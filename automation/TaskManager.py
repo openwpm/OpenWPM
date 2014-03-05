@@ -16,7 +16,7 @@ import time
 # Compared to light wrapper around WebDriver, provides robustness and timeout functionality
 
 # <db_location> is the absolute path of the folder in which we want to build our crawl data DB
-# <db_name> is the base name of the database (e.g. dump_data instead of dump_data.sqlite)
+# <db_name> is the name of the database (including .sqlite suffix)
 # <browsers> is the type of browser we want to instantiate (currently accepts 'firefox' / 'chrome')
 # <timeout> is the default amount of time we want to allow a command to execute (can override on individual commands)
 # <headless> is a boolean that indicates whether we want to run a headless browser (TODO: make this work for Chrome)
@@ -30,13 +30,13 @@ import time
 
 class TaskManager:
 
-    def __init__(self, db_location, db_name, browser='firefox', timeout=30, headless=False, proxy=True,
+    def __init__(self, db_location, db_name, browser='firefox', timeout=30, headless=False, proxy=False,
                  fourthparty=False, browser_debugging=False, profile=None, description=None, mp_lock=None):
          # sets up the information needed to write to the database
         self.profile_path = profile
         self.desc = description
         self.mp_lock = mp_lock
-        self.db_loc = db_location if db_location.ends_with("/") else db_location + "/"
+        self.db_loc = db_location if db_location.endswith("/") else db_location + "/"
         self.db_name = db_name
 
         # sets up the crawl data database and extracts crawl id
@@ -110,7 +110,7 @@ class TaskManager:
             browser_manager.start()
 
             # waits for BrowserManager to send success tuple i.e. (profile_path, browser pid, display pid)
-            for i in xrange(0, spawn_timeout * 1000):
+            for i in xrange(0, int(spawn_timeout) * 1000):
                  # no status for now -> sleep to avoid pegging CPU on blocking get
                 if self.browser_status_queue.empty():
                     time.sleep(0.001)
@@ -179,15 +179,17 @@ class TaskManager:
     # CRAWLER COMMAND CODE   
 
     # sends command tuple to the BrowserManager
-    def issue_command(self, command):
+    # <timeout> gives the option to override default timeout
+    def issue_command(self, command, timeout=None):
         self.is_fresh = False  # since we are issuing a command, the BrowserManager is no longer a fresh instance
+        timeout = self.timeout if timeout is None else timeout  # allows user to overwrite timeout
 
         # passes off command and waits for a success (or failure signal)
         self.browser_command_queue.put(command)
         command_succeeded = False
 
         # repeatedly waits for a reply from the BrowserManager; if fails/times-out => restart
-        for i in xrange(0, self.timeout * 1000):
+        for i in xrange(0, int(timeout) * 1000):
             if self.browser_status_queue.empty():  # nothing to do -> sleep so as to not peg CPU
                 time.sleep(0.001)
                 continue
@@ -204,17 +206,17 @@ class TaskManager:
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
     # goes to a url
-    def get(self, url):
-        self.issue_command(('GET', url))
+    def get(self, url, overwrite_timeout=None):
+        self.issue_command(('GET', url), overwrite_timeout)
 
     # dumps from the profile path to a given file (absolute path)
-    def dump_profile(self, dump_folder):
-        self.issue_command(('DUMP_PROF', dump_folder))
+    def dump_profile(self, dump_folder, overwrite_timeout=None):
+        self.issue_command(('DUMP_PROF', dump_folder), overwrite_timeout)
     
     # loads profile from the load folder 
     # if prof is None, picks newest folder, otherwise chooses prof tar file
-    def load_profile(self, load_folder, prof=None):
-        self.issue_command(('LOAD_PROF', load_folder, prof))
+    def load_profile(self, load_folder, prof=None, overwrite_timeout=None):
+        self.issue_command(('LOAD_PROF', load_folder, prof), overwrite_timeout)
 
     # resets the worker processes with profile to a clean state
     def reset(self):

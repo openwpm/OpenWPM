@@ -27,7 +27,7 @@ def deploy_firefox(browser_params) :
             fp.set_preference("network.cookie.cookieBehavior", 1)
     '''
 
-    if browser_params['proxy'] is not None:
+    if browser_params['proxy']:
         PROXY_HOST = "localhost"
         PROXY_PORT = browser_params['proxy']
 
@@ -45,8 +45,8 @@ def deploy_firefox(browser_params) :
         # copy the dbs into temp profile
         # these were created by manually adding the cert to
         # a previous tmp selenium profile
-        shutil.copy(os.path.join(os.path.dirname(__file__) + "/../", 'proxy/key3.db'), fp.path + '/key3.db')
-        shutil.copy(os.path.join(os.path.dirname(__file__) + "/../", 'proxy/cert8.db'), fp.path + '/cert8.db')
+        shutil.copy(os.path.join(os.path.dirname(__file__) + "/../", 'Proxy/key3.db'), fp.path + '/key3.db')
+        shutil.copy(os.path.join(os.path.dirname(__file__) + "/../", 'Proxy/cert8.db'), fp.path + '/cert8.db')
 
     if browser_params['fourthparty']:
         fp.add_extension(extension=os.path.join(os.path.dirname(__file__) + "/../",

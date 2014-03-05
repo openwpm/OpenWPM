@@ -10,8 +10,8 @@ import tarfile
 # profile dumped as a timestamped tar file, format is DDMMYY_HHMMSS.tar.gz
 def dump_profile(profile_folder, new_folder):
     # ensures that folder paths end with slashes
-    profile_folder = profile_folder if profile_folder.ends_with("/") else profile_folder + "/"
-    new_folder = new_folder if new_folder.ends_with("/") else new_folder + "/"
+    profile_folder = profile_folder if profile_folder.endswith("/") else profile_folder + "/"
+    new_folder = new_folder if new_folder.endswith("/") else new_folder + "/"
 
     tar = tarfile.open(new_folder + datetime.datetime.now().strftime("%d%m%y_%H%M%S") + '.tar.gz', 'w:gz')
     for db in ["cookies.sqlite", "cookies.sqlite-shm", "cookies.sqlite-wal",
@@ -24,8 +24,8 @@ def dump_profile(profile_folder, new_folder):
 # when <prof> is None, load the most recent profile in <old_folder>, other loads the profile tar <prof>
 def load_profile(profile_folder, old_folder, prof=None):
     # ensures that folder paths end with slashes
-    profile_folder = profile_folder if profile_folder.ends_with("/") else profile_folder + "/"
-    old_folder = old_folder if old_folder.ends_with("/") else old_folder + "/"
+    profile_folder = profile_folder if profile_folder.endswith("/") else profile_folder + "/"
+    old_folder = old_folder if old_folder.endswith("/") else old_folder + "/"
 
     if prof is None:  # gets the most recent profile
         files = glob.glob(old_folder + '*.tar.gz')
