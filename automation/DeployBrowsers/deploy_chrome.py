@@ -1,7 +1,5 @@
 from selenium import webdriver
-import shutil
 import os
-from pyvirtualdisplay import Display
 
 # note dnt, tp_off are not supported
 # in general, chrome may not be well-supported yet
@@ -15,13 +13,6 @@ def deploy_chrome(browser_params):
     profile_path = os.environ['HOME'] + "/.config/google-chrome/"
     co = webdriver.ChromeOptions()
 
-    # Add user-defined chrome options
-    '''
-    for cmd_arg in cmd_args:
-        if cmd_arg:
-            co.add_argument(cmd_arg)
-    '''
-
     # to exclude sites from traversing proxy
     # comma-separated list of bypass values: 1.2.3.0/24,.google.com
     # co.add_argument("--proxy-bypass-list=.google.com,.yahoo.com,.yimg.com")
@@ -31,7 +22,8 @@ def deploy_chrome(browser_params):
     # co.add_extension(os.path.join(os.path.dirname(__file__),'extensions/....'))
 
     if browser_params['debugging']:
-        co.add_argument("--load-extension=%s" % (os.path.join(os.path.dirname(__file__) + "/../" ,'extensions/firebug_chrome/')))
+        co.add_argument("--load-extension=%s" %
+                        (os.path.join(os.path.dirname(__file__) + "/../", 'extensions/firebug_chrome/')))
         pass
 
     if browser_params['proxy'] is not None:
@@ -45,4 +37,4 @@ def deploy_chrome(browser_params):
     driver.set_page_load_timeout(30)
     driver.set_script_timeout(30)
 
-    return (driver, profile_path, None)
+    return driver, profile_path, None

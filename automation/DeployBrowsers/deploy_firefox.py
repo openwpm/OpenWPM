@@ -3,9 +3,9 @@ import shutil
 import os
 from pyvirtualdisplay import Display
 
-def deploy_firefox(browser_params) :
+def deploy_firefox(browser_params):
     display_pid = None
-    if browser_params['headless'] :
+    if browser_params['headless']:
         display = Display(visible=0, size=(1366,768))
         display.start()
         display_pid = display.pid
@@ -16,16 +16,6 @@ def deploy_firefox(browser_params) :
     if browser_params['debugging']:
         fp.add_extension(extension=os.path.join(os.path.dirname(__file__), 'extensions/firebug-1.11.0.xpi'))
         fp.set_preference("extensions.firebug.currentVersion", "1.11.0") #Avoid startup screen
-
-    # TODO: re-include this support for Do Not Track and turning off Third Party cookies
-    '''
-    if dnt:
-        fp.set_preference("privacy.donottrackheader.enabled", True)
-        fp.set_preference("privacy.donottrackheader.value", 1)
-
-    if tp_off:
-            fp.set_preference("network.cookie.cookieBehavior", 1)
-    '''
 
     if browser_params['proxy']:
         PROXY_HOST = "localhost"
@@ -58,4 +48,4 @@ def deploy_firefox(browser_params) :
     driver.set_page_load_timeout(30)
     driver.set_script_timeout(30)
 
-    return (driver, profile_path, display_pid)
+    return driver, profile_path, display_pid
