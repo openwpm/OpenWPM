@@ -6,7 +6,7 @@ import time
 # goes to <url> using the given <webdriver> instance
 # <proxy_queue> is queue for sending the proxy the current first party site
 def get_website(url, webdriver, proxy_queue):
-    try :
+    try:
         # sends top-level domain to proxy
         # then, waits for it to finish marking traffic in queue before moving to new site
         if proxy_queue is not None:

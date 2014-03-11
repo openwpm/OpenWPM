@@ -5,9 +5,6 @@
 # msg is the message object given by MITM
 # (crawl_id, url, method, referrer, top_url)
 def process_general_mitm_request(db_queue, crawl_id, top_url, msg):
-    if msg is None:
-        return
-
     if len(msg.headers['referer']) > 0:
         referrer = msg.headers['referer'][0]
     else:
@@ -19,9 +16,6 @@ def process_general_mitm_request(db_queue, crawl_id, top_url, msg):
 # msg is the message object given by MITM
 # (crawl_id, url, method, referrer, response_status, response_status_text, top_url)
 def process_general_mitm_response(db_queue, crawl_id, top_url, msg):
-    if msg is None:
-        return
-
     if len(msg.request.headers['referer']) > 0:
         referrer = msg.request.headers['referer'][0]
     else:

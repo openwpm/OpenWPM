@@ -71,7 +71,7 @@ def main(argv):
         "fourthparty": False,
         "proxy": False,
         "headless": False,
-        "timeout": 20.0,
+        "timeout": 30.0,
         "load_folder": None,
         "dump_folder": None
     }
@@ -87,7 +87,7 @@ def main(argv):
         elif argv[i] == "-headless":
             preferences["headless"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-timeout":
-            preferences["fourthparty"] = float(argv[i+1]) if float(argv[i]) > 0 else 20.0
+            preferences["fourthparty"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
         elif argv[i] == "-load":
             preferences["load_folder"] = argv[i+1]
         elif argv[i] == "-dump":
