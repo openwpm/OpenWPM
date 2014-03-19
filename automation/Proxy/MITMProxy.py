@@ -3,8 +3,9 @@
 # functionality to handling requests and responses
 from libmproxy import controller
 import sys
-import mitm_commands
 import Queue
+import mitm_commands
+from tld import get_tld
 
 # Inspired by the following example. Note the gist has a lot of bugs.
 # https://gist.github.com/dannvix/5285924
@@ -35,7 +36,7 @@ class InterceptingMaster (controller.Master):
         # try to load/process message as usual
         try:
             msg = q.get(timeout=0.01)
-            controller.Master.handle(self, msg)
+            controller.Master.handle(self, *msg)
         except Queue.Empty:
             pass
 
@@ -58,9 +59,10 @@ class InterceptingMaster (controller.Master):
         msg.reply()
 
         # use heuristic to detect that we are now indeed seeing traffic from newly-visited site (if applicable)
-        if self.changed and len(msg.headers['referer']) == 0 and self.new_top_url in msg.get_url():
-            self.curr_top_url = self.new_top_url
-            self.changed = False
+        if self.changed and len(msg.headers['referer']) == 0:
+            if get_tld(self.new_top_url, fail_silently=True) == get_tld(msg.get_url(), fail_silently=True):
+                self.curr_top_url = self.new_top_url
+                self.changed = False
 
         mitm_commands.process_general_mitm_request(self.db_queue, self.crawl_id, self.curr_top_url, msg)
 
