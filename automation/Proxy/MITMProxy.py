@@ -59,7 +59,8 @@ class InterceptingMaster (controller.Master):
         msg.reply()
 
         # use heuristic to detect that we are now indeed seeing traffic from newly-visited site (if applicable)
-        if self.changed and len(msg.headers['referer']) == 0:
+        if self.changed:
+            #print get_tld(self.new_top_url, fail_silently=True) + "\t" + get_tld(msg.get_url(), fail_silently=True)
             if get_tld(self.new_top_url, fail_silently=True) == get_tld(msg.get_url(), fail_silently=True):
                 self.curr_top_url = self.new_top_url
                 self.changed = False

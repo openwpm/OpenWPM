@@ -24,12 +24,6 @@ CREATE TABLE IF NOT EXISTS xpath (
 
 /* Proxy Tables */
 
-CREATE TABLE IF NOT EXISTS javascript (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crawl_id INTEGER NOT NULL,
-    top_url VARCHAR[500] NOT NULL,
-    javascript TEXT NOT NULL);
-
 /* TODO: add publix_suffix to db structure */
 /* TODO: link with headers */
 CREATE TABLE IF NOT EXISTS http_requests (
@@ -54,3 +48,13 @@ CREATE TABLE IF NOT EXISTS http_responses (
     top_url VARCHAR[500] NOT NULL);
 
 
+CREATE TABLE IF NOT EXISTS cookies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
+    domain VARCHAR[500] NOT NULL,
+    name VARCHAR[500] NOT NULL,
+    value VARCHAR[500] NOT NULL,
+    expiry VARCHAR[500] NOT NULL,
+    accessed VARCHAR[500] NOT NULL,
+    referrer VARCHAR[500] NOT NULL,
+    top_url VARCHAR[500] NOT NULL);
