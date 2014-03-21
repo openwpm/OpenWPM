@@ -16,6 +16,7 @@ def process_general_mitm_request(db_queue, crawl_id, top_url, msg):
     data = (crawl_id, msg.get_url(), msg.method, referrer, top_url)
     db_queue.put(("INSERT INTO http_requests (crawl_id, url, method, referrer, top_url) VALUES (?,?,?,?,?)", data))
 
+
 # msg is the message object given by MITM
 # (crawl_id, url, method, referrer, response_status, response_status_text, top_url)
 def process_general_mitm_response(db_queue, crawl_id, top_url, msg):
@@ -32,13 +33,21 @@ def process_general_mitm_response(db_queue, crawl_id, top_url, msg):
         db_queue.put(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
                       "response_status_text, top_url) VALUES (?,?,?,?,?,?,?)", data))
 
+# returns canonical date-time string
+def parse_date(date):
+    try:
+        return str(parser.parse(date, fuzzy=True))
+    except Exception as ex:
+        return str(datetime.datetime.now())
+
 # add an entry for a cookie to the table
 def process_cookies(db_queue, crawl_id, top_url, referrer, cookies):
     for name in cookies:
         value, attr_dict = cookies[name]
         domain = '' if 'domain' not in attr_dict else unicode(attr_dict['domain'], errors='ignore')
-        expiry = str(datetime.datetime.max) if 'expires' not in attr_dict else str(parser.parse(attr_dict['expires']))
         accessed = str(datetime.datetime.now())
+        expiry = str(datetime.datetime.now()) if 'expires' not in attr_dict else parse_date(attr_dict['expires'])
+
         data = (crawl_id, domain, unicode(name, errors='ignore'), unicode(value, errors='ignore'),
                 expiry, accessed, referrer, top_url)
         db_queue.put(("INSERT INTO cookies (crawl_id, domain, name, value, expiry, accessed, referrer, top_url) "
