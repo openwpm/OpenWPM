@@ -1,28 +1,10 @@
 # This module is used to extract persistent cookie IDs using the same heuristics from the PETS 2014 paper
 
+import census_util
 from collections import defaultdict
-import difflib
-import itertools
 import sqlite3 as lite
 from dateutil import parser
-import datetime
 
-# are all items the same?
-def all_same(items):
-    return all(x == items[0] for x in items)
-
-# are all strings of the same length?
-def all_same_len(items):
-    return all(len(x) == len(items[0]) for x in items)
-
-# Are two cookies more than 80% similar in accordance to Ratcliff-Obershelp metric
-def ro_similar(seq1, seq2):
-    return difflib.SequenceMatcher(a=seq1, b=seq2).ratio() > 0.8
-
-# Are all cookies in a list pairwise-dissimilar (i.e. fail ro-test)
-def all_dissimilar(items):
-    pairs = list(itertools.combinations(items, 2))
-    return all(not ro_similar(x[0], x[1]) for x in pairs)
 
 # builds a dictionary with keys = (domain, name) and values being list of cookie values
 # values must be from non short-lived cookies and consistent across the crawls
@@ -44,7 +26,7 @@ def extract_cookies_from_db(db_name):
     # only keep cookies with values that remain constant throughout the crawl
     cookie_dict = {}
     for cookie in raw_cookie_dict:
-        if all_same(raw_cookie_dict[cookie]):
+        if census_util.all_same(raw_cookie_dict[cookie]):
             cookie_dict[cookie] = raw_cookie_dict[cookie][0]
 
     return cookie_dict
@@ -61,8 +43,8 @@ def extract_persistent_ids(cookie_dicts):
             raw_id_dict[cookie].append(cookie_dict[cookie])
 
     for cookie in raw_id_dict:
-        if len(raw_id_dict[cookie]) > 1 and all_same_len(raw_id_dict[cookie]) \
-                and len(raw_id_dict[cookie][0]) > 5 and all_dissimilar(raw_id_dict[cookie]):
+        if len(raw_id_dict[cookie]) > 1 and census_util.all_same_len(raw_id_dict[cookie]) \
+                and len(raw_id_dict[cookie][0]) > 5 and census_util.all_dissimilar(raw_id_dict[cookie]):
                 pass
             #print str(cookie) + "\t" + str(raw_id_dict[cookie])
 
