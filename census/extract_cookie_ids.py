@@ -21,7 +21,9 @@ def extract_cookies_from_db(db_name):
         if (parser.parse(expiry).replace(tzinfo=None) - parser.parse(access).replace(tzinfo=None)).days < 30:
             continue
 
+        # add the basic values, then try to parse inner parameters and add them
         raw_cookie_dict[(domain, name)].append(value)
+        add_inner_parameters(raw_cookie_dict, domain, name, value)
 
     # only keep cookies with values that remain constant throughout the crawl
     cookie_dict = {}
@@ -30,6 +32,19 @@ def extract_cookies_from_db(db_name):
             cookie_dict[cookie] = raw_cookie_dict[cookie][0]
 
     return cookie_dict
+
+# goes through the cookies values and looks for values of the form id=XXX&time=YYYY
+# then appends to raw_cookie_dict the cookie (domain, name#id) XXX
+# and (domain, name#time) YYY
+# currently uses two known delimiters
+def add_inner_parameters(raw_cookie_dict, domain, name, value):
+    delimiters = [":", "&"]  # currently known inner cookie delimiters
+    for delimiter in delimiters:
+        parts = value.split(delimiter)
+        for part in parts:
+            params = part.split("=")
+            if len(params) == 2:
+                raw_cookie_dict[(domain, name + "#" + params[0])].append(params[1])
 
 # takes in dictionaries of persistent, non-session cookies
 # finds common ids that have values of the same length
@@ -49,7 +64,7 @@ def extract_persistent_ids(cookie_dicts):
 
     # prune away cookies that fail one of our unique ID heuristics
     for cookie in raw_id_dict:
-        if len(raw_id_dict[cookie]) <= 1 or len(raw_id_dict[cookie][0]) <= 5 \
+        if len(raw_id_dict[cookie]) <= 1 or len(raw_id_dict[cookie][0]) <= 5 or len(raw_id_dict[cookie][0]) > 100 \
                 or not census_util.all_same_len(raw_id_dict[cookie]) \
                 or not census_util.all_dissimilar(raw_id_dict[cookie]):
             continue
@@ -59,6 +74,6 @@ def extract_persistent_ids(cookie_dicts):
     return domain_dict
 
 if __name__ == "__main__":
-    c1 =  extract_cookies_from_db("/home/christian/Desktop/crawl1.sqlite")
-    c2 =  extract_cookies_from_db("/home/christian/Desktop/crawl2.sqlite")
-    print extract_persistent_ids([c1, c2])
+    c1 = extract_cookies_from_db("/home/christian/Desktop/crawl1.sqlite")
+    c2 = extract_cookies_from_db("/home/christian/Desktop/crawl2.sqlite")
+    print len(extract_persistent_ids([c1, c2]))
