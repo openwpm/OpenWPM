@@ -11,6 +11,3 @@ def execute_command(command, webdriver, profile_path, proxy_queue):
 
     if command[0] == 'DUMP_PROF':
         profile_commands.dump_profile(profile_path, command[1])
-
-    if command[0] == 'LOAD_PROF':
-        profile_commands.load_profile(profile_path, command[1], command[2])

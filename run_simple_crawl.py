@@ -32,6 +32,8 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
 
     for site in sites:
         manager.get(site)
+        if preferences["wipe"]:
+            manager.reset()
 
     # dump profile at the end if necessary
     if preferences['dump_folder'] is not None:
@@ -51,7 +53,8 @@ def print_help_message():
           "-headless: True/False value as to whether to run browser in headless mode\n" \
           "-timeout: timeout (in seconds) for the TaskManager to default time out loads\n" \
           "-load: absolute path of folder that contains tar-zipped user profile\n" \
-          "-dump: absolute path of folder in which to dump tar-zipped user profile\n"
+          "-dump: absolute path of folder in which to dump tar-zipped user profile\n" \
+          "-wipe: True/False value as to whether we want to wipe the state between sites\n"
 
 # main helper function, reads command-line arguments and launches crawl
 def main(argv):
@@ -71,9 +74,10 @@ def main(argv):
         "fourthparty": False,
         "proxy": False,
         "headless": False,
-        "timeout": 20.0,
+        "timeout": 30.0,
         "load_folder": None,
-        "dump_folder": None
+        "dump_folder": None,
+        "wipe": False
     }
 
     # overwrites the default preferences based on command-line inputs
@@ -87,11 +91,13 @@ def main(argv):
         elif argv[i] == "-headless":
             preferences["headless"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-timeout":
-            preferences["fourthparty"] = float(argv[i+1]) if float(argv[i]) > 0 else 20.0
+            preferences["fourthparty"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
         elif argv[i] == "-load":
             preferences["load_folder"] = argv[i+1]
         elif argv[i] == "-dump":
             preferences["dump_folder"] = argv[i+1]
+        elif argv[i] == "-wipe":
+            preferences["wipe"] = True if argv[i+1].lower() == "true" else False
 
     # launches the crawl with the updated preferences
     run_site_crawl(db_loc, db_name, sites, preferences)
