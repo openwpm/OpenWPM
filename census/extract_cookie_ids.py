@@ -70,7 +70,6 @@ def extract_common_persistent_ids(cookie_dicts):
             continue
 
         domain_dict[cookie[0]].append(cookie[1])
-        print str(cookie) + "\t" + str(raw_id_dict[cookie])
 
     return domain_dict
 
@@ -104,4 +103,4 @@ if __name__ == "__main__":
     c1 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
     c2 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl2.sqlite")
     extracted = extract_common_persistent_ids([c1, c2])
-    print extract_known_cookies_from_db("/home/christian/Desktop/crawl2.sqlite", extracted)
+    known = extract_known_cookies_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)
