@@ -26,10 +26,7 @@ import time
 # <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
 # <description> is an optional description string for a particular crawl
 # <mp_lock> is a multi-processing lock used for DB I/O
-
-
 class TaskManager:
-
     def __init__(self, db_location, db_name, browser='firefox', timeout=30, headless=False, proxy=False,
                  fourthparty=False, browser_debugging=False, profile=None, description=None, mp_lock=None):
          # sets up the information needed to write to the database
@@ -212,11 +209,6 @@ class TaskManager:
     # dumps from the profile path to a given file (absolute path)
     def dump_profile(self, dump_folder, overwrite_timeout=None):
         self.issue_command(('DUMP_PROF', dump_folder), overwrite_timeout)
-    
-    # loads profile from the load folder 
-    # if prof is None, picks newest folder, otherwise chooses prof tar file
-    def load_profile(self, load_folder, prof=None, overwrite_timeout=None):
-        self.issue_command(('LOAD_PROF', load_folder, prof), overwrite_timeout)
 
     # resets the worker processes with profile to a clean state
     def reset(self):
