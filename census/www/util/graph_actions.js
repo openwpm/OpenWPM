@@ -1,10 +1,12 @@
-var curr_clicked = null;
-var curr_cookies = null;
+var curr_clicked = null;  // currently clicked node
+var curr_cookies = null;  // list of cookies held at currently clicked node
+var highlighted = "ffff00";  // color to highlight node
 
 // dummy function: colors a node gray
 function hover_node(n) {
     // either we are not clicking on a node or we are hovering over that node
-    if (curr_clicked == null || n.data.node.id == curr_clicked) {
+    // also, ignore nodes that are not currently highlighed
+    if (curr_clicked == null || n.data.node.id == curr_clicked || n.data.node.color != highlighted) {
         return;
     }
 
@@ -24,7 +26,12 @@ function hover_node(n) {
     s.refresh();
 }
 
-// used for when we click, the screen - restores nodes to their original colors
+function click_stage(stage) {
+    reset_settings(stage);
+    s.refresh();
+}
+
+// sets the graph to its original coloring
 function reset_settings(stage) {
     s.graph.nodes().forEach(function(n) {
         n.color = n.original_color;
@@ -32,7 +39,14 @@ function reset_settings(stage) {
     s.graph.edges().forEach(function(e) {
         e.color = e.original_color;
     });
-    s.refresh();
+}
+
+function click_node(e) {
+    if (e.data.node.id == curr_clicked) {
+        return;
+    }
+    reset_settings(e);
+    color_flow(e);
 }
 
 // used for clicking, colors all nodes and edges that share a common cookie
@@ -47,7 +61,7 @@ function color_flow(e) {
     s.graph.nodes().forEach(function(n) {
         cookies.some(function(c) {
             if (c in n.cookies) {
-                n.color = "ffff00";
+                n.color = highlighted;
             }
         });
     });
@@ -56,7 +70,7 @@ function color_flow(e) {
     s.graph.edges().forEach(function(e) {
         cookies.some(function(c) {
             if (c in e.cookies) {
-                e.color = "ffff00";
+                e.color = highlighted;
             }
         });
     });

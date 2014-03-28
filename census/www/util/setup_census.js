@@ -18,7 +18,7 @@ function init() {
 
 	// bind actions from graph_actions.js
 	s.bind('overNode', hover_node);
-    s.bind('clickStage', reset_settings);
-    s.bind('clickNode', color_flow);
+    s.bind('clickStage', click_stage);
+    s.bind('clickNode', click_node);
    
 }
