@@ -5,10 +5,20 @@ function init() {
 		'graph.json',
 		s,
 		function() {
-			s.refresh()
+            // save the original color of the graph for later re-coloring
+            s.graph.nodes().forEach(function(n) {
+                n.original_color = n.color;
+            });
+            s.graph.edges().forEach(function(e) {
+                e.original_color = e.color;
+            });
+			s.refresh();
 		}
 	);
 
 	// bind actions from graph_actions.js
-	s.bind('overNode', hover_node)
+	s.bind('overNode', hover_node);
+    s.bind('clickStage', reset_settings);
+    s.bind('clickNode', color_flow);
+   
 }

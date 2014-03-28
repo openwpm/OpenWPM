@@ -1,8 +1,9 @@
 import networkx as nx
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import extract_cookie_ids
 import sqlite3 as lite
 import census_util
+import sigma_graph_json
 
 # builds and returns a cookie synchronization graph
 # nodes are websites and (directed) edges illustrate cookie values flowing between sites
@@ -24,12 +25,21 @@ def build_sync_graph(db_name, known_cookies):
             referrer = census_util.extract_domain(referrer)
 
             # adds edges and adds cookies to nodes + edges
-            g.add_edge(referrer, url)
-            g.edge[referrer][url][cookie[0]] = cookie[1]
-            g.node[referrer][cookie[0]] = cookie[1]
-            g.node[url][cookie[1]] = cookie[1]
+            # TODO: error with blank strings?
+            cookie_str = str(cookie[0]) + "|" + str(cookie[1])
+            if url not in g:
+                g.add_node(url, cookies={})
+            if referrer not in g:
+                g.add_node(referrer, cookies={})
+            if (referrer, url) not in g.edges():
+                g.add_edge(referrer, url, cookies={})
+
+            g.edge[referrer][url]['cookies'][cookie_str] = 1
+            g.node[referrer]['cookies'][cookie_str] = 1
+            g.node[url]['cookies'][cookie_str] = 1
 
     # adds the weights to the nodes and edges
+    # TODO: fix this, wrong under cookie dictionary scheme
     for node in g.nodes(data=True):
         g.node[node[0]]['weight'] = len(node[1])
 
@@ -38,11 +48,25 @@ def build_sync_graph(db_name, known_cookies):
 
     return g
 
+# takes in a graph and adds fields to it to make it drawable in sigma.js
+def add_drawable_graph_fields(G):
+    # remove blank node if necessary
+    if '' in G.nodes():
+        G.remove_node('')
+        layout = nx.spring_layout(G)
+
+    # adds coordinates to node
+    for node in layout:
+        G.add_node(node, x=float(layout[node][0]), y=float(layout[node][1]))
+
+    return G
+
 if __name__ == "__main__":
     c1 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
     c2 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/christian/Desktop/crawl2.sqlite")
     extracted = extract_cookie_ids.extract_common_persistent_ids([c1, c2])
     known = extract_cookie_ids.extract_known_cookies_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)
     G = build_sync_graph("/home/christian/Desktop/crawl1.sqlite", extracted)
-    nx.draw(G)
-    plt.show()
+    G = add_drawable_graph_fields(G)
+    sigma_graph_json.write_json_graph_to_file(G, "/home/christian/Desktop/graph.json")
+

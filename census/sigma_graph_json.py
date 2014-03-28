@@ -11,16 +11,19 @@ def build_node(G, node):
     "y": G.node[node]['y'],
     "size": 3,
     "color": "ff0000",
+    "cookies": G.node[node]['cookies']
     }
     return str(val).replace("\'", "\"")
 
 # takes in an edge and a counter (i.e. the id for the edge)
 # returns a string corresponding to the edge
-def build_edge(edge, counter):
+def build_edge(G, edge, counter):
     val = {
         "id": "e" + str(counter),
         "source": str(edge[0]),
-        "target": str(edge[1])
+        "target": str(edge[1]),
+        "color": "ff0000",
+        "cookies": G.edge[edge[0]][edge[1]]['cookies']
     }
     return str(val).replace("\'", "\"")
 
@@ -46,7 +49,7 @@ def build_json_encoding(G):
     num_edges = len(G.edges())
     json_parts.append("], \"edges\": [")
     for edge in G.edges():
-        json_parts.append(build_edge(edge, counter))
+        json_parts.append(build_edge(G, edge, counter))
         counter += 1
         if counter < num_edges:
             json_parts.append(",")
