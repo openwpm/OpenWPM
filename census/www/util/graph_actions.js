@@ -1,6 +1,7 @@
 var curr_clicked = null;  // currently clicked node
 var curr_cookies = null;  // list of cookies held at currently clicked node
 var highlighted = "ffff00";  // color to highlight node
+var faded = "fffaf0"; // color for faded out nodes
 
 // dummy function: colors a node gray
 function hover_node(n) {
@@ -10,7 +11,7 @@ function hover_node(n) {
         return;
     }
 
-    // try fo find the common cookies
+    // try to find the common cookies
     common_cookies = [];
     curr_cookies.forEach(function (c) {
         if (c in n.data.node.cookies) {
@@ -20,10 +21,17 @@ function hover_node(n) {
     
     common_cookies.sort();
     console.log(common_cookies);
+    fill_cookie_data(n.data.node.id);
     
-    
-    //e.data.node.color = "eeeeee";
     s.refresh();
+}
+
+function unhover_node(n) {
+    if (curr_clicked == null) {
+        return;
+    }
+
+    fill_cookie_data(null);
 }
 
 function click_stage(stage) {
@@ -45,8 +53,8 @@ function click_node(e) {
     if (e.data.node.id == curr_clicked) {
         return;
     }
-    reset_settings(e);
     color_flow(e);
+    fill_cookie_data(null);
 }
 
 // used for clicking, colors all nodes and edges that share a common cookie
@@ -63,6 +71,9 @@ function color_flow(e) {
             if (c in n.cookies) {
                 n.color = highlighted;
             }
+            else {
+                n.color = faded;
+            }
         });
     });
 
@@ -72,7 +83,34 @@ function color_flow(e) {
             if (c in e.cookies) {
                 e.color = highlighted;
             }
+            else {
+                e.color = faded;
+            }
         });
     });
     s.refresh();
+}
+
+function fill_cookie_data(hovered_node) {
+    if (hovered_node == null) {
+        $("#owners").html(s.graph.nodes(curr_clicked).label);
+        // in this case, we fill in all of the current cookies
+        owned_cookies = "";
+        curr_cookies.forEach(function(c) {
+            owned_cookies += c + "</br>";
+        });
+        $("#cookies").html(owned_cookies);
+    }
+
+    else {
+        console.log(s.graph.nodes(hovered_node).label);
+        $("#owners").html(s.graph.nodes(curr_clicked).label + " and " + s.graph.nodes(hovered_node).label);
+        owned_cookies = "";
+        curr_cookies.forEach(function(c) {
+            if (c in s.graph.nodes(hovered_node).cookies) {
+                owned_cookies += c + "</br>";
+            }
+        });
+        $("#cookies").html(owned_cookies);
+    }
 }

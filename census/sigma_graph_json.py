@@ -22,7 +22,6 @@ def build_edge(G, edge, counter):
         "id": "e" + str(counter),
         "source": str(edge[0]),
         "target": str(edge[1]),
-        "color": "ff0000",
         "cookies": G.edge[edge[0]][edge[1]]['cookies']
     }
     return str(val).replace("\'", "\"")

@@ -26,7 +26,7 @@ def build_sync_graph(db_name, known_cookies):
 
             # adds edges and adds cookies to nodes + edges
             # TODO: error with blank strings?
-            cookie_str = str(cookie[0]) + "|" + str(cookie[1])
+            cookie_str = str(cookie[0]) + " " + str(cookie[1])
             if url not in g:
                 g.add_node(url, cookies={})
             if referrer not in g:
