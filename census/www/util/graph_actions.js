@@ -1,6 +1,6 @@
 var curr_clicked = null;  // currently clicked node
 var curr_cookies = null;  // list of cookies held at currently clicked node
-var highlighted = "ffff00";  // color to highlight node
+var highlighted = "ff0000";  // color to highlight node
 var faded = "fffaf0"; // color for faded out nodes
 
 // dummy function: colors a node gray
@@ -44,6 +44,7 @@ function reset_settings(stage) {
     s.graph.nodes().forEach(function(n) {
         n.color = n.original_color;
     });
+
     s.graph.edges().forEach(function(e) {
         e.color = e.original_color;
     });
@@ -53,6 +54,7 @@ function click_node(e) {
     if (e.data.node.id == curr_clicked) {
         return;
     }
+
     color_flow(e);
     fill_cookie_data(null);
 }
@@ -99,18 +101,45 @@ function fill_cookie_data(hovered_node) {
         curr_cookies.forEach(function(c) {
             owned_cookies += c + "</br>";
         });
+
         $("#cookies").html(owned_cookies);
     }
 
     else {
         console.log(s.graph.nodes(hovered_node).label);
         $("#owners").html(s.graph.nodes(curr_clicked).label + " and " + s.graph.nodes(hovered_node).label);
+
         owned_cookies = "";
         curr_cookies.forEach(function(c) {
             if (c in s.graph.nodes(hovered_node).cookies) {
                 owned_cookies += c + "</br>";
             }
         });
+
         $("#cookies").html(owned_cookies);
     }
+}
+
+function filter_out_low_weights(threshold_weight) {
+    // first fade out the low-weight nodes
+    s.graph.nodes().forEach(function(n) {
+        if (n.weight < threshold_weight) {
+            n.color = faded;
+        }
+        else {
+            n.color = highlighted;
+        }
+    });
+
+    // next, fade out the edges with at least one faded node
+    s.graph.edges().forEach(function(e) {
+        if (s.graph.nodes(e.source).color == faded 
+            || s.graph.nodes(e.target).color == faded) {
+            e.color = faded;
+        }
+        else {
+            e.color = highlighted;
+        }
+    });
+    s.refresh();
 }
