@@ -1,6 +1,7 @@
 # Customized MITMProxy
 # Extends the proxy controller to add some additional
 # functionality to handling requests and responses
+from ..SocketManager import clientsocket
 from libmproxy import controller
 import sys
 import Queue
@@ -10,7 +11,7 @@ from tld import get_tld
 # Inspired by the following example. Note the gist has a lot of bugs.
 # https://gist.github.com/dannvix/5285924
 class InterceptingMaster (controller.Master):
-    def __init__(self, server, crawl_id, url_queue, db_command_queue):
+    def __init__(self, server, crawl_id, url_queue, db_socket_address):
         self.crawl_id = crawl_id
         
         # Attributes used to flag the first-party domain
@@ -19,8 +20,9 @@ class InterceptingMaster (controller.Master):
         self.new_top_url = None  # first-party url that BrowserManager just claimed to have visited
         self.changed = False  # used to flag that new site has been visited so proxy looks for new site's traffic
 
-        # Queue to communicate with DataAggregator
-        self.db_queue = db_command_queue
+        # Open a socket to communicate with DataAggregator
+        self.db_socket = clientsocket()
+        self.db_socket.connect(*db_socket_address)
 
         controller.Master.__init__(self, server)
 
@@ -36,7 +38,7 @@ class InterceptingMaster (controller.Master):
         # try to load/process message as usual
         try:
             msg = q.get(timeout=0.01)
-            controller.Master.handle(self, *msg)
+            controller.Master.handle(self, msg)
         except Queue.Empty:
             pass
 
@@ -65,10 +67,10 @@ class InterceptingMaster (controller.Master):
                 self.curr_top_url = self.new_top_url
                 self.changed = False
 
-        mitm_commands.process_general_mitm_request(self.db_queue, self.crawl_id, self.curr_top_url, msg)
+        mitm_commands.process_general_mitm_request(self.db_socket, self.crawl_id, self.curr_top_url, msg)
 
     # Record data from HTTP responses
     def handle_response(self, msg):
         msg.reply()
 
-        mitm_commands.process_general_mitm_response(self.db_queue, self.crawl_id, self.curr_top_url, msg)
+        mitm_commands.process_general_mitm_response(self.db_socket, self.crawl_id, self.curr_top_url, msg)

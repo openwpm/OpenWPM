@@ -37,6 +37,7 @@ class TaskManager:
         self.db_name = db_name
 
         # sets up the crawl data database and extracts crawl id
+        #TODO update this -- locks likely aren't needed
         if self.mp_lock is not None:
             self.mp_lock.acquire()
         self.db = sqlite3.connect(db_location + db_name)
@@ -63,10 +64,11 @@ class TaskManager:
         self.timeout = timeout
         self.browser_command_queue = None  # queue for passing command tuples to BrowserManager
         self.browser_status_queue = None  # queue for receiving command execution status from BrowserManager
-        self.aggregator_query_queue = None  # queue for sending data/queries to DataAggregator
+        #self.aggregator_query_queue = None  # queue for sending data/queries to DataAggregator #TODO remove
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
-        self.browser_manager = self.launch_browser_manager()
         self.data_aggregator = self.launch_data_aggregator()
+        self.aggregator_address = self.aggregator_status_queue.get() #socket location: (address, port)
+        self.browser_manager = self.launch_browser_manager()
 
     # CRAWLER SETUP / KILL CODE
 
@@ -97,13 +99,12 @@ class TaskManager:
         successful_spawn = False
         while not successful_spawn:
             # Resets the command/status queues
-            (self.browser_command_queue, self.browser_status_queue, self.aggregator_query_queue) \
-                = (Queue(), Queue(), Queue())
+            (self.browser_command_queue, self.browser_status_queue) = (Queue(), Queue())
 
             # builds and launches the browser_manager
             browser_manager = Process(target=BrowserManager.BrowserManager,
                                       args=(self.browser_command_queue, self.browser_status_queue,
-                                            self.aggregator_query_queue, self.browser_params, ))
+                                            self.aggregator_address, self.browser_params, ))
             browser_manager.start()
 
             # waits for BrowserManager to send success tuple i.e. (profile_path, browser pid, display pid)
@@ -135,8 +136,8 @@ class TaskManager:
     def launch_data_aggregator(self):
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
-                             args=(self.crawl_id, self.db_loc + self.db_name,
-                                   self.aggregator_query_queue, self.aggregator_status_queue, ))
+                             args=(self.crawl_id, self.db_loc + self.db_name, 
+                                 self.aggregator_status_queue, ))
         aggregator.start()
         return aggregator
 
@@ -156,7 +157,6 @@ class TaskManager:
     # <reset> marks whether we want to wipe the old profile
     def restart_workers(self, reset=False):
         self.kill_browser_manager()
-        self.kill_data_aggregator()
 
         # in case of reset, hard-deletes old profile
         if reset and self.profile_path is not None:
@@ -164,7 +164,6 @@ class TaskManager:
             self.profile_path = None
 
         self.browser_manager = self.launch_browser_manager()
-        self.data_aggregator = self.launch_data_aggregator()
 
     # closes the TaskManager for good and frees up memory
     def close(self):
