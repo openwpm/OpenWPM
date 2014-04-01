@@ -8,7 +8,7 @@ from dateutil import parser
 # builds a dictionary with keys = (domain, name) and values being list of cookie values
 # values must be from non short-lived cookies and consistent across the crawls
 # extracts from a single OpenWPM database
-def extract_cookies_from_db(db_name):
+def extract_cookie_candidates_from_db(db_name):
     con = lite.connect(db_name)
     cur = con.cursor()
 
@@ -52,7 +52,7 @@ def add_inner_parameters(raw_cookie_dict, domain, name, value):
 # an ID must appear in at least 2 different crawls (otherwise, can't make a definitive statement about it)
 # prunes away cookies with lengths less than or equal to 5 (these strings are probably too short
 # returns dictionary with domains as keys and cookie names as values
-def extract_persistent_ids(cookie_dicts):
+def extract_common_persistent_ids(cookie_dicts):
     raw_id_dict = defaultdict(list)  # for each cookie, a list of the values across each crawl
 
     # combine all smaller cookie dictionaries into a larger dictionary
@@ -73,7 +73,34 @@ def extract_persistent_ids(cookie_dicts):
 
     return domain_dict
 
+# given a dictionary of persistent ids, goes through a database
+# and returns a dictionary with the persistent ids and their unique values
+# in the database (for those that actually appear)
+def extract_known_cookies_from_db(db_name, cookie_dict):
+    con = lite.connect(db_name)
+    cur = con.cursor()
+
+    found_cookies = {}
+    for domain, name, value in cur.execute('SELECT domain, name, value FROM cookies'):
+        domain = domain if len(domain) == 0 or domain[0] != "." else domain[1:]
+
+        # first search for most basic cookies
+        if domain in cookie_dict and name in cookie_dict[domain]:
+            found_cookies[(domain, name)] = value
+
+            # next, look for potential nested cookies
+            if "=" in value:
+                for delimiter in ["&", ":"]:
+                    parts = value.split(delimiter)
+                    for part in parts:
+                        params = part.split("=")
+                        if len(params) == 2 and name + "#" + params[0] in cookie_dict[domain]:
+                            found_cookies[(domain, name + "#" + params[0])] = params[1]
+
+    return found_cookies
+
 if __name__ == "__main__":
-    c1 = extract_cookies_from_db("/home/christian/Desktop/crawl1.sqlite")
-    c2 = extract_cookies_from_db("/home/christian/Desktop/crawl2.sqlite")
-    print len(extract_persistent_ids([c1, c2]))
+    c1 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
+    c2 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl2.sqlite")
+    extracted = extract_common_persistent_ids([c1, c2])
+    known = extract_known_cookies_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)

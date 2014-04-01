@@ -11,9 +11,9 @@ def all_same(items):
 def all_same_len(items):
     return all(len(x) == len(items[0]) for x in items)
 
-# Are two cookies more than 80% similar in accordance to Ratcliff-Obershelp metric
+# Are two cookies more than 33% similar in accordance to Ratcliff-Obershelp metric
 def ro_similar(seq1, seq2):
-    return difflib.SequenceMatcher(a=seq1, b=seq2).ratio() > 0.5
+    return difflib.SequenceMatcher(a=seq1, b=seq2).ratio() > 0.33
 
 # Are all cookies in a list pairwise-dissimilar (i.e. fail ro-test)
 def all_dissimilar(items):
