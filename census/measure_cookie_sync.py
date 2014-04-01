@@ -19,13 +19,16 @@ def build_sync_graph(db_name, known_cookies):
 
     # iterates through all the cookie ids to look from them flowing throughout the graph
     for cookie in value_dict:
+        # ignore cookies with blank domains
+        if len(cookie[0]) == 0:
+            continue
+
         query = 'SELECT url, referrer FROM http_requests WHERE url LIKE \'%' + value_dict[cookie] + '%\''
         for url, referrer in cur.execute(query):
             url = census_util.extract_domain(url)
             referrer = census_util.extract_domain(referrer)
 
             # adds edges and adds cookies to nodes + edges
-            # TODO: error with blank strings?
             cookie_str = str(cookie[0]) + " " + str(cookie[1])
             if url not in g:
                 g.add_node(url, cookies={})
@@ -39,7 +42,6 @@ def build_sync_graph(db_name, known_cookies):
             g.node[url]['cookies'][cookie_str] = 1
 
     # adds the weights to the nodes and edges
-    # TODO: fix this, wrong under cookie dictionary scheme
     for node in g.nodes(data=True):
         g.node[node[0]]['weight'] = len(node[1])
 

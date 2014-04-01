@@ -10,19 +10,22 @@
     </head>
 
     <body>
-        <h1>Princeton Web Transparency</h1>
+        <center><h1>Web Measurement Census: Cookie Synchronization</h1></center>
+        <p>
+            <label for="cookie_weight">Cookie weight:</label>
+            <div id="cookie_weight"></div>
+        </p>
         <div id="weight_slider" style='width:30%'></div>
          <div class="ui-widget" style ='width:30%'>
-            <label for="tags">Tags: </label>
-            <input id="tags">
+            <label for="cookie_search">Search for cookies: </label>
+            <input id="cookie_search">
         </div>
-        <div id="graph" style='height:80%; width:100%'></div>
-        <div id="cookie_panel">
+        <div id="cookie_panel" style="position:absolute">
             <div id="owners"></div>
             <div id="cookies"></div>
         </div>
+        <div id="graph" style='height:100%; width:100%'></div>
         
-       
         <script>init();</script>
     </body>
 </html>
