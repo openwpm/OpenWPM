@@ -1,4 +1,4 @@
-from ..SocketManager import serversocket
+from ..SocketInterface import serversocket
 import sqlite3
 import time
 

@@ -3,6 +3,7 @@ from Commands import profile_commands
 from DataAggregator import DataAggregator
 
 from multiprocessing import Process, Queue
+from threading import Thread
 import os
 import signal
 import sqlite3

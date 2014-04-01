@@ -1,7 +1,7 @@
 # Customized MITMProxy
 # Extends the proxy controller to add some additional
 # functionality to handling requests and responses
-from ..SocketManager import clientsocket
+from ..SocketInterface import clientsocket
 from libmproxy import controller
 import sys
 import Queue
