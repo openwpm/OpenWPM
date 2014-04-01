@@ -11,14 +11,14 @@ import time
 
 # <command_queue> is the queue through which the browser sends command tuples
 # <status_queue> is a queue through which the BrowserManager either signals command failure or success
-# <db_address> is the socket address through which to send data to the DataAggregator to manipulate and write
+# <db_socket_address> is the socket address through which to send data to the DataAggregator to manipulate and write
 # <browser_params> are browser parameter settings (e.g. whether we're using a proxy, headless, etc.)
 
-def BrowserManager(command_queue, status_queue, db_address, browser_params):
+def BrowserManager(command_queue, status_queue, db_socket_address, browser_params):
     # sets up the proxy (for now, mitmproxy) if necessary
     proxy_site_queue = None  # used to pass the current site down to the proxy
     if browser_params['proxy']:
-        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(db_address, browser_params['crawl_id'])
+        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(db_socket_address, browser_params['crawl_id'])
         browser_params['proxy'] = local_port
 
     # Gets the WebDriver, profile folder (i.e. where history/cookies are stored) and display pid (None if not headless)

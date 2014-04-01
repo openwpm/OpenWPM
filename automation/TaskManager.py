@@ -30,7 +30,7 @@ import time
 class TaskManager:
     def __init__(self, db_location, db_name, browser='firefox', timeout=30, headless=False, proxy=False,
                  fourthparty=False, browser_debugging=False, profile=None, description=None, mp_lock=None):
-         # sets up the information needed to write to the database
+        # sets up the information needed to write to the database
         self.profile_path = profile
         self.desc = description
         self.mp_lock = mp_lock
@@ -65,7 +65,6 @@ class TaskManager:
         self.timeout = timeout
         self.browser_command_queue = None  # queue for passing command tuples to BrowserManager
         self.browser_status_queue = None  # queue for receiving command execution status from BrowserManager
-        #self.aggregator_query_queue = None  # queue for sending data/queries to DataAggregator #TODO remove
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
         self.data_aggregator = self.launch_data_aggregator()
         self.aggregator_address = self.aggregator_status_queue.get() #socket location: (address, port)
@@ -133,7 +132,7 @@ class TaskManager:
         self.is_fresh = old_profile is None  # browser is fresh iff it starts from a blank profile
         return browser_manager
 
-    # sets up the DataAggregator (should only be called once corresponding BrowserManager is live)
+    # sets up the DataAggregator (Must be launched prior to BrowserManager) 
     def launch_data_aggregator(self):
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
