@@ -32,6 +32,7 @@ function init() {
                 min: 0,
                 max: max_weight,
                 value: max_weight / 2,
+                font-size: 1px,
                 slide: function(event, ui) {
                     filter_out_low_weights(ui.value);
                 }
