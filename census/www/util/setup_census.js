@@ -15,7 +15,7 @@ function init() {
 		'graph.json',
 		s,
         // performs the graph pre-processing and sets up the ui
-		function() {
+        function() {
             max_weight = 0;  // the weight of the node that knows the most IDs
 
             // sets the colors, weights and draw_sizes for the nodes
@@ -87,7 +87,7 @@ function init() {
             })
     });
           
-	// bind graph actions to actions in graph_actions.js
+    // bind graph actions to actions in graph_actions.js
     s.bind('clickStage', click_stage);
     s.bind('clickNode', click_node);
     s.bind('overNode', hover_node);

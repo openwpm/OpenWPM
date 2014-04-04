@@ -59,6 +59,7 @@ function highlight_cookie_owners(cookie) {
 // after clicking on the stage, resets the graph
 // unselects the clicking and resets the ui
 function click_stage(stage) {
+    console.log(stage);
     curr_clicked = null;
     curr_cookies = null;
 
