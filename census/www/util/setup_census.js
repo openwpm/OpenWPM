@@ -1,4 +1,6 @@
 var node_color = "0066ff";  // standard color for nodes
+var tp_color = "e06666";  // color for third-party nodes 
+var color_tp = false; // should we be coloring third-party nodes
 var edge_color = "999999";  // standard color for edges
 var faded = "fffaf0";  // color for faded out parts of the graph
 var highlighted = "cc8400"; // color to highlight a node (usually the one clicked)
@@ -50,12 +52,18 @@ function init() {
             // for now, edge weights are not being used
             s.graph.edges().forEach(function(e) {
                 e.color = edge_color;
-                e.hidden = false;
+                e.hidden = false; 
                 e.weight = Object.keys(e.cookies).length;
             });
 			s.refresh();
 
-            // UI 1: build up a slider that filters nodes by weights
+            // UI 1: build button to toggle third-party coloring
+            $("#toggle_tp").button().click(function(e) {
+                color_tp = (color_tp != true); // flips the bit (no JS XOR) for coloring tps
+                redraw_graph();
+            });
+
+            // UI 2: build up a slider that filters nodes by weights
 
             // sets an arbitrary starting weight (max/4 seems to highlight the main TPs)
             starting_weight = Math.floor(max_weight / 4);
@@ -79,7 +87,7 @@ function init() {
             // draw the graph based on the initial starting weights
             redraw_graph(); 
 
-            // UI 2: build a slider for zooming in and out of the graph
+            // UI 3: build a slider for zooming in and out of the graph
             default_zoom_level = 4;
             $("#zoom_slider").slider({
                 range: "max",
@@ -95,7 +103,7 @@ function init() {
                 
             });
 
-            // UI 3: build an autocomplete feature that highlights nodes that know that cookie ID
+            // UI 4: build an autocomplete feature that highlights nodes that know that cookie ID
             
             // first, builds up a list of all the cookies onwed by the nodes
             // also, build up a list of all the sites
@@ -119,7 +127,7 @@ function init() {
                 }
             });
 
-            // UI 4: build an autocomplete feature that allows you to select a site to highlight (like clicking)
+            // UI 5: build an autocomplete feature that allows you to select a site to highlight (like clicking)
 
             // first, process the list of sites we just collected, then build the autocomplete feature
             sites = [];

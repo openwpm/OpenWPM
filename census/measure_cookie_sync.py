@@ -1,9 +1,9 @@
 import networkx as nx
-#import matplotlib.pyplot as plt
 import extract_cookie_ids
 import sqlite3 as lite
 import census_util
 import sigma_graph_json
+from sets import Set
 
 # builds and returns a cookie synchronization graph
 # nodes are websites and (directed) edges illustrate cookie values flowing between sites
@@ -18,40 +18,29 @@ def build_sync_graph(db_name, known_cookies):
     cur = con.cursor()
 
     # iterates through all the cookie ids to look from them flowing throughout the graph
-    for cookie in value_dict:
-        # ignore cookies with blank domains
-        if len(cookie[0]) == 0:
-            continue
+    for url, referrer in cur.execute('SELECT url, referrer from http_requests'):
+        referrer = census_util.extract_domain(referrer)
+        short_url = census_util.extract_domain(url)
+        for cookie in value_dict:
+            if value_dict[cookie] in url:
+                cookie_str = str(cookie[0]) + " " + str(cookie[1])
 
-        query = 'SELECT url, referrer FROM http_requests WHERE url LIKE \'%' + value_dict[cookie] + '%\''
-        for url, referrer in cur.execute(query):
-            url = census_util.extract_domain(url)
-            referrer = census_util.extract_domain(referrer)
+                if short_url not in g:
+                    g.add_node(short_url, cookies={})
+                if referrer not in g:
+                    g.add_node(referrer, cookies={})
+                if (referrer, short_url) not in g.edges():
+                    g.add_edge(referrer, short_url, cookies={})
 
-            # adds edges and adds cookies to nodes + edges
-            cookie_str = str(cookie[0]) + " " + str(cookie[1])
-            if url not in g:
-                g.add_node(url, cookies={})
-            if referrer not in g:
-                g.add_node(referrer, cookies={})
-            if (referrer, url) not in g.edges():
-                g.add_edge(referrer, url, cookies={})
-
-            g.edge[referrer][url]['cookies'][cookie_str] = 1
-            g.node[referrer]['cookies'][cookie_str] = 1
-            g.node[url]['cookies'][cookie_str] = 1
-
-    # adds the weights to the nodes and edges
-    for node in g.nodes(data=True):
-        g.node[node[0]]['weight'] = len(node[1])
-
-    for edge in g.edges(data=True):
-        g.edge[edge[0]][edge[1]]['weight'] = len(edge[2])
+                g.edge[referrer][short_url]['cookies'][cookie_str] = 1
+                g.node[referrer]['cookies'][cookie_str] = 1
+                g.node[short_url]['cookies'][cookie_str] = 1
 
     return g
 
 # takes in a graph and adds fields to it to make it drawable in sigma.js
-def add_drawable_graph_fields(G):
+# also, takes in a site file, which is a list of sites used to tag whether a site is FP or TP
+def add_drawable_graph_fields(G, site_file):
     # remove blank node if necessary
     if '' in G.nodes():
         G.remove_node('')
@@ -61,7 +50,22 @@ def add_drawable_graph_fields(G):
     for node in layout:
         G.add_node(node, x=float(layout[node][0]), y=float(layout[node][1]))
 
+    # builds a set of known first parties
+    fp = Set()
+    f = open(site_file)
+    for line in f:
+        fp.add(line.strip())
+    f.close()
+
+    # goes through the graph, if node in the set of fp, tag it as a first party - otherwise first party
+    for node in G.nodes():
+        if node in fp:
+            G.node[node]['third_party'] = 0
+        else:
+            G.node[node]['third_party'] = 1
+
     return G
+
 
 if __name__ == "__main__":
     c1 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
@@ -69,6 +73,6 @@ if __name__ == "__main__":
     extracted = extract_cookie_ids.extract_common_persistent_ids([c1, c2])
     known = extract_cookie_ids.extract_known_cookies_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)
     G = build_sync_graph("/home/christian/Desktop/crawl1.sqlite", extracted)
-    G = add_drawable_graph_fields(G)
+    G = add_drawable_graph_fields(G, "alexa.txt")
     sigma_graph_json.write_json_graph_to_file(G, "/home/christian/Desktop/graph.json")
 

@@ -9,7 +9,8 @@ def build_node(G, node):
     "label": str(node),
     "x": G.node[node]['x'],
     "y": G.node[node]['y'],
-    "cookies": G.node[node]['cookies']
+    "cookies": G.node[node]['cookies'],
+    "third_party": G.node[node]['third_party']
     }
     return str(val).replace("\'", "\"")
 

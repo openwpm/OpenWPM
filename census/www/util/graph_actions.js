@@ -22,6 +22,10 @@ function redraw_graph() {
         else {
             n.hidden = false;
             n.color = node_color;
+
+            if (color_tp && n.third_party > 0) {
+                n.color = tp_color;
+            }
             if (n.id == curr_clicked) {
                 n.color = highlighted;
             }
