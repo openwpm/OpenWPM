@@ -1,16 +1,25 @@
 var node_color = "0066ff";  // standard color for nodes
 var edge_color = "999999";  // standard color for edges
 var faded = "fffaf0";  // color for faded out parts of the graph
+var highlighted = "cc8400"; // color to highlight a node (usually the one clicked)
 var curr_weight;  // the current weight for nodes to be drawn in accordance with slider
 var curr_clicked = null;  // the node that we have currently clicked
 var curr_cookies = null;  // the list of cookies owned by the currently-clicked node
 var curr_hovered = null;  // the currently hovered-over node
+var node_to_index = {};  // dictionary that maps nodes names to indices
 
 // omnibus initialization function that builds up our Sigma.JS graph
 // and also sets up the various UI components
 function init() {
 	// setup the graph by parsing the json file
-	s = new sigma(document.getElementById('graph'));
+	s = new sigma({
+        container: document.getElementById('graph'),
+        settings: {
+            'labelThreshold' : 10, // ensures that no labels are drawn to begin
+        }
+    });
+
+    // read in the graph
 	sigma.parsers.json(
 		'graph.json',
 		s,
@@ -24,9 +33,11 @@ function init() {
             // nodes will be drawn if to_draw and weight threshold passes
             s.graph.nodes().forEach(function(n) {
                 n.color = node_color;
+                n.hidden = false;
                 n.weight = Object.keys(n.cookies).length;
-                n.size = 1;
+                n.size = 5;
                 n.to_draw = true;
+                n.label = n.id;
                 if (n.weight > max_weight) {
                     max_weight = n.weight;
                 }
@@ -36,6 +47,7 @@ function init() {
             // for now, edge weights are not being used
             s.graph.edges().forEach(function(e) {
                 e.color = edge_color;
+                e.hidden = false;
                 e.weight = Object.keys(e.cookies).length;
             });
 			s.refresh();
@@ -67,6 +79,7 @@ function init() {
             // UI 2: build an autocomplete feature that highlights nodes that know that cookie ID
             
             // first, builds up a list of all the cookies onwed by the nodes
+            // also, build up a list of all the sites
             cookie_dict = {};
             s.graph.nodes().forEach(function(n) {
                 Object.keys(n.cookies).forEach(function(c) {
@@ -80,13 +93,36 @@ function init() {
             $("#cookie_search").autocomplete({
                 source: cookie_list,
 
-                // performs an 
+                // highlights all sites that know the given cookie ID
                 select: function(event, ui) {
+                    $("#site_search").val("");
                     highlight_cookie_owners(ui.item.value);
                 }
-            })
+            });
+
+            // UI 3: build an autocomplete feature that allows you to select a site to highlight (like clicking)
+
+            // first, process the list of sites we just collected, then build the autocomplete feature
+            sites = [];
+            index = 0;
+            s.graph.nodes().forEach(function(n) {
+                sites.push(n.id);
+                node_to_index[n.id] = index;
+                index++;
+            });
+            sites.sort();
+
+            $("#site_search").autocomplete({
+                source: sites,
+
+                // performs an 
+                select: function(event, ui) {
+                    select_node(s.graph.nodes()[node_to_index[ui.item.value]]);
+                }
+            });
+            
     });
-          
+
     // bind graph actions to actions in graph_actions.js
     s.bind('clickStage', click_stage);
     s.bind('clickNode', click_node);

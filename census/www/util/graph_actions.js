@@ -16,21 +16,26 @@ function redraw_graph() {
     // re-color the nodes
     s.graph.nodes().forEach(function(n) {
         if (!n.to_draw || n.weight < curr_weight) {
-            n.color = faded;
+            n.color = node_color;
+            n.hidden = true;
         }
         else {
+            n.hidden = false;
             n.color = node_color;
+            if (n.id == curr_clicked) {
+                n.color = highlighted;
+            }
         }
     });
 
     // re-color the edges
     s.graph.edges().forEach(function(e) {
-        if (s.graph.nodes(e.source).color == faded 
-            || s.graph.nodes(e.target).color == faded) {
-            e.color = faded;
+        if (s.graph.nodes(e.source).hidden
+            || s.graph.nodes(e.target).hidden) {
+            e.hidden = true;
         }
         else {
-            e.color = edge_color;
+            e.hidden = false;
         }
     });
 
@@ -59,12 +64,12 @@ function highlight_cookie_owners(cookie) {
 // after clicking on the stage, resets the graph
 // unselects the clicking and resets the ui
 function click_stage(stage) {
-    console.log(stage);
     curr_clicked = null;
     curr_cookies = null;
 
     $("#cookie_panel").hide();
     $("#cookie_search").val("");
+    $("#site_search").val("");
 
     set_all_drawable();
     redraw_graph();
@@ -73,14 +78,21 @@ function click_stage(stage) {
 // function when you click on a node
 // set the node and nodes that mutually know at least one common id to be drawn
 function click_node(clicked) {
+    select_node(clicked.data.node);
+}
+
+function select_node(selected) {
     // only act if not already clicked on this node before
-    if (clicked.data.node.id == curr_clicked) {
+    if (selected.id == curr_clicked) {
         return;
     }
+    
+    // update the autocomplete for completeness
+    $("#site_search").val(selected.id);
 
     // reset ids and get sorted list of cookies
-    curr_clicked = clicked.data.node.id;
-    cookies = Object.keys(clicked.data.node.cookies);
+    curr_clicked = selected.id;
+    cookies = Object.keys(selected.cookies);
     cookies.sort();
     curr_cookies = cookies;
 
@@ -112,7 +124,7 @@ function click_node(clicked) {
 function hover_node(hovered) {
     // either we are not clicking on a node or we are hovering over that node
     // also, ignore nodes that are not currently highlighed
-    if (curr_clicked == null || hovered.data.node.id == curr_clicked || hovered.data.node.color == faded) {
+    if (curr_clicked == null || hovered.data.node.id == curr_clicked || hovered.data.node.hidden) {
         return;
     }
 
@@ -151,7 +163,6 @@ function fill_known_cookie_data(hovered_node) {
 
     // i.e. we are hovering over a given node <hovered_node>
     else {
-        console.log(s.graph.nodes(hovered_node).label);
         msg = "<b>Cookie IDs jointly known by " + s.graph.nodes(curr_clicked).label;
         msg += " and " + s.graph.nodes(hovered_node).label + "</b>";
         $("#owners").html(msg);
