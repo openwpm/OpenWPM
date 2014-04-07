@@ -1,0 +1,29 @@
+/* css design inspired by alistapart.com/article/holygrail */
+
+
+#info-container {
+    padding-left: 200px;     
+    padding-right: 200px;     
+}
+		
+#info-container .info-column {
+    position: relative;
+    float: left;
+}
+
+#graph {
+    width: 100%;
+    height: 100%;
+}
+		
+#tools {
+	width: 200px;          
+	right: 200px;       
+	margin-left: -100%;
+}
+		
+#about {
+    width: 200px;             
+    margin-right: -100%;
+}
+
