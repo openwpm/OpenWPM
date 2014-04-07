@@ -16,6 +16,7 @@ function init() {
         container: document.getElementById('graph'),
         settings: {
             'labelThreshold' : 10, // ensures that no labels are drawn to begin
+            'doubleClickZoomingRatio' : 1  // for now, stops double clicking
         }
     });
 
@@ -115,7 +116,6 @@ function init() {
             $("#site_search").autocomplete({
                 source: sites,
 
-                // performs an 
                 select: function(event, ui) {
                     select_node(s.graph.nodes()[node_to_index[ui.item.value]]);
                 }
@@ -124,7 +124,7 @@ function init() {
     });
 
     // bind graph actions to actions in graph_actions.js
-    s.bind('clickStage', click_stage);
+    s.bind('doubleClickStage', click_stage);
     s.bind('clickNode', click_node);
     s.bind('overNode', hover_node);
     s.bind('outNode', unhover_node);

@@ -61,7 +61,7 @@ function highlight_cookie_owners(cookie) {
 
 // GRAPH-CLICK-DRIVEN FUNCTIONS
 
-// after clicking on the stage, resets the graph
+// after double-clicking on the stage, resets the graph
 // unselects the clicking and resets the ui
 function click_stage(stage) {
     curr_clicked = null;
