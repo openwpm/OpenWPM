@@ -7,6 +7,8 @@ var curr_clicked = null;  // the node that we have currently clicked
 var curr_cookies = null;  // the list of cookies owned by the currently-clicked node
 var curr_hovered = null;  // the currently hovered-over node
 var node_to_index = {};  // dictionary that maps nodes names to indices
+var default_zoom_level; // baseline ui ratio
+var zoom_ratio = 0.8; // ratio in which zoom bar moves
 
 // omnibus initialization function that builds up our Sigma.JS graph
 // and also sets up the various UI components
@@ -77,7 +79,23 @@ function init() {
             // draw the graph based on the initial starting weights
             redraw_graph(); 
 
-            // UI 2: build an autocomplete feature that highlights nodes that know that cookie ID
+            // UI 2: build a slider for zooming in and out of the graph
+            default_zoom_level = 4;
+            $("#zoom_slider").slider({
+                range: "max",
+                min: 0,
+                max: 7,
+                value: default_zoom_level,
+                
+                // causes the graph to grow or shrink in size
+                slide: function(event, ui) {
+                    s.cameras[0].ratio = Math.pow(zoom_ratio, ui.value - default_zoom_level);
+                    s.refresh();
+                }
+                
+            });
+
+            // UI 3: build an autocomplete feature that highlights nodes that know that cookie ID
             
             // first, builds up a list of all the cookies onwed by the nodes
             // also, build up a list of all the sites
@@ -101,7 +119,7 @@ function init() {
                 }
             });
 
-            // UI 3: build an autocomplete feature that allows you to select a site to highlight (like clicking)
+            // UI 4: build an autocomplete feature that allows you to select a site to highlight (like clicking)
 
             // first, process the list of sites we just collected, then build the autocomplete feature
             sites = [];
