@@ -39,7 +39,6 @@ function init() {
             s.graph.nodes().forEach(function(n) {
                 n.color = node_color;
                 n.hidden = false;
-                n.weight = Object.keys(n.cookies).length;
                 n.size = 5;
                 n.to_draw = true;
                 n.label = n.id;
@@ -65,8 +64,8 @@ function init() {
 
             // UI 2: build up a slider that filters nodes by weights
 
-            // sets an arbitrary starting weight (max/4 seems to highlight the main TPs)
-            starting_weight = Math.floor(max_weight / 4);
+            // sets an arbitrary starting weight (max/2 seems to highlight the main TPs)
+            starting_weight = Math.floor(max_weight / 2);
             curr_weight = starting_weight;  // starting weight is our baseline filtering level
             $("#cookie_weight").html(starting_weight)
             $("#weight_slider").slider({

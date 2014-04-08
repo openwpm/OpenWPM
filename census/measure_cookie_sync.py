@@ -22,6 +22,10 @@ def build_sync_graph(db_name, known_cookies):
         referrer = census_util.extract_domain(referrer)
         short_url = census_util.extract_domain(url)
         for cookie in value_dict:
+            # ignore domainless-cookies
+            if cookie[0] == '':
+                continue
+            
             if value_dict[cookie] in url:
                 cookie_str = str(cookie[0]) + " " + str(cookie[1])
 
@@ -64,8 +68,24 @@ def add_drawable_graph_fields(G, site_file):
         else:
             G.node[node]['third_party'] = 1
 
+    # calculates the weight for a node: defined as the number of unique domains that a third party exposes
+    for node in G.nodes():
+        G.node[node]['weight'] = get_unique_cookie_domains(G.node[node]['cookies'])
+
     return G
 
+# returns the number of distinct top-level domains that a given party owns
+# so that here.example.com and there.example.com are not double-counted for instance
+def get_unique_cookie_domains(cookie_dict):
+    domains = Set()
+
+    for cookie in cookie_dict:
+        domain = cookie.split()[0].strip()
+        domain = domain if domain.startswith("http") else "http://" + domain # hack since http utils require url to start with http
+        domains.add(census_util.extract_domain(domain))
+
+    return len(domains)
+    
 
 if __name__ == "__main__":
     c1 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
