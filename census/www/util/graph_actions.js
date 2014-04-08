@@ -51,6 +51,12 @@ function redraw_graph() {
 
 // sets the nodes who know the cookie <cookie> to_draw then draw the grpah
 function highlight_cookie_owners(cookie) {
+    $("#cookie_panel").hide();
+    $("#cookie_search").val(cookie);
+    $("#site_search").val("");
+    curr_clicked = null;
+    curr_cookies = null;
+
     s.graph.nodes().forEach(function(n) {
         if (cookie in n.cookies) {
             n.to_draw = true;
@@ -93,6 +99,7 @@ function select_node(selected) {
     
     // update the autocomplete for completeness
     $("#site_search").val(selected.id);
+    $("#cookie_search").val("");
 
     // reset ids and get sorted list of cookies
     curr_clicked = selected.id;
@@ -159,7 +166,7 @@ function fill_known_cookie_data(hovered_node) {
         // build the list of all cookies known by curr_site
         owned_cookies = "";
         curr_cookies.forEach(function(c) {
-            owned_cookies += c + "</br>";
+            owned_cookies += '<a onclick=highlight_cookie_owners(curr_cookies[' + curr_cookies.indexOf(c) + '])>' + c + '</a></br>';
         });
 
         $("#cookies").html(owned_cookies);
@@ -175,7 +182,7 @@ function fill_known_cookie_data(hovered_node) {
         owned_cookies = "";
         curr_cookies.forEach(function(c) {
             if (c in s.graph.nodes(hovered_node).cookies) {
-                owned_cookies += c + "</br>";
+                owned_cookies += '<a onclick=highlight_cookie_owners(curr_cookies[' + curr_cookies.indexOf(c) + '])>' + c + '</a></br>';
             }
         });
 

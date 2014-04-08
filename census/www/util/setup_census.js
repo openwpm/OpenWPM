@@ -99,7 +99,6 @@ function init() {
                     s.cameras[0].ratio = Math.pow(zoom_ratio, ui.value - default_zoom_level);
                     s.refresh();
                 }
-                
             });
 
             // UI 4: build an autocomplete feature that highlights nodes that know that cookie ID
