@@ -36,7 +36,8 @@ class serversocket:
     def _handle_conn(self, client, address):
         '''
         Recieve messages and pass to queue. Messages are prefixed with
-        a 4-byte integer to specify the message length.
+        a 4-byte integer to specify the message length and 1-byte boolean
+        to indicate pickling.
         '''
         if self.verbose:
             print "Thread: " + str(threading.current_thread()) + " connected to: " + str(address)
@@ -68,7 +69,18 @@ class clientsocket:
     def connect(self, host, port):
         self.sock.connect((host,port))
 
-    def send(self, msg, is_pickled=False):
+    def send(self, msg):
+        '''
+        Sends an arbitrary python object to the connected socket. Pickles if 
+        not str, and prepends msg len (4-bytes) and pickle status (1-byte).
+        '''
+        #if input not string, pickle
+        if type(msg) is not str:
+            msg = cPickle.dumps(msg)
+            is_pickled = True
+        else:
+            is_pickled = False
+        
         #prepend with message length
         msg = struct.pack('>I?', len(msg), is_pickled) + msg
         totalsent = 0
@@ -78,10 +90,6 @@ class clientsocket:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
     
-    def send_pickled(self, obj):
-        pickled = cPickle.dumps(obj)
-        self.send(pickled,is_pickled=True)
-
     def close(self):
         self.sock.close()
 

@@ -8,13 +8,12 @@ import time
 # Currently uses SQLite but may move to different platform
 # TODO: add killing of the serversocket once supported
 
-# <crawl_id> is the id of the current crawl w.r.t a particular database (TODO: re-add this feature)
 # <db_loc> is the absolute path of the DB's current location
 # <query_queue> is data input queue: for now, passed query strings (TODO: more involved data manipulations)
 # <status_queue> is a queue connect to the TaskManager used for
 # <commit_loop> is the number of execution statements that should be made before a commit (used for speedup)
 
-def DataAggregator(crawl_id, db_loc, status_queue, commit_loop=1000):
+def DataAggregator(db_loc, status_queue, commit_loop=1000):
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()
