@@ -71,7 +71,8 @@ function init() {
             // next, build the actual table and save it in the table element
             tracker_table = "<table>"
             for (var i = 0; i < num_trackers; i++) {
-                tracker_table += "<tr><td>" + top_trackers[i].id + "</td><td>" + top_trackers[i].weight + "</td></tr>";
+                tracker_table += "<tr><td><a onclick=select_node(top_trackers["+ i +"])>" + top_trackers[i].id + "</a></td>";
+                tracker_table += "<td>" + top_trackers[i].weight + "</td></tr>";
             }
             tracker_table += "</table>"
                 
