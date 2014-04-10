@@ -69,13 +69,28 @@ function init() {
             );
 
             // next, build the actual table and save it in the table element
-            tracker_table = "<table>"
-            for (var i = 0; i < num_trackers; i++) {
-                tracker_table += "<tr><td><a onclick=select_node(top_trackers["+ i +"])>" + top_trackers[i].id + "</a></td>";
+            tracker_table = "<center><h3>Top " + num_trackers + " cookie-syncing domains</h3></center>";
+            tracker_table += "<table><tr><td><b>Rank</b></td><td><b>Domain</b></td><td><b># domains where ID is known</b></td</tr>";
+            curr_weight = top_trackers[0].weight;
+            curr_rank = 1;
+
+            for (var i = 0; i < top_trackers.length; i++) {
+                console.log(curr_rank);
+                if (top_trackers[i].weight != curr_weight) {
+                    curr_weight = top_trackers[i].weight;
+                    curr_rank = i + 1;
+                }
+
+                if (curr_rank > num_trackers) {
+                    break;
+                }
+
+                tracker_table += "<tr><td>" + curr_rank + "</td>";
+                tracker_table += "<td><a onclick=select_node(top_trackers["+ i +"])>" + top_trackers[i].id + "</a></td>";
                 tracker_table += "<td>" + top_trackers[i].weight + "</td></tr>";
             }
             tracker_table += "</table>"
-                
+            console.log(tracker_table);
             $("#top_trackers").html(tracker_table);
 
             // UI 1: build button to toggle third-party coloring
