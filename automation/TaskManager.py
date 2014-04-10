@@ -57,8 +57,6 @@ class TaskManager:
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
 
-        import ipdb; ipdb.set_trace()
-
     # CRAWLER SETUP / KILL CODE
 
     # initialize the browsers, each with a unique set of parameters
@@ -75,6 +73,7 @@ class TaskManager:
         params = list()
         for arg in args:
             if type(arg) == list:
+                # list arguments must not exceed # of browsers and divide # of browsers evenly
                 if len(arg) <= self.num_browsers and self.num_browsers % len(arg) == 0:
                     params.append(arg * (self.num_browsers / len(arg)))
                 else:
@@ -112,6 +111,7 @@ class TaskManager:
         self.data_aggregator.join()
 
     # closes the TaskManager for good and frees up memory
+    #TODO: loop through browsers when closing
     def close(self):
         self.kill_browser_manager()
         if self.profile_path is not None:
@@ -119,8 +119,53 @@ class TaskManager:
         self.kill_data_aggregator()
         self.db.close()
 
-    # CRAWLER COMMAND CODE   
+    # CRAWLER COMMAND CODE
 
+    # parses command type and issues command(s) to the proper browser
+    # <index> specifies the type of command this is
+    #         = None  -> first come, first serve
+    #         = #     -> index of browser to send command to
+    #         = *     -> sends command to all browsers
+    #         = **    -> sends command to all browsers (synchronized)
+    def distribute_command(self, command, index=None, timeout=None):
+        if index is None:
+            #send to first browser available
+            command_executed = False
+            while True:
+                for browser in self.browsers:
+                    if browser.ready():
+                        self.start_thread(browser, command, timeout)
+                        command_executed = True
+                        break
+                if command_executed:
+                    break
+                time.sleep(0.01)
+        elif index >= 0 and index < len(self.browsers):
+            #send the command to this specific browser
+            self.start_thread(self.browsers[index], command, timeout)
+        elif index == '*':
+            #send the command to all browsers
+            command_executed = [False] * len(self.browsers)
+            while False in command_executed:
+                for i in range(len(self.browsers)):
+                    if self.browsers[i].ready() and not command_executed[i]:
+                        self.start_thread(self.browsers[i], command, timeout)
+                        command_executed[i] = True
+                time.sleep(0.01)
+        elif index == '**':
+            #send the command to all browsers and sync it
+            print "Not supported..."
+        else:
+            #not a supported command
+            print "Command index type is not supported or out of range"
+
+    # starts the command execution thread
+    def start_thread(self, browser, command, timeout):
+        args = (browser, command, timeout)
+        thread = Thread(target=self.issue_command, args=args)
+        browser.command_thread = thread
+        thread.start()
+    
     # sends command tuple to the BrowserManager
     # <timeout> gives the option to override default timeout
     def issue_command(self, browser, command, timeout=None):
@@ -149,9 +194,11 @@ class TaskManager:
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
     # goes to a url
-    def get(self, url, overwrite_timeout=None):
-        self.issue_command(('GET', url), overwrite_timeout)
+    def get(self, url, index=None, overwrite_timeout=None):
+        self.distribute_command(('GET', url), index, overwrite_timeout)
 
     # dumps from the profile path to a given file (absolute path)
-    def dump_profile(self, dump_folder, overwrite_timeout=None):
-        self.issue_command(('DUMP_PROF', dump_folder), overwrite_timeout)
+    def dump_profile(self, dump_folder, index=None, overwrite_timeout=None):
+        self.distribute_command(('DUMP_PROF', dump_folder), index, overwrite_timeout)
+
+

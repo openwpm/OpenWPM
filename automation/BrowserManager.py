@@ -41,6 +41,7 @@ class Browser:
         }
         
         # Queues and process IDs for BrowserManager
+        self.command_thread = None # thread to run commands issues from TaskManager
         self.command_queue = None  # queue for passing command tuples to BrowserManager
         self.status_queue = None  # queue for receiving command execution status from BrowserManager
         self.browser_pid = None  # pid for browser instance controlled by BrowserManager
@@ -51,6 +52,13 @@ class Browser:
         self.browser_manager = self.launch_browser_manager()
 
     # CRAWLER SETUP / KILL CODE
+
+    # return if the browser is ready to accept a command
+    def ready(self):
+        if self.command_thread == None or not self.command_thread.is_alive():
+            return True
+        else:
+            return False
 
     # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
     def kill_browser_manager(self):

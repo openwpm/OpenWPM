@@ -30,10 +30,16 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
     if preferences['load_folder'] is not None:
         manager.load_profile(preferences['load_folder'])
 
-    for site in sites:
-        manager.get(site)
-        if preferences["wipe"]:
-            manager.reset()
+    #for site in sites:
+    #    import ipdb; ipdb.set_trace()
+    #    manager.get(site)
+    #    if preferences["wipe"]:
+    #        manager.reset()
+    import ipdb; ipdb.set_trace()
+    manager.get('http://www.google.com')
+    manager.get('http://www.google.com')
+    manager.get('http://www.google.com')
+
 
     # dump profile at the end if necessary
     if preferences['dump_folder'] is not None:
