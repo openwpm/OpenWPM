@@ -11,6 +11,7 @@ var curr_hovered = null;  // the currently hovered-over node
 var node_to_index = {};  // dictionary that maps nodes names to indices
 var default_zoom_level; // baseline ui ratio
 var zoom_ratio = 0.8; // ratio in which zoom bar moves
+var num_trackers = 20; // the number of top trackers we wish to display
 
 // omnibus initialization function that builds up our Sigma.JS graph
 // and also sets up the various UI components
@@ -55,6 +56,26 @@ function init() {
                 e.weight = Object.keys(e.cookies).length;
             });
 			s.refresh();
+
+            // INFOGRAPHIC: flag the top 20 trackers
+            // get a list of top trackers sorted by descending weights (ties done alphabetically)
+            top_trackers = s.graph.nodes().sort(
+                function(a,b) {
+                    if (a.weight == b.weight) {
+                        return a.id.localeCompare(b.id);
+                    }
+                    return b.weight - a.weight;
+                }
+            );
+
+            // next, build the actual table and save it in the table element
+            tracker_table = "<table>"
+            for (var i = 0; i < num_trackers; i++) {
+                tracker_table += "<tr><td>" + top_trackers[i].id + "</td><td>" + top_trackers[i].weight + "</td></tr>";
+            }
+            tracker_table += "</table>"
+                
+            $("#top_trackers").html(tracker_table);
 
             // UI 1: build button to toggle third-party coloring
             $("#toggle_tp").button().click(function(e) {
