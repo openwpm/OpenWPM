@@ -35,10 +35,13 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
     #    manager.get(site)
     #    if preferences["wipe"]:
     #        manager.reset()
-    import ipdb; ipdb.set_trace()
-    manager.get('http://www.google.com')
-    manager.get('http://www.google.com')
-    manager.get('http://www.google.com')
+    manager.get('http://www.cnn.com','**')
+    manager.get('http://www.qq.com')
+    manager.get('http://www.foxnews.com','**')
+    manager.get('http://www.qq.com')
+    manager.get('http://www.arstechnica.com','**')
+    manager.get('http://www.qq.com')
+    manager.get('http://www.bbc.com','**')
 
 
     # dump profile at the end if necessary

@@ -1,3 +1,7 @@
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 from Commands import command_executor
 from DeployBrowsers import deploy_browser
 from Commands import profile_commands
@@ -122,7 +126,7 @@ class Browser:
 
     # kill and restart the two worker processes
     # <reset> marks whether we want to wipe the old profile
-    def restart_workers(self, reset=False):
+    def restart_browser_manager(self, reset=False):
         self.kill_browser_manager()
 
         # in case of reset, hard-deletes old profile
@@ -161,6 +165,11 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
             command_executor.execute_command(command, driver, prof_folder, proxy_site_queue)
+
+            #TODO: make this not dependent on selenium - get the right timeout?
+            element = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            element.send_keys("Keys.ESCAPE") #Make sure it is really done loading
+
             status_queue.put("OK")
         except Exception as ex:
             print "CRASH IN DRIVER ORACLE:" + str(ex) + " RESTARTING BROWSER MANAGER"
