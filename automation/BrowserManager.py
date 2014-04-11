@@ -18,7 +18,6 @@ import os
 # Continually listens to the TaskManager for commands and passes them to command module to execute
 # Sends OK signal if command succeeds or else sends a FAILED signal to indicate that workers should be restarted
 # TODO: this approach may be too coarse
-# TODO: are profiles saved on crash??
 
 # <command_queue> is the queue through which the browser sends command tuples
 # <status_queue> is a queue through which the BrowserManager either signals command failure or success
@@ -166,7 +165,8 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         try:
             command_executor.execute_command(command, driver, prof_folder, proxy_site_queue)
 
-            #TODO: make this not dependent on selenium - get the right timeout?
+            # This is a fix for when selenium claims it is done loading but actually isn't
+            # TODO: make this not dependent on selenium - get the right timeout?
             element = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             element.send_keys("Keys.ESCAPE") #Make sure it is really done loading
 
