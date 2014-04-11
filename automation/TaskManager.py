@@ -116,7 +116,6 @@ class TaskManager:
         self.data_aggregator.join()
 
     # closes the TaskManager for good and frees up memory
-    #TODO: loop through browsers when closing
     def close(self):
         for browser in self.browsers:
             if browser.command_thread is not None:

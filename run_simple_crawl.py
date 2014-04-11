@@ -30,24 +30,10 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
     if preferences['load_folder'] is not None:
         manager.load_profile(preferences['load_folder'])
 
-    #for site in sites:
-    #    import ipdb; ipdb.set_trace()
-    #    manager.get(site)
-    #    if preferences["wipe"]:
-    #        manager.reset()
-
-    manager.get('http://www.cnn.com','**')
-    manager.get('http://www.qq.com')
-    manager.get('http://www.foxnews.com','**')
-    manager.get('http://www.qq.com')
-    manager.get('http://www.arstechnica.com','**')
-    manager.get('http://www.qq.com')
-    manager.get('http://www.bbc.com','**')
-
-    manager.get('http://www.google.com')
-    manager.get('http://www.yahoo.com')
-    manager.get('http://www.msn.com')
-
+    for site in sites:
+        manager.get(site)
+        if preferences["wipe"]:
+            manager.reset()
 
     # dump profile at the end if necessary
     if preferences['dump_folder'] is not None:
