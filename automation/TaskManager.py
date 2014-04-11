@@ -212,6 +212,8 @@ class TaskManager:
                                  (browser.crawl_id, command[0], command[1], True) ))
             break
         if not command_succeeded:  # reboots since BrowserManager is down
+            self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
+                                 (browser.crawl_id, command[0], command[1], False) ))
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
