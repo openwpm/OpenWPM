@@ -7,30 +7,30 @@ from dateutil import parser
 
 # msg is the message object given by MITM
 # (crawl_id, url, method, referrer, top_url)
-def process_general_mitm_request(db_queue, crawl_id, top_url, msg):
+def process_general_mitm_request(db_socket, crawl_id, top_url, msg):
     if len(msg.headers['referer']) > 0:
         referrer = msg.headers['referer'][0]
     else:
         referrer = ''
 
     data = (crawl_id, msg.get_url(), msg.method, referrer, top_url)
-    db_queue.put(("INSERT INTO http_requests (crawl_id, url, method, referrer, top_url) VALUES (?,?,?,?,?)", data))
+    db_socket.send_pickled(("INSERT INTO http_requests (crawl_id, url, method, referrer, top_url) VALUES (?,?,?,?,?)", data))
 
 
 # msg is the message object given by MITM
 # (crawl_id, url, method, referrer, response_status, response_status_text, top_url)
-def process_general_mitm_response(db_queue, crawl_id, top_url, msg):
+def process_general_mitm_response(db_socket, crawl_id, top_url, msg):
     if len(msg.request.headers['referer']) > 0:
         referrer = msg.request.headers['referer'][0]
     else:
         referrer = ''
 
     if msg.get_cookies() is not None:
-        process_cookies(db_queue, crawl_id, top_url, referrer, msg.get_cookies())
+        process_cookies(db_socket, crawl_id, top_url, referrer, msg.get_cookies())
 
     else:
         data = (crawl_id, msg.request.get_url(), msg.request.method, referrer, msg.code, msg.msg, top_url)
-        db_queue.put(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
+        db_socket.send_pickled(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
                       "response_status_text, top_url) VALUES (?,?,?,?,?,?,?)", data))
 
 # returns canonical date-time string
@@ -41,7 +41,7 @@ def parse_date(date):
         return str(datetime.datetime.now())
 
 # add an entry for a cookie to the table
-def process_cookies(db_queue, crawl_id, top_url, referrer, cookies):
+def process_cookies(db_socket, crawl_id, top_url, referrer, cookies):
     for name in cookies:
         value, attr_dict = cookies[name]
         domain = '' if 'domain' not in attr_dict else unicode(attr_dict['domain'], errors='ignore')
@@ -50,5 +50,5 @@ def process_cookies(db_queue, crawl_id, top_url, referrer, cookies):
 
         data = (crawl_id, domain, unicode(name, errors='ignore'), unicode(value, errors='ignore'),
                 expiry, accessed, referrer, top_url)
-        db_queue.put(("INSERT INTO cookies (crawl_id, domain, name, value, expiry, accessed, referrer, top_url) "
+        db_socket.send_pickled(("INSERT INTO cookies (crawl_id, domain, name, value, expiry, accessed, referrer, top_url) "
                       "VALUES (?,?,?,?,?,?,?,?)", data))
