@@ -58,7 +58,7 @@ class TaskManager:
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
 
-	# open client socket
+	    # open client socket
         self.sock = clientsocket()
         self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
 
@@ -208,7 +208,7 @@ class TaskManager:
             if status == "OK":
                 print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
-		self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
+                self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                                  (browser.crawl_id, command[0], command[1], True) ))
             break
         if not command_succeeded:  # reboots since BrowserManager is down
