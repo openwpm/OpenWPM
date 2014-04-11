@@ -4,7 +4,7 @@ from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
 from collections import namedtuple
-from threading import Thread
+import threading
 import os
 import signal
 import sqlite3
@@ -118,9 +118,12 @@ class TaskManager:
     # closes the TaskManager for good and frees up memory
     #TODO: loop through browsers when closing
     def close(self):
-        self.kill_browser_manager()
-        if self.profile_path is not None:
-            subprocess.call(["rm", "-r", self.profile_path])
+        for browser in self.browsers:
+            if browser.command_thread is not None:
+                browser.command_thread.join()
+            browser.kill_browser_manager()
+            if browser.profile_path is not None:
+                subprocess.call(["rm", "-r", browser.profile_path])
         self.kill_data_aggregator()
         self.db.close()
 
@@ -159,24 +162,36 @@ class TaskManager:
                 time.sleep(0.01)
         elif index == '**':
             #send the command to all browsers and sync it
-            print "Not supported..."
-
+            condition = threading.Condition() #Used to block threads until ready
+            command_executed = [False] * len(self.browsers)
+            while False in command_executed:
+                for i in range(len(self.browsers)):
+                    if self.browsers[i].ready() and not command_executed[i]:
+                        self.start_thread(self.browsers[i], command, timeout, condition)
+                        command_executed[i] = True
+                time.sleep(0.01)
+            with condition:
+                condition.notifyAll() #All browsers loaded, tell them to start
         else:
             #not a supported command
             print "Command index type is not supported or out of range"
 
     # starts the command execution thread
-    def start_thread(self, browser, command, timeout):
-        args = (browser, command, timeout)
-        thread = Thread(target=self.issue_command, args=args)
+    def start_thread(self, browser, command, timeout, condition=None):
+        args = (browser, command, timeout, condition)
+        thread = threading.Thread(target=self.issue_command, args=args)
         browser.command_thread = thread
         thread.start()
     
     # sends command tuple to the BrowserManager
     # <timeout> gives the option to override default timeout
-    def issue_command(self, browser, command, timeout=None):
+    def issue_command(self, browser, command, timeout=None, condition=None):
         browser.is_fresh = False  # since we are issuing a command, the BrowserManager is no longer a fresh instance
         timeout = browser.timeout if timeout is None else timeout  # allows user to overwrite timeout
+        # if this is a synced call, block on condition
+        if condition is not None:
+            with condition:
+                condition.wait()
 
         # passes off command and waits for a success (or failure signal)
         browser.command_queue.put(command)
@@ -191,11 +206,11 @@ class TaskManager:
             # received reply from BrowserManager, either success signal or failure notice
             status = browser.status_queue.get()
             if status == "OK":
+                print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
                 self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                                  (browser.crawl_id, command[0], command[1], True) ))
             break
-
         if not command_succeeded:  # reboots since BrowserManager is down
             browser.restart_browser_manager()
 
