@@ -1,5 +1,6 @@
 from BrowserManager import Browser, BrowserManager
 from DataAggregator import DataAggregator
+from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
 from collections import namedtuple
@@ -56,6 +57,10 @@ class TaskManager:
         
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
+
+	    # open client socket
+        self.sock = clientsocket()
+        self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
 
     # CRAWLER SETUP / KILL CODE
 
@@ -203,8 +208,12 @@ class TaskManager:
             if status == "OK":
                 print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
+                self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
+                                 (browser.crawl_id, command[0], command[1], True) ))
             break
         if not command_succeeded:  # reboots since BrowserManager is down
+            self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
+                                 (browser.crawl_id, command[0], command[1], False) ))
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS

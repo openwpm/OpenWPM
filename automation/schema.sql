@@ -58,3 +58,11 @@ CREATE TABLE IF NOT EXISTS cookies (
     accessed VARCHAR[500] NOT NULL,
     referrer VARCHAR[500] NOT NULL,
     top_url VARCHAR[500] NOT NULL);
+
+/* Crawl History table */
+CREATE TABLE IF NOT EXISTS CrawlHistory (
+    crawl_id INTEGER,
+    command TEXT,
+    arguments TEXT,
+    bool_success INTEGER,
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id));

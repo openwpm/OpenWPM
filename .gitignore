@@ -5,5 +5,6 @@
 # A bug in selenium creates this on unix systems
 C:\\nppdf32Log\\debuglog.txt
 
-#MAC filesystem explorer drops this
-.DS_Store
+.idea/*
+*.idea
+*/idea
