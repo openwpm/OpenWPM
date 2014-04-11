@@ -155,6 +155,7 @@ class TaskManager:
         elif index == '**':
             #send the command to all browsers and sync it
             print "Not supported..."
+
         else:
             #not a supported command
             print "Command index type is not supported or out of range"
