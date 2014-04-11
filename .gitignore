@@ -5,4 +5,6 @@
 # A bug in selenium creates this on unix systems
 C:\\nppdf32Log\\debuglog.txt
 
-
+.idea/*
+*.idea
+*/idea
