@@ -4,14 +4,24 @@
  */
 
 /* Crawler Tables */
+CREATE TABLE IF NOT EXISTS task (
+    task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    description TEXT);
 
 CREATE TABLE IF NOT EXISTS crawl (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    db_location VARCHAR(500) NOT NULL,
     profile VARCHAR(200),
-    description TEXT,
-    finished BOOLEAN NOT NULL DEFAULT 0);
+    browser VARCHAR(200),
+    headless VARCHAR(200),
+    proxy VARCHAR(200),
+    fourthparty VARCHAR(200),
+    debugging VARCHAR(200),
+    timeout INTEGER,
+    finished BOOLEAN NOT NULL DEFAULT 0,
+    FOREIGN KEY(task_id) REFERENCES task(task_id));
 
 CREATE TABLE IF NOT EXISTS xpath (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,3 +76,5 @@ CREATE TABLE IF NOT EXISTS CrawlHistory (
     arguments TEXT,
     bool_success INTEGER,
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+
+

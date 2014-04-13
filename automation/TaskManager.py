@@ -40,6 +40,10 @@ class TaskManager:
         self.db_loc = db_location if db_location.endswith("/") else db_location + "/"
         self.db_name = db_name
 
+        # Store parameters for the database
+        self.parameters = (browser, headless, proxy, fourthparty,
+                            browser_debugging, profile, timeout)
+
         # sets up the crawl data database
         self.db = sqlite3.connect(db_location + db_name)
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
@@ -54,13 +58,27 @@ class TaskManager:
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
         self.data_aggregator = self.launch_data_aggregator()
         self.aggregator_address = self.aggregator_status_queue.get() #socket location: (address, port)
+
+        # open client socket
+        self.sock = clientsocket()
+        self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
+
+        # update task table
+        self.task_id = None
+        self.sock.send( ("INSERT INTO task (description) VALUES (?)", (self.desc,) ))
+        # Get task ID (last item added to seq table)
+        cur = self.db.cursor()
+        cur.execute("SELECT seq from sqlite_sequence WHERE name='task'")
+        data = cur.fetchall()
+        try:
+            self.task_id = data[0][0]
+        except:
+            self.task_id = 1
         
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
 
-	    # open client socket
-        self.sock = clientsocket()
-        self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
+
 
     # CRAWLER SETUP / KILL CODE
 
@@ -96,9 +114,19 @@ class TaskManager:
     #TODO: the crawl database needs some serious TLC
     def get_id(self, browser_params):
         cur = self.db.cursor()
-        cur.execute("INSERT INTO crawl (db_location, description, profile) VALUES (?,?,?)",
-                    (self.db_loc, str(browser_params), self.profile_path))
-        self.db.commit()
+
+        #TO DO finish task and crawls table
+        import ipdb; ipdb.set_trace()
+
+        # update crawl table
+        self.sock.send( ("INSERT INTO crawl (task_id, profile, \
+                        browser, headless, proxy, fourthparty, debugging, timeout) VALUES (?,?,?,?,?,?,?,?)",
+                                 (self.task_id, self.parameters[0], self.parameters[1], self.parameters[2],
+                                 self.parameters[3], self.parameters[4], self.parameters[5],
+                                 self.parameters[6]) ))
+        #cur.execute("INSERT INTO crawl (db_location, description, profile) VALUES (?,?,?)",
+        #            (self.db_loc, str(browser_params), self.profile_path))
+        #self.db.commit()
         return cur.lastrowid
     
     # sets up the DataAggregator (Must be launched prior to BrowserManager) 
