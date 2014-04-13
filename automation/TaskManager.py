@@ -41,8 +41,8 @@ class TaskManager:
         self.db_name = db_name
 
         # Store parameters for the database
-        self.parameters = (browser, headless, proxy, fourthparty,
-                            browser_debugging, profile, timeout)
+        self.parameters = (profile, browser, headless, proxy, fourthparty,
+                            browser_debugging, timeout)
 
         # sets up the crawl data database
         self.db = sqlite3.connect(db_location + db_name)
@@ -51,7 +51,7 @@ class TaskManager:
         
         # prepares browser settings
         self.num_browsers = num_browsers
-        browser_params = self.build_browser_params(browser, headless, proxy, fourthparty, 
+        browser_params = self.build_browser_params(browser, headless, proxy, fourthparty,
                                                    browser_debugging, profile, timeout)
 
         # sets up the DataAggregator + associated queues
@@ -60,20 +60,15 @@ class TaskManager:
         self.aggregator_address = self.aggregator_status_queue.get() #socket location: (address, port)
 
         # open client socket
+        # TODO: Do we need this socket for when browsers send/receive info from the db?
         self.sock = clientsocket()
         self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
 
         # update task table
-        self.task_id = None
-        self.sock.send( ("INSERT INTO task (description) VALUES (?)", (self.desc,) ))
-        # Get task ID (last item added to seq table)
         cur = self.db.cursor()
-        cur.execute("SELECT seq from sqlite_sequence WHERE name='task'")
-        data = cur.fetchall()
-        try:
-            self.task_id = data[0][0]
-        except:
-            self.task_id = 1
+        cur.execute("INSERT INTO task (description) VALUES (?)", (self.desc,))
+        self.db.commit()
+        self.task_id = cur.lastrowid
         
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
@@ -86,7 +81,15 @@ class TaskManager:
     def initialize_browsers(self, browser_params):
         browsers = list()
         for i in range(self.num_browsers):
-            crawl_id = self.get_id(browser_params[i])
+            # update crawl table
+            cur = self.db.cursor()
+            cur.execute("INSERT INTO crawl (task_id, profile, browser, \
+                            headless, proxy, fourthparty, debugging, timeout) VALUES (?,?,?,?,?,?,?,?)",
+                                 (self.task_id, self.parameters[0], self.parameters[1], self.parameters[2],
+                                 self.parameters[3], self.parameters[4], self.parameters[5], self.parameters[6]) )
+            self.db.commit()
+            crawl_id = cur.lastrowid
+            #crawl_id = self.get_id(browser_params[i])
             browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))
         return browsers
 
@@ -111,23 +114,13 @@ class TaskManager:
         return params_list
 
     # assigns id to the crawler based on the output database
-    #TODO: the crawl database needs some serious TLC
-    def get_id(self, browser_params):
-        cur = self.db.cursor()
-
-        #TO DO finish task and crawls table
-        import ipdb; ipdb.set_trace()
-
-        # update crawl table
-        self.sock.send( ("INSERT INTO crawl (task_id, profile, \
-                        browser, headless, proxy, fourthparty, debugging, timeout) VALUES (?,?,?,?,?,?,?,?)",
-                                 (self.task_id, self.parameters[0], self.parameters[1], self.parameters[2],
-                                 self.parameters[3], self.parameters[4], self.parameters[5],
-                                 self.parameters[6]) ))
-        #cur.execute("INSERT INTO crawl (db_location, description, profile) VALUES (?,?,?)",
-        #            (self.db_loc, str(browser_params), self.profile_path))
-        #self.db.commit()
-        return cur.lastrowid
+    #def get_id(self, browser_params):
+    #    cur = self.db.cursor()
+    #
+    #    #cur.execute("INSERT INTO crawl (db_location, description, profile) VALUES (?,?,?)",
+    #    #            (self.db_loc, str(browser_params), self.profile_path))
+    #    #self.db.commit()
+    #    return cur.lastrowid
     
     # sets up the DataAggregator (Must be launched prior to BrowserManager) 
     def launch_data_aggregator(self):
@@ -144,6 +137,8 @@ class TaskManager:
         self.data_aggregator.join()
 
     # closes the TaskManager for good and frees up memory
+    #TODO: loop through browsers when closing
+    #TODO: write 1 to finished field for each browser (crawl_id)
     def close(self):
         for browser in self.browsers:
             if browser.command_thread is not None:
