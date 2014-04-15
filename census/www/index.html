@@ -3,16 +3,64 @@
         <script src="sigma.min.js"></script>
         <script src="plugins/sigma.parsers.json.min.js"></script>
         <script src="util/graph_actions.js"></script>
+        <link rel="stylesheet" href="jquery-ui/css/smoothness/jquery-ui-1.10.4.custom.css" />
+        <link rel="stylesheet" href="census.css" />
         <script src="util/setup_census.js"></script>
-        <script src="jquery-ui/jquery-1.10.2.js"></script>
+        <script src="jquery-ui/js/jquery-1.10.2.js"></script>
+        <script src="jquery-ui/js/jquery-ui-1.10.4.custom.min.js"></script>
     </head>
 
     <body>
-        <div id="graph" style='height:100%; width:100%'></div>
-        <div id="cookie_panel">
-            <div id="owners"></div>
-            <div id="cookies"></div>
+        <!-- For now, just contains the title but eventually to be expanded to links for other census items -->
+        <div id="header">
+            <center><h1>Web Measurement Census: Cookie Synchronization</h1></center>
         </div>
-        <script> init(); </script>
+
+        <!-- Container to hold the three data columns pertaining to the graph -->
+        <div id="info-container">
+            <!-- Holds the graph itself in the center -->
+            <div id="graph" class="info-column">
+            </div>
+
+            <!-- Contains the various UI tools for manipulating the graph -->
+            <div id="tools" class="info-column">
+                
+                <input type="checkbox" id="toggle_tp"><label for="toggle_tp">Flag third parties</label>
+
+                <p>
+                    <label for="cookie_weight">Cookie weight:</label>
+                    <div id="cookie_weight"></div>
+                </p>
+                <div id="weight_slider"></div>
+
+                <p>
+                    Zoom:
+                </p>
+                <div id="zoom_slider"></div>                
+                    
+                <div class="ui-widget">
+                    <label for="site_search">Select a site: </label>
+                    <input id="site_search">
+                </div>
+
+                <div class="ui-widget">
+                    <label for="cookie_search">Search for cookies: </label>
+                    <input id="cookie_search">
+                </div>
+
+                <div id="cookie_panel" style="position:absolute;overflow:scroll;height:500px;display:none">
+                    <div id="owners"></div>
+                    <div id="cookies"></div>
+                </div>
+            </div>
+
+            <!-- Contains text about cookie syncing + the graph -->
+            <div id="about" class="info-column">
+                <h2>About cookie synchronization</h2>
+                <div id="top_trackers"></div>
+            </div>
+        </div>
+        
+        <script>init();</script>
     </body>
 </html>

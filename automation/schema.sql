@@ -76,5 +76,3 @@ CREATE TABLE IF NOT EXISTS CrawlHistory (
     arguments TEXT,
     bool_success INTEGER,
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
-
-

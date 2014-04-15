@@ -72,8 +72,10 @@ class TaskManager:
         
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
-
-
+        
+        # open client socket
+        self.sock = clientsocket()
+        self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
 
     # CRAWLER SETUP / KILL CODE
 
