@@ -9,6 +9,10 @@ from sets import Set
 # nodes are websites and (directed) edges illustrate cookie values flowing between sites
 # each node and edge contains the cookies that are available to them
 # only includes cookies in the graph that are present in at least 1 transfer
+def unique(seq):
+    # Not order preserving
+    return {}.fromkeys(seq).keys()
+
 def build_sync_graph(db_name, known_cookies):
     # first, build a dictionary that maps cookies to the value actually seen in the database
     value_dict = extract_cookie_ids.extract_known_cookies_from_db(db_name, known_cookies)
@@ -18,28 +22,33 @@ def build_sync_graph(db_name, known_cookies):
     cur = con.cursor()
 
     # iterates through all the cookie ids to look from them flowing throughout the graph
-    for url, referrer in cur.execute('SELECT url, referrer from http_requests'):
+    edge_list = list()
+    for url, referrer in cur.execute('SELECT DISTINCT url, referrer FROM http_requests'):
         referrer = census_util.extract_domain(referrer)
         short_url = census_util.extract_domain(url)
+        
         for cookie in value_dict:
-            # ignore domainless-cookies
             if cookie[0] == '':
                 continue
-            
+
             if value_dict[cookie] in url:
                 cookie_str = str(cookie[0]) + " " + str(cookie[1])
+                edge_list.append((referrer, short_url, cookie_str))
+                break #NOTE will IDs ever change?
 
-                if short_url not in g:
-                    g.add_node(short_url, cookies={})
-                if referrer not in g:
-                    g.add_node(referrer, cookies={})
-                if (referrer, short_url) not in g.edges():
-                    g.add_edge(referrer, short_url, cookies={})
+    #do it as a vector -- should be possible and must faster
+    #g.add_edges_from(edge_list, cookies={})
 
-                g.edge[referrer][short_url]['cookies'][cookie_str] = 1
-                g.node[referrer]['cookies'][cookie_str] = 1
-                g.node[short_url]['cookies'][cookie_str] = 1
-
+    #add the unique triplets to graph
+    edge_list = unique(edge_list)
+    for item in edge_list:
+        g.add_node(item[0], cookies={})
+        g.add_node(item[1], cookies={})
+        g.add_edge(item[0], item[1], cookies={})
+        g.edge[item[0]][item[1]]['cookies'][item[2]] = 1
+        g.node[item[0]]['cookies'][item[2]] = 1
+        g.node[item[1]]['cookies'][item[2]] = 1
+                
     return g
 
 # takes in a graph and adds fields to it to make it drawable in sigma.js

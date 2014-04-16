@@ -1,6 +1,5 @@
 import measure_cookie_sync
 import extract_cookie_ids
-import measure_cookie_sync
 import networkx as nx
 import numpy
 
@@ -72,16 +71,20 @@ def print_graph_statistics(G):
     degs = [(node, G.degree(node)) for node in G.nodes()]
     print_degree_stats(degs)
 
-if __name__ == "__main__":
+def run_test():
     print "READING DB1"
-    c1 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/christian/Desktop/alexa1.sqlite")
+    c1 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/sengleha/Desktop/cookie_sync/alexa_basic1.sqlite")
     print "READING DB2"
-    c2 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/christian/Desktop/alexa2.sqlite")
+    c2 = extract_cookie_ids.extract_cookie_candidates_from_db("/home/sengleha/Desktop/cookie_sync/alexa_basic2.sqlite")
     print "EXTRACTING COOKIES"
     extracted = extract_cookie_ids.extract_common_persistent_ids([c1, c2])
     print "BUILDING GRAPH"
-    G = measure_cookie_sync.build_sync_graph("/home/christian/Desktop/alexa1.sqlite", extracted)
+    G = measure_cookie_sync.build_sync_graph("/home/sengleha/Desktop/cookie_sync/alexa_basic1.sqlite", extracted)
     print "GRAPH BUILT"
     print_graph_statistics(G)
-    
 
+if __name__ == "__main__":
+    import cProfile
+    cProfile.run('run_test()')
+
+    import ipdb; ipdb.set_trace()
