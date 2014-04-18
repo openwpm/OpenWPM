@@ -230,7 +230,7 @@ class TaskManager:
             # received reply from BrowserManager, either success signal or failure notice
             status = browser.status_queue.get()
             if status == "OK":
-                print str(browser.crawl_id) + " " + "got OK"
+                #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
                 self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                                  (browser.crawl_id, command[0], command[1], True) ))
