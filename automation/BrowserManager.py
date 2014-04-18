@@ -28,7 +28,7 @@ class Browser:
     def __init__(self, crawl_id, db_socket_address, browser, headless, proxy, 
                 fourthparty, browser_debugging, profile_tar, timeout):
         # manager parameters
-        self.current_profile_path = profile
+        self.current_profile_path = None
         self.crawl_id = crawl_id
         self.timeout = timeout
         self.db_socket_address = db_socket_address
