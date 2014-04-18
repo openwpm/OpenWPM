@@ -52,4 +52,4 @@ def deploy_firefox(browser_params):
     driver.set_page_load_timeout(30)
     driver.set_script_timeout(30)
 
-    return driver, profile_path, display_pid
+    return driver, browser_profile_path, display_pid
