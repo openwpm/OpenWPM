@@ -13,7 +13,10 @@ def dump_profile(profile_folder, new_folder):
     profile_folder = profile_folder if profile_folder.endswith("/") else profile_folder + "/"
     new_folder = new_folder if new_folder.endswith("/") else new_folder + "/"
 
-    tar = tarfile.open(new_folder + datetime.datetime.now().strftime("%d%m%y_%H%M%S") + '.tar.gz', 'w:gz')
+    if not os.path.exists(new_folder):
+        os.makedirs(new_folder)
+
+    tar = tarfile.open(new_folder + 'profile.tar.gz', 'w:gz')
     for db in ["cookies.sqlite", "cookies.sqlite-shm", "cookies.sqlite-wal",
                "places.sqlite", "places.sqlite-shm", "places.sqlite-wal"]:
         if os.path.isfile(profile_folder + db):

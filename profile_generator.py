@@ -6,12 +6,10 @@ import time
 
 def sitecrawler(d, user, db_loc, db_name, desc):
     """
-    Takes as input a dict with publisher, category, URLs, user number, entry_id (key)
-    Database located locally on user's desktop as rss.sqlite
-    Tracks URLs successfully traversed in DB table CrawlHistory
-    Tries to load a preexisting profile located at profile_dump_loc on DropBox
-        If successful, adds to the profile and overwrites the profile on DropBox
-    Saves the profile to the Dropbox location corresponding to the profile_dump_loc
+    Takes publisher:url dict as input
+    Tries to load the preexisting profile specified
+    Crawls all links in dict
+    Saves the profile
     """
     # Unpack the input dictionary
     pub = None
@@ -21,7 +19,6 @@ def sitecrawler(d, user, db_loc, db_name, desc):
         cat = d[k]['category']
         break
 
-
     # Pull out all the URLs, store as tuple of (URL, entry_id)
     urls = list()
     for key in d:
@@ -29,10 +26,9 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     profile_dump_loc = db_loc + 'profiles/news/' + pub + '/' + cat + '/' + str(user) + '/'
     write_profile = False
-    profile_saved = False
-    prof_load_successful = False
     profile = None
 
+    import ipdb; ipdb.set_trace()
     # initialize crawler
     manager = TaskManager.TaskManager(db_loc, db_name, profile=profile_dump_loc,
                                       headless=False, description=desc, num_browsers=1)
@@ -47,10 +43,9 @@ def sitecrawler(d, user, db_loc, db_name, desc):
             continue
         time.sleep(3)
         traversed_list.append(link)
-        #if len(traversed_list) >= 20:
-        #   break
+        #import ipdb; ipdb.set_trace()
 
-    import ipdb; ipdb.set_trace()
+
     # Make sure we actually traversed some URLs before writing the profile
     # This prevents us from writing the profile or DB when we are debugging
     if len(traversed_list) > 10:
@@ -58,8 +53,6 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     if write_profile == True:
         print("Saving profile: %s to %s" % (category, profile_dump_loc) )
-        print profile
-        print manager.profile_path
         #manager.dump_profile(profile_dump_loc)
         import ipdb; ipdb.set_trace()
         try:
