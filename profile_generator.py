@@ -26,9 +26,15 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     profile_dump_loc = db_loc + 'profiles/news/' + pub + '/' + cat + '/' + str(user) + '/'
     write_profile = False
+    profile_tar_loc = None
+
+    # Does the profile tar location exist?
+    # If it does, then we're safe to pass it as the profile_tar argument to the  Task Manager
+    if os.path.exists(profile_dump_loc):
+        profile_tar_loc = profile_dump_loc
 
     # initialize crawler
-    manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_dump_loc,
+    manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
                                       headless=False, description=desc, num_browsers=1)
     # Traverse the category links
     traversed_list = list()
