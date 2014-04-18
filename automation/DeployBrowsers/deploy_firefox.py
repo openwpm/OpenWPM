@@ -2,6 +2,7 @@ from selenium import webdriver
 import shutil
 import os
 from pyvirtualdisplay import Display
+from ..Commands.profile_commands import load_profile
 
 def deploy_firefox(browser_params):
     display_pid = None
@@ -11,7 +12,10 @@ def deploy_firefox(browser_params):
         display_pid = display.pid
 
     fp = webdriver.FirefoxProfile()
-    profile_path = fp.path + '/'
+    browser_profile_path = fp.path + '/'
+
+    if browser_params['profile_tar']:
+        load_profile(browser_profile_path, browser_params['profile_tar'])
 
     if browser_params['debugging']:
         fp.add_extension(extension=os.path.join(os.path.dirname(__file__), 'extensions/firebug-1.11.0.xpi'))
