@@ -16,6 +16,11 @@ def dump_profile(browser_profile_folder, tar_location):
     if not os.path.exists(tar_location):
         os.makedirs(tar_location)
 
+    # see if this file exists first, if it does
+    # if it does, delete it before we try to save the current session
+    if os.path.isfile(tar_location + 'profile.tar.gz'):
+        subprocess.call(["rm", tar_location + 'profile.tar.gz'])
+
     tar = tarfile.open(tar_location + 'profile.tar.gz', 'w:gz')
     for db in ["cookies.sqlite", "cookies.sqlite-shm", "cookies.sqlite-wal",
                "places.sqlite", "places.sqlite-shm", "places.sqlite-wal"]:
