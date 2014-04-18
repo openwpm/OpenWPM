@@ -27,9 +27,8 @@ def sitecrawler(d, user, db_loc, db_name, desc):
     profile_dump_loc = db_loc + 'profiles/news/' + pub + '/' + cat + '/' + str(user) + '/'
     write_profile = False
 
-    import ipdb; ipdb.set_trace()
     # initialize crawler
-    manager = TaskManager.TaskManager(db_loc, db_name, profile=profile_dump_loc,
+    manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_dump_loc,
                                       headless=False, description=desc, num_browsers=1)
 
     # Traverse the category links
@@ -52,8 +51,6 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     if write_profile == True:
         print("Saving profile: %s to %s" % (category, profile_dump_loc) )
-        #manager.dump_profile(profile_dump_loc)
-        import ipdb; ipdb.set_trace()
         try:
             manager.dump_profile(profile_dump_loc, index=0)
             # log completed creation of publisher and category

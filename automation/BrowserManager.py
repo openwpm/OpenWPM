@@ -40,7 +40,7 @@ class Browser:
             'proxy': proxy,
             'fourthparty': fourthparty,
             'debugging': browser_debugging,
-            'crawl_id': crawl_id
+            'crawl_id': crawl_id,
             'profile_tar': profile_tar
         }
         
