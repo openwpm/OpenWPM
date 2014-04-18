@@ -26,7 +26,6 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     profile_dump_loc = db_loc + 'profiles/news/' + pub + '/' + cat + '/' + str(user) + '/'
     write_profile = False
-    profile = None
 
     import ipdb; ipdb.set_trace()
     # initialize crawler
@@ -123,7 +122,6 @@ if __name__ == '__main__':
                     'category': category
                 }
                 url_crawl_limit += 1
-            #import ipdb; ipdb.set_trace()
             sitecrawler(url_dict, user_num, db_loc, db_name, desc)
             #import ipdb; ipdb.set_trace()
             break
