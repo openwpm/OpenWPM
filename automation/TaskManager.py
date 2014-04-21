@@ -31,9 +31,9 @@ import time
 # <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
 # <description> is an optional description string for a particular crawl
 class TaskManager:
-    def __init__(self, db_location, db_name, description = None, num_browsers = 2,
+    def __init__(self, db_location, db_name, description = None, num_browsers = 1,
                 browser='firefox', headless=False, proxy=False, fourthparty=False,
-                browser_debugging=False, timeout=30, profile_tar=None):
+                browser_debugging=False, timeout=60, profile_tar=None, random_attributes=False):
         # sets up the information needed to write to the database
         self.desc = description
         self.db_loc = db_location if db_location.endswith("/") else db_location + "/"
@@ -51,7 +51,8 @@ class TaskManager:
         # prepares browser settings
         self.num_browsers = num_browsers
         browser_params = self.build_browser_params(browser, headless, proxy, fourthparty,
-                                                   browser_debugging, profile_tar, timeout)
+                                                   browser_debugging, profile_tar, timeout,
+                                                   random_attributes)
 
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator

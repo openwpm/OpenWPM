@@ -24,12 +24,10 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
 
     manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
                                       headless=preferences["headless"], proxy=preferences["proxy"],
-                                      fourthparty=preferences["fourthparty"])
+                                      fourthparty=preferences["fourthparty"], profile_tar=preferences['load_folder'],
+                                      random_attributes=True)
 
-    # load profile at beginning if necessary
-    if preferences['load_folder'] is not None:
-        manager.load_profile(preferences['load_folder'])
-
+    import ipdb; ipdb.set_trace()
     for site in sites:
         manager.get(site)
         if preferences["wipe"]:
@@ -75,8 +73,8 @@ def main(argv):
         "proxy": False,
         "headless": False,
         "timeout": 30.0,
-        "load_folder": None,
-        "dump_folder": None,
+        "load_folder": '/home/sengleha/Desktop/flash_crawls/profile/',
+        "dump_folder": '/home/sengleha/Desktop/flash_crawls/profile/',
         "wipe": False
     }
 

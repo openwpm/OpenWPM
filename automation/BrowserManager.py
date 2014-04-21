@@ -26,7 +26,7 @@ import os
 
 class Browser:
     def __init__(self, crawl_id, db_socket_address, browser, headless, proxy, 
-                fourthparty, browser_debugging, profile_tar, timeout):
+                fourthparty, browser_debugging, profile_tar, timeout, random_attributes):
         # manager parameters
         self.current_profile_path = None
         self.crawl_id = crawl_id
@@ -41,7 +41,8 @@ class Browser:
             'fourthparty': fourthparty,
             'debugging': browser_debugging,
             'crawl_id': crawl_id,
-            'profile_tar': profile_tar
+            'profile_tar': profile_tar,
+            'random_attributes': random_attributes
         }
         
         # Queues and process IDs for BrowserManager
@@ -144,7 +145,7 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         browser_params['proxy'] = local_port
 
     # Gets the WebDriver, profile folder (i.e. where history/cookies are stored) and display pid (None if not headless)
-    (driver, prof_folder, display_pid) = deploy_browser.deploy_browser(browser_params)
+    (driver, prof_folder, display_pid, browser_settings) = deploy_browser.deploy_browser(browser_params)
 
     # passes the profile folder, WebDriver pid and display pid back to the TaskManager
     # now, the TaskManager knows that the browser is successfully set up
