@@ -1,2 +1,5 @@
 google.com
 yahoo.com
+qq.com
+arstechnica.com
+reddit.com

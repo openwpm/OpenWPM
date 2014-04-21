@@ -98,7 +98,10 @@ def deploy_firefox(browser_params):
     if browser_params['fourthparty']:
         fp.add_extension(extension=os.path.join(root_dir + "/../",
                                            'extensions/fourthparty/fourthparty.xpi'))
-    
+    # Disable flash
+    if browser_params['disable_flash']:
+        fp.set_preference('plugin.state.flash',0)
+
     driver = webdriver.Firefox(firefox_profile=fp)
 
     # Limit page loads to 30 seconds, this constant is up for debate

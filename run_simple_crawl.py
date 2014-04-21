@@ -25,14 +25,12 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
     manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
                                       headless=preferences["headless"], proxy=preferences["proxy"],
                                       fourthparty=preferences["fourthparty"], profile_tar=preferences['load_folder'],
-                                      random_attributes=True)
+                                      random_attributes=True, disable_flash=True)
 
     for site in sites:
         manager.get(site)
         if preferences["wipe"]:
             manager.reset()
-
-    import ipdb; ipdb.set_trace()
 
     # dump profile at the end if necessary
     if preferences['dump_folder'] is not None:
