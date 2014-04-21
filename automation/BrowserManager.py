@@ -83,7 +83,7 @@ class Browser:
             tempdir = tempfile.mkdtemp() + "/"
             profile_commands.dump_profile(crashed_profile_path, tempdir, self.browser_settings)
             self.browser_params['profile_tar'] = tempdir # make sure browser loads crashed profile
-            self.broswer_params['random_attributes'] = False # don't re-randomize attributes
+            self.browser_params['random_attributes'] = False # don't re-randomize attributes
         else:
             tempdir = None
             crashed_profile_path = None

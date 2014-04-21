@@ -33,7 +33,7 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None):
     if browser_settings is not None:
         # see if the browser_settings file exists, and if so delete
         if os.path.isfile(tar_location + 'browser_settings.p'):
-            subprocess.call(["rm", tar_location + 'profile.tar.gz'])
+            subprocess.call(["rm", tar_location + 'browser_settings.p'])
 
         with open(tar_location + 'browser_settings.p', 'wb') as f:
             cPickle.dump(browser_settings, f)

@@ -27,11 +27,12 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
                                       fourthparty=preferences["fourthparty"], profile_tar=preferences['load_folder'],
                                       random_attributes=True)
 
-    import ipdb; ipdb.set_trace()
     for site in sites:
         manager.get(site)
         if preferences["wipe"]:
             manager.reset()
+
+    import ipdb; ipdb.set_trace()
 
     # dump profile at the end if necessary
     if preferences['dump_folder'] is not None:
