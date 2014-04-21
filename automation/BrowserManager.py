@@ -1,7 +1,3 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
 from Commands import command_executor
 from DeployBrowsers import deploy_browser
 from Commands import profile_commands
@@ -175,13 +171,6 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
             command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue)
-
-            # TODO: move this into the get command
-            # This is a fix for when selenium claims it is done loading but actually isn't
-            # TODO: make this not dependent on selenium - get the right timeout?
-            element = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-            element.send_keys("Keys.ESCAPE") #Make sure it is really done loading
-
             status_queue.put("OK")
         except Exception as ex:
             print "CRASH IN DRIVER ORACLE:" + str(ex) + " RESTARTING BROWSER MANAGER"
