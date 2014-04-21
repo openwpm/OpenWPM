@@ -174,9 +174,9 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
-            command_executor.execute_command(command, driver, prof_folder, proxy_site_queue)
+            command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue)
 
-            #TODO: move this into the get command
+            # TODO: move this into the get command
             # This is a fix for when selenium claims it is done loading but actually isn't
             # TODO: make this not dependent on selenium - get the right timeout?
             element = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
