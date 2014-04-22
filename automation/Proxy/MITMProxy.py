@@ -38,7 +38,7 @@ class InterceptingMaster (controller.Master):
         # try to load/process message as usual
         try:
             msg = q.get(timeout=0.01)
-            controller.Master.handle(self, msg)
+            controller.Master.handle(self, *msg)
         except Queue.Empty:
             pass
 

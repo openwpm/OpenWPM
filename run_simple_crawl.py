@@ -25,7 +25,7 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
     manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
                                       headless=preferences["headless"], proxy=preferences["proxy"],
                                       fourthparty=preferences["fourthparty"], profile_tar=preferences['load_folder'],
-                                      random_attributes=True, disable_flash=True)
+                                      random_attributes=True)
 
     for site in sites:
         manager.get(site)
@@ -69,11 +69,11 @@ def main(argv):
     preferences = {
         "browser": "firefox",
         "fourthparty": False,
-        "proxy": False,
-        "headless": False,
-        "timeout": 30.0,
-        "load_folder": '/home/sengleha/Desktop/flash_crawls/profile/',
-        "dump_folder": '/home/sengleha/Desktop/flash_crawls/profile/',
+        "proxy": True,
+        "headless": True,
+        "timeout": 60.0,
+        "load_folder": None,
+        "dump_folder": None,
         "wipe": False
     }
 
