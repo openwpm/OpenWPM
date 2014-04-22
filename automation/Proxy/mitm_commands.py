@@ -14,7 +14,7 @@ def process_general_mitm_request(db_socket, crawl_id, top_url, msg):
         referrer = ''
 
     data = (crawl_id, msg.get_url(), msg.method, referrer, top_url)
-    db_socket.send_pickled(("INSERT INTO http_requests (crawl_id, url, method, referrer, top_url) VALUES (?,?,?,?,?)", data))
+    db_socket.send(("INSERT INTO http_requests (crawl_id, url, method, referrer, top_url) VALUES (?,?,?,?,?)", data))
 
 
 # msg is the message object given by MITM
@@ -30,7 +30,7 @@ def process_general_mitm_response(db_socket, crawl_id, top_url, msg):
 
     else:
         data = (crawl_id, msg.request.get_url(), msg.request.method, referrer, msg.code, msg.msg, top_url)
-        db_socket.send_pickled(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
+        db_socket.send(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
                       "response_status_text, top_url) VALUES (?,?,?,?,?,?,?)", data))
 
 # returns canonical date-time string
@@ -50,5 +50,5 @@ def process_cookies(db_socket, crawl_id, top_url, referrer, cookies):
 
         data = (crawl_id, domain, unicode(name, errors='ignore'), unicode(value, errors='ignore'),
                 expiry, accessed, referrer, top_url)
-        db_socket.send_pickled(("INSERT INTO cookies (crawl_id, domain, name, value, expiry, accessed, referrer, top_url) "
+        db_socket.send(("INSERT INTO cookies (crawl_id, domain, name, value, expiry, accessed, referrer, top_url) "
                       "VALUES (?,?,?,?,?,?,?,?)", data))

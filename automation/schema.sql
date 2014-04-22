@@ -75,4 +75,5 @@ CREATE TABLE IF NOT EXISTS CrawlHistory (
     command TEXT,
     arguments TEXT,
     bool_success INTEGER,
+    dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));

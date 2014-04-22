@@ -2,7 +2,7 @@ from selenium import webdriver
 import os
 
 # note dnt, tp_off are not supported
-# in general, chrome may not be well-supported yet
+# in general, chrome is not well-supported yet
 def deploy_chrome(browser_params):
     # chrome driver must be installed in python $PATH (/usr/bin/)
     # Chrome browser is assumed in default install directory for OS

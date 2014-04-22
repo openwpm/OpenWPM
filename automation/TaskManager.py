@@ -31,17 +31,17 @@ import time
 # <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
 # <description> is an optional description string for a particular crawl
 class TaskManager:
-    def __init__(self, db_location, db_name, description = None, num_browsers = 2,
+    def __init__(self, db_location, db_name, description = None, num_browsers = 1,
                 browser='firefox', headless=False, proxy=False, fourthparty=False,
-                browser_debugging=False, timeout=30, profile=None):
+                disable_flash = False, browser_debugging=False, timeout=60, 
+                profile_tar=None, random_attributes=False):
         # sets up the information needed to write to the database
-        self.profile_path = 'FIX-ME' #TODO - make per-browser
-        self.desc = description #TODO - update for multiprocessing
+        self.desc = description
         self.db_loc = db_location if db_location.endswith("/") else db_location + "/"
         self.db_name = db_name
 
         # Store parameters for the database
-        self.parameters = (profile, browser, headless, proxy, fourthparty,
+        self.parameters = (profile_tar, browser, headless, proxy, fourthparty,
                             browser_debugging, timeout)
 
         # sets up the crawl data database
@@ -52,7 +52,8 @@ class TaskManager:
         # prepares browser settings
         self.num_browsers = num_browsers
         browser_params = self.build_browser_params(browser, headless, proxy, fourthparty,
-                                                   browser_debugging, profile, timeout)
+                                                   disable_flash, browser_debugging, 
+                                                   profile_tar, timeout, random_attributes)
 
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
@@ -114,15 +115,6 @@ class TaskManager:
         for i in range(self.num_browsers):
             params_list.append([x[i] for x in params])
         return params_list
-
-    # assigns id to the crawler based on the output database
-    #def get_id(self, browser_params):
-    #    cur = self.db.cursor()
-    #
-    #    #cur.execute("INSERT INTO crawl (db_location, description, profile) VALUES (?,?,?)",
-    #    #            (self.db_loc, str(browser_params), self.profile_path))
-    #    #self.db.commit()
-    #    return cur.lastrowid
     
     # sets up the DataAggregator (Must be launched prior to BrowserManager) 
     def launch_data_aggregator(self):
@@ -139,15 +131,14 @@ class TaskManager:
         self.data_aggregator.join()
 
     # closes the TaskManager for good and frees up memory
-    #TODO: loop through browsers when closing
     #TODO: write 1 to finished field for each browser (crawl_id)
     def close(self):
         for browser in self.browsers:
             if browser.command_thread is not None:
                 browser.command_thread.join()
             browser.kill_browser_manager()
-            if browser.profile_path is not None:
-                subprocess.call(["rm", "-r", browser.profile_path])
+            if browser.current_profile_path is not None:
+                subprocess.call(["rm", "-r", browser.current_profile_path])
         self.kill_data_aggregator()
         self.db.close()
 
@@ -230,7 +221,7 @@ class TaskManager:
             # received reply from BrowserManager, either success signal or failure notice
             status = browser.status_queue.get()
             if status == "OK":
-                print str(browser.crawl_id) + " " + "got OK"
+                #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
                 self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                                  (browser.crawl_id, command[0], command[1], True) ))
@@ -249,5 +240,3 @@ class TaskManager:
     # dumps from the profile path to a given file (absolute path)
     def dump_profile(self, dump_folder, index=None, overwrite_timeout=None):
         self.distribute_command(('DUMP_PROF', dump_folder), index, overwrite_timeout)
-
-

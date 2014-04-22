@@ -163,5 +163,5 @@ def extract_first_seen_from_db(db_name, cookie_dict):
 if __name__ == "__main__":
     c1 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
     c2 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl2.sqlite")
-    extracted = extract_common_persistent_ids([c1, c2])
+    extracted = extract_persistent_ids([c1, c2])
     known = extract_known_cookies_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)
