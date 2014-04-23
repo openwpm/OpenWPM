@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS crawl (
     fourthparty VARCHAR(200),
     debugging VARCHAR(200),
     timeout INTEGER,
+    extensions VARCHAR(200),
+    screen_res VARCHAR(50),
+    ua_string VARCHAR(200),
     finished BOOLEAN NOT NULL DEFAULT 0,
     FOREIGN KEY(task_id) REFERENCES task(task_id));
 

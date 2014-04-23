@@ -1,5 +1,6 @@
 from automation import TaskManager
 import sys
+import os.path
 from os.path import expanduser
 import sqlite3
 import time
@@ -35,7 +36,8 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     # initialize crawler
     manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
-                                      headless=False, description=desc, num_browsers=1)
+                                      headless=False, description=desc, num_browsers=1,
+                                      random_attributes=True)
     # Traverse the category links
     traversed_list = list()
     for link in urls:

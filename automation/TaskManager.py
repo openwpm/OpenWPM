@@ -85,6 +85,8 @@ class TaskManager:
         browsers = list()
         for i in range(self.num_browsers):
             # update crawl table
+            # TO DO: update DB with browser.browser_settings for each browser manager initialized
+
             cur = self.db.cursor()
             cur.execute("INSERT INTO crawl (task_id, profile, browser, \
                             headless, proxy, fourthparty, debugging, timeout) VALUES (?,?,?,?,?,?,?,?)",
@@ -92,8 +94,20 @@ class TaskManager:
                                  self.parameters[3], self.parameters[4], self.parameters[5], self.parameters[6]) )
             self.db.commit()
             crawl_id = cur.lastrowid
-            #crawl_id = self.get_id(browser_params[i])
             browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))
+            # Update our DB with the random browser settings
+            # These are found within the scope of each instance of Browser in the browsers list
+            for item in browsers:
+                if not item.browser_settings['extensions']:
+                    extensions = 'None'
+                else:
+                    extensions = ','.join(item.browser_settings['extensions'])
+                screen_res = str(item.browser_settings['screen_res'])
+                ua_string  = str(item.browser_settings['ua_string'])
+                cur.execute("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
+                            WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id) )
+                self.db.commit()
+            import ipdb; ipdb.set_trace()
         return browsers
 
     # builds the browser parameter vectors, scaling all parameters to the number of browsers
