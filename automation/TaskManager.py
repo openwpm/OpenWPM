@@ -107,7 +107,6 @@ class TaskManager:
                 cur.execute("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
                             WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id) )
                 self.db.commit()
-            import ipdb; ipdb.set_trace()
         return browsers
 
     # builds the browser parameter vectors, scaling all parameters to the number of browsers
