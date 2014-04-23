@@ -118,7 +118,7 @@ if __name__ == '__main__':
             # data[x][2] is entry_id
             url_crawl_limit = 0
             for item in data:
-                if url_crawl_limit == 50:
+                if url_crawl_limit == 11:
                     break
                 url_dict[item[2]] = {
                     'publisher': item[0],

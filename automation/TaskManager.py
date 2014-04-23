@@ -144,14 +144,18 @@ class TaskManager:
         self.data_aggregator.join()
 
     # closes the TaskManager for good and frees up memory
-    #TODO: write 1 to finished field for each browser (crawl_id)
     def close(self):
+        # Update crawl table for each browser (crawl_id) to show successful finish
+        cur = self.db.cursor()
         for browser in self.browsers:
             if browser.command_thread is not None:
                 browser.command_thread.join()
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 subprocess.call(["rm", "-r", browser.current_profile_path])
+            cur.execute("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
+                        (browser.crawl_id,) )
+            self.db.commit()
         self.kill_data_aggregator()
         self.db.close()
 
