@@ -4,6 +4,7 @@ import os.path
 from os.path import expanduser
 import sqlite3
 import time
+import random
 
 def sitecrawler(d, user, db_loc, db_name, desc):
     """
@@ -29,6 +30,9 @@ def sitecrawler(d, user, db_loc, db_name, desc):
     write_profile = False
     profile_tar_loc = None
 
+    # I want my label to be 'profile generation - <profile we're creating>'
+    description = desc + ' - ' + str(profile_dump_loc)
+
     # Does the profile tar location exist?
     # If it does, then we're safe to pass it as the profile_tar argument to the  Task Manager
     if os.path.exists(profile_dump_loc):
@@ -36,7 +40,7 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     # initialize crawler
     manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
-                                      headless=False, description=desc, num_browsers=1,
+                                      headless=False, description=description, num_browsers=1,
                                       random_attributes=True, disable_flash=True)
     # Traverse the category links
     traversed_list = list()
@@ -46,7 +50,7 @@ def sitecrawler(d, user, db_loc, db_name, desc):
         except:
             print("Couldn't navigate to %s" % (link[0]))
             continue
-        time.sleep(3)
+        time.sleep(5)
         traversed_list.append(link)
         #import ipdb; ipdb.set_trace()
 
@@ -114,15 +118,12 @@ if __name__ == '__main__':
             # data[x][0] is publisher
             # data[x][1] is URL
             # data[x][2] is entry_id
-            url_crawl_limit = 0
-            for item in data:
-                if url_crawl_limit == 15:
-                    break
-                url_dict[item[2]] = {
-                    'publisher': item[0],
-                    'url': item[1],
+            for i in range(0, 25):
+                row = random.choice(data)
+                url_dict[row[2]] = {
+                    'publisher': row[0],
+                    'url': row[1],
                     'category': category
                 }
-                url_crawl_limit += 1
             sitecrawler(url_dict, user_num, db_loc, db_name, desc)
             #import ipdb; ipdb.set_trace()
