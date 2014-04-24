@@ -42,7 +42,7 @@ class TaskManager:
 
         # Store parameters for the database
         self.parameters = (profile_tar, browser, headless, proxy, fourthparty,
-                            browser_debugging, timeout)
+                            browser_debugging, timeout, disable_flash)
 
         # sets up the crawl data database
         self.db = sqlite3.connect(db_location + db_name)
@@ -89,9 +89,11 @@ class TaskManager:
 
             cur = self.db.cursor()
             cur.execute("INSERT INTO crawl (task_id, profile, browser, \
-                            headless, proxy, fourthparty, debugging, timeout) VALUES (?,?,?,?,?,?,?,?)",
+                            headless, proxy, fourthparty, debugging, timeout, disable_flash) \
+                            VALUES (?,?,?,?,?,?,?,?,?)",
                                  (self.task_id, self.parameters[0], self.parameters[1], self.parameters[2],
-                                 self.parameters[3], self.parameters[4], self.parameters[5], self.parameters[6]) )
+                                 self.parameters[3], self.parameters[4], self.parameters[5], self.parameters[6],
+                                 self.parameters[7]) )
             self.db.commit()
             crawl_id = cur.lastrowid
             browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))
@@ -180,9 +182,14 @@ class TaskManager:
                 if command_executed:
                     break
                 time.sleep(0.01)
+
         elif index >= 0 and index < len(self.browsers):
             #send the command to this specific browser
-            self.start_thread(self.browsers[index], command, timeout)
+            while True:
+                if self.browsers[index].ready():
+                    self.start_thread(self.browsers[index], command, timeout)
+                    break
+                time.sleep(0.01)
         elif index == '*':
             #send the command to all browsers
             command_executed = [False] * len(self.browsers)
@@ -245,7 +252,7 @@ class TaskManager:
             break
         if not command_succeeded:  # reboots since BrowserManager is down
             self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                                 (browser.crawl_id, command[0], command[1], False) ))
+                             (browser.crawl_id, command[0], command[1], False) ))
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS

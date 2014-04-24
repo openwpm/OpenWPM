@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS crawl (
     fourthparty VARCHAR(200),
     debugging VARCHAR(200),
     timeout INTEGER,
+    disable_flash VARCHAR(200),
     extensions VARCHAR(200),
     screen_res VARCHAR(50),
     ua_string VARCHAR(200),

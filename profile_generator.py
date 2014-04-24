@@ -37,7 +37,7 @@ def sitecrawler(d, user, db_loc, db_name, desc):
     # initialize crawler
     manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
                                       headless=False, description=desc, num_browsers=1,
-                                      random_attributes=True)
+                                      random_attributes=True, disable_flash=True)
     # Traverse the category links
     traversed_list = list()
     for link in urls:
@@ -79,7 +79,6 @@ if __name__ == '__main__':
                      'crime, law and justice',
                      'disaster and accident',
                      'economy, business and finance',
-                     'education',
                      'environmental issue',
                      'health',
                      'human interest',
@@ -90,8 +89,7 @@ if __name__ == '__main__':
                      'science and technology',
                      'social issue',
                      'sport',
-                     'unrest, conflicts and war',
-                     'weather'
+                     'unrest, conflicts and war'
                      ]
 
     # Pull CL arguments
@@ -118,7 +116,7 @@ if __name__ == '__main__':
             # data[x][2] is entry_id
             url_crawl_limit = 0
             for item in data:
-                if url_crawl_limit == 11:
+                if url_crawl_limit == 15:
                     break
                 url_dict[item[2]] = {
                     'publisher': item[0],
