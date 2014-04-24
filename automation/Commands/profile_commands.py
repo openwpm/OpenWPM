@@ -1,5 +1,4 @@
-import datetime
-import glob
+import tempfile
 import os
 import subprocess
 import tarfile
@@ -16,7 +15,7 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None):
     if not os.path.exists(tar_location):
         os.makedirs(tar_location)
 
-    # see if this file exists first, if it does
+    # see if this file exists first
     # if it does, delete it before we try to save the current session
     if os.path.isfile(tar_location + 'profile.tar.gz'):
         subprocess.call(["rm", tar_location + 'profile.tar.gz'])
@@ -27,6 +26,7 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None):
         if os.path.isfile(browser_profile_folder + db):
             tar.add(browser_profile_folder + db, arcname=db)
     tar.close()
+
 
     # browser_settings stores additional profile config parameters
     # e.g. screen_res, plugin sets, user_agent string

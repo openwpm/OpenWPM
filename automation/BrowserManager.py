@@ -168,7 +168,7 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # reads in the command tuple of form (command, arg0, arg1, arg2, ..., argN) where N is variable
         command = command_queue.get()
         print "EXECUTING COMMAND: " + str(command)
-        
+
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
