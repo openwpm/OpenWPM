@@ -134,34 +134,26 @@ def extract_known_cookies_from_db(db_name, cookie_dict):
     con.close()
     return found_cookies
 
-# given a dictionary of persistent ids, goes through a database
-# and returns a dictionary with the persistent ids and their unique values
-# in the database, but only returns the first seen cookie for each ID (the assumed owner)
-def extract_first_seen_from_db(db_name, cookie_dict):
+#Takes in a known cookie db and attaches the best guess at the 
+#"owner" of an ID by looking for first use. This is probably quite
+#inefficient.
+def extract_cookie_owner_from_db(db_name, known_cookies):
     con = lite.connect(db_name)
     cur = con.cursor()
 
-    found_cookies = {}
-    for domain, name, value, accessed in cur.execute('SELECT domain, name, value, accessed FROM cookies'):
-        domain = domain if len(domain) == 0 or domain[0] != "." else domain[1:]
-
-        # first search for most basic cookies
-        if domain in cookie_dict and name in cookie_dict[domain]:
-            found_cookies[(domain, name)] = value
-
-            # next, look for potential nested cookies
-            if "=" in value:
-                for delimiter in ["&", ":"]:
-                    parts = value.split(delimiter)
-                    for part in parts:
-                        params = part.split("=")
-                        if len(params) == 2 and name + "#" + params[0] in cookie_dict[domain]:
-                            found_cookies[(domain, name + "#" + params[0])] = params[1]
+    for cookie in known_cookies:
+        value = known_cookies[cookie]
+        cur.execute('SELECT domain FROM cookies WHERE value LIKE ? ORDER BY accessed LIMIT 1', ('%'+value+'%', ))
+        owner = cur.fetchone()[0]
+        owner = owner if len(owner) == 0 or owner[0] != "." else owner[1:]
+        known_cookies[cookie] = (value, owner)
+    
     con.close()
-    return found_cookies
+    return known_cookies
 
 if __name__ == "__main__":
     c1 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl1.sqlite")
     c2 = extract_cookie_candidates_from_db("/home/christian/Desktop/crawl2.sqlite")
     extracted = extract_persistent_ids([c1, c2])
     known = extract_known_cookies_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)
+    known_owner = extract_cookie_owner_from_db("/home/christian/Desktop/crawl1.sqlite", extracted)
