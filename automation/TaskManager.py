@@ -16,7 +16,6 @@ import time
 # General paradigm is for the TaskManager to send commands and wait for response and/or restart workers if necessary
 # Compared to light wrapper around WebDriver, provides robustness and timeout functionality
 #TODO: improve db management in Task manager - the connection doesn't need to remain open
-#TODO: sensibly handle crawl descriptions and saving configuration parameters
 #TODO: clean up this documentation to match the refactor
 
 # <db_location> is the absolute path of the folder in which we want to build our crawl data DB
