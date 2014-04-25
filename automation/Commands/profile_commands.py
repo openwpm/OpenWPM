@@ -3,6 +3,7 @@ import os
 import subprocess
 import tarfile
 import cPickle
+import re
 
 # Library for managing profile folders (for now, profile folder I/O)
 
@@ -64,7 +65,21 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None,
     # backup and tar profile
     tar = tarfile.open(tar_location + tar_name, 'w:gz')
     if full_profile: #backup everything
-        tar.add(browser_profile_folder, arcname='')
+        dir_ignore = set(['extensions','x86','amd64','Cache'])
+        file_ignore = re.compile(r'(browser_log\d*\.txt)|(driver_log\d*\.txt)|(profiler_log\d*\.txt)|(lock)|(\.parent_lock)|(extensions\.ini)|(extensions\.json)')
+        #Write 1 to cache
+        with open(os.path.join(browser_profile_folder,'_CACHE_CLEAN_'),'w') as f:
+            f.write('1')
+        for root, dirs, files in os.walk(browser_profile_folder):
+            if len(set(re.split('/',root)).intersection(dir_ignore)) > 0:
+                continue
+            for file in files:
+                if re.match(file_ignore, file):
+                    continue
+                full_path = os.path.join(root,file)
+                tar.add(full_path, arcname=re.sub(browser_profile_folder,'',full_path))
+        #for path in os.path.walk(tar_location + tar_name):
+        #tar.add(browser_profile_folder, arcname='')
     else: #only backup specified databases
         for db in ["cookies.sqlite", "cookies.sqlite-shm", "cookies.sqlite-wal",
                    "places.sqlite", "places.sqlite-shm", "places.sqlite-wal"]:
@@ -100,6 +115,7 @@ def load_profile(browser_profile_folder, tar_location, load_flash=False):
     f = opener(browser_profile_folder + tar_name, mode)
     f.extractall(browser_profile_folder)
     f.close()
+    subprocess.call(["rm", browser_profile_folder + tar_name])
 
     # clear and load flash cookies
     if load_flash:
