@@ -40,11 +40,6 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         query = sock.queue.get()
         curr.execute(query[0], query[1])
 
-        #TODO: REMOVE THIS
-        if counter > 30:
-            curr.execute("lskdjfklsajdlfjasldfjlasdfjlasjdflas")
-            db.commit()
-
         # batch commit if necessary
         counter += 1
         if counter >= commit_loop:
