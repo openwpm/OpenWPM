@@ -2,6 +2,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.action_chains import ActionChains
+import random
 import time
 
 # Library for core WebDriver-based browser commands
@@ -18,6 +20,19 @@ def get_website(url, webdriver, proxy_queue):
                 time.sleep(0.001)
 
         webdriver.get(url)
+
+        # Add bot detection mitigation techniques
+        # TODO: make this an option in the future?
+        # move the mouse to random positions a number of times
+        for i in range(0,10):
+            x = random.randrange(0,500)
+            y = random.randrange(0,500)
+            action = ActionChains(webdriver)
+            action.move_by_offset(x,y)
+            action.perform
+
+        # scroll to bottom of page
+        webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # This is a fix for when selenium claims it is done loading but actually isn't
         # TODO: get the correct wait time here?

@@ -42,6 +42,9 @@ def sitecrawler(d, user, db_loc, db_name, desc):
     manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
                                       headless=False, description=description, num_browsers=1,
                                       random_attributes=True, disable_flash=True)
+
+    import ipdb; ipdb.set_trace()
+
     # Traverse the category links
     traversed_list = list()
     for link in urls:
