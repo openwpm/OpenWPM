@@ -82,14 +82,14 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None,
 
 
 # loads a zipped cookie-based profile stored in <tar_location> and 
-# unzips it to <browser_profile_folder>
-def load_profile(browser_profile_folder, tar_location,
-                 load_flash=True, full_profile=False):
+# unzips it to <browser_profile_folder>. This will load whatever profile
+# is in the folder, either full_profile.tar.gz or profile.tar.gz
+def load_profile(browser_profile_folder, tar_location, load_flash=False):
     # ensures that folder paths end with slashes
     browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") else browser_profile_folder + "/"
     tar_location = tar_location if tar_location.endswith("/") else tar_location + "/"
 
-    if full_profile:
+    if os.path.isfile(tar_location + 'full_profile.tar.gz'):
         tar_name = 'full_profile.tar.gz'
     else:
         tar_name = 'profile.tar.gz'
