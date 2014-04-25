@@ -21,8 +21,8 @@ def get_website(url, webdriver, proxy_queue):
 
         # This is a fix for when selenium claims it is done loading but actually isn't
         # TODO: get the correct wait time here?
-        element = WebDriverWait(webdriver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        element.send_keys("Keys.ESCAPE") #Make sure it is really done loading
+        # element = WebDriverWait(webdriver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        # element.send_keys("Keys.ESCAPE") #Make sure it is really done loading
 
     except TimeoutException:
         pass
