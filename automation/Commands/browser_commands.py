@@ -34,6 +34,9 @@ def get_website(url, webdriver, proxy_queue):
         # scroll to bottom of page
         webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
+        # random wait time
+        time.sleep(random.randrange(1,7))
+
         # This is a fix for when selenium claims it is done loading but actually isn't
         # TODO: get the correct wait time here?
         # element = WebDriverWait(webdriver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
