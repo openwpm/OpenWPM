@@ -30,9 +30,6 @@ def sitecrawler(d, user, db_loc, db_name, desc):
     write_profile = False
     profile_tar_loc = None
 
-    # I want my label to be 'profile generation - <profile we're creating>'
-    description = desc + ' - ' + str(profile_dump_loc)
-
     # Does the profile tar location exist?
     # If it does, then we're safe to pass it as the profile_tar argument to the  Task Manager
     if os.path.exists(profile_dump_loc):
@@ -40,10 +37,8 @@ def sitecrawler(d, user, db_loc, db_name, desc):
 
     # initialize crawler
     manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
-                                      headless=False, description=description, num_browsers=1,
+                                      headless=False, description=desc, num_browsers=1,
                                       random_attributes=True, disable_flash=True)
-
-    import ipdb; ipdb.set_trace()
 
     # Traverse the category links
     traversed_list = list()
@@ -55,8 +50,6 @@ def sitecrawler(d, user, db_loc, db_name, desc):
             continue
         time.sleep(5)
         traversed_list.append(link)
-        #import ipdb; ipdb.set_trace()
-
 
     # Make sure we actually traversed some URLs before writing the profile
     # This prevents us from writing the profile or DB when we are debugging
@@ -107,11 +100,11 @@ if __name__ == '__main__':
     home = expanduser("~")
     db_loc = home + '/Desktop/'
     db_name = 'profile_generator.sqlite'
-    desc = 'profile generation'
     conn = sqlite3.connect(db_loc + db_name)
     cur = conn.cursor()
 
     for publisher in pub_list:
+        control_dict = dict()
         for category in category_list:
             url_dict = dict()
             cur.execute('SELECT publisher, article_url, entry_id, article_topic FROM RSSEntries as r, \
@@ -121,12 +114,42 @@ if __name__ == '__main__':
             # data[x][0] is publisher
             # data[x][1] is URL
             # data[x][2] is entry_id
-            for i in range(0, 25):
-                row = random.choice(data)
+            row_list = list()
+            try:
+                # for those categories with more than 50 URLs
+                # sample without replacement
+                row_list = random.sample(data, 50)
+            except:
+                # for those categories with less than 50 URLs
+                # sample with replacement
+                for i in range(0, 50):
+                    row_list.append(random.choice(data))
+
+            i = 0
+            for row in row_list:
+                # append these samples to the current profile crawl_dict
                 url_dict[row[2]] = {
                     'publisher': row[0],
                     'url': row[1],
                     'category': category
                 }
+                # append first three samples to the publisher control profile dict
+                if i < 3:
+                    control_dict[row[2]] = {
+                        'publisher': row[0],
+                        'url': row[1],
+                        'category': 'CONTROL'
+                    }
+                    i += 1
+            # Update the description to be useful in the database task table
+            desc = 'profile generation' + ' | ' + publisher + ' | ' + category + ' | ' + 'user# ' + str(user_num)
+
+            # Crawl the sites for this publisher/category pair
             sitecrawler(url_dict, user_num, db_loc, db_name, desc)
-            #import ipdb; ipdb.set_trace()
+
+        # Create control profile
+        desc = 'profile generation' + ' | ' + publisher + ' | ' + 'CONTROL' + ' | ' + 'user# ' + str(user_num)
+        # Crawl the sites for this publisher/CONTROL pair
+        sitecrawler(control_dict, user_num, db_loc, db_name, desc)
+
+#import ipdb; ipdb.set_trace()
