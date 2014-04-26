@@ -144,7 +144,7 @@ class TaskManager:
         self.aggregator_status_queue.put("DIE")
         self.data_aggregator.join()
 
-    # closes the TaskManager for good and frees up memory
+    # wait for all child processes to finish executing commands and closes everything
     def close(self):
         # Update crawl table for each browser (crawl_id) to show successful finish
         cur = self.db.cursor()
@@ -157,8 +157,9 @@ class TaskManager:
             cur.execute("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
                         (browser.crawl_id,) )
             self.db.commit()
-        self.kill_data_aggregator()
-        self.db.close()
+        self.db.close() #close db connection
+        self.sock.close() #close socket to data aggregator
+        self.kill_data_aggregator() 
 
     # CRAWLER COMMAND CODE
 

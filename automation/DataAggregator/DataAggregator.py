@@ -13,7 +13,7 @@ import time
 # <status_queue> is a queue connect to the TaskManager used for
 # <commit_loop> is the number of execution statements that should be made before a commit (used for speedup)
 
-def DataAggregator(db_loc, status_queue, commit_loop=1):
+def DataAggregator(db_loc, status_queue, commit_loop=100):
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()
@@ -38,7 +38,11 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         # executes a query of form (template_string, arguments)
         # query is of form (template_string, arguments)
         query = sock.queue.get()
-        curr.execute(query[0], query[1])
+        try:
+            curr.execute(query[0], query[1])
+        except OperationalError:
+            print "ERROR: Unsupported query" + query[0] + " " + query[1]
+            pass
 
         # batch commit if necessary
         counter += 1

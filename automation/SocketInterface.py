@@ -4,8 +4,8 @@ import socket
 import struct
 import cPickle
 
-#TODO - Implement a kill command for the server socket
-#TODO - Add in thread joins and make sure everything exits cleanly
+#TODO - Implement a cleaner shutdown for server socket
+# see: https://stackoverflow.com/questions/1148062/python-socket-accept-blocks-prevents-app-from-quitting
 
 class serversocket:
     '''
@@ -24,6 +24,7 @@ class serversocket:
     def start_accepting(self):
         ''' Start the listener thread '''
         thread = threading.Thread(target=self._accept, args=())
+        thread.setDaemon(True) #stops from blocking shutdown
         thread.start()
 
     def _accept(self):
@@ -61,6 +62,9 @@ class serversocket:
                 raise RuntimeError("socket connection broken")
             msg = msg + chunk
         return msg
+
+    def close(self):
+        self.sock.close()
 
 class clientsocket:
     def __init__(self):

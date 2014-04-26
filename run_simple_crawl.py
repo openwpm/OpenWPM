@@ -71,7 +71,7 @@ def main(argv):
         "fourthparty": False,
         "proxy": True,
         "headless": False,
-        "timeout": 5.0,
+        "timeout": 30.0,
         "load_folder": None,
         "dump_folder": None,
         "wipe": False
