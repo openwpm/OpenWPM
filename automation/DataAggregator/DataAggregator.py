@@ -6,7 +6,6 @@ import time
 # Executes queries until being told to die (then it will finish work and shut down)
 # This process should never be terminated un-gracefully
 # Currently uses SQLite but may move to different platform
-# TODO: add killing of the serversocket once supported
 
 # <db_loc> is the absolute path of the DB's current location
 # <query_queue> is data input queue: for now, passed query strings (TODO: more involved data manipulations)
@@ -53,3 +52,4 @@ def DataAggregator(db_loc, status_queue, commit_loop=100):
     # finishes work and gracefully stops
     db.commit()
     db.close()
+    sock.close()
