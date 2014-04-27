@@ -80,7 +80,6 @@ class Browser:
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
             crashed_profile_path = self.current_profile_path
-            self.current_profile_path = None
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp() + "/"
             profile_commands.dump_profile(crashed_profile_path, tempdir, self.browser_settings, full_profile=True)
