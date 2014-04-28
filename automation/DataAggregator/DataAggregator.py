@@ -1,5 +1,6 @@
 from ..SocketInterface import serversocket
 from sqlite3 import OperationalError
+from sqlite3 import ProgrammingError
 import sqlite3
 import time
 
@@ -41,7 +42,12 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         try:
             curr.execute(query[0], query[1])
         except OperationalError:
-            print "ERROR: Unsupported query" + query[0] + " " + query[1]
+            #print "ERROR: Unsupported query" + query[0] + " " + query[1]
+            print "ERROR: Unsupported query"
+            pass
+        except ProgrammingError:
+            #print "ERROR: Unsupported query" + query[0] + " " + query[1]
+            print "ERROR: Unsupported query"
             pass
 
         # batch commit if necessary
