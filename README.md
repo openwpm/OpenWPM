@@ -18,5 +18,7 @@ If you need flash on Ubuntu 14.04 64-bit Amazon EC2 instance, run the following:
 
 sudo sh -c 'echo "deb http://archive.canonical.com/ubuntu/ trusty partner" >> \
 /etc/apt/sources.list.d/canonical\_partner.list'
+
 sudo apt-get update
+
 sudo apt-get install adobe-flashplugin
