@@ -25,13 +25,21 @@ def process_general_mitm_response(db_socket, crawl_id, top_url, msg):
     else:
         referrer = ''
 
+    if len(msg.headers['location']) > 0:
+        location = msg.headers['location'][0]
+    else:
+        location = ''
+
+
+    # currently, either log request as a cookie or standard request
+    # in the future, may want to add JavaScript table
     if msg.get_cookies() is not None:
         process_cookies(db_socket, crawl_id, top_url, referrer, msg.get_cookies())
 
     else:
-        data = (crawl_id, msg.request.get_url(), msg.request.method, referrer, msg.code, msg.msg, top_url)
+        data = (crawl_id, msg.request.get_url(), msg.request.method, referrer, msg.code, msg.msg, location, top_url)
         db_socket.send(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
-                      "response_status_text, top_url) VALUES (?,?,?,?,?,?,?)", data))
+                      "response_status_text, location, top_url) VALUES (?,?,?,?,?,?,?,?)", data))
 
 # returns canonical date-time string
 def parse_date(date):
