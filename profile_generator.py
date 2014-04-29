@@ -6,7 +6,7 @@ import sqlite3
 import time
 import random
 
-def sitecrawler(d, user, db_loc, db_name, desc):
+def sitecrawler(d, num_users, db_loc, db_name, desc):
     """
     Takes publisher:url dict as input
     Tries to load the preexisting profile specified
@@ -26,29 +26,27 @@ def sitecrawler(d, user, db_loc, db_name, desc):
     for key in d:
         urls.append((d[key]['url'], key))
 
-    profile_dump_loc = db_loc + 'profiles/news/' + pub + '/' + cat + '/' + str(user) + '/'
-    write_profile = False
-    profile_tar_loc = None
+    user_list = range(num_users)
+    profile_dump_list = list()
+    for user in user_list:
+        profile_dump_list.append(db_loc + 'profiles/news/' + pub + '/' + cat + '/' + str(user) + '/')
 
-    # Does the profile tar location exist?
-    # If it does, then we're safe to pass it as the profile_tar argument to the  Task Manager
-    if os.path.exists(profile_dump_loc):
-        profile_tar_loc = profile_dump_loc
+    write_profile = False
 
     # initialize crawler
-    manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_tar_loc,
-                                      headless=False, description=desc, num_browsers=1,
+    manager = TaskManager.TaskManager(db_loc, db_name, profile_tar=profile_dump_list,
+                                      headless=True, description=desc, num_browsers=len(profile_dump_list),
                                       random_attributes=True, disable_flash=True)
 
     # Traverse the category links
     traversed_list = list()
     for link in urls:
         try:
-            manager.get(link[0])
+            manager.get(link[0], index='*')
         except:
             print("Couldn't navigate to %s" % (link[0]))
             continue
-        time.sleep(5)
+        #time.sleep(5)
         traversed_list.append(link)
 
     # Make sure we actually traversed some URLs before writing the profile
@@ -57,14 +55,15 @@ def sitecrawler(d, user, db_loc, db_name, desc):
         write_profile = True
 
     if write_profile == True:
-        print("Saving profile: %s to %s" % (category, profile_dump_loc) )
-        try:
-            manager.dump_profile(profile_dump_loc, index=0)
-            # log completed creation of publisher and category
-            print("Completed Creation of Profile: %s %s" % (publisher, category))
-        except:
-            print("Error in crawl, did not create new profile for: %s" % (profile_dump_loc))
-            print("URLs for %s: %s" % (profile_dump_loc, str(urls)))
+        for i in range(len(profile_dump_list)):
+            try:
+                print("Saving profile: %s to %s" % (category, profile_dump_list[i]) )
+                manager.dump_profile(profile_dump_list[i], index=i)
+                # log completed creation of publisher and category
+                print("Completed Creation of Profile: %s %s" % (publisher, category))
+            except:
+                print("Error in crawl, did not create new profile for: %s" % (profile_dump_list[i]))
+                print("URLs for %s: %s" % (profile_dump_list[i], str(urls)))
 
     # Close the crawler
     manager.close()
@@ -74,6 +73,7 @@ if __name__ == '__main__':
     # Read from RSSEntries table in DB
     # Extract information into a dict
     # Execute crawl
+    # 9 publishers, 15 cats each
     pub_list = ['FN', 'CNN', 'HP', 'DM', 'BBC', 'GUARDIAN', 'NBC', 'USA', 'TIME']
     category_list = ['arts, culture and entertainment',
                      'crime, law and justice',
@@ -92,9 +92,8 @@ if __name__ == '__main__':
                      'unrest, conflicts and war'
                      ]
 
-    # Pull CL arguments
-    if len(sys.argv) >= 1:
-        user_num = int(sys.argv[1])
+    # How many users we want to simulate per profile/category pair
+    num_users = 18
 
     # Get links from DB for this publisher:category pair
     home = expanduser("~")
@@ -142,14 +141,14 @@ if __name__ == '__main__':
                     }
                     i += 1
             # Update the description to be useful in the database task table
-            desc = 'profile generation' + ' | ' + publisher + ' | ' + category + ' | ' + 'user# ' + str(user_num)
+            desc = 'profile generation' + ' | ' + publisher + ' | ' + category
 
             # Crawl the sites for this publisher/category pair
-            sitecrawler(url_dict, user_num, db_loc, db_name, desc)
+            sitecrawler(url_dict, num_users, db_loc, db_name, desc)
 
         # Create control profile
-        desc = 'profile generation' + ' | ' + publisher + ' | ' + 'CONTROL' + ' | ' + 'user# ' + str(user_num)
         # Crawl the sites for this publisher/CONTROL pair
-        sitecrawler(control_dict, user_num, db_loc, db_name, desc)
+        desc = 'profile generation' + ' | ' + publisher + ' | ' + 'CONTROL'
+        sitecrawler(control_dict, num_users, db_loc, db_name, desc)
 
 #import ipdb; ipdb.set_trace()
