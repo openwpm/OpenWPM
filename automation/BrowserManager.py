@@ -40,7 +40,8 @@ class Browser:
             'debugging': browser_debugging,
             'crawl_id': crawl_id,
             'profile_tar': profile_tar,
-            'random_attributes': random_attributes
+            'random_attributes': random_attributes,
+            'timeout': timeout
         }
         
         # Queues and process IDs for BrowserManager
