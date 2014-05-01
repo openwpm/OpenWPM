@@ -4,6 +4,8 @@
 
 import datetime
 from dateutil import parser
+import base64
+import zlib
 
 # msg is the message object given by MITM
 # (crawl_id, url, method, referrer, top_url)
@@ -13,8 +15,8 @@ def process_general_mitm_request(db_socket, crawl_id, top_url, msg):
     else:
         referrer = ''
 
-    data = (crawl_id, msg.get_url(), msg.method, referrer, top_url)
-    db_socket.send(("INSERT INTO http_requests (crawl_id, url, method, referrer, top_url) VALUES (?,?,?,?,?)", data))
+    data = (crawl_id, msg.get_url(), msg.method, referrer, str(msg.headers), top_url, str(datetime.datetime.now()))
+    db_socket.send(("INSERT INTO http_requests (crawl_id, url, method, referrer, headers, top_url, time_stamp) VALUES (?,?,?,?,?,?,?)", data))
 
 
 # msg is the message object given by MITM
@@ -30,16 +32,15 @@ def process_general_mitm_response(db_socket, crawl_id, top_url, msg):
     else:
         location = ''
 
-
     # currently, either log request as a cookie or standard request
     # in the future, may want to add JavaScript table
     if msg.get_cookies() is not None:
         process_cookies(db_socket, crawl_id, top_url, referrer, msg.get_cookies())
 
     else:
-        data = (crawl_id, msg.request.get_url(), msg.request.method, referrer, msg.code, msg.msg, location, top_url)
+        data = (crawl_id, msg.request.get_url(), msg.request.method, referrer, msg.code, msg.msg, str(msg.headers), location, top_url, str(datetime.datetime.now()))
         db_socket.send(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
-                      "response_status_text, location, top_url) VALUES (?,?,?,?,?,?,?,?)", data))
+                      "response_status_text, headers, location, top_url, time_stamp) VALUES (?,?,?,?,?,?,?,?,?,?)", data))
 
 # returns canonical date-time string
 def parse_date(date):

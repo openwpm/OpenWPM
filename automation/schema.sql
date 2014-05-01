@@ -46,7 +46,9 @@ CREATE TABLE IF NOT EXISTS http_requests (
     url VARCHAR(500) NOT NULL,
     method VARCHAR(500) NOT NULL,
     referrer VARCHAR(500) NOT NULL,
-    top_url VARCHAR[500] NOT NULL);
+    headers VARCHAR(500) NOT NULL,
+    top_url VARCHAR(500) NOT NULL,
+    time_stamp VARCHAR(500) NOT NULL);
 
 /* TODO: add publix_suffix to db structure */
 /* TODO: link with headers */
@@ -59,8 +61,10 @@ CREATE TABLE IF NOT EXISTS http_responses (
     referrer VARCHAR(500) NOT NULL,
     response_status INTEGER NOT NULL,
     response_status_text VARCHAR(500) NOT NULL,
+    headers VARCHAR(500) NOT NULL,
     location VARCHAR(500) NOT NULL,
-    top_url VARCHAR[500] NOT NULL);
+    top_url VARCHAR(500) NOT NULL,
+    time_stamp VARCHAR(500) NOT NULL);
 
 
 CREATE TABLE IF NOT EXISTS cookies (
