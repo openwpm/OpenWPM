@@ -67,10 +67,19 @@ class Browser:
 
     # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
     def kill_browser_manager(self):
-        os.kill(self.browser_manager.pid, signal.SIGKILL)
+        try:
+            os.kill(self.browser_manager.pid, signal.SIGKILL)
+        except OSError:
+            print "Browser manager process already dead"
         if self.display_pid is not None:
-            os.kill(self.display_pid, signal.SIGKILL)
-        os.kill(self.browser_pid, signal.SIGKILL)
+            try:
+                os.kill(self.display_pid, signal.SIGKILL)
+            except OSError:
+                print "Display process already dead"
+        try:
+            os.kill(self.browser_pid, signal.SIGKILL)
+        except OSError:
+            print "Browser process already dead"
 
     # sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
     # loads associated user profile if necessary
