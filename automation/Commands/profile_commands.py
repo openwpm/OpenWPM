@@ -108,28 +108,33 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None,
 # unzips it to <browser_profile_folder>. This will load whatever profile
 # is in the folder, either full_profile.tar.gz or profile.tar.gz
 def load_profile(browser_profile_folder, tar_location, load_flash=False):
-    # ensures that folder paths end with slashes
-    browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") else browser_profile_folder + "/"
-    tar_location = tar_location if tar_location.endswith("/") else tar_location + "/"
+    try:
+        # ensures that folder paths end with slashes
+        browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") else browser_profile_folder + "/"
+        tar_location = tar_location if tar_location.endswith("/") else tar_location + "/"
 
-    if os.path.isfile(tar_location + 'full_profile.tar.gz'):
-        tar_name = 'full_profile.tar.gz'
-    else:
-        tar_name = 'profile.tar.gz'
+        if os.path.isfile(tar_location + 'full_profile.tar.gz'):
+            tar_name = 'full_profile.tar.gz'
+        else:
+            tar_name = 'profile.tar.gz'
 
-    # Copy and untar the loaded profile
-    subprocess.call(["cp", tar_location + tar_name, browser_profile_folder])
-    opener, mode = tarfile.open, 'r:gz'
-    f = opener(browser_profile_folder + tar_name, mode)
-    f.extractall(browser_profile_folder)
-    f.close()
-    subprocess.call(["rm", browser_profile_folder + tar_name])
+        # Copy and untar the loaded profile
+        subprocess.call(["cp", tar_location + tar_name, browser_profile_folder])
+        opener, mode = tarfile.open, 'r:gz'
+        f = opener(browser_profile_folder + tar_name, mode)
+        f.extractall(browser_profile_folder)
+        f.close()
+        subprocess.call(["rm", browser_profile_folder + tar_name])
 
-    # clear and load flash cookies
-    if load_flash:
-        load_flash_files(tar_location)
+        # clear and load flash cookies
+        if load_flash:
+            load_flash_files(tar_location)
 
-    # load the browser settings
-    browser_settings = load_browser_settings(tar_location)
+        # load the browser settings
+        browser_settings = load_browser_settings(tar_location)
+
+    except Exception as ex:
+        print "Error loading profile: " , str(ex)
+        browser_settings = None
 
     return browser_settings

@@ -40,8 +40,8 @@ class TaskManager:
         self.db_name = db_name
 
         # Store parameters for the database
-        self.parameters = (profile_tar, browser, headless, proxy, fourthparty,
-                            browser_debugging, timeout, disable_flash)
+        #self.parameters = (profile_tar, browser, headless, proxy, fourthparty,
+        #                    browser_debugging, timeout, disable_flash)
 
         # sets up the crawl data database
         self.db = sqlite3.connect(db_location + db_name)
@@ -90,9 +90,9 @@ class TaskManager:
             cur.execute("INSERT INTO crawl (task_id, profile, browser, \
                             headless, proxy, fourthparty, debugging, timeout, disable_flash) \
                             VALUES (?,?,?,?,?,?,?,?,?)",
-                                 (self.task_id, self.parameters[0], self.parameters[1], self.parameters[2],
-                                 self.parameters[3], self.parameters[4], self.parameters[5], self.parameters[6],
-                                 self.parameters[7]) )
+                                 (self.task_id, browser_params[i][6], browser_params[i][0], browser_params[i][1],
+                                 browser_params[i][2], browser_params[i][3], browser_params[i][5], browser_params[i][7],
+                                 browser_params[i][4]) )
             self.db.commit()
             crawl_id = cur.lastrowid
             browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))

@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS http_responses (
     referrer VARCHAR(500) NOT NULL,
     response_status INTEGER NOT NULL,
     response_status_text VARCHAR(500) NOT NULL,
+    location VARCHAR(500) NOT NULL,
     top_url VARCHAR[500] NOT NULL);
 
 
