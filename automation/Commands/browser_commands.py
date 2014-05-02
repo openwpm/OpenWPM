@@ -7,6 +7,10 @@ from selenium.webdriver.common.action_chains import ActionChains
 import random
 import time
 
+from ..SocketInterface import clientsocket
+from utils.lso import get_flash_cookies
+from utils.firefox_profile import get_localStorage, get_cookies, sleep_until_sqlite_checkpoint
+
 # Library for core WebDriver-based browser commands
 
 # goes to <url> using the given <webdriver> instance
@@ -28,9 +32,10 @@ def get_website(url, webdriver, proxy_queue):
     
     # Close modal dialog if exists
     try:
-        WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
+        WebDriverWait(webdriver, .5).until(EC.alert_is_present())
         alert = webdriver.switch_to_alert()
         alert.dismiss()
+        time.sleep(1)
     except TimeoutException:
         pass
 
@@ -47,7 +52,7 @@ def get_website(url, webdriver, proxy_queue):
     time.sleep(5)
 
     # Create a new tab and kill this one to stop traffic
-    # NOTE: This code is firefox-specific
+    # NOTE: This code is firefox specific
     switch_to_new_tab = ActionChains(webdriver)
     switch_to_new_tab.key_down(Keys.CONTROL + 't') # open new tab
     switch_to_new_tab.key_up(Keys.CONTROL + 't')
@@ -56,12 +61,8 @@ def get_website(url, webdriver, proxy_queue):
     switch_to_new_tab.key_down(Keys.CONTROL + 'w') # close tab
     switch_to_new_tab.key_up(Keys.CONTROL + 'w')
     switch_to_new_tab.perform()
-    time.sleep(2)
+    time.sleep(5)
     
-    # Wait for SQLite to write to disk
-
-    # Tag storage vector changes
-
     # Add bot detection mitigation techniques
     # TODO: make this an option in the future?
     # move the mouse to random positions a number of times
@@ -77,3 +78,42 @@ def get_website(url, webdriver, proxy_queue):
 
     # random wait time
     #time.sleep(random.randrange(1,7))
+
+def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address):
+    # Set up a connection to DataAggregator
+    sock = clientsocket()
+    sock.connect(*db_socket_address)
+
+    # Wait for SQLite Checkpointing - never happens when browser open
+    # sleep_until_sqlite_checkpoint(profile_dir)
+
+    # Flash cookies
+    flash_cookies = get_flash_cookies(start_time)
+    for cookie in flash_cookies:
+        query = ("INSERT INTO flash_cookies (page_url, domain, filename, local_path, \
+                  key, content) VALUES (?,?,?,?,?,?)", 
+                  (top_url, cookie.domain, cookie.filename, cookie.local_path, 
+                  cookie.key, cookie.content))
+        sock.send(query)
+
+    # Cookies
+    rows = get_cookies(profile_dir, start_time)
+    if rows is not None:
+        for row in rows:
+            query = ("INSERT INTO profile_cookies (page_url, domain, name, value, \
+                      host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?)",(top_url,) + row)
+            sock.send(query)
+    
+    # localStorage - TODO support modified time
+    '''
+    rows = get_localStorage(profile_dir, start_time)
+    if rows is not None:
+        for row in rows:
+            query = ("INSERT INTO localStorage (page_url, scope, KEY, value) \
+                      VALUES (?,?,?,?)",(top_url,) + row)
+            sock.send(query)
+    '''
+
+    # Close connection to db
+    sock.close()

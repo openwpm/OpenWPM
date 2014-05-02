@@ -78,6 +78,38 @@ CREATE TABLE IF NOT EXISTS cookies (
     referrer VARCHAR[500] NOT NULL,
     top_url VARCHAR[500] NOT NULL);
 
+/* Firefox Storage Vector Dumps */
+
+CREATE TABLE IF NOT EXISTS flash_cookies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_url VARCHAR(500) NOT NULL,
+    domain VARCHAR(500),
+    filename VARCHAR(500),
+    local_path VARCHAR(1000),
+    key TEXT,
+    content TEXT);
+
+CREATE TABLE IF NOT EXISTS profile_cookies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_url VARCHAR(500) NOT NULL,
+    domain TEXT,
+    name TEXT,
+    value TEXT,
+    host TEXT,
+    path TEXT,
+    expiry INTEGER,
+    accessed INTEGER,
+    creationTime INTEGER,
+    isSecure INTEGER,
+    isHttpOnly INTEGER);
+
+CREATE TABLE IF NOT EXISTS localStorage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_url VARCHAR(500) NOT NULL,
+    scope TEXT,
+    KEY TEXT,
+    value TEXT);
+
 /* Crawl History table */
 CREATE TABLE IF NOT EXISTS CrawlHistory (
     crawl_id INTEGER,
