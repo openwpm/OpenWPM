@@ -40,7 +40,8 @@ class Browser:
             'debugging': browser_debugging,
             'crawl_id': crawl_id,
             'profile_tar': profile_tar,
-            'random_attributes': random_attributes
+            'random_attributes': random_attributes,
+            'timeout': timeout
         }
         
         # Queues and process IDs for BrowserManager
@@ -61,6 +62,7 @@ class Browser:
     # return if the browser is ready to accept a command
     def ready(self):
         if self.command_thread == None or not self.command_thread.is_alive():
+            print "THREAD" + str(self.command_thread) + "IS NO LONGER ALIVE"
             return True
         else:
             return False

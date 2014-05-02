@@ -235,6 +235,7 @@ class TaskManager:
         # passes off command and waits for a success (or failure signal)
         browser.command_queue.put(command)
         command_succeeded = False
+        is_timeout = True
 
         # repeatedly waits for a reply from the BrowserManager; if fails/times-out => restart
         for i in xrange(0, int(timeout) * 1000):
@@ -249,8 +250,11 @@ class TaskManager:
                 command_succeeded = True
                 self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                                  (browser.crawl_id, command[0], command[1], True) ))
+            is_timeout = False
             break
         if not command_succeeded:  # reboots since BrowserManager is down
+            if is_timeout:
+                print "TIMEOUT, KILLING BROWSER MANAGER"
             self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                              (browser.crawl_id, command[0], command[1], False) ))
             browser.restart_browser_manager()
