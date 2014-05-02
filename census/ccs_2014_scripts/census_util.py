@@ -22,6 +22,7 @@ def all_dissimilar(items, sim=0.33):
 
 # gets the domain from a url
 def extract_domain(url):
+    url = url if url.startswith("http") else "http://" + url # hack since http utils require url to start with http
     try:
         return get_tld(url)
     except:

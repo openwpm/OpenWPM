@@ -1,21 +1,19 @@
 # THIS MODULE IS USED TO MEASURE THE EXTENT TO WHICH IDS ARE SPREAD
-import networkx as nx
-import extract_cookie_ids
+
 import sqlite3 as lite
 import census_util
-import extract_cookie_ids
 from collections import defaultdict
 
 # MAPS IDS TO THE PARTIES THAT WE DEFINITELY KNOW HAVE THEM
 # first, we can look at the list of cookie owners that know the id (seen in the dictionary)
 # next, we can look at the http_responses and locations
 # finally, we can look at the http_requests
-def build_id_knowledge_dictionary(id_dict, cookie_db):
+def build_id_knowledge_dictionary(cookie_id_dict, cookie_db):
     id_knowledge_dict = defaultdict(list)
 
     # first, extract the cookies
-    for cookie_id in id_dict:
-        for cookie in id_dict[cookie_id]:
+    for cookie_id in cookie_id_dict:
+        for cookie in cookie_id_dict[cookie_id]:
             id_knowledge_dict[cookie_id].append(census_util.extract_domain(cookie[0]))
 
     # connect to the cookie database
@@ -29,7 +27,7 @@ def build_id_knowledge_dictionary(id_dict, cookie_db):
         short_url = census_util.extract_domain(url)
         short_referrer = census_util.extract_domain(referrer)
 
-        for cookie_id in id_dict:
+        for cookie_id in cookie_id_dict:
             if cookie_id in url:
                 id_knowledge_dict[cookie_id].append(short_url)
             if cookie_id in referrer:
@@ -45,7 +43,7 @@ def build_id_knowledge_dictionary(id_dict, cookie_db):
         short_referrer = census_util.extract_domain(referrer)
         short_location = census_util.extract_domain(location)
 
-        for cookie_id in id_dict:
+        for cookie_id in cookie_id_dict:
             if cookie_id in url:
                 id_knowledge_dict[cookie_id].append(short_url)
             if cookie_id in location:
@@ -83,14 +81,3 @@ def map_domains_to_known_ids(id_knowledge_dict):
         domain_knowledge_dict[domain] = id_list
 
     return domain_knowledge_dict
-
-
-if __name__ == "__main__":
-    c1 = extract_cookie_ids.extract_persistent_ids_from_db("/home/christian/Desktop/alexa_500_1.sqlite")
-    c2 = extract_cookie_ids.extract_persistent_ids_from_db("/home/christian/Desktop/alexa_500_2.sqlite")
-    extracted = extract_cookie_ids.extract_common_id_cookies([c1, c2])
-    known = extract_cookie_ids.extract_known_cookies_from_db("/home/christian/Desktop/alexa_500_1.sqlite", extracted)
-    id_dict = extract_cookie_ids.map_ids_to_cookies(known)
-    id_domain_map = build_id_knowledge_dictionary(id_dict, "/home/christian/Desktop/alexa_500_1.sqlite")
-    domain_id_map = map_domains_to_known_ids(id_domain_map)
-    print domain_id_map
