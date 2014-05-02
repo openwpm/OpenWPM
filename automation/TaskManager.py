@@ -4,6 +4,7 @@ from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
 from collections import namedtuple
+from sqlite3 import OperationalError
 import threading
 import os
 import signal
@@ -60,7 +61,6 @@ class TaskManager:
         self.aggregator_address = self.aggregator_status_queue.get() #socket location: (address, port)
 
         # open client socket
-        # TODO: Do we need this socket for when browsers send/receive info from the db?
         self.sock = clientsocket()
         self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
 
@@ -87,14 +87,21 @@ class TaskManager:
             # TO DO: update DB with browser.browser_settings for each browser manager initialized
 
             cur = self.db.cursor()
-            cur.execute("INSERT INTO crawl (task_id, profile, browser, \
-                            headless, proxy, fourthparty, debugging, timeout, disable_flash) \
-                            VALUES (?,?,?,?,?,?,?,?,?)",
-                                 (self.task_id, browser_params[i][6], browser_params[i][0], browser_params[i][1],
-                                 browser_params[i][2], browser_params[i][3], browser_params[i][5], browser_params[i][7],
-                                 browser_params[i][4]) )
-            self.db.commit()
-            crawl_id = cur.lastrowid
+            query_successful = False
+            while not query_successful:
+                try:
+                    cur.execute("INSERT INTO crawl (task_id, profile, browser, \
+                                    headless, proxy, fourthparty, debugging, timeout, disable_flash) \
+                                    VALUES (?,?,?,?,?,?,?,?,?)",
+                                    (self.task_id, browser_params[i][6], browser_params[i][0], browser_params[i][1],
+                                    browser_params[i][2], browser_params[i][3], browser_params[i][5], browser_params[i][7],
+                                    browser_params[i][4]) )
+                    self.db.commit()
+                    crawl_id = cur.lastrowid
+                    query_successful = True
+                except OperationalError:
+                    time.sleep(2)
+                    pass
             browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
@@ -105,9 +112,8 @@ class TaskManager:
                     extensions = ','.join(item.browser_settings['extensions'])
                 screen_res = str(item.browser_settings['screen_res'])
                 ua_string  = str(item.browser_settings['ua_string'])
-                cur.execute("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
-                            WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id) )
-                self.db.commit()
+                self.sock.send( ("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
+                                 WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)) )
         return browsers
 
     # builds the browser parameter vectors, scaling all parameters to the number of browsers
@@ -147,16 +153,14 @@ class TaskManager:
     # wait for all child processes to finish executing commands and closes everything
     def close(self):
         # Update crawl table for each browser (crawl_id) to show successful finish
-        cur = self.db.cursor()
         for browser in self.browsers:
             if browser.command_thread is not None:
                 browser.command_thread.join()
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 subprocess.call(["rm", "-r", browser.current_profile_path])
-            cur.execute("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
-                        (browser.crawl_id,) )
-            self.db.commit()
+            self.sock.send( ("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
+                            (browser.crawl_id,)) )
         self.db.close() #close db connection
         self.sock.close() #close socket to data aggregator
         self.kill_data_aggregator() 
