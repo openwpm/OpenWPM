@@ -45,7 +45,7 @@ def load_flash_files(tar_location):
 # if <browser_settings> exists they are also saved
 # <full_profile> specifies to save the entire profile directory (not just cookies)
 # <save_flash> specifies whether to dump flash files
-def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdriver,
+def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdriver=None,
             browser_settings = None, save_flash = False, full_profile=True):
     # ensures that folder paths end with slashes
     browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") else browser_profile_folder + "/"
