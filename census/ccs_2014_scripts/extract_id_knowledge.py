@@ -58,6 +58,8 @@ def build_id_knowledge_dictionary(cookie_id_dict, cookie_db):
     for cookie_id in id_knowledge_dict:
         unique_domains = census_util.unique(id_knowledge_dict[cookie_id])
         unique_domains.sort()
+        if '' in unique_domains:
+            unique_domains.remove('')
         id_knowledge_dict[cookie_id] = unique_domains
 
     return id_knowledge_dict
