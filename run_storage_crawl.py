@@ -16,9 +16,9 @@ def load_sites(site_path):
     return sites
 
 db_loc = os.path.expanduser('~/Desktop/')
-db_name = 'alexa500.sqlite'
+db_name = 'alexa100.sqlite'
 
-sites = load_sites('alexa500.txt')
+sites = load_sites('alexa100.txt')
 
 manager = TaskManager.TaskManager(db_loc, db_name, browser='firefox', timeout=60,
                                   headless=True, proxy=True)
