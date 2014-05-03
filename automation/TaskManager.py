@@ -274,5 +274,5 @@ class TaskManager:
         self.distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, overwrite_timeout)
 
     # dumps from the profile path to a given file (absolute path)
-    def dump_profile(self, dump_folder, index=None, overwrite_timeout=None):
-        self.distribute_command(('DUMP_PROF', dump_folder), index, overwrite_timeout)
+    def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
+        self.distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)

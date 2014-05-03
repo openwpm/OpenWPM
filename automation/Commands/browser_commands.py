@@ -9,7 +9,7 @@ import time
 
 from ..SocketInterface import clientsocket
 from utils.lso import get_flash_cookies
-from utils.firefox_profile import get_localStorage, get_cookies, sleep_until_sqlite_checkpoint
+from utils.firefox_profile import get_localStorage, get_cookies
 
 # Library for core WebDriver-based browser commands
 
@@ -80,12 +80,12 @@ def get_website(url, webdriver, proxy_queue):
     #time.sleep(random.randrange(1,7))
 
 def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address):
+    ''' Grab the newly changed items in supported storage vectors '''
     # Set up a connection to DataAggregator
     sock = clientsocket()
     sock.connect(*db_socket_address)
 
     # Wait for SQLite Checkpointing - never happens when browser open
-    # sleep_until_sqlite_checkpoint(profile_dir)
 
     # Flash cookies
     flash_cookies = get_flash_cookies(start_time)

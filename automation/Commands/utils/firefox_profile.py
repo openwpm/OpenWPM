@@ -10,7 +10,7 @@ def tmp_sqlite_files_exist(path):
            glob(os.path.join(path, '*-shm'))
 
 
-def sleep_until_sqlite_checkpoint(profile_dir, timeout=30):
+def sleep_until_sqlite_checkpoint(profile_dir, timeout=60):
     """We wait until all the shm and wal files are checkpointed to DB.
 
     https://www.sqlite.org/wal.html#ckpt.
@@ -18,7 +18,7 @@ def sleep_until_sqlite_checkpoint(profile_dir, timeout=30):
     while (timeout > 0 and tmp_sqlite_files_exist(profile_dir)):
         time.sleep(1)
         timeout -= 1
-    print "Waited for %s seconds for sqlite checkpointing" % (30 - timeout)
+    print "Waited for %s seconds for sqlite checkpointing" % (60 - timeout)
 
 
 def get_localStorage(profile_directory, mod_since):

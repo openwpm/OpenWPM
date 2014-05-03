@@ -13,4 +13,4 @@ def execute_command(command, webdriver, profile_path, browser_settings, proxy_qu
         browser_commands.dump_storage_vectors(command[1], command[2], profile_path, db_socket_address)
 
     if command[0] == 'DUMP_PROF':
-        profile_commands.dump_profile(profile_path, command[1], browser_settings)
+        profile_commands.dump_profile(profile_path, command[1], command[2], webdriver, browser_settings)
