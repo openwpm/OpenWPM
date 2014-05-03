@@ -83,15 +83,18 @@ CREATE TABLE IF NOT EXISTS cookies (
 
 CREATE TABLE IF NOT EXISTS flash_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
     page_url VARCHAR(500) NOT NULL,
     domain VARCHAR(500),
     filename VARCHAR(500),
     local_path VARCHAR(1000),
     key TEXT,
-    content TEXT);
+    content TEXT,
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
 CREATE TABLE IF NOT EXISTS profile_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
     page_url VARCHAR(500) NOT NULL,
     domain TEXT,
     name TEXT,
@@ -102,14 +105,17 @@ CREATE TABLE IF NOT EXISTS profile_cookies (
     accessed INTEGER,
     creationTime INTEGER,
     isSecure INTEGER,
-    isHttpOnly INTEGER);
+    isHttpOnly INTEGER,
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
 CREATE TABLE IF NOT EXISTS localStorage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
     page_url VARCHAR(500) NOT NULL,
     scope TEXT,
     KEY TEXT,
-    value TEXT);
+    value TEXT,
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
 /* Crawl History table */
 CREATE TABLE IF NOT EXISTS CrawlHistory (

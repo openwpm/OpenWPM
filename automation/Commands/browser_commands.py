@@ -79,7 +79,7 @@ def get_website(url, webdriver, proxy_queue):
     # random wait time
     #time.sleep(random.randrange(1,7))
 
-def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address):
+def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address, crawl_id):
     ''' Grab the newly changed items in supported storage vectors '''
     # Set up a connection to DataAggregator
     sock = clientsocket()
@@ -90,9 +90,9 @@ def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address):
     # Flash cookies
     flash_cookies = get_flash_cookies(start_time)
     for cookie in flash_cookies:
-        query = ("INSERT INTO flash_cookies (page_url, domain, filename, local_path, \
-                  key, content) VALUES (?,?,?,?,?,?)", 
-                  (top_url, cookie.domain, cookie.filename, cookie.local_path, 
+        query = ("INSERT INTO flash_cookies (crawl_id, page_url, domain, filename, local_path, \
+                  key, content) VALUES (?,?,?,?,?,?,?)", 
+                  (crawl_id, top_url, cookie.domain, cookie.filename, cookie.local_path, 
                   cookie.key, cookie.content))
         sock.send(query)
 
@@ -100,9 +100,9 @@ def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address):
     rows = get_cookies(profile_dir, start_time)
     if rows is not None:
         for row in rows:
-            query = ("INSERT INTO profile_cookies (page_url, domain, name, value, \
+            query = ("INSERT INTO profile_cookies (crawl_id, page_url, domain, name, value, \
                       host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
-                      VALUES (?,?,?,?,?,?,?,?,?,?,?)",(top_url,) + row)
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(crawl_id, top_url) + row)
             sock.send(query)
     
     # localStorage - TODO support modified time
@@ -110,8 +110,8 @@ def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address):
     rows = get_localStorage(profile_dir, start_time)
     if rows is not None:
         for row in rows:
-            query = ("INSERT INTO localStorage (page_url, scope, KEY, value) \
-                      VALUES (?,?,?,?)",(top_url,) + row)
+            query = ("INSERT INTO localStorage (crawl_id, page_url, scope, KEY, value) \
+                      VALUES (?,?,?,?)",(crawl_id, top_url) + row)
             sock.send(query)
     '''
 
