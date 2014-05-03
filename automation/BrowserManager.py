@@ -181,7 +181,7 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
-            command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue, db_socket_address)
+            command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue, db_socket_address, browser_params['crawl_id'])
             status_queue.put("OK")
         except Exception as ex:
             print "CRASH IN DRIVER ORACLE:" + str(ex) + " RESTARTING BROWSER MANAGER"

@@ -1,7 +1,7 @@
 from automation import TaskManager
 import time
 import sys
-
+import os
 
 # loads a list of websites from a text file
 def load_sites(site_path):
@@ -15,18 +15,17 @@ def load_sites(site_path):
 
     return sites
 
-db_loc = '/home/sengleha/Desktop/'
-db_name = 'testing_time.sqlite'
+db_loc = os.path.expanduser('~/Desktop/')
+db_name = 'alexa500.sqlite'
 
-sites = load_sites('test_sites.txt')
+sites = load_sites('alexa500.txt')
 
-manager = TaskManager.TaskManager(db_loc, db_name, browser='firefox', timeout=50,
-                                  headless=False, proxy=False)
+manager = TaskManager.TaskManager(db_loc, db_name, browser='firefox', timeout=60,
+                                  headless=True, proxy=True)
 
 for site in sites:
     start_time = time.time()
     manager.get(site)
-    #import ipdb; ipdb.set_trace()
     manager.dump_storage_vectors(site, start_time)
 
 manager.close()
