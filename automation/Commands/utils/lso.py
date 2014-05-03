@@ -19,8 +19,6 @@ def get_flash_cookies(mod_since=0):
         top_dir = os.path.expanduser(top_dir)
         for lso_file in fu.gen_find_files("*.sol", top_dir):
             mtime = os.path.getmtime(lso_file)
-            print "lso_file = " + lso_file
-            print "mtime = " + str(mtime) + " | mod_since = " + str(mod_since)
             if mtime > mod_since:
                 try:
                     flash_cookies.extend(parse_flash_cookies(lso_file))
