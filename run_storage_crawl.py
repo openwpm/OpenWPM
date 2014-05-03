@@ -28,4 +28,6 @@ for site in sites:
     manager.get(site)
     manager.dump_storage_vectors(site, start_time)
 
+manager.dump_profile(os.path.expanduser('~/Desktop/alexa500_05-02_profile/'), close_webdriver=True, overwrite_timeout=120)
+import ipdb; ipdb.set_trace()
 manager.close()
