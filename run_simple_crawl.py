@@ -23,8 +23,9 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
     db_loc = db_loc if db_loc.endswith("/") else db_loc + "/"
 
     manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
-                                      headless=preferences["headless"], proxy=preferences["proxy"],
-                                      fourthparty=preferences["fourthparty"], profile_tar=preferences['load_folder'], 
+                                      headless=preferences["headless"], proxy=preferences["proxy"], 
+                                      tp_cookies=preferences["tp_cookies"], fourthparty=preferences["fourthparty"],
+                                      donottrack=preferences["donottrack"], profile_tar=preferences["load_folder"],
                                       random_attributes=True)
 
     for site in sites:
@@ -46,6 +47,8 @@ def print_help_message():
           "Other command line argument flags are:\n" \
           "-browser: specifies type of browser to use (firefox or chrome)\n" \
           "-fourthparty: True/False value as to whether to use Fourthparty instrumentation\n" \
+          "-donottrack: True/False value as to whether to use the Do Not Track flag\n" \
+          "-tp_cookies: string designating third-party cookie preferences: always, never or just_visted\n" \
           "-proxy: True/False value as to whether to use proxy-based instrumentation\n" \
           "-headless: True/False value as to whether to run browser in headless mode\n" \
           "-timeout: timeout (in seconds) for the TaskManager to default time out loads\n" \
@@ -69,6 +72,8 @@ def main(argv):
     preferences = {
         "browser": "firefox",
         "fourthparty": False,
+        "donottrack": False,
+        "tp_cookies": "always",
         "proxy": True,
         "headless": False,
         "timeout": 30.0,
@@ -83,12 +88,16 @@ def main(argv):
             preferences["browser"] = "chrome" if argv[i+1].lower() == "chrome" else "firefox"
         elif argv[i] == "-fourthparty":
             preferences["fourthparty"] = True if argv[i+1].lower() == "true" else False
+        elif argv[i] == "-donottrack":
+            preferences["donottrack"] = True if argv[i+1].lower() == "true" else False
+        elif argv[i] == "-tp_cookies":
+            preferences["tp_cookies"] = argv[i+1].lower()
         elif argv[i] == "-proxy":
             preferences["proxy"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-headless":
             preferences["headless"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-timeout":
-            preferences["fourthparty"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
+            preferences["timeout"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
         elif argv[i] == "-load":
             preferences["load_folder"] = argv[i+1]
         elif argv[i] == "-dump":
