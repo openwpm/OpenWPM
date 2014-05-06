@@ -20,7 +20,6 @@ def add_inner_cookie_parameters(raw_cookie_dict, domain, name, value):
             if len(params) == 2 and params[0] != '' and params[1] != '':
                 raw_cookie_dict[(domain, name + "#" + params[0])].append(params[1])
 
-
 # EXTRACTS PERSISTENT COOKIES FROM A SINGLE DATABASE
 # returns a dictionary with keys = (domain, name) pairs; values = values of the corresponding cookie
 # values must be from non-shorted lived cookies (life at least <num_days> days long)

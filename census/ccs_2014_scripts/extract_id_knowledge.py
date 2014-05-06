@@ -52,7 +52,8 @@ def build_id_knowledge_dictionary(cookie_id_dict, cookie_db):
             if cookie_id in referrer:
                 id_knowledge_dict[cookie_id].append(short_referrer)
                 id_knowledge_dict[cookie_id].append(short_url)
-                id_knowledge_dict[cookie_id].append(short_location)
+                if short_location != '':
+                    id_knowledge_dict[cookie_id].append(short_location)
 
     # remove duplicates and sort results before returning the final dictionary
     for cookie_id in id_knowledge_dict:
