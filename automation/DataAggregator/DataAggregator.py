@@ -14,7 +14,7 @@ import time
 # <status_queue> is a queue connect to the TaskManager used for
 # <commit_loop> is the number of execution statements that should be made before a commit (used for speedup)
 
-def DataAggregator(db_loc, status_queue, commit_loop=1):
+def DataAggregator(db_loc, status_queue, commit_loop=1000):
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()

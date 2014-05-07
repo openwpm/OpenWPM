@@ -16,18 +16,17 @@ def load_sites(site_path):
     return sites
 
 db_loc = os.path.expanduser('~/Desktop/')
-db_name = 'alexa100.sqlite'
+db_name = 'alexa1_5k_fingprint_respawn.sqlite'
 
-sites = load_sites('alexa100.txt')
+sites = load_sites('alexa1_5k.txt')
 
 manager = TaskManager.TaskManager(db_loc, db_name, browser='firefox', timeout=60,
-                                  headless=True, proxy=True)
+                                  headless=True, proxy=True, random_attributes=True)
 
 for site in sites:
     start_time = time.time()
     manager.get(site)
     manager.dump_storage_vectors(site, start_time)
 
-manager.dump_profile(os.path.expanduser('~/Desktop/alexa500_05-02_profile/'), close_webdriver=True, overwrite_timeout=120)
-import ipdb; ipdb.set_trace()
+manager.dump_profile(os.path.expanduser('~/Desktop/alexa1_5k_fingerprint_respawn/'), close_webdriver=True, overwrite_timeout=120)
 manager.close()
