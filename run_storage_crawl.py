@@ -16,7 +16,7 @@ def load_sites(site_path):
     return sites
 
 db_loc = os.path.expanduser('~/Desktop/')
-db_name = 'alexa1_5k_fingprint_respawn.sqlite'
+db_name = 'alexa1_5k_fingprint_respawn_snoop.sqlite'
 
 sites = load_sites('alexa1_5k.txt')
 

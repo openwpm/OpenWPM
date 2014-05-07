@@ -52,12 +52,15 @@ def build_id_knowledge_dictionary(cookie_id_dict, cookie_db):
             if cookie_id in referrer:
                 id_knowledge_dict[cookie_id].append(short_referrer)
                 id_knowledge_dict[cookie_id].append(short_url)
-                id_knowledge_dict[cookie_id].append(short_location)
+                if short_location != '':
+                    id_knowledge_dict[cookie_id].append(short_location)
 
     # remove duplicates and sort results before returning the final dictionary
     for cookie_id in id_knowledge_dict:
         unique_domains = census_util.unique(id_knowledge_dict[cookie_id])
         unique_domains.sort()
+        if '' in unique_domains:
+            unique_domains.remove('')
         id_knowledge_dict[cookie_id] = unique_domains
 
     return id_knowledge_dict
