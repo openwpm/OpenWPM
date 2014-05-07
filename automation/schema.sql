@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS cookies (
     expiry VARCHAR[500] NOT NULL,
     accessed VARCHAR[500] NOT NULL,
     referrer VARCHAR[500] NOT NULL,
+    http_type VARCHAR[500] NOT NULL,
     top_url VARCHAR[500] NOT NULL);
 
 /* Crawl History table */
