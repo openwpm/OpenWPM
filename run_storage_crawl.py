@@ -16,9 +16,9 @@ def load_sites(site_path):
     return sites
 
 db_loc = os.path.expanduser('~/Desktop/')
-db_name = 'alexa100.sqlite'
+db_name = 'alexa3k_05062014_fresh_triton.sqlite'
 
-sites = load_sites('alexa100.txt')
+sites = load_sites('alexa3k.txt')
 
 manager = TaskManager.TaskManager(db_loc, db_name, browser='firefox', timeout=60,
                                   headless=True, proxy=True)
@@ -28,6 +28,5 @@ for site in sites:
     manager.get(site)
     manager.dump_storage_vectors(site, start_time)
 
-manager.dump_profile(os.path.expanduser('~/Desktop/alexa500_05-02_profile/'), close_webdriver=True, overwrite_timeout=120)
-import ipdb; ipdb.set_trace()
+manager.dump_profile(os.path.expanduser('~/Desktop/alexa3k_05062014_fresh_triton/'), close_webdriver=True, overwrite_timeout=120)
 manager.close()
