@@ -11,8 +11,7 @@ from tld import get_tld
 # Inspired by the following example. Note the gist has a lot of bugs.
 # https://gist.github.com/dannvix/5285924
 class InterceptingMaster (controller.Master):
-    def __init__(self, server, crawl_id, url_queue, db_socket_address, url_filter):
-        self.url_filter = url_filter
+    def __init__(self, server, crawl_id, url_queue, db_socket_address):
         self.crawl_id = crawl_id
         
         # Attributes used to flag the first-party domain
