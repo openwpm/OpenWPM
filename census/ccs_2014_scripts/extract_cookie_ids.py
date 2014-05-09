@@ -20,31 +20,32 @@ def add_inner_cookie_parameters(raw_cookie_dict, domain, name, value):
             if len(params) == 2 and params[0] != '' and params[1] != '':
                 raw_cookie_dict[(domain, name + "#" + params[0])].append(params[1])
 
-# EXTRACTS PERSISTENT COOKIES FROM A SINGLE DATABASE
+# EXTRACTS PERSISTENT COOKIES FROM A MULTIPLE DATABASES DATABASE
 # returns a dictionary with keys = (domain, name) pairs; values = values of the corresponding cookie
 # values must be from non-shorted lived cookies (life at least <num_days> days long)
-def extract_persistent_ids_from_db(cookie_db, num_days=30):
-    conn = lite.connect(cookie_db)
-    curr = conn.cursor()
+def extract_persistent_ids_from_dbs(cookie_dbs, num_days=30):
+    for cookie_db in cookie_dbs:
+        conn = lite.connect(cookie_db)
+        curr = conn.cursor()
 
-    # add all cookie-value pairs to a dictionary, provided these cookies live at least <days> days
-    raw_cookie_dict = defaultdict(list)  # maps (domain, names) to lists of values
+        # add all cookie-value pairs to a dictionary, provided these cookies live at least <days> days
+        raw_cookie_dict = defaultdict(list)  # maps (domain, names) to lists of values
 
-    for domain, name, value, access, expiry \
-            in curr.execute('SELECT domain, name, value, accessed, expiry FROM cookies'):
-        domain = domain if len(domain) == 0 or domain[0] != "." else domain[1:]  # prunes leading period
+        for domain, name, value, access, expiry \
+                in curr.execute('SELECT domain, name, value, accessed, expiry FROM cookies'):
+            domain = domain if len(domain) == 0 or domain[0] != "." else domain[1:]  # prunes leading period
 
-        # ignores cookies with blank or incomplete measurements
-        if domain == '' or name == '' or value == '':
-            continue
+            # ignores cookies with blank or incomplete measurements
+            if domain == '' or name == '' or value == '':
+                continue
 
-        # prune away cookies with expiry times under <num_days> days
-        if (parser.parse(expiry).replace(tzinfo=None) - parser.parse(access).replace(tzinfo=None)).days < num_days:
-            continue
+            # prune away cookies with expiry times under <num_days> days
+            if (parser.parse(expiry).replace(tzinfo=None) - parser.parse(access).replace(tzinfo=None)).days < num_days:
+                continue
 
-        # add the full value strings then attempt to parse and add nested values as well
-        raw_cookie_dict[(domain, name)].append(value)
-        add_inner_cookie_parameters(raw_cookie_dict, domain, name, value)
+            # add the full value strings then attempt to parse and add nested values as well
+            raw_cookie_dict[(domain, name)].append(value)
+            add_inner_cookie_parameters(raw_cookie_dict, domain, name, value)
 
     # only keep cookies with values that remain constant throughout the crawl
     final_cookie_dict = {}

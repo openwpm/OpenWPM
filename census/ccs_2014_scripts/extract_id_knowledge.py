@@ -11,14 +11,20 @@ from collections import defaultdict
 def build_id_knowledge_dictionary(cookie_id_dict, cookie_db):
     id_knowledge_dict = defaultdict(list)
 
-    # first, extract the cookies
-    for cookie_id in cookie_id_dict:
-        for cookie in cookie_id_dict[cookie_id]:
-            id_knowledge_dict[cookie_id].append(census_util.extract_domain(cookie[0]))
-
     # connect to the cookie database
     conn = lite.connect(cookie_db)
     cur = conn.cursor()
+
+    # first, extract the cookies
+    for domain, value in cur.execute('SELECT DISTINCT domain, value FROM cookies'):
+        domain = domain if len(domain) == 0 or domain[0] != "." else domain[1:]  # prunes away leading period
+        domain = census_util.extract_domain(domain)
+        if domain == '':
+            continue
+
+        for cookie_id in cookie_id_dict:
+            if cookie_id in value:
+                id_knowledge_dict[cookie_id].append(domain)
 
     # scans through the urls/ referrers from http_requests
     # if the id is embedded in the url (or referrer) then we know the url (or referrer) tld knows the id

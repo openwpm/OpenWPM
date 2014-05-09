@@ -45,8 +45,8 @@ def build_hop_neighborhood(seed_domain, hop, domain_to_id, id_to_domain):
 def output_sync_measurements(db1, db2):
     print "0"
     # extract the cookie ids on a per-database basis
-    cookies_db1 = extract_cookie_ids.extract_persistent_ids_from_db(db1)
-    cookies_db2 = extract_cookie_ids.extract_persistent_ids_from_db(db2)
+    cookies_db1 = extract_cookie_ids.extract_persistent_ids_from_dbs([db1])
+    cookies_db2 = extract_cookie_ids.extract_persistent_ids_from_dbs([db2])
 
     print "1"
 
@@ -86,12 +86,39 @@ def output_sync_measurements(db1, db2):
         depth3 = len(build_hop_neighborhood(domain, 3, domain_to_id_map, id_to_domain_map))
         print str(domain) + "\t" + str(count) + "\t" + str(depth1) + "\t" + str(depth2) + "\t" + str(depth3)
 
+# RESPAWN / SYNC SCRIPT
+# checks for respawning and syncing of cookie data
+# baseline is a list of at least one database used to perform the diffs (but we don't actually care about spawning here)
+# pre_clear is the first database of some sort of crawl run before we make a clear command
+# post_clear is the second datbase of some crawl after the clear - here we care about the chance of respawning
+def perform_respawn_resync_study(baseline_dbs, pre_clear_db, post_clear_db):
+    print "Extracting initial set of ID cookies"
+    cookies_baseline = extract_cookie_ids.extract_persistent_ids_from_dbs([baseline_dbs])
+    cookies_pre_clear = extract_cookie_ids.extract_persistent_ids_from_dbs([pre_clear_db])
 
-    #import ipdb; ipdb.set_trace()
+    print "Extracting the pre-clear IDs"
+    id_cookies = extract_cookie_ids.extract_common_id_cookies([cookies_baseline, cookies_pre_clear])
+    pre_clear_ids = extract_cookie_ids.extract_known_cookies_from_db(pre_clear_db, id_cookies)
+
+    print "Build the sync maps on the post_clear db"
+    # build the three maps that are most fundamental to the analysis
+    id_to_cookie_map = extract_cookie_ids.map_ids_to_cookies(pre_clear_ids)
+    id_to_cookie_map_pruned = census_util.prune_list_dict(id_to_cookie_map)
+
+    id_to_domain_map = extract_id_knowledge.build_id_knowledge_dictionary(id_to_cookie_map, post_clear_db)
+    id_to_domain_map = census_util.prune_list_dict(id_to_domain_map)
+
+    domain_to_id_map = extract_id_knowledge.map_domains_to_known_ids(id_to_domain_map)
+    domain_to_id_map_pruned = census_util.prune_list_dict(domain_to_id_map)
+    
 
 if __name__ == "__main__":
     crawl_db1 = "/home/christian/Desktop/alexa10k_1.sqlite"
     crawl_db2 = "/home/christian/Desktop/alexa10k_2.sqlite"
-    output_sync_measurements(crawl_db1, crawl_db2)
+    base1 = "/home/christian/Desktop/alexa500_rocklor_1.sqlite"
+    pre_clear = "/home/christian/Desktop/alexa500_satrap_1.sqlite"
+    post_clear = "/home/christian/Desktop/alexa500_satrap_2.sqlite"
+    perform_respawn_resync_study(base1, pre_clear, post_clear)
+    #output_sync_measurements(pre_clear, post_clear)
 
 
