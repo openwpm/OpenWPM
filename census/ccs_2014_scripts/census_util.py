@@ -47,3 +47,12 @@ def prune_list_dict(list_dict):
 def sort_tuples(tuple_list):
     return sorted(tuple_list, key = lambda  arr: arr[1], reverse=True)
 
+# given a list of keys and a default dict of list, returns the union of dict[key] for all keys
+def get_values_from_keys(keys, value_dict):
+    values = set()
+    for key in keys:
+        values = values.union(set(value_dict[key]))
+
+    return values
+
+

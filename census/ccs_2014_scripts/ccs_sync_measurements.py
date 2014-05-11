@@ -1,10 +1,8 @@
 import extract_cookie_ids
 import extract_id_knowledge
 import census_util
-
-
+import sqlite3 as lite
 import Queue
-
 
 # BFS HOP ANALYSIS
 # for a given domain, returns a sorted list of sites within <hops> steps away in the sync graph
@@ -75,6 +73,9 @@ def output_sync_measurements(db1, db2):
 
     id_to_domain_counts = census_util.sort_tuples([(key, len(id_to_domain_map[key])) for key in id_to_domain_map])
     print id_to_domain_counts
+    for x in id_to_domain_counts:
+        print str(x[0]) + "\t" + str(x[1])
+
     domain_to_id_counts = census_util.sort_tuples([(key, len(domain_to_id_map[key])) for key in domain_to_id_map])
     print domain_to_id_counts
 
@@ -91,14 +92,14 @@ def output_sync_measurements(db1, db2):
 # baseline is a list of at least one database used to perform the diffs (but we don't actually care about spawning here)
 # pre_clear is the first database of some sort of crawl run before we make a clear command
 # post_clear is the second datbase of some crawl after the clear - here we care about the chance of respawning
-def perform_respawn_resync_study(baseline_dbs, pre_clear_db, post_clear_db):
+def perform_respawn_resync_study(baseline_db, pre_clear_db, post_clear_db):
     print "Extracting initial set of ID cookies"
-    cookies_baseline = extract_cookie_ids.extract_persistent_ids_from_dbs([baseline_dbs])
+    cookies_baseline = extract_cookie_ids.extract_persistent_ids_from_dbs([baseline_db])
     cookies_pre_clear = extract_cookie_ids.extract_persistent_ids_from_dbs([pre_clear_db])
 
     print "Extracting the pre-clear IDs"
     id_cookies = extract_cookie_ids.extract_common_id_cookies([cookies_baseline, cookies_pre_clear])
-    pre_clear_ids = extract_cookie_ids.extract_known_cookies_from_db(pre_clear_db, id_cookies)
+    pre_clear_ids = extract_cookie_ids.extract_known_cookies_from_db(baseline_db, id_cookies) # CHANGE THIS LINE DEPENDING ON Q
 
     print "Build the sync maps on the post_clear db"
     # build the three maps that are most fundamental to the analysis
@@ -106,19 +107,101 @@ def perform_respawn_resync_study(baseline_dbs, pre_clear_db, post_clear_db):
     id_to_cookie_map_pruned = census_util.prune_list_dict(id_to_cookie_map)
 
     id_to_domain_map = extract_id_knowledge.build_id_knowledge_dictionary(id_to_cookie_map, post_clear_db)
-    id_to_domain_map = census_util.prune_list_dict(id_to_domain_map)
+    #id_to_domain_map = census_util.prune_list_dict(id_to_domain_map)
 
     domain_to_id_map = extract_id_knowledge.map_domains_to_known_ids(id_to_domain_map)
     domain_to_id_map_pruned = census_util.prune_list_dict(domain_to_id_map)
+
+    print id_to_domain_map
+
+# FLASH SPAWN SCRIPT
+# checks for matched flash content
+def check_for_respawned_flash(flash_dbs):
+    set_list = []
+
+    # builds up the list of sets of flash content
+    for flash_db in flash_dbs:
+        value_set = set()
+        conn = lite.connect(flash_db)
+        cur = conn.cursor()
+        for domain, content in cur.execute('SELECT domain, content FROM flash_cookies'):
+            value_set.add(content)
+        set_list.append(value_set)
+
+    full_set = set_list[0]
+    for content_set in set_list:
+        full_set = full_set.intersection(content_set)
+
+    print full_set
+
+# GRAPH RE-SPAWN SCRIPT
+def connect_graph_through_sync(baseline_db, pre_sync_db, post_sync_db):
+    print "Extracting initial set of ID cookies"
+    cookies_baseline = extract_cookie_ids.extract_persistent_ids_from_dbs([baseline_db])
+    cookies_pre_sync = extract_cookie_ids.extract_persistent_ids_from_dbs([pre_sync_db])
+    cookies_post_sync = extract_cookie_ids.extract_persistent_ids_from_dbs([post_sync_db])
+
+    print "Building the sync graphs"
+    mappings = [] # first mapping is ID to domain - second is domain to ID; 0 is pre_sync 1 is post_sync
+    for cookie_database, cookies in [(pre_sync_db, cookies_pre_sync), (post_sync_db, cookies_post_sync)]:
+        print "Building the graph for " + cookie_database
+        id_cookies = extract_cookie_ids.extract_common_id_cookies([cookies_baseline, cookies])
+        id_cookies_with_val = extract_cookie_ids.extract_known_cookies_from_db(cookie_database, id_cookies)
+        
+        print "Building id to cookie mapping"
+        id_to_cookie_map = extract_cookie_ids.map_ids_to_cookies(id_cookies_with_val)
+
+        print "Building id to domain mappings"
+        id_to_domain_map = extract_id_knowledge.build_id_knowledge_dictionary(id_to_cookie_map, cookie_database)
+        id_to_domain_map = census_util.prune_list_dict(id_to_domain_map)
+
+        print "Building domain to id mappings"
+        domain_to_id_map = extract_id_knowledge.map_domains_to_known_ids(id_to_domain_map)
+        #domain_to_id_map = census_util.prune_list_dict(domain_to_id_map)
+
+        mappings.append((id_to_cookie_map, id_to_domain_map, domain_to_id_map))
+
+    print "Pull out respawned and resynced IDs"
+    respawned_id_to_domain_map = extract_id_knowledge.build_id_knowledge_dictionary(mappings[0][0], post_sync_db)
+    respawned_id_to_domain_map = census_util.prune_list_dict(respawned_id_to_domain_map)
     
+    respawned_domain_to_id_map = extract_id_knowledge.map_domains_to_known_ids(respawned_id_to_domain_map)  
+    respawned_domain_to_id_map = census_util.prune_list_dict(respawned_domain_to_id_map)
+
+    print "Printing all possible ids"
+    old_ids = mappings[0][1].keys()
+    old_domains = mappings[0][2].keys()
+    new_ids = mappings[1][1].keys()
+    new_domains = mappings[1][2].keys()
+    all_ids = set(old_ids).union(set(new_ids))
+    all_domains = set(old_domains).union(set(new_domains))
+    print "IDS:\t" + str(len(old_ids)) + "\t" + str(len(new_ids)) + "\t" + str(len(all_ids))
+    print "DOMAINS:\t" + str(len(old_domains)) + "\t" + str(len(new_domains)) + "\t" + str(len(all_domains))
+    
+    print "Examining graph linkage"
+    for respawned_id in respawned_id_to_domain_map:
+        old_neighborhood = build_hop_neighborhood(respawned_id, float("inf"), mappings[0][1], mappings[0][2])
+        old_neighborhood_domains = census_util.get_values_from_keys(old_neighborhood, mappings[0][1])
+        new_neighborhood = build_hop_neighborhood(respawned_id, float("inf"), mappings[1][1], mappings[1][2])
+        new_neighborhood_domains = census_util.get_values_from_keys(new_neighborhood, mappings[1][1])
+        full_neighborhood = set(old_neighborhood).union(set(new_neighborhood))
+        full_neighborhood_domains = set(old_neighborhood_domains).union(set(new_neighborhood_domains))
+        print respawned_id + "\t" + str(len(old_neighborhood)) + "\t" + str(len(new_neighborhood)) + "\t" + str(len(full_neighborhood))
+        print respawned_id + "\t" + str(len(old_neighborhood_domains)) + "\t" + str(len(new_neighborhood_domains)) + "\t" + str(len(full_neighborhood_domains))
 
 if __name__ == "__main__":
-    crawl_db1 = "/home/christian/Desktop/alexa10k_1.sqlite"
-    crawl_db2 = "/home/christian/Desktop/alexa10k_2.sqlite"
-    base1 = "/home/christian/Desktop/alexa500_rocklor_1.sqlite"
-    pre_clear = "/home/christian/Desktop/alexa500_satrap_1.sqlite"
-    post_clear = "/home/christian/Desktop/alexa500_satrap_2.sqlite"
-    perform_respawn_resync_study(base1, pre_clear, post_clear)
-    #output_sync_measurements(pre_clear, post_clear)
+    triton1 = "/home/christian/Desktop/flash_dbs/alexa3k_triton_fresh.sqlite"
+    triton2 = "/home/christian/Desktop/flash_dbs/alexa3k_triton_recrawl.sqlite"
+    triton3 = "/home/christian/Desktop/flash_dbs/alexa3k_triton_3.sqlite"
+    kingpin1 = "/home/christian/Desktop/flash_dbs/alexa3k_kingpin_fresh.sqlite"
+    kingpin2 = "/home/christian/Desktop/flash_dbs/alexa3k_kingpin_recrawl.sqlite"
+    kingpin3 = "/home/christian/Desktop/flash_dbs/alexa3k_kingpin_recrawl.sqlite"
+    snoop = "/home/christian/Desktop/flash_dbs/alexa3k_snoop_recrawl.sqlite"
+    roman = "/home/christian/Desktop/flash_dbs/alexa3k_roman_recrawl.sqlite"
+    #perform_respawn_resync_study(triton1, kingpin1, kingpin2)
+    #output_sync_measurements(kingpin1, triton1)
+    #check_for_respawned_flash([triton1, snoop])
+    #connect_graph_through_sync(triton1, kingpin1, kingpin2)
+    connect_graph_through_sync(triton1, kingpin1, kingpin3)
 
 
