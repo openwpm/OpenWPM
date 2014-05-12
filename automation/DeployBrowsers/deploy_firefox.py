@@ -95,10 +95,10 @@ def deploy_firefox(browser_params):
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/key3.db'), fp.path + '/key3.db')
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/cert8.db'), fp.path + '/cert8.db')
 
-        #TODO: this isn't supported
-        if browser_params['fourthparty']:
-            fp.add_extension(extension=os.path.join(root_dir + "/../",
-                                                    'extensions/fourthparty/fourthparty.xpi'))
+    #TODO: this isn't supported
+    if browser_params['fourthparty']:
+        fp.add_extension(extension=os.path.join(root_dir + "/../",
+					    'extensions/fourthparty/fourthparty.xpi'))
 
     # Turns on Do Not Track
     if browser_params['donottrack']:
