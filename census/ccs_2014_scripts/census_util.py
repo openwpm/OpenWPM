@@ -2,6 +2,7 @@ import difflib
 import itertools
 import urlparse
 from tld import get_tld
+from collections import defaultdict
 
 # are all items the same?
 def all_same(items):
@@ -32,3 +33,26 @@ def extract_domain(url):
 def unique(seq):
     # Not order preserving
     return {}.fromkeys(seq).keys()
+
+# returns a defaultdict(list) such that all keys to the dict map to a list with > 1 value
+def prune_list_dict(list_dict):
+    pruned_dict = defaultdict(list)
+    for key in list_dict:
+        if len(list_dict[key]) > 1:
+            pruned_dict[key] = list_dict[key]
+
+    return pruned_dict
+
+# sorts tuple of the form (x, count) in reverse order
+def sort_tuples(tuple_list):
+    return sorted(tuple_list, key = lambda  arr: arr[1], reverse=True)
+
+# given a list of keys and a default dict of list, returns the union of dict[key] for all keys
+def get_values_from_keys(keys, value_dict):
+    values = set()
+    for key in keys:
+        values = values.union(set(value_dict[key]))
+
+    return values
+
+

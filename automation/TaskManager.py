@@ -27,13 +27,16 @@ import time
 # <headless> is a boolean that indicates whether we want to run a headless browser (TODO: make this work for Chrome)
 # <proxy> is a boolean that indicates whether we want to use a proxy (for now mitmproxy)
 # <fourthparty> is a boolean that indicates whether we want to add support for FourthParty
+# <donottrack> is a boolean that indicates whether we want to use Do Not Track
+# <tp_cookies> is a a string for our third party cookie preference: 'always', 'never' or 'from_visited'
 # <browser_debugging> is a boolean that indicates whether we want to run the browser in debugging mode
 # <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
 # <description> is an optional description string for a particular crawl
 class TaskManager:
     def __init__(self, db_location, db_name, description = None, num_browsers = 1,
                 browser='firefox', headless=False, proxy=False, fourthparty=False,
-                disable_flash = False, browser_debugging=False, timeout=60, 
+                donottrack=True, tp_cookies='always', disable_flash= False, 
+                browser_debugging=False, timeout=60, 
                 profile_tar=None, random_attributes=False):
         # sets up the information needed to write to the database
         self.desc = description
@@ -52,7 +55,7 @@ class TaskManager:
         # prepares browser settings
         self.num_browsers = num_browsers
         browser_params = self.build_browser_params(browser, headless, proxy, fourthparty,
-                                                   disable_flash, browser_debugging, 
+                                                   donottrack, tp_cookies, disable_flash, browser_debugging, 
                                                    profile_tar, timeout, random_attributes)
 
         # sets up the DataAggregator + associated queues
@@ -82,7 +85,7 @@ class TaskManager:
     # initialize the browsers, each with a unique set of parameters
     def initialize_browsers(self, browser_params):
         browsers = list()
-        for i in range(self.num_browsers):
+        for i in xrange(self.num_browsers):
             # update crawl table
             # TO DO: update DB with browser.browser_settings for each browser manager initialized
 
@@ -93,9 +96,9 @@ class TaskManager:
                     cur.execute("INSERT INTO crawl (task_id, profile, browser, \
                                     headless, proxy, fourthparty, debugging, timeout, disable_flash) \
                                     VALUES (?,?,?,?,?,?,?,?,?)",
-                                    (self.task_id, browser_params[i][6], browser_params[i][0], browser_params[i][1],
-                                    browser_params[i][2], browser_params[i][3], browser_params[i][5], browser_params[i][7],
-                                    browser_params[i][4]) )
+                                    (self.task_id, browser_params[i][8], browser_params[i][0], browser_params[i][1],
+                                    browser_params[i][2], browser_params[i][3], browser_params[i][7], browser_params[i][9],
+                                    browser_params[i][6]) )
                     self.db.commit()
                     crawl_id = cur.lastrowid
                     query_successful = True
@@ -132,8 +135,9 @@ class TaskManager:
                 params.append([arg] * self.num_browsers)
         # create a per-browser list
         params_list = list()
-        for i in range(self.num_browsers):
+        for i in xrange(self.num_browsers):
             params_list.append([x[i] for x in params])
+
         return params_list
     
     # sets up the DataAggregator (Must be launched prior to BrowserManager) 
@@ -198,7 +202,7 @@ class TaskManager:
             #send the command to all browsers
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
-                for i in range(len(self.browsers)):
+                for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.start_thread(self.browsers[i], command, timeout)
                         command_executed[i] = True
@@ -208,7 +212,7 @@ class TaskManager:
             condition = threading.Condition() #Used to block threads until ready
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
-                for i in range(len(self.browsers)):
+                for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.start_thread(self.browsers[i], command, timeout, condition)
                         command_executed[i] = True
