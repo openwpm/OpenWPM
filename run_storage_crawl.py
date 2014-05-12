@@ -16,17 +16,17 @@ def load_sites(site_path):
     return sites
 
 db_loc = os.path.expanduser('~/Desktop/')
-db_name = 'alexa3k_05092014_fresh_triton.sqlite'
+db_name = 'alexa3k_05122014_DNT_fresh_triton.sqlite'
 
 sites = load_sites('alexa3k.txt')
 
 manager = TaskManager.TaskManager(db_loc, db_name, browser='firefox', timeout=60,
-                                  headless=True, proxy=True)
+                                  headless=True, proxy=True, donottrack=True)
 
 for site in sites:
     start_time = time.time()
     manager.get(site)
     manager.dump_storage_vectors(site, start_time)
 
-manager.dump_profile(os.path.expanduser('~/Desktop/alexa3k_05092014_fresh_triton/'), close_webdriver=True, overwrite_timeout=120)
+manager.dump_profile(os.path.expanduser('~/Desktop/alexa3k_05122014_DNT_triton/'), close_webdriver=True, overwrite_timeout=120)
 manager.close()
