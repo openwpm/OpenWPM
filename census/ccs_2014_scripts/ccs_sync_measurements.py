@@ -45,6 +45,7 @@ def output_sync_measurements(db1, db2):
     # extract the cookie ids on a per-database basis
     cookies_db1 = extract_cookie_ids.extract_persistent_ids_from_dbs([db1])
     cookies_db2 = extract_cookie_ids.extract_persistent_ids_from_dbs([db2])
+    domain_to_fp_map = census_util.build_domain_map(db1)
 
     print "1"
 
@@ -70,7 +71,6 @@ def output_sync_measurements(db1, db2):
     print "NUMBER OF IDS IN SYNCS: " + str(len(id_to_domain_map))
     print "NUMBER OF ID COOKIES IN SYNC: " + str(sum([len(id_to_cookie_map[key]) for key in id_to_domain_map]))
 
-
     id_to_domain_counts = census_util.sort_tuples([(key, len(id_to_domain_map[key])) for key in id_to_domain_map])
     print id_to_domain_counts
     for x in id_to_domain_counts:
@@ -82,10 +82,15 @@ def output_sync_measurements(db1, db2):
     print "NUMBER OF DOMAINS IN SYNC " + str(len(domain_to_id_map))
 
     for domain, count in domain_to_id_counts:
-        depth1 = len(build_hop_neighborhood(domain, 1, domain_to_id_map, id_to_domain_map))
-        depth2 = len(build_hop_neighborhood(domain, 2, domain_to_id_map, id_to_domain_map))
-        depth3 = len(build_hop_neighborhood(domain, 3, domain_to_id_map, id_to_domain_map))
-        print str(domain) + "\t" + str(count) + "\t" + str(depth1) + "\t" + str(depth2) + "\t" + str(depth3)
+        neigh1 = build_hop_neighborhood(domain, 1, domain_to_id_map, id_to_domain_map)
+        depth1 = len(neigh1)
+        num_doms1 = len(census_util.get_values_from_keys(neigh1, domain_to_fp_map))
+
+        neigh2 = build_hop_neighborhood(domain, 2, domain_to_id_map, id_to_domain_map)
+        depth2 = len(neigh2)
+        num_doms2 = len(census_util.get_values_from_keys(neigh2, domain_to_fp_map))
+
+        print str(domain) + "\t" + str(count) + "\t" + str(depth1) + "\t" + str(num_doms1) + "\t" + str(depth2) + "\t" + str(num_doms2)
 
 # RESPAWN / SYNC SCRIPT
 # checks for respawning and syncing of cookie data
@@ -141,6 +146,10 @@ def connect_graph_through_sync(baseline_db, pre_sync_db, post_sync_db):
     cookies_pre_sync = extract_cookie_ids.extract_persistent_ids_from_dbs([pre_sync_db])
     cookies_post_sync = extract_cookie_ids.extract_persistent_ids_from_dbs([post_sync_db])
 
+    print "Extracting the domain to first-party mappings"
+    fp_map_pre_sync = census_util.build_domain_map(pre_sync_db)
+    fp_map_post_sync = census_util.build_domain_map(post_sync_db)
+
     print "Building the sync graphs"
     mappings = [] # first mapping is ID to domain - second is domain to ID; 0 is pre_sync 1 is post_sync
     for cookie_database, cookies in [(pre_sync_db, cookies_pre_sync), (post_sync_db, cookies_post_sync)]:
@@ -182,12 +191,19 @@ def connect_graph_through_sync(baseline_db, pre_sync_db, post_sync_db):
     for respawned_id in respawned_id_to_domain_map:
         old_neighborhood = build_hop_neighborhood(respawned_id, float("inf"), mappings[0][1], mappings[0][2])
         old_neighborhood_domains = census_util.get_values_from_keys(old_neighborhood, mappings[0][1])
+        old_fp_domains = census_util.get_values_from_keys(old_neighborhood_domains, fp_map_pre_sync)
+
         new_neighborhood = build_hop_neighborhood(respawned_id, float("inf"), mappings[1][1], mappings[1][2])
-        new_neighborhood_domains = census_util.get_values_from_keys(new_neighborhood, mappings[1][1])
+        new_neighborhood_domains = census_util.get_values_from_keys(new_neighborhood, mappings[1][1])   
+        new_fp_domains = census_util.get_values_from_keys(new_neighborhood_domains, fp_map_post_sync)
+
         full_neighborhood = set(old_neighborhood).union(set(new_neighborhood))
         full_neighborhood_domains = set(old_neighborhood_domains).union(set(new_neighborhood_domains))
+        full_fp_domains = set(old_fp_domains).union(set(new_fp_domains))
+
         print respawned_id + "\t" + str(len(old_neighborhood)) + "\t" + str(len(new_neighborhood)) + "\t" + str(len(full_neighborhood))
         print respawned_id + "\t" + str(len(old_neighborhood_domains)) + "\t" + str(len(new_neighborhood_domains)) + "\t" + str(len(full_neighborhood_domains))
+        print respawned_id + "\t" + str(len(old_fp_domains)) + "\t" + str(len(new_fp_domains)) + "\t" + str(len(full_fp_domains))
 
 if __name__ == "__main__":
     triton1 = "/home/christian/Desktop/flash_dbs/alexa3k_triton_fresh.sqlite"
@@ -198,10 +214,10 @@ if __name__ == "__main__":
     kingpin3 = "/home/christian/Desktop/flash_dbs/alexa3k_kingpin_recrawl.sqlite"
     snoop = "/home/christian/Desktop/flash_dbs/alexa3k_snoop_recrawl.sqlite"
     roman = "/home/christian/Desktop/flash_dbs/alexa3k_roman_recrawl.sqlite"
-    #perform_respawn_resync_study(triton1, kingpin1, kingpin2)
-    #output_sync_measurements(kingpin1, triton1)
-    #check_for_respawned_flash([triton1, snoop])
-    #connect_graph_through_sync(triton1, kingpin1, kingpin2)
-    connect_graph_through_sync(triton1, kingpin1, kingpin3)
+    dnt1 = "/home/christian/Desktop/flash_dbs/alexa3k_triton_DNT.sqlite"
+    dnt2 = "/home/christian/Desktop/flash_dbs/alexa3k_kingpin_DNT.sqlite"
+    notp1 = "/home/christian/Desktop/flash_dbs/alexa3k_snoop_notp.sqlite"
+    notp2 = "/home/christian/Desktop/flash_dbs/alexa3k_roman_notp.sqlite"
 
-
+    output_sync_measurements(kingpin1, triton1)
+    #connect_graph_through_sync(triton1, kingpin1, kingpin3)
