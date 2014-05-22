@@ -87,7 +87,7 @@ class Browser:
     # sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
     # loads associated user profile if necessary
     # <spawn_timeout> is the timeout for creating BrowserManager
-    def launch_browser_manager(self, spawn_timeout=300):
+    def launch_browser_manager(self, spawn_timeout=30):
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
