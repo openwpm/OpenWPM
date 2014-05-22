@@ -14,6 +14,27 @@ import time
 # <status_queue> is a queue connect to the TaskManager used for
 # <commit_loop> is the number of execution statements that should be made before a commit (used for speedup)
 
+def process_query(query, curr, db):
+    # executes a query of form (template_string, arguments)
+    # query is of form (template_string, arguments)
+    try:
+        curr.execute(query[0], query[1])
+    except OperationalError:
+        #print "ERROR: Unsupported query" + query[0] + " " + query[1]
+        print "ERROR: Unsupported query"
+        pass
+    except ProgrammingError:
+        #print "ERROR: Unsupported query" + query[0] + " " + query[1]
+        print "ERROR: Unsupported query"
+        pass
+
+def drain_queue(sock, curr, db):
+    ''' Ensures queue is empty before closing '''
+    time.sleep(3) #TODO: the socket needs a better way of closing
+    while not sock.queue.empty():
+        query = sock.queue.get()
+        process_query(query, curr, db)
+
 def DataAggregator(db_loc, status_queue, commit_loop=1):
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
@@ -30,6 +51,7 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         # received KILL command from TaskManager
         if not status_queue.empty():
             status_queue.get()
+            drain_queue(sock, curr, db)
             break
 
         # no command for now -> sleep to avoid pegging CPU on blocking get
@@ -41,19 +63,9 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
                 db.commit()
             continue
 
-        # executes a query of form (template_string, arguments)
-        # query is of form (template_string, arguments)
+        # process query
         query = sock.queue.get()
-        try:
-            curr.execute(query[0], query[1])
-        except OperationalError:
-            #print "ERROR: Unsupported query" + query[0] + " " + query[1]
-            print "ERROR: Unsupported query"
-            pass
-        except ProgrammingError:
-            #print "ERROR: Unsupported query" + query[0] + " " + query[1]
-            print "ERROR: Unsupported query"
-            pass
+        process_query(query, curr, db)
 
         # batch commit if necessary
         counter += 1
