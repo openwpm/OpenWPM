@@ -25,6 +25,7 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
     sock.start_accepting()
 
     counter = 0  # number of executions made since last commit
+    commit_time = 0 # keep track of time since last commit
     while True:
         # received KILL command from TaskManager
         if not status_queue.empty():
@@ -34,6 +35,10 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         # no command for now -> sleep to avoid pegging CPU on blocking get
         if sock.queue.empty():
             time.sleep(0.001)
+
+            # commit every two seconds to avoid blocking the db for too long
+            if counter > 0 and time.time() - commit_time > 5:
+                db.commit()
             continue
 
         # executes a query of form (template_string, arguments)
@@ -54,6 +59,7 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         counter += 1
         if counter >= commit_loop:
             counter = 0
+            commit_time = time.time()
             db.commit()
 
     # finishes work and gracefully stops
