@@ -35,7 +35,7 @@ def drain_queue(sock, curr, db):
         query = sock.queue.get()
         process_query(query, curr, db)
 
-def DataAggregator(db_loc, status_queue, commit_loop=1):
+def DataAggregator(db_loc, status_queue, commit_loop=1000):
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()
@@ -58,7 +58,7 @@ def DataAggregator(db_loc, status_queue, commit_loop=1):
         if sock.queue.empty():
             time.sleep(0.001)
 
-            # commit every two seconds to avoid blocking the db for too long
+            # commit every five seconds to avoid blocking the db for too long
             if counter > 0 and time.time() - commit_time > 5:
                 db.commit()
             continue
