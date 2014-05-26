@@ -89,10 +89,10 @@ class TaskManager:
             while not query_successful:
                 try:
                     cur.execute("INSERT INTO crawl (task_id, profile, browser, \
-                                    headless, proxy, fourthparty, debugging, timeout, disable_flash) \
-                                    VALUES (?,?,?,?,?,?,?,?,?)",
+                                    headless, proxy, debugging, timeout, disable_flash) \
+                                    VALUES (?,?,?,?,?,?,?,?)",
                                     (self.task_id, browser_params[i][7], browser_params[i][0], browser_params[i][1],
-                                    browser_params[i][2], False, browser_params[i][6], browser_params[i][8],
+                                    browser_params[i][2], browser_params[i][6], browser_params[i][8],
                                     browser_params[i][5]))
                     self.db.commit()
                     crawl_id = cur.lastrowid
