@@ -26,7 +26,6 @@ import time
 # <num_instances> is the number of browser managers to launch if you wish to crawl in parallel
 # <headless> is a boolean that indicates whether we want to run a headless browser (TODO: make this work for Chrome)
 # <proxy> is a boolean that indicates whether we want to use a proxy (for now mitmproxy)
-# <fourthparty> is a boolean that indicates whether we want to add support for FourthParty
 # <donottrack> is a boolean that indicates whether we want to use Do Not Track
 # <tp_cookies> is a a string for our third party cookie preference: 'always', 'never' or 'from_visited'
 # <browser_debugging> is a boolean that indicates whether we want to run the browser in debugging mode
@@ -34,7 +33,7 @@ import time
 # <description> is an optional description string for a particular crawl
 class TaskManager:
     def __init__(self, db_location, db_name, description = None, num_browsers = 1,
-                browser='firefox', headless=False, proxy=False, fourthparty=False,
+                browser='firefox', headless=False, proxy=False, 
                 donottrack=True, tp_cookies='always', disable_flash= False, 
                 browser_debugging=False, timeout=60, 
                 profile_tar=None, random_attributes=False):
@@ -43,10 +42,6 @@ class TaskManager:
         self.db_loc = db_location if db_location.endswith("/") else db_location + "/"
         self.db_name = db_name
 
-        # Store parameters for the database
-        #self.parameters = (profile_tar, browser, headless, proxy, fourthparty,
-        #                    browser_debugging, timeout, disable_flash)
-
         # sets up the crawl data database
         self.db = sqlite3.connect(db_location + db_name)
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
@@ -54,7 +49,7 @@ class TaskManager:
         
         # prepares browser settings
         self.num_browsers = num_browsers
-        browser_params = self.build_browser_params(browser, headless, proxy, fourthparty,
+        browser_params = self.build_browser_params(browser, headless, proxy,
                                                    donottrack, tp_cookies, disable_flash, browser_debugging, 
                                                    profile_tar, timeout, random_attributes)
 
@@ -96,9 +91,9 @@ class TaskManager:
                     cur.execute("INSERT INTO crawl (task_id, profile, browser, \
                                     headless, proxy, fourthparty, debugging, timeout, disable_flash) \
                                     VALUES (?,?,?,?,?,?,?,?,?)",
-                                    (self.task_id, browser_params[i][8], browser_params[i][0], browser_params[i][1],
-                                    browser_params[i][2], browser_params[i][3], browser_params[i][7], browser_params[i][9],
-                                    browser_params[i][6]) )
+                                    (self.task_id, browser_params[i][7], browser_params[i][0], browser_params[i][1],
+                                    browser_params[i][2], False, browser_params[i][6], browser_params[i][8],
+                                    browser_params[i][5]))
                     self.db.commit()
                     crawl_id = cur.lastrowid
                     query_successful = True

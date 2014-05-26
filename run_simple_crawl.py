@@ -24,14 +24,10 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
 
     manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
                                       headless=preferences["headless"], proxy=preferences["proxy"], 
-                                      tp_cookies=preferences["tp_cookies"], fourthparty=preferences["fourthparty"],
-                                      donottrack=preferences["donottrack"], profile_tar=preferences["load_folder"],
-                                      random_attributes=True)
-
+                                      tp_cookies=preferences["tp_cookies"], donottrack=preferences["donottrack"],
+                                      profile_tar=preferences["load_folder"], random_attributes=True)
     for site in sites:
         manager.get(site)
-        if preferences["wipe"]:
-            manager.reset()
 
     # dump profile at the end if necessary
     if preferences['dump_folder'] is not None:
@@ -46,7 +42,6 @@ def print_help_message():
           "2. The name of the crawl DB\n" \
           "Other command line argument flags are:\n" \
           "-browser: specifies type of browser to use (firefox or chrome)\n" \
-          "-fourthparty: True/False value as to whether to use Fourthparty instrumentation\n" \
           "-donottrack: True/False value as to whether to use the Do Not Track flag\n" \
           "-tp_cookies: string designating third-party cookie preferences: always, never or just_visted\n" \
           "-proxy: True/False value as to whether to use proxy-based instrumentation\n" \
@@ -54,7 +49,6 @@ def print_help_message():
           "-timeout: timeout (in seconds) for the TaskManager to default time out loads\n" \
           "-load: absolute path of folder that contains tar-zipped user profile\n" \
           "-dump: absolute path of folder in which to dump tar-zipped user profile\n" \
-          "-wipe: True/False value as to whether we want to wipe the state between sites\n"
 
 # main helper function, reads command-line arguments and launches crawl
 def main(argv):
@@ -71,7 +65,6 @@ def main(argv):
     # default preferences for the crawl (see print_help_message for details of their meanings)
     preferences = {
         "browser": "firefox",
-        "fourthparty": False,
         "donottrack": False,
         "tp_cookies": "always",
         "proxy": True,
@@ -86,8 +79,6 @@ def main(argv):
     for i in xrange(4, len(argv), 2):
         if argv[i] == "-browser":
             preferences["browser"] = "chrome" if argv[i+1].lower() == "chrome" else "firefox"
-        elif argv[i] == "-fourthparty":
-            preferences["fourthparty"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-donottrack":
             preferences["donottrack"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-tp_cookies":
@@ -102,8 +93,6 @@ def main(argv):
             preferences["load_folder"] = argv[i+1]
         elif argv[i] == "-dump":
             preferences["dump_folder"] = argv[i+1]
-        elif argv[i] == "-wipe":
-            preferences["wipe"] = True if argv[i+1].lower() == "true" else False
 
     # launches the crawl with the updated preferences
     run_site_crawl(db_loc, db_name, sites, preferences)

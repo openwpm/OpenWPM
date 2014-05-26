@@ -9,14 +9,14 @@ import cPickle
 import random
 
 def deploy_firefox(browser_params):
-    root_dir = os.path.dirname(__file__) #directory of this file
+    root_dir = os.path.dirname(__file__)  # directory of this file
     
     display_pid = None
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
     
-    profile_settings = None #Imported browser settings
-    ext_dict = None #Dictionary of supported extensions
+    profile_settings = None  # Imported browser settings
+    ext_dict = None  # Dictionary of supported extensions
     if browser_params['profile_tar']:
         profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'])
 
@@ -24,14 +24,14 @@ def deploy_firefox(browser_params):
         profile_settings = dict()
 
         # load a random set of extensions
-        with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'),'rb') as f:
+        with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'), 'rb') as f:
             ext_dict = cPickle.load(f)
-        extensions = random.sample(ext_dict.keys(),random.randint(0,len(ext_dict.keys())))
+        extensions = random.sample(ext_dict.keys(),random.randint(0, len(ext_dict.keys())))
         profile_settings['extensions'] = extensions
 
         # choose a random screen-res from list
         resolutions = list()
-        with open(os.path.join(root_dir,'screen_resolutions.txt'), 'r') as f:
+        with open(os.path.join(root_dir, 'screen_resolutions.txt'), 'r') as f:
             for line in f:
                 resolutions.append(tuple(line.strip().split(',')))
         profile_settings['screen_res'] = random.choice(resolutions)
@@ -46,16 +46,16 @@ def deploy_firefox(browser_params):
     # If profile settings still not set - set defaults
     if profile_settings is None:
         profile_settings = dict()
-        profile_settings['extensions'] = [] #Load no extensions
-        profile_settings['screen_res'] = (1366,768)
+        profile_settings['extensions'] = []  # Load no extensions
+        profile_settings['screen_res'] = (1366, 768)
         profile_settings['ua_string'] = None
 
     # Load profile settings - window size set after initialization
     if profile_settings['extensions'] != [] and ext_dict is None:
-        with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'),'rb') as f:
+        with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'), 'rb') as f:
             ext_dict = cPickle.load(f)
     for extension in profile_settings['extensions']:
-        ext_loc = os.path.join(root_dir, 'firefox_extensions/',ext_dict[extension]['filename'])
+        ext_loc = os.path.join(root_dir, 'firefox_extensions/', ext_dict[extension]['filename'])
         fp.add_extension(extension=ext_loc)
         # Avoid start-up screen - set the necessary flags for each extension
         for item in ext_dict[extension]['startup']:
@@ -72,7 +72,7 @@ def deploy_firefox(browser_params):
     if browser_params['debugging']:
         firebug_loc = os.path.join(root_dir, 'firefox_extensions/firebug-1.11.0.xpi')
         fp.add_extension(extension=firebug_loc)
-        fp.set_preference("extensions.firebug.currentVersion", "1.11.0") #Avoid startup screen
+        fp.set_preference("extensions.firebug.currentVersion", "1.11.0")  # Avoid startup screen
 
     if browser_params['proxy']:
         PROXY_HOST = "localhost"
@@ -82,7 +82,7 @@ def deploy_firefox(browser_params):
         fp.set_preference("network.proxy.type", 1)
         fp.set_preference("network.proxy.http", PROXY_HOST)
         fp.set_preference("network.proxy.http_port", PROXY_PORT)
-        fp.set_preference("network.proxy.ssl", PROXY_HOST) #https sites
+        fp.set_preference("network.proxy.ssl", PROXY_HOST)  # https sites
         fp.set_preference("network.proxy.ssl_port", PROXY_PORT)
 
         # set this to exclude sites from using proxy
@@ -94,11 +94,6 @@ def deploy_firefox(browser_params):
         # a previous tmp selenium profile
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/key3.db'), fp.path + '/key3.db')
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/cert8.db'), fp.path + '/cert8.db')
-
-        #TODO: this isn't supported
-        if browser_params['fourthparty']:
-            fp.add_extension(extension=os.path.join(root_dir + "/../",
-                                                    'extensions/fourthparty/fourthparty.xpi'))
 
     # Turns on Do Not Track
     if browser_params['donottrack']:
@@ -115,7 +110,7 @@ def deploy_firefox(browser_params):
         
     # Disable flash
     if browser_params['disable_flash']:
-        fp.set_preference('plugin.state.flash',0)
+        fp.set_preference('plugin.state.flash', 0)
 
     driver = webdriver.Firefox(firefox_profile=fp)
 

@@ -1,9 +1,8 @@
-import tempfile
+
 import os
 import subprocess
 import tarfile
 import cPickle
-import re
 
 # Library for managing profile folders (for now, profile folder I/O)
 

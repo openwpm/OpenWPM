@@ -22,7 +22,7 @@ import os
 
 class Browser:
     def __init__(self, crawl_id, db_socket_address, browser, headless, proxy, 
-                fourthparty, donottrack, tp_cookies, disable_flash, browser_debugging,
+                donottrack, tp_cookies, disable_flash, browser_debugging,
                 profile_tar, timeout, random_attributes):
         # manager parameters
         self.current_profile_path = None
@@ -35,7 +35,6 @@ class Browser:
             'browser': browser,
             'headless': headless,
             'proxy': proxy,
-            'fourthparty': fourthparty,
             'donottrack': donottrack,
             'tp_cookies': tp_cookies,
             'disable_flash': disable_flash,
