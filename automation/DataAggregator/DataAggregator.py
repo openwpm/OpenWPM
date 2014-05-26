@@ -10,48 +10,46 @@ import time
 # Currently uses SQLite but may move to different platform
 
 # <db_loc> is the absolute path of the DB's current location
-# <query_queue> is data input queue: for now, passed query strings (TODO: more involved data manipulations)
+# <query_queue> is data input queue: for now, passed query strings
 # <status_queue> is a queue connect to the TaskManager used for
-# <commit_loop> is the number of execution statements that should be made before a commit (used for speedup)
+# <commit_batch_size> is the number of execution statements that should be made before a commit (used for speedup)
 
-def process_query(query, curr, db):
+def process_query(query, curr):
     # executes a query of form (template_string, arguments)
     # query is of form (template_string, arguments)
     try:
         curr.execute(query[0], query[1])
     except OperationalError:
-        #print "ERROR: Unsupported query" + query[0] + " " + query[1]
         print "ERROR: Unsupported query"
         pass
     except ProgrammingError:
-        #print "ERROR: Unsupported query" + query[0] + " " + query[1]
         print "ERROR: Unsupported query"
         pass
 
-def drain_queue(sock, curr, db):
+def drain_queue(sock, curr):
     ''' Ensures queue is empty before closing '''
-    time.sleep(3) #TODO: the socket needs a better way of closing
+    time.sleep(3)  # TODO: the socket needs a better way of closing
     while not sock.queue.empty():
         query = sock.queue.get()
-        process_query(query, curr, db)
+        process_query(query, curr)
 
-def DataAggregator(db_loc, status_queue, commit_loop=1000):
+def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()
 
     # sets up the serversocket to start accepting connections
     sock = serversocket()
-    status_queue.put(sock.sock.getsockname()) #let TM know location
+    status_queue.put(sock.sock.getsockname())  # let TM know location
     sock.start_accepting()
 
     counter = 0  # number of executions made since last commit
-    commit_time = 0 # keep track of time since last commit
+    commit_time = 0  # keep track of time since last commit
     while True:
         # received KILL command from TaskManager
         if not status_queue.empty():
             status_queue.get()
-            drain_queue(sock, curr, db)
+            drain_queue(sock, curr)
             break
 
         # no command for now -> sleep to avoid pegging CPU on blocking get
@@ -65,11 +63,11 @@ def DataAggregator(db_loc, status_queue, commit_loop=1000):
 
         # process query
         query = sock.queue.get()
-        process_query(query, curr, db)
+        process_query(query, curr)
 
         # batch commit if necessary
         counter += 1
-        if counter >= commit_loop:
+        if counter >= commit_batch_size:
             counter = 0
             commit_time = time.time()
             db.commit()

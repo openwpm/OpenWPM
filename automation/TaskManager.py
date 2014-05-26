@@ -1,13 +1,11 @@
-from BrowserManager import Browser, BrowserManager
+from BrowserManager import Browser
 from DataAggregator import DataAggregator
 from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
-from collections import namedtuple
 from sqlite3 import OperationalError
 import threading
 import os
-import signal
 import sqlite3
 import subprocess
 import time
@@ -86,6 +84,7 @@ class TaskManager:
 
             cur = self.db.cursor()
             query_successful = False
+            crawl_id = -1
             while not query_successful:
                 try:
                     cur.execute("INSERT INTO crawl (task_id, profile, browser, \
