@@ -31,7 +31,7 @@ def get_website(url, webdriver, proxy_queue):
         y = random.randrange(0,500)
         action = ActionChains(webdriver)
         action.move_by_offset(x,y)
-        action.perform
+        action.perform()
 
     # scroll to bottom of page
     webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
