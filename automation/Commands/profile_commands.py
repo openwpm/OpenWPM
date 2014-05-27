@@ -4,6 +4,8 @@ import subprocess
 import tarfile
 import cPickle
 
+from utils.firefox_profile import sleep_until_sqlite_checkpoint
+
 # Library for managing profile folders (for now, profile folder I/O)
 
 # saves the browser settings in a pickled dictionary to <location>
@@ -42,8 +44,8 @@ def load_flash_files(tar_location):
 # if <browser_settings> exists they are also saved
 # <full_profile> specifies to save the entire profile directory (not just cookies)
 # <save_flash> specifies whether to dump flash files
-def dump_profile(browser_profile_folder, tar_location, browser_settings = None, 
-                 save_flash = False, full_profile=True):
+def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdriver=None,
+            browser_settings = None, save_flash = False, full_profile=True):
     # ensures that folder paths end with slashes
     browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") else browser_profile_folder + "/"
     tar_location = tar_location if tar_location.endswith("/") else tar_location + "/"
@@ -61,6 +63,11 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None,
     if os.path.isfile(tar_location + tar_name):
         subprocess.call(["rm", tar_location + tar_name])
 
+    # if this is a dump on close, close the webdriver and wait for checkpoint
+    if close_webdriver:
+        webdriver.close()
+        sleep_until_sqlite_checkpoint(browser_profile_folder)
+
     # backup and tar profile
     tar = tarfile.open(tar_location + tar_name, 'w:gz')
     if full_profile: #backup all storage vectors
@@ -72,7 +79,7 @@ def dump_profile(browser_profile_folder, tar_location, browser_settings = None,
             ]
         storage_vector_dirs = [
                 'webapps', # related to localStorage?
-                'storage/persistent', # directory for IndexedDB
+                'storage', # directory for IndexedDB
                 #'Cache', # ff cache files - need workaround: https://support.mozilla.org/en-US/questions/945274
                 #'startupCache' # related to cache?
                 ]

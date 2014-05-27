@@ -94,9 +94,10 @@ class Browser:
             crashed_profile_path = self.current_profile_path
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp() + "/"
-            profile_commands.dump_profile(crashed_profile_path, tempdir, self.browser_settings, full_profile=True)
-            self.browser_params['profile_tar'] = tempdir  # make sure browser loads crashed profile
-            self.browser_params['random_attributes'] = False  # don't re-randomize attributes
+            profile_commands.dump_profile(crashed_profile_path, tempdir, close_webdriver=False, 
+			browser_settings=self.browser_settings, full_profile=True)
+            self.browser_params['profile_tar'] = tempdir # make sure browser loads crashed profile
+            self.browser_params['random_attributes'] = False # don't re-randomize attributes
         else:
             tempdir = None
             crashed_profile_path = None
@@ -184,7 +185,7 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
-            command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue)
+            command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue, db_socket_address, browser_params['crawl_id'])
             status_queue.put("OK")
         except Exception as ex:
             print "CRASH IN DRIVER ORACLE:" + str(ex) + " RESTARTING BROWSER MANAGER"

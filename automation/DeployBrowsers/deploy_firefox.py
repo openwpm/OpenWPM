@@ -114,7 +114,7 @@ def deploy_firefox(browser_params):
 
     driver = webdriver.Firefox(firefox_profile=fp)
 
-    # Set the selenium timeout equal to half the user set, this constant is up for debate
+    # Set the timeout equal to half the user set, this constant is up for debate
     timeout = ceil(float(browser_params['timeout'])/2)
     driver.set_page_load_timeout(timeout)
     driver.set_script_timeout(timeout)

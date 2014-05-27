@@ -237,6 +237,7 @@ class TaskManager:
         # passes off command and waits for a success (or failure signal)
         browser.command_queue.put(command)
         command_succeeded = False
+        is_timeout = True
 
         # repeatedly waits for a reply from the BrowserManager; if fails/times-out => restart
         for i in xrange(0, int(timeout) * 1000):
@@ -251,8 +252,11 @@ class TaskManager:
                 command_succeeded = True
                 self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                                  (browser.crawl_id, command[0], command[1], True) ))
+            is_timeout = False
             break
         if not command_succeeded:  # reboots since BrowserManager is down
+            if is_timeout:
+                print "TIMEOUT, KILLING BROWSER MANAGER"
             self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
                              (browser.crawl_id, command[0], command[1], False) ))
             browser.restart_browser_manager()
@@ -263,6 +267,10 @@ class TaskManager:
     def get(self, url, index=None, overwrite_timeout=None):
         self.distribute_command(('GET', url), index, overwrite_timeout)
 
+    # dumps the local storage vectors (flash, localStorage, cookies) to db
+    def dump_storage_vectors(self, url, start_time, index = None, overwrite_timeout=None):
+        self.distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, overwrite_timeout)
+
     # dumps from the profile path to a given file (absolute path)
-    def dump_profile(self, dump_folder, index=None, overwrite_timeout=None):
-        self.distribute_command(('DUMP_PROF', dump_folder), index, overwrite_timeout)
+    def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
+        self.distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
