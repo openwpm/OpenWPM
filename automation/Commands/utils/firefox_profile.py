@@ -1,4 +1,5 @@
-### Code taken from KU Leuven collaboration ###
+### This is code adapted from KU Leuven crawler code written by
+### Gunes Acar and Marc Juarez
 from glob import glob
 import sqlite3
 import time

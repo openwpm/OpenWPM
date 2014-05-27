@@ -1,8 +1,10 @@
-### This is code adapted from KU Leuven crawler code ###
+### This is code adapted from KU Leuven crawler code written by
+### Gunes Acar and Marc Juarez
 from pyamf import sol
-import file_utils as fu
+import fnmatch
 import os
 
+#TODO: Linux only
 FLASH_DIRS = ['~/.macromedia/Flash_Player/#SharedObjects/']
 
 class FlashCookie(object):
@@ -12,12 +14,21 @@ class FlashCookie(object):
     key = ''
     content = ''
 
+def gen_find_files(filepat, top):
+    """
+    http://www.dabeaz.com/generators/
+    returns filenames that matches the given pattern under() a given dir
+    """
+    for path, _, filelist in os.walk(top):
+        for name in fnmatch.filter(filelist, filepat):
+            yield os.path.join(path, name)
+
 def get_flash_cookies(mod_since=0):
     """Return a list of Flash cookies (Local Shared Objects)."""
     flash_cookies = list()
     for top_dir in FLASH_DIRS:
         top_dir = os.path.expanduser(top_dir)
-        for lso_file in fu.gen_find_files("*.sol", top_dir):
+        for lso_file in gen_find_files("*.sol", top_dir):
             mtime = os.path.getmtime(lso_file)
             if mtime > mod_since:
                 try:
