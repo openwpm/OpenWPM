@@ -19,10 +19,8 @@ def load_sites(site_path):
 # <db_loc> is the absolute path of where we want to dump the database
 # <db_name> is the name of the database
 # <preferences> is a dictionary of preferences to initialize the crawler
-def run_site_crawl(db_loc, db_name, sites, preferences):
-    db_loc = db_loc if db_loc.endswith("/") else db_loc + "/"
-
-    manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
+def run_site_crawl(db_path, sites, preferences):
+    manager = TaskManager.TaskManager(db_path, browser=preferences["browser"], timeout=preferences["timeout"],
                                       headless=preferences["headless"], proxy=preferences["proxy"], 
                                       tp_cookies=preferences["tp_cookies"], donottrack=preferences["donottrack"],
                                       profile_tar=preferences["load_folder"])
@@ -37,9 +35,8 @@ def run_site_crawl(db_loc, db_name, sites, preferences):
 
 # prints out the help message in the case that too few arguments are mentioned
 def print_help_message():
-    print "\nMust call simple crawl script with at least two arguments: \n" \
-          "1. The absolute directory path in which to store the crawl DB\n" \
-          "2. The name of the crawl DB\n" \
+    print "\nMust call simple crawl script with at least one arguments: \n" \
+          "The absolute directory path of the new crawl DB\n" \
           "Other command line argument flags are:\n" \
           "-browser: specifies type of browser to use (firefox or chrome)\n" \
           "-donottrack: True/False value as to whether to use the Do Not Track flag\n" \
@@ -53,13 +50,12 @@ def print_help_message():
 # main helper function, reads command-line arguments and launches crawl
 def main(argv):
     # filters out bad arguments
-    if len(argv) < 4 or len(argv) % 2 != 0:
+    if len(argv) < 3 or len(argv) % 2 == 0:
         print_help_message()
         return
 
-    db_loc = argv[1]  # absolute path for the database
-    db_name = argv[2]  # name of the crawl database
-    site_file = argv[3]  # absolute path of the file that contains the list of sites to visit
+    db_path = argv[1]  # absolute path for the database
+    site_file = argv[2]  # absolute path of the file that contains the list of sites to visit
     sites = load_sites(site_file)
 
     # default preferences for the crawl (see print_help_message for details of their meanings)
@@ -76,7 +72,7 @@ def main(argv):
     }
 
     # overwrites the default preferences based on command-line inputs
-    for i in xrange(4, len(argv), 2):
+    for i in xrange(3, len(argv), 2):
         if argv[i] == "-browser":
             preferences["browser"] = "chrome" if argv[i+1].lower() == "chrome" else "firefox"
         elif argv[i] == "-donottrack":
@@ -95,7 +91,7 @@ def main(argv):
             preferences["dump_folder"] = argv[i+1]
 
     # launches the crawl with the updated preferences
-    run_site_crawl(db_loc, db_name, sites, preferences)
+    run_site_crawl(db_path, sites, preferences)
 
 # Full main function (just passes down sys.argv)
 if __name__ == "__main__":
