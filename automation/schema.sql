@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS profile_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
     page_url VARCHAR(500) NOT NULL,
-    domain TEXT,
+    baseDomain TEXT,
     name TEXT,
     value TEXT,
     host TEXT,

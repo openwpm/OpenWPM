@@ -66,7 +66,7 @@ def get_website(url, webdriver, proxy_queue):
             action.perform()
             num_moves += 1
         except MoveTargetOutOfBoundsException:
-            print "...mouse moves out of bounds"
+            print "[ERROR] - mouse moves out of bounds"
             pass
 
     # bot mitigation 2: scroll to the bottom of the page
@@ -110,7 +110,7 @@ def dump_storage_vectors(top_url, start_time, profile_dir, db_socket_address, cr
     rows = get_cookies(profile_dir, start_time)
     if rows is not None:
         for row in rows:
-            query = ("INSERT INTO profile_cookies (crawl_id, page_url, domain, name, value, \
+            query = ("INSERT INTO profile_cookies (crawl_id, page_url, baseDomain, name, value, \
                       host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(crawl_id, top_url) + row)
             sock.send(query)
