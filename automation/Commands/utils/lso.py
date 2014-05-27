@@ -48,28 +48,3 @@ def parse_flash_cookies(lso_file):
 
         flash_cookies.append(flash_cookie)
     return flash_cookies
-
-if __name__=="__main__":
-    import sqlite3
-    loc = '~/Desktop/delete_this.sqlite'
-    con = sqlite3.connect(os.path.expanduser(loc))
-    cur = con.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS flash_cookies (\
-            id INTEGER PRIMARY KEY AUTOINCREMENT,\
-            page_url VARCHAR(500) NOT NULL,\
-            domain VARCHAR(500),\
-            filename VARCHAR(500),\
-            local_path VARCHAR(1000),\
-            key TEXT,\
-            content TEXT);")
-    
-    top_url = 'testing'
-    flash_cookies = get_flash_cookies()
-    for cookie in flash_cookies:
-        query = ("INSERT INTO flash_cookies (page_url, domain, filename, local_path, \
-                  key, content) VALUES (?,?,?,?,?,?)", 
-                  (top_url, cookie.domain, cookie.filename, cookie.local_path, 
-                  cookie.key, cookie.content))
-        cur.execute(*query)
-    con.commit()
-    import ipdb; ipdb.set_trace()
