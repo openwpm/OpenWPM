@@ -2,6 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 import random
@@ -53,13 +54,20 @@ def get_website(url, webdriver, proxy_queue):
         webdriver.switch_to_window(main_handle)
 
     #TODO: bot mitigation should be optional
+    #TODO: should do bounds checking
     # bot mitigation 1: move the randomly around a number of times
-    for i in xrange(0, NUM_MOUSE_MOVES):
-        x = random.randrange(0, 500)
-        y = random.randrange(0, 500)
-        action = ActionChains(webdriver)
-        action.move_by_offset(x, y)
-        action.perform()
+    num_moves = 0
+    while num_moves < NUM_MOUSE_MOVES:
+        try:
+            x = random.randrange(0, 100)
+            y = random.randrange(0, 100)
+            action = ActionChains(webdriver)
+            action.move_by_offset(x, y)
+            action.perform()
+            num_moves += 1
+        except MoveTargetOutOfBoundsException:
+            print "...mouse moves out of bounds"
+            pass
 
     # bot mitigation 2: scroll to the bottom of the page
     webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -70,7 +78,7 @@ def get_website(url, webdriver, proxy_queue):
     # Create a new tab and kill this one to stop traffic
     # NOTE: This code is firefox specific
     # TODO: This should be optional
-    time.sleep(5)
+    time.sleep(1)
     switch_to_new_tab = ActionChains(webdriver)
     switch_to_new_tab.key_down(Keys.CONTROL + 't') # open new tab
     switch_to_new_tab.key_up(Keys.CONTROL + 't')
