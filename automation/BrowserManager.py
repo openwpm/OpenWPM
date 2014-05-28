@@ -21,28 +21,13 @@ import os
 # <browser_params> are browser parameter settings (e.g. whether we're using a proxy, headless, etc.)
 
 class Browser:
-    def __init__(self, crawl_id, db_socket_address, browser, headless, proxy, donottrack, tp_cookies,
-                 disable_flash, browser_debugging, profile_tar, timeout, random_attributes):
+    def __init__(self, db_socket_address, browser_params):
         # manager parameters
         self.current_profile_path = None
-        self.crawl_id = crawl_id
-        self.timeout = timeout
         self.db_socket_address = db_socket_address
-        
-        # constructs dictionary of browser parameters
-        self.browser_params = {
-            'browser': browser,
-            'headless': headless,
-            'proxy': proxy,
-            'donottrack': donottrack,
-            'tp_cookies': tp_cookies,
-            'disable_flash': disable_flash,
-            'debugging': browser_debugging,
-            'crawl_id': crawl_id,
-            'profile_tar': profile_tar,
-            'random_attributes': random_attributes,
-            'timeout': timeout
-        }
+        self.crawl_id = browser_params['crawl_id']
+        self.timeout = browser_params['timeout']
+        self.browser_params = browser_params
         
         # Queues and process IDs for BrowserManager
         self.command_thread = None  # thread to run commands issues from TaskManager
@@ -62,11 +47,6 @@ class Browser:
     # return if the browser is ready to accept a command
     def ready(self):
         return self.command_thread is None or not self.command_thread.is_alive()
-        #return self.command_thread is not None and self.command_thread.is_alive()
-        #if self.command_thread == None or not self.command_thread.is_alive():
-         #   return True
-        #else:
-         #   return False
 
     # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
     def kill_browser_manager(self):

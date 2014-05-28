@@ -27,15 +27,11 @@ import time
 # <tp_cookies> is a a string for our third party cookie preference: 'always', 'never' or 'from_visited'
 # <browser_debugging> is a boolean that indicates whether we want to run the browser in debugging mode
 # <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
-# <description> is an optional description string for a particular crawl
+# <task_description> is an optional description string for a particular crawl
 class TaskManager:
-    def __init__(self, db_path, description = None, num_browsers = 1,
-                browser='firefox', headless=False, proxy=False, 
-                donottrack=True, tp_cookies='always', disable_flash= False, 
-                browser_debugging=False, timeout=60, 
-                profile_tar=None, random_attributes=False):
+    def __init__(self, db_path, browser_params, num_browsers, task_description = None):
         # sets up the information needed to write to the database
-        self.desc = description
+        self.desc = task_description
         self.db_path = db_path
 
         # sets up the crawl data database
@@ -45,9 +41,11 @@ class TaskManager:
         
         # prepares browser settings
         self.num_browsers = num_browsers
-        browser_params = self.build_browser_params(browser, headless, proxy,
-                                                   donottrack, tp_cookies, disable_flash, browser_debugging, 
-                                                   profile_tar, timeout, random_attributes)
+        if type(browser_params) is not list:
+            browser_params = [browser_params]
+
+        if len(browser_params) != num_browsers:
+            raise Exception("Number of browser parameter dictionaries is not the same as <num_browsers>")
 
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
@@ -85,19 +83,21 @@ class TaskManager:
             crawl_id = -1
             while not query_successful:
                 try:
-                    cur.execute("INSERT INTO crawl (task_id, profile, browser, \
-                                    headless, proxy, debugging, timeout, disable_flash) \
-                                    VALUES (?,?,?,?,?,?,?,?)",
-                                    (self.task_id, browser_params[i][7], browser_params[i][0], browser_params[i][1],
-                                    browser_params[i][2], browser_params[i][6], browser_params[i][8],
-                                    browser_params[i][5]))
+                    cur.execute("INSERT INTO crawl (task_id, profile, browser, headless, proxy, debugging, "
+                                "timeout, disable_flash) VALUES (?,?,?,?,?,?,?,?)",
+                                (self.task_id, browser_params[i]['profile_tar'], browser_params[i]['browser'],
+                                 browser_params[i]['headless'], browser_params[i]['proxy'],
+                                 browser_params[i]['debugging'], browser_params[i]['timeout'],
+                                 browser_params[i]['disable_flash']))
                     self.db.commit()
                     crawl_id = cur.lastrowid
                     query_successful = True
                 except OperationalError:
                     time.sleep(2)
                     pass
-            browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))
+
+            browser_params[i]['crawl_id'] = crawl_id
+            browsers.append(Browser(self.aggregator_address, browser_params[i]))
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
             for item in browsers:
@@ -111,27 +111,6 @@ class TaskManager:
                                  WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)))
         return browsers
 
-    # builds the browser parameter vectors, scaling all parameters to the number of browsers
-    def build_browser_params(self, *args):
-        # scale parameter vectors
-        params = list()
-        for arg in args:
-            if type(arg) == list:
-                # list arguments must not exceed # of browsers and divide # of browsers evenly
-                if len(arg) <= self.num_browsers and self.num_browsers % len(arg) == 0:
-                    params.append(arg * (self.num_browsers / len(arg)))
-                else:
-                    raise Exception("Number of browsers requested is not the length of \
-                                    the specified parameters (or a multiple).")
-            else:  # single length parameter
-                params.append([arg] * self.num_browsers)
-        # create a per-browser list
-        params_list = list()
-        for i in xrange(self.num_browsers):
-            params_list.append([x[i] for x in params])
-
-        return params_list
-    
     # sets up the DataAggregator (Must be launched prior to BrowserManager) 
     def launch_data_aggregator(self):
         self.aggregator_status_queue = Queue()
