@@ -8,6 +8,8 @@ import os
 import cPickle
 import random
 
+DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
+
 def deploy_firefox(browser_params):
     root_dir = os.path.dirname(__file__)  # directory of this file
     
@@ -47,7 +49,7 @@ def deploy_firefox(browser_params):
     if profile_settings is None:
         profile_settings = dict()
         profile_settings['extensions'] = []  # Load no extensions
-        profile_settings['screen_res'] = (1366, 768)
+        profile_settings['screen_res'] = DEFAULT_SCREEN_RES
         profile_settings['ua_string'] = None
 
     # Load profile settings - window size set after initialization
@@ -113,11 +115,6 @@ def deploy_firefox(browser_params):
         fp.set_preference('plugin.state.flash', 0)
 
     driver = webdriver.Firefox(firefox_profile=fp)
-
-    # Set the timeout equal to half the user set, this constant is up for debate
-    timeout = ceil(float(browser_params['timeout'])/2)
-    driver.set_page_load_timeout(timeout)
-    driver.set_script_timeout(timeout)
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])

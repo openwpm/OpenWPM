@@ -1,5 +1,7 @@
 from automation import TaskManager
 import sys
+import json
+import os
 
 # Runs a basic crawl which simply runs through a list of websites
 
@@ -19,27 +21,18 @@ def load_sites(site_path):
 # <db_loc> is the absolute path of where we want to dump the database
 # <db_name> is the name of the database
 # <preferences> is a dictionary of preferences to initialize the crawler
-def run_site_crawl(db_loc, db_name, sites, preferences):
-    db_loc = db_loc if db_loc.endswith("/") else db_loc + "/"
+def run_site_crawl(db_path, sites, preferences):
+    manager = TaskManager.TaskManager(db_path, preferences, 1)
 
-    manager = TaskManager.TaskManager(db_loc, db_name, browser=preferences["browser"], timeout=preferences["timeout"],
-                                      headless=preferences["headless"], proxy=preferences["proxy"], 
-                                      tp_cookies=preferences["tp_cookies"], fourthparty=preferences["fourthparty"],
-                                      donottrack=preferences["donottrack"], profile_tar=preferences["load_folder"])
     for site in sites:
         manager.get(site)
-
-    # dump profile at the end if necessary
-    if preferences['dump_folder'] is not None:
-        manager.dump_profile(preferences['dump_folder'])
 
     manager.close()
 
 # prints out the help message in the case that too few arguments are mentioned
 def print_help_message():
-    print "\nMust call simple crawl script with at least two arguments: \n" \
-          "1. The absolute directory path in which to store the crawl DB\n" \
-          "2. The name of the crawl DB\n" \
+    print "\nMust call simple crawl script with at least one arguments: \n" \
+          "The absolute directory path of the new crawl DB\n" \
           "Other command line argument flags are:\n" \
           "-browser: specifies type of browser to use (firefox or chrome)\n" \
           "-donottrack: True/False value as to whether to use the Do Not Track flag\n" \
@@ -48,35 +41,26 @@ def print_help_message():
           "-headless: True/False value as to whether to run browser in headless mode\n" \
           "-timeout: timeout (in seconds) for the TaskManager to default time out loads\n" \
           "-load: absolute path of folder that contains tar-zipped user profile\n" \
-          "-dump: absolute path of folder in which to dump tar-zipped user profile\n" \
+          "-profile_tar: absolute path of folder in which to dump tar-zipped user profile\n" \
 
 # main helper function, reads command-line arguments and launches crawl
 def main(argv):
     # filters out bad arguments
-    if len(argv) < 4 or len(argv) % 2 != 0:
+    if len(argv) < 3 or len(argv) % 2 == 0:
         print_help_message()
         return
 
-    db_loc = argv[1]  # absolute path for the database
-    db_name = argv[2]  # name of the crawl database
-    site_file = argv[3]  # absolute path of the file that contains the list of sites to visit
+    db_path = argv[1]  # absolute path for the database
+    site_file = argv[2]  # absolute path of the file that contains the list of sites to visit
     sites = load_sites(site_file)
 
-    # default preferences for the crawl (see print_help_message for details of their meanings)
-    preferences = {
-        "browser": "firefox",
-        "donottrack": False,
-        "tp_cookies": "always",
-        "proxy": True,
-        "headless": False,
-        "timeout": 60.0,
-        "load_folder": None,
-        "dump_folder": None,
-        "wipe": False
-    }
+    # loads up the default preference dictionary
+    fp = open(os.path.join(os.path.dirname(__file__), 'automation/default_settings.json'))
+    preferences = json.load(fp)
+    fp.close()
 
     # overwrites the default preferences based on command-line inputs
-    for i in xrange(4, len(argv), 2):
+    for i in xrange(3, len(argv), 2):
         if argv[i] == "-browser":
             preferences["browser"] = "chrome" if argv[i+1].lower() == "chrome" else "firefox"
         elif argv[i] == "-donottrack":
@@ -89,14 +73,11 @@ def main(argv):
             preferences["headless"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-timeout":
             preferences["timeout"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
-        elif argv[i] == "-load":
-            preferences["load_folder"] = argv[i+1]
-        elif argv[i] == "-dump":
-            preferences["dump_folder"] = argv[i+1]
+        elif argv[i] == "-profile_tar":
+            preferences["profile_tar"] = argv[i+1]
 
     # launches the crawl with the updated preferences
-    run_site_crawl(db_loc, db_name, sites, preferences)
+    run_site_crawl(db_path, sites, preferences)
 
-# Full main function (just passes down sys.argv)
 if __name__ == "__main__":
     main(sys.argv)

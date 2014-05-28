@@ -17,8 +17,7 @@ import time
 #TODO: improve db management in Task manager - the connection doesn't need to remain open
 #TODO: clean up this documentation to match the refactor
 
-# <db_location> is the absolute path of the folder in which we want to build our crawl data DB
-# <db_name> is the name of the database (including .sqlite suffix)
+# <db_path> is the absolute path of the crawl DB (which may not yet exist)
 # <browsers> is the type of browser we want to instantiate (currently accepts 'firefox' / 'chrome')
 # <timeout> is the default amount of time we want to allow a command to execute (can override on individual commands)
 # <num_instances> is the number of browser managers to launch if you wish to crawl in parallel
@@ -28,33 +27,30 @@ import time
 # <tp_cookies> is a a string for our third party cookie preference: 'always', 'never' or 'from_visited'
 # <browser_debugging> is a boolean that indicates whether we want to run the browser in debugging mode
 # <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
-# <description> is an optional description string for a particular crawl
+# <task_description> is an optional description string for a particular crawl
 class TaskManager:
-    def __init__(self, db_location, db_name, description = None, num_browsers = 1,
-                browser='firefox', headless=False, proxy=False, 
-                donottrack=True, tp_cookies='always', disable_flash= False, 
-                browser_debugging=False, timeout=60, 
-                profile_tar=None, random_attributes=False):
+    def __init__(self, db_path, browser_params, num_browsers, task_description = None):
         # sets up the information needed to write to the database
-        self.desc = description
-        self.db_loc = db_location if db_location.endswith("/") else db_location + "/"
-        self.db_name = db_name
+        self.desc = task_description
+        self.db_path = db_path
 
         # sets up the crawl data database
-        self.db = sqlite3.connect(db_location + db_name)
+        self.db = sqlite3.connect(db_path)
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
             self.db.executescript(f.read())
         
         # prepares browser settings
         self.num_browsers = num_browsers
-        browser_params = self.build_browser_params(browser, headless, proxy,
-                                                   donottrack, tp_cookies, disable_flash, browser_debugging, 
-                                                   profile_tar, timeout, random_attributes)
+        if type(browser_params) is not list:
+            browser_params = [browser_params]
+
+        if len(browser_params) != num_browsers:
+            raise Exception("Number of browser parameter dictionaries is not the same as <num_browsers>")
 
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
         self.data_aggregator = self.launch_data_aggregator()
-        self.aggregator_address = self.aggregator_status_queue.get() #socket location: (address, port)
+        self.aggregator_address = self.aggregator_status_queue.get()  # socket location: (address, port)
 
         # open client socket
         self.sock = clientsocket()
@@ -67,7 +63,7 @@ class TaskManager:
         self.task_id = cur.lastrowid
         
         # sets up the BrowserManager(s) + associated queues
-        self.browsers = self.initialize_browsers(browser_params) #List of the Browser(s)
+        self.browsers = self.initialize_browsers(browser_params)  # List of the Browser(s)
         
         # open client socket
         self.sock = clientsocket()
@@ -87,19 +83,21 @@ class TaskManager:
             crawl_id = -1
             while not query_successful:
                 try:
-                    cur.execute("INSERT INTO crawl (task_id, profile, browser, \
-                                    headless, proxy, debugging, timeout, disable_flash) \
-                                    VALUES (?,?,?,?,?,?,?,?)",
-                                    (self.task_id, browser_params[i][7], browser_params[i][0], browser_params[i][1],
-                                    browser_params[i][2], browser_params[i][6], browser_params[i][8],
-                                    browser_params[i][5]))
+                    cur.execute("INSERT INTO crawl (task_id, profile, browser, headless, proxy, debugging, "
+                                "timeout, disable_flash) VALUES (?,?,?,?,?,?,?,?)",
+                                (self.task_id, browser_params[i]['profile_tar'], browser_params[i]['browser'],
+                                 browser_params[i]['headless'], browser_params[i]['proxy'],
+                                 browser_params[i]['debugging'], browser_params[i]['timeout'],
+                                 browser_params[i]['disable_flash']))
                     self.db.commit()
                     crawl_id = cur.lastrowid
                     query_successful = True
                 except OperationalError:
                     time.sleep(2)
                     pass
-            browsers.append(Browser(crawl_id, self.aggregator_address, *browser_params[i]))
+
+            browser_params[i]['crawl_id'] = crawl_id
+            browsers.append(Browser(self.aggregator_address, browser_params[i]))
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
             for item in browsers:
@@ -108,38 +106,16 @@ class TaskManager:
                 else:
                     extensions = ','.join(item.browser_settings['extensions'])
                 screen_res = str(item.browser_settings['screen_res'])
-                ua_string  = str(item.browser_settings['ua_string'])
-                self.sock.send( ("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
-                                 WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)) )
+                ua_string = str(item.browser_settings['ua_string'])
+                self.sock.send(("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
+                                 WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)))
         return browsers
 
-    # builds the browser parameter vectors, scaling all parameters to the number of browsers
-    def build_browser_params(self, *args):
-        # scale parameter vectors
-        params = list()
-        for arg in args:
-            if type(arg) == list:
-                # list arguments must not exceed # of browsers and divide # of browsers evenly
-                if len(arg) <= self.num_browsers and self.num_browsers % len(arg) == 0:
-                    params.append(arg * (self.num_browsers / len(arg)))
-                else:
-                    raise Exception("Number of browsers requested is not the length of \
-                                    the specified parameters (or a multiple).")
-            else: #single length parameter
-                params.append([arg] * self.num_browsers)
-        # create a per-browser list
-        params_list = list()
-        for i in xrange(self.num_browsers):
-            params_list.append([x[i] for x in params])
-
-        return params_list
-    
     # sets up the DataAggregator (Must be launched prior to BrowserManager) 
     def launch_data_aggregator(self):
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
-                             args=(self.db_loc + self.db_name, 
-                                 self.aggregator_status_queue, ))
+                             args=(self.db_path, self.aggregator_status_queue, ))
         aggregator.start()
         return aggregator
 
@@ -157,10 +133,10 @@ class TaskManager:
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 subprocess.call(["rm", "-r", browser.current_profile_path])
-            self.sock.send( ("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
-                            (browser.crawl_id,)) )
-        self.db.close() #close db connection
-        self.sock.close() #close socket to data aggregator
+            self.sock.send(("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
+                            (browser.crawl_id,)))
+        self.db.close()  # close db connection
+        self.sock.close()  # close socket to data aggregator
         self.kill_data_aggregator() 
 
     # CRAWLER COMMAND CODE
@@ -185,7 +161,7 @@ class TaskManager:
                     break
                 time.sleep(0.01)
 
-        elif index >= 0 and index < len(self.browsers):
+        elif 0 <= index < len(self.browsers):
             #send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
@@ -203,7 +179,7 @@ class TaskManager:
                 time.sleep(0.01)
         elif index == '**':
             #send the command to all browsers and sync it
-            condition = threading.Condition() #Used to block threads until ready
+            condition = threading.Condition()  # Used to block threads until ready
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
@@ -212,7 +188,7 @@ class TaskManager:
                         command_executed[i] = True
                 time.sleep(0.01)
             with condition:
-                condition.notifyAll() #All browsers loaded, tell them to start
+                condition.notifyAll()  # All browsers loaded, tell them to start
         else:
             #not a supported command
             print "Command index type is not supported or out of range"
@@ -250,15 +226,15 @@ class TaskManager:
             if status == "OK":
                 #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
-                self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                                 (browser.crawl_id, command[0], command[1], True) ))
+                self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
+                                 (browser.crawl_id, command[0], command[1], True)))
             is_timeout = False
             break
         if not command_succeeded:  # reboots since BrowserManager is down
             if is_timeout:
                 print "TIMEOUT, KILLING BROWSER MANAGER"
-            self.sock.send( ("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                             (browser.crawl_id, command[0], command[1], False) ))
+            self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
+                             (browser.crawl_id, command[0], command[1], False)))
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
