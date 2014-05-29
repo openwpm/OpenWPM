@@ -2,7 +2,6 @@ from ..Commands.profile_commands import load_profile
 
 from selenium import webdriver
 from pyvirtualdisplay import Display
-from math import ceil
 import shutil
 import os
 import cPickle
@@ -10,7 +9,9 @@ import random
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
+
 def deploy_firefox(browser_params):
+    """ launches a firefox instance with parameters set by the input dictionary """
     root_dir = os.path.dirname(__file__)  # directory of this file
     
     display_pid = None
@@ -28,7 +29,7 @@ def deploy_firefox(browser_params):
         # load a random set of extensions
         with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'), 'rb') as f:
             ext_dict = cPickle.load(f)
-        extensions = random.sample(ext_dict.keys(),random.randint(0, len(ext_dict.keys())))
+        extensions = random.sample(ext_dict.keys(), random.randint(0, len(ext_dict.keys())))
         profile_settings['extensions'] = extensions
 
         # choose a random screen-res from list

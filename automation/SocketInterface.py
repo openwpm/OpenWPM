@@ -8,10 +8,10 @@ import cPickle
 # see: https://stackoverflow.com/questions/1148062/python-socket-accept-blocks-prevents-app-from-quitting
 
 class serversocket:
-    '''
+    """
     A server socket to recieve and process string messages
     from client sockets to a central queue
-    '''
+    """
     def __init__(self, verbose=False):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', 0))
@@ -22,24 +22,24 @@ class serversocket:
             print "Server bound to: " + str(self.sock.getsockname())
     
     def start_accepting(self):
-        ''' Start the listener thread '''
+        """ Start the listener thread """
         thread = threading.Thread(target=self._accept, args=())
         thread.setDaemon(True)  # stops from blocking shutdown
         thread.start()
 
     def _accept(self):
-        ''' Listen for connections and pass handling to a new thread '''
+        """ Listen for connections and pass handling to a new thread """
         while True:
             (client, address) = self.sock.accept()
             thread = threading.Thread(target=self._handle_conn, args=(client, address))
             thread.start()
             
     def _handle_conn(self, client, address):
-        '''
+        """
         Recieve messages and pass to queue. Messages are prefixed with
         a 4-byte integer to specify the message length and 1-byte boolean
         to indicate pickling.
-        '''
+        """
         if self.verbose:
             print "Thread: " + str(threading.current_thread()) + " connected to: " + str(address)
         try:
@@ -74,10 +74,10 @@ class clientsocket:
         self.sock.connect((host, port))
 
     def send(self, msg):
-        '''
+        """
         Sends an arbitrary python object to the connected socket. Pickles if 
         not str, and prepends msg len (4-bytes) and pickle status (1-byte).
-        '''
+        """
         #if input not string, pickle
         if type(msg) is not str:
             msg = cPickle.dumps(msg)

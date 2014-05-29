@@ -1,11 +1,14 @@
 from selenium import webdriver
 import os
 
-# note dnt, tp_off are not supported
-# in general, chrome is not well-supported yet
+
 def deploy_chrome(browser_params):
-    # chrome driver must be installed in python $PATH (/usr/bin/)
-    # Chrome browser is assumed in default install directory for OS
+    """
+    deploys a chrome browser, given the list of list of browser params
+    in general, not as well supported as firefox yet
+    chrome driver must be installed in python $PATH (/usr/bin/)
+    Chrome browser is assumed in default install directory for OS
+    """
 
     # Profile Paths
     # OSX: ~/Library/Application Support/Google/Chrome/
@@ -32,9 +35,5 @@ def deploy_chrome(browser_params):
         co.add_argument("--proxy-server=%s:%i" % (PROXY_HOST, PROXY_PORT))
 
     driver = webdriver.Chrome(chrome_options=co)
-
-    #Limit page loads to 30 seconds
-    driver.set_page_load_timeout(30)
-    driver.set_script_timeout(30)
 
     return driver, profile_path, None

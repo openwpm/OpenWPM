@@ -5,8 +5,9 @@ import os
 
 # Runs a basic crawl which simply runs through a list of websites
 
-# loads a list of websites from a text file
+
 def load_sites(site_path):
+    """ loads a list of websites from a text file """
     sites = []
 
     f = open(site_path)
@@ -17,11 +18,13 @@ def load_sites(site_path):
 
     return sites
 
-# runs the crawl itself
-# <db_loc> is the absolute path of where we want to dump the database
-# <db_name> is the name of the database
-# <preferences> is a dictionary of preferences to initialize the crawler
+
 def run_site_crawl(db_path, sites, preferences):
+    """
+    runs the crawl itself
+    <db_path> is the absolute path of crawl database
+    <preferences> is a dictionary of preferences to initialize the crawler
+    """
     manager = TaskManager.TaskManager(db_path, preferences, 1)
 
     for site in sites:
@@ -29,8 +32,9 @@ def run_site_crawl(db_path, sites, preferences):
 
     manager.close()
 
-# prints out the help message in the case that too few arguments are mentioned
+
 def print_help_message():
+    """ prints out the help message in the case that too few arguments are mentioned """
     print "\nMust call simple crawl script with at least one arguments: \n" \
           "The absolute directory path of the new crawl DB\n" \
           "Other command line argument flags are:\n" \
@@ -44,8 +48,10 @@ def print_help_message():
           "-profile_tar: absolute path of folder in which to dump tar-zipped user profile\n" \
           "-bot_mitigation: True/False value as to whether to enable bot-mitigation measures"
 
-# main helper function, reads command-line arguments and launches crawl
+
 def main(argv):
+    """ main helper function, reads command-line arguments and launches crawl """
+
     # filters out bad arguments
     if len(argv) < 3 or len(argv) % 2 == 0:
         print_help_message()

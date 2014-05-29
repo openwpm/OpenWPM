@@ -17,8 +17,10 @@ NUM_MOUSE_MOVES = 10  # number of times to randomly move the mouse as part of bo
 RANDOM_SLEEP_LOW = 1  # low end (in seconds) for random sleep times between page loads (bot mitigation)
 RANDOM_SLEEP_HIGH = 7  # high end (in seconds) for random sleep times between page loads (bot mitigation)
 
-# performs three optional commands for bot-detection mitigation when getting a site
+
 def bot_mitigation(webdriver):
+    """ performs three optional commands for bot-detection mitigation when getting a site """
+
     # bot mitigation 1: move the randomly around a number of times
     num_moves = 0
     while num_moves < NUM_MOUSE_MOVES:
@@ -39,9 +41,12 @@ def bot_mitigation(webdriver):
     # bot mitigation 3: randomly wait so that page visits appear at irregular intervals
     time.sleep(random.randrange(RANDOM_SLEEP_LOW, RANDOM_SLEEP_HIGH))
 
-# kills the current tab and creates a new one to stop traffic
-# note: this code if firefox-specific for now
+
 def tab_restart_browser(webdriver):
+    """
+    kills the current tab and creates a new one to stop traffic
+    note: this code if firefox-specific for now
+    """
     if webdriver.current_url.lower() == 'about:blank':
         return
 
@@ -55,9 +60,13 @@ def tab_restart_browser(webdriver):
     switch_to_new_tab.perform()
     time.sleep(5)
 
-# goes to <url> using the given <webdriver> instance
-# <proxy_queue> is queue for sending the proxy the current first party site
+
 def get_website(url, webdriver, proxy_queue, browser_params):
+    """
+    goes to <url> using the given <webdriver> instance
+    <proxy_queue> is queue for sending the proxy the current first party site
+    """
+
     tab_restart_browser(webdriver)
     main_handle = webdriver.current_window_handle
 
@@ -95,8 +104,10 @@ def get_website(url, webdriver, proxy_queue, browser_params):
     if browser_params['bot_mitigation']:
         bot_mitigation(webdriver)
 
+
 def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
-    ''' Grab the newly changed items in supported storage vectors'''
+    """ Grab the newly changed items in supported storage vectors """
+
     # Set up a connection to DataAggregator
     tab_restart_browser(webdriver)  # kills traffic so we can cleanly record data
     sock = clientsocket()
@@ -108,9 +119,9 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
     flash_cookies = get_flash_cookies(start_time)
     for cookie in flash_cookies:
         query = ("INSERT INTO flash_cookies (crawl_id, page_url, domain, filename, local_path, \
-                  key, content) VALUES (?,?,?,?,?,?,?)", 
-                  (browser_params['crawl_id'], top_url, cookie.domain, cookie.filename, cookie.local_path,
-                  cookie.key, cookie.content))
+                  key, content) VALUES (?,?,?,?,?,?,?)", (browser_params['crawl_id'], top_url, cookie.domain,
+                                                          cookie.filename, cookie.local_path,
+                                                          cookie.key, cookie.content))
         sock.send(query)
 
     # Cookies
@@ -119,7 +130,7 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
         for row in rows:
             query = ("INSERT INTO profile_cookies (crawl_id, page_url, baseDomain, name, value, \
                       host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
-                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(browser_params['crawl_id'], top_url) + row)
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (browser_params['crawl_id'], top_url) + row)
             sock.send(query)
     
     # localStorage - TODO this doesn't have a modified time support

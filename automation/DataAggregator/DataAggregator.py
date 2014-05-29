@@ -4,36 +4,19 @@ from sqlite3 import ProgrammingError
 import sqlite3
 import time
 
-# Receives SQL queries from other processes and writes them to the central database
-# Executes queries until being told to die (then it will finish work and shut down)
-# This process should never be terminated un-gracefully
-# Currently uses SQLite but may move to different platform
-
-# <db_loc> is the absolute path of the DB's current location
-# <query_queue> is data input queue: for now, passed query strings
-# <status_queue> is a queue connect to the TaskManager used for
-# <commit_batch_size> is the number of execution statements that should be made before a commit (used for speedup)
-
-def process_query(query, curr):
-    # executes a query of form (template_string, arguments)
-    # query is of form (template_string, arguments)
-    try:
-        curr.execute(query[0], query[1])
-    except OperationalError:
-        print "ERROR: Unsupported query"
-        pass
-    except ProgrammingError:
-        print "ERROR: Unsupported query"
-        pass
-
-def drain_queue(sock, curr):
-    ''' Ensures queue is empty before closing '''
-    time.sleep(3)  # TODO: the socket needs a better way of closing
-    while not sock.queue.empty():
-        query = sock.queue.get()
-        process_query(query, curr)
 
 def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
+    """
+     Receives SQL queries from other processes and writes them to the central database
+     Executes queries until being told to die (then it will finish work and shut down)
+     This process should never be terminated un-gracefully
+     Currently uses SQLite but may move to different platform
+
+     <db_loc> is the absolute path of the DB's current location
+     <status_queue> is a queue connect to the TaskManager used for communication
+     <commit_batch_size> is the number of execution statements that should be made before a commit (used for speedup)
+    """
+
     # sets up DB connection
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()
@@ -76,3 +59,26 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
     db.commit()
     db.close()
     sock.close()
+
+
+def process_query(query, curr):
+    """
+    executes a query of form (template_string, arguments)
+    query is of form (template_string, arguments)
+    """
+    try:
+        curr.execute(query[0], query[1])
+    except OperationalError:
+        print "ERROR: Unsupported query"
+        pass
+    except ProgrammingError:
+        print "ERROR: Unsupported query"
+        pass
+
+
+def drain_queue(sock, curr):
+    """ Ensures queue is empty before closing """
+    time.sleep(3)  # TODO: the socket needs a better way of closing
+    while not sock.queue.empty():
+        query = sock.queue.get()
+        process_query(query, curr)

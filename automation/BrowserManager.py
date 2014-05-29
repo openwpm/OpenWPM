@@ -10,17 +10,19 @@ import signal
 import time
 import os
 
-# Sets up a WebDriver instance that adheres to a given set of user paramters
-# Continually listens to the TaskManager for commands and passes them to command module to execute
-# Sends OK signal if command succeeds or else sends a FAILED signal to indicate that workers should be restarted
-# TODO: this approach may be too coarse
-
-# <command_queue> is the queue through which the browser sends command tuples
-# <status_queue> is a queue through which the BrowserManager either signals command failure or success
-# <db_socket_address> is the socket address through which to send data to the DataAggregator to manipulate and write
-# <browser_params> are browser parameter settings (e.g. whether we're using a proxy, headless, etc.)
 
 class Browser:
+    """
+     Sets up a WebDriver instance that adheres to a given set of user paramters
+     Continually listens to the TaskManager for commands and passes them to command module to execute
+     Sends OK signal if command succeeds or else sends a FAILED signal to indicate that workers should be restarted
+
+     <command_queue> is the queue through which the browser sends command tuples
+     <status_queue> is a queue through which the BrowserManager either signals command failure or success
+     <db_socket_address> is the socket address through which to send data to the DataAggregator to manipulate and write
+     <browser_params> are browser parameter settings (e.g. whether we're using a proxy, headless, etc.)
+
+     """
     def __init__(self, browser_params):
         # manager parameters
         self.current_profile_path = None
@@ -42,10 +44,8 @@ class Browser:
         # start the browser process
         self.browser_manager = self.launch_browser_manager()
 
-    # CRAWLER SETUP / KILL CODE
-
-    # return if the browser is ready to accept a command
     def ready(self):
+        """ return if the browser is ready to accept a command """
         return self.command_thread is None or not self.command_thread.is_alive()
 
     # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
@@ -64,20 +64,23 @@ class Browser:
         except OSError:
             print "Browser process already dead"
 
-    # sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
-    # loads associated user profile if necessary
-    # <spawn_timeout> is the timeout for creating BrowserManager
     def launch_browser_manager(self, spawn_timeout=30):
+        """
+        sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
+        loads associated user profile if necessary
+        <spawn_timeout> is the timeout for creating BrowserManager
+        """
+
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
             crashed_profile_path = self.current_profile_path
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp() + "/"
-            profile_commands.dump_profile(crashed_profile_path, tempdir, close_webdriver=False, 
-			browser_settings=self.browser_settings, full_profile=True)
-            self.browser_params['profile_tar'] = tempdir # make sure browser loads crashed profile
-            self.browser_params['random_attributes'] = False # don't re-randomize attributes
+            profile_commands.dump_profile(crashed_profile_path, tempdir, close_webdriver=False,
+                                          browser_settings=self.browser_settings, full_profile=True)
+            self.browser_params['profile_tar'] = tempdir  # make sure browser loads crashed profile
+            self.browser_params['random_attributes'] = False  # don't re-randomize attributes
         else:
             tempdir = None
             crashed_profile_path = None
@@ -120,14 +123,16 @@ class Browser:
         self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
         return browser_manager
 
-    # resets the worker processes with profile to a clean state
     def reset(self):
+        """ resets the worker processes with profile to a clean state """
         if not self.is_fresh:  # optimization in case resetting after a relaunch
             self.restart_browser_manager(reset=True)
 
-    # kill and restart the two worker processes
-    # <reset> marks whether we want to wipe the old profile
     def restart_browser_manager(self, reset=False):
+        """
+        kill and restart the two worker processes
+        <reset> marks whether we want to wipe the old profile
+        """
         self.kill_browser_manager()
 
         # in case of reset, hard-deletes old profile

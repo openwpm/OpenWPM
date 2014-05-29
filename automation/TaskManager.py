@@ -11,26 +11,21 @@ import sqlite3
 import subprocess
 import time
 
-# User-facing API for running browser automation
-# The TaskManager runs two sub-processes - WebManger for browser actions/instrumentation and DataAggregator for DB I/O
-# General paradigm is for the TaskManager to send commands and wait for response and/or restart workers if necessary
-# Compared to light wrapper around WebDriver, provides robustness and timeout functionality
-#TODO: improve db management in Task manager - the connection doesn't need to remain open
-#TODO: clean up this documentation to match the refactor
 
-# <db_path> is the absolute path of the crawl DB (which may not yet exist)
-# <browsers> is the type of browser we want to instantiate (currently accepts 'firefox' / 'chrome')
-# <timeout> is the default amount of time we want to allow a command to execute (can override on individual commands)
-# <num_instances> is the number of browser managers to launch if you wish to crawl in parallel
-# <headless> is a boolean that indicates whether we want to run a headless browser (TODO: make this work for Chrome)
-# <proxy> is a boolean that indicates whether we want to use a proxy (for now mitmproxy)
-# <donottrack> is a boolean that indicates whether we want to use Do Not Track
-# <tp_cookies> is a a string for our third party cookie preference: 'always', 'never' or 'from_visited'
-# <browser_debugging> is a boolean that indicates whether we want to run the browser in debugging mode
-# <profile_path> is an absolute path of the folder containing a browser profile that we wish to load
-# <task_description> is an optional description string for a particular crawl
 class TaskManager:
-    def __init__(self, db_path, browser_params, num_browsers, task_description = None):
+    """
+    User-facing API for running browser automation
+    The TaskManager runs two sub-processes - WebManger for browser actions/instrumentation and DataAggregator for DB I/O
+    General paradigm is for the TaskManager to send commands and wait for response and/or restart workers if necessary
+    Compared to light wrapper around WebDriver, provides robustness and timeout functionality
+
+    <db_path> is the absolute path of the crawl DB (which may not yet exist)
+    <browser_params> is a list of (or single) dictionaries that specify preferences for browsers to instantiate
+    <num_browsers> is the number of browsers to instantiate
+    <task_description> is an optional description string for a particular crawl (primarily for logging)
+    """
+
+    def __init__(self, db_path, browser_params, num_browsers, task_description=None):
         # sets up the information needed to write to the database
         self.desc = task_description
         self.db_path = db_path
@@ -71,10 +66,8 @@ class TaskManager:
         self.sock = clientsocket()
         self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
 
-    # CRAWLER SETUP / KILL CODE
-
-    # initialize the browsers, each with a unique set of parameters
     def initialize_browsers(self, browser_params):
+        """ initialize the browsers, each with a unique set of parameters """
         browsers = list()
         for i in xrange(self.num_browsers):
             # update crawl table
@@ -114,22 +107,25 @@ class TaskManager:
                                  WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)))
         return browsers
 
-    # sets up the DataAggregator (Must be launched prior to BrowserManager) 
     def launch_data_aggregator(self):
+        """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
                              args=(self.db_path, self.aggregator_status_queue, ))
         aggregator.start()
         return aggregator
 
-    # terminates a DataAggregator with a graceful KILL COMMAND
     def kill_data_aggregator(self):
+        """ terminates a DataAggregator with a graceful KILL COMMAND """
         self.aggregator_status_queue.put("DIE")
         self.data_aggregator.join()
 
-    # wait for all child processes to finish executing commands and closes everything
     def close(self):
-        # Update crawl table for each browser (crawl_id) to show successful finish
+        """
+        wait for all child processes to finish executing commands and closes everything
+        Update crawl table for each browser (crawl_id) to show successful finish
+        """
+
         for browser in self.browsers:
             if browser.command_thread is not None:
                 browser.command_thread.join()
@@ -144,13 +140,15 @@ class TaskManager:
 
     # CRAWLER COMMAND CODE
 
-    # parses command type and issues command(s) to the proper browser
-    # <index> specifies the type of command this is
-    #         = None  -> first come, first serve
-    #         = #     -> index of browser to send command to
-    #         = *     -> sends command to all browsers
-    #         = **    -> sends command to all browsers (synchronized)
     def distribute_command(self, command, index=None, timeout=None):
+        """
+        parses command type and issues command(s) to the proper browser
+        <index> specifies the type of command this is:
+        = None  -> first come, first serve
+        =  #     -> index of browser to send command to
+        = *     -> sends command to all browsers
+        = **    -> sends command to all browsers (synchronized)
+        """
         if index is None:
             #send to first browser available
             command_executed = False
@@ -196,16 +194,18 @@ class TaskManager:
             #not a supported command
             print "Command index type is not supported or out of range"
 
-    # starts the command execution thread
     def start_thread(self, browser, command, timeout, condition=None):
+        """  starts the command execution thread """
         args = (browser, command, timeout, condition)
         thread = threading.Thread(target=self.issue_command, args=args)
         browser.command_thread = thread
         thread.start()
-    
-    # sends command tuple to the BrowserManager
-    # <timeout> gives the option to override default timeout
+
     def issue_command(self, browser, command, timeout=None, condition=None):
+        """
+        sends command tuple to the BrowserManager
+        <timeout> gives the option to override default timeout
+        """
         browser.is_fresh = False  # since we are issuing a command, the BrowserManager is no longer a fresh instance
         timeout = browser.timeout if timeout is None else timeout  # allows user to overwrite timeout
         # if this is a synced call, block on condition
@@ -229,27 +229,27 @@ class TaskManager:
             if status == "OK":
                 #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
-                self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                                 (browser.crawl_id, command[0], command[1], True)))
+                self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
+                                " VALUES (?,?,?,?)", (browser.crawl_id, command[0], command[1], True)))
             is_timeout = False
             break
         if not command_succeeded:  # reboots since BrowserManager is down
             if is_timeout:
                 print "TIMEOUT, KILLING BROWSER MANAGER"
             self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                             (browser.crawl_id, command[0], command[1], False)))
+                            (browser.crawl_id, command[0], command[1], False)))
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
-    # goes to a url
     def get(self, url, index=None, overwrite_timeout=None):
+        """ goes to a url """
         self.distribute_command(('GET', url), index, overwrite_timeout)
 
-    # dumps the local storage vectors (flash, localStorage, cookies) to db
-    def dump_storage_vectors(self, url, start_time, index = None, overwrite_timeout=None):
+    def dump_storage_vectors(self, url, start_time, index=None, overwrite_timeout=None):
+        """ dumps the local storage vectors (flash, localStorage, cookies) to db """
         self.distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, overwrite_timeout)
 
-    # dumps from the profile path to a given file (absolute path)
     def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
+        """ dumps from the profile path to a given file (absolute path) """
         self.distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
