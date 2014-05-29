@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import tarfile
@@ -6,12 +5,11 @@ import cPickle
 
 from utils.firefox_profile import sleep_until_sqlite_checkpoint
 
-# Library for managing profile folders (for now, profile folder I/O)
-
-# saves the browser settings in a pickled dictionary to <location>
 def save_browser_settings(location, browser_settings):
-    # browser_settings stores additional profile config parameters
-    # e.g. screen_res, plugin sets, user_agent string
+    '''
+    browser_settings stores additional profile config parameters
+    e.g. screen_res, plugin sets, user_agent string
+    '''
     if browser_settings is not None:
         # see if the browser_settings file exists, and if so delete
         if os.path.isfile(location + 'browser_settings.p'):
@@ -20,9 +18,8 @@ def save_browser_settings(location, browser_settings):
         with open(location + 'browser_settings.p', 'wb') as f:
             cPickle.dump(browser_settings, f)
 
-# loads the browser settings from a pickled dictionary in <location>
 def load_browser_settings(location):
-    # Check for and import additional browser settings
+    '''loads the browser settings from a pickled dictionary in <location>'''
     try:
         with open(location + 'browser_settings.p', 'rb') as f:
             browser_settings = cPickle.load(f)
