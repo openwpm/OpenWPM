@@ -42,6 +42,7 @@ def print_help_message():
           "-timeout: timeout (in seconds) for the TaskManager to default time out loads\n" \
           "-load: absolute path of folder that contains tar-zipped user profile\n" \
           "-profile_tar: absolute path of folder in which to dump tar-zipped user profile\n" \
+          "-bot_mitigation: True/False value as to whether to enable bot-mitigation measures"
 
 # main helper function, reads command-line arguments and launches crawl
 def main(argv):
@@ -71,6 +72,8 @@ def main(argv):
             preferences["proxy"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-headless":
             preferences["headless"] = True if argv[i+1].lower() == "true" else False
+        elif argv[i] == "-bot_mitigation":
+            preferences["bot_mitigation"] = True if argv[i+1].lower() == "true" else False
         elif argv[i] == "-timeout":
             preferences["timeout"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
         elif argv[i] == "-profile_tar":

@@ -99,7 +99,8 @@ class TaskManager:
                     pass
 
             browser_params[i]['crawl_id'] = crawl_id
-            browsers.append(Browser(self.aggregator_address, browser_params[i]))
+            browser_params[i]['aggregator_address'] = self.aggregator_address
+            browsers.append(Browser(browser_params[i]))
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
             for item in browsers:

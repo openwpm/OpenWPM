@@ -21,10 +21,10 @@ import os
 # <browser_params> are browser parameter settings (e.g. whether we're using a proxy, headless, etc.)
 
 class Browser:
-    def __init__(self, db_socket_address, browser_params):
+    def __init__(self, browser_params):
         # manager parameters
         self.current_profile_path = None
-        self.db_socket_address = db_socket_address
+        self.db_socket_address = browser_params['aggregator_address']
         self.crawl_id = browser_params['crawl_id']
         self.timeout = browser_params['timeout']
         self.browser_params = browser_params
@@ -90,7 +90,7 @@ class Browser:
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
             # builds and launches the browser_manager
-            args = (self.command_queue, self.status_queue, self.db_socket_address, self.browser_params)
+            args = (self.command_queue, self.status_queue, self.browser_params)
             browser_manager = Process(target=BrowserManager, args=args)
             browser_manager.start()
 
@@ -138,11 +138,12 @@ class Browser:
 
         self.browser_manager = self.launch_browser_manager()
 
-def BrowserManager(command_queue, status_queue, db_socket_address, browser_params):
+def BrowserManager(command_queue, status_queue, browser_params):
     # sets up the proxy (for now, mitmproxy) if necessary
     proxy_site_queue = None  # used to pass the current site down to the proxy
     if browser_params['proxy']:
-        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(db_socket_address, browser_params['crawl_id'])
+        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params['aggregator_address'],
+                                                                      browser_params['crawl_id'])
         browser_params['proxy'] = local_port
 
     # Gets the WebDriver, profile folder (i.e. where history/cookies are stored) and display pid (None if not headless)
@@ -151,6 +152,7 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
     # passes the profile folder, WebDriver pid and display pid back to the TaskManager
     # now, the TaskManager knows that the browser is successfully set up
     status_queue.put((prof_folder, int(driver.binary.process.pid), display_pid, browser_settings))
+    browser_params['profile_path'] = prof_folder
 
     # starts accepting arguments until told to die
     while True:
@@ -166,7 +168,7 @@ def BrowserManager(command_queue, status_queue, db_socket_address, browser_param
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
-            command_executor.execute_command(command, driver, prof_folder, browser_settings, proxy_site_queue, db_socket_address, browser_params['crawl_id'])
+            command_executor.execute_command(command, driver, proxy_site_queue, browser_settings, browser_params)
             status_queue.put("OK")
         except Exception as ex:
             print "CRASH IN DRIVER ORACLE:" + str(ex) + " RESTARTING BROWSER MANAGER"
