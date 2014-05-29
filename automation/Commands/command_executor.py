@@ -11,7 +11,7 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
         browser_commands.get_website(command[1], webdriver, proxy_queue, browser_params)
     
     if command[0] == 'DUMP_STORAGE_VECTORS':
-        browser_commands.dump_storage_vectors(command[1], command[2], browser_params)
+        browser_commands.dump_storage_vectors(command[1], command[2], webdriver, browser_params)
 
     if command[0] == 'DUMP_PROF':
         profile_commands.dump_profile(browser_params['profile_path'],

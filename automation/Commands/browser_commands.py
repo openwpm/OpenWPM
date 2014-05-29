@@ -39,11 +39,28 @@ def bot_mitigation(webdriver):
     # bot mitigation 3: randomly wait so that page visits appear at irregular intervals
     time.sleep(random.randrange(RANDOM_SLEEP_LOW, RANDOM_SLEEP_HIGH))
 
+# kills the current tab and creates a new one to stop traffic
+# note: this code if firefox-specific for now
+def tab_restart_browser(webdriver):
+    if webdriver.current_url.lower() == 'about:blank':
+        return
+
+    switch_to_new_tab = ActionChains(webdriver)
+    switch_to_new_tab.key_down(Keys.CONTROL + 't')  # open new tab
+    switch_to_new_tab.key_up(Keys.CONTROL + 't')
+    switch_to_new_tab.key_down(Keys.CONTROL + Keys.PAGE_UP)  # switch to prev tab
+    switch_to_new_tab.key_up(Keys.CONTROL + Keys.PAGE_UP)
+    switch_to_new_tab.key_down(Keys.CONTROL + 'w')  # close tab
+    switch_to_new_tab.key_up(Keys.CONTROL + 'w')
+    switch_to_new_tab.perform()
+    time.sleep(5)
 
 # goes to <url> using the given <webdriver> instance
 # <proxy_queue> is queue for sending the proxy the current first party site
 def get_website(url, webdriver, proxy_queue, browser_params):
+    tab_restart_browser(webdriver)
     main_handle = webdriver.current_window_handle
+
     # sends top-level domain to proxy
     # then, waits for it to finish marking traffic in queue before moving to new site
     if proxy_queue is not None:
@@ -78,23 +95,10 @@ def get_website(url, webdriver, proxy_queue, browser_params):
     if browser_params['bot_mitigation']:
         bot_mitigation(webdriver)
 
-    # Create a new tab and kill this one to stop traffic
-    # NOTE: This code is firefox specific
-    # TODO: This should be optional
-    time.sleep(1)
-    switch_to_new_tab = ActionChains(webdriver)
-    switch_to_new_tab.key_down(Keys.CONTROL + 't') # open new tab
-    switch_to_new_tab.key_up(Keys.CONTROL + 't')
-    switch_to_new_tab.key_down(Keys.CONTROL + Keys.PAGE_UP) # switch to prev tab
-    switch_to_new_tab.key_up(Keys.CONTROL + Keys.PAGE_UP)
-    switch_to_new_tab.key_down(Keys.CONTROL + 'w') # close tab
-    switch_to_new_tab.key_up(Keys.CONTROL + 'w')
-    switch_to_new_tab.perform()
-    time.sleep(5)
-
-def dump_storage_vectors(top_url, start_time, browser_params):
-    ''' Grab the newly changed items in supported storage vectors '''
+def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
+    ''' Grab the newly changed items in supported storage vectors'''
     # Set up a connection to DataAggregator
+    tab_restart_browser(webdriver)  # kills traffic so we can cleanly record data
     sock = clientsocket()
     sock.connect(*browser_params['aggregator_address'])
 

@@ -74,9 +74,11 @@ class InterceptingMaster (controller.Master):
         # attempts to get the top url, based on the request object
         if msg.request in self.prev_requests:
             top_url = self.prev_top_url
+            self.prev_requests.remove(msg.request)
         elif msg.request in self.curr_requests:
             top_url = self.curr_top_url
-        else:
+            self.curr_requests.remove(msg.request)
+        else:  # ignore responses for which we cannot match the request
             return
 
         mitm_commands.process_general_mitm_response(self.db_socket, self.crawl_id, top_url, msg)
