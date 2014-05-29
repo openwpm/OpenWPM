@@ -4,6 +4,7 @@ from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
 from sqlite3 import OperationalError
+import copy
 import threading
 import os
 import sqlite3
@@ -41,8 +42,9 @@ class TaskManager:
         
         # prepares browser settings
         self.num_browsers = num_browsers
+        # special case: for singleton dictionary, we perform deep copies so that number of dicts is <num_browsers>
         if type(browser_params) is not list:
-            browser_params = [browser_params]
+            browser_params = [copy.deepcopy(browser_params) for i in xrange(0, num_browsers)]
 
         if len(browser_params) != num_browsers:
             raise Exception("Number of browser parameter dictionaries is not the same as <num_browsers>")
