@@ -1,1 +1,1 @@
-{"random_attributes": false, "proxy": false, "disable_flash": true, "debugging": false, "profile_tar": null, "tp_cookies": "always", "headless": false, "donottrack": false, "timeout": 60, "browser": "firefox"}
+{"random_attributes": false, "proxy": true, "disable_flash": true, "debugging": false, "profile_tar": null, "tp_cookies": "always", "headless": false, "donottrack": false, "timeout": 60, "browser": "firefox"}

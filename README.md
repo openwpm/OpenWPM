@@ -1,6 +1,7 @@
 OpenWPM
 =======
 
+See the [wiki](https://github.com/citp/OpenWPM-dev/wiki) for a more in-depth tutorial.
 
 Install Dependencies
 --------------------
