@@ -134,6 +134,7 @@ class Browser:
         if reset and self.current_profile_path is not None:
             subprocess.call(["rm", "-r", self.current_profile_path])
             self.current_profile_path = None
+            self.browser_params['profile_tar'] = None
 
         self.browser_manager = self.launch_browser_manager()
 
