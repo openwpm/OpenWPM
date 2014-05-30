@@ -1,15 +1,21 @@
-# Customized MITMProxy
-# Extends the proxy controller to add some additional
-# functionality to handling requests and responses
+
 from ..SocketInterface import clientsocket
 from libmproxy import controller
 import sys
 import Queue
 import mitm_commands
 
-# Inspired by the following example. Note the gist has a lot of bugs.
-# https://gist.github.com/dannvix/5285924
+
 class InterceptingMaster (controller.Master):
+    """
+    Customized MITMProxy
+    Extends the proxy controller to add some additional
+    functionality for handling /logging requests and responses
+
+    Inspired by the following example. Note the gist has a lot of bugs.
+    https://gist.github.com/dannvix/5285924
+    """
+    
     def __init__(self, server, crawl_id, url_queue, db_socket_address):
         self.crawl_id = crawl_id
         
@@ -24,8 +30,8 @@ class InterceptingMaster (controller.Master):
 
         controller.Master.__init__(self, server)
 
-    # Tries to read and process a message from the proxy queue, returns True iff this succeeeds
     def load_process_message(self, q):
+        """ Tries to read and process a message from the proxy queue, returns True iff this succeeds """
         try:
             msg = q.get(timeout=0.01)
             controller.Master.handle(self, *msg)
@@ -33,8 +39,8 @@ class InterceptingMaster (controller.Master):
         except Queue.Empty:
             return False
 
-    # new tick function used to label first-party domains and avoid race conditions when doing so
     def tick(self, q):
+        """ new tick function used to label first-party domains and avoid race conditions when doing so """
         if self.curr_top_url is None:  # proxy is fresh, need to get first-party domain right away
             self.curr_top_url = self.url_queue.get()
         elif not self.url_queue.empty():  # new FP has been visited
@@ -47,8 +53,8 @@ class InterceptingMaster (controller.Master):
 
         self.load_process_message(q)
 
-    # Light wrapper around run with error printing
     def run(self):
+        """ Light wrapper around run with error printing """
         try:
             controller.Master.run(self)
         except KeyboardInterrupt:
@@ -61,14 +67,15 @@ class InterceptingMaster (controller.Master):
             self.shutdown()
             raise
 
-    # Record data from HTTP requests
     def handle_request(self, msg):
+        """ Receives HTTP request, and sends it to logging function """
         msg.reply()
         self.curr_requests.add(msg)
         mitm_commands.process_general_mitm_request(self.db_socket, self.crawl_id, self.curr_top_url, msg)
 
     # Record data from HTTP responses
     def handle_response(self, msg):
+        """ Receives HTTP response, and sends it to logging function """
         msg.reply()
 
         # attempts to get the top url, based on the request object

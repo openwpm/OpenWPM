@@ -6,11 +6,14 @@ import thread
 import MITMProxy
 from libmproxy import proxy
 
-# deploys an instance of mitmproxy
-# <db_query_query> is the queue used to pass down query strings and arguments to the DataAggregator
-# <crawl_id> is the id set by the TaskManager
 
 def init_proxy(db_socket_address, crawl_id):
+    """
+    # deploys an (optional) instance of mitmproxy used to log crawl data
+    <db_socket_address> is the connection address of the DataAggregator
+    <crawl_id> is the id set by the TaskManager
+    """
+
     proxy_site_queue = Queue.Queue()  # queue for crawler to communicate with proxy
 
     # gets local port from one of the free ports
