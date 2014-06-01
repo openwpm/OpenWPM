@@ -22,17 +22,25 @@ def bot_mitigation(webdriver):
     """ performs three optional commands for bot-detection mitigation when getting a site """
 
     # bot mitigation 1: move the randomly around a number of times
+    window_size = webdriver.get_window_size()
     num_moves = 0
-    while num_moves < NUM_MOUSE_MOVES:
+    num_fails = 0
+    while num_moves < NUM_MOUSE_MOVES + 1 and num_fails < NUM_MOUSE_MOVES:
         try:
-            x = random.randrange(0, 100)
-            y = random.randrange(0, 100)
+            if num_moves == 0: #move to the center of the screen
+                x = int(round(window_size['height']/2))
+                y = int(round(window_size['width']/2))
+            else: #move a random amount in some direction
+                move_max = random.randint(0,500)
+                x = random.randint(-move_max, move_max)
+                y = random.randint(-move_max, move_max)
             action = ActionChains(webdriver)
             action.move_by_offset(x, y)
             action.perform()
             num_moves += 1
         except MoveTargetOutOfBoundsException:
-            print "[ERROR] - mouse moves out of bounds"
+            num_fails += 1
+            #print "[WARNING] - Mouse movement out of bounds, trying a different offset..."
             pass
 
     # bot mitigation 2: scroll to the bottom of the page
