@@ -1,27 +1,10 @@
 OpenWPM
 =======
 
+If you’re a researcher interested in measuring some aspect of online privacy -- whether prevalence of cookies, or leakage of PII, or price discrimination based on personal information, or anything in between -- then the OpenWPM platform is for you.
+
+We built OpenWPM because we noticed that there are an incredible number of methodological and engineering pitfalls in automating web privacy measurement: existing automation tools like Selenium are prone to crashes and data corruption; automated browsing units may not behave sufficiently realistically like human users, and hence measure different results; there can be subtle, unforeseen interactions between different measurement units may invalidate measurements. These are just a few main ones.
+
+OpenWPM handles all these aspects so you don’t have to. We built it based on a year of our own our hard-earned experience and mistakes in running web privacy measurement studies, our detailed survey of 32 such prior papers, and numerous discussions with researchers in this area. Our crawling infrastructure abstracts away the underlying tools and allows you to specify high-level commands with a minimal amount of code, recovers from all browser crashes, and lets you run reproducible studies. 
+
 See the [wiki](https://github.com/citp/OpenWPM-dev/wiki) for a more in-depth tutorial.
-
-Install Dependencies
---------------------
-
-A mostly updated list of dependencies, this should enable you to run things on a clean
-install of ubuntu.
-
-sudo apt-get update
-
-sudo apt-get install htop git firefox python-dev python-pip libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb
-
-sudo pip install pyvirtualdisplay beautifulsoup4 selenium netlib pyasn1 PyOPenSSL mitmproxy python-dateutil tld pyamf
-
-git clone https://github.com/citp/OpenWPM-dev/
-git config --global user.name your\_user\_name
-
-If you need flash on Ubuntu 14.04 64-bit Amazon EC2 instance, run the following:
-
-sudo sh -c 'echo "deb http://archive.canonical.com/ubuntu/ trusty partner" >> /etc/apt/sources.list.d/canonical\_partner.list'
-
-sudo apt-get update
-
-sudo apt-get install adobe-flashplugin

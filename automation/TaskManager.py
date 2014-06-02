@@ -11,6 +11,8 @@ import sqlite3
 import subprocess
 import time
 
+SLEEP_CONS = 0.01  # command sleep constant (in seconds)
+
 
 class TaskManager:
     """
@@ -160,7 +162,7 @@ class TaskManager:
                         break
                 if command_executed:
                     break
-                time.sleep(0.01)
+                time.sleep(SLEEP_CONS)
 
         elif 0 <= index < len(self.browsers):
             #send the command to this specific browser
@@ -168,7 +170,7 @@ class TaskManager:
                 if self.browsers[index].ready():
                     self.start_thread(self.browsers[index], command, timeout)
                     break
-                time.sleep(0.01)
+                time.sleep(SLEEP_CONS)
         elif index == '*':
             #send the command to all browsers
             command_executed = [False] * len(self.browsers)
@@ -177,7 +179,7 @@ class TaskManager:
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.start_thread(self.browsers[i], command, timeout)
                         command_executed[i] = True
-                time.sleep(0.01)
+                time.sleep(SLEEP_CONS)
         elif index == '**':
             #send the command to all browsers and sync it
             condition = threading.Condition()  # Used to block threads until ready
@@ -187,7 +189,7 @@ class TaskManager:
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.start_thread(self.browsers[i], command, timeout, condition)
                         command_executed[i] = True
-                time.sleep(0.01)
+                time.sleep(SLEEP_CONS)
             with condition:
                 condition.notifyAll()  # All browsers loaded, tell them to start
         else:
@@ -219,9 +221,9 @@ class TaskManager:
         is_timeout = True
 
         # repeatedly waits for a reply from the BrowserManager; if fails/times-out => restart
-        for i in xrange(0, int(timeout) * 1000):
+        for i in xrange(0, int(timeout / SLEEP_CONS)):
             if browser.status_queue.empty():  # nothing to do -> sleep so as to not peg CPU
-                time.sleep(0.001)
+                time.sleep(SLEEP_CONS)
                 continue
 
             # received reply from BrowserManager, either success signal or failure notice
