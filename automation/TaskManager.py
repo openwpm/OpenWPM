@@ -201,6 +201,7 @@ class TaskManager:
         args = (browser, command, timeout, condition)
         thread = threading.Thread(target=self.issue_command, args=args)
         browser.command_thread = thread
+        thread.daemon = True
         thread.start()
 
     def issue_command(self, browser, command, timeout=None, condition=None):

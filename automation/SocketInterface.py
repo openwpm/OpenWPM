@@ -24,7 +24,7 @@ class serversocket:
     def start_accepting(self):
         """ Start the listener thread """
         thread = threading.Thread(target=self._accept, args=())
-        thread.setDaemon(True)  # stops from blocking shutdown
+        thread.daemon = True  # stops from blocking shutdown
         thread.start()
 
     def _accept(self):
@@ -32,6 +32,7 @@ class serversocket:
         while True:
             (client, address) = self.sock.accept()
             thread = threading.Thread(target=self._handle_conn, args=(client, address))
+            thread.daemon = True
             thread.start()
             
     def _handle_conn(self, client, address):

@@ -1,7 +1,7 @@
 import Queue
 import os
 import socket
-import thread
+import threading
 
 import MITMProxy
 from libmproxy import proxy
@@ -26,5 +26,7 @@ def init_proxy(db_socket_address, crawl_id):
     server = proxy.ProxyServer(config, proxy_port)
     print 'Intercepting Proxy listening on ' + str(proxy_port)
     m = MITMProxy.InterceptingMaster(server, crawl_id, proxy_site_queue, db_socket_address)
-    thread.start_new_thread(m.run, ())
+    thread = threading.Thread(target=m.run, args=())
+    thread.daemon = True
+    thread.start()
     return proxy_port, proxy_site_queue
