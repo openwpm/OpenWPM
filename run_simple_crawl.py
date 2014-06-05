@@ -19,7 +19,7 @@ def load_sites(site_path):
     return sites
 
 
-def run_site_crawl(db_path, sites, preferences):
+def run_site_crawl(db_path, sites, preferences, dump_location):
     """
     runs the crawl itself
     <db_path> is the absolute path of crawl database
@@ -29,6 +29,9 @@ def run_site_crawl(db_path, sites, preferences):
 
     for site in sites:
         manager.get(site)
+
+    if dump_location:
+        manager.dump_profile(dump_location,True)
 
     manager.close()
 
@@ -44,8 +47,8 @@ def print_help_message():
           "-proxy: True/False value as to whether to use proxy-based instrumentation\n" \
           "-headless: True/False value as to whether to run browser in headless mode\n" \
           "-timeout: timeout (in seconds) for the TaskManager to default time out loads\n" \
-          "-load: absolute path of folder that contains tar-zipped user profile\n" \
-          "-profile_tar: absolute path of folder in which to dump tar-zipped user profile\n" \
+          "-profile_tar: absolute path of folder in which to load tar-zipped user profile\n" \
+          "-dump_location: absolute path of folder in which to dump tar-zipped user profile\n" \
           "-bot_mitigation: True/False value as to whether to enable bot-mitigation measures"
 
 
@@ -66,6 +69,7 @@ def main(argv):
     preferences = json.load(fp)
     fp.close()
 
+    dump_location = None
     # overwrites the default preferences based on command-line inputs
     for i in xrange(3, len(argv), 2):
         if argv[i] == "-browser":
@@ -84,9 +88,13 @@ def main(argv):
             preferences["timeout"] = float(argv[i+1]) if float(argv[i]) > 0 else 30.0
         elif argv[i] == "-profile_tar":
             preferences["profile_tar"] = argv[i+1]
+        elif argv[i] == "-disable_flash":
+            preferences["disable_flash"] = True if argv[i+1].lower() == "true" else False
+        elif argv[i] == "-dump_location":
+            dump_location = argv[i+1]
 
     # launches the crawl with the updated preferences
-    run_site_crawl(db_path, sites, preferences)
+    run_site_crawl(db_path, sites, preferences, dump_location)
 
 if __name__ == "__main__":
     main(sys.argv)

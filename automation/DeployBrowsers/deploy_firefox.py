@@ -10,7 +10,7 @@ import random
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
 
-def deploy_firefox(browser_params):
+def deploy_firefox(browser_params, crash_recovery):
     """ launches a firefox instance with parameters set by the input dictionary """
     root_dir = os.path.dirname(__file__)  # directory of this file
     
@@ -20,7 +20,10 @@ def deploy_firefox(browser_params):
     
     profile_settings = None  # Imported browser settings
     ext_dict = None  # Dictionary of supported extensions
-    if browser_params['profile_tar']:
+    if browser_params['profile_tar'] and not crash_recovery:
+        profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'],
+                                        load_flash=browser_params['disable_flash'] is False)
+    elif browser_params['profile_tar']:
         profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'])
 
     if browser_params['random_attributes'] and profile_settings is None:

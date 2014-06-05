@@ -1,10 +1,17 @@
-import os
 import subprocess
 import tarfile
 import cPickle
+import shutil
+import sys
+import os
 
 from utils.firefox_profile import sleep_until_sqlite_checkpoint
+from utils.file_utils import rmsubtree
 
+# Flash Plugin Storage Location -- Linux ONLY
+HOME = os.path.expanduser('~')
+FLASH_LOCS = [HOME + '/.macromedia/Flash_Player/#SharedObjects',
+             HOME + '/.macromedia/Flash_Player/macromedia.com/support/flashplayer/sys']
 
 def save_browser_settings(location, browser_settings):
     """
@@ -19,7 +26,6 @@ def save_browser_settings(location, browser_settings):
         with open(location + 'browser_settings.p', 'wb') as f:
             cPickle.dump(browser_settings, f)
 
-
 def load_browser_settings(location):
     """ loads the browser settings from a pickled dictionary in <location>"""
     try:
@@ -29,19 +35,48 @@ def load_browser_settings(location):
         browser_settings = None
     return browser_settings
 
-
-def save_flash_files(dump_location):
+def save_flash_files(dump_location, clear=False):
     """
     save all files from the default flash storage locations
-    NOTE: this only supports the default linux storage locations
+    clear: sets whether to clear storage locations after backup
     """
-    print "Saving flash not supported yet"
+    if not os.path.isdir(dump_location):
+        os.makedirs(dump_location)
 
+    #Copy all flash objects over to dump location
+    for location in FLASH_LOCS:
+        if not os.path.isdir(location):
+            print "WARNING: "+location+" not found, skipping..."
+            continue
+
+        print "SAVING: " + location
+        (head, tail) = os.path.split(location)
+        
+        #Remove old backups if exist
+        if os.path.exists(os.path.join(dump_location,tail)):
+            shutil.rmtree(os.path.join(dump_location,tail))
+
+        #Make new backups
+        shutil.copytree(location, os.path.join(dump_location,tail))
+    
+        if clear:
+            print "CLEARING: " + location
+            rmsubtree(location)
 
 def load_flash_files(tar_location):
-    """ clear old flash cookies and load ones from dump """
-    print "Loading flash not supported yet"
+    """ clear old flash cookies and load ones from dump """ 
+    #Clear previous objects prior to loading
+    for location in FLASH_LOCS:
+        if not os.path.isdir(location):
+            print "WARNING: "+location+" not found, skipping..."
+            continue
+        
+        print "CLEARING: " + location
+        shutil.rmtree(location)
 
+        #Copy flash storage objects from tar_location
+        (head, tail) = os.path.split(location)
+        shutil.copytree(os.path.join(tar_location,tail),location)
 
 def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdriver=None, browser_settings=None,
                  save_flash=False, full_profile=True):
@@ -52,7 +87,6 @@ def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdrive
     <full_profile> specifies to save the entire profile directory (not just cookies)
     <save_flash> specifies whether to dump flash files
     """
-
     # ensures that folder paths end with slashes
     browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/")\
         else browser_profile_folder + "/"
@@ -82,17 +116,12 @@ def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdrive
         storage_vector_files = [
             'cookies.sqlite', 'cookies.sqlite-shm', 'cookies.sqlite-wal',  # cookies
             'places.sqlite', 'places.sqlite-shm', 'places.sqlite-wal',  # history
-            'webappsstore.sqlite', 'webappsstore.sqlite-shm', 'webappsstore.sqlite-wal',  # todo: localStorage
-            # todo: '_CACHE_CLEAN_' #flag for cache
+            'webappsstore.sqlite', 'webappsstore.sqlite-shm', 'webappsstore.sqlite-wal',  # localStorage
         ]
         storage_vector_dirs = [
             'webapps',  # related to localStorage?
             'storage'  # directory for IndexedDB
         ]
-                # todo: 'Cache', # ff cache files - need workaround: https://support.mozilla.org/en-US/questions/945274
-                # todo: 'startupCache' # related to cache?
-
-        #Hack to force Cache to import properly -- DOESN'T WORK
         for item in storage_vector_files:
             full_path = os.path.join(browser_profile_folder, item)
             if os.path.isfile(full_path):

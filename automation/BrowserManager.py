@@ -81,9 +81,11 @@ class Browser:
                                           browser_settings=self.browser_settings, full_profile=True)
             self.browser_params['profile_tar'] = tempdir  # make sure browser loads crashed profile
             self.browser_params['random_attributes'] = False  # don't re-randomize attributes
+            crash_recovery = True
         else:
             tempdir = None
             crashed_profile_path = None
+            crash_recovery = False
         
         # keep trying to spawn a BrowserManager until we have a successful launch within the timeout limit
         browser_manager = None
@@ -93,7 +95,7 @@ class Browser:
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
             # builds and launches the browser_manager
-            args = (self.command_queue, self.status_queue, self.browser_params)
+            args = (self.command_queue, self.status_queue, self.browser_params, crash_recovery)
             browser_manager = Process(target=BrowserManager, args=args)
             browser_manager.start()
 
@@ -143,7 +145,7 @@ class Browser:
 
         self.browser_manager = self.launch_browser_manager()
 
-def BrowserManager(command_queue, status_queue, browser_params):
+def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # sets up the proxy (for now, mitmproxy) if necessary
     proxy_site_queue = None  # used to pass the current site down to the proxy
     if browser_params['proxy']:
@@ -152,7 +154,7 @@ def BrowserManager(command_queue, status_queue, browser_params):
         browser_params['proxy'] = local_port
 
     # Gets the WebDriver, profile folder (i.e. where history/cookies are stored) and display pid (None if not headless)
-    (driver, prof_folder, display_pid, browser_settings) = deploy_browser.deploy_browser(browser_params)
+    (driver, prof_folder, display_pid, browser_settings) = deploy_browser.deploy_browser(browser_params, crash_recovery)
 
     # passes the profile folder, WebDriver pid and display pid back to the TaskManager
     # now, the TaskManager knows that the browser is successfully set up
