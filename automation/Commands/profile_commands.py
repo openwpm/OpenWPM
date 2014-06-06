@@ -76,7 +76,11 @@ def load_flash_files(tar_location):
 
         #Copy flash storage objects from tar_location
         (head, tail) = os.path.split(location)
-        shutil.copytree(os.path.join(tar_location,tail),location)
+        if os.path.exists(os.path.join(tar_location,tail)):
+            shutil.copytree(os.path.join(tar_location,tail),location)
+        else:
+            print "WARNING: "+os.path.join(tar_location, tail)+" not found, skipping..."
+            continue
 
 def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdriver=None, browser_settings=None,
                  save_flash=False, full_profile=True):
