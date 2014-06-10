@@ -1,5 +1,5 @@
+google.com
+yahoo.com
 buzzfeed.com
-grooveshark.com
-adobe.com
 youtube.com
 bbc.com
