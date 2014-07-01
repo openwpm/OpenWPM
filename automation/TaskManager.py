@@ -10,9 +10,21 @@ import os
 import sqlite3
 import subprocess
 import time
+import json
 
 SLEEP_CONS = 0.01  # command sleep constant (in seconds)
 
+def load_default_params(num_instances=1):
+    """
+    Loads num_instances copies of the default
+    browser parameters from the included default settings json
+    """
+    fp = open(os.path.join(os.path.dirname(__file__), 'default_settings.json'))
+    preferences = json.load(fp)
+    fp.close()
+
+    browser_params = [copy.deepcopy(preferences) for i in xrange(0, num_instances)]
+    return browser_params
 
 class TaskManager:
     """
