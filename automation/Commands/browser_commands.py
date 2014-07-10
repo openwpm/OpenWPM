@@ -112,6 +112,30 @@ def get_website(url, webdriver, proxy_queue, browser_params):
     if browser_params['bot_mitigation']:
         bot_mitigation(webdriver)
 
+def extract_links(webdriver, browser_params):
+    link_elements = webdriver.find_elements_by_tag_name('a')
+    link_urls = set(element.get_attribute("href") for element in link_elements)
+
+    sock = clientsocket()
+    sock.connect(*browser_params['aggregator_address'])
+    create_table_query = ("""
+    CREATE TABLE IF NOT EXISTS links_found (
+      found_on TEXT,
+      location TEXT
+    )
+    """, ())
+    sock.send(create_table_query)
+
+    if len(link_urls) > 0:
+        current_url = webdriver.current_url
+        insert_query_string = """
+        INSERT INTO links_found (found_on, location)
+        VALUES (?, ?)
+        """
+        for link in link_urls:
+            sock.send((insert_query_string, (current_url, link)))
+
+    sock.close()
 
 def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
     """ Grab the newly changed items in supported storage vectors """

@@ -232,6 +232,7 @@ class TaskManager:
         browser.command_queue.put(command)
         command_succeeded = False
         is_timeout = True
+        command_arguments = command[1] if len(command) > 1 else None
 
         # repeatedly waits for a reply from the BrowserManager; if fails/times-out => restart
         for i in xrange(0, int(timeout / SLEEP_CONS)):
@@ -245,14 +246,15 @@ class TaskManager:
                 #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
                 self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
-                                " VALUES (?,?,?,?)", (browser.crawl_id, command[0], command[1], True)))
+                                " VALUES (?,?,?,?)",
+                                (browser.crawl_id, command[0], command_arguments, True)))
             is_timeout = False
             break
         if not command_succeeded:  # reboots since BrowserManager is down
             if is_timeout:
                 print "TIMEOUT, KILLING BROWSER MANAGER"
             self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                            (browser.crawl_id, command[0], command[1], False)))
+                            (browser.crawl_id, command[0], command_arguments, False)))
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
@@ -268,3 +270,6 @@ class TaskManager:
     def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
         """ dumps from the profile path to a given file (absolute path) """
         self.distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
+
+    def extract_links(self, index = None, overwrite_timeout = None):
+        self.distribute_command(('EXTRACT_LINKS',), index, overwrite_timeout)
