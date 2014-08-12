@@ -1,8 +1,10 @@
 from BrowserManager import Browser
 from DataAggregator import DataAggregator
 from SocketInterface import clientsocket
+from PostProcessing import post_processing
 
 from multiprocessing import Process, Queue
+from Queue import Empty as EmptyQueue
 from sqlite3 import OperationalError
 import copy
 import threading
@@ -150,7 +152,9 @@ class TaskManager:
                             (browser.crawl_id,)))
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
-        self.kill_data_aggregator() 
+        self.kill_data_aggregator()
+
+        post_processing.run(self.db_path) # launch post-crawl processing
 
     # CRAWLER COMMAND CODE
 
@@ -231,28 +235,25 @@ class TaskManager:
         # passes off command and waits for a success (or failure signal)
         browser.command_queue.put(command)
         command_succeeded = False
-        is_timeout = True
+        command_arguments = command[1] if len(command) > 1 else None
 
-        # repeatedly waits for a reply from the BrowserManager; if fails/times-out => restart
-        for i in xrange(0, int(timeout / SLEEP_CONS)):
-            if browser.status_queue.empty():  # nothing to do -> sleep so as to not peg CPU
-                time.sleep(SLEEP_CONS)
-                continue
-
-            # received reply from BrowserManager, either success signal or failure notice
-            status = browser.status_queue.get()
+        # received reply from BrowserManager, either success signal or failure notice
+        try:
+            status = browser.status_queue.get(True, timeout)
             if status == "OK":
                 #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
-                self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
-                                " VALUES (?,?,?,?)", (browser.crawl_id, command[0], command[1], True)))
-            is_timeout = False
-            break
-        if not command_succeeded:  # reboots since BrowserManager is down
-            if is_timeout:
-                print "TIMEOUT, KILLING BROWSER MANAGER"
-            self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success) VALUES (?,?,?,?)",
-                            (browser.crawl_id, command[0], command[1], False)))
+            else:
+                print("Received failure status while executing command: " + command[0])
+        except EmptyQueue:
+            print("Timeout while executing command, " + command[0] +
+                  " killing browser manager")
+
+        self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
+                        " VALUES (?,?,?,?)",
+                        (browser.crawl_id, command[0], command_arguments, command_succeeded)))
+
+        if not command_succeeded:
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
@@ -268,3 +269,6 @@ class TaskManager:
     def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
         """ dumps from the profile path to a given file (absolute path) """
         self.distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
+
+    def extract_links(self, index = None, overwrite_timeout = None):
+        self.distribute_command(('EXTRACT_LINKS',), index, overwrite_timeout)

@@ -65,19 +65,6 @@ CREATE TABLE IF NOT EXISTS http_responses (
     top_url VARCHAR(500) NOT NULL,
     time_stamp VARCHAR(500) NOT NULL);
 
-
-CREATE TABLE IF NOT EXISTS cookies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crawl_id INTEGER NOT NULL,
-    domain VARCHAR[500] NOT NULL,
-    name VARCHAR[500] NOT NULL,
-    value VARCHAR[500] NOT NULL,
-    expiry VARCHAR[500] NOT NULL,
-    accessed VARCHAR[500] NOT NULL,
-    referrer VARCHAR[500] NOT NULL,
-    http_type VARCHAR[500] NOT NULL,
-    top_url VARCHAR[500] NOT NULL);
-
 /* Firefox Storage Vector Dumps */
 
 CREATE TABLE IF NOT EXISTS flash_cookies (
