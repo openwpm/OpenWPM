@@ -1,6 +1,7 @@
 from BrowserManager import Browser
 from DataAggregator import DataAggregator
 from SocketInterface import clientsocket
+from PostProcessing import post_processing
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
@@ -151,7 +152,9 @@ class TaskManager:
                             (browser.crawl_id,)))
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
-        self.kill_data_aggregator() 
+        self.kill_data_aggregator()
+
+        post_processing.run(self.db_path) # launch post-crawl processing
 
     # CRAWLER COMMAND CODE
 
