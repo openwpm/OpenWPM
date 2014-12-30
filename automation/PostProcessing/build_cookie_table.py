@@ -112,7 +112,9 @@ def build_http_cookie_table(database, verbose=False):
 
     # Parse http request cookies
     commit = 0
-    for req_id, crawl_id, header_str, time_stamp in cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests"):
+    cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests \
+                    WHERE id NOT IN (SELECT header_id FROM http_cookies)")
+    for req_id, crawl_id, header_str, time_stamp in cur1.fetchall():
         header = mimetools.Message(StringIO(header_str))
         if header.has_key('Cookie'):
             queries = parse_cookies(header['Cookie'], verbose, http_type = 'request')
@@ -132,7 +134,9 @@ def build_http_cookie_table(database, verbose=False):
 
     # Parse http response cookies
     commit = 0
-    for resp_id, crawl_id, req_url, header_str, time_stamp in cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses"):
+    cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses \
+                    WHERE id NOT IN (SELECT header_id FROM http_cookies)")
+    for resp_id, crawl_id, req_url, header_str, time_stamp in cur1.fetchall():
         header = mimetools.Message(StringIO(header_str))
         for cookie_str in header.getallmatchingheaders('Set-Cookie'):
             queries = parse_cookies(cookie_str, verbose, url = req_url, http_type = 'response')
