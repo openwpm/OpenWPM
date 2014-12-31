@@ -118,6 +118,24 @@ def deploy_firefox(browser_params, crash_recovery):
     if browser_params['disable_flash']:
         fp.set_preference('plugin.state.flash', 0)
 
+    # Disable health reports
+    fp.set_preference('datareporting.healthreport.uploadEnabled', False)
+    fp.set_preference('toolkit.telemetry.enabled', False)
+
+    fp.set_preference('extensions.checkCompatibility.nightly', False)
+    fp.set_preference('browser.search.update', False)
+    # Disable know your rights banner
+    fp.set_preference('browser.rights.3.shown', True)
+    fp.set_preference('browser.shell.checkDefaultBrowser', False)
+    fp.set_preference('security.OCSP.enabled', "0")
+    fp.set_preference('browser.safebrowsing.enabled', False)
+    fp.set_preference('devtools.profiler.enabled', False)
+    fp.set_preference('network.seer.enabled', False)  # predictive actions
+    fp.set_preference('network.dns.disablePrefetch', True)  # no need to prefetch
+    fp.set_preference('network.prefetch-next', False)  # no need to prefetch
+    # Disable page thumbnails
+    fp.set_preference('browser.pagethumbnails.capturing_disabled', True)
+
     driver = webdriver.Firefox(firefox_profile=fp)
 
     # set window size
