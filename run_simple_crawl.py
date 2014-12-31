@@ -25,10 +25,10 @@ def run_site_crawl(db_path, sites, preferences, dump_location):
     <db_path> is the absolute path of crawl database
     <preferences> is a dictionary of preferences to initialize the crawler
     """
-    manager = TaskManager.TaskManager(db_path, preferences, 1)
+    manager = TaskManager.TaskManager(db_path, preferences, 2)
 
     for site in sites:
-        manager.get(site)
+        manager.browse(site)
 
     if dump_location:
         manager.dump_profile(dump_location,True)
