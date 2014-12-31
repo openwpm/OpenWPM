@@ -10,6 +10,9 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
     """
     if command[0] == 'GET':
         browser_commands.get_website(command[1], webdriver, proxy_queue, browser_params)
+        
+    if command[0] == 'BROWSE':
+        browser_commands.browse_website(command[1], webdriver, proxy_queue, browser_params)   
     
     if command[0] == 'DUMP_STORAGE_VECTORS':
         browser_commands.dump_storage_vectors(command[1], command[2], webdriver, browser_params)
