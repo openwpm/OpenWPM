@@ -39,7 +39,7 @@ class InterceptingMaster (controller.Master):
         except Queue.Empty:
             return False
 
-    def tick(self, q):
+    def tick(self, q, timeout):
         """ new tick function used to label first-party domains and avoid race conditions when doing so """
         if self.curr_top_url is None:  # proxy is fresh, need to get first-party domain right away
             self.curr_top_url = self.url_queue.get()
@@ -70,7 +70,7 @@ class InterceptingMaster (controller.Master):
     def handle_request(self, msg):
         """ Receives HTTP request, and sends it to logging function """
         msg.reply()
-        self.curr_requests.add(msg)
+        self.curr_requests.add(msg.request)
         mitm_commands.process_general_mitm_request(self.db_socket, self.crawl_id, self.curr_top_url, msg)
 
     # Record data from HTTP responses
