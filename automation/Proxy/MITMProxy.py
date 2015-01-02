@@ -30,28 +30,29 @@ class InterceptingMaster (controller.Master):
 
         controller.Master.__init__(self, server)
 
-    def load_process_message(self, q):
+    def load_process_message(self, q, timeout):
         """ Tries to read and process a message from the proxy queue, returns True iff this succeeds """
         try:
-            msg = q.get(timeout=0.01)
+            msg = q.get(timeout=timeout)
             controller.Master.handle(self, *msg)
             return True
         except Queue.Empty:
             return False
 
-    def tick(self, q, timeout):
+
+    def tick(self, q, timeout=0.01):
         """ new tick function used to label first-party domains and avoid race conditions when doing so """
         if self.curr_top_url is None:  # proxy is fresh, need to get first-party domain right away
             self.curr_top_url = self.url_queue.get()
         elif not self.url_queue.empty():  # new FP has been visited
             # drains the queue to get rid of stale messages from previous site
-            while self.load_process_message(q):
+            while self.load_process_message(q, timeout):
                 pass
 
             self.prev_requests, self.curr_requests = self.curr_requests, set()
             self.prev_top_url, self.curr_top_url = self.curr_top_url, self.url_queue.get()
 
-        self.load_process_message(q)
+        self.load_process_message(q, timeout)
 
     def run(self):
         """ Light wrapper around run with error printing """

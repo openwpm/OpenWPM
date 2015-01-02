@@ -158,7 +158,7 @@ class TaskManager:
 
     # CRAWLER COMMAND CODE
 
-    def distribute_command(self, command, index=None, timeout=None):
+    def distribute_command(self, command, index=None, timeout=None, reset=False):
         """
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
@@ -173,7 +173,7 @@ class TaskManager:
             while True:
                 for browser in self.browsers:
                     if browser.ready():
-                        self.start_thread(browser, command, timeout)
+                        self.start_thread(browser, command, timeout, reset)
                         command_executed = True
                         break
                 if command_executed:
@@ -184,7 +184,7 @@ class TaskManager:
             #send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self.start_thread(self.browsers[index], command, timeout)
+                    self.start_thread(self.browsers[index], command, timeout, reset)
                     break
                 time.sleep(SLEEP_CONS)
         elif index == '*':
@@ -193,7 +193,7 @@ class TaskManager:
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.start_thread(self.browsers[i], command, timeout)
+                        self.start_thread(self.browsers[i], command, timeout, reset)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
         elif index == '**':
@@ -203,24 +203,23 @@ class TaskManager:
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.start_thread(self.browsers[i], command, timeout, condition)
+                        self.start_thread(self.browsers[i], command, timeout, reset, condition)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
             with condition:
                 condition.notifyAll()  # All browsers loaded, tell them to start
         else:
-            #not a supported command
             print "Command index type is not supported or out of range"
 
-    def start_thread(self, browser, command, timeout, condition=None):
+    def start_thread(self, browser, command, timeout, reset, condition=None):
         """  starts the command execution thread """
-        args = (browser, command, timeout, condition)
+        args = (browser, command, timeout, reset, condition)
         thread = threading.Thread(target=self.issue_command, args=args)
         browser.command_thread = thread
         thread.daemon = True
         thread.start()
 
-    def issue_command(self, browser, command, timeout=None, condition=None):
+    def issue_command(self, browser, command, timeout, reset, condition=None):
         """
         sends command tuple to the BrowserManager
         <timeout> gives the option to override default timeout
@@ -241,7 +240,6 @@ class TaskManager:
         try:
             status = browser.status_queue.get(True, timeout)
             if status == "OK":
-                #print str(browser.crawl_id) + " " + "got OK"
                 command_succeeded = True
             else:
                 print("Received failure status while executing command: " + command[0])
@@ -253,18 +251,20 @@ class TaskManager:
                         " VALUES (?,?,?,?)",
                         (browser.crawl_id, command[0], command_arguments, command_succeeded)))
 
-        if not command_succeeded:
+        if reset:
+            browser.reset()
+        elif not command_succeeded:
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
-    def get(self, url, index=None, overwrite_timeout=None):
+    def get(self, url, index=None, overwrite_timeout=None, reset=False):
         """ goes to a url """
-        self.distribute_command(('GET', url), index, overwrite_timeout)
+        self.distribute_command(('GET', url), index, overwrite_timeout, reset)
         
     def browse(self, url, index=None, overwrite_timeout=None):
         """ browse a website """
-        self.distribute_command(('BROWSE', url), index, overwrite_timeout)
+        self.distribute_command(('BROWSE', url), index, overwrite_timeout, reset)
 
     def dump_storage_vectors(self, url, start_time, index=None, overwrite_timeout=None):
         """ dumps the local storage vectors (flash, localStorage, cookies) to db """
