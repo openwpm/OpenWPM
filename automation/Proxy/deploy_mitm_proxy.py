@@ -24,8 +24,6 @@ def init_proxy(db_socket_address, crawl_id):
     sock.close()
 
 
-    #confdir = os.path.dirname(__file__)
-    #config = proxy.ProxyConfig(port=proxy_port)
     config = proxy.ProxyConfig(cadir=os.path.join(os.path.dirname(__file__), 'cert'),port=proxy_port)
     server = ProxyServer(config)
     print 'Intercepting Proxy listening on ' + str(proxy_port)

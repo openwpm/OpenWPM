@@ -262,7 +262,7 @@ class TaskManager:
         """ goes to a url """
         self.distribute_command(('GET', url), index, overwrite_timeout, reset)
         
-    def browse(self, url, index=None, overwrite_timeout=None):
+    def browse(self, url, index=None, overwrite_timeout=None, reset=False):
         """ browse a website """
         self.distribute_command(('BROWSE', url), index, overwrite_timeout, reset)
 

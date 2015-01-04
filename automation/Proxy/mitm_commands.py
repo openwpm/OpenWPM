@@ -6,6 +6,7 @@ import datetime
 def process_general_mitm_request(db_socket, crawl_id, top_url, msg):
     """ Logs a HTTP request object """
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
+
     data = (crawl_id, msg.request.url, msg.request.method, referrer, str(msg.request.headers), top_url, str(datetime.datetime.now()))
     db_socket.send(("INSERT INTO http_requests (crawl_id, url, method, referrer, headers, "
                     "top_url, time_stamp) VALUES (?,?,?,?,?,?,?)", data))

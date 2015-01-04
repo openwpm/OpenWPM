@@ -1,4 +1,3 @@
-
 from ..SocketInterface import clientsocket
 from libmproxy import controller
 import sys
@@ -38,7 +37,6 @@ class InterceptingMaster (controller.Master):
             return True
         except Queue.Empty:
             return False
-
 
     def tick(self, q, timeout=0.01):
         """ new tick function used to label first-party domains and avoid race conditions when doing so """

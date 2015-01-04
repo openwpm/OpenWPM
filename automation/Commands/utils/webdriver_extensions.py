@@ -5,8 +5,35 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import NoSuchElementException
+from urlparse import urlparse
+import random
+import time
 
 import XPathUtil
+
+#### Basic functions
+def scroll_down(driver):
+    at_bottom = False
+    while random.random() > .05 and not at_bottom:
+        k = str(10 + int(200*random.random()))
+        driver.execute_script("window.scrollBy(0,"+k+")")
+        at_bottom = driver.execute_script("return (((window.scrollY + window.innerHeight ) +100 > document.body.clientHeight ))")
+        time.sleep(.5+ 1.0 * random.random())
+
+def is_loaded(webdriver):
+    return (webdriver.execute_script("return document.readyState") == "complete")
+
+def wait_until_loaded(webdriver, timeout, period=0.25):
+    mustend = time.time() + timeout
+    while time.time() < mustend:
+        if is_loaded(webdriver): return True
+        time.sleep(period)
+    return False
+
+def get_intra_links(webdriver, url):
+    domain = urlparse(url).hostname
+    links = filter(lambda x: (x.get_attribute("href") and x.get_attribute("href").find(domain) > 0 and x.get_attribute("href").find("http") == 0), webdriver.find_elements_by_tag_name("a"))
+    return links
 
 ##### Search/Block Functions
 # locator_type: a text representation of the standard
