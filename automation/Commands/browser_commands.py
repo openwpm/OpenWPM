@@ -10,7 +10,7 @@ import time
 from ..SocketInterface import clientsocket
 from utils.lso import get_flash_cookies
 from utils.firefox_profile import get_cookies  # todo: add back get_localStorage,
-from utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links 
+from utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links
 
 # Library for core WebDriver-based browser commands
 
@@ -104,7 +104,7 @@ def get_website(url, webdriver, proxy_queue, browser_params):
         for window in windows:
             if window != main_handle:
                 webdriver.switch_to_window(window)
-                webdriver.quit()
+                webdriver.exit()
         webdriver.switch_to_window(main_handle)
 
     if browser_params['bot_mitigation']:
@@ -135,62 +135,34 @@ def extract_links(webdriver, browser_params):
 
     sock.close()
 
-def browse_website(url, webdriver, proxy_queue, browser_params):
+def browse_website(url, webdriver, proxy_queue, browser_params, num_links=2):
     """
-    goes to <url> using the given <webdriver> instance
-    <proxy_queue> is queue for sending the proxy the current first party site
+    calls get_website before visiting <num_links> present on the page
+    NOTE: top_url will NOT be properly labeled for requests to subpages
+          these will still have the top_url set to the url passed as a parameter
+          to this function.
     """
-    tab_restart_browser(webdriver)
-    main_handle = webdriver.current_window_handle
+    # First get the site
+    get_website(url, webdriver, proxy_queue, browser_params)
 
-    # sends top-level domain to proxy
-    # then, waits for it to finish marking traffic in queue before moving to new site
-    if proxy_queue is not None:
-        proxy_queue.put(url)
-        while not proxy_queue.empty():
-            time.sleep(0.001)
-
-    # Execute a get through selenium
-    try:
-        webdriver.get(url)
-    except TimeoutException:
-        pass
-
-    # Close modal dialog if exists
-    try:
-        WebDriverWait(webdriver, .5).until(EC.alert_is_present())
-        alert = webdriver.switch_to_alert()
-        alert.dismiss()
-        time.sleep(1)
-    except TimeoutException:
-        pass
-
-    # Close other windows (popups or "tabs")
-    windows = webdriver.window_handles
-    if len(windows) > 1:
-        for window in windows:
-            if window != main_handle:
-                webdriver.switch_to_window(window)
-                webdriver.quit()
-        webdriver.switch_to_window(main_handle)
-
-
-    if browser_params['bot_mitigation']:
-        bot_mitigation(webdriver)
-    for i in range(1, 2):
+    # Then visit a few subpages
+    for i in range(num_links):
         links = get_intra_links(webdriver, url)
+        links = filter(lambda x: x.is_displayed() == True, links)
         if len(links) == 0:
-            return
+            break
         r = int(random.random()*len(links)-1)
         print "BROWSE: visiting link to %s" % links[r].get_attribute("href")
+        
         try:
             links[r].click()
             wait_until_loaded(webdriver, 300)
+            time.sleep(1)
             if browser_params['bot_mitigation']:
                 bot_mitigation(webdriver)
             webdriver.back()
-        except Exception:
-            time.sleep(2)
+        except Exception, e:
+            pass
 
 def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
     """ Grab the newly changed items in supported storage vectors """

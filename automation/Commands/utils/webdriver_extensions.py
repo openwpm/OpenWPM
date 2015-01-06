@@ -14,11 +14,15 @@ import XPathUtil
 #### Basic functions
 def scroll_down(driver):
     at_bottom = False
-    while random.random() > .05 and not at_bottom:
+    while random.random() > .20 and not at_bottom:
         k = str(10 + int(200*random.random()))
         driver.execute_script("window.scrollBy(0,"+k+")")
         at_bottom = driver.execute_script("return (((window.scrollY + window.innerHeight ) +100 > document.body.clientHeight ))")
-        time.sleep(.5+ 1.0 * random.random())
+        time.sleep(0.5 + random.random())
+
+def scroll_to_bottom(driver):
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    return
 
 def is_loaded(webdriver):
     return (webdriver.execute_script("return document.readyState") == "complete")
@@ -131,11 +135,6 @@ if self.mp_lock is not None:
 self.mp_lock.release()
 return cur.lastrowid
 '''
-
-#Scroll to the bottom of a page
-def scroll_to_bottom(driver):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    return
 
 #Click an xpath using javascript -- not working correctly
 #gets around visibility requirements of selenium.
