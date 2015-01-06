@@ -104,7 +104,7 @@ def get_website(url, webdriver, proxy_queue, browser_params):
         for window in windows:
             if window != main_handle:
                 webdriver.switch_to_window(window)
-                webdriver.exit()
+                webdriver.close()
         webdriver.switch_to_window(main_handle)
 
     if browser_params['bot_mitigation']:
