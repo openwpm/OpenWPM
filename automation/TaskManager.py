@@ -261,6 +261,10 @@ class TaskManager:
     def get(self, url, index=None, overwrite_timeout=None, reset=False):
         """ goes to a url """
         self.distribute_command(('GET', url), index, overwrite_timeout, reset)
+        
+    def browse(self, url, num_links = 2, index=None, overwrite_timeout=None, reset=False):
+        """ browse a website and visit <num_links> links on the page """
+        self.distribute_command(('BROWSE', url, num_links), index, overwrite_timeout, reset)
 
     def dump_storage_vectors(self, url, start_time, index=None, overwrite_timeout=None):
         """ dumps the local storage vectors (flash, localStorage, cookies) to db """

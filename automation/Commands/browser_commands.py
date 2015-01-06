@@ -10,6 +10,7 @@ import time
 from ..SocketInterface import clientsocket
 from utils.lso import get_flash_cookies
 from utils.firefox_profile import get_cookies  # todo: add back get_localStorage,
+from utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links
 
 # Library for core WebDriver-based browser commands
 
@@ -43,8 +44,8 @@ def bot_mitigation(webdriver):
             #print "[WARNING] - Mouse movement out of bounds, trying a different offset..."
             pass
 
-    # bot mitigation 2: scroll to the bottom of the page
-    webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    # bot mitigation 2: scroll in random intervals down page
+    scroll_down(webdriver)
 
     # bot mitigation 3: randomly wait so that page visits appear at irregular intervals
     time.sleep(random.randrange(RANDOM_SLEEP_LOW, RANDOM_SLEEP_HIGH))
@@ -59,12 +60,9 @@ def tab_restart_browser(webdriver):
         return
 
     switch_to_new_tab = ActionChains(webdriver)
-    switch_to_new_tab.key_down(Keys.CONTROL + 't')  # open new tab
-    switch_to_new_tab.key_up(Keys.CONTROL + 't')
-    switch_to_new_tab.key_down(Keys.CONTROL + Keys.PAGE_UP)  # switch to prev tab
-    switch_to_new_tab.key_up(Keys.CONTROL + Keys.PAGE_UP)
-    switch_to_new_tab.key_down(Keys.CONTROL + 'w')  # close tab
-    switch_to_new_tab.key_up(Keys.CONTROL + 'w')
+    switch_to_new_tab.key_down(Keys.CONTROL).send_keys('t').key_up(Keys.CONTROL)
+    switch_to_new_tab.key_down(Keys.CONTROL).send_keys(Keys.PAGE_UP).key_up(Keys.CONTROL)
+    switch_to_new_tab.key_down(Keys.CONTROL).send_keys('w').key_up(Keys.CONTROL)
     switch_to_new_tab.perform()
     time.sleep(5)
 
@@ -106,7 +104,7 @@ def get_website(url, webdriver, proxy_queue, browser_params):
         for window in windows:
             if window != main_handle:
                 webdriver.switch_to_window(window)
-                webdriver.close()
+                webdriver.exit()
         webdriver.switch_to_window(main_handle)
 
     if browser_params['bot_mitigation']:
@@ -136,6 +134,35 @@ def extract_links(webdriver, browser_params):
             sock.send((insert_query_string, (current_url, link)))
 
     sock.close()
+
+def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
+    """
+    calls get_website before visiting <num_links> present on the page
+    NOTE: top_url will NOT be properly labeled for requests to subpages
+          these will still have the top_url set to the url passed as a parameter
+          to this function.
+    """
+    # First get the site
+    get_website(url, webdriver, proxy_queue, browser_params)
+
+    # Then visit a few subpages
+    for i in range(num_links):
+        links = get_intra_links(webdriver, url)
+        links = filter(lambda x: x.is_displayed() == True, links)
+        if len(links) == 0:
+            break
+        r = int(random.random()*len(links)-1)
+        print "BROWSE: visiting link to %s" % links[r].get_attribute("href")
+        
+        try:
+            links[r].click()
+            wait_until_loaded(webdriver, 300)
+            time.sleep(1)
+            if browser_params['bot_mitigation']:
+                bot_mitigation(webdriver)
+            webdriver.back()
+        except Exception, e:
+            pass
 
 def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
     """ Grab the newly changed items in supported storage vectors """

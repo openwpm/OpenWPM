@@ -1,4 +1,3 @@
-
 from ..SocketInterface import clientsocket
 from libmproxy import controller
 import sys
