@@ -46,7 +46,9 @@ class serversocket:
         try:
             while True:
                 msg = self.receive_msg(client, 5)
-                msglen, is_pickled = struct.unpack('>I?', msg)
+                msglen, is_pickled = struct.unpack('>i?', msg)
+                if self.verbose:
+                    print "Msglen: " + str(msglen) + " is_pickled: " + str(is_pickled)
                 msg = self.receive_msg(client, msglen)
                 if is_pickled:
                     msg = cPickle.loads(msg)

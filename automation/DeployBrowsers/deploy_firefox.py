@@ -80,6 +80,15 @@ def deploy_firefox(browser_params, crash_recovery):
         fp.add_extension(extension=firebug_loc)
         fp.set_preference("extensions.firebug.currentVersion", "1.11.0")  # Avoid startup screen
 
+    if browser_params['custom_ext']:
+        ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/@openwpm.xpi')
+        ext_loc = os.path.normpath(ext_loc)
+        fp.add_extension(extension=ext_loc)
+        with open(browser_profile_path + 'database_settings.txt', 'w') as f:
+            host, port = browser_params['aggregator_address']
+            crawl_id = browser_params['crawl_id']
+            f.write(host + ',' + str(port) + ',' + str(crawl_id))
+
     if browser_params['proxy']:
         PROXY_HOST = "localhost"
         PROXY_PORT = browser_params['proxy']
@@ -136,6 +145,7 @@ def deploy_firefox(browser_params, crash_recovery):
     # Disable page thumbnails
     fp.set_preference('browser.pagethumbnails.capturing_disabled', True)
 
+    # Launch the webdriver
     driver = webdriver.Firefox(firefox_profile=fp)
 
     # set window size
