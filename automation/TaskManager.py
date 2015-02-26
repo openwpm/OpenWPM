@@ -233,17 +233,19 @@ class TaskManager:
 
         # passes off command and waits for a success (or failure signal)
         browser.command_queue.put(command)
-        command_succeeded = False
+        command_succeeded = 0 #1 success, 0 failure from error, -1 timeout
         command_arguments = command[1] if len(command) > 1 else None
 
         # received reply from BrowserManager, either success signal or failure notice
         try:
             status = browser.status_queue.get(True, timeout)
             if status == "OK":
-                command_succeeded = True
+                command_succeeded = 1
             else:
+                command_succeeded = 0
                 print("Received failure status while executing command: " + command[0])
         except EmptyQueue:
+            command_succeeded = -1
             print("Timeout while executing command, " + command[0] +
                   " killing browser manager")
 
