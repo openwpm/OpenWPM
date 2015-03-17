@@ -1,22 +1,9 @@
-const fileIO            = require("sdk/io/file");
-const system            = require("sdk/system");
 var socket              = require("./socket.js");
 
-exports.open = function() {
-    var crawlID = null;
+var crawlID = null;
     
-    // Read the db address from file
-    var path = system.pathFor("ProfD") + '/database_settings.txt';
-    if (fileIO.exists(path)) {
-        var dbstring = fileIO.read(path, 'r').split(',');
-        var host = dbstring[0];
-        var port = dbstring[1];
-        crawlID = dbstring[2];
-        console.log("Host:",host,"Port:",port,"CrawlID:",crawlID); 
-    } else {
-        console.log("ERROR: database settings not found");
-    }
-
+exports.open = function(host, port, crawlID) {
+    crawlID = crawlID
     // Connect to database
     socket.connect(host, port);
 };

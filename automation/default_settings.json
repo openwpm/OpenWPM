@@ -10,5 +10,10 @@
     "donottrack": false,
     "timeout": 60,
     "browser": "firefox",
-    "custom_ext": false
+    "extension": {
+        "enabled": false,
+        "cookieInstrument": false,
+        "jsInstrument":false,
+        "cpInstrument":false
+    }
 }
