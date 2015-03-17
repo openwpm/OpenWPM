@@ -1,6 +1,10 @@
+const fileIO            = require("sdk/io/file");
+const system            = require("sdk/system");
 var socket              = require("./socket.js");
 
 exports.open = function() {
+    var crawlID = null;
+    
     // Read the db address from file
     var path = system.pathFor("ProfD") + '/database_settings.txt';
     if (fileIO.exists(path)) {
@@ -54,7 +58,7 @@ exports.boolToInt = function(bool) {
 };
 
 exports.createInsert = function(table, update) {
-	var statement = "INSERT INTO " + table + "(";
+	var statement = "INSERT INTO " + table + " (";
 	var value_str = "VALUES (";
         var values = [];
 	var first = true;

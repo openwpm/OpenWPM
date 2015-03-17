@@ -1,7 +1,7 @@
 const {Cc, Ci} = require("chrome");
 var events = require("sdk/system/events");
 const data = require("sdk/self").data;
-var loggingDB = require("./logging-db");
+var loggingDB = require("./loggingdb.js");
 
 exports.run = function() {
 

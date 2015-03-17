@@ -110,7 +110,10 @@ function logValue(instrumentedVariableName, value, operation) {
 		return;
 	inLog = true;
 	try {
-		self.port.emit("instrumentation", {
+		console.log("logValue")
+		console.log("Variable Name: " + instrumentedVariableName);
+		console.log("Value: " + value);
+                self.port.emit("instrumentation", {
 			operation: operation,
 			symbol: instrumentedVariableName,
 			value: serializeObject(value)
@@ -133,9 +136,9 @@ function logCall(instrumentedFunctionName, args) {
 		return;
 	inLog = true;
 	try {	
-		//console.log("logCall");
-		//console.log("Function Name: " + instrumentedFunctionName);
-		//console.log("Args: " + args.length);
+		console.log("logCall");
+		console.log("Function Name: " + instrumentedFunctionName);
+		console.log("Args: " + args.length);
 		for(var i = 0; i < args.length; i++) {
 			var logLine = "Arg " + i + ": ";
 			console.log(logLine + typeof args[i]);
@@ -313,6 +316,8 @@ instrumentPrototype(window.CanvasRenderingContext2D.prototype, "CanvasRenderingC
 
 // Access to webRTC
 instrumentPrototype(window.mozRTCPeerConnection.prototype,"mozRTCPeerConnection");
+
+console.log("WORKING DFSDFSDFSDF");
 
 }
 

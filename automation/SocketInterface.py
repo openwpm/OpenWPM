@@ -52,6 +52,10 @@ class serversocket:
                 msg = self.receive_msg(client, msglen)
                 if is_pickled:
                     msg = cPickle.loads(msg)
+                if self.verbose:
+                    print "Message:\n"
+                    print msg[0]
+                    print msg[1]
                 self.queue.put(msg)
         except RuntimeError:
             if self.verbose:
@@ -109,3 +113,5 @@ if __name__ == '__main__':
         sock.start_accepting()
     elif sys.argv[1] == 'c':
         sock = clientsocket()
+
+    raw_input("Press enter to exit...")

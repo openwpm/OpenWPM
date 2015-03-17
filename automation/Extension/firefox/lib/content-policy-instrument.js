@@ -3,8 +3,8 @@ const data = require("sdk/self").data;
 var { Class } = require('sdk/core/heritage');
 var { xpcom, Unknown, Service } = require('sdk/platform/xpcom');
 var uuid = require('sdk/util/uuid').uuid();
-var loggingDB = require("./logging-db");
-var pageManager = require("./page-manager");
+var loggingDB = require("./loggingdb.js");
+var pageManager = require("./page-manager.js");
 
 exports.run = function() {
 

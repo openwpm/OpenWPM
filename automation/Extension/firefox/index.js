@@ -1,41 +1,13 @@
-const fileIO        = require("sdk/io/file");
-const system        = require("sdk/system");
-var socket          = require("./lib/socket.js");
+var loggingDB           = require("./lib/loggingdb.js");
+var pageManager         = require("./lib/page-manager.js");
+var cookieInstrument    = require("./lib/cookie-instrument.js");
+var jsInstrument        = require("./lib/javascript-instrument.js");
+var cpInstrument        = require("./lib/content-policy-instrument.js");
 
-var crawlID = null;
-
-// Read the db address from file
-var path = system.pathFor("ProfD") + '/database_settings.txt';
-if (fileIO.exists(path)) {
-    var dbstring = fileIO.read(path, 'r').split(',');
-    var host = dbstring[0];
-    var port = dbstring[1];
-    crawlID = dbstring[2];
-    console.log("Host:",host,"Port:",port,"CrawlID:",crawlID); 
-} else {
-    console.log("ERROR: database settings not found");
-}
-
-// Connect to database
-socket.connect(host, port);
-
-// Setup a dummy test table
-var query = "CREATE TABLE IF NOT EXISTS ExtensionTest ( " +
-            "   id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "   crawl_id INTEGER NOT NULL, " +
-            "   url VARCHAR[500], " +
-            "   title VARCHAR[500]);"
-socket.send([query,[]]);
-
-// Listen for new page loads and log page titles
-var tabs = require("sdk/tabs");
-tabs.on("ready", function(tab) {
-    if (crawlID == null) {
-        return;
-    }
-    var url = tab.url;
-    var title = tab.title;
-    console.log("URL:",url,"TITLE:",title);
-    query = "INSERT INTO ExtensionTest (crawl_id, url, title) VALUES (?,?,?)";
-    socket.send([query,[crawlID, url, title]]);
-});
+exports.main = function(options, callbacks) {
+        loggingDB.open();
+	pageManager.setup();
+	cookieInstrument.run();
+        jsInstrument.run();
+        cpInstrument.run();
+};
