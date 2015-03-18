@@ -1,5 +1,6 @@
-CREATE TABLE pages(
+CREATE TABLE IF NOT EXISTS pages(
 	id INTEGER PRIMARY KEY ASC,
-	location TEXT,
+	crawl_id INTEGER,
+        location TEXT,
 	parent_id INTEGER
 );

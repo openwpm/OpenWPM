@@ -3,7 +3,7 @@ var events = require("sdk/system/events");
 const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
 
-exports.run = function() {
+exports.run = function(crawlID) {
 
 	// Set up logging
 	var createCookiesTable = data.load("create_cookies_table.sql");
@@ -16,7 +16,8 @@ exports.run = function() {
 		if(data == "deleted" || data == "added" || data == "changed") {	
 			var update = {};
 			update["change"] = loggingDB.escapeString(data);
-			
+			update["crawl_id"] = crawlID;
+
 			var cookie = event.subject.QueryInterface(Ci.nsICookie2);
 			update["creationTime"] = cookie.creationTime;
 			update["expiry"] = cookie.expiry;
@@ -36,7 +37,7 @@ exports.run = function() {
 			update["status"] = cookie.status;
 			update["value"] = loggingDB.escapeString(cookie.value);
 			
-			loggingDB.executeSQL(loggingDB.createInsert("cookies", update), true);
+			loggingDB.executeSQL(loggingDB.createInsert("javascript_cookies", update), true);
 		}
 	});
 	

@@ -317,8 +317,6 @@ instrumentPrototype(window.CanvasRenderingContext2D.prototype, "CanvasRenderingC
 // Access to webRTC
 instrumentPrototype(window.mozRTCPeerConnection.prototype,"mozRTCPeerConnection");
 
-console.log("WORKING DFSDFSDFSDF");
-
 }
 
 }

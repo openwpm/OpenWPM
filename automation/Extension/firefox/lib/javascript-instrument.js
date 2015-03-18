@@ -3,7 +3,7 @@ const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
 var pageManager = require("./page-manager.js");
 
-exports.run = function() {
+exports.run = function(crawlID) {
 
     // Set up logging
     var createJavascriptTable = data.load("create_javascript_table.sql");
@@ -21,8 +21,8 @@ exports.run = function() {
             var url = worker.url;
             worker.port.on("instrumentation", function(data) {
                 var update = {};
-                console.log("MESSAGE RECEIVED"); 
                 update["id"] = javascriptID;
+                update["crawl_id"] = crawlID;
                 update["url"] = loggingDB.escapeString(url);
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
@@ -33,6 +33,7 @@ exports.run = function() {
                 if(data.operation == "call") {
                     var call_update = {};
                     call_update["javascript_id"] = javascriptID;
+                    call_update["crawl_id"] = crawlID; 
                     for(var i = 0; i < data.args.length; i++) {
                         call_update["parameter_index"] = i;
                         call_update["value"] = loggingDB.escapeString(data.args[i]);

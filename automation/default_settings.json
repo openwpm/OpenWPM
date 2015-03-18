@@ -13,7 +13,7 @@
     "extension": {
         "enabled": false,
         "cookieInstrument": false,
-        "jsInstrument":false,
-        "cpInstrument":false
+        "jsInstrument": false,
+        "cpInstrument": false
     }
 }

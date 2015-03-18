@@ -6,7 +6,7 @@ var uuid = require('sdk/util/uuid').uuid();
 var loggingDB = require("./loggingdb.js");
 var pageManager = require("./page-manager.js");
 
-exports.run = function() {
+exports.run = function(crawlID) {
 
 	// Set up logging
 	var createContentPolicyTable = data.load("create_content_policy_table.sql");
@@ -20,7 +20,8 @@ exports.run = function() {
 		
 		shouldLoad: function(contentType, contentLocation, requestOrigin, context, mimeTypeGuess, extra) {
 			var update = { };
-			update["content_type"] = contentType;
+			update["crawl_id"] = crawlID;
+                        update["content_type"] = contentType;
 			update["content_location"] = loggingDB.escapeString(contentLocation.spec);
 			update["request_origin"] = loggingDB.escapeString(requestOrigin ? requestOrigin.spec : "");
 			update["page_id"] = -1;

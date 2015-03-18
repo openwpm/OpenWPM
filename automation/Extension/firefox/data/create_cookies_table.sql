@@ -1,6 +1,7 @@
-CREATE TABLE cookies(
+CREATE TABLE IF NOT EXISTS javascript_cookies(
 	id INTEGER PRIMARY KEY ASC,
-	change TEXT,
+	crawl_id INTEGER,
+        change TEXT,
 	creationTime INTEGER,
 	expiry INTEGER,
 	is_http_only INTEGER,

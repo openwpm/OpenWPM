@@ -27,17 +27,19 @@ exports.escapeString = function(string) {
 		string = "" + string;
 
 	// Go character by character doubling 's
-	var escapedString = [ ];
-	escapedString.push("'");
-	for(var i = 0; i < string.length; i++) {
-		var currentChar = string.charAt(i);
-		if(currentChar == "'")
-			escapedString.push("''");
-		else
-			escapedString.push(currentChar);
-	}
-	escapedString.push("'");
-	return escapedString.join("");
+	//var escapedString = [ ];
+	//escapedString.push("'");
+	//for(var i = 0; i < string.length; i++) {
+	//	var currentChar = string.charAt(i);
+	//	if(currentChar == "'")
+	//		escapedString.push("''");
+	//	else
+	//		escapedString.push(currentChar);
+	//}
+	//escapedString.push("'");
+	//return escapedString.join("");
+        
+        return string;
 };
 
 exports.boolToInt = function(bool) {

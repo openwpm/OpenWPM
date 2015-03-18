@@ -26,15 +26,15 @@ exports.main = function(options, callbacks) {
     // Turn on instrumentation
     if (enableCK || enableJS || enableCP) {
         loggingDB.open(host, port, crawlID);
-        pageManager.setup();
+        pageManager.setup(crawlID);
     }
     if (enableCK) {
-        cookieInstrument.run();
+        cookieInstrument.run(crawlID);
     }
     if (enableJS) {
-        jsInstrument.run();
+        jsInstrument.run(crawlID);
     }
     if (enableCP) {
-        cpInstrument.run();
+        cpInstrument.run(crawlID);
     }
 };
