@@ -2,14 +2,14 @@ import browser_commands
 import profile_commands
 
 
-def execute_command(command, webdriver, proxy_queue, browser_settings, browser_params):
+def execute_command(command, webdriver, proxy_queue, browser_settings, browser_params, extension_socket):
     """
     executes BrowserManager commands by passing command tuples into necessary helper function
     commands are of form (COMMAND, ARG0, ARG1, ...)
     the only imports in this file should be imports to helper libraries
     """
     if command[0] == 'GET':
-        browser_commands.get_website(command[1], webdriver, proxy_queue, browser_params)
+        browser_commands.get_website(command[1], webdriver, proxy_queue, browser_params, extension_socket)
         
     if command[0] == 'BROWSE':
         browser_commands.browse_website(command[1], command[2], webdriver, proxy_queue, browser_params)

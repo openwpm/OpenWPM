@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS javascript_cookies(
 	id INTEGER PRIMARY KEY ASC,
 	crawl_id INTEGER,
+        top_url TEXT,
         change TEXT,
 	creationTime INTEGER,
 	expiry INTEGER,

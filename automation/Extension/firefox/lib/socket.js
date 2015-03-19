@@ -38,12 +38,9 @@ function createListeningSocket() {
     var queue = [];
     serverSocket.asyncListen({
         onSocketAccepted: function(sock, transport) {
-            console.log("NEW INCOMMING CONNECTION");
             var inputStream = transport.openInputStream(0, 0, 0);
-            console.log("Non-Blocking?",inputStream.isNonBlocking());
             inputStream.asyncWait({
                 onInputStreamReady: function() {
-                    console.log("Socket ready for read");
                     updateQueue(inputStream, queue);
                 }
             }, 0, 0, tm.mainThread);
@@ -59,21 +56,16 @@ function updateQueue(inputStream, queue) {
     
     bInputStream.setInputStream(inputStream);
     
-    console.log("READING ENCODING BYTES");
     var buff = bInputStream.readByteArray(5);
-    console.log("Buff:", buff);
     var meta = bufferpack.unpack('>Ib', buff);
-    console.log("READING MESSAGE OF LEN:",meta[0]);
     string = bInputStream.readBytes(meta[0]);
     if (meta[1]) {
         string = pickle.loads(string);
     }
-    console.log("Message Received:",string);
     queue.push(string);
     
     inputStream.asyncWait({
         onInputStreamReady: function() {
-            console.log("Socket ready for read");
             updateQueue(inputStream, queue);
         }
     }, 0, 0, tm.mainThread);

@@ -15,18 +15,12 @@ exports.main = function(options, callbacks) {
         var host = dbstring[0];
         var port = dbstring[1];
         var crawlID = dbstring[2];
-        var enableCK = dbstring[3];
-        var enableJS = dbstring[4];
-        var enableCP = dbstring[5];
+        var enableCK = dbstring[3] == 'True';
+        var enableJS = dbstring[4] == 'True';
+        var enableCP = dbstring[5] == 'True';
         console.log("Host:",host,"Port:",port,"CrawlID:",crawlID,"Cookie:",enableCK,"JS:",enableJS,"CP:",enableCP); 
     } else {
         console.log("ERROR: database settings not found");
-        var host = '127.0.0.1';
-        var port = '56090';
-        var crawlID = '1';
-        var enableCK = true;
-        var enableJS = true;
-        var enableCP = true;
     }
     
     // Turn on instrumentation
@@ -35,7 +29,8 @@ exports.main = function(options, callbacks) {
         pageManager.setup(crawlID);
     }
     if (enableCK) {
-        cookieInstrument.run(crawlID);
+        //TODO: Doesnt always activate
+        //cookieInstrument.run(crawlID);
     }
     if (enableJS) {
         jsInstrument.run(crawlID);
