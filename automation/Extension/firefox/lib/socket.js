@@ -1,17 +1,83 @@
-const {Cc, Ci} = require("chrome");
+const {Cc, Ci}  = require("chrome");
+const fileIO    = require("sdk/io/file");
+const system    = require("sdk/system");
 
-var bufferpack = require("bufferpack/bufferpack");
-var pickle = require("./pickle.js");
+var bufferpack  = require("bufferpack/bufferpack");
+var pickle      = require("./pickle.js");
+
+var tm = Cc["@mozilla.org/thread-manager;1"].getService();
+var socket_service = Cc["@mozilla.org/network/socket-transport-service;1"]
+                          .getService(Ci.nsISocketTransportService);
+var binaryStream = Cc["@mozilla.org/binaryoutputstream;1"]
+                             .createInstance(Ci.nsIBinaryOutputStream);
 
 // Socket connection handle
 var stream = null;
 var binStream = null;
 
-// Grab socket transport
-var socket_service = Cc["@mozilla.org/network/socket-transport-service;1"]
-                          .getService(Ci.nsISocketTransportService);
-var binaryStream = Cc["@mozilla.org/binaryoutputstream;1"]
-                             .createInstance(Ci.nsIBinaryOutputStream);
+// Feeds incomming messages to a queue
+exports.createListeningSocket = createListeningSocket;
+function createListeningSocket() {
+    console.log("Setting up server socket listening");
+    var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
+                             .createInstance(Ci.nsIServerSocket);
+    
+    // init with random port
+    //serverSocket.init(-1, true, -1);
+    serverSocket.init(33766, true, -1);
+    console.log("Extension serverSocket listening on port:",serverSocket.port);
+    
+    // write port to file for OpenWPM
+    var path = system.pathFor("ProfD") + '/extension_port.txt';
+    var file = fileIO.open(path, 'w');
+    if (!file.closed) {
+        file.write(serverSocket.port);
+        file.close();
+    }
+    
+    var queue = [];
+    serverSocket.asyncListen({
+        onSocketAccepted: function(sock, transport) {
+            console.log("NEW INCOMMING CONNECTION");
+            var inputStream = transport.openInputStream(0, 0, 0);
+            console.log("Non-Blocking?",inputStream.isNonBlocking());
+            inputStream.asyncWait({
+                onInputStreamReady: function() {
+                    console.log("Socket ready for read");
+                    updateQueue(inputStream, queue);
+                }
+            }, 0, 0, tm.mainThread);
+        }
+    });
+
+    return queue;
+}
+
+function updateQueue(inputStream, queue) {
+    var bInputStream = Cc["@mozilla.org/binaryinputstream;1"]
+                            .createInstance(Ci.nsIBinaryInputStream);
+    
+    bInputStream.setInputStream(inputStream);
+    
+    console.log("READING ENCODING BYTES");
+    var buff = bInputStream.readByteArray(5);
+    console.log("Buff:", buff);
+    var meta = bufferpack.unpack('>Ib', buff);
+    console.log("READING MESSAGE OF LEN:",meta[0]);
+    string = bInputStream.readBytes(meta[0]);
+    if (meta[1]) {
+        string = pickle.loads(string);
+    }
+    console.log("Message Received:",string);
+    queue.push(string);
+    
+    inputStream.asyncWait({
+        onInputStreamReady: function() {
+            console.log("Socket ready for read");
+            updateQueue(inputStream, queue);
+        }
+    }, 0, 0, tm.mainThread);
+}
 
 // Open socket connection
 exports.connect = connect;

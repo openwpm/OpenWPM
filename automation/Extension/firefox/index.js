@@ -21,6 +21,12 @@ exports.main = function(options, callbacks) {
         console.log("Host:",host,"Port:",port,"CrawlID:",crawlID,"Cookie:",enableCK,"JS:",enableJS,"CP:",enableCP); 
     } else {
         console.log("ERROR: database settings not found");
+        var host = '127.0.0.1';
+        var port = '56090';
+        var crawlID = '1';
+        var enableCK = true;
+        var enableJS = true;
+        var enableCP = true;
     }
     
     // Turn on instrumentation
