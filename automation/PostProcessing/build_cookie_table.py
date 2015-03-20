@@ -28,7 +28,12 @@ def select_date_format(date_string):
                 if date_format == DATE_FORMATS[len(DATE_FORMATS)-1]:
                     return None
                 pass
-        return time.strftime("%Y-%m-%d %H:%M:%S", time_obj)
+        
+        # time.strftime() doesn't work for years < 1900
+        if time_obj.tm_year >= 1900:
+            return time.strftime("%Y-%m-%d %H:%M:%S", time_obj)
+        else:
+            return None 
 
 def get_path(path_string, url):
     """ Parse path. Defaults to the path of the request URL that generated the
