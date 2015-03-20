@@ -12,7 +12,8 @@
     "browser": "firefox",
     "extension": {
         "enabled": false,
-        "jsInstrument": false,
+        "cookieInstrument": false,
+	"jsInstrument": false,
         "cpInstrument": false
     }
 }
