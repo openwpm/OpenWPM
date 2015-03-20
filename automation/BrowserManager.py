@@ -2,6 +2,7 @@ from Commands import command_executor
 from DeployBrowsers import deploy_browser
 from Commands import profile_commands
 from Proxy import deploy_mitm_proxy
+from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
 import subprocess
@@ -156,6 +157,18 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Gets the WebDriver, profile folder (i.e. where history/cookies are stored) and display pid (None if not headless)
     (driver, prof_folder, display_pid, browser_settings) = deploy_browser.deploy_browser(browser_params, crash_recovery)
 
+    # Read the extension port -- if extension is enabled
+    # TODO: This needs to be cleaner
+    if browser_params['browser'] == 'firefox' and browser_params['extension']['enabled']:
+        while not os.path.isfile(prof_folder + 'extension_port.txt'):
+            time.sleep(0.01)
+        with open(prof_folder + 'extension_port.txt', 'r') as f:
+            port = f.read().strip()
+        extension_socket = clientsocket()
+        extension_socket.connect('127.0.0.1',int(port))
+    else:
+        extension_socket = None
+
     # passes the profile folder, WebDriver pid and display pid back to the TaskManager
     # now, the TaskManager knows that the browser is successfully set up
     status_queue.put((prof_folder, int(driver.binary.process.pid), display_pid, browser_settings))
@@ -175,7 +188,7 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
-            command_executor.execute_command(command, driver, proxy_site_queue, browser_settings, browser_params)
+            command_executor.execute_command(command, driver, proxy_site_queue, browser_settings, browser_params, extension_socket)
             status_queue.put("OK")
         except Exception as ex:
             print "CRASH IN DRIVER ORACLE:" + str(ex) + " RESTARTING BROWSER MANAGER"

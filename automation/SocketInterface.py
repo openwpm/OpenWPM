@@ -46,10 +46,16 @@ class serversocket:
         try:
             while True:
                 msg = self.receive_msg(client, 5)
-                msglen, is_pickled = struct.unpack('>I?', msg)
+                msglen, is_pickled = struct.unpack('>i?', msg)
+                if self.verbose:
+                    print "Msglen: " + str(msglen) + " is_pickled: " + str(is_pickled)
                 msg = self.receive_msg(client, msglen)
                 if is_pickled:
                     msg = cPickle.loads(msg)
+                if self.verbose:
+                    print "Message:\n"
+                    print msg[0]
+                    print msg[1]
                 self.queue.put(msg)
         except RuntimeError:
             if self.verbose:
@@ -105,5 +111,15 @@ if __name__ == '__main__':
     if sys.argv[1] == 's':
         sock = serversocket(verbose=True)
         sock.start_accepting()
+        raw_input("Press enter to exit...")
+        sock.close()
     elif sys.argv[1] == 'c':
         sock = clientsocket()
+        host = raw_input("Enter the host name:\n")
+        port = raw_input("Enter the port:\n")
+        sock.connect(host, int(port))
+        msg = None
+        while msg != "quit":
+            msg = raw_input("Enter a message to send:\n")
+            sock.send(msg)
+        sock.close()

@@ -67,7 +67,7 @@ def tab_restart_browser(webdriver):
     time.sleep(5)
 
 
-def get_website(url, webdriver, proxy_queue, browser_params):
+def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
     """
     goes to <url> using the given <webdriver> instance
     <proxy_queue> is queue for sending the proxy the current first party site
@@ -76,12 +76,14 @@ def get_website(url, webdriver, proxy_queue, browser_params):
     tab_restart_browser(webdriver)
     main_handle = webdriver.current_window_handle
 
-    # sends top-level domain to proxy
-    # then, waits for it to finish marking traffic in queue before moving to new site
+    # sends top-level domain to proxy and extension (if enabled)
+    # then, waits for it to finish marking traffic in proxy before moving to new site
     if proxy_queue is not None:
         proxy_queue.put(url)
         while not proxy_queue.empty():
             time.sleep(0.001)
+    if extension_socket is not None:
+        extension_socket.send(url)
     
     # Execute a get through selenium
     try:
