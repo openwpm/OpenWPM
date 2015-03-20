@@ -8,9 +8,6 @@ exports.run = function(crawlID) {
     // Set up logging
     var createJavascriptTable = data.load("create_javascript_table.sql");
     loggingDB.executeSQL(createJavascriptTable, false);
-    var createJavascriptCallsTable = data.load("create_javascript_calls_table.sql");
-    loggingDB.executeSQL(createJavascriptCallsTable, false);
-    var javascriptID = 0;
     
     // Inject content script to instrument JavaScript API
     pageMod.PageMod({
@@ -27,21 +24,12 @@ exports.run = function(crawlID) {
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
-
-                loggingDB.executeSQL(loggingDB.createInsert("javascript", update), true);
-            
-                if(data.operation == "call") {
-                    var call_update = {};
-                    call_update["javascript_id"] = javascriptID;
-                    call_update["crawl_id"] = crawlID; 
-                    for(var i = 0; i < data.args.length; i++) {
-                        call_update["parameter_index"] = i;
-                        call_update["value"] = loggingDB.escapeString(data.args[i]);
-                        loggingDB.executeSQL(loggingDB.createInsert("javascript_calls", call_update), true);
-                    }
+		
+                for(var i = 0; i < data.args.length; i++) {
+		    update["parameter_index"] = i;
+		    update["parameter_value"] = loggingDB.escapeString(data.args[i]);
+                    loggingDB.executeSQL(loggingDB.createInsert("javascript", update), true);
                 }
-            
-                javascriptID++;
             });
         }
     });

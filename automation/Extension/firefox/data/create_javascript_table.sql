@@ -1,10 +1,11 @@
 CREATE TABLE IF NOT EXISTS javascript(
-	id INTEGER ASC,
+	id INTEGER PRIMARY KEY,
 	crawl_id INTEGER,
         top_url TEXT,
         url TEXT,
 	symbol TEXT,
 	operation TEXT,
 	value TEXT,
-        PRIMARY KEY (id, crawl_id)
+	parameter_index INTEGER,
+	parameter_value TEXT
 );

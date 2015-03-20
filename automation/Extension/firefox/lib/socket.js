@@ -23,8 +23,7 @@ function createListeningSocket() {
                              .createInstance(Ci.nsIServerSocket);
     
     // init with random port
-    //serverSocket.init(-1, true, -1);
-    serverSocket.init(33766, true, -1);
+    serverSocket.init(-1, true, -1);
     console.log("Extension serverSocket listening on port:",serverSocket.port);
     
     // write port to file for OpenWPM
