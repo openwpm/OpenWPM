@@ -8,3 +8,8 @@ We built OpenWPM because we noticed that there are an incredible number of metho
 OpenWPM handles all these aspects so you don’t have to. We built it based on a year of our own our hard-earned experience and mistakes in running web privacy measurement studies, our detailed survey of 32 such prior papers, and numerous discussions with researchers in this area. Our crawling infrastructure abstracts away the underlying tools and allows you to specify high-level commands with a minimal amount of code, recovers from all browser crashes, and lets you run reproducible studies. 
 
 See the [wiki](https://github.com/citp/OpenWPM/wiki) for a more in-depth tutorial.
+
+License
+-------
+
+OpenWPM and included code from [FourthParty](https://github.com/fourthparty/fourthparty) are both licenced under GNU GPLv3.
