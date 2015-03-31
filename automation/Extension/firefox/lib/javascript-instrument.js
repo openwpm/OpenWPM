@@ -18,16 +18,19 @@ exports.run = function(crawlID) {
             var url = worker.url;
             worker.port.on("instrumentation", function(data) {
                 var update = {};
-                update["id"] = javascriptID;
                 update["crawl_id"] = crawlID;
                 update["url"] = loggingDB.escapeString(url);
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
 		
-                for(var i = 0; i < data.args.length; i++) {
-		    update["parameter_index"] = i;
-		    update["parameter_value"] = loggingDB.escapeString(data.args[i]);
+                if (data.operation == 'call') {
+                    for(var i = 0; i < data.args.length; i++) {
+                        update["parameter_index"] = i;
+                        update["parameter_value"] = loggingDB.escapeString(data.args[i]);
+                        loggingDB.executeSQL(loggingDB.createInsert("javascript", update), true);
+                    }
+                } else {
                     loggingDB.executeSQL(loggingDB.createInsert("javascript", update), true);
                 }
             });

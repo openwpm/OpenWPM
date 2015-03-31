@@ -29,13 +29,16 @@ exports.main = function(options, callbacks) {
         pageManager.setup(crawlID);
     }
     if (enableCK) {
+        console.log("Cookie instrumentation enabled");
         //TODO: Doesnt always activate
         //cookieInstrument.run(crawlID);
     }
     if (enableJS) {
+        console.log("Javascript instrumentation enabled");
         jsInstrument.run(crawlID);
     }
     if (enableCP) {
+        console.log("Content Policy instrumentation enabled");
         cpInstrument.run(crawlID);
     }
 };
