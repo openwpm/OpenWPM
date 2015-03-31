@@ -66,18 +66,29 @@ def process_query(query, curr):
     executes a query of form (template_string, arguments)
     query is of form (template_string, arguments)
     """
+    statement = query[0]
+    args = list(query[1])
+    for i in range(len(args)):
+        if type(args[i]) == str:
+            args[i] = unicode(args[i], errors='ignore')
     try:
-        statement = query[0]
-        args = tuple(query[1])
         if len(args) == 0:
             curr.execute(statement)
         else:
             curr.execute(statement,args)
-    except OperationalError:
+    except OperationalError as e:
         print "ERROR: Unsupported query"
+        print type(e)
+        print e
+        print statement
+        print args
         pass
-    except ProgrammingError:
+    except ProgrammingError as e:
         print "ERROR: Unsupported query"
+        print type(e)
+        print e
+        print statement
+        print args
         pass
 
 
