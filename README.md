@@ -9,6 +9,11 @@ OpenWPM handles all these aspects so you don’t have to. We built it based on a
 
 See the [wiki](https://github.com/citp/OpenWPM/wiki) for a more in-depth tutorial.
 
+Development
+-----------
+
+Note OpenWPM is under active development. The repository may contain experimental features that aren't fully tested. We recommend using a [tagged release](https://github.com/citp/OpenWPM/releases).
+
 License
 -------
 
