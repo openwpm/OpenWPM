@@ -13,8 +13,10 @@ import sqlite3
 import subprocess
 import time
 import json
+import psutil
 
 SLEEP_CONS = 0.01  # command sleep constant (in seconds)
+BROWSER_MEMORY_LIMIT = 3072 # in MB
 
 def load_default_params(num_instances=1):
     """
@@ -42,6 +44,8 @@ class TaskManager:
     """
 
     def __init__(self, db_path, browser_params, num_browsers, task_description=None):
+        self.closing = False
+
         # sets up the information needed to write to the database
         self.desc = task_description
         self.db_path = db_path
@@ -77,10 +81,11 @@ class TaskManager:
         
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self.initialize_browsers(browser_params)  # List of the Browser(s)
-        
-        # open client socket
-        self.sock = clientsocket()
-        self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
+
+        # start the memory watchdog
+        thread = threading.Thread(target=self.browser_memory_watchdog, args=())
+        thread.daemon = True
+        thread.start()
 
     def initialize_browsers(self, browser_params):
         """ initialize the browsers, each with a unique set of parameters """
@@ -121,7 +126,24 @@ class TaskManager:
                 ua_string = str(item.browser_settings['ua_string'])
                 self.sock.send(("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
                                  WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)))
+        
+                
         return browsers
+
+    def browser_memory_watchdog(self):
+        """ 
+        checks the memory consumption of all browsers every 30 seconds
+        and kills any which exceed the limit
+        """
+        while not self.closing:
+            time.sleep(30)
+            for browser in self.browsers:
+                process = psutil.Process(browser.browser_pid)
+                mem = process.get_memory_info()[0] / float(2 ** 20)
+                if mem > BROWSER_MEMORY_LIMIT:
+                    print "INFO: Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
+                        % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT)
+                    browser.restart_browser_manager()
 
     def launch_data_aggregator(self):
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
@@ -141,7 +163,7 @@ class TaskManager:
         wait for all child processes to finish executing commands and closes everything
         Update crawl table for each browser (crawl_id) to show successful finish
         """
-
+        self.closing = True
         for browser in self.browsers:
             if browser.command_thread is not None:
                 browser.command_thread.join()
