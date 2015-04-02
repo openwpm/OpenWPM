@@ -43,7 +43,8 @@ class Browser:
         self.browser_settings = None  # dict of additional browser profile settings (e.g. screen_res)
         
         # start the browser process
-        self.browser_manager = self.launch_browser_manager()
+        self.browser_manager = None
+        self.launch_browser_manager()        
 
     def ready(self):
         """ return if the browser is ready to accept a command """
@@ -54,16 +55,16 @@ class Browser:
         try:
             os.kill(self.browser_manager.pid, signal.SIGKILL)
         except OSError:
-            print "Browser manager process already dead"
+            print "WARNING: Browser manager process does not exist"
         if self.display_pid is not None:
             try:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
-                print "Display process already dead"
+                print "WARNING: Display process does not exit"
         try:
             os.kill(self.browser_pid, signal.SIGKILL)
         except OSError:
-            print "Browser process already dead"
+            print "WARNING: Browser process does not exist"
 
     def launch_browser_manager(self, spawn_timeout=30):
         """
@@ -89,7 +90,6 @@ class Browser:
             crash_recovery = False
         
         # keep trying to spawn a BrowserManager until we have a successful launch within the timeout limit
-        browser_manager = None
         successful_spawn = False
         while not successful_spawn:
             # Resets the command/status queues
@@ -97,24 +97,17 @@ class Browser:
 
             # builds and launches the browser_manager
             args = (self.command_queue, self.status_queue, self.browser_params, crash_recovery)
-            browser_manager = Process(target=BrowserManager, args=args)
-            browser_manager.start()
+            self.browser_manager = Process(target=BrowserManager, args=args)
+            self.browser_manager.start()
 
-            # waits for BrowserManager to send success tuple i.e. (current_profile_path, browser pid, display pid)
-            for i in xrange(0, int(spawn_timeout) * 1000):
-                 # no status for now -> sleep to avoid pegging CPU on blocking get
-                if self.status_queue.empty():
-                    time.sleep(0.001)
-                    continue
-
+            # waits for BrowserManager to send success tuple
+            try:
                 (self.current_profile_path, self.browser_pid, self.display_pid, self.browser_settings) \
-                    = self.status_queue.get()
+                    = self.status_queue.get(True, spawn_timeout)
                 successful_spawn = True
-                break
-
-            # kill the BrowserManager if it failed to start up the browser
-            if not successful_spawn:
-                os.kill(browser_manager.pid, signal.SIGKILL)
+            except Queue.Empty:
+                print "ERROR: Browser spawn unsuccessful, killing any child processes"
+                self.kill_browser_manager()
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
@@ -124,7 +117,6 @@ class Browser:
             subprocess.call(["rm", "-r", crashed_profile_path])
 
         self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
-        return browser_manager
 
     def reset(self):
         """ resets the worker processes with profile to a clean state """
@@ -144,7 +136,7 @@ class Browser:
             self.current_profile_path = None
             self.browser_params['profile_tar'] = None
 
-        self.browser_manager = self.launch_browser_manager()
+        self.launch_browser_manager()
 
 def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # sets up the proxy (for now, mitmproxy) if necessary
@@ -160,8 +152,9 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Read the extension port -- if extension is enabled
     # TODO: This needs to be cleaner
     if browser_params['browser'] == 'firefox' and browser_params['extension']['enabled']:
+        print "INFO: Looking for extension port information in %s" % prof_folder
         while not os.path.isfile(prof_folder + 'extension_port.txt'):
-            time.sleep(0.01)
+            time.sleep(0.1)
         with open(prof_folder + 'extension_port.txt', 'r') as f:
             port = f.read().strip()
         extension_socket = clientsocket()
