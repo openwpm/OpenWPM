@@ -32,12 +32,11 @@ def fblogin(site, email, password):
     action = ActionChains(driver)
     signoutselect = driver.find_element_by_id('usernav-profile-link')
     action.move_to_element(signoutselect).perform()
-    time.sleep(1)
-    signout = driver.find_element_by_id('usernav-signout')
+    signout = wait.until(EC.element_to_be_clickable((By.ID,'usernav-signout')))
     signout.click()
     #driver.close()
 
 
 if __name__ == '__main__':
     # Put email and password
-    fblogin('http://www.buzzfeed.com', '', '')
+    fblogin('http://www.buzzfeed.com', 'nayebir@gmail.com', 'yugiho')
