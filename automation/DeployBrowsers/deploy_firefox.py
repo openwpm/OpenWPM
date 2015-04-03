@@ -9,8 +9,7 @@ import random
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
-
-def deploy_firefox(browser_params, crash_recovery):
+def deploy_firefox(status_queue, browser_params, crash_recovery):
     """ launches a firefox instance with parameters set by the input dictionary """
     root_dir = os.path.dirname(__file__)  # directory of this file
 
@@ -74,6 +73,7 @@ def deploy_firefox(browser_params, crash_recovery):
         display = Display(visible=0, size=profile_settings['screen_res'])
         display.start()
         display_pid = display.pid
+    status_queue.put(display_pid)
 
     if browser_params['debugging']:
         firebug_loc = os.path.join(root_dir, 'firefox_extensions/firebug-1.11.0.xpi')
@@ -150,8 +150,9 @@ def deploy_firefox(browser_params, crash_recovery):
 
     # Launch the webdriver
     driver = webdriver.Firefox(firefox_profile=fp)
+    status_queue.put(browser_profile_path, int(driver.binary.process.pid), profile_settings)
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])
 
-    return driver, browser_profile_path, display_pid, profile_settings
+    return driver, browser_profile_path, profile_settings

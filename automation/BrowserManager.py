@@ -101,11 +101,13 @@ class Browser:
             self.browser_manager = Process(target=BrowserManager, args=args)
             self.browser_manager.start()
 
-            # waits for BrowserManager to send success tuple
+            # wait for BrowserManager to send success tuple
             try:
-                (self.current_profile_path, self.browser_pid, self.display_pid, self.browser_settings) \
-                    = self.status_queue.get(True, spawn_timeout)
-                successful_spawn = True
+                self.display_pid = self.status_queue.get(True, spawn_timeout)
+                (self.current_profile_path, self.browser_pid, self.browser_settings) \
+                        = self.status_queue.get(True, spawn_timeout)
+                if self.status_queue.get(True, spawn_timeout) == 'READY':
+                    successful_spawn = True
             except EmptyQueue:
                 print "ERROR: Browser spawn unsuccessful, killing any child processes"
                 self.kill_browser_manager()
@@ -140,15 +142,15 @@ class Browser:
         self.launch_browser_manager()
 
 def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
-    # sets up the proxy (for now, mitmproxy) if necessary
+    # Start the proxy
     proxy_site_queue = None  # used to pass the current site down to the proxy
     if browser_params['proxy']:
         (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params['aggregator_address'],
                                                                       browser_params['crawl_id'])
         browser_params['proxy'] = local_port
 
-    # Gets the WebDriver, profile folder (i.e. where history/cookies are stored) and display pid (None if not headless)
-    (driver, prof_folder, display_pid, browser_settings) = deploy_browser.deploy_browser(browser_params, crash_recovery)
+    # Start the virtualdisplay (if necessary), webdriver, and browser
+    (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, crash_recovery)
 
     # Read the extension port -- if extension is enabled
     # TODO: This needs to be cleaner
@@ -165,7 +167,7 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
 
     # passes the profile folder, WebDriver pid and display pid back to the TaskManager
     # now, the TaskManager knows that the browser is successfully set up
-    status_queue.put((prof_folder, int(driver.binary.process.pid), display_pid, browser_settings))
+    status_queue.put('READY')
     browser_params['profile_path'] = prof_folder
 
     # starts accepting arguments until told to die
