@@ -111,6 +111,9 @@ class Browser:
             except EmptyQueue:
                 print "ERROR: Browser spawn unsuccessful, killing any child processes"
                 self.kill_browser_manager()
+                subprocess.call(["rm", "-r", self.current_profile_path])
+                #TODO should also delete XVFB lockfile
+                #TODO potentially also an extension diretory???
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
