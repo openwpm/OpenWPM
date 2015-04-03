@@ -5,6 +5,7 @@ from Proxy import deploy_mitm_proxy
 from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
+from Queue import Empty as EmptyQueue
 import subprocess
 import tempfile
 import signal
@@ -105,7 +106,7 @@ class Browser:
                 (self.current_profile_path, self.browser_pid, self.display_pid, self.browser_settings) \
                     = self.status_queue.get(True, spawn_timeout)
                 successful_spawn = True
-            except Queue.Empty:
+            except EmptyQueue:
                 print "ERROR: Browser spawn unsuccessful, killing any child processes"
                 self.kill_browser_manager()
 
