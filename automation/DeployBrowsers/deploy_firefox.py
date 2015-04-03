@@ -150,7 +150,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
 
     # Launch the webdriver
     driver = webdriver.Firefox(firefox_profile=fp)
-    status_queue.put(browser_profile_path, int(driver.binary.process.pid), profile_settings)
+    status_queue.put((browser_profile_path, int(driver.binary.process.pid), profile_settings))
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])

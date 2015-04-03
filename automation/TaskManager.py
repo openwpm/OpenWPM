@@ -16,7 +16,7 @@ import json
 import psutil
 
 SLEEP_CONS = 0.01  # command sleep constant (in seconds)
-BROWSER_MEMORY_LIMIT = 3072 # in MB
+BROWSER_MEMORY_LIMIT = 1500 # in MB
 
 def load_default_params(num_instances=1):
     """
@@ -109,7 +109,7 @@ class TaskManager:
                     crawl_id = cur.lastrowid
                     query_successful = True
                 except OperationalError:
-                    time.sleep(2)
+                    time.sleep(0.1)
                     pass
 
             browser_params[i]['crawl_id'] = crawl_id
