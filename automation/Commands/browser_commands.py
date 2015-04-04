@@ -66,6 +66,33 @@ def tab_restart_browser(webdriver):
     switch_to_new_tab.perform()
     time.sleep(5)
 
+def fb_login(url, driver, proxy_queue, browser_params, extension_socket, email, password):
+    get_website(url, driver, proxy_queue, browser_params, extension_socket)
+    wait = WebDriverWait(driver, 10)
+   
+    signin = driver.find_element_by_id('header-signin')
+    signin.click()
+    fbbutton = driver.find_element_by_class_name('fb-button')
+    fbbutton.click()
+    
+    driver.switch_to_window(driver.window_handles[-1])
+
+    emailfield = wait.until(EC.presence_of_element_located((By.ID,'email')))
+    emailfield.send_keys(email)
+    passwordfield = driver.find_element_by_id('pass')
+    passwordfield.send_keys(password)
+    login = driver.find_element_by_name("login")
+    login.click()
+    time.sleep(1)
+    driver.switch_to_window(driver.window_handles[-1])
+
+    action = ActionChains(driver)
+    signoutselect = driver.find_element_by_id('usernav-profile-link')
+    action.move_to_element(signoutselect).perform()
+    signout = wait.until(EC.element_to_be_clickable((By.ID,'usernav-signout')))
+    signout.click()    
+
+
 
 def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
     """
