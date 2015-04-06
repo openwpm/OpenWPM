@@ -14,6 +14,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     root_dir = os.path.dirname(__file__)  # directory of this file
 
     display_pid = None
+    diplay_port = None
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
     
@@ -73,7 +74,8 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
         display = Display(visible=0, size=profile_settings['screen_res'])
         display.start()
         display_pid = display.pid
-    status_queue.put(display_pid)
+        display_port = display.cmd_param[5][1:]
+    status_queue.put((display_pid, display_port))
 
     if browser_params['debugging']:
         firebug_loc = os.path.join(root_dir, 'firefox_extensions/firebug-1.11.0.xpi')

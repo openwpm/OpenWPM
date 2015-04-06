@@ -39,6 +39,7 @@ class Browser:
         self.status_queue = None  # queue for receiving command execution status from BrowserManager
         self.browser_pid = None  # pid for browser instance controlled by BrowserManager
         self.display_pid = None  # the pid of the display for the headless browser (if it exists)
+        self.display_port = None  # the port of the display for the headless browser (if it exists)
         
         self.is_fresh = None  # boolean that says if the BrowserManager new (used to optimize restarts)
         self.browser_settings = None  # dict of additional browser profile settings (e.g. screen_res)
@@ -62,6 +63,8 @@ class Browser:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
                 print "WARNING: Display process does not exit"
+        if self.display_port is not None: # xvfb diplay lock
+            subprocess.call(["rm", "-f", "/tmp/.X"+str(self.display_port)+"-lock"])
         try:
             os.kill(self.browser_pid, signal.SIGKILL)
         except OSError:
@@ -103,7 +106,7 @@ class Browser:
 
             # wait for BrowserManager to send success tuple
             try:
-                self.display_pid = self.status_queue.get(True, spawn_timeout)
+                (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
                 (self.current_profile_path, self.browser_pid, self.browser_settings) \
                         = self.status_queue.get(True, spawn_timeout)
                 if self.status_queue.get(True, spawn_timeout) == 'READY':
@@ -111,9 +114,7 @@ class Browser:
             except EmptyQueue:
                 print "ERROR: Browser spawn unsuccessful, killing any child processes"
                 self.kill_browser_manager()
-                subprocess.call(["rm", "-r", self.current_profile_path])
-                #TODO should also delete XVFB lockfile
-                #TODO potentially also an extension diretory???
+                subprocess.call(["rm", "-r", self.current_profile_path]) # selenium tmp directory
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
