@@ -88,8 +88,8 @@ class Browser:
 
             # wait for BrowserManager to send success tuple
             try:
-                (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
                 self.current_profile_path = self.status_queue.get(True, spawn_timeout)
+                (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
                 (self.browser_pid, self.browser_settings) = self.status_queue.get(True, spawn_timeout)
                 if self.status_queue.get(True, spawn_timeout) == 'READY':
                     successful_spawn = True
