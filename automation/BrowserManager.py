@@ -170,6 +170,7 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
         print "INFO: Looking for extension port information in %s" % prof_folder
         while not os.path.isfile(prof_folder + 'extension_port.txt'):
             time.sleep(0.1)
+        time.sleep(0.5)
         with open(prof_folder + 'extension_port.txt', 'r') as f:
             port = f.read().strip()
         extension_socket = clientsocket()

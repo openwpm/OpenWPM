@@ -138,12 +138,15 @@ class TaskManager:
         while not self.closing:
             time.sleep(30)
             for browser in self.browsers:
-                process = psutil.Process(browser.browser_pid)
-                mem = process.get_memory_info()[0] / float(2 ** 20)
-                if mem > BROWSER_MEMORY_LIMIT:
-                    print "INFO: Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
-                        % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT)
-                    browser.reset()
+                try:
+                    process = psutil.Process(browser.browser_pid)
+                    mem = process.get_memory_info()[0] / float(2 ** 20)
+                    if mem > BROWSER_MEMORY_LIMIT:
+                        print "INFO: Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
+                            % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT)
+                        browser.reset()
+                except psutil.NoSuchProcessError as e:
+                    pass
 
     def launch_data_aggregator(self):
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
