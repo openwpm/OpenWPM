@@ -17,7 +17,8 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     diplay_port = None
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
-    
+    status_queue.put(browser_profile_path)
+
     profile_settings = None  # Imported browser settings
     ext_dict = None  # Dictionary of supported extensions
     if browser_params['profile_tar'] and not crash_recovery:
@@ -152,7 +153,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
 
     # Launch the webdriver
     driver = webdriver.Firefox(firefox_profile=fp)
-    status_queue.put((browser_profile_path, int(driver.binary.process.pid), profile_settings))
+    status_queue.put((int(driver.binary.process.pid), profile_settings))
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])

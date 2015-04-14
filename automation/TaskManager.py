@@ -143,7 +143,7 @@ class TaskManager:
                 if mem > BROWSER_MEMORY_LIMIT:
                     print "INFO: Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
                         % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT)
-                    browser.restart_browser_manager()
+                    browser.reset()
 
     def launch_data_aggregator(self):
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """

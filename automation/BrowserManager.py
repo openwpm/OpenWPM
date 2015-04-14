@@ -52,24 +52,6 @@ class Browser:
         """ return if the browser is ready to accept a command """
         return self.command_thread is None or not self.command_thread.is_alive()
 
-    # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
-    def kill_browser_manager(self):
-        try:
-            os.kill(self.browser_manager.pid, signal.SIGKILL)
-        except OSError:
-            print "WARNING: Browser manager process does not exist"
-        if self.display_pid is not None:
-            try:
-                os.kill(self.display_pid, signal.SIGKILL)
-            except OSError:
-                print "WARNING: Display process does not exit"
-        if self.display_port is not None: # xvfb diplay lock
-            subprocess.call(["rm", "-f", "/tmp/.X"+str(self.display_port)+"-lock"])
-        try:
-            os.kill(self.browser_pid, signal.SIGKILL)
-        except OSError:
-            print "WARNING: Browser process does not exist"
-
     def launch_browser_manager(self, spawn_timeout=30):
         """
         sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
@@ -107,8 +89,8 @@ class Browser:
             # wait for BrowserManager to send success tuple
             try:
                 (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
-                (self.current_profile_path, self.browser_pid, self.browser_settings) \
-                        = self.status_queue.get(True, spawn_timeout)
+                self.current_profile_path = self.status_queue.get(True, spawn_timeout)
+                (self.browser_pid, self.browser_settings) = self.status_queue.get(True, spawn_timeout)
                 if self.status_queue.get(True, spawn_timeout) == 'READY':
                     successful_spawn = True
             except EmptyQueue:
@@ -145,6 +127,24 @@ class Browser:
             self.browser_params['profile_tar'] = None
 
         self.launch_browser_manager()
+
+    # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
+    def kill_browser_manager(self):
+        try:
+            os.kill(self.browser_manager.pid, signal.SIGKILL)
+        except OSError:
+            print "WARNING: Browser manager process does not exist"
+        if self.display_pid is not None:
+            try:
+                os.kill(self.display_pid, signal.SIGKILL)
+            except OSError:
+                print "WARNING: Display process does not exit"
+        if self.display_port is not None: # xvfb diplay lock
+            subprocess.call(["rm", "-f", "/tmp/.X"+str(self.display_port)+"-lock"])
+        try:
+            os.kill(self.browser_pid, signal.SIGKILL)
+        except OSError:
+            print "WARNING: Browser process does not exist"
 
 def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Start the proxy
