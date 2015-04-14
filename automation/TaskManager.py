@@ -10,10 +10,10 @@ import copy
 import threading
 import os
 import sqlite3
-import subprocess
 import time
 import json
 import psutil
+import shutil
 
 SLEEP_CONS = 0.01  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500 # in MB
@@ -169,7 +169,7 @@ class TaskManager:
                 browser.command_thread.join()
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
-                subprocess.call(["rm", "-r", browser.current_profile_path])
+                shutil.rmtree(browser.current_profile_path)
             self.sock.send(("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
                             (browser.crawl_id,)))
         self.db.close()  # close db connection

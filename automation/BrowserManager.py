@@ -6,8 +6,8 @@ from SocketInterface import clientsocket
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
-import subprocess
 import tempfile
+import shutil
 import signal
 import time
 import os
@@ -97,14 +97,14 @@ class Browser:
                 print "ERROR: Browser spawn unsuccessful, killing any child processes"
                 self.kill_browser_manager()
                 if self.current_profile_path is not None:
-                    subprocess.call(["rm", "-r", self.current_profile_path]) # selenium tmp directory
+                    shutil.rmtree(self.current_profile_path)
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
         if tempdir is not None:
-            subprocess.call(["rm", "-r", tempdir])
+            shutil.rmtree(tempdir)
         if crashed_profile_path is not None:
-            subprocess.call(["rm", "-r", crashed_profile_path])
+            shutil.rmtree(crashed_profile_path)
 
         self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
 
@@ -122,7 +122,7 @@ class Browser:
 
         # in case of reset, hard-deletes old profile
         if reset and self.current_profile_path is not None:
-            subprocess.call(["rm", "-r", self.current_profile_path])
+            shutil.rmtree(self.current_profile_path)
             self.current_profile_path = None
             self.browser_params['profile_tar'] = None
 
@@ -140,7 +140,7 @@ class Browser:
             except OSError:
                 print "WARNING: Display process does not exit"
         if self.display_port is not None: # xvfb diplay lock
-            subprocess.call(["rm", "-f", "/tmp/.X"+str(self.display_port)+"-lock"])
+            os.remove("/tmp/.X"+str(self.display_port)+"-lock")
         try:
             os.kill(self.browser_pid, signal.SIGKILL)
         except OSError:
