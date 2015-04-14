@@ -26,7 +26,8 @@ exports.main = function(options, callbacks) {
     // Turn on instrumentation
     if (enableCK || enableJS || enableCP) {
         loggingDB.open(host, port, crawlID);
-        pageManager.setup(crawlID);
+        //BROKEN
+        //pageManager.setup(crawlID);
     }
     if (enableCK) {
         console.log("Cookie instrumentation enabled");
