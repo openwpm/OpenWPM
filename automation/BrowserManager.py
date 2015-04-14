@@ -134,17 +134,24 @@ class Browser:
             os.kill(self.browser_manager.pid, signal.SIGKILL)
         except OSError:
             print "WARNING: Browser manager process does not exist"
+            pass
         if self.display_pid is not None:
             try:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
                 print "WARNING: Display process does not exit"
+                pass
         if self.display_port is not None: # xvfb diplay lock
-            os.remove("/tmp/.X"+str(self.display_port)+"-lock")
+            try:
+                os.remove("/tmp/.X"+str(self.display_port)+"-lock")
+            except OSError:
+                print "WARNING: Screen lockfile already removed"
+                pass
         try:
             os.kill(self.browser_pid, signal.SIGKILL)
         except OSError:
             print "WARNING: Browser process does not exist"
+            pass
 
 def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Start the proxy
