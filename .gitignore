@@ -1,3 +1,6 @@
+# firefox directories
+firefox/
+
 # VIM tmp files
 *~
 .*.sw*

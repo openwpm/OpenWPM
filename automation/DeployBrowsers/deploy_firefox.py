@@ -1,6 +1,8 @@
 from ..Commands.profile_commands import load_profile
 
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
+
 from pyvirtualdisplay import Display
 import shutil
 import os
@@ -152,7 +154,9 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     fp.set_preference('browser.pagethumbnails.capturing_disabled', True)
 
     # Launch the webdriver
-    driver = webdriver.Firefox(firefox_profile=fp)
+    status_queue.put("HERE")
+    fb = FirefoxBinary(root_dir  + "/../../firefox/firefox")
+    driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
     status_queue.put((int(driver.binary.process.pid), profile_settings))
 
     # set window size

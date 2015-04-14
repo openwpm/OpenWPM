@@ -87,24 +87,31 @@ class Browser:
             self.browser_manager.start()
 
             # wait for BrowserManager to send success tuple
+            prof_done = disp_done = browser_done = ready_done = here_done = False
             try:
                 self.current_profile_path = self.status_queue.get(True, spawn_timeout)
+                prof_done = True
                 (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
+                disp_done = True
+                useless = self.status_queue.get(True, spawn_timeout)
+                here_done = True
                 (self.browser_pid, self.browser_settings) = self.status_queue.get(True, spawn_timeout)
+                browser_done = True
                 if self.status_queue.get(True, spawn_timeout) == 'READY':
                     successful_spawn = True
+                ready_done = True
             except EmptyQueue:
-                print "ERROR: Browser spawn unsuccessful, killing any child processes"
+                print "ERROR: Browser spawn unsuccessful, killing any child processes \n       Profile: " + str(prof_done) + "  Display: " + str(disp_done) + "  HERE: " + str(here_done) + "  Browser: " + str(browser_done) + " Ready: " + str(ready_done)
                 self.kill_browser_manager()
                 if self.current_profile_path is not None:
-                    shutil.rmtree(self.current_profile_path)
+                    shutil.rmtree(self.current_profile_path, ignore_errors=True)
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
         if tempdir is not None:
-            shutil.rmtree(tempdir)
+            shutil.rmtree(tempdir, ignore_errors=True)
         if crashed_profile_path is not None:
-            shutil.rmtree(crashed_profile_path)
+            shutil.rmtree(crashed_profile_path, ignore_errors=True)
 
         self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
 
@@ -122,7 +129,7 @@ class Browser:
 
         # in case of reset, hard-deletes old profile
         if reset and self.current_profile_path is not None:
-            shutil.rmtree(self.current_profile_path)
+            shutil.rmtree(self.current_profile_path, ignore_errors=True)
             self.current_profile_path = None
             self.browser_params['profile_tar'] = None
 
@@ -167,7 +174,7 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Read the extension port -- if extension is enabled
     # TODO: This needs to be cleaner
     if browser_params['browser'] == 'firefox' and browser_params['extension']['enabled']:
-        print "INFO: Looking for extension port information in %s" % prof_folder
+        # print "INFO: Looking for extension port information in %s" % prof_folder
         while not os.path.isfile(prof_folder + 'extension_port.txt'):
             time.sleep(0.1)
         time.sleep(0.5)

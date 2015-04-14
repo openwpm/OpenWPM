@@ -52,7 +52,7 @@ class serversocket:
                 msg = self.receive_msg(client, msglen)
                 if is_pickled:
                     try:
-                        msg = cPickle.loads(msg)
+                        msg = cPickle.loads(str(msg))
                     except ValueError as e:
                         print "ERROR: Corrupted pickle string"
                         print type(e)
