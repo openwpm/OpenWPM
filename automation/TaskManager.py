@@ -188,7 +188,7 @@ class TaskManager:
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
         = None  -> first come, first serve
-        =  #     -> index of browser to send command to
+        =  #    -> index of browser to send command to
         = *     -> sends command to all browsers
         = **    -> sends command to all browsers (synchronized)
         """
@@ -280,7 +280,7 @@ class TaskManager:
 
         if reset:
             browser.reset()
-        elif not command_succeeded:
+        elif command_succeeded != 1:
             browser.restart_browser_manager()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
