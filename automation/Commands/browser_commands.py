@@ -64,7 +64,7 @@ def tab_restart_browser(webdriver):
     switch_to_new_tab.key_down(Keys.CONTROL).send_keys(Keys.PAGE_UP).key_up(Keys.CONTROL)
     switch_to_new_tab.key_down(Keys.CONTROL).send_keys('w').key_up(Keys.CONTROL)
     switch_to_new_tab.perform()
-    time.sleep(5)
+    time.sleep(0.5)
 
 
 def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):

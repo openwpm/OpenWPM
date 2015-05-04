@@ -16,7 +16,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     root_dir = os.path.dirname(__file__)  # directory of this file
 
     display_pid = None
-    diplay_port = None
+    display_port = None
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(browser_profile_path)
