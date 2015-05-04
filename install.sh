@@ -1,6 +1,6 @@
 sudo apt-get update
 
-sudo apt-get install htop git python-dev python-pip libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb
+sudo apt-get install firefox htop git python-dev python-pip libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb
 
 sudo pip install -U pyvirtualdisplay beautifulsoup4 netlib pyasn1 PyOPenSSL mitmproxy python-dateutil tld pyamf psutil
 
