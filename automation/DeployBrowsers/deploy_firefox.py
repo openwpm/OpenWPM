@@ -1,9 +1,11 @@
 from ..Commands.profile_commands import load_profile
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from selenium.webdriver.remote.remote_connection import LOGGER
 from selenium import webdriver
 
 from pyvirtualdisplay import Display
+import logging
 import shutil
 import os
 import cPickle
@@ -20,6 +22,10 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(browser_profile_path)
+
+    # Enable logging
+    LOGGER.setLevel(logging.WARNING)
+    fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
 
     profile_settings = None  # Imported browser settings
     ext_dict = None  # Dictionary of supported extensions
