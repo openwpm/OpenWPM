@@ -137,11 +137,12 @@ class Browser:
 
     # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
     def kill_browser_manager(self):
-        try:
-            os.kill(self.browser_manager.pid, signal.SIGKILL)
-        except OSError:
-            print "WARNING: Browser manager process does not exist"
-            pass
+        if self.browser_manager.pid is not None:
+            try:
+                os.kill(self.browser_manager.pid, signal.SIGKILL)
+            except OSError:
+                print "WARNING: Browser manager process does not exist"
+                pass
         if self.display_pid is not None:
             try:
                 os.kill(self.display_pid, signal.SIGKILL)
@@ -154,11 +155,12 @@ class Browser:
             except OSError:
                 print "WARNING: Screen lockfile already removed"
                 pass
-        try:
-            os.kill(self.browser_pid, signal.SIGKILL)
-        except OSError:
-            print "WARNING: Browser process does not exist"
-            pass
+        if self.browser_pid is not None:
+            try:
+                os.kill(self.browser_pid, signal.SIGKILL)
+            except OSError:
+                print "WARNING: Browser process does not exist"
+                pass
 
 def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Start the proxy
