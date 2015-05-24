@@ -102,6 +102,8 @@ class Browser:
                 ready_done = True
             except EmptyQueue:
                 print "ERROR: Browser spawn unsuccessful, killing any child processes \n       Profile: " + str(prof_done) + "  Display: " + str(disp_done) + "  HERE: " + str(here_done) + "  Browser: " + str(browser_done) + " Ready: " + str(ready_done)
+                print "current_profile_path: " + self.current_profile_path + \
+                "\nbrowser_params: " + str(self.browser_params)
                 self.kill_browser_manager()
                 if self.current_profile_path is not None:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
