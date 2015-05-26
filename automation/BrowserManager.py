@@ -52,7 +52,7 @@ class Browser:
         """ return if the browser is ready to accept a command """
         return self.command_thread is None or not self.command_thread.is_alive()
 
-    def launch_browser_manager(self, spawn_timeout=30):
+    def launch_browser_manager(self, spawn_timeout=90):
         """
         sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
         loads associated user profile if necessary
@@ -75,9 +75,10 @@ class Browser:
             crashed_profile_path = None
             crash_recovery = False
         
-        # keep trying to spawn a BrowserManager until we have a successful launch within the timeout limit
-        successful_spawn = False
-        while not successful_spawn:
+        # Try up to 5 times to spawn a browser within the timeout
+        unsuccessful_spawns = 0
+        success = False
+        while not success and unsuccessful_spawns < 5:
             # Resets the command/status queues
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
@@ -86,25 +87,25 @@ class Browser:
             self.browser_manager = Process(target=BrowserManager, args=args)
             self.browser_manager.start()
 
-            # wait for BrowserManager to send success tuple
-            prof_done = disp_done = browser_done = ready_done = here_done = False
+            # Read success status of browser manager
+            prof_done = disp_done = browser_done = ready_done = launch_attempted = False
             try:
                 self.current_profile_path = self.status_queue.get(True, spawn_timeout)
                 prof_done = True
                 (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
                 disp_done = True
                 useless = self.status_queue.get(True, spawn_timeout)
-                here_done = True
+                launch_attempted = True
                 (self.browser_pid, self.browser_settings) = self.status_queue.get(True, spawn_timeout)
                 browser_done = True
-                if self.status_queue.get(True, spawn_timeout) == 'READY':
-                    successful_spawn = True
-                ready_done = True
+                if self.status_queue.get(True, spawn_timeout) != 'READY':
+                    print "ERROR: mismatch of status queue return values, trying again..."
+                    unsuccessful_spawns += 1
+                    continue
+                success = True
             except EmptyQueue:
-                print "ERROR: Browser spawn unsuccessful, killing any child processes \n       Profile: " + str(prof_done) + "  Display: " + str(disp_done) + "  HERE: " + str(here_done) + "  Browser: " + str(browser_done) + " Ready: " + str(ready_done)
-                print "current_profile_path: " + self.current_profile_path + \
-                "\nbrowser_params: " + str(self.browser_params)
-                self.kill_browser_manager()
+                unsuccessful_spawns += 1
+                print "ERROR: Browser spawn unsuccessful, killing any child processes \n       Profile: " + str(prof_done) + "  Display: " + str(disp_done) + "  Browser Launch attempted: " + str(launch_attempted) + "  Browser: " + str(browser_done)
                 if self.current_profile_path is not None:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
 
