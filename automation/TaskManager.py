@@ -14,6 +14,7 @@ import time
 import json
 import psutil
 import shutil
+import sys
 
 SLEEP_CONS = 0.01  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500 # in MB
@@ -45,6 +46,7 @@ class TaskManager:
 
     def __init__(self, db_path, browser_params, num_browsers, task_description=None):
         self.closing = False
+        self.launch_failure_flag = False
 
         # sets up the information needed to write to the database
         self.desc = task_description
@@ -66,7 +68,7 @@ class TaskManager:
 
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
-        self.data_aggregator = self.launch_data_aggregator()
+        self.data_aggregator = self._launch_data_aggregator()
         self.aggregator_address = self.aggregator_status_queue.get()  # socket location: (address, port)
 
         # open client socket
@@ -80,20 +82,20 @@ class TaskManager:
         self.task_id = cur.lastrowid
         
         # sets up the BrowserManager(s) + associated queues
-        self.browsers = self.initialize_browsers(browser_params)  # List of the Browser(s)
+        self.browsers = self._initialize_browsers(browser_params)  # List of the Browser(s)
+        self._launch_browsers()
 
-        # start the memory watchdog
-        thread = threading.Thread(target=self.browser_memory_watchdog, args=())
+        # start the manager watchdog
+        thread = threading.Thread(target=self._manager_watchdog, args=())
         thread.daemon = True
         thread.start()
 
-    def initialize_browsers(self, browser_params):
-        """ initialize the browsers, each with a unique set of parameters """
+    def _initialize_browsers(self, browser_params):
+        """ initialize the browser classes, each with a unique set of parameters """
         browsers = list()
         for i in xrange(self.num_browsers):
             # update crawl table
-            # TO DO: update DB with browser.browser_settings for each browser manager initialized
-
+            # TODO: update DB with browser.browser_settings for each browser manager initialized
             cur = self.db.cursor()
             query_successful = False
             crawl_id = -1
@@ -115,28 +117,36 @@ class TaskManager:
             browser_params[i]['crawl_id'] = crawl_id
             browser_params[i]['aggregator_address'] = self.aggregator_address
             browsers.append(Browser(browser_params[i]))
+
+        return browsers
+    
+    def _launch_browsers(self):
+        """ launch each browser manager process / browser """
+        for browser in self.browsers:
+            success = browser.launch_browser_manager()
+            if not success:
+                print "ERROR: Browser spawn failure during TaskManager initialization, exiting..."
+                self.close(post_process=False)
+                break
+
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
-            for item in browsers:
-                if not item.browser_settings['extensions']:
-                    extensions = 'None'
-                else:
-                    extensions = ','.join(item.browser_settings['extensions'])
-                screen_res = str(item.browser_settings['screen_res'])
-                ua_string = str(item.browser_settings['ua_string'])
-                self.sock.send(("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
-                                 WHERE crawl_id = ?", (extensions, screen_res, ua_string, item.crawl_id)))
-        
-                
-        return browsers
+            if not browser.browser_settings['extensions']:
+                extensions = 'None'
+            else:
+                extensions = ','.join(browser.browser_settings['extensions'])
+            screen_res = str(browser.browser_settings['screen_res'])
+            ua_string = str(browser.browser_settings['ua_string'])
+            self.sock.send(("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
+                             WHERE crawl_id = ?", (extensions, screen_res, ua_string, browser.crawl_id)))
 
-    def browser_memory_watchdog(self):
+    def _manager_watchdog(self):
         """ 
-        checks the memory consumption of all browsers every 30 seconds
-        and kills any which exceed the limit
+        Periodically checks the following:
+        - memory consumption of all browsers every 10 seconds
         """
         while not self.closing:
-            time.sleep(30)
+            time.sleep(10)
             for browser in self.browsers:
                 try:
                     process = psutil.Process(browser.browser_pid)
@@ -148,7 +158,7 @@ class TaskManager:
                 except psutil.NoSuchProcess as e:
                     pass
 
-    def launch_data_aggregator(self):
+    def _launch_data_aggregator(self):
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
@@ -156,34 +166,47 @@ class TaskManager:
         aggregator.start()
         return aggregator
 
-    def kill_data_aggregator(self):
+    def _kill_data_aggregator(self):
         """ terminates a DataAggregator with a graceful KILL COMMAND """
         self.aggregator_status_queue.put("DIE")
         self.data_aggregator.join()
 
-    def close(self):
+    def _shutdown_manager(self, failure=False):
         """
-        wait for all child processes to finish executing commands and closes everything
-        Update crawl table for each browser (crawl_id) to show successful finish
+        Wait for current commands to finish, close all child processes and
+        threads
+        <failure> flag to indicate manager failure (True) or end of crawl (False)
         """
         self.closing = True
+        
         for browser in self.browsers:
-            if browser.command_thread is not None:
+            if browser.command_thread is not None and browser.command_thread.is_alive():
                 browser.command_thread.join()
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
-                shutil.rmtree(browser.current_profile_path)
-            self.sock.send(("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
-                            (browser.crawl_id,)))
+                shutil.rmtree(browser.current_profile_path, ignore_errors = True)
+            if failure:
+                self.sock.send(("UPDATE crawl SET finished = -1 WHERE crawl_id = ?",
+                                (browser.crawl_id,)))
+            else:
+                self.sock.send(("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
+                                (browser.crawl_id,)))
+        
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
-        self.kill_data_aggregator()
+        self._kill_data_aggregator()
 
-        post_processing.run(self.db_path) # launch post-crawl processing
+    def _gracefully_fail(self, msg):
+        """
+        Execute shutdown commands before throwing error
+        <msg>: an Exception will be raised with this message
+        """
+        self._shutdown_manager(failure=True)
+        raise Exception(msg)
 
     # CRAWLER COMMAND CODE
 
-    def distribute_command(self, command, index=None, timeout=None, reset=False):
+    def _distribute_command(self, command, index=None, timeout=None, reset=False):
         """
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
@@ -198,7 +221,7 @@ class TaskManager:
             while True:
                 for browser in self.browsers:
                     if browser.ready():
-                        self.start_thread(browser, command, timeout, reset)
+                        self._start_thread(browser, command, timeout, reset)
                         command_executed = True
                         break
                 if command_executed:
@@ -209,7 +232,7 @@ class TaskManager:
             #send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self.start_thread(self.browsers[index], command, timeout, reset)
+                    self._start_thread(self.browsers[index], command, timeout, reset)
                     break
                 time.sleep(SLEEP_CONS)
         elif index == '*':
@@ -218,7 +241,7 @@ class TaskManager:
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.start_thread(self.browsers[i], command, timeout, reset)
+                        self._start_thread(self.browsers[i], command, timeout, reset)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
         elif index == '**':
@@ -228,7 +251,7 @@ class TaskManager:
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.start_thread(self.browsers[i], command, timeout, reset, condition)
+                        self._start_thread(self.browsers[i], command, timeout, reset, condition)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
             with condition:
@@ -236,15 +259,22 @@ class TaskManager:
         else:
             print "Command index type is not supported or out of range"
 
-    def start_thread(self, browser, command, timeout, reset, condition=None):
+    def _start_thread(self, browser, command, timeout, reset, condition=None):
         """  starts the command execution thread """
+        # Check status flags before starting thread
+        if self.closing:
+            raise Exception("Attempted to execute command on closed TaskManager")
+        if self.launch_failure_flag:
+            self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...")
+
+        # Start command execution thread
         args = (browser, command, timeout, reset, condition)
-        thread = threading.Thread(target=self.issue_command, args=args)
+        thread = threading.Thread(target=self._issue_command, args=args)
         browser.command_thread = thread
         thread.daemon = True
         thread.start()
 
-    def issue_command(self, browser, command, timeout, reset, condition=None):
+    def _issue_command(self, browser, command, timeout, reset, condition=None):
         """
         sends command tuple to the BrowserManager
         <timeout> gives the option to override default timeout
@@ -281,25 +311,39 @@ class TaskManager:
         if reset:
             browser.reset()
         elif command_succeeded != 1:
-            browser.restart_browser_manager()
-
+            success = browser.restart_browser_manager()
+            if not success:
+                self.launch_failure_flag = True # set crash flag for main thread
+    
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
     def get(self, url, index=None, overwrite_timeout=None, reset=False):
         """ goes to a url """
-        self.distribute_command(('GET', url), index, overwrite_timeout, reset)
+        self._distribute_command(('GET', url), index, overwrite_timeout, reset)
         
     def browse(self, url, num_links = 2, index=None, overwrite_timeout=None, reset=False):
         """ browse a website and visit <num_links> links on the page """
-        self.distribute_command(('BROWSE', url, num_links), index, overwrite_timeout, reset)
+        self._distribute_command(('BROWSE', url, num_links), index, overwrite_timeout, reset)
 
     def dump_storage_vectors(self, url, start_time, index=None, overwrite_timeout=None):
         """ dumps the local storage vectors (flash, localStorage, cookies) to db """
-        self.distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, overwrite_timeout)
+        self._distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, overwrite_timeout)
 
     def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
         """ dumps from the profile path to a given file (absolute path) """
-        self.distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
+        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
 
     def extract_links(self, index = None, overwrite_timeout = None):
-        self.distribute_command(('EXTRACT_LINKS',), index, overwrite_timeout)
+        self._distribute_command(('EXTRACT_LINKS',), index, overwrite_timeout)
+
+    def close(self, post_process=True):
+        """
+        Execute shutdown procedure for TaskManager
+        <post_process> flag to launch post_processing pipeline
+        """
+        if self.closing:
+            raise Exception("TaskManager already closed.")
+        self._shutdown_manager()
+        if post_process:
+            post_processing.run(self.db_path) # launch post-crawl processing
+

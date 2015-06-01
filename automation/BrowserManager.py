@@ -43,10 +43,9 @@ class Browser:
         
         self.is_fresh = None  # boolean that says if the BrowserManager new (used to optimize restarts)
         self.browser_settings = None  # dict of additional browser profile settings (e.g. screen_res)
+        self.browser_manager = None # process that controls browser
         
-        # start the browser process
-        self.browser_manager = None
-        self.launch_browser_manager()        
+        self.launch_time = time.time() #XXX remove this
 
     def ready(self):
         """ return if the browser is ready to accept a command """
@@ -58,6 +57,10 @@ class Browser:
         loads associated user profile if necessary
         <spawn_timeout> is the timeout for creating BrowserManager
         """
+        
+        #XXX remove this
+        if time.time() - self.launch_time > 10 and self.crawl_id == 1:
+            spawn_timeout = 1
 
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
@@ -77,6 +80,7 @@ class Browser:
         
         # Try up to 5 times to spawn a browser within the timeout
         unsuccessful_spawns = 0
+        retry = False
         success = False
         while not success and unsuccessful_spawns < 5:
             # Resets the command/status queues
@@ -106,17 +110,27 @@ class Browser:
             except EmptyQueue:
                 unsuccessful_spawns += 1
                 print "ERROR: Browser spawn unsuccessful, killing any child processes \n       Profile: " + str(prof_done) + "  Display: " + str(disp_done) + "  Browser Launch attempted: " + str(launch_attempted) + "  Browser: " + str(browser_done)
+                self.kill_browser_manager()
                 if self.current_profile_path is not None:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
+                if unsuccessful_spawns == 5 and not retry:
+                    print "Browser %d failed to launch, sleeping for 60 seconds" % self.crawl_id
+                    #time.sleep(60)
+                    time.sleep(10) #XXX remove this
+                    unsuccessful_spawns = 0
+                    retry = True
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
-        if tempdir is not None:
-            shutil.rmtree(tempdir, ignore_errors=True)
-        if crashed_profile_path is not None:
-            shutil.rmtree(crashed_profile_path, ignore_errors=True)
+        if success:
+            if tempdir is not None:
+                shutil.rmtree(tempdir, ignore_errors=True)
+            if crashed_profile_path is not None:
+                shutil.rmtree(crashed_profile_path, ignore_errors=True)
 
-        self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
+            self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
+        
+        return success
 
     def reset(self):
         """ resets the worker processes with profile to a clean state """
@@ -136,11 +150,11 @@ class Browser:
             self.current_profile_path = None
             self.browser_params['profile_tar'] = None
 
-        self.launch_browser_manager()
+        return self.launch_browser_manager()
 
     # terminates a BrowserManager, its browser instance and, if necessary, its virtual display
     def kill_browser_manager(self):
-        if self.browser_manager.pid is not None:
+        if self.browser_manager is not None and self.browser_manager.pid is not None:
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
