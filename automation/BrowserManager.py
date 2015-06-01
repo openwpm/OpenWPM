@@ -45,8 +45,6 @@ class Browser:
         self.browser_settings = None  # dict of additional browser profile settings (e.g. screen_res)
         self.browser_manager = None # process that controls browser
         
-        self.launch_time = time.time() #XXX remove this
-
     def ready(self):
         """ return if the browser is ready to accept a command """
         return self.command_thread is None or not self.command_thread.is_alive()
@@ -57,11 +55,6 @@ class Browser:
         loads associated user profile if necessary
         <spawn_timeout> is the timeout for creating BrowserManager
         """
-        
-        #XXX remove this
-        if time.time() - self.launch_time > 10 and self.crawl_id == 1:
-            spawn_timeout = 1
-
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
@@ -115,8 +108,7 @@ class Browser:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
                 if unsuccessful_spawns == 5 and not retry:
                     print "Browser %d failed to launch, sleeping for 60 seconds" % self.crawl_id
-                    #time.sleep(60)
-                    time.sleep(10) #XXX remove this
+                    time.sleep(60)
                     unsuccessful_spawns = 0
                     retry = True
 
