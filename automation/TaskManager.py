@@ -2,6 +2,7 @@ from BrowserManager import Browser
 from DataAggregator import DataAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
+from Errors import CommandExecutionError
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
@@ -196,13 +197,13 @@ class TaskManager:
         self.sock.close()  # close socket to data aggregator
         self._kill_data_aggregator()
 
-    def _gracefully_fail(self, msg):
+    def _gracefully_fail(self, msg, command):
         """
         Execute shutdown commands before throwing error
         <msg>: an Exception will be raised with this message
         """
         self._shutdown_manager(failure=True)
-        raise Exception(msg)
+        raise CommandExecutionError(msg, command)
 
     # CRAWLER COMMAND CODE
 
@@ -265,7 +266,7 @@ class TaskManager:
         if self.closing:
             raise Exception("Attempted to execute command on closed TaskManager")
         if self.launch_failure_flag:
-            self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...")
+            self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...", command)
 
         # Start command execution thread
         args = (browser, command, timeout, reset, condition)
@@ -342,7 +343,8 @@ class TaskManager:
         <post_process> flag to launch post_processing pipeline
         """
         if self.closing:
-            raise Exception("TaskManager already closed.")
+            print "ERROR: TaskManager already closed"
+            return
         self._shutdown_manager()
         if post_process:
             post_processing.run(self.db_path) # launch post-crawl processing
