@@ -182,7 +182,7 @@ class TaskManager:
         
         for browser in self.browsers:
             if browser.command_thread is not None and browser.command_thread.is_alive():
-                browser.command_thread.join()
+                browser.command_thread.join(timeout=60)
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 shutil.rmtree(browser.current_profile_path, ignore_errors = True)
