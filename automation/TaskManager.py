@@ -170,7 +170,7 @@ class TaskManager:
     def _kill_data_aggregator(self):
         """ terminates a DataAggregator with a graceful KILL COMMAND """
         self.aggregator_status_queue.put("DIE")
-        self.data_aggregator.join(120)
+        self.data_aggregator.join(300)
 
     def _shutdown_manager(self, failure=False):
         """
@@ -262,9 +262,10 @@ class TaskManager:
 
     def _start_thread(self, browser, command, timeout, reset, condition=None):
         """  starts the command execution thread """
+        
         # Check status flags before starting thread
         if self.closing:
-            raise Exception("Attempted to execute command on closed TaskManager")
+            print "ERROR: Attempted to execute command on a closed TaskManager"
         if self.launch_failure_flag:
             self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...", command)
 
@@ -308,7 +309,9 @@ class TaskManager:
         self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
                         " VALUES (?,?,?,?)",
                         (browser.crawl_id, command[0], command_arguments, command_succeeded)))
-
+        
+        if self.closing:
+            return
         if reset:
             browser.reset()
         elif command_succeeded != 1:

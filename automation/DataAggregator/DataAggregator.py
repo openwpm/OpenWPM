@@ -32,7 +32,8 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
         # received KILL command from TaskManager
         if not status_queue.empty():
             status_queue.get()
-            drain_queue(sock, curr)
+            sock.close()
+            drain_queue(sock.queue, curr)
             break
 
         # no command for now -> sleep to avoid pegging CPU on blocking get
@@ -58,7 +59,6 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
     # finishes work and gracefully stops
     db.commit()
     db.close()
-    sock.close()
 
 
 def process_query(query, curr):
@@ -92,9 +92,9 @@ def process_query(query, curr):
         pass
 
 
-def drain_queue(sock, curr):
+def drain_queue(sock_queue, curr):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
-    while not sock.queue.empty():
-        query = sock.queue.get()
+    while not sock_queue.empty():
+        query = sock_queue.get()
         process_query(query, curr)
