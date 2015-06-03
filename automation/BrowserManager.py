@@ -75,7 +75,7 @@ class Browser:
         unsuccessful_spawns = 0
         retry = False
         success = False
-        while not success and unsuccessful_spawns < 5:
+        while not success and unsuccessful_spawns < 3:
             # Resets the command/status queues
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
@@ -106,11 +106,11 @@ class Browser:
                 self.kill_browser_manager()
                 if self.current_profile_path is not None:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
-                if unsuccessful_spawns == 5 and not retry:
-                    print "Browser %d failed to launch, sleeping for 60 seconds" % self.crawl_id
-                    time.sleep(60)
-                    unsuccessful_spawns = 0
-                    retry = True
+                #if unsuccessful_spawns == 5 and not retry:
+                #    print "Browser %d failed to launch, sleeping for 60 seconds" % self.crawl_id
+                #    time.sleep(60)
+                #    unsuccessful_spawns = 0
+                #    retry = True
 
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
@@ -158,6 +158,9 @@ class Browser:
             except OSError:
                 print "WARNING: Display process does not exit"
                 pass
+            except TypeError:
+                print "PID NOT CORRECT TYPE: " + str(self.display_pid)
+                os.kill(int(self.display_pid), signal.SIGKILL)
         if self.display_port is not None: # xvfb diplay lock
             try:
                 os.remove("/tmp/.X"+str(self.display_port)+"-lock")

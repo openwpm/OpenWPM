@@ -170,7 +170,7 @@ class TaskManager:
     def _kill_data_aggregator(self):
         """ terminates a DataAggregator with a graceful KILL COMMAND """
         self.aggregator_status_queue.put("DIE")
-        self.data_aggregator.join()
+        self.data_aggregator.join(120)
 
     def _shutdown_manager(self, failure=False):
         """
@@ -182,7 +182,7 @@ class TaskManager:
         
         for browser in self.browsers:
             if browser.command_thread is not None and browser.command_thread.is_alive():
-                browser.command_thread.join(timeout=60)
+                browser.command_thread.join(60)
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 shutil.rmtree(browser.current_profile_path, ignore_errors = True)

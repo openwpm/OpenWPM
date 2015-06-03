@@ -24,8 +24,8 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     status_queue.put(browser_profile_path)
 
     # Enable logging
-    LOGGER.setLevel(logging.WARNING)
-    fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
+    #LOGGER.setLevel(logging.WARNING)
+    #fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
 
     profile_settings = None  # Imported browser settings
     ext_dict = None  # Dictionary of supported extensions
@@ -161,7 +161,8 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
 
     # Launch the webdriver
     status_queue.put("LAUNCHING BROWSER")
-    fb = FirefoxBinary(root_dir  + "/../../firefox/firefox", log_file=open(root_dir + '/../../firefox_logging','w'))
+    #fb = FirefoxBinary(root_dir  + "/../../firefox/firefox", log_file=open(root_dir + '/../../firefox_logging','w'))
+    fb = FirefoxBinary(root_dir  + "/../../firefox/firefox")
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
     status_queue.put((int(driver.binary.process.pid), profile_settings))
 
