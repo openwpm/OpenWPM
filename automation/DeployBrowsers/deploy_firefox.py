@@ -5,7 +5,6 @@ from selenium.webdriver.remote.remote_connection import LOGGER
 from selenium import webdriver
 
 from pyvirtualdisplay import Display
-import logging
 import shutil
 import os
 import cPickle

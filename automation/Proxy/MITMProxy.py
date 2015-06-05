@@ -1,8 +1,10 @@
 from ..SocketInterface import clientsocket
-from libmproxy import controller
-import sys
-import Queue
+from ..MPLogger import loggingclient
 import mitm_commands
+
+from libmproxy import controller
+import Queue
+import sys
 
 
 class InterceptingMaster (controller.Master):
@@ -15,7 +17,7 @@ class InterceptingMaster (controller.Master):
     https://gist.github.com/dannvix/5285924
     """
     
-    def __init__(self, server, crawl_id, url_queue, db_socket_address):
+    def __init__(self, server, crawl_id, url_queue, db_socket_address, logger_address):
         self.crawl_id = crawl_id
         
         # Attributes used to flag the first-party domain
@@ -26,6 +28,9 @@ class InterceptingMaster (controller.Master):
         # Open a socket to communicate with DataAggregator
         self.db_socket = clientsocket()
         self.db_socket.connect(*db_socket_address)
+
+        # Open a socket to communicate with MPLogger
+        self.logger = loggingclient(*logger_address)
 
         controller.Master.__init__(self, server)
 
@@ -61,8 +66,7 @@ class InterceptingMaster (controller.Master):
             self.shutdown()
             sys.exit(0)
         except Exception as ex:
-            print str(ex)
-            print 'Exception. Shutting down proxy!'
+            self.logger.critical('Exception. Shutting down proxy!' + '\n' + str(ex))
             self.shutdown()
             raise
 

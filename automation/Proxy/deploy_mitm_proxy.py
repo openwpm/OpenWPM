@@ -1,20 +1,21 @@
-import Queue
-import os
-import socket
-import threading
-
+from ..MPLogger import loggingclient
 import MITMProxy
+
 from libmproxy import proxy
 from libmproxy.proxy.server import ProxyServer
+import threading
+import socket
+import Queue
+import os
 
 
-def init_proxy(db_socket_address, crawl_id):
+def init_proxy(db_socket_address, logger_address, crawl_id):
     """
     # deploys an (optional) instance of mitmproxy used to log crawl data
     <db_socket_address> is the connection address of the DataAggregator
     <crawl_id> is the id set by the TaskManager
     """
-
+    logger = loggingclient(*logger_address)
     proxy_site_queue = Queue.Queue()  # queue for crawler to communicate with proxy
 
     # gets local port from one of the free ports
@@ -26,8 +27,8 @@ def init_proxy(db_socket_address, crawl_id):
 
     config = proxy.ProxyConfig(cadir=os.path.join(os.path.dirname(__file__), 'cert'),port=proxy_port)
     server = ProxyServer(config)
-    print 'Intercepting Proxy listening on ' + str(proxy_port)
-    m = MITMProxy.InterceptingMaster(server, crawl_id, proxy_site_queue, db_socket_address)
+    logger.info('Intercepting Proxy listening on ' + str(proxy_port))
+    m = MITMProxy.InterceptingMaster(server, crawl_id, proxy_site_queue, db_socket_address, logger_address)
     thread = threading.Thread(target=m.run, args=())
     thread.daemon = True
     thread.start()

@@ -57,13 +57,15 @@ class serversocket:
                         try:
                             msg = json.loads(unicode(msg, 'ISO-8859-1', 'ignore'))
                         except ValueError:
-                            print "WARNING: Unrecognized character encoding during de-serialization."
+                            if self.verbose:
+                                "Unrecognized character encoding during de-serialization."
                             continue
                     except ValueError as e:
                         try:
                             msg = json.loads(unicode(msg, 'utf-8', 'ignore'))
                         except ValueError:
-                            print "WARNING: Unrecognized character encoding during de-serialization."
+                            if self.verbose:
+                                print "Unrecognized character encoding during de-serialization."
                             continue
                 if self.verbose:
                     print "Message:"
@@ -99,13 +101,7 @@ class clientsocket:
         """
         #if input not string, serialize to string
         if type(msg) is not str:
-            try:
-                msg = json.dumps(msg)
-            except UnicodeDecodeError as e:
-                print "ERROR: Unable to serialize message"
-                print type(e)
-                print e
-                return
+            msg = json.dumps(msg)
             is_serialized = True
         else:
             is_serialized = False
