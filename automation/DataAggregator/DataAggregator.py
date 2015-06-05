@@ -1,11 +1,12 @@
 from ..SocketInterface import serversocket
+from ..MPLogger import loggingclient
 from sqlite3 import OperationalError
 from sqlite3 import ProgrammingError
 import sqlite3
 import time
 
 
-def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
+def DataAggregator(db_loc, status_queue, logger_address, commit_batch_size=1000):
     """
      Receives SQL queries from other processes and writes them to the central database
      Executes queries until being told to die (then it will finish work and shut down)
@@ -21,6 +22,9 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
     db = sqlite3.connect(db_loc, check_same_thread=False)
     curr = db.cursor()
 
+    # sets up logging connection
+    logger = loggingclient(*logger_address)
+
     # sets up the serversocket to start accepting connections
     sock = serversocket()
     status_queue.put(sock.sock.getsockname())  # let TM know location
@@ -33,7 +37,7 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
         if not status_queue.empty():
             status_queue.get()
             sock.close()
-            drain_queue(sock.queue, curr)
+            drain_queue(sock.queue, curr, logger)
             break
 
         # no command for now -> sleep to avoid pegging CPU on blocking get
@@ -47,7 +51,7 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
 
         # process query
         query = sock.queue.get()
-        process_query(query, curr)
+        process_query(query, curr, logger)
 
         # batch commit if necessary
         counter += 1
@@ -61,7 +65,7 @@ def DataAggregator(db_loc, status_queue, commit_batch_size=1000):
     db.close()
 
 
-def process_query(query, curr):
+def process_query(query, curr, logger):
     """
     executes a query of form (template_string, arguments)
     query is of form (template_string, arguments)
@@ -77,24 +81,16 @@ def process_query(query, curr):
         else:
             curr.execute(statement,args)
     except OperationalError as e:
-        print "ERROR: Unsupported query"
-        print type(e)
-        print e
-        print statement
-        print args
+        logger.error("Unsupported query" + '\n' + type(e) + '\n' + e + '\n' + statement + '\n' + args)
         pass
     except ProgrammingError as e:
-        print "ERROR: Unsupported query"
-        print type(e)
-        print e
-        print statement
-        print args
+        logger.error("Unsupported query" + '\n' + type(e) + '\n' + e + '\n' + statement + '\n' + args)
         pass
 
 
-def drain_queue(sock_queue, curr):
+def drain_queue(sock_queue, curr, logger):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
     while not sock_queue.empty():
         query = sock_queue.get()
-        process_query(query, curr)
+        process_query(query, curr, logger)

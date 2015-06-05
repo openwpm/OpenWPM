@@ -3,12 +3,13 @@ from DataAggregator import DataAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
 from Errors import CommandExecutionError
+import MPLogger
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 from sqlite3 import OperationalError
-import copy
 import threading
+import copy
 import os
 import sqlite3
 import time
@@ -43,15 +44,17 @@ class TaskManager:
     <browser_params> is a list of (or single) dictionaries that specify preferences for browsers to instantiate
     <num_browsers> is the number of browsers to instantiate
     <task_description> is an optional description string for a particular crawl (primarily for logging)
+    <log_file> is the full path/name of the logfile. defaults to the user's home directory
     """
 
-    def __init__(self, db_path, browser_params, num_browsers, task_description=None):
+    def __init__(self, db_path, browser_params, num_browsers, log_file = '~/openwpm.log', task_description=None):
         self.closing = False
         self.launch_failure_flag = False
 
         # sets up the information needed to write to the database
         self.desc = task_description
         self.db_path = db_path
+        self.log_file = log_file
 
         # sets up the crawl data database
         self.db = sqlite3.connect(db_path)
@@ -67,6 +70,12 @@ class TaskManager:
         if len(browser_params) != num_browsers:
             raise Exception("Number of browser parameter dictionaries is not the same as <num_browsers>")
 
+        # sets up logging server + connect a client
+        self.logging_status_queue = None
+        self.loggingserver = self._launch_loggingserver()
+        self.logger_address = self.logging_status_queue.get()  # socket location: (address, port)
+        self.logger = MPLogger.loggingclient(*self.logger_address)
+        
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
         self.data_aggregator = self._launch_data_aggregator()
@@ -117,6 +126,7 @@ class TaskManager:
 
             browser_params[i]['crawl_id'] = crawl_id
             browser_params[i]['aggregator_address'] = self.aggregator_address
+            browser_params[i]['logger_address'] = self.logger_address
             browsers.append(Browser(browser_params[i]))
 
         return browsers
@@ -126,7 +136,7 @@ class TaskManager:
         for browser in self.browsers:
             success = browser.launch_browser_manager()
             if not success:
-                print "ERROR: Browser spawn failure during TaskManager initialization, exiting..."
+                self.logger.critical("Browser spawn failure during TaskManager initialization, exiting...")
                 self.close(post_process=False)
                 break
 
@@ -153,8 +163,8 @@ class TaskManager:
                     process = psutil.Process(browser.browser_pid)
                     mem = process.get_memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
-                        print "INFO: Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
-                            % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT)
+                        self.logger.info("Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
+                            % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT))
                         browser.reset()
                 except psutil.NoSuchProcess as e:
                     pass
@@ -163,14 +173,32 @@ class TaskManager:
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
-                             args=(self.db_path, self.aggregator_status_queue, ))
+                             args=(self.db_path, self.aggregator_status_queue, self.logger_address))
+        aggregator.daemon = True
         aggregator.start()
         return aggregator
 
     def _kill_data_aggregator(self):
         """ terminates a DataAggregator with a graceful KILL COMMAND """
+        self.logger.debug("Telling the DataAggregator to shut down...")
         self.aggregator_status_queue.put("DIE")
+        start_time = time.time()
         self.data_aggregator.join(300)
+        self.logger.debug("DataAggregator took " + str(time.time() - start_time) + " seconds to close")
+    
+    def _launch_loggingserver(self):
+        """ sets up logging server """
+        self.logging_status_queue = Queue()
+        loggingserver = Process(target=MPLogger.loggingserver,
+                             args=(self.log_file, self.logging_status_queue, ))
+        loggingserver.daemon = True
+        loggingserver.start()
+        return loggingserver
+
+    def _kill_loggingserver(self):
+        """ terminates logging server gracefully """
+        self.logging_status_queue.put("DIE")
+        self.loggingserver.join(300)
 
     def _shutdown_manager(self, failure=False):
         """
@@ -180,9 +208,14 @@ class TaskManager:
         """
         self.closing = True
         
-        for browser in self.browsers:
+        for i in range(len(self.browsers)):
+            browser = self.browsers[i]
             if browser.command_thread is not None and browser.command_thread.is_alive():
+                self.logger.debug("Joining browser %i..." % i)
+                start_time = time.time()
                 browser.command_thread.join(60)
+                self.logger.debug("...browser %i took %f seconds to shut down" % (i, time.time() - start_time))
+            self.logger.debug("Killing browser %i's browser manager..." % i)
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 shutil.rmtree(browser.current_profile_path, ignore_errors = True)
@@ -196,6 +229,7 @@ class TaskManager:
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
         self._kill_data_aggregator()
+        self._kill_loggingserver()
 
     def _gracefully_fail(self, msg, command):
         """
@@ -258,15 +292,17 @@ class TaskManager:
             with condition:
                 condition.notifyAll()  # All browsers loaded, tell them to start
         else:
-            print "Command index type is not supported or out of range"
+            self.logger.info("Command index type is not supported or out of range")
 
     def _start_thread(self, browser, command, timeout, reset, condition=None):
         """  starts the command execution thread """
         
         # Check status flags before starting thread
         if self.closing:
-            print "ERROR: Attempted to execute command on a closed TaskManager"
+            self.logger.error("Attempted to execute command on a closed TaskManager")
+            return
         if self.launch_failure_flag:
+            self.logger.debug("Browser failed to launch after multiple retries, shutting down TaskManager")
             self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...", command)
 
         # Start command execution thread
@@ -300,10 +336,10 @@ class TaskManager:
                 command_succeeded = 1
             else:
                 command_succeeded = 0
-                print("Received failure status while executing command: " + command[0])
+                self.logger.info("Received failure status while executing command: " + command[0])
         except EmptyQueue:
             command_succeeded = -1
-            print("Timeout while executing command, " + command[0] +
+            self.logger.info("Timeout while executing command, " + command[0] +
                   " killing browser manager")
 
         self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
@@ -346,7 +382,7 @@ class TaskManager:
         <post_process> flag to launch post_processing pipeline
         """
         if self.closing:
-            print "ERROR: TaskManager already closed"
+            self.logger.error("TaskManager already closed")
             return
         self._shutdown_manager()
         if post_process:

@@ -3,7 +3,6 @@ const fileIO    = require("sdk/io/file");
 const system    = require("sdk/system");
 
 var bufferpack  = require("bufferpack/bufferpack");
-var pickle      = require("./pickle.js");
 
 var tm = Cc["@mozilla.org/thread-manager;1"].getService();
 var socket_service = Cc["@mozilla.org/network/socket-transport-service;1"]
@@ -59,7 +58,7 @@ function updateQueue(inputStream, queue) {
     var meta = bufferpack.unpack('>Ib', buff);
     string = bInputStream.readBytes(meta[0]);
     if (meta[1]) {
-        string = pickle.loads(string);
+        string = JSON.parse(string);
     }
     queue.push(string);
     
@@ -89,7 +88,7 @@ function connect(host, port) {
 exports.send = send;
 function send(query) {
     try {
-        var msg = pickle.dumps(query);
+        var msg = JSON.stringify(query);
         var buff = bufferpack.pack('>Ib',[msg.length,1]);
         binaryStream.writeByteArray(buff, buff.length);
         stream.write(msg, msg.length);

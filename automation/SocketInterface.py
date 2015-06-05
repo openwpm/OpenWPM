@@ -2,7 +2,7 @@ import Queue
 import threading
 import socket
 import struct
-import cPickle
+import json
 
 #TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/questions/1148062/python-socket-accept-blocks-prevents-app-from-quitting
@@ -39,29 +39,37 @@ class serversocket:
         """
         Recieve messages and pass to queue. Messages are prefixed with
         a 4-byte integer to specify the message length and 1-byte boolean
-        to indicate pickling.
+        to indicate serialization with json.
         """
         if self.verbose:
             print "Thread: " + str(threading.current_thread()) + " connected to: " + str(address)
         try:
             while True:
                 msg = self.receive_msg(client, 5)
-                msglen, is_pickled = struct.unpack('>i?', msg)
+                msglen, is_serialized = struct.unpack('>i?', msg)
                 if self.verbose:
-                    print "Msglen: " + str(msglen) + " is_pickled: " + str(is_pickled)
+                    print "Msglen: " + str(msglen) + " is_serialized: " + str(is_serialized)
                 msg = self.receive_msg(client, msglen)
-                if is_pickled:
+                if is_serialized:
                     try:
-                        msg = cPickle.loads(str(msg))
+                        msg = json.loads(msg)
+                    except UnicodeDecodeError:
+                        try:
+                            msg = json.loads(unicode(msg, 'ISO-8859-1', 'ignore'))
+                        except ValueError:
+                            if self.verbose:
+                                "Unrecognized character encoding during de-serialization."
+                            continue
                     except ValueError as e:
-                        print "ERROR: Corrupted pickle string"
-                        print type(e)
-                        print e
-                        continue
+                        try:
+                            msg = json.loads(unicode(msg, 'utf-8', 'ignore'))
+                        except ValueError:
+                            if self.verbose:
+                                print "Unrecognized character encoding during de-serialization."
+                            continue
                 if self.verbose:
-                    print "Message:\n"
-                    print msg[0]
-                    print msg[1]
+                    print "Message:"
+                    print msg
                 self.queue.put(msg)
         except RuntimeError:
             if self.verbose:
@@ -88,18 +96,18 @@ class clientsocket:
 
     def send(self, msg):
         """
-        Sends an arbitrary python object to the connected socket. Pickles if 
-        not str, and prepends msg len (4-bytes) and pickle status (1-byte).
+        Sends an arbitrary python object to the connected socket. Serializes (json) if 
+        not str, and prepends msg len (4-bytes) and serialization status (1-byte).
         """
-        #if input not string, pickle
+        #if input not string, serialize to string
         if type(msg) is not str:
-            msg = cPickle.dumps(msg)
-            is_pickled = True
+            msg = json.dumps(msg)
+            is_serialized = True
         else:
-            is_pickled = False
+            is_serialized = False
         
         #prepend with message length
-        msg = struct.pack('>I?', len(msg), is_pickled) + msg
+        msg = struct.pack('>I?', len(msg), is_serialized) + msg
         totalsent = 0
         while totalsent < len(msg):
             sent = self.sock.send(msg[totalsent:])
