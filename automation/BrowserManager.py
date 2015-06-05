@@ -80,6 +80,7 @@ class Browser:
         retry = False
         success = False
         while not success and unsuccessful_spawns < 4:
+            self.logger.debug("Browser spawn attempt %i " % unsuccessful_spawns)
             # Resets the command/status queues
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
@@ -115,6 +116,7 @@ class Browser:
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
         if success:
+            self.logger.debug("Browser spawn unsuccessful...")
             if tempdir is not None:
                 shutil.rmtree(tempdir, ignore_errors=True)
             if crashed_profile_path is not None:

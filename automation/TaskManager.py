@@ -180,8 +180,11 @@ class TaskManager:
 
     def _kill_data_aggregator(self):
         """ terminates a DataAggregator with a graceful KILL COMMAND """
+        self.logger.debug("Telling the DataAggregator to shut down...")
         self.aggregator_status_queue.put("DIE")
+        start_time = time.time()
         self.data_aggregator.join(300)
+        self.logger.debug("DataAggregator took " + str(time.time() - start_time) + " seconds to close")
     
     def _launch_loggingserver(self):
         """ sets up logging server """
@@ -194,7 +197,7 @@ class TaskManager:
 
     def _kill_loggingserver(self):
         """ terminates logging server gracefully """
-        self.loggingserver_status_queue.put("DIE")
+        self.logging_status_queue.put("DIE")
         self.loggingserver.join(300)
 
     def _shutdown_manager(self, failure=False):
@@ -205,9 +208,14 @@ class TaskManager:
         """
         self.closing = True
         
-        for browser in self.browsers:
+        for i in range(len(self.browsers)):
+            browser = self.browsers[i]
             if browser.command_thread is not None and browser.command_thread.is_alive():
+                self.logger.debug("Joining browser %i..." % i)
+                start_time = time.time()
                 browser.command_thread.join(60)
+                self.logger.debug("...browser %i took %f seconds to shut down" % (i, time.time() - start_time))
+            self.logger.debug("Killing browser %i's browser manager..." % i)
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 shutil.rmtree(browser.current_profile_path, ignore_errors = True)
@@ -220,8 +228,8 @@ class TaskManager:
         
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
-        self._kill_loggingserver()
         self._kill_data_aggregator()
+        self._kill_loggingserver()
 
     def _gracefully_fail(self, msg, command):
         """
@@ -294,6 +302,7 @@ class TaskManager:
             self.logger.error("Attempted to execute command on a closed TaskManager")
             return
         if self.launch_failure_flag:
+            self.logger.debug("Browser failed to launch after multiple retries, shutting down TaskManager")
             self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...", command)
 
         # Start command execution thread

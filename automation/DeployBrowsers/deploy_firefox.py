@@ -1,3 +1,4 @@
+from ..MPLogger import loggingclient
 from ..Commands.profile_commands import load_profile
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
@@ -15,12 +16,14 @@ DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are g
 def deploy_firefox(status_queue, browser_params, crash_recovery):
     """ launches a firefox instance with parameters set by the input dictionary """
     root_dir = os.path.dirname(__file__)  # directory of this file
+    logger = loggingclient(*browser_params['logger_address'])
 
     display_pid = None
     display_port = None
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(browser_profile_path)
+    logger.debug("Successfully created a firefox profile at directory: " + browser_profile_path)
 
     # Enable logging
     #LOGGER.setLevel(logging.WARNING)
@@ -29,12 +32,15 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
     profile_settings = None  # Imported browser settings
     ext_dict = None  # Dictionary of supported extensions
     if browser_params['profile_tar'] and not crash_recovery:
+        logger.debug("Loading initial browser profile from: " + browser_params['profile_tar'])
         profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'],
                                         load_flash=browser_params['disable_flash'] is False)
     elif browser_params['profile_tar']:
+        logger.debug("Loading recovered browser profile from: " + browser_params['profile_tar'])
         profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'])
 
     if browser_params['random_attributes'] and profile_settings is None:
+        logger.debug("Loading random attributes for browser")
         profile_settings = dict()
 
         # load a random set of extensions
@@ -76,13 +82,16 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
             fp.set_preference(*item)
 
     if profile_settings['ua_string'] is not None:
+        logger.debug("Overriding user agent string with the following: " + profile_settings['ua_string'])
         fp.set_preference("general.useragent.override", profile_settings['ua_string'])
 
     if browser_params['headless']:
+        logger.debug("Launching virtual display for a headless browser")
         display = Display(visible=0, size=profile_settings['screen_res'])
         display.start()
         display_pid = display.pid
         display_port = display.cmd_param[5][1:]
+        logger.debug("...display successfully launched with pid %i and port %i" % (int(display_pid), int(display_port)))
     status_queue.put((display_pid, display_port))
 
     if browser_params['debugging']:
@@ -91,6 +100,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
         fp.set_preference("extensions.firebug.currentVersion", "1.11.0")  # Avoid startup screen
 
     if browser_params['extension']['enabled']:
+        logger.debug("Loading OpenWPM Firefox extension...")
         ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/@openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
@@ -101,6 +111,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
             f.write(','+str(browser_params['extension']['cookieInstrument']))
             f.write(','+str(browser_params['extension']['jsInstrument']))
             f.write(','+str(browser_params['extension']['cpInstrument']))
+        logger.debug("...OpenWPM Firefox extension loaded and aggregator address written to disk")
 
     if browser_params['proxy']:
         PROXY_HOST = "localhost"
@@ -160,10 +171,12 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
 
     # Launch the webdriver
     status_queue.put("LAUNCHING BROWSER")
+    logger.debug("Launching Firefox browser...")
     #fb = FirefoxBinary(root_dir  + "/../../firefox/firefox", log_file=open(root_dir + '/../../firefox_logging','w'))
     fb = FirefoxBinary(root_dir  + "/../../firefox/firefox")
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
     status_queue.put((int(driver.binary.process.pid), profile_settings))
+    logger.debug("...Firefox browser successfully launched")
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])
