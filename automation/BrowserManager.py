@@ -86,6 +86,7 @@ class Browser:
             # builds and launches the browser_manager
             args = (self.command_queue, self.status_queue, self.browser_params, crash_recovery)
             self.browser_manager = Process(target=BrowserManager, args=args)
+            self.browser_manager.daemon = True
             self.browser_manager.start()
 
             # Read success status of browser manager

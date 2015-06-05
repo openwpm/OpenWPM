@@ -174,6 +174,7 @@ class TaskManager:
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
                              args=(self.db_path, self.aggregator_status_queue, self.logger_address))
+        aggregator.daemon = True
         aggregator.start()
         return aggregator
 
