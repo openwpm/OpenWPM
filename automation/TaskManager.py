@@ -210,11 +210,11 @@ class TaskManager:
         
         for i in range(len(self.browsers)):
             browser = self.browsers[i]
-            if browser.command_thread is not None and browser.command_thread.is_alive():
+            if browser.command_thread is not None:
                 self.logger.debug("Joining browser %i..." % i)
                 start_time = time.time()
                 browser.command_thread.join(60)
-                self.logger.debug("...browser %i took %f seconds to shut down" % (i, time.time() - start_time))
+                self.logger.debug("...browser %i took %f seconds to join" % (i, time.time() - start_time))
             self.logger.debug("Killing browser %i's browser manager..." % i)
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:

@@ -116,7 +116,7 @@ class Browser:
         # if recovering from a crash, new browser has a new profile dir
         # so the crashed dir and temporary tar dump can be cleaned up
         if success:
-            self.logger.debug("Browser spawn unsuccessful...")
+            self.logger.debug("Browser spawn sucessful!")
             if tempdir is not None:
                 shutil.rmtree(tempdir, ignore_errors=True)
             if crashed_profile_path is not None:
