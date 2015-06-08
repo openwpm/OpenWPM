@@ -112,11 +112,10 @@ class TaskManager:
             while not query_successful:
                 try:
                     cur.execute("INSERT INTO crawl (task_id, profile, browser, headless, proxy, debugging, "
-                                "timeout, disable_flash) VALUES (?,?,?,?,?,?,?,?)",
+                                "disable_flash) VALUES (?,?,?,?,?,?,?)",
                                 (self.task_id, browser_params[i]['profile_tar'], browser_params[i]['browser'],
                                  browser_params[i]['headless'], browser_params[i]['proxy'],
-                                 browser_params[i]['debugging'], browser_params[i]['timeout'],
-                                 browser_params[i]['disable_flash']))
+                                 browser_params[i]['debugging'], browser_params[i]['disable_flash']))
                     self.db.commit()
                     crawl_id = cur.lastrowid
                     query_successful = True
@@ -213,7 +212,10 @@ class TaskManager:
             if browser.command_thread is not None:
                 self.logger.debug("Joining browser %i..." % i)
                 start_time = time.time()
-                browser.command_thread.join(60)
+                if browser.current_timeout is not None:
+                    browser.command_thread.join(browser.current_timeout + 10)
+                else:
+                    browser.command_thread.join(60)
                 self.logger.debug("...browser %i took %f seconds to join" % (i, time.time() - start_time))
             self.logger.debug("Killing browser %i's browser manager..." % i)
             browser.kill_browser_manager()
@@ -256,7 +258,8 @@ class TaskManager:
             while True:
                 for browser in self.browsers:
                     if browser.ready():
-                        self._start_thread(browser, command, timeout, reset)
+                        browser.current_timeout = timeout
+                        self._start_thread(browser, command, reset)
                         command_executed = True
                         break
                 if command_executed:
@@ -267,7 +270,8 @@ class TaskManager:
             #send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self._start_thread(self.browsers[index], command, timeout, reset)
+                    self.browsers[index].current_timeout = timeout
+                    self._start_thread(self.browsers[index], command, reset)
                     break
                 time.sleep(SLEEP_CONS)
         elif index == '*':
@@ -276,7 +280,8 @@ class TaskManager:
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self._start_thread(self.browsers[i], command, timeout, reset)
+                        self.browsers[i].current_timeout = timeout
+                        self._start_thread(self.browsers[i], command, reset)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
         elif index == '**':
@@ -286,7 +291,8 @@ class TaskManager:
             while False in command_executed:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self._start_thread(self.browsers[i], command, timeout, reset, condition)
+                        self.browsers[i].current_timeout = timeout
+                        self._start_thread(self.browsers[i], command, reset, condition)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
             with condition:
@@ -294,7 +300,7 @@ class TaskManager:
         else:
             self.logger.info("Command index type is not supported or out of range")
 
-    def _start_thread(self, browser, command, timeout, reset, condition=None):
+    def _start_thread(self, browser, command, reset, condition=None):
         """  starts the command execution thread """
         
         # Check status flags before starting thread
@@ -306,19 +312,18 @@ class TaskManager:
             self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...", command)
 
         # Start command execution thread
-        args = (browser, command, timeout, reset, condition)
+        args = (browser, command, reset, condition)
         thread = threading.Thread(target=self._issue_command, args=args)
         browser.command_thread = thread
         thread.daemon = True
         thread.start()
 
-    def _issue_command(self, browser, command, timeout, reset, condition=None):
+    def _issue_command(self, browser, command, reset, condition=None):
         """
         sends command tuple to the BrowserManager
-        <timeout> gives the option to override default timeout
         """
         browser.is_fresh = False  # since we are issuing a command, the BrowserManager is no longer a fresh instance
-        timeout = browser.timeout if timeout is None else timeout  # allows user to overwrite timeout
+        
         # if this is a synced call, block on condition
         if condition is not None:
             with condition:
@@ -331,7 +336,7 @@ class TaskManager:
 
         # received reply from BrowserManager, either success signal or failure notice
         try:
-            status = browser.status_queue.get(True, timeout)
+            status = browser.status_queue.get(True, browser.current_timeout)
             if status == "OK":
                 command_succeeded = 1
             else:
@@ -357,24 +362,24 @@ class TaskManager:
     
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
-    def get(self, url, index=None, overwrite_timeout=None, reset=False):
+    def get(self, url, index=None, timeout=60, reset=False):
         """ goes to a url """
-        self._distribute_command(('GET', url), index, overwrite_timeout, reset)
+        self._distribute_command(('GET', url), index, timeout, reset)
         
-    def browse(self, url, num_links = 2, index=None, overwrite_timeout=None, reset=False):
+    def browse(self, url, num_links = 2, index=None, timeout=60, reset=False):
         """ browse a website and visit <num_links> links on the page """
-        self._distribute_command(('BROWSE', url, num_links), index, overwrite_timeout, reset)
+        self._distribute_command(('BROWSE', url, num_links), index, timeout, reset)
 
-    def dump_storage_vectors(self, url, start_time, index=None, overwrite_timeout=None):
+    def dump_storage_vectors(self, url, start_time, index=None, timeout=60):
         """ dumps the local storage vectors (flash, localStorage, cookies) to db """
-        self._distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, overwrite_timeout)
+        self._distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, timeout)
 
-    def dump_profile(self, dump_folder, close_webdriver=False, index=None, overwrite_timeout=None):
+    def dump_profile(self, dump_folder, close_webdriver=False, index=None, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """
-        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, overwrite_timeout)
+        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, timeout)
 
-    def extract_links(self, index = None, overwrite_timeout = None):
-        self._distribute_command(('EXTRACT_LINKS',), index, overwrite_timeout)
+    def extract_links(self, index=None, timeout=30):
+        self._distribute_command(('EXTRACT_LINKS',), index, timeout)
 
     def close(self, post_process=True):
         """

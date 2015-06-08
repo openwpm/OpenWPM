@@ -33,7 +33,6 @@ class Browser:
         self.db_socket_address = browser_params['aggregator_address']
         self.logger_address = browser_params['logger_address']
         self.crawl_id = browser_params['crawl_id']
-        self.timeout = browser_params['timeout']
         self.browser_params = browser_params
         
         # Queues and process IDs for BrowserManager
@@ -45,6 +44,7 @@ class Browser:
         self.display_port = None  # the port of the display for the headless browser (if it exists)
         
         self.is_fresh = None  # boolean that says if the BrowserManager new (used to optimize restarts)
+        self.current_timeout = None # timeout of the current command
         self.browser_settings = None  # dict of additional browser profile settings (e.g. screen_res)
         self.browser_manager = None # process that controls browser
         self.logger = loggingclient(*self.logger_address) # connection to loggingserver
