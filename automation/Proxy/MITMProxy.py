@@ -66,7 +66,7 @@ class InterceptingMaster (controller.Master):
             self.shutdown()
             sys.exit(0)
         except Exception as ex:
-            self.logger.critical('Exception. Shutting down proxy!' + '\n' + str(ex))
+            self.logger.critical('BROWSER %i: Exception. Shutting down proxy!\n%s' % (self.crawl_id, str(ex)))
             self.shutdown()
             raise
 

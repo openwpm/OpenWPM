@@ -162,8 +162,8 @@ class TaskManager:
                     process = psutil.Process(browser.browser_pid)
                     mem = process.get_memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
-                        self.logger.info("Browser pid: %i memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
-                            % (browser.browser_pid, int(mem), BROWSER_MEMORY_LIMIT))
+                        self.logger.info("BROWSER %i: memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
+                            % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
                         browser.reset()
                 except psutil.NoSuchProcess as e:
                     pass
@@ -210,14 +210,14 @@ class TaskManager:
         for i in range(len(self.browsers)):
             browser = self.browsers[i]
             if browser.command_thread is not None:
-                self.logger.debug("Joining browser %i..." % i)
+                self.logger.debug("BROWSER %i: Joining command thread" % browser.crawl_id)
                 start_time = time.time()
                 if browser.current_timeout is not None:
                     browser.command_thread.join(browser.current_timeout + 10)
                 else:
                     browser.command_thread.join(60)
-                self.logger.debug("...browser %i took %f seconds to join" % (i, time.time() - start_time))
-            self.logger.debug("Killing browser %i's browser manager..." % i)
+                self.logger.debug("BROWSER %i: %f seconds to join command thread" % (browser.crawl_id, time.time() - start_time))
+            self.logger.debug("BROWSER %i: Killing browser manager..." % browser.crawl_id)
             browser.kill_browser_manager()
             if browser.current_profile_path is not None:
                 shutil.rmtree(browser.current_profile_path, ignore_errors = True)
@@ -308,8 +308,8 @@ class TaskManager:
             self.logger.error("Attempted to execute command on a closed TaskManager")
             return
         if self.launch_failure_flag:
-            self.logger.debug("Browser failed to launch after multiple retries, shutting down TaskManager")
-            self._gracefully_fail("Browser failed to launch after multiple retries, shutting down TaskManager...", command)
+            self.logger.debug("BROWSER %i: Browser failed to launch after multiple retries, shutting down TaskManager" % browser.crawl_id)
+            self._gracefully_fail("BROWSER %i: Browser failed to launch after multiple retries, shutting down TaskManager..." % browser.crawl_id, command)
 
         # Start command execution thread
         args = (browser, command, reset, condition)
@@ -341,11 +341,10 @@ class TaskManager:
                 command_succeeded = 1
             else:
                 command_succeeded = 0
-                self.logger.info("Received failure status while executing command: " + command[0])
+                self.logger.info("BROWSER %i: Received failure status while executing command: %s" % (browser.crawl_id, command[0]))
         except EmptyQueue:
             command_succeeded = -1
-            self.logger.info("Timeout while executing command, " + command[0] +
-                  " killing browser manager")
+            self.logger.info("BROWSER %i: Timeout while executing command, %s, killing browser manager" % (browser.crawl_id, command[0]))
 
         self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
                         " VALUES (?,?,?,?)",

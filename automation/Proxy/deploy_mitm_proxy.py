@@ -27,7 +27,7 @@ def init_proxy(db_socket_address, logger_address, crawl_id):
 
     config = proxy.ProxyConfig(cadir=os.path.join(os.path.dirname(__file__), 'cert'),port=proxy_port)
     server = ProxyServer(config)
-    logger.info('Intercepting Proxy listening on ' + str(proxy_port))
+    logger.info('BROWSER %i: Intercepting Proxy listening on %i' % (crawl_id, proxy_port))
     m = MITMProxy.InterceptingMaster(server, crawl_id, proxy_site_queue, db_socket_address, logger_address)
     thread = threading.Thread(target=m.run, args=())
     thread.daemon = True
