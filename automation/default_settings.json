@@ -8,7 +8,6 @@
     "tp_cookies": "always",
     "headless": false,
     "donottrack": false,
-    "timeout": 60,
     "browser": "firefox",
     "extension": {
         "enabled": false,

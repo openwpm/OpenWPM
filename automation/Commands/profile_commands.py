@@ -111,7 +111,7 @@ def dump_profile(browser_profile_folder, tar_location, close_webdriver, webdrive
 
     # if this is a dump on close, close the webdriver and wait for checkpoint
     if close_webdriver:
-        webdriver.close()
+        webdriver.quit()
         sleep_until_sqlite_checkpoint(browser_profile_folder)
 
     # backup and tar profile

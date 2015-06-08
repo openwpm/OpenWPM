@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS crawl (
     headless VARCHAR(200),
     proxy VARCHAR(200),
     debugging VARCHAR(200),
-    timeout INTEGER,
     disable_flash VARCHAR(200),
     extensions VARCHAR(200),
     screen_res VARCHAR(50),
