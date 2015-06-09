@@ -81,10 +81,10 @@ def process_query(query, curr, logger):
         else:
             curr.execute(statement,args)
     except OperationalError as e:
-        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + e + '\n' + statement + '\n' + args)
+        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + str(e) + '\n' + statement + '\n' + str(args))
         pass
     except ProgrammingError as e:
-        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + e + '\n' + statement + '\n' + args)
+        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + str(e) + '\n' + statement + '\n' + str(args))
         pass
 
 
