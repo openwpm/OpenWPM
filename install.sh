@@ -8,7 +8,7 @@ sudo pip install -U pyvirtualdisplay beautifulsoup4 netlib pyasn1 PyOPenSSL pyth
 # current version has compatibility issues with 
 # the most recent cffi release
 sudo pip install mitmproxy==0.11.2
-sudo pip install cffi=1.0.3
+sudo pip install cffi==1.0.3
 
 # Install specific version of Firefox and selenium
 # known to work well together.
