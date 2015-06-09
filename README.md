@@ -14,6 +14,19 @@ Development
 
 Note OpenWPM is under active development. The repository may contain experimental features that aren't fully tested. We recommend using a [tagged release](https://github.com/citp/OpenWPM/releases).
 
+Citation
+--------
+
+If you use OpenWPM in your research, please cite our current [Technical Report](http://www.cs.princeton.edu/~ste/papers/openwpm_03-2015.pdf) on the infrastructure. You can use the following BibTeX.
+
+    @unpublished{englehardt2015openwpm,
+        author = "Steven Englehardt and Christian Eubank and Peter Zimmerman and Dillon Reisman and Arvind Narayanan",
+        title  = "{OpenWPM: An Automated Platform for Web Privacy Measurement}",
+        month = "mar",
+        year   = "2015",
+        note = "Manuscript"
+    }
+
 License
 -------
 
