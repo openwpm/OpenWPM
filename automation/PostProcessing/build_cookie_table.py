@@ -77,10 +77,10 @@ def parse_cookies(cookie_string, verbose, url = None, http_type = 'response'):
     queries = list()
     try:
         cookie_string = re.sub('Set-Cookie: ','',cookie_string)
-        cookie = Cookie.BaseCookie(str(cookie_string))
+        cookie = Cookie.BaseCookie(cookie_string.encode('utf8')) # requires str type
         for key in cookie.keys():
-            name = key
-            value = cookie[key].coded_value
+            name = unicode(key, 'utf8')
+            value = unicode(cookie[key].coded_value, 'utf8')
             attrs = parse_cookie_attributes(cookie, key, url, http_type)
             query = (name, value)+attrs
             queries.append(query)
