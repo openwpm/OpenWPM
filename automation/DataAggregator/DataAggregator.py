@@ -70,6 +70,9 @@ def process_query(query, curr, logger):
     executes a query of form (template_string, arguments)
     query is of form (template_string, arguments)
     """
+    if len(query) != 2:
+        print "ERROR: Query is not the correct length"
+        return
     statement = query[0]
     args = list(query[1])
     for i in range(len(args)):
