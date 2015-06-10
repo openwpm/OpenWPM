@@ -43,11 +43,13 @@ class TaskManager:
     <db_path> is the absolute path of the crawl DB (which may not yet exist)
     <browser_params> is a list of (or single) dictionaries that specify preferences for browsers to instantiate
     <num_browsers> is the number of browsers to instantiate
-    <task_description> is an optional description string for a particular crawl (primarily for logging)
     <log_file> is the full path/name of the logfile. defaults to the user's home directory
+    <process_watchdog> will monitor firefox and Xvfb processes, killing any not indexed in TaskManager's browser list.
+        NOTE: Only run this in isolated environments. It kills processes by name, indiscriminately.
+    <task_description> is an optional description string for a particular crawl (primarily for logging)
     """
 
-    def __init__(self, db_path, browser_params, num_browsers, log_file = '~/openwpm.log', task_description=None):
+    def __init__(self, db_path, browser_params, num_browsers, log_file = '~/openwpm.log', process_watchdog=False, task_description=None):
         self.closing = False
         self.launch_failure_flag = False
 
@@ -55,6 +57,7 @@ class TaskManager:
         self.desc = task_description
         self.db_path = db_path
         self.log_file = log_file
+        self.process_watchdog = process_watchdog
 
         # sets up the crawl data database
         self.db = sqlite3.connect(db_path)
@@ -154,19 +157,40 @@ class TaskManager:
         """ 
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
+        - presence of processes that are no longer in use
         """
         while not self.closing:
             time.sleep(10)
+
+            # Check browser memory usage
             for browser in self.browsers:
                 try:
                     process = psutil.Process(browser.browser_pid)
                     mem = process.get_memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
-                        self.logger.info("BROWSER %i: memory usage: %iMB, exceeding limit of %iMB. Killing Browser" \
+                        self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
                             % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
                         browser.reset()
                 except psutil.NoSuchProcess as e:
                     pass
+            
+            # Check for browsers or displays that were not closed correctly
+            if self.process_watchdog:
+                browser_pids = set()
+                display_pids = set()
+                check_time = time.time()
+                for browser in self.browsers:
+                    if browser.browser_pid is not None:
+                        browser_pids.add(browser.browser_pid)
+                    if browser.display_pid is not None:
+                        display_pids.add(browser.display_pid)
+                for process in psutil.get_process_list():
+                    if (process.create_time() < check_time and
+                            ((process.name() == 'firefox' and process.pid not in browser_pids) or
+                            (process.name() == 'Xvfb' and process.pid not in display_pids))):
+                                self.logger.debug("Process: %s (pid: %i) with start time %s found running but not in browser process list. Killing."
+                                        % (process.name(), process.pid, process.create_time()))
+                        process.kill()
 
     def _launch_data_aggregator(self):
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
