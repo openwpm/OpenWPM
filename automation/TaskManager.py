@@ -50,12 +50,16 @@ class TaskManager:
     """
 
     def __init__(self, db_path, browser_params, num_browsers, log_file = '~/openwpm.log', process_watchdog=False, task_description=None):
+        # Flow control
         self.closing = False
-        self.launch_failure_flag = False
+        self.failure_flag = False
+        self.threadlock = threading.Lock()
+        self.failurecount = 0
 
         # sets up the information needed to write to the database
         self.desc = task_description
         self.db_path = db_path
+
         self.log_file = log_file
         self.process_watchdog = process_watchdog
 
@@ -188,8 +192,8 @@ class TaskManager:
                     if (process.create_time() < check_time and
                             ((process.name() == 'firefox' and process.pid not in browser_pids) or
                             (process.name() == 'Xvfb' and process.pid not in display_pids))):
-                                self.logger.debug("Process: %s (pid: %i) with start time %s found running but not in browser process list. Killing."
-                                        % (process.name(), process.pid, process.create_time()))
+                        self.logger.debug("Process: %s (pid: %i) with start time %s found running but not in browser process list. Killing."
+                                % (process.name(), process.pid, process.create_time()))
                         process.kill()
 
     def _launch_data_aggregator(self):
@@ -331,9 +335,9 @@ class TaskManager:
         if self.closing:
             self.logger.error("Attempted to execute command on a closed TaskManager")
             return
-        if self.launch_failure_flag:
-            self.logger.debug("BROWSER %i: Browser failed to launch after multiple retries, shutting down TaskManager" % browser.crawl_id)
-            self._gracefully_fail("BROWSER %i: Browser failed to launch after multiple retries, shutting down TaskManager..." % browser.crawl_id, command)
+        if self.failure_flag:
+            self.logger.debug("TaskManager failure threshold exceeded, raising CommandExecutionError")
+            self._gracefully_fail("TaskManager failure threshold exceeded", command)
 
         # Start command execution thread
         args = (browser, command, reset, condition)
@@ -376,12 +380,24 @@ class TaskManager:
         
         if self.closing:
             return
-        if reset:
-            browser.reset()
-        elif command_succeeded != 1:
+        
+        if command_succeeded != 1:
+            with self.threadlock:
+                self.failurecount += 1
+            if self.failurecount > self.num_browsers * 2:
+                self.logger.critical("BROWSER %i: Command execution failure pushes failure count above the allowable limit. Setting failure_flag." % browser.crawl_id)
+                self.failure_flag = True
+                return
             success = browser.restart_browser_manager()
             if not success:
-                self.launch_failure_flag = True # set crash flag for main thread
+                self.logger.critical("BROWSER %i: Exceeded the maximum allowable consecutive browser launch failures. Setting failure_flag." % browser.crawl_id)
+                self.failure_flag = True
+                return
+        else:
+            with self.threadlock:
+                self.failurecount = 0
+            if reset:
+                browser.reset()
     
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
