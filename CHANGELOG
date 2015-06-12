@@ -1,8 +1,28 @@
-0.1.0 - Initial Public Release
-0.1.1 - Simplfied load of default settings, including wiki demo
-0.2.0 - Complete re-write of HTTP Cookie parsing
-0.2.1 - Support for MITMProxy v0.11 + minor bugfixes
-0.2.2 - Browse command + better scrolling + bugfixes
-0.2.3 - Timeout logging 
-0.3.0 - Experimental merge of Fourthparty + framework to allow additional javascript instrumentation.
+v0.4.0
+======
+
+Changes:
+    * Significant stability improvements for long crawls
+    * Support for logging with logging module
+    * A large number of bugfixes related to process handling
+    * Prevention of a large number of stray tmp files/folders during long crawls
+    * Process/memory watchdog to handle orphaned processes and keep memory usage reasonable
+    * Numerous bugfixes for extension
+    * Failure thresholds to prevent infinite loops of browser respawns or command execution attempts (instead, Errors and raised)
+    * Script to install dependencies
+    * API changes to command timeouts
+    * Move SocketInterface from pickle to json serialization
+
+Known Issues:
+    * Encoding issues cause a very small percentage of data to be dropped by the extension
+    * Malformed queries are occassionally sent to the DataAggregator and are dropped. The cause is unknown.
+    * Forking can be done in a more memory efficient way
+
 0.3.1 - Fixes #5
+0.3.0 - Experimental merge of Fourthparty + framework to allow additional javascript instrumentation.
+0.2.3 - Timeout logging 
+0.2.2 - Browse command + better scrolling + bugfixes
+0.2.1 - Support for MITMProxy v0.11 + minor bugfixes
+0.2.0 - Complete re-write of HTTP Cookie parsing
+0.1.1 - Simplfied load of default settings, including wiki demo
+0.1.0 - Initial Public Release
