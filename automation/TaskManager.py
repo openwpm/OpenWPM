@@ -170,7 +170,7 @@ class TaskManager:
             for browser in self.browsers:
                 try:
                     process = psutil.Process(browser.browser_pid)
-                    mem = process.get_memory_info()[0] / float(2 ** 20)
+                    mem = process.memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
                             % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
