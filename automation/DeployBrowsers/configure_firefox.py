@@ -1,4 +1,4 @@
-""" Load firefox extensions with configuration files """
+""" Set prefs and load extensions in Firefox """
 import shutil
 import os
 
