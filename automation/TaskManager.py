@@ -153,14 +153,10 @@ class TaskManager:
 
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
-            if not browser.browser_settings['extensions']:
-                extensions = 'None'
-            else:
-                extensions = ','.join(browser.browser_settings['extensions'])
             screen_res = str(browser.browser_settings['screen_res'])
             ua_string = str(browser.browser_settings['ua_string'])
-            self.sock.send(("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
-                             WHERE crawl_id = ?", (extensions, screen_res, ua_string, browser.crawl_id)))
+            self.sock.send(("UPDATE crawl SET screen_res = ?, ua_string = ? \
+                             WHERE crawl_id = ?", (screen_res, ua_string, browser.crawl_id)))
 
     def _manager_watchdog(self):
         """ 

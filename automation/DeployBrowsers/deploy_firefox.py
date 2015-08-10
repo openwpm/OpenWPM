@@ -30,7 +30,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     #fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
 
     profile_settings = None  # Imported browser settings
-    ext_dict = None  # Dictionary of supported extensions
     if browser_params['profile_tar'] and not crash_recovery:
         logger.debug("BROWSER %i: Loading initial browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'],
@@ -42,12 +41,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser" % browser_params['crawl_id'])
         profile_settings = dict()
-
-        # load a random set of extensions
-        with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'), 'rb') as f:
-            ext_dict = cPickle.load(f)
-        extensions = random.sample(ext_dict.keys(), random.randint(0, len(ext_dict.keys())))
-        profile_settings['extensions'] = extensions
 
         # choose a random screen-res from list
         resolutions = list()
@@ -66,20 +59,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # If profile settings still not set - set defaults
     if profile_settings is None:
         profile_settings = dict()
-        profile_settings['extensions'] = []  # Load no extensions
         profile_settings['screen_res'] = DEFAULT_SCREEN_RES
         profile_settings['ua_string'] = None
-
-    # Load profile settings - window size set after initialization
-    if profile_settings['extensions'] != [] and ext_dict is None:
-        with open(os.path.join(root_dir, 'firefox_extensions/supported_extensions.p'), 'rb') as f:
-            ext_dict = cPickle.load(f)
-    for extension in profile_settings['extensions']:
-        ext_loc = os.path.join(root_dir, 'firefox_extensions/', ext_dict[extension]['filename'])
-        fp.add_extension(extension=ext_loc)
-        # Avoid start-up screen - set the necessary flags for each extension
-        for item in ext_dict[extension]['startup']:
-            fp.set_preference(*item)
 
     if profile_settings['ua_string'] is not None:
         logger.debug("BROWSER %i: Overriding user agent string with the following: %s" % (browser_params['crawl_id'], profile_settings['ua_string']))
