@@ -1,5 +1,6 @@
 from ..MPLogger import loggingclient
 from ..Commands.profile_commands import load_profile
+import configure_firefox
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.remote.remote_connection import LOGGER
@@ -129,23 +130,13 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         # a previous tmp selenium profile
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/key3.db'), fp.path + '/key3.db')
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/cert8.db'), fp.path + '/cert8.db')
-
-    # Turns on Do Not Track
-    if browser_params['donottrack']:
-        fp.set_preference("privacy.donottrackheader.enabled", True)
-        fp.set_preference("privacy.donottrackheader.value", 1)
-
-    # Sets the third party cookie setting
-    if browser_params['tp_cookies'].lower() == 'never':
-        fp.set_preference("network.cookie.cookieBehavior", 1)
-    elif browser_params['tp_cookies'].lower() == 'from_visited':
-        fp.set_preference("network.cookie.cookieBehavior", 3)
-    else:  # always allow third party cookies
-        fp.set_preference("network.cookie.cookieBehavior", 0)
         
     # Disable flash
     if browser_params['disable_flash']:
         fp.set_preference('plugin.state.flash', 0)
+
+    # Configure privacy settings
+    configure_firefox.privacy(browser_params, fp, root_dir, browser_profile_path)
 
     # Disable health reports
     fp.set_preference('datareporting.healthreport.uploadEnabled', False)
