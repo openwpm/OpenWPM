@@ -17,8 +17,8 @@ class InterceptingMaster (controller.Master):
     https://gist.github.com/dannvix/5285924
     """
     
-    def __init__(self, server, crawl_id, url_queue, db_socket_address, logger_address):
-        self.crawl_id = crawl_id
+    def __init__(self, server, url_queue, browser_params):
+        self.browser_params = browser_params
         
         # Attributes used to flag the first-party domain
         self.url_queue = url_queue  # first-party domain provided by BrowserManager
@@ -27,10 +27,10 @@ class InterceptingMaster (controller.Master):
 
         # Open a socket to communicate with DataAggregator
         self.db_socket = clientsocket()
-        self.db_socket.connect(*db_socket_address)
+        self.db_socket.connect(*browser_params['aggregator_address'])
 
         # Open a socket to communicate with MPLogger
-        self.logger = loggingclient(*logger_address)
+        self.logger = loggingclient(*browser_params['logger_address'])
 
         controller.Master.__init__(self, server)
 
@@ -66,7 +66,7 @@ class InterceptingMaster (controller.Master):
             self.shutdown()
             sys.exit(0)
         except Exception as ex:
-            self.logger.critical('BROWSER %i: Exception. Shutting down proxy!\n%s' % (self.crawl_id, str(ex)))
+            self.logger.critical('BROWSER %i: Exception. Shutting down proxy!\n%s' % (self.browser_params['crawl_id'], str(ex)))
             self.shutdown()
             raise
 
@@ -74,7 +74,7 @@ class InterceptingMaster (controller.Master):
         """ Receives HTTP request, and sends it to logging function """
         msg.reply()
         self.curr_requests.add(msg.request)
-        mitm_commands.process_general_mitm_request(self.db_socket, self.crawl_id, self.curr_top_url, msg)
+        mitm_commands.process_general_mitm_request(self.db_socket, self.browser_params, self.curr_top_url, msg)
 
     # Record data from HTTP responses
     def handle_response(self, msg):
@@ -91,4 +91,4 @@ class InterceptingMaster (controller.Master):
         else:  # ignore responses for which we cannot match the request
             return
 
-        mitm_commands.process_general_mitm_response(self.db_socket, self.crawl_id, top_url, msg)
+        mitm_commands.process_general_mitm_response(self.db_socket, self.logger, self.browser_params, top_url, msg)

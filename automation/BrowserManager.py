@@ -182,9 +182,7 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
     # Start the proxy
     proxy_site_queue = None  # used to pass the current site down to the proxy
     if browser_params['proxy']:
-        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params['aggregator_address'],
-                                                                      browser_params['logger_address'],
-                                                                      browser_params['crawl_id'])
+        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params)
         browser_params['proxy'] = local_port
 
     # Start the virtualdisplay (if necessary), webdriver, and browser
