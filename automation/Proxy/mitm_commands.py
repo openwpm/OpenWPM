@@ -43,7 +43,7 @@ def process_general_mitm_response(db_socket, logger, browser_params, manager_par
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
     location = msg.response.headers['location'][0] if len(msg.response.headers['location']) > 0 else ''
     
-    content_hash = save_javascript_content(logger, manager_params, msg)
+    content_hash = save_javascript_content(logger, browser_params, manager_params, msg)
     
     data = (browser_params['crawl_id'],
             encode_to_unicode(msg.request.url),
@@ -61,9 +61,11 @@ def process_general_mitm_response(db_socket, logger, browser_params, manager_par
                     "response_status_text, headers, location, top_url, time_stamp, content_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)", data))
 
  
-def save_javascript_content(logger, manager_params, msg):
+def save_javascript_content(logger, browser_params, manager_params, msg):
     """ Save javascript files de-duplicated on disk """
-    
+    if not browser_params['save_javascript']:
+        return
+
     # Check if this response is javascript content
     content_type = msg.response.headers['Content-Type']
     url_path = urlparse(msg.request.url).path 
