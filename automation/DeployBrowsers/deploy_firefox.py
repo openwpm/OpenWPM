@@ -13,10 +13,10 @@ import random
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
-def deploy_firefox(status_queue, browser_params, crash_recovery):
+def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
     """ launches a firefox instance with parameters set by the input dictionary """
     root_dir = os.path.dirname(__file__)  # directory of this file
-    logger = loggingclient(*browser_params['logger_address'])
+    logger = loggingclient(*manager_params['logger_address'])
 
     display_pid = None
     display_port = None
@@ -101,7 +101,7 @@ def deploy_firefox(status_queue, browser_params, crash_recovery):
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
         with open(browser_profile_path + 'database_settings.txt', 'w') as f:
-            host, port = browser_params['aggregator_address']
+            host, port = manager_params['aggregator_address']
             crawl_id = browser_params['crawl_id']
             f.write(host + ',' + str(port) + ',' + str(crawl_id))
             f.write(','+str(browser_params['extension']['cookieInstrument']))

@@ -22,7 +22,7 @@ def encode_to_unicode(msg):
     return msg
 
 
-def process_general_mitm_request(db_socket, browser_params, top_url, msg):
+def process_general_mitm_request(db_socket, browser_params, manager_params, top_url, msg):
     """ Logs a HTTP request object """
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
 
@@ -38,12 +38,12 @@ def process_general_mitm_request(db_socket, browser_params, top_url, msg):
                     "top_url, time_stamp) VALUES (?,?,?,?,?,?,?)", data))
 
 
-def process_general_mitm_response(db_socket, logger, browser_params, top_url, msg):
+def process_general_mitm_response(db_socket, logger, browser_params, manager_params, top_url, msg):
     """ Logs a HTTP response object and, if necessary, """
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
     location = msg.response.headers['location'][0] if len(msg.response.headers['location']) > 0 else ''
     
-    content_hash = save_javascript_content(logger, browser_params, msg)
+    content_hash = save_javascript_content(logger, manager_params, msg)
     
     data = (browser_params['crawl_id'],
             encode_to_unicode(msg.request.url),
@@ -61,7 +61,7 @@ def process_general_mitm_response(db_socket, logger, browser_params, top_url, ms
                     "response_status_text, headers, location, top_url, time_stamp, content_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)", data))
 
  
-def save_javascript_content(logger, browser_params, msg):
+def save_javascript_content(logger, manager_params, msg):
     """ Save javascript files de-duplicated on disk """
     
     # Check if this response is javascript content
@@ -90,7 +90,7 @@ def save_javascript_content(logger, browser_params, msg):
     # Hash script for deduplication on disk
     script_hash = str(hash(script))
 
-    path = os.path.join(browser_params['data_directory'],'javascript_files/')
+    path = os.path.join(manager_params['data_directory'],'javascript_files/')
     if not os.path.exists(path):
         os.mkdir(path)
     with open(path + script_hash, 'w') as f:

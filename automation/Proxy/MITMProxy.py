@@ -17,8 +17,9 @@ class InterceptingMaster (controller.Master):
     https://gist.github.com/dannvix/5285924
     """
     
-    def __init__(self, server, url_queue, browser_params):
+    def __init__(self, server, url_queue, browser_params, manager_params):
         self.browser_params = browser_params
+        self.manager_params = manager_params
         
         # Attributes used to flag the first-party domain
         self.url_queue = url_queue  # first-party domain provided by BrowserManager
@@ -27,10 +28,10 @@ class InterceptingMaster (controller.Master):
 
         # Open a socket to communicate with DataAggregator
         self.db_socket = clientsocket()
-        self.db_socket.connect(*browser_params['aggregator_address'])
+        self.db_socket.connect(*manager_params['aggregator_address'])
 
         # Open a socket to communicate with MPLogger
-        self.logger = loggingclient(*browser_params['logger_address'])
+        self.logger = loggingclient(*manager_params['logger_address'])
 
         controller.Master.__init__(self, server)
 
@@ -74,7 +75,11 @@ class InterceptingMaster (controller.Master):
         """ Receives HTTP request, and sends it to logging function """
         msg.reply()
         self.curr_requests.add(msg.request)
-        mitm_commands.process_general_mitm_request(self.db_socket, self.browser_params, self.curr_top_url, msg)
+        mitm_commands.process_general_mitm_request(self.db_socket,
+                                                   self.browser_params,
+                                                   self.manager_params,
+                                                   self.curr_top_url,
+                                                   msg)
 
     # Record data from HTTP responses
     def handle_response(self, msg):
@@ -91,4 +96,8 @@ class InterceptingMaster (controller.Master):
         else:  # ignore responses for which we cannot match the request
             return
 
-        mitm_commands.process_general_mitm_response(self.db_socket, self.logger, self.browser_params, top_url, msg)
+        mitm_commands.process_general_mitm_response(self.db_socket,
+                                                    self.logger,
+                                                    self.browser_params,
+                                                    self.manager_params,
+                                                    top_url, msg)

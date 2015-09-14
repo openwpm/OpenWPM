@@ -17,23 +17,24 @@ import os
 
 class Browser:
     """
-     Sets up a WebDriver instance that adheres to a given set of user paramters
-     Continually listens to the TaskManager for commands and passes them to command module to execute
-     Sends OK signal if command succeeds or else sends a FAILED signal to indicate that workers should be restarted
+     The Browser class is responsbile for holding all of the
+     configuration and status information on BrowserManager process 
+     it corresponds to. It also includes a set of methods for managing
+     the BrowserManager process and its child processes/threads.
 
-     <command_queue> is the queue through which the browser sends command tuples
-     <status_queue> is a queue through which the BrowserManager either signals command failure or success
-     <db_socket_address> is the socket address through which to send data to the DataAggregator to manipulate and write
-     <browser_params> are browser parameter settings (e.g. whether we're using a proxy, headless, etc.)
+     <manager_params> are the TaskManager configuration settings.
+     <browser_params> are per-browser parameter settings (e.g. whether 
+                      this browser is using a proxy, headless, etc.)
 
      """
-    def __init__(self, browser_params):
+    def __init__(self, manager_params, browser_params):
         # manager parameters
         self.current_profile_path = None
-        self.db_socket_address = browser_params['aggregator_address']
-        self.logger_address = browser_params['logger_address']
+        self.db_socket_address = manager_params['aggregator_address']
+        self.logger_address = manager_params['logger_address']
         self.crawl_id = browser_params['crawl_id']
         self.browser_params = browser_params
+        self.manager_params = manager_params
         
         # Queues and process IDs for BrowserManager
         self.command_thread = None  # thread to run commands issues from TaskManager
@@ -85,7 +86,7 @@ class Browser:
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
             # builds and launches the browser_manager
-            args = (self.command_queue, self.status_queue, self.browser_params, crash_recovery)
+            args = (self.command_queue, self.status_queue, self.browser_params, self.manager_params, crash_recovery)
             self.browser_manager = Process(target=BrowserManager, args=args)
             self.browser_manager.daemon = True
             self.browser_manager.start()
@@ -176,17 +177,25 @@ class Browser:
                 self.logger.debug("BROWSER %i: Browser process does not exist" % self.crawl_id)
                 pass
 
-def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
-    logger = loggingclient(*browser_params['logger_address'])
+def BrowserManager(command_queue, status_queue, browser_params, manager_params, crash_recovery):
+    """
+    The BrowserManager function runs in each new browser process.
+    It is responsible for listening to command instructions from 
+    the Task Manager and passing them to the command module to execute
+    and interface with Selenium. Command execution status is sent back
+    to the TaskManager.
+    """
+    logger = loggingclient(*manager_params['logger_address'])
     
     # Start the proxy
     proxy_site_queue = None  # used to pass the current site down to the proxy
     if browser_params['proxy']:
-        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params)
+        (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params,
+                                                                      manager_params)
         browser_params['proxy'] = local_port
 
     # Start the virtualdisplay (if necessary), webdriver, and browser
-    (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, crash_recovery)
+    (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, manager_params, crash_recovery)
 
     # Read the extension port -- if extension is enabled
     # TODO: This needs to be cleaner
@@ -221,7 +230,13 @@ def BrowserManager(command_queue, status_queue, browser_params, crash_recovery):
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
-            command_executor.execute_command(command, driver, proxy_site_queue, browser_settings, browser_params, extension_socket)
+            command_executor.execute_command(command,
+                                             driver,
+                                             proxy_site_queue,
+                                             browser_settings,
+                                             browser_params,
+                                             manager_params,
+                                             extension_socket)
             status_queue.put("OK")
         except Exception as e:
             logger.info("BROWSER %i: Crash in driver, restarting browser manager \n %s \n %s" % (browser_params['crawl_id'], str(type(e)), str(e)))
