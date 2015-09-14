@@ -72,6 +72,8 @@ class TaskManager:
 
         # sets up the crawl data database
         db_path = manager_params['database_name']
+        if not os.path.exists(manager_params['data_directory']):
+            os.mkdir(manager_params['data_directory'])
         self.db = sqlite3.connect(db_path)
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
             self.db.executescript(f.read())
