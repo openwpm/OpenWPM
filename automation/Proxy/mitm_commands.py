@@ -94,7 +94,7 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     # Hash script for deduplication on disk
     script_hash = str(hash(script))
     if os.path.isfile(path + script_hash + '.gz'):
-        return
+        return script_hash
 
     if not os.path.exists(path):
         os.mkdir(path)
