@@ -6,7 +6,7 @@ sudo pip install -U pyvirtualdisplay beautifulsoup4 netlib pyasn1 PyOPenSSL pyth
 
 # Install specific version of Firefox and selenium
 # known to work well together.
-sudo pip install selenium==2.46.0
-wget https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/37.0.2/linux-x86_64/en-US/firefox-37.0.2.tar.bz2
+sudo pip install selenium==2.47.1
+wget https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/39.0.3/linux-x86_64/en-US/firefox-39.0.3.tar.bz2
 tar jxf firefox*.tar.bz2 -C ./
 rm firefox*.tar.bz2
