@@ -89,14 +89,16 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     else:
         logger.error('Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % str(msg.response.headers['Content-Encoding']))
         return
+    path = os.path.join(manager_params['data_directory'],'javascript_files/')
 
     # Hash script for deduplication on disk
     script_hash = str(hash(script))
+    if os.path.isfile(path + script_hash + '.gz'):
+        return
 
-    path = os.path.join(manager_params['data_directory'],'javascript_files/')
     if not os.path.exists(path):
         os.mkdir(path)
-    with gzip.open(path + script_hash+'.gz', 'wb') as f:
+    with gzip.open(path + script_hash + '.gz', 'wb') as f:
         f.write(script)
 
     return script_hash
