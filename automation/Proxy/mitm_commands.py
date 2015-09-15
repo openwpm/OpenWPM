@@ -4,6 +4,7 @@
 from urlparse import urlparse
 import datetime
 import zlib
+import gzip
 import os
 
 def encode_to_unicode(msg):
@@ -62,7 +63,7 @@ def process_general_mitm_response(db_socket, logger, browser_params, manager_par
 
  
 def save_javascript_content(logger, browser_params, manager_params, msg):
-    """ Save javascript files de-duplicated on disk """
+    """ Save javascript files de-duplicated and compressed on disk """
     if not browser_params['save_javascript']:
         return
 
@@ -95,7 +96,7 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     path = os.path.join(manager_params['data_directory'],'javascript_files/')
     if not os.path.exists(path):
         os.mkdir(path)
-    with open(path + script_hash, 'w') as f:
+    with gzip.open(path + script_hash+'.gz', 'wb') as f:
         f.write(script)
 
     return script_hash
