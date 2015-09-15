@@ -3,6 +3,7 @@
 
 from urlparse import urlparse
 import datetime
+import pyhash
 import zlib
 import gzip
 import os
@@ -92,7 +93,8 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     path = os.path.join(manager_params['data_directory'],'javascript_files/')
 
     # Hash script for deduplication on disk
-    script_hash = str(hash(script))
+    hasher = pyhash.murmur3_x64_128()
+    script_hash = str(hasher(script) >> 64)
     if os.path.isfile(path + script_hash + '.gz'):
         return script_hash
 

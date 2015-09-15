@@ -184,6 +184,8 @@ class TaskManager:
                     pass
             
             # Check for browsers or displays that were not closed correctly
+            # Provide a 300 second buffer to avoid killing freshly launched browsers
+            # TODO This buffer should correspond to the maximum browser spawn timeout
             if self.process_watchdog:
                 browser_pids = set()
                 display_pids = set()
@@ -194,7 +196,7 @@ class TaskManager:
                     if browser.display_pid is not None:
                         display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
-                    if (process.create_time() < check_time and
+                    if (process.create_time() + 300 < check_time and
                             ((process.name() == 'firefox' and process.pid not in browser_pids) or
                             (process.name() == 'Xvfb' and process.pid not in display_pids))):
                         self.logger.debug("Process: %s (pid: %i) with start time %s found running but not in browser process list. Killing."
