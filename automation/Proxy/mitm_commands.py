@@ -82,9 +82,17 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     # Firefox currently only accepts gzip/deflate
     script = ''
     if 'gzip' in msg.response.headers['Content-Encoding']:
-        script = zlib.decompress(msg.response.content, zlib.MAX_WBITS|16)
+        try:
+            script = zlib.decompress(msg.response.content, zlib.MAX_WBITS|16)
+        except zlib.error as e:
+            logger.error('Received zlib error when trying to decompress gzipped javascript: %s' % str(e))
+            return
     elif 'deflate' in msg.response.headers['Content-Encoding']:
-        script = zlib.decompress(msg.response.content, -zlib.MAX_WBITS)
+        try:
+            script = zlib.decompress(msg.response.content, -zlib.MAX_WBITS)
+        except zlib.error as e:
+            logger.error('Received zlib error when trying to decompress deflated javascript: %s' % str(e))
+            return
     elif msg.response.headers['Content-Encoding'] == []:
         script = msg.response.content
     else:
