@@ -137,7 +137,7 @@ def extract_links(webdriver, browser_params, manager_params):
 
     sock.close()
 
-def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
+def browse_website(url, num_links, webdriver, proxy_queue, browser_params, extension_socket):
     """
     calls get_website before visiting <num_links> present on the page
     NOTE: top_url will NOT be properly labeled for requests to subpages
@@ -145,7 +145,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
           to this function.
     """
     # First get the site
-    get_website(url, webdriver, proxy_queue, browser_params)
+    get_website(url, webdriver, proxy_queue, browser_params, extension_socket)
 
     # Then visit a few subpages
     for i in range(num_links):
