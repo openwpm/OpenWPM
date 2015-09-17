@@ -175,7 +175,7 @@ class TaskManager:
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
                             % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
-                        browser.reset()
+                        browser.restart_browser_manager()
                 except psutil.NoSuchProcess as e:
                     pass
             
