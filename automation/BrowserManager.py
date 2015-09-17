@@ -133,6 +133,9 @@ class Browser:
         kill and restart the two worker processes
         <clear_profile> marks whether we want to wipe the old profile
         """
+        if self.is_fresh(): # Return success if browser is fresh
+            return True
+        
         self.kill_browser_manager()
 
         # if crawl should be stateless we can clear profile
