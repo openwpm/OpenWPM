@@ -18,7 +18,7 @@ import psutil
 import shutil
 import sys
 
-SLEEP_CONS = 0.01  # command sleep constant (in seconds)
+SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500 # in MB
 
 def load_default_params(num_browsers=1):
@@ -175,7 +175,7 @@ class TaskManager:
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
                             % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
-                        browser.restart_browser_manager()
+                        browser.restart_required = True
                 except psutil.NoSuchProcess as e:
                     pass
             
@@ -383,24 +383,26 @@ class TaskManager:
         
         if self.closing:
             return
-        
+
         if command_succeeded != 1:
             with self.threadlock:
                 self.failurecount += 1
-            if self.failurecount > self.num_browsers * 2:
+            if self.failurecount > self.num_browsers * 2 + 10:
                 self.logger.critical("BROWSER %i: Command execution failure pushes failure count above the allowable limit. Setting failure_flag." % browser.crawl_id)
                 self.failure_flag = True
                 return
-            success = browser.restart_browser_manager()
+            browser.restart_required = True
+        else:
+            with self.threadlock:
+                self.failurecount = 0
+            
+        if browser.restart_required or reset:
+            success = browser.restart_browser_manager(clear_profile = reset)
             if not success:
                 self.logger.critical("BROWSER %i: Exceeded the maximum allowable consecutive browser launch failures. Setting failure_flag." % browser.crawl_id)
                 self.failure_flag = True
                 return
-        else:
-            with self.threadlock:
-                self.failurecount = 0
-            if reset:
-                browser.restart_browser_manager(clear_profile=True)
+            browser.restart_required = False
     
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 

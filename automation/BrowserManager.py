@@ -14,7 +14,6 @@ import signal
 import time
 import os
 
-
 class Browser:
     """
      The Browser class is responsbile for holding all of the
@@ -44,7 +43,9 @@ class Browser:
         self.display_pid = None  # the pid of the display for the headless browser (if it exists)
         self.display_port = None  # the port of the display for the headless browser (if it exists)
         
-        self.is_fresh = None  # boolean that says if the BrowserManager new (used to optimize restarts)
+        self.is_fresh = True  # boolean that says if the BrowserManager new (used to optimize restarts)
+        self.restart_required = False # boolean indicating if the browser should be restarted
+
         self.current_timeout = None # timeout of the current command
         self.browser_settings = None  # dict of additional browser profile settings (e.g. screen_res)
         self.browser_manager = None # process that controls browser
@@ -133,7 +134,7 @@ class Browser:
         kill and restart the two worker processes
         <clear_profile> marks whether we want to wipe the old profile
         """
-        if self.is_fresh(): # Return success if browser is fresh
+        if self.is_fresh: # Return success if browser is fresh
             return True
         
         self.kill_browser_manager()
@@ -224,7 +225,6 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         # reads in the command tuple of form (command, arg0, arg1, arg2, ..., argN) where N is variable
         command = command_queue.get()
         logger.info("BROWSER %i: EXECUTING COMMAND: %s" % (browser_params['crawl_id'], str(command)))
-
         # attempts to perform an action and return an OK signal
         # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
         try:
