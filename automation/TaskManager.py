@@ -400,7 +400,7 @@ class TaskManager:
             with self.threadlock:
                 self.failurecount = 0
             if reset:
-                browser.reset()
+                browser.restart_browser_manager(clear_profile=True)
     
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 

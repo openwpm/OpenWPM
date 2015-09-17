@@ -128,20 +128,15 @@ class Browser:
         
         return success
 
-    def reset(self):
-        """ resets the worker processes with profile to a clean state """
-        if not self.is_fresh:  # optimization in case resetting after a relaunch
-            self.restart_browser_manager(reset=True)
-
-    def restart_browser_manager(self, reset=False):
+    def restart_browser_manager(self, clear_profile=False):
         """
         kill and restart the two worker processes
-        <reset> marks whether we want to wipe the old profile
+        <clear_profile> marks whether we want to wipe the old profile
         """
         self.kill_browser_manager()
 
-        # in case of reset, hard-deletes old profile
-        if reset and self.current_profile_path is not None:
+        # if crawl should be stateless we can clear profile
+        if clear_profile and self.current_profile_path is not None:
             shutil.rmtree(self.current_profile_path, ignore_errors=True)
             self.current_profile_path = None
             self.browser_params['profile_tar'] = None
