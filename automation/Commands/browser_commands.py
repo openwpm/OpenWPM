@@ -8,6 +8,7 @@ import random
 import time
 
 from ..SocketInterface import clientsocket
+from ..MPLogger import loggingclient
 from utils.lso import get_flash_cookies
 from utils.firefox_profile import get_cookies  # todo: add back get_localStorage,
 from utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links
@@ -137,7 +138,7 @@ def extract_links(webdriver, browser_params, manager_params):
 
     sock.close()
 
-def browse_website(url, num_links, webdriver, proxy_queue, browser_params, extension_socket):
+def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manager_params, extension_socket):
     """
     calls get_website before visiting <num_links> present on the page
     NOTE: top_url will NOT be properly labeled for requests to subpages
@@ -147,6 +148,9 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, exten
     # First get the site
     get_website(url, webdriver, proxy_queue, browser_params, extension_socket)
 
+    # Connect to logger
+    logger = loggingclient(*manager_params['logger_address'])
+
     # Then visit a few subpages
     for i in range(num_links):
         links = get_intra_links(webdriver, url)
@@ -154,7 +158,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, exten
         if len(links) == 0:
             break
         r = int(random.random()*len(links)-1)
-        print "BROWSE: visiting link to %s" % links[r].get_attribute("href")
+        logger.info("BROWSER %i: visiting internal link %s" % (browser_params['crawl_id'], links[r].get_attribute("href")))
         
         try:
             links[r].click()
