@@ -140,7 +140,7 @@ def dump_profile(browser_profile_folder, manager_params, tar_location, close_web
             tar.add(full_path, arcname=item)
         for item in storage_vector_dirs:
             full_path = os.path.join(browser_profile_folder, item)
-            if not os.path.isfile(full_path) and full_path[-3:] != 'shm' and full_path[-3:] != 'wal':
+            if not os.path.isdir(full_path):
                 logger.warning("%s NOT FOUND IN profile folder, skipping." % full_path)
                 continue
             tar.add(full_path, arcname=item)
