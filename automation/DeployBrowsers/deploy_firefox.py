@@ -32,11 +32,13 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
         logger.debug("BROWSER %i: Loading initial browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
-        profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'],
+        profile_settings = load_profile(browser_profile_path, manager_params, 
+                                        browser_params['profile_tar'],
                                         load_flash=browser_params['disable_flash'] is False)
     elif browser_params['profile_tar']:
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
-        profile_settings = load_profile(browser_profile_path, browser_params['profile_tar'])
+        profile_settings = load_profile(browser_profile_path, manager_params,
+                                        browser_params['profile_tar'])
 
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser" % browser_params['crawl_id'])

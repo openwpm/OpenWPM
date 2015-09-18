@@ -67,8 +67,12 @@ class Browser:
             crashed_profile_path = self.current_profile_path
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp() + "/"
-            profile_commands.dump_profile(crashed_profile_path, tempdir, close_webdriver=False,
-                                          browser_settings=self.browser_settings, full_profile=True)
+            profile_commands.dump_profile(crashed_profile_path,
+                                          self.manager_params,
+                                          tempdir,
+                                          close_webdriver=False,
+                                          browser_settings=self.browser_settings,
+                                          full_profile=True)
             self.browser_params['profile_tar'] = tempdir  # make sure browser loads crashed profile
             self.browser_params['random_attributes'] = False  # don't re-randomize attributes
             crash_recovery = True
