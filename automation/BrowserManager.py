@@ -69,6 +69,7 @@ class Browser:
             tempdir = tempfile.mkdtemp() + "/"
             profile_commands.dump_profile(crashed_profile_path,
                                           self.manager_params,
+                                          self.browser_params,
                                           tempdir,
                                           close_webdriver=False,
                                           browser_settings=self.browser_settings,

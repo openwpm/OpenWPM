@@ -85,18 +85,18 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
         try:
             script = zlib.decompress(msg.response.content, zlib.MAX_WBITS|16)
         except zlib.error as e:
-            logger.error('Received zlib error when trying to decompress gzipped javascript: %s' % str(e))
+            logger.error('BROWSER %i: Received zlib error when trying to decompress gzipped javascript: %s' % (browser_params['crawl_id'],str(e)))
             return
     elif 'deflate' in msg.response.headers['Content-Encoding']:
         try:
             script = zlib.decompress(msg.response.content, -zlib.MAX_WBITS)
         except zlib.error as e:
-            logger.error('Received zlib error when trying to decompress deflated javascript: %s' % str(e))
+            logger.error('BROWSER %i: Received zlib error when trying to decompress deflated javascript: %s' % (browser_params['crawl_id'],str(e)))
             return
     elif msg.response.headers['Content-Encoding'] == []:
         script = msg.response.content
     else:
-        logger.error('Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % str(msg.response.headers['Content-Encoding']))
+        logger.error('BROWSER %i: Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % (browser_params['crawl_id'], str(msg.response.headers['Content-Encoding'])))
         return
     path = os.path.join(manager_params['data_directory'],'javascript_files/')
 
