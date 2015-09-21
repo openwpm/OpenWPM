@@ -1,4 +1,3 @@
-import subprocess
 import tarfile
 import cPickle
 import shutil
@@ -22,7 +21,7 @@ def save_browser_settings(location, browser_settings):
     if browser_settings is not None:
         # see if the browser_settings file exists, and if so delete
         if os.path.isfile(location + 'browser_settings.p'):
-            subprocess.call(["rm", location + 'browser_settings.p'])
+            os.remove(location + 'browser_settings.p')
 
         with open(location + 'browser_settings.p', 'wb') as f:
             cPickle.dump(browser_settings, f)
@@ -112,7 +111,7 @@ def dump_profile(browser_profile_folder, manager_params, browser_params, tar_loc
     # see if this file exists first
     # if it does, delete it before we try to save the current session
     if os.path.isfile(tar_location + tar_name):
-        subprocess.call(["rm", tar_location + tar_name])
+        os.remove(tar_location + tar_name)
 
     # if this is a dump on close, close the webdriver and wait for checkpoint
     if close_webdriver:
@@ -186,12 +185,10 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
 
         # Copy and untar the loaded profile
         logger.debug("BROWSER %i: Copying profile tar from %s to %s" % (browser_params['crawl_id'], tar_location+tar_name, browser_profile_folder))
-        subprocess.call(["cp", tar_location + tar_name, browser_profile_folder])
-        opener, mode = tarfile.open, 'r:gz'
-        f = opener(browser_profile_folder + tar_name, mode)
-        f.extractall(browser_profile_folder)
-        f.close()
-        subprocess.call(["rm", browser_profile_folder + tar_name])
+        shutil.copy(tar_location + tar_name, browser_profile_folder)
+        with tarfile.open(browser_profile_folder + tar_name, 'r:gz') as f:
+            f.extractall(browser_profile_folder)
+        os.remove(browser_profile_folder + tar_name)
 
         # clear and load flash cookies
         if load_flash:
