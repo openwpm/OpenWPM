@@ -418,9 +418,9 @@ class TaskManager:
         """ dumps the local storage vectors (flash, localStorage, cookies) to db """
         self._distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, timeout)
 
-    def dump_profile(self, dump_folder, close_webdriver=False, index=None, timeout=120):
+    def dump_profile(self, dump_folder, close_webdriver=False, compress=True, index=None, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """
-        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, timeout)
+        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver, compress), index, timeout)
 
     def extract_links(self, index=None, timeout=30):
         self._distribute_command(('EXTRACT_LINKS',), index, timeout)

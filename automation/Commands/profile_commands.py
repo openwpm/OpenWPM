@@ -84,12 +84,11 @@ def load_flash_files(logger, browser_params, tar_location):
 
 def dump_profile(browser_profile_folder, manager_params, browser_params, tar_location, 
                  close_webdriver, webdriver=None, browser_settings=None, save_flash=False,
-                 full_profile=True):
+                 compress=False):
     """
     dumps a browser profile currently stored in <browser_profile_folder> to
     <tar_location> in which both folders are absolute paths.
     if <browser_settings> exists they are also saved
-    <full_profile> specifies to save the entire profile directory (not just cookies)
     <save_flash> specifies whether to dump flash files
     """
     # Connect to logger
@@ -103,10 +102,10 @@ def dump_profile(browser_profile_folder, manager_params, browser_params, tar_loc
     if not os.path.exists(tar_location):
         os.makedirs(tar_location)
 
-    if full_profile:
-        tar_name = 'full_profile.tar.gz'
-    else:
+    if compress:
         tar_name = 'profile.tar.gz'
+    else:
+        tar_name = 'profile.tar'
 
     # see if this file exists first
     # if it does, delete it before we try to save the current session
@@ -119,39 +118,33 @@ def dump_profile(browser_profile_folder, manager_params, browser_params, tar_loc
         sleep_until_sqlite_checkpoint(browser_profile_folder)
 
     # backup and tar profile
-    tar = tarfile.open(tar_location + tar_name, 'w:gz')
-    if full_profile:  # backup all storage vectors
-        logger.debug("BROWSER %i: Backing up full profile from %s to %s" % (browser_params['crawl_id'], browser_profile_folder, tar_location + tar_name))
-        storage_vector_files = [
-            'cookies.sqlite', 'cookies.sqlite-shm', 'cookies.sqlite-wal',  # cookies
-            'places.sqlite', 'places.sqlite-shm', 'places.sqlite-wal',  # history
-            'webappsstore.sqlite', 'webappsstore.sqlite-shm', 'webappsstore.sqlite-wal',  # localStorage
-        ]
-        storage_vector_dirs = [
-            'webapps',  # related to localStorage?
-            'storage'  # directory for IndexedDB
-        ]
-        for item in storage_vector_files:
-            full_path = os.path.join(browser_profile_folder, item)
-            if not os.path.isfile(full_path) and full_path[-3:] != 'shm' and full_path[-3:] != 'wal':
-                logger.critical("BROWSER %i: %s NOT FOUND IN profile folder, skipping." % (browser_params['crawl_id'], full_path))
-            elif not os.path.isfile(full_path) and (full_path[-3:] == 'shm' or full_path[-3:] == 'wal'):
-                continue # These are just checkpoint files
-            tar.add(full_path, arcname=item)
-        for item in storage_vector_dirs:
-            full_path = os.path.join(browser_profile_folder, item)
-            if not os.path.isdir(full_path):
-                logger.warning("BROWSER %i: %s NOT FOUND IN profile folder, skipping." % (browser_params['crawl_id'], full_path))
-                continue
-            tar.add(full_path, arcname=item)
-
-    else:  # only backup cookies and history
-        logger.debug("BROWSER %i: Backing up limited profile from %s to %s" % (browser_params['crawl_id'], browser_profile_folder, tar_location + tar_name))
-        for db in ["cookies.sqlite", "cookies.sqlite-shm", "cookies.sqlite-wal",
-                   "places.sqlite", "places.sqlite-shm", "places.sqlite-wal"]:
-            if os.path.isfile(browser_profile_folder + db):
-                logger.debug("BROWSER %i: Adding %s from profile folder to archive." % (browser_params['crawl_id'], full_path))
-                tar.add(browser_profile_folder + db, arcname=db)
+    if compress:
+        tar = tarfile.open(tar_location + tar_name, 'w:gz', errorlevel=1)
+    else:
+        tar = tarfile.open(tar_location + tar_name, 'w', errorlevel=1)
+    logger.debug("BROWSER %i: Backing up full profile from %s to %s" % (browser_params['crawl_id'], browser_profile_folder, tar_location + tar_name))
+    storage_vector_files = [
+        'cookies.sqlite', 'cookies.sqlite-shm', 'cookies.sqlite-wal',  # cookies
+        'places.sqlite', 'places.sqlite-shm', 'places.sqlite-wal',  # history
+        'webappsstore.sqlite', 'webappsstore.sqlite-shm', 'webappsstore.sqlite-wal',  # localStorage
+    ]
+    storage_vector_dirs = [
+        'webapps',  # related to localStorage?
+        'storage'  # directory for IndexedDB
+    ]
+    for item in storage_vector_files:
+        full_path = os.path.join(browser_profile_folder, item)
+        if not os.path.isfile(full_path) and full_path[-3:] != 'shm' and full_path[-3:] != 'wal':
+            logger.critical("BROWSER %i: %s NOT FOUND IN profile folder, skipping." % (browser_params['crawl_id'], full_path))
+        elif not os.path.isfile(full_path) and (full_path[-3:] == 'shm' or full_path[-3:] == 'wal'):
+            continue # These are just checkpoint files
+        tar.add(full_path, arcname=item)
+    for item in storage_vector_dirs:
+        full_path = os.path.join(browser_profile_folder, item)
+        if not os.path.isdir(full_path):
+            logger.warning("BROWSER %i: %s NOT FOUND IN profile folder, skipping." % (browser_params['crawl_id'], full_path))
+            continue
+        tar.add(full_path, arcname=item)
     tar.close()
 
     # save flash cookies
@@ -178,17 +171,23 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
             else browser_profile_folder + "/"
         tar_location = tar_location if tar_location.endswith("/") else tar_location + "/"
 
-        if os.path.isfile(tar_location + 'full_profile.tar.gz'):
-            tar_name = 'full_profile.tar.gz'
-        else:
+        if os.path.isfile(tar_location + 'profile.tar.gz'):
             tar_name = 'profile.tar.gz'
+        else:
+            tar_name = 'profile.tar'
 
         # Copy and untar the loaded profile
         logger.debug("BROWSER %i: Copying profile tar from %s to %s" % (browser_params['crawl_id'], tar_location+tar_name, browser_profile_folder))
         shutil.copy(tar_location + tar_name, browser_profile_folder)
-        with tarfile.open(browser_profile_folder + tar_name, 'r:gz') as f:
-            f.extractall(browser_profile_folder)
+        
+        if tar_name == 'profile.tar.gz':
+            f = tarfile.open(browser_profile_folder + tar_name, 'r:gz', errorlevel=1)
+        else:
+            f = tarfile.open(browser_profile_folder + tar_name, 'r', errorlevel=1)
+        f.extractall(browser_profile_folder)
+        f.close()
         os.remove(browser_profile_folder + tar_name)
+        logger.debug("BROWSER %i: Tarfile extracted" % browser_params['crawl_id'])
 
         # clear and load flash cookies
         if load_flash:

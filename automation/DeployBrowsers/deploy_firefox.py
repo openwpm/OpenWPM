@@ -28,7 +28,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Enable logging
     #LOGGER.setLevel(logging.WARNING)
     #fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
-
+    
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
         logger.debug("BROWSER %i: Loading initial browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
@@ -39,7 +39,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path, manager_params, browser_params,
                                         browser_params['profile_tar'])
-
+    status_queue.put('profile_success')
+    
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser" % browser_params['crawl_id'])
         profile_settings = dict()

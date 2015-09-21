@@ -72,8 +72,7 @@ class Browser:
                                           self.browser_params,
                                           tempdir,
                                           close_webdriver=False,
-                                          browser_settings=self.browser_settings,
-                                          full_profile=True)
+                                          browser_settings=self.browser_settings)
             self.browser_params['profile_tar'] = tempdir  # make sure browser loads crashed profile
             self.browser_params['random_attributes'] = False  # don't re-randomize attributes
             crash_recovery = True
@@ -98,10 +97,12 @@ class Browser:
             self.browser_manager.start()
 
             # Read success status of browser manager
-            prof_done = disp_done = browser_done = ready_done = launch_attempted = False
+            prof_done = prof_tar_done = disp_done = browser_done = ready_done = launch_attempted = False
             try:
                 self.current_profile_path = self.status_queue.get(True, spawn_timeout)
                 prof_done = True
+                useless = self.status_queue.get(True, spawn_timeout)
+                prof_tar_done = True
                 (self.display_pid, self.display_port) = self.status_queue.get(True, spawn_timeout)
                 disp_done = True
                 useless = self.status_queue.get(True, spawn_timeout)
@@ -115,8 +116,8 @@ class Browser:
                 success = True
             except EmptyQueue:
                 unsuccessful_spawns += 1
-                self.logger.error("BROWSER %i: Spawn unsuccessful | Profile: %s | Display: %s | Launch attempted: %s | Browser: %s" %
-                        (self.crawl_id, str(prof_done), str(disp_done), str(launch_attempted), str(browser_done)))
+                self.logger.error("BROWSER %i: Spawn unsuccessful | Profile Created: %s | Profile Tar: %s | Display: %s | Launch attempted: %s | Browser: %s" %
+                        (self.crawl_id, str(prof_done), str(prof_tar_done), str(disp_done), str(launch_attempted), str(browser_done)))
                 self.kill_browser_manager()
                 if self.current_profile_path is not None:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
