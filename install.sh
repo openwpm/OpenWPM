@@ -2,6 +2,7 @@ sudo apt-get update
 
 sudo apt-get install firefox htop git python-dev python-pip libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb libboost-python-dev
 
+sudo pip install -U setuptools
 sudo pip install -U pyvirtualdisplay beautifulsoup4 netlib pyasn1 PyOPenSSL python-dateutil tld pyamf psutil mitmproxy pyhash
 
 # Install specific version of Firefox and selenium
