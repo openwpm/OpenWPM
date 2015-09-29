@@ -69,13 +69,14 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
         return
 
     # Check if this response is javascript content
-    content_type = msg.response.headers['Content-Type']
-    url_path = urlparse(msg.request.url).path 
-    if (content_type != 'application/javascript' and
-        content_type != 'application/x-javascript' and
-        content_type != 'text/javascript' and
-        url_path.split('.')[-1] != 'js'):
-           return
+    is_js = False
+    if (len(msg.response.headers['Content-Type']) > 0 and
+       'javascript' in msg.response.headers['Content-Type'][0]):
+        is_js = True
+    if not is_js and urlparse(msg.request.url).path.split('.')[-1] == 'js':
+        is_js = True
+    if not is_js:
+        return
 
     # Decompress any content with compression
     # We want files to hash to the same value
