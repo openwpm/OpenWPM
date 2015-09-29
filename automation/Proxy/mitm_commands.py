@@ -82,22 +82,29 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     # We want files to hash to the same value
     # Firefox currently only accepts gzip/deflate
     script = ''
-    if 'gzip' in msg.response.headers['Content-Encoding']:
+    content_encoding = msg.response.headers['Content-Encoding']
+    if (len(content_encoding) == 0 or
+            content_encoding[0].lower() == 'utf-8' or
+            content_encoding[0].lower() == 'identity' or
+            content_encoding[0].lower() == 'none' or
+            content_encoding[0].lower() == 'ansi_x3.4-1968' or
+            content_encoding[0].lower() == 'utf8' or
+            content_encoding[0] == ''):
+        script = msg.response.content
+    elif 'gzip' in content_encoding[0].lower():
         try:
             script = zlib.decompress(msg.response.content, zlib.MAX_WBITS|16)
         except zlib.error as e:
             logger.error('BROWSER %i: Received zlib error when trying to decompress gzipped javascript: %s' % (browser_params['crawl_id'],str(e)))
             return
-    elif 'deflate' in msg.response.headers['Content-Encoding']:
+    elif 'deflate' in content_encoding[0].lower():
         try:
             script = zlib.decompress(msg.response.content, -zlib.MAX_WBITS)
         except zlib.error as e:
             logger.error('BROWSER %i: Received zlib error when trying to decompress deflated javascript: %s' % (browser_params['crawl_id'],str(e)))
             return
-    elif msg.response.headers['Content-Encoding'] == []:
-        script = msg.response.content
     else:
-        logger.error('BROWSER %i: Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % (browser_params['crawl_id'], str(msg.response.headers['Content-Encoding'])))
+        logger.error('BROWSER %i: Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % (browser_params['crawl_id'], str(content_encoding)))
         return
     path = os.path.join(manager_params['data_directory'],'javascript_files/')
 
