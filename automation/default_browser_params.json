@@ -20,5 +20,6 @@
     "donottrack": false,
     "ghostery": false,
     "https-everywhere": false,
+    "adblock-plus": false,
     "tracking-protection": false
 }
