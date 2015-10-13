@@ -44,3 +44,11 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
         fp.set_preference("extensions.https_everywhere.toolbar_hint_shown", True)
         fp.set_preference("extensions.https_everywhere._observatory.popup_shown", True)
         fp.set_preference("extensions.https_everywhere._observatory.clean_config", True)
+
+    # Enable AdBlock Plus - Uses "Easy List" by default
+    # "Allow some non-intrusive advertising" disabled
+    if browser_params['adblock-plus']:
+        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/adblock-plus-2.6.11.xpi'))
+        fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
+        fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
+
