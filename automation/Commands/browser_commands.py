@@ -8,6 +8,7 @@ import random
 import time
 
 from ..SocketInterface import clientsocket
+from ..MPLogger import loggingclient
 from utils.lso import get_flash_cookies
 from utils.firefox_profile import get_cookies  # todo: add back get_localStorage,
 from utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links
@@ -112,12 +113,12 @@ def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
     if browser_params['bot_mitigation']:
         bot_mitigation(webdriver)
 
-def extract_links(webdriver, browser_params):
+def extract_links(webdriver, browser_params, manager_params):
     link_elements = webdriver.find_elements_by_tag_name('a')
     link_urls = set(element.get_attribute("href") for element in link_elements)
 
     sock = clientsocket()
-    sock.connect(*browser_params['aggregator_address'])
+    sock.connect(*manager_params['aggregator_address'])
     create_table_query = ("""
     CREATE TABLE IF NOT EXISTS links_found (
       found_on TEXT,
@@ -137,7 +138,7 @@ def extract_links(webdriver, browser_params):
 
     sock.close()
 
-def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
+def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manager_params, extension_socket):
     """
     calls get_website before visiting <num_links> present on the page
     NOTE: top_url will NOT be properly labeled for requests to subpages
@@ -145,7 +146,10 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
           to this function.
     """
     # First get the site
-    get_website(url, webdriver, proxy_queue, browser_params)
+    get_website(url, webdriver, proxy_queue, browser_params, extension_socket)
+
+    # Connect to logger
+    logger = loggingclient(*manager_params['logger_address'])
 
     # Then visit a few subpages
     for i in range(num_links):
@@ -154,7 +158,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
         if len(links) == 0:
             break
         r = int(random.random()*len(links)-1)
-        print "BROWSE: visiting link to %s" % links[r].get_attribute("href")
+        logger.info("BROWSER %i: visiting internal link %s" % (browser_params['crawl_id'], links[r].get_attribute("href")))
         
         try:
             links[r].click()
@@ -166,13 +170,13 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params):
         except Exception, e:
             pass
 
-def dump_storage_vectors(top_url, start_time, webdriver, browser_params):
+def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager_params):
     """ Grab the newly changed items in supported storage vectors """
 
     # Set up a connection to DataAggregator
     tab_restart_browser(webdriver)  # kills traffic so we can cleanly record data
     sock = clientsocket()
-    sock.connect(*browser_params['aggregator_address'])
+    sock.connect(*manager_params['aggregator_address'])
 
     # Wait for SQLite Checkpointing - never happens when browser open
 

@@ -18,79 +18,86 @@ import psutil
 import shutil
 import sys
 
-SLEEP_CONS = 0.01  # command sleep constant (in seconds)
+SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500 # in MB
 
-def load_default_params(num_instances=1):
+def load_default_params(num_browsers=1):
     """
-    Loads num_instances copies of the default
-    browser parameters from the included default settings json
+    Loads num_browsers copies of the default browser_params dictionary.
+    Also loads a single copy of the default TaskManager params dictionary.
     """
-    fp = open(os.path.join(os.path.dirname(__file__), 'default_settings.json'))
+    fp = open(os.path.join(os.path.dirname(__file__), 'default_browser_params.json'))
     preferences = json.load(fp)
     fp.close()
-
-    browser_params = [copy.deepcopy(preferences) for i in xrange(0, num_instances)]
-    return browser_params
+    browser_params = [copy.deepcopy(preferences) for i in xrange(0, num_browsers)]
+    
+    fp = open(os.path.join(os.path.dirname(__file__), 'default_manager_params.json'))
+    manager_params = json.load(fp)
+    fp.close()
+    manager_params['num_browsers'] = num_browsers
+    
+    return manager_params, browser_params
 
 class TaskManager:
     """
-    User-facing API for running browser automation
-    The TaskManager runs two sub-processes - WebManger for browser actions/instrumentation and DataAggregator for DB I/O
-    General paradigm is for the TaskManager to send commands and wait for response and/or restart workers if necessary
-    Compared to light wrapper around WebDriver, provides robustness and timeout functionality
+    User-facing Class for interfacing with OpenWPM
+    The TaskManager spawns several child processes to run the automation tasks.
+        - DataAggregator to aggregate data in a SQLite database
+        - MPLogger to aggregate logs across processes
+        - BrowserManager processes to isolate Browsers in a separate process
 
-    <db_path> is the absolute path of the crawl DB (which may not yet exist)
-    <browser_params> is a list of (or single) dictionaries that specify preferences for browsers to instantiate
-    <num_browsers> is the number of browsers to instantiate
-    <log_file> is the full path/name of the logfile. defaults to the user's home directory
+    <manager_params> dict of TaskManager configuration parameters
+    <browser_params> is a list of (or a single) dictionaries that specify preferences for browsers to instantiate
     <process_watchdog> will monitor firefox and Xvfb processes, killing any not indexed in TaskManager's browser list.
         NOTE: Only run this in isolated environments. It kills processes by name, indiscriminately.
     <task_description> is an optional description string for a particular crawl (primarily for logging)
     """
 
-    def __init__(self, db_path, browser_params, num_browsers, log_file = '~/openwpm.log', process_watchdog=False, task_description=None):
+    def __init__(self, manager_params, browser_params, process_watchdog=False, task_description=None):
+        # Make paths absolute in manager_params
+        manager_params['data_directory'] = os.path.expanduser(manager_params['data_directory'])
+        manager_params['log_directory'] = os.path.expanduser(manager_params['log_directory'])
+        manager_params['database_name'] = os.path.join(manager_params['data_directory'],manager_params['database_name'])
+        manager_params['log_file'] = os.path.join(manager_params['log_directory'],manager_params['log_file'])
+        self.manager_params = manager_params
+        
         # Flow control
         self.closing = False
         self.failure_flag = False
         self.threadlock = threading.Lock()
         self.failurecount = 0
-
-        # sets up the information needed to write to the database
+        
         self.desc = task_description
-        self.db_path = db_path
-
-        self.log_file = log_file
         self.process_watchdog = process_watchdog
 
         # sets up the crawl data database
+        db_path = manager_params['database_name']
+        if not os.path.exists(manager_params['data_directory']):
+            os.mkdir(manager_params['data_directory'])
         self.db = sqlite3.connect(db_path)
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
             self.db.executescript(f.read())
         
-        # prepares browser settings
-        self.num_browsers = num_browsers
-        # special case: for singleton dictionary, we perform deep copies so that number of dicts is <num_browsers>
-        if type(browser_params) is not list:
-            browser_params = [copy.deepcopy(browser_params) for i in xrange(0, num_browsers)]
-
-        if len(browser_params) != num_browsers:
-            raise Exception("Number of browser parameter dictionaries is not the same as <num_browsers>")
+        # check size of parameter dictionary
+        self.num_browsers = manager_params['num_browsers']
+        if len(browser_params) != self.num_browsers:
+            raise Exception("Number of <browser_params> dicts is not the same as manager_params['num_browsers']")
 
         # sets up logging server + connect a client
         self.logging_status_queue = None
         self.loggingserver = self._launch_loggingserver()
-        self.logger_address = self.logging_status_queue.get()  # socket location: (address, port)
-        self.logger = MPLogger.loggingclient(*self.logger_address)
+        # socket location: (address, port)
+        self.manager_params['logger_address'] = self.logging_status_queue.get()
+        self.logger = MPLogger.loggingclient(*self.manager_params['logger_address'])
         
         # sets up the DataAggregator + associated queues
         self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
         self.data_aggregator = self._launch_data_aggregator()
-        self.aggregator_address = self.aggregator_status_queue.get()  # socket location: (address, port)
+        self.manager_params['aggregator_address'] = self.aggregator_status_queue.get()  # socket location: (address, port)
 
         # open client socket
         self.sock = clientsocket()
-        self.sock.connect(self.aggregator_address[0], self.aggregator_address[1])
+        self.sock.connect(*self.manager_params['aggregator_address'])
 
         # update task table
         cur = self.db.cursor()
@@ -131,9 +138,7 @@ class TaskManager:
                     pass
 
             browser_params[i]['crawl_id'] = crawl_id
-            browser_params[i]['aggregator_address'] = self.aggregator_address
-            browser_params[i]['logger_address'] = self.logger_address
-            browsers.append(Browser(browser_params[i]))
+            browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
     
@@ -148,14 +153,10 @@ class TaskManager:
 
             # Update our DB with the random browser settings
             # These are found within the scope of each instance of Browser in the browsers list
-            if not browser.browser_settings['extensions']:
-                extensions = 'None'
-            else:
-                extensions = ','.join(browser.browser_settings['extensions'])
             screen_res = str(browser.browser_settings['screen_res'])
             ua_string = str(browser.browser_settings['ua_string'])
-            self.sock.send(("UPDATE crawl SET extensions = ?, screen_res = ?, ua_string = ? \
-                             WHERE crawl_id = ?", (extensions, screen_res, ua_string, browser.crawl_id)))
+            self.sock.send(("UPDATE crawl SET screen_res = ?, ua_string = ? \
+                             WHERE crawl_id = ?", (screen_res, ua_string, browser.crawl_id)))
 
     def _manager_watchdog(self):
         """ 
@@ -174,11 +175,13 @@ class TaskManager:
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
                             % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
-                        browser.reset()
+                        browser.restart_required = True
                 except psutil.NoSuchProcess as e:
                     pass
             
             # Check for browsers or displays that were not closed correctly
+            # Provide a 300 second buffer to avoid killing freshly launched browsers
+            # TODO This buffer should correspond to the maximum browser spawn timeout
             if self.process_watchdog:
                 browser_pids = set()
                 display_pids = set()
@@ -188,8 +191,8 @@ class TaskManager:
                         browser_pids.add(browser.browser_pid)
                     if browser.display_pid is not None:
                         display_pids.add(browser.display_pid)
-                for process in psutil.get_process_list():
-                    if (process.create_time() < check_time and
+                for process in psutil.process_iter():
+                    if (process.create_time() + 300 < check_time and
                             ((process.name() == 'firefox' and process.pid not in browser_pids) or
                             (process.name() == 'Xvfb' and process.pid not in display_pids))):
                         self.logger.debug("Process: %s (pid: %i) with start time %s found running but not in browser process list. Killing."
@@ -200,7 +203,7 @@ class TaskManager:
         """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
         self.aggregator_status_queue = Queue()
         aggregator = Process(target=DataAggregator.DataAggregator,
-                             args=(self.db_path, self.aggregator_status_queue, self.logger_address))
+                             args=(self.manager_params, self.aggregator_status_queue))
         aggregator.daemon = True
         aggregator.start()
         return aggregator
@@ -217,7 +220,7 @@ class TaskManager:
         """ sets up logging server """
         self.logging_status_queue = Queue()
         loggingserver = Process(target=MPLogger.loggingserver,
-                             args=(self.log_file, self.logging_status_queue, ))
+                             args=(self.manager_params['log_file'], self.logging_status_queue, ))
         loggingserver.daemon = True
         loggingserver.start()
         return loggingserver
@@ -380,24 +383,26 @@ class TaskManager:
         
         if self.closing:
             return
-        
+
         if command_succeeded != 1:
             with self.threadlock:
                 self.failurecount += 1
-            if self.failurecount > self.num_browsers * 2:
+            if self.failurecount > self.num_browsers * 2 + 10:
                 self.logger.critical("BROWSER %i: Command execution failure pushes failure count above the allowable limit. Setting failure_flag." % browser.crawl_id)
                 self.failure_flag = True
                 return
-            success = browser.restart_browser_manager()
+            browser.restart_required = True
+        else:
+            with self.threadlock:
+                self.failurecount = 0
+            
+        if browser.restart_required or reset:
+            success = browser.restart_browser_manager(clear_profile = reset)
             if not success:
                 self.logger.critical("BROWSER %i: Exceeded the maximum allowable consecutive browser launch failures. Setting failure_flag." % browser.crawl_id)
                 self.failure_flag = True
                 return
-        else:
-            with self.threadlock:
-                self.failurecount = 0
-            if reset:
-                browser.reset()
+            browser.restart_required = False
     
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
@@ -413,9 +418,9 @@ class TaskManager:
         """ dumps the local storage vectors (flash, localStorage, cookies) to db """
         self._distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, timeout)
 
-    def dump_profile(self, dump_folder, close_webdriver=False, index=None, timeout=120):
+    def dump_profile(self, dump_folder, close_webdriver=False, compress=True, index=None, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """
-        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver), index, timeout)
+        self._distribute_command(('DUMP_PROF', dump_folder, close_webdriver, compress), index, timeout)
 
     def extract_links(self, index=None, timeout=30):
         self._distribute_command(('EXTRACT_LINKS',), index, timeout)
@@ -430,5 +435,5 @@ class TaskManager:
             return
         self._shutdown_manager()
         if post_process:
-            post_processing.run(self.db_path) # launch post-crawl processing
+            post_processing.run(self.manager_params) # launch post-crawl processing
 

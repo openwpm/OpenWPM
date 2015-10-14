@@ -1,3 +1,18 @@
+v0.5.0 - 2015-10-14
+======
+
+Changes:
+    * Added support for saving all javascript files de-duplicated and compressed
+    * Created two configuration dictionaries. One for individual browsers and another for the entire infrastructure
+    * Support for using OpenWPM as a submodule
+    * Firefox (v39) and Selenium (v2.47.1)
+    * Added support for launching Ghostery, HTTPS Everywhere, and AdBlock Plus
+    * Removed Random Extension Support
+    * Bugfix for broken profile saving.
+    * Bugfix for profile clearing when memory limits are exceeded
+    * Numerous stability fixes
+    * Full Logging support in all commands
+
 v0.4.0
 ======
 

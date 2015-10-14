@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS crawl (
     proxy VARCHAR(200),
     debugging VARCHAR(200),
     disable_flash VARCHAR(200),
-    extensions VARCHAR(200),
     screen_res VARCHAR(50),
     ua_string VARCHAR(200),
     finished BOOLEAN NOT NULL DEFAULT 0,
@@ -62,7 +61,8 @@ CREATE TABLE IF NOT EXISTS http_responses (
     headers VARCHAR(500) NOT NULL,
     location VARCHAR(500) NOT NULL,
     top_url VARCHAR(500) NOT NULL,
-    time_stamp VARCHAR(500) NOT NULL);
+    time_stamp VARCHAR(500) NOT NULL,
+    content_hash VARCHAR(50));
 
 /* Firefox Storage Vector Dumps */
 

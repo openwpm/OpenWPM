@@ -4,26 +4,28 @@ from sqlite3 import OperationalError
 from sqlite3 import ProgrammingError
 import sqlite3
 import time
+import os
 
 
-def DataAggregator(db_loc, status_queue, logger_address, commit_batch_size=1000):
+def DataAggregator(manager_params, status_queue, commit_batch_size=1000):
     """
      Receives SQL queries from other processes and writes them to the central database
      Executes queries until being told to die (then it will finish work and shut down)
      This process should never be terminated un-gracefully
      Currently uses SQLite but may move to different platform
 
-     <db_loc> is the absolute path of the DB's current location
+     <manager_params> TaskManager configuration parameters
      <status_queue> is a queue connect to the TaskManager used for communication
      <commit_batch_size> is the number of execution statements that should be made before a commit (used for speedup)
     """
 
     # sets up DB connection
-    db = sqlite3.connect(db_loc, check_same_thread=False)
+    db_path = manager_params['database_name']
+    db = sqlite3.connect(db_path, check_same_thread=False)
     curr = db.cursor()
 
     # sets up logging connection
-    logger = loggingclient(*logger_address)
+    logger = loggingclient(*manager_params['logger_address'])
 
     # sets up the serversocket to start accepting connections
     sock = serversocket()
