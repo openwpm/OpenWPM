@@ -122,23 +122,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fp, root_dir, browser_profile_path)
 
-    # Disable health reports
-    fp.set_preference('datareporting.healthreport.uploadEnabled', False)
-    fp.set_preference('toolkit.telemetry.enabled', False)
-
-    fp.set_preference('extensions.checkCompatibility.nightly', False)
-    fp.set_preference('browser.search.update', False)
-    # Disable know your rights banner
-    fp.set_preference('browser.rights.3.shown', True)
-    fp.set_preference('browser.shell.checkDefaultBrowser', False)
-    fp.set_preference('security.OCSP.enabled', "0")
-    fp.set_preference('browser.safebrowsing.enabled', False)
-    fp.set_preference('devtools.profiler.enabled', False)
-    fp.set_preference('network.seer.enabled', False)  # predictive actions
-    fp.set_preference('network.dns.disablePrefetch', True)  # no need to prefetch
-    fp.set_preference('network.prefetch-next', False)  # no need to prefetch
-    # Disable page thumbnails
-    fp.set_preference('browser.pagethumbnails.capturing_disabled', True)
+    # Set various prefs to improve speed and eliminate traffic to Mozilla
+    configure_firefox.optimize_prefs(fp)
 
     # Launch the webdriver
     status_queue.put("LAUNCHING BROWSER")
