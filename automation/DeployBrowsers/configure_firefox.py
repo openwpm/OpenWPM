@@ -99,6 +99,7 @@ def optimize_prefs(fp):
     # Disable auto-updating
     fp.set_preference("app.update.enabled", False) # browser
     fp.set_preference("app.update.url", "") # browser
+    fp.set_preference("media.gmp-manager.url", "") # OpenH264 Codec
     fp.set_preference("browser.search.update", False) # search
     fp.set_preference("extensions.update.enabled", False) # extensions
     fp.set_preference("extensions.update.autoUpdateDefault", False) # addons
