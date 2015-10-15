@@ -1,10 +1,9 @@
-from StringIO import StringIO
 from urlparse import urlparse
+from netlib.odict import ODictCaseless
 import sqlite3
-import mimetools
+import json
 import time
 import os
-import re
 
 # This should be the modified Cookie.py included
 # the standard lib Cookie.py has many bugs
@@ -76,7 +75,6 @@ def parse_cookies(cookie_string, verbose, url = None, http_type = 'response'):
     """
     queries = list()
     try:
-        cookie_string = re.sub('Set-Cookie: ','',cookie_string)
         cookie = Cookie.BaseCookie(cookie_string.encode('utf8')) # requires str type
         for key in cookie.keys():
             name = unicode(key, 'utf8')
@@ -120,9 +118,10 @@ def build_http_cookie_table(database, verbose=False):
     cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests \
                     WHERE id NOT IN (SELECT header_id FROM http_cookies)")
     for req_id, crawl_id, header_str, time_stamp in cur1.fetchall():
-        header = mimetools.Message(StringIO(header_str))
-        if header.has_key('Cookie'):
-            queries = parse_cookies(header['Cookie'], verbose, http_type = 'request')
+        header = ODictCaseless()
+        header.load_state(json.loads(header_str))
+        for cookie_str in header['Cookie']:
+            queries = parse_cookies(cookie_str, verbose, http_type = 'request')
             for query in queries:
                 cur2.execute("INSERT INTO http_cookies \
                             (crawl_id, header_id, http_type, name, \
@@ -142,8 +141,9 @@ def build_http_cookie_table(database, verbose=False):
     cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses \
                     WHERE id NOT IN (SELECT header_id FROM http_cookies)")
     for resp_id, crawl_id, req_url, header_str, time_stamp in cur1.fetchall():
-        header = mimetools.Message(StringIO(header_str))
-        for cookie_str in header.getallmatchingheaders('Set-Cookie'):
+        header = ODictCaseless()
+        header.load_state(json.loads(header_str))
+        for cookie_str in header['Set-Cookie']:
             queries = parse_cookies(cookie_str, verbose, url = req_url, http_type = 'response')
             for query in queries:
                 cur2.execute("INSERT INTO http_cookies \

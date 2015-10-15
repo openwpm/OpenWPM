@@ -4,6 +4,7 @@
 from urlparse import urlparse
 import datetime
 import pyhash
+import json
 import zlib
 import gzip
 import os
@@ -32,7 +33,7 @@ def process_general_mitm_request(db_socket, browser_params, manager_params, top_
             encode_to_unicode(msg.request.url),
             msg.request.method,
             encode_to_unicode(referrer),
-            encode_to_unicode(str(msg.request.headers)),
+            json.dumps(msg.request.headers.get_state()),
             top_url,
             str(datetime.datetime.now()))
 
@@ -53,7 +54,7 @@ def process_general_mitm_response(db_socket, logger, browser_params, manager_par
             encode_to_unicode(referrer),
             msg.response.code,
             msg.response.msg,
-            encode_to_unicode(str(msg.response.headers)),
+            json.dumps(msg.response.headers.get_state()),
             encode_to_unicode(location),
             top_url,
             str(datetime.datetime.now()),
