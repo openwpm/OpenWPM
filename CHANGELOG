@@ -1,3 +1,9 @@
+v0.5.1 - 2015-10-15
+======
+
+Changes:
+    * Save json serialized headers and fix cookie parsing
+
 v0.5.0 - 2015-10-14
 ======
 
