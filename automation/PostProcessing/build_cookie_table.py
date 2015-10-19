@@ -75,6 +75,8 @@ def parse_cookies(cookie_string, verbose, url = None, http_type = 'response'):
     """
     queries = list()
     try:
+        if type(cookie_string) == unicode:
+            cookie_string = cookie_string.encode('utf-8')
         cookie = Cookie.BaseCookie(cookie_string) # requires str type
         for key in cookie.keys():
             name = unicode(key, 'utf8')
