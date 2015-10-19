@@ -1,5 +1,5 @@
 from BrowserManager import Browser
-from DataAggregator import DataAggregator
+from DataAggregator import DataAggregator, LevelDBAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
 from Errors import CommandExecutionError
@@ -89,12 +89,17 @@ class TaskManager:
         # socket location: (address, port)
         self.manager_params['logger_address'] = self.logging_status_queue.get()
         self.logger = MPLogger.loggingclient(*self.manager_params['logger_address'])
-        
-        # sets up the DataAggregator + associated queues
-        self.aggregator_status_queue = None  # queue used for sending graceful KILL command to DataAggregator
-        self.data_aggregator = self._launch_data_aggregator()
-        self.manager_params['aggregator_address'] = self.aggregator_status_queue.get()  # socket location: (address, port)
 
+        # Mark if LDBAggregator is needed (if js is enabled on any browser)
+        self.ldb_enabled = False
+        for params in browser_params:
+            if params['save_javascript']:
+                self.ldb_enabled = True
+                break
+
+        # Initialize the data aggregators
+        self._launch_aggregators()
+        
         # open client socket
         self.sock = clientsocket()
         self.sock.connect(*self.manager_params['aggregator_address'])
@@ -199,22 +204,45 @@ class TaskManager:
                                 % (process.name(), process.pid, process.create_time()))
                         process.kill()
 
-    def _launch_data_aggregator(self):
-        """ sets up the DataAggregator (Must be launched prior to BrowserManager) """
+    def _launch_aggregators(self):
+        """
+        Launches the various data aggregators, which serialize data from all processes.
+        * DataAggregator - sqlite database for crawl data
+        * LevelDBAggregator - leveldb database for javascript files
+        """
+        # DataAggregator
         self.aggregator_status_queue = Queue()
-        aggregator = Process(target=DataAggregator.DataAggregator,
+        self.data_aggregator = Process(target=DataAggregator.DataAggregator,
                              args=(self.manager_params, self.aggregator_status_queue))
-        aggregator.daemon = True
-        aggregator.start()
-        return aggregator
+        self.data_aggregator.daemon = True
+        self.data_aggregator.start()
+        self.manager_params['aggregator_address'] = self.aggregator_status_queue.get()  # socket location: (address, port)
 
-    def _kill_data_aggregator(self):
-        """ terminates a DataAggregator with a graceful KILL COMMAND """
+        # LevelDB Aggregator
+        if self.ldb_enabled:
+            self.ldb_status_queue = Queue()
+            self.ldb_aggregator = Process(target=LevelDBAggregator.LevelDBAggregator,
+                                 args=(self.manager_params, self.ldb_status_queue))
+            self.ldb_aggregator.daemon = True
+            self.ldb_aggregator.start()
+            self.manager_params['ldb_address'] = self.ldb_status_queue.get()  # socket location: (address, port)
+
+    def _kill_aggregators(self):
+        """ Terminates the aggregators gracefully """
+        # DataAggregator
         self.logger.debug("Telling the DataAggregator to shut down...")
         self.aggregator_status_queue.put("DIE")
         start_time = time.time()
         self.data_aggregator.join(300)
         self.logger.debug("DataAggregator took " + str(time.time() - start_time) + " seconds to close")
+        
+        # LevelDB Aggregator
+        if self.ldb_enabled:
+            self.logger.debug("Telling the LevelDBAggregator to shut down...")
+            self.ldb_status_queue.put("DIE")
+            start_time = time.time()
+            self.ldb_aggregator.join(300)
+            self.logger.debug("LevelDBAggregator took " + str(time.time() - start_time) + " seconds to close")
     
     def _launch_loggingserver(self):
         """ sets up logging server """
@@ -261,7 +289,7 @@ class TaskManager:
         
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
-        self._kill_data_aggregator()
+        self._kill_aggregators()
         self._kill_loggingserver()
 
     def _gracefully_fail(self, msg, command):

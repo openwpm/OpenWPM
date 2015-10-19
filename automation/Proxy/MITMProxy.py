@@ -29,6 +29,12 @@ class InterceptingMaster (controller.Master):
         # Open a socket to communicate with DataAggregator
         self.db_socket = clientsocket()
         self.db_socket.connect(*manager_params['aggregator_address'])
+        
+        # Open a socket to communicate with LevelDBAggregator
+        self.ldb_socket = None
+        if browser_params['save_javascript']:
+            self.ldb_socket = clientsocket()
+            self.ldb_socket.connect(*manager_params['ldb_address'])
 
         # Open a socket to communicate with MPLogger
         self.logger = loggingclient(*manager_params['logger_address'])
@@ -77,7 +83,6 @@ class InterceptingMaster (controller.Master):
         self.curr_requests.add(msg.request)
         mitm_commands.process_general_mitm_request(self.db_socket,
                                                    self.browser_params,
-                                                   self.manager_params,
                                                    self.curr_top_url,
                                                    msg)
 
@@ -97,7 +102,7 @@ class InterceptingMaster (controller.Master):
             return
 
         mitm_commands.process_general_mitm_response(self.db_socket,
+                                                    self.ldb_socket,
                                                     self.logger,
                                                     self.browser_params,
-                                                    self.manager_params,
                                                     top_url, msg)

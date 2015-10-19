@@ -4,9 +4,9 @@
 from urlparse import urlparse
 import datetime
 import pyhash
+import plyvel
 import json
 import zlib
-import gzip
 import os
 
 def encode_to_unicode(msg):
@@ -25,7 +25,7 @@ def encode_to_unicode(msg):
     return msg
 
 
-def process_general_mitm_request(db_socket, browser_params, manager_params, top_url, msg):
+def process_general_mitm_request(db_socket, browser_params, top_url, msg):
     """ Logs a HTTP request object """
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
 
@@ -41,12 +41,12 @@ def process_general_mitm_request(db_socket, browser_params, manager_params, top_
                     "top_url, time_stamp) VALUES (?,?,?,?,?,?,?)", data))
 
 
-def process_general_mitm_response(db_socket, logger, browser_params, manager_params, top_url, msg):
+def process_general_mitm_response(db_socket, ldb_socket, logger, browser_params, top_url, msg):
     """ Logs a HTTP response object and, if necessary, """
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
     location = msg.response.headers['location'][0] if len(msg.response.headers['location']) > 0 else ''
     
-    content_hash = save_javascript_content(logger, browser_params, manager_params, msg)
+    content_hash = save_javascript_content(ldb_socket, logger, browser_params, msg)
     
     data = (browser_params['crawl_id'],
             encode_to_unicode(msg.request.url),
@@ -64,7 +64,7 @@ def process_general_mitm_response(db_socket, logger, browser_params, manager_par
                     "response_status_text, headers, location, top_url, time_stamp, content_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)", data))
 
  
-def save_javascript_content(logger, browser_params, manager_params, msg):
+def save_javascript_content(ldb_socket, logger, browser_params, msg):
     """ Save javascript files de-duplicated and compressed on disk """
     if not browser_params['save_javascript']:
         return
@@ -107,17 +107,11 @@ def save_javascript_content(logger, browser_params, manager_params, msg):
     else:
         logger.error('BROWSER %i: Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % (browser_params['crawl_id'], str(content_encoding)))
         return
-    path = os.path.join(manager_params['data_directory'],'javascript_files/')
-
+    
+    ldb_socket.send(script)
+    
     # Hash script for deduplication on disk
     hasher = pyhash.murmur3_x64_128()
     script_hash = str(hasher(script) >> 64)
-    if os.path.isfile(path + script_hash + '.gz'):
-        return script_hash
-
-    if not os.path.exists(path):
-        os.mkdir(path)
-    with gzip.open(path + script_hash + '.gz', 'wb') as f:
-        f.write(script)
-
+    
     return script_hash
