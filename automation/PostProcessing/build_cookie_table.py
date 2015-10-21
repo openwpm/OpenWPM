@@ -117,9 +117,12 @@ def build_http_cookie_table(database, verbose=False):
 
     # Parse http request cookies
     commit = 0
+    last_commit = 0
     cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests \
                     WHERE id NOT IN (SELECT header_id FROM http_cookies)")
-    for req_id, crawl_id, header_str, time_stamp in cur1.fetchall():
+    row = cur1.fetchone()
+    while row is not None:
+        req_id, crawl_id, header_str, time_stamp = row
         header = ODictCaseless()
         header.load_state(json.loads(header_str))
         for cookie_str in header['Cookie']:
@@ -132,17 +135,22 @@ def build_http_cookie_table(database, verbose=False):
                             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             (crawl_id, req_id, 'request')+query+(time_stamp,))
                 commit += 1
-        if commit % 10000 == 0:
+        if commit % 10000 == 0 and commit != 0 and commit != last_commit:
+            last_commit = commit
             con.commit()
             if verbose: print str(commit) + " Cookies Processed"
+        row = cur1.fetchone()
     con.commit()
     print "Processing HTTP Request Cookies Complete"
 
     # Parse http response cookies
     commit = 0
+    last_commit = 0
     cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses \
                     WHERE id NOT IN (SELECT header_id FROM http_cookies)")
-    for resp_id, crawl_id, req_url, header_str, time_stamp in cur1.fetchall():
+    row = cur1.fetchone()
+    while row is not None:
+        resp_id, crawl_id, req_url, header_str, time_stamp = row
         header = ODictCaseless()
         header.load_state(json.loads(header_str))
         for cookie_str in header['Set-Cookie']:
@@ -155,9 +163,11 @@ def build_http_cookie_table(database, verbose=False):
                             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             (crawl_id, resp_id, 'response')+query+(time_stamp,))
                 commit += 1
-        if commit % 10000 == 0:
+        if commit % 10000 == 0 and commit != 0 and commit != last_commit:
+            last_commit = commit
             con.commit()
             if verbose: print str(commit) + " Cookies Processed"
+        row = cur1.fetchone()
     con.commit()
     print "Processing HTTP Response Cookies Complete"
     con.close()

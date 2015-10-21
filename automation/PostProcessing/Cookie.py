@@ -248,7 +248,7 @@ class CookieError(Exception):
 # 
 # The legal chars have been expanded a bit to match modern browsers
 
-_LegalChars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~[]:/@{}()"
+_LegalChars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~[]:/@{}(),?<>"
 _Translator       = {
     '\000' : '\\000',  '\001' : '\\001',  '\002' : '\\002',
     '\003' : '\\003',  '\004' : '\\004',  '\005' : '\\005',
@@ -655,7 +655,8 @@ class BaseCookie(dict):
             i = match.end(0)
 
             # Parse the key, value in case it's metainfo
-            if K[0] == "$":
+            # Some sites use '$' at the start of cookie names
+            if K[0] == "$" and K[1:] in Morsel._reserved:
                 # We ignore attributes which pertain to the cookie
                 # mechanism as a whole.  See RFC 2109.
                 # (Does anyone care?)
