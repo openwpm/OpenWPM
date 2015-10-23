@@ -27,12 +27,12 @@ def select_date_format(date_string):
                 if date_format == DATE_FORMATS[len(DATE_FORMATS)-1]:
                     return None
                 pass
-        
+
         # time.strftime() doesn't work for years < 1900
         if time_obj.tm_year >= 1900:
             return time.strftime("%Y-%m-%d %H:%M:%S", time_obj)
         else:
-            return None 
+            return None
 
 def get_path(path_string, url):
     """ Parse path. Defaults to the path of the request URL that generated the
@@ -46,17 +46,38 @@ def get_path(path_string, url):
     else:
         return path_string
 
+def get_domain(domain_string, url):
+    """
+    Domains are parsed in the same style as Firefox parses them. This is NOT
+    consistent across browsers. See: http://erik.io/blog/2014/03/04/definitive-guide-to-cookie-domains/
+    The Firefox implementation is given in nsCookieService::CheckDomain.
+    See: https://dxr.mozilla.org/mozilla-central/search?q=nsCookieService%3A%3ACheckDomain
+
+    It can be summarized as:
+      1. If a domain is given  -->  prepend a '.' if one does not exist
+      2. If no domain is given -->  get hostname from request url
+                                    and save without a prepended '.'
+
+    Domains with a prepended '.' are "domain cookies" and will be sent to all
+    subdomains of that domain. Domains without a '.' are not, and will only be
+    sent to hostnames that are exact matches (no subdomains). This should match
+    the cookies seen in our scans of cookies.sqlite.
+    """
+    if domain_string == '':
+        domain_string = urlparse(url).hostname
+    elif domain_string[0] != '.':
+        domain_string = '.' + domain_string
+    return domain_string
+
 def parse_cookie_attributes(cookie, key, url, http_type):
-    """ 
+    """
     Extract/Format each attribute of cookie
     path is set according to RFC2109 when blank
     See: http://tools.ietf.org/html/rfc2109#section-4.3.1
-    domain is set to None when blank due to inconsistent
-    handling by browsers.
-    See: http://erik.io/blog/2014/03/04/definitive-guide-to-cookie-domains/
+    domain is set according to Firefox spec
     """
     if http_type == 'response':
-        domain = cookie[key]['domain'] if cookie[key]['domain'] != '' else None
+        domain = get_domain(cookie[key]['domain'], url)
         path = get_path(cookie[key]['path'], url)
         expires = select_date_format(cookie[key]['expires'])
         max_age = cookie[key]['max-age'] if cookie[key]['max-age'] != '' else None
@@ -65,7 +86,7 @@ def parse_cookie_attributes(cookie, key, url, http_type):
         comment = cookie[key]['comment'] if cookie[key]['comment'] != '' else None
         version = cookie[key]['version'] if cookie[key]['version'] != '' else None
         return (domain, path, expires, max_age, httponly, secure, comment, version)
-   
+
     elif http_type == 'request':
         return (None, None, None, None, None, None, None, None)
 
@@ -171,3 +192,7 @@ def build_http_cookie_table(database, verbose=False):
     con.commit()
     print "Processing HTTP Response Cookies Complete"
     con.close()
+
+if __name__=='__main__':
+    import sys
+    build_http_cookie_table(sys.argv[1], verbose=True)
