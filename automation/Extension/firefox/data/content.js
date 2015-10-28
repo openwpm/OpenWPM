@@ -240,7 +240,6 @@ function instrumentPrototypeProperty(object, objectName, propertyName) {
 function logFunction(object, objectName, method) {
   var originalMethod = object[method];
   object[method] = function () {
-    //console.log(objectName, method, arguments);
     logCall(objectName + '.' + method, arguments);
     return originalMethod.apply(this, arguments);
   };
@@ -253,12 +252,10 @@ function logPropertyPrototype(object, objectName, property) {
     Object.defineProperty(object, property, {
         configurable: true,
         get: function() {
-            //console.log(objectName, property, "get", instrumentedData[objectName + property]);
             logValue(objectName + '.' + property, instrumentedData[objectName + property], "get");
             return instrumentedData[objectName + property];
         },
         set: function(value) {
-            //console.log(objectName, property, "set", value);
             logValue(objectName + '.' + property, value, "set");
             instrumentedData[objectName + property] = value;
         }
@@ -271,12 +268,10 @@ function logProperty(object, objectName, property) {
     Object.defineProperty(object, property, {
         configurable: true,
         get: function() {
-            //console.log(objectName, property, originalProperty, "get");
             logValue(objectName + '.' + property, originalProperty, "get");
             return originalProperty;
         },
         set: function(value) {
-            //console.log(objectName, property, value, "set");
             logValue(objectName + '.' + property, value, "set");
             originalProperty = value;
         }

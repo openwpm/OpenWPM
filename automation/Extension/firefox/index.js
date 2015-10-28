@@ -20,7 +20,13 @@ exports.main = function(options, callbacks) {
         var enableCP = dbstring[5].trim() == 'True';
         console.log("Host:",host,"Port:",port,"CrawlID:",crawlID,"Cookie:",enableCK,"JS:",enableJS,"CP:",enableCP); 
     } else {
-        console.log("ERROR: database settings not found");
+        console.log("ERROR: database settings not found -- outputting all queries to console");
+        var enableCK = true;
+        var enableJS = true;
+        var enableCP = true;
+        var host = '';
+        var port = '';
+        var crawlID = '';
     }
     
     // Turn on instrumentation

@@ -3,8 +3,14 @@ var socket              = require("./socket.js");
 var crawlID = null;
 var topURL = null;
 var url_queue = null;
+var debugging = false;
 
 exports.open = function(host, port, crawlID) {
+    if (host == '' && port == '' && crawlID == '') {
+        debugging = true;
+        return;
+    }
+
     console.log("Opening socket connections")
     crawlID = crawlID;
     
@@ -21,7 +27,14 @@ exports.close = function() {
 
 // async statement kept around for API compatibility
 exports.executeSQL = function(statement, async) {
-
+    // send to console if debugging
+    if (debugging) {
+        if (typeof statement == 'string')
+            console.log(statement);
+        else
+            console.log(statement[1]);
+        return;
+    }
     // catch statements without arguments
     if (typeof statement == "string") {
         var statement = [statement, []];
@@ -43,7 +56,7 @@ exports.boolToInt = function(bool) {
 
 exports.createInsert = function(table, update) {
     // Add top url if changed
-    while (url_queue.length != 0) {
+    while (!debugging && url_queue.length != 0) {
         topURL = url_queue.shift();
         console.log("Top URL:",topURL);
     }
