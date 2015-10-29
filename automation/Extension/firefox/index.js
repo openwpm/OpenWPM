@@ -37,8 +37,7 @@ exports.main = function(options, callbacks) {
     }
     if (enableCK) {
         console.log("Cookie instrumentation enabled");
-        //TODO: Doesnt always activate
-        //cookieInstrument.run(crawlID);
+        cookieInstrument.run(crawlID);
     }
     if (enableJS) {
         console.log("Javascript instrumentation enabled");

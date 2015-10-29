@@ -40,6 +40,6 @@ exports.run = function(crawlID) {
             
             loggingDB.executeSQL(loggingDB.createInsert("javascript_cookies", update), true);
         }
-    });
+    }, true);
     
 };
