@@ -13,6 +13,7 @@
     "disable_flash": true,
     "debugging": false,
     "profile_tar": null,
+    "profile_archive_dir": null,
     "headless": false,
     "browser": "firefox",
     

@@ -266,20 +266,8 @@ class TaskManager:
         """
         self.closing = True
         
-        for i in range(len(self.browsers)):
-            browser = self.browsers[i]
-            if browser.command_thread is not None:
-                self.logger.debug("BROWSER %i: Joining command thread" % browser.crawl_id)
-                start_time = time.time()
-                if browser.current_timeout is not None:
-                    browser.command_thread.join(browser.current_timeout + 10)
-                else:
-                    browser.command_thread.join(60)
-                self.logger.debug("BROWSER %i: %f seconds to join command thread" % (browser.crawl_id, time.time() - start_time))
-            self.logger.debug("BROWSER %i: Killing browser manager..." % browser.crawl_id)
-            browser.kill_browser_manager()
-            if browser.current_profile_path is not None:
-                shutil.rmtree(browser.current_profile_path, ignore_errors = True)
+        for browser in self.browsers:
+            browser.shutdown_browser()
             if failure:
                 self.sock.send(("UPDATE crawl SET finished = -1 WHERE crawl_id = ?",
                                 (browser.crawl_id,)))

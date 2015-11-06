@@ -182,6 +182,38 @@ class Browser:
                 self.logger.debug("BROWSER %i: Browser process does not exist" % self.crawl_id)
                 pass
 
+    def shutdown_browser(self):
+        """ Runs the closing tasks for this Browser/BrowserManager """
+        # Join command thread
+        if self.command_thread is not None:
+            self.logger.debug("BROWSER %i: Joining command thread" % self.crawl_id)
+            start_time = time.time()
+            if self.current_timeout is not None:
+                self.command_thread.join(self.current_timeout + 10)
+            else:
+                self.command_thread.join(60)
+            self.logger.debug("BROWSER %i: %f seconds to join command thread" % (self.crawl_id, time.time() - start_time))
+        
+        # Kill BrowserManager process and children
+        self.logger.debug("BROWSER %i: Killing browser manager..." % self.crawl_id)
+        self.kill_browser_manager()
+
+        # Archive browser profile (if requested)
+        if self.browser_params['profile_archive_dir'] is not None:
+            self.logger.debug("BROWSER %i: Archiving browser profile directory to %s" % (self.crawl_id, self.browser_params['profile_archive_dir']))
+            profile_commands.dump_profile(self.current_profile_path,
+                                          self.manager_params,
+                                          self.browser_params,
+                                          self.browser_params['profile_archive_dir'],
+                                          close_webdriver=False,
+                                          browser_settings=self.browser_settings,
+                                          compress=True,
+                                          save_flash=self.browser_params['disable_flash'] is False)
+
+        # Clean up temporary files
+        if self.current_profile_path is not None:
+            shutil.rmtree(self.current_profile_path, ignore_errors = True)
+
 def BrowserManager(command_queue, status_queue, browser_params, manager_params, crash_recovery):
     """
     The BrowserManager function runs in each new browser process.
