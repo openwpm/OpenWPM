@@ -23,7 +23,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     display_port = None
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
-    status_queue.put(browser_profile_path)
+    status_queue.put(('STATUS','Profile Created',browser_profile_path))
 
     # Enable logging
     #LOGGER.setLevel(logging.WARNING)
@@ -39,7 +39,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path, manager_params, browser_params,
                                         browser_params['profile_tar'])
-    status_queue.put('profile_success')
+    status_queue.put(('STATUS','Profile Tar',None))
     
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser" % browser_params['crawl_id'])
@@ -74,7 +74,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         display.start()
         display_pid = display.pid
         display_port = display.cmd_param[5][1:]
-    status_queue.put((display_pid, display_port))
+    status_queue.put(('STATUS','Display',(display_pid, display_port)))
 
     if browser_params['debugging']:
         firebug_loc = os.path.join(root_dir, 'firefox_extensions/firebug-1.11.0.xpi')
@@ -126,11 +126,11 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     configure_firefox.optimize_prefs(fp)
 
     # Launch the webdriver
-    status_queue.put("LAUNCHING BROWSER")
+    status_queue.put(('STATUS','Launch Attempted',None))
     #fb = FirefoxBinary(root_dir  + "/../../firefox/firefox", log_file=open(root_dir + '/../../firefox_logging','w'))
     fb = FirefoxBinary(root_dir  + "/../../firefox/firefox")
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
-    status_queue.put((int(driver.binary.process.pid), profile_settings))
+    status_queue.put(('STATUS','Browser Launched',(int(driver.binary.process.pid), profile_settings)))
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])
