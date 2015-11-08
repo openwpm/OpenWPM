@@ -9,6 +9,10 @@ rm get-pip.py
 sudo -H pip install -U setuptools
 sudo -H pip install -U pyvirtualdisplay beautifulsoup4 netlib pyasn1 PyOPenSSL python-dateutil tld pyamf psutil mitmproxy pyhash plyvel tblib
 
+# Install specific mitmproxy version since we rely on some internal structure of 
+# netlib and mitmproxy. New releases tend to break things and should be tested
+sudo pip install mitmproxy==0.13
+
 # Install specific version of Firefox and selenium
 # known to work well together.
 sudo pip install selenium==2.47.1
