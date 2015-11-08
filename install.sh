@@ -24,7 +24,7 @@ sudo -H python get-pip.py
 rm get-pip.py
 
 sudo -H pip install -U setuptools
-sudo -H pip install -U pyvirtualdisplay beautifulsoup4 pyasn1 PyOPenSSL python-dateutil tld pyamf psutil pyhash plyvel
+sudo -H pip install -U pyvirtualdisplay beautifulsoup4 pyasn1 PyOPenSSL python-dateutil tld pyamf psutil pyhash plyvel tblib
 
 # Install specific mitmproxy version since we rely on some internal structure of 
 # netlib and mitmproxy. New releases tend to break things and should be tested
