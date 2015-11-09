@@ -58,7 +58,7 @@ class TaskManager:
     def __init__(self, manager_params, browser_params, process_watchdog=False, task_description=None):
 
         # Make paths absolute in manager_params
-        for path in ['data_directory','log_directory','profile_archive_dir']:
+        for path in ['data_directory','log_directory']:
             if manager_params[path] is not None:
                 manager_params[path] = os.path.expanduser(manager_params[path])
         manager_params['database_name'] = os.path.join(manager_params['data_directory'],manager_params['database_name'])

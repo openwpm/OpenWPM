@@ -130,7 +130,7 @@ class Browser:
                 status_strings = ['Profile Created','Profile Tar','Display','Launch Attempted', 'Browser Launched', 'Browser Ready']
                 for string in status_strings:
                     error_string += " | %s: %s " % (string, launch_status.get(string, False))
-                self.logger.error("BROWSER %i: Spawn unsuccessful %s" % error_string)
+                self.logger.error("BROWSER %i: Spawn unsuccessful %s" % (self.crawl_id, error_string))
                 self.kill_browser_manager()
                 if self.current_profile_path is not None:
                     shutil.rmtree(self.current_profile_path, ignore_errors=True)
@@ -206,12 +206,13 @@ class Browser:
             else:
                 self.command_thread.join(60)
             self.logger.debug("BROWSER %i: %f seconds to join command thread" % (self.crawl_id, time.time() - start_time))
-        
+
         # Kill BrowserManager process and children
         self.logger.debug("BROWSER %i: Killing browser manager..." % self.crawl_id)
         self.kill_browser_manager()
 
         # Archive browser profile (if requested)
+        self.logger.debug("BROWSER %i: during_init=%s | profile_archive_dir=%s" % (self.crawl_id, str(during_init), self.browser_params['profile_archive_dir']))
         if not during_init and self.browser_params['profile_archive_dir'] is not None:
             self.logger.debug("BROWSER %i: Archiving browser profile directory to %s" % (self.crawl_id, self.browser_params['profile_archive_dir']))
             profile_commands.dump_profile(self.current_profile_path,

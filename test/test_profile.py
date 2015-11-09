@@ -21,7 +21,7 @@ class TestProfile():
         manager.get('http://example.com')
         manager.close(post_process=False)
         assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
-    
+
     def test_crash(self, tmpdir):
         manager_params, browser_params = self.get_config(str(tmpdir))
         manager_params['failure_limit'] = 0
@@ -30,6 +30,20 @@ class TestProfile():
             manager.get('http://example.com') # So we have a profile
             manager.get('example.com') # Selenium requires scheme prefix
             manager.get('example.com') # Requires two commands to shut down
+
+    def test_crash_profile(self, tmpdir):
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params['failure_limit'] = 2
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        try:
+            manager.get('http://example.com') # So we have a profile
+            manager.get('example.com') # Selenium requires scheme prefix
+            manager.get('example.com') # Selenium requires scheme prefix
+            manager.get('example.com') # Selenium requires scheme prefix
+            manager.get('example.com') # Requires two commands to shut down
+        except CommandExecutionError:
+            pass
+        assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
 
     def test_profile_error(self, tmpdir):
         manager_params, browser_params = self.get_config(str(tmpdir))
