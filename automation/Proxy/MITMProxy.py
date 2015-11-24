@@ -17,13 +17,13 @@ class InterceptingMaster (controller.Master):
     https://gist.github.com/dannvix/5285924
     """
     
-    def __init__(self, server, url_queue, browser_params, manager_params):
+    def __init__(self, server, visit_id_queue, browser_params, manager_params):
         self.browser_params = browser_params
         self.manager_params = manager_params
         
         # Attributes used to flag the first-party domain
-        self.url_queue = url_queue  # first-party domain provided by BrowserManager
-        self.prev_top_url, self.curr_top_url = None, None  # previous and current top level domains
+        self.visit_id_queue = visit_id_queue  # first-party domain provided by BrowserManager
+        self.prev_visit_id, self.curr_visit_id = None, None  # previous and current top level domains
         self.prev_requests, self.curr_requests = set(), set()  # set of requests for previous and current site
 
         # Open a socket to communicate with DataAggregator
@@ -52,15 +52,15 @@ class InterceptingMaster (controller.Master):
 
     def tick(self, q, timeout=0.01):
         """ new tick function used to label first-party domains and avoid race conditions when doing so """
-        if self.curr_top_url is None:  # proxy is fresh, need to get first-party domain right away
-            self.curr_top_url = self.url_queue.get()
-        elif not self.url_queue.empty():  # new FP has been visited
+        if self.curr_visit_id is None:  # proxy is fresh, need to get first-party domain right away
+            self.curr_visit_id = self.visit_id_queue.get()
+        elif not self.visit_id_queue.empty():  # new FP has been visited
             # drains the queue to get rid of stale messages from previous site
             while self.load_process_message(q, timeout):
                 pass
 
             self.prev_requests, self.curr_requests = self.curr_requests, set()
-            self.prev_top_url, self.curr_top_url = self.curr_top_url, self.url_queue.get()
+            self.prev_visit_id, self.curr_visit_id = self.curr_visit_id, self.visit_id_queue.get()
 
         self.load_process_message(q, timeout)
 
@@ -83,7 +83,7 @@ class InterceptingMaster (controller.Master):
         self.curr_requests.add(msg.request)
         mitm_commands.process_general_mitm_request(self.db_socket,
                                                    self.browser_params,
-                                                   self.curr_top_url,
+                                                   self.curr_visit_id,
                                                    msg)
 
     # Record data from HTTP responses
@@ -91,12 +91,12 @@ class InterceptingMaster (controller.Master):
         """ Receives HTTP response, and sends it to logging function """
         msg.reply()
 
-        # attempts to get the top url, based on the request object
+        # attempts to get the top url visit id, based on the request object
         if msg.request in self.prev_requests:
-            top_url = self.prev_top_url
+            visit_id = self.prev_visit_id
             self.prev_requests.remove(msg.request)
         elif msg.request in self.curr_requests:
-            top_url = self.curr_top_url
+            visit_id = self.curr_visit_id
             self.curr_requests.remove(msg.request)
         else:  # ignore responses for which we cannot match the request
             return
@@ -105,4 +105,4 @@ class InterceptingMaster (controller.Master):
                                                     self.ldb_socket,
                                                     self.logger,
                                                     self.browser_params,
-                                                    top_url, msg)
+                                                    visit_id, msg)

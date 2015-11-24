@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS content_policy(
 	request_origin TEXT,
 	mime_type_guess TEXT,
 	page_id INTEGER,
-        top_url TEXT
+        visit_id INTEGER,
 );

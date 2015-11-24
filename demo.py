@@ -1,4 +1,4 @@
-from automation import TaskManager
+from automation import TaskManager, CommandSequence
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 3
@@ -24,7 +24,10 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites with both browsers simultaneously
 for site in sites:
-    manager.get(site, index='**') # ** = synchronized browsers
+    command_sequence = CommandSequence.CommandSequence(site)
+    command_sequence.get(120)
+    command_sequence.dump_storage_vectors(120)
+    manager.execute_command_sequence(command_sequence, index='**') # ** = synchronized browsers
 
 # Shuts down the browsers and waits for the data to finish logging
 manager.close()

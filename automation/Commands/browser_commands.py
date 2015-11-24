@@ -68,7 +68,7 @@ def tab_restart_browser(webdriver):
     time.sleep(0.5)
 
 
-def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
+def get_website(url, visit_id, webdriver, proxy_queue, browser_params, extension_socket):
     """
     goes to <url> using the given <webdriver> instance
     <proxy_queue> is queue for sending the proxy the current first party site
@@ -80,18 +80,17 @@ def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
     # sends top-level domain to proxy and extension (if enabled)
     # then, waits for it to finish marking traffic in proxy before moving to new site
     if proxy_queue is not None:
-        proxy_queue.put(url)
+        proxy_queue.put(visit_id)
         while not proxy_queue.empty():
             time.sleep(0.001)
     if extension_socket is not None:
-        extension_socket.send(url)
+        extension_socket.send(visit_id)
     
     # Execute a get through selenium
     try:
         webdriver.get(url)
     except TimeoutException:
         pass
-    
     # Close modal dialog if exists
     try:
         WebDriverWait(webdriver, .5).until(EC.alert_is_present())
@@ -138,7 +137,7 @@ def extract_links(webdriver, browser_params, manager_params):
 
     sock.close()
 
-def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manager_params, extension_socket):
+def browse_website(url, num_links, visit_id, webdriver, proxy_queue, browser_params, manager_params, extension_socket):
     """
     calls get_website before visiting <num_links> present on the page
     NOTE: top_url will NOT be properly labeled for requests to subpages
@@ -146,7 +145,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manag
           to this function.
     """
     # First get the site
-    get_website(url, webdriver, proxy_queue, browser_params, extension_socket)
+    get_website(url, visit_id, webdriver, proxy_queue, browser_params, extension_socket)
 
     # Connect to logger
     logger = loggingclient(*manager_params['logger_address'])
@@ -170,7 +169,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manag
         except Exception, e:
             pass
 
-def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager_params):
+def dump_storage_vectors(top_url, start_time, visit_id, webdriver, browser_params, manager_params):
     """ Grab the newly changed items in supported storage vectors """
 
     # Set up a connection to DataAggregator
@@ -183,8 +182,8 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager
     # Flash cookies
     flash_cookies = get_flash_cookies(start_time)
     for cookie in flash_cookies:
-        query = ("INSERT INTO flash_cookies (crawl_id, page_url, domain, filename, local_path, \
-                  key, content) VALUES (?,?,?,?,?,?,?)", (browser_params['crawl_id'], top_url, cookie.domain,
+        query = ("INSERT INTO flash_cookies (crawl_id, visit_id, domain, filename, local_path, \
+                  key, content) VALUES (?,?,?,?,?,?,?)", (browser_params['crawl_id'], visit_id, cookie.domain,
                                                           cookie.filename, cookie.local_path,
                                                           cookie.key, cookie.content))
         sock.send(query)
@@ -193,9 +192,9 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager
     rows = get_cookies(browser_params['profile_path'], start_time)
     if rows is not None:
         for row in rows:
-            query = ("INSERT INTO profile_cookies (crawl_id, page_url, baseDomain, name, value, \
+            query = ("INSERT INTO profile_cookies (crawl_id, visit_id, baseDomain, name, value, \
                       host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
-                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (browser_params['crawl_id'], top_url) + row)
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (browser_params['crawl_id'], visit_id) + row)
             sock.send(query)
     
     # localStorage - TODO this doesn't have a modified time support
