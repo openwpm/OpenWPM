@@ -4,6 +4,7 @@ import shutil
 import sys
 import os
 
+from ..Errors import ProfileLoadError
 from ..MPLogger import loggingclient
 from utils.firefox_profile import sleep_until_sqlite_checkpoint
 from utils.file_utils import rmsubtree
@@ -162,10 +163,10 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
     unzips it to <browser_profile_folder>. This will load whatever profile
     is in the folder, either full_profile.tar.gz or profile.tar.gz
     """
-    # Connect to logger
-    logger = loggingclient(*manager_params['logger_address'])
-    
     try:
+        # Connect to logger
+        logger = loggingclient(*manager_params['logger_address'])
+        
         # ensures that folder paths end with slashes
         browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") \
             else browser_profile_folder + "/"
@@ -195,9 +196,8 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
 
         # load the browser settings
         browser_settings = load_browser_settings(tar_location)
-
     except Exception as ex:
-        logger.error("BROWSER %i: Error: %s while attempting to load profile" % (browser_params['crawl_id'],str(ex)))
-        browser_settings = None
+        logger.critical("BROWSER %i: Error: %s while attempting to load profile" % (browser_params['crawl_id'],str(ex)))
+        raise ProfileLoadError('Profile Load not successful')
 
     return browser_settings

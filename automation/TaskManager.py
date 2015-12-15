@@ -2,13 +2,15 @@ from BrowserManager import Browser
 from DataAggregator import DataAggregator, LevelDBAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
-from Errors import CommandExecutionError
+from Errors import CommandExecutionError, ProfileLoadError
 import MPLogger
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 from sqlite3 import OperationalError
+from six import reraise
 import threading
+import cPickle
 import copy
 import os
 import sqlite3
@@ -54,18 +56,29 @@ class TaskManager:
     """
 
     def __init__(self, manager_params, browser_params, process_watchdog=False, task_description=None):
+
         # Make paths absolute in manager_params
-        manager_params['data_directory'] = os.path.expanduser(manager_params['data_directory'])
-        manager_params['log_directory'] = os.path.expanduser(manager_params['log_directory'])
+        for path in ['data_directory','log_directory']:
+            if manager_params[path] is not None:
+                manager_params[path] = os.path.expanduser(manager_params[path])
         manager_params['database_name'] = os.path.join(manager_params['data_directory'],manager_params['database_name'])
         manager_params['log_file'] = os.path.join(manager_params['log_directory'],manager_params['log_file'])
         self.manager_params = manager_params
+        
+        # check size of parameter dictionary
+        self.num_browsers = manager_params['num_browsers']
+        if len(browser_params) != self.num_browsers:
+            raise Exception("Number of <browser_params> dicts is not the same as manager_params['num_browsers']")
         
         # Flow control
         self.closing = False
         self.failure_flag = False
         self.threadlock = threading.Lock()
         self.failurecount = 0
+        if manager_params['failure_limit'] is not None:
+            self.failure_limit = manager_params['failure_limit']
+        else:
+            self.failure_limit = self.num_browsers * 2 + 10
         
         self.desc = task_description
         self.process_watchdog = process_watchdog
@@ -78,11 +91,6 @@ class TaskManager:
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
             self.db.executescript(f.read())
         
-        # check size of parameter dictionary
-        self.num_browsers = manager_params['num_browsers']
-        if len(browser_params) != self.num_browsers:
-            raise Exception("Number of <browser_params> dicts is not the same as manager_params['num_browsers']")
-
         # sets up logging server + connect a client
         self.logging_status_queue = None
         self.loggingserver = self._launch_loggingserver()
@@ -150,7 +158,12 @@ class TaskManager:
     def _launch_browsers(self):
         """ launch each browser manager process / browser """
         for browser in self.browsers:
-            success = browser.launch_browser_manager()
+            try:
+                success = browser.launch_browser_manager()
+            except:
+                self._cleanup_before_fail(during_init=True)
+                raise
+                
             if not success:
                 self.logger.critical("Browser spawn failure during TaskManager initialization, exiting...")
                 self.close(post_process=False)
@@ -258,28 +271,17 @@ class TaskManager:
         self.logging_status_queue.put("DIE")
         self.loggingserver.join(300)
 
-    def _shutdown_manager(self, failure=False):
+    def _shutdown_manager(self, failure=False, during_init=False):
         """
         Wait for current commands to finish, close all child processes and
         threads
         <failure> flag to indicate manager failure (True) or end of crawl (False)
+        <during_init> flag to indicator if this shutdown is occuring during the TaskManager initialization
         """
         self.closing = True
         
-        for i in range(len(self.browsers)):
-            browser = self.browsers[i]
-            if browser.command_thread is not None:
-                self.logger.debug("BROWSER %i: Joining command thread" % browser.crawl_id)
-                start_time = time.time()
-                if browser.current_timeout is not None:
-                    browser.command_thread.join(browser.current_timeout + 10)
-                else:
-                    browser.command_thread.join(60)
-                self.logger.debug("BROWSER %i: %f seconds to join command thread" % (browser.crawl_id, time.time() - start_time))
-            self.logger.debug("BROWSER %i: Killing browser manager..." % browser.crawl_id)
-            browser.kill_browser_manager()
-            if browser.current_profile_path is not None:
-                shutil.rmtree(browser.current_profile_path, ignore_errors = True)
+        for browser in self.browsers:
+            browser.shutdown_browser(during_init)
             if failure:
                 self.sock.send(("UPDATE crawl SET finished = -1 WHERE crawl_id = ?",
                                 (browser.crawl_id,)))
@@ -292,13 +294,14 @@ class TaskManager:
         self._kill_aggregators()
         self._kill_loggingserver()
 
-    def _gracefully_fail(self, msg, command):
+    def _cleanup_before_fail(self, during_init=False):
         """
-        Execute shutdown commands before throwing error
-        <msg>: an Exception will be raised with this message
+        Execute shutdown commands before throwing an exception
+        This should keep us from having a bunch of hanging processes
+        and incomplete data.
+        <during_init> flag to indicator if this shutdown is occuring during the TaskManager initialization
         """
-        self._shutdown_manager(failure=True)
-        raise CommandExecutionError(msg, command)
+        self._shutdown_manager(failure=True, during_init=during_init)
 
     # CRAWLER COMMAND CODE
 
@@ -368,7 +371,8 @@ class TaskManager:
             return
         if self.failure_flag:
             self.logger.debug("TaskManager failure threshold exceeded, raising CommandExecutionError")
-            self._gracefully_fail("TaskManager failure threshold exceeded", command)
+            self._cleanup_before_fail()
+            raise CommandExecutionError("TaskManager failure threshold exceeded", command)
 
         # Start command execution thread
         args = (browser, command, reset, condition)
@@ -396,6 +400,12 @@ class TaskManager:
         # received reply from BrowserManager, either success signal or failure notice
         try:
             status = browser.status_queue.get(True, browser.current_timeout)
+            if type(status) == tuple and status[0] == 'CRITICAL':
+                self.logger.info("BROWSER %i: Received an exception while executing command: %s" % (browser.crawl_id, command[0]))
+                command_succeeded = 0
+                self.failure_flag = True
+                self._cleanup_before_fail()
+                reraise(*cPickle.loads(status[1]))
             if status == "OK":
                 command_succeeded = 1
             else:
@@ -415,7 +425,7 @@ class TaskManager:
         if command_succeeded != 1:
             with self.threadlock:
                 self.failurecount += 1
-            if self.failurecount > self.num_browsers * 2 + 10:
+            if self.failurecount > self.failure_limit:
                 self.logger.critical("BROWSER %i: Command execution failure pushes failure count above the allowable limit. Setting failure_flag." % browser.crawl_id)
                 self.failure_flag = True
                 return
