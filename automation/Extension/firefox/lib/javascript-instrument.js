@@ -13,7 +13,7 @@ exports.run = function(crawlID) {
     pageMod.PageMod({
         include: "*",
         contentScriptWhen: "start",
-        contentScriptFile: data.url("./content.js"),
+        contentScriptFile: data.url("./content-pb.js"),
         onAttach: function onAttach(worker) {
             var url = worker.url;
             worker.port.on("instrumentation", function(data) {
