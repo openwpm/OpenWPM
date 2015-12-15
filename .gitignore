@@ -1,5 +1,5 @@
 # firefox directories
-firefox/
+firefox-bin/
 
 # VIM tmp files
 *~
@@ -66,5 +66,3 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
-
->>>>>>> 95fa9a69c555f5556582f79fc142d10c240ee02d

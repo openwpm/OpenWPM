@@ -35,5 +35,6 @@ sudo -H pip install selenium==2.48.0
 
 # Install specific version of Firefox known to work well with the selenium version above
 wget https://ftp.mozilla.org/pub/firefox/releases/41.0.2/linux-x86_64/en-US/firefox-41.0.2.tar.bz2 
-tar jxf firefox*.tar.bz2 -C ./
+tar jxf firefox*.tar.bz2 -C ./firefox-bin
+mv firefox firefox-bin
 rm firefox*.tar.bz2
