@@ -101,55 +101,85 @@ function logErrorToConsole(error) {
 	console.log("Error stack: " + error.stack);
 }
 
+// Helper to get originating script urls
+var geckoCallSiteRe = /^\s*(.*?)(?:\((.*?)\))?@?((?:file|https?|chrome):.*?)(?: line \d* > eval)?:(\d+)(?::(\d+))?\s*$/i;
+function getStackTrace() {
+  var stack;
+
+  try {
+    throw new Error();
+  } catch (err) {
+    stack = err.stack;
+  }
+
+  return stack;
+}
+function getOriginatingScriptUrl() {
+  var trace = getStackTrace().split('\n');
+
+  if (trace.length < 4) {
+    return '';
+  }
+
+  // this script is at 0, 1 and 2
+  var callSite = trace[3];
+
+  var scriptUrlMatches = callSite.match(geckoCallSiteRe);
+  return scriptUrlMatches && scriptUrlMatches[3] || '';
+}
+
 // Prevent logging of gets arising from logging
 var inLog = false;
 
 // For gets, sets, etc. on a single value
-function logValue(instrumentedVariableName, value, operation) {
+function logValue(instrumentedVariableName, value, operation, scriptUrl) {
 	if(inLog)
 		return;
 	inLog = true;
 	try {
-		console.log("logValue")
-		console.log("Variable Name: " + instrumentedVariableName);
-		console.log("Value: " + value);
+		//console.log("logValue")
+		//console.log("Variable Name: " + instrumentedVariableName);
+		//console.log("Value: " + value);
+                //console.log("Script Url: " + scriptUrl);
                 self.port.emit("instrumentation", {
 			operation: operation,
 			symbol: instrumentedVariableName,
-			value: serializeObject(value)
+			value: serializeObject(value),
+                        scriptUrl: scriptUrl
 		});
 	}
 	catch(error) {
 		console.log("Unsuccessful value log!");
-		console.log("Operation: " + operation);
-		console.log("Symbol: " + instrumentedVariableName);
-		console.log("String Value: " + value);
-		console.log("Serialized Value: " + serializeObject(value));
+		//console.log("Operation: " + operation);
+		//console.log("Symbol: " + instrumentedVariableName);
+		//console.log("String Value: " + value);
+		//console.log("Serialized Value: " + serializeObject(value));
 		logErrorToConsole(error);
 	}
 	inLog = false;
 }
 
 // For functions
-function logCall(instrumentedFunctionName, args) {
+function logCall(instrumentedFunctionName, args, scriptUrl) {
 	if(inLog)
 		return;
 	inLog = true;
 	try {	
-		console.log("logCall");
-		console.log("Function Name: " + instrumentedFunctionName);
-		console.log("Args: " + args.length);
-		for(var i = 0; i < args.length; i++) {
-			var logLine = "Arg " + i + ": ";
-			console.log(logLine + typeof args[i]);
-			if(typeof args[i] == "string")
-				console.log(logLine + args[i]);
-			if(typeof args[i] == "object") {
-				console.log("" + args[i]);
-				console.log("" + args[i].wrappedJSObject);
-				console.log(logLine + Object.keys(args[i]));
-			}
-                }
+		//console.log("logCall");
+		//console.log("Function Name: " + instrumentedFunctionName);
+		//console.log("Args: " + args.length);
+                //console.log("Script Url: " + scriptUrl);
+		//for(var i = 0; i < args.length; i++) {
+		//	var logLine = "Arg " + i + ": ";
+		//	console.log(logLine + typeof args[i]);
+		//	if(typeof args[i] == "string")
+		//		console.log(logLine + args[i]);
+		//	if(typeof args[i] == "object") {
+		//		console.log("" + args[i]);
+		//		console.log("" + args[i].wrappedJSObject);
+		//		console.log(logLine + Object.keys(args[i]));
+		//	}
+                //}
 
                 // Convert special arguments array to a standard array for JSONifying
 		var serialArgs = [ ];
@@ -159,7 +189,8 @@ function logCall(instrumentedFunctionName, args) {
 			operation: "call",
 			symbol: instrumentedFunctionName,
 			args: serialArgs,
-			value: ""
+			value: "",
+                        scriptUrl: scriptUrl
 		});
 	}
 	catch(error) {
@@ -240,7 +271,8 @@ function instrumentPrototypeProperty(object, objectName, propertyName) {
 function logFunction(object, objectName, method) {
   var originalMethod = object[method];
   object[method] = function () {
-    logCall(objectName + '.' + method, arguments);
+    var scriptUrl = getOriginatingScriptUrl();
+    logCall(objectName + '.' + method, arguments, scriptUrl);
     return originalMethod.apply(this, arguments);
   };
 }
@@ -252,11 +284,13 @@ function logPropertyPrototype(object, objectName, property) {
     Object.defineProperty(object, property, {
         configurable: true,
         get: function() {
-            logValue(objectName + '.' + property, instrumentedData[objectName + property], "get");
+            var scriptUrl = getOriginatingScriptUrl();
+            logValue(objectName + '.' + property, instrumentedData[objectName + property], "get", scriptUrl);
             return instrumentedData[objectName + property];
         },
         set: function(value) {
-            logValue(objectName + '.' + property, value, "set");
+            var scriptUrl = getOriginatingScriptUrl();
+            logValue(objectName + '.' + property, value, "set", scriptUrl);
             instrumentedData[objectName + property] = value;
         }
     });
@@ -268,11 +302,13 @@ function logProperty(object, objectName, property) {
     Object.defineProperty(object, property, {
         configurable: true,
         get: function() {
-            logValue(objectName + '.' + property, originalProperty, "get");
+            var scriptUrl = getOriginatingScriptUrl();
+            logValue(objectName + '.' + property, originalProperty, "get", scriptUrl);
             return originalProperty;
         },
         set: function(value) {
-            logValue(objectName + '.' + property, value, "set");
+            var scriptUrl = getOriginatingScriptUrl();
+            logValue(objectName + '.' + property, value, "set", scriptUrl);
             originalProperty = value;
         }
     });
