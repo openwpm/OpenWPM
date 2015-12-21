@@ -228,9 +228,12 @@ Object.getPropertyNames = function (subject, name) {
  */
 
 // Use for direct objects
-function instrumentObject(object, objectName) {
+function instrumentObject(object, objectName, excludedProperties=[]) {
     var properties = Object.getPropertyNames(object);
     for (var i = 0; i < properties.length; i++) {
+        if (excludedProperties.indexOf(properties[i]) > -1) {
+            continue;
+        }
         instrumentObjectProperty(object, objectName, properties[i]);
     }
 }
@@ -249,9 +252,12 @@ function instrumentObjectProperty(object, objectName, propertyName) {
 }
 
 // Use for prototypes of Objects
-function instrumentPrototype(object, objectName) {
+function instrumentPrototype(object, objectName, excludedProperties=[]) {
     var properties = Object.getPropertyNames(object);
     for (var i = 0; i < properties.length; i++) {
+        if (excludedProperties.indexOf(properties[i]) > -1) {
+            continue;
+        }
         instrumentPrototypeProperty(object, objectName, properties[i]);
     }
 }
@@ -318,18 +324,18 @@ function logProperty(object, objectName, property) {
  * Start Instrumentation
  */
 
-// Access to navigator/screen properties
+// Access to navigator properties
 var navigatorProperties = [ "appCodeName", "appMinorVersion", "appName", "appVersion", "buildID", "cookieEnabled", "cpuClass", "doNotTrack", "geolocation", "language", "languages", "onLine", "opsProfile", "oscpu", "platform", "product", "productSub", "systemLanguage", "userAgent", "userLanguage", "userProfile", "vendorSub", "vendor" ];
 navigatorProperties.forEach(function(property) {
     instrumentObjectProperty(window.navigator, "window.navigator", property);
 });
 
+// Access to screen properties
 //instrumentObject(window.screen, "window.screen");
 var screenProperties =  [ "pixelDepth", "colorDepth" ];
 screenProperties.forEach(function(property) {
     instrumentObjectProperty(window.screen, "window.screen", property);
 });
-
 
 // Access to plugins
 for (var i = 0; i < window.navigator.plugins.length; i++) {
@@ -349,7 +355,8 @@ instrumentPrototype(window.Storage.prototype, "window.Storage")
 
 // Access to canvas
 instrumentPrototype(window.HTMLCanvasElement.prototype,"HTMLCanvasElement");
-instrumentPrototype(window.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D");
+var excludedProperties = [ "quadraticCurveTo", "lineTo", "transform", "globalAlpha", "moveTo", "drawImage" ];
+instrumentPrototype(window.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D", excludedProperties);
 
 // Access to webRTC
 instrumentPrototype(window.mozRTCPeerConnection.prototype,"mozRTCPeerConnection");
