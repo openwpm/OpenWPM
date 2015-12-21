@@ -319,11 +319,17 @@ function logProperty(object, objectName, property) {
  */
 
 // Access to navigator/screen properties
-var navigatorProperties = [ "appCodeName", "appMinorVersion", "appName", "appVersion", "cookieEnabled", "cpuClass", "geolocation", "onLine", "opsProfile", "platform", "product", "systemLanguage", "userAgent", "userLanguage", "userProfile" ];
+var navigatorProperties = [ "appCodeName", "appMinorVersion", "appName", "appVersion", "buildID", "cookieEnabled", "cpuClass", "doNotTrack", "geolocation", "javaEnabled", "language", "languages", "onLine", "opsProfile", "oscpu", "platform", "product", "productSub", "systemLanguage", "userAgent", "userLanguage", "userProfile", "vendorSub", "vendor" ];
 navigatorProperties.forEach(function(property) {
     instrumentObjectProperty(window.navigator, "window.navigator", property);
 });
-instrumentObject(window.screen, "window.screen");
+
+//instrumentObject(window.screen, "window.screen");
+var screenProperties =  [ "pixelDepth", "colorDepth" ];
+screenProperties.forEach(function(property) {
+    instrumentObjectProperty(window.screen, "window.screen", property);
+});
+
 
 // Access to plugins
 for (var i = 0; i < window.navigator.plugins.length; i++) {
