@@ -8,7 +8,7 @@ exports.run = function(crawlID) {
     // Set up logging
     var createJavascriptTable = data.load("create_javascript_table.sql");
     loggingDB.executeSQL(createJavascriptTable, false);
-    
+  
     // Inject content script to instrument JavaScript API
     pageMod.PageMod({
         include: "*",
@@ -19,7 +19,7 @@ exports.run = function(crawlID) {
             worker.port.on("instrumentation", function(data) {
                 var update = {};
                 update["crawl_id"] = crawlID;
-                update["url"] = loggingDB.escapeString(url);
+                update["script_url"] = loggingDB.escapeString(data.scriptUrl);
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
@@ -36,5 +36,4 @@ exports.run = function(crawlID) {
             });
         }
     });
-    
 };
