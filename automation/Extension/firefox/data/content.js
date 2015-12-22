@@ -127,14 +127,36 @@ function getOriginatingScriptUrl() {
   return scriptUrlMatches && scriptUrlMatches[3] || '';
 }
 
+// Counter to cap # of calls logged for each script/api combination
+var maxLogCount = 500;
+var logCounter = new Object();
+function updateCounterAndCheckIfOver(scriptUrl, symbol) {
+    var key = scriptUrl + '|' + symbol;
+    if ((key in logCounter) && (logCounter[key] >= maxLogCount)) {
+        return true;
+    } else if (!(key in logCounter)) {
+        logCounter[key] = 1;
+    } else {
+        logCounter[key] += 1;
+    }
+    return false;
+}
+
 // Prevent logging of gets arising from logging
 var inLog = false;
 
 // For gets, sets, etc. on a single value
 function logValue(instrumentedVariableName, value, operation, scriptUrl) {
     if(inLog)
-            return;
+        return;
     inLog = true;
+
+    var overLimit = updateCounterAndCheckIfOver(scriptUrl, instrumentedVariableName);
+    if (overLimit) {
+        inLog = false;
+        return;
+    }
+    
     try {
         self.port.emit("instrumentation", {
             operation: operation,
@@ -147,6 +169,7 @@ function logValue(instrumentedVariableName, value, operation, scriptUrl) {
         console.log("Unsuccessful value log!");
         logErrorToConsole(error);
     }
+
     inLog = false;
 }
 
@@ -155,6 +178,13 @@ function logCall(instrumentedFunctionName, args, scriptUrl) {
     if(inLog)
         return;
     inLog = true;
+    
+    var overLimit = updateCounterAndCheckIfOver(scriptUrl, instrumentedFunctionName);
+    if (overLimit) {
+        inLog = false;
+        return;
+    }
+    
     try {	
         // Convert special arguments array to a standard array for JSONifying
         var serialArgs = [ ];
