@@ -1,4 +1,44 @@
-GNU GENERAL PUBLIC LICENSE
+OpenWPM:
+Copyright © 2015 Steven Englehardt
+Licensed GPL v3
+
+CONTRIBUTORS AGREE TO FREE/OPEN SOURCE LICENSING
+================================================
+
+By contributing code or other works of authorship to this project ("Your
+Contributions"), you grant to Steven Englehardt a
+perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+license to reproduce, prepare derivative works of, publicly display, publicly
+perform, sublicense, and distribute Your Contributions and such derivative
+works under the terms of any free software or open source license or licenses,
+such license(s) to be selected by Steven Englehardt at its sole discretion.
+
+By contributing code or other works of authorship to this project, you
+represent that you have the legal right and ability to grant this license.
+
+Except for the license granted herein to Steven Englehardt and recipients of 
+software distributed by Steven Englehardt, You reserve all right, title, and 
+interest in and to Your Contributions.
+
+If you do not agree to these terms, please do not send patches or pull
+requests, or commit any material to this repository.
+
+LICENSES FOR INCORPORATED CODEBASES
+===================================
+
+Incorporating code from FourthParty,
+http://fourthparty.info/
+By Jonathan Mayer
+Licensed GPLv3+
+
+Incorporating code from Privacy Badger Firefox,
+https://github.com/EFForg/privacybadgerfirefox
+Copyright © 2015 Electronic Frontier Foundation and other contributors
+Licensed GPLv3+
+
+Text of GPLv3 License:
+======================
+                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
