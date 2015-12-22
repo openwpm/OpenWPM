@@ -1,3 +1,16 @@
+v0.6.0 - 2015-12-22
+======
+
+Changes:
+    * Cleanup of Firefox prefs to make browsers faster and reduce phoning home
+    * Use LevelDB for javascript file storage
+    * Improved HTTP Cookie Parsing
+    * Several bugfixes to extension instrumentation
+    * Improved profile handling during shutdown and crashes
+    * Improved handling of child Exceptions
+    * Inital platform tests
+    * Improvements to javascript instrumentation
+
 v0.5.1 - 2015-10-15
 ======
 
