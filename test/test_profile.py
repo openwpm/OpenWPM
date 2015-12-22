@@ -1,15 +1,13 @@
-from publicsuffix import PublicSuffixList, fetch
 from urlparse import urlparse
 import sqlite3
 import tarfile
-import codecs
 import pytest
 import os
 
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
+import utilities
 
-PSL_CACHE_LOC = '/tmp/public_suffix_list.dat'
 TEST_SITES = [
     'http://google.com',
     'http://facebook.com',
@@ -33,19 +31,7 @@ TEST_SITES = [
     'http://yahoo.co.jp'
 ]
 
-def get_psl():
-    """
-    Grabs an updated public suffix list.
-    """
-    if not os.path.isfile(PSL_CACHE_LOC):
-        print "%s does not exist, downloading a copy." % PSL_CACHE_LOC
-        psl_file = fetch()
-        with codecs.open(PSL_CACHE_LOC, 'w', encoding='utf8') as f:
-            f.write(psl_file.read())
-    psl_cache = codecs.open(PSL_CACHE_LOC, encoding='utf8')
-    return PublicSuffixList(psl_cache)
-
-psl = get_psl()
+psl = utilities.get_psl()
 
 class TestProfile():
     NUM_BROWSERS = 1
