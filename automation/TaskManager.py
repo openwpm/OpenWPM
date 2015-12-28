@@ -3,6 +3,7 @@ from DataAggregator import DataAggregator, LevelDBAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
 from Errors import CommandExecutionError, ProfileLoadError
+from platform_utils import get_version
 import MPLogger
 
 from multiprocessing import Process, Queue
@@ -52,10 +53,9 @@ class TaskManager:
     <browser_params> is a list of (or a single) dictionaries that specify preferences for browsers to instantiate
     <process_watchdog> will monitor firefox and Xvfb processes, killing any not indexed in TaskManager's browser list.
         NOTE: Only run this in isolated environments. It kills processes by name, indiscriminately.
-    <task_description> is an optional description string for a particular crawl (primarily for logging)
     """
 
-    def __init__(self, manager_params, browser_params, process_watchdog=False, task_description=None):
+    def __init__(self, manager_params, browser_params, process_watchdog=False):
 
         # Make paths absolute in manager_params
         for path in ['data_directory','log_directory']:
@@ -80,7 +80,6 @@ class TaskManager:
         else:
             self.failure_limit = self.num_browsers * 2 + 10
         
-        self.desc = task_description
         self.process_watchdog = process_watchdog
 
         # sets up the crawl data database
@@ -90,6 +89,7 @@ class TaskManager:
         self.db = sqlite3.connect(db_path)
         with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
             self.db.executescript(f.read())
+        self.db.commit()
         
         # sets up logging server + connect a client
         self.logging_status_queue = None
@@ -112,12 +112,8 @@ class TaskManager:
         self.sock = clientsocket()
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-        # update task table
-        cur = self.db.cursor()
-        cur.execute("INSERT INTO task (description) VALUES (?)", (self.desc,))
-        self.db.commit()
-        self.task_id = cur.lastrowid
-        
+        self._save_configuration(browser_params)
+
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)  # List of the Browser(s)
         self._launch_browsers()
@@ -127,30 +123,32 @@ class TaskManager:
         thread.daemon = True
         thread.start()
 
+    def _save_configuration(self, browser_params):
+        """ Saves crawl configuration details to db and logfile"""
+        cur = self.db.cursor()
+
+        # Get git version and commit information
+        openwpm_v, browser_v = get_version()
+
+        # Record task details
+        cur.execute(("INSERT INTO task "
+                     "(manager_params, openwpm_version, browser_version) "
+                     "VALUES (?,?,?)"),
+                (json.dumps(self.manager_params), openwpm_v, browser_v))
+        self.db.commit()
+        self.task_id = cur.lastrowid
+
+        # Record browser details for each brower
+        for i in xrange(self.num_browsers):
+            cur.execute("INSERT INTO crawl (task_id, browser_params) VALUES (?,?)",
+                        (self.task_id, json.dumps(browser_params[i])))
+            self.db.commit()
+            browser_params[i]['crawl_id'] = cur.lastrowid
+
     def _initialize_browsers(self, browser_params):
-        """ initialize the browser classes, each with a unique set of parameters """
+        """ initialize the browser classes, each its unique set of parameters """
         browsers = list()
         for i in xrange(self.num_browsers):
-            # update crawl table
-            # TODO: update DB with browser.browser_settings for each browser manager initialized
-            cur = self.db.cursor()
-            query_successful = False
-            crawl_id = -1
-            while not query_successful:
-                try:
-                    cur.execute("INSERT INTO crawl (task_id, profile, browser, headless, proxy, debugging, "
-                                "disable_flash) VALUES (?,?,?,?,?,?,?)",
-                                (self.task_id, browser_params[i]['profile_tar'], browser_params[i]['browser'],
-                                 browser_params[i]['headless'], browser_params[i]['proxy'],
-                                 browser_params[i]['debugging'], browser_params[i]['disable_flash']))
-                    self.db.commit()
-                    crawl_id = cur.lastrowid
-                    query_successful = True
-                except OperationalError:
-                    time.sleep(0.1)
-                    pass
-
-            browser_params[i]['crawl_id'] = crawl_id
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers

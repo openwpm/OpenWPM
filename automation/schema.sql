@@ -4,24 +4,22 @@
  */
 
 /* Crawler Tables */
+
 CREATE TABLE IF NOT EXISTS task (
     task_id INTEGER PRIMARY KEY AUTOINCREMENT,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    description TEXT);
+    manager_params TEXT NOT NULL,
+    openwpm_version TEXT NOT NULL,
+    browser_version TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS crawl (
     crawl_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_id INTEGER,
-    start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    profile VARCHAR(200),
-    browser VARCHAR(200),
-    headless VARCHAR(200),
-    proxy VARCHAR(200),
-    debugging VARCHAR(200),
-    disable_flash VARCHAR(200),
-    screen_res VARCHAR(50),
-    ua_string VARCHAR(200),
+    task_id INTEGER NOT NULL,
+    browser_params TEXT NOT NULL,
+    screen_res TEXT,
+    ua_string TEXT,
     finished BOOLEAN NOT NULL DEFAULT 0,
+    start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(task_id) REFERENCES task(task_id));
 
 CREATE TABLE IF NOT EXISTS xpath (
