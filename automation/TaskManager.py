@@ -3,7 +3,7 @@ from DataAggregator import DataAggregator, LevelDBAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
 from Errors import CommandExecutionError, ProfileLoadError
-from platform_utils import get_version
+from platform_utils import get_version, get_configuration_string
 import MPLogger
 
 from multiprocessing import Process, Queue
@@ -144,6 +144,11 @@ class TaskManager:
                         (self.task_id, json.dumps(browser_params[i])))
             self.db.commit()
             browser_params[i]['crawl_id'] = cur.lastrowid
+
+        # Print the configuration details
+        self.logger.info(get_configuration_string(self.manager_params,
+                                                  browser_params,
+                                                  (openwpm_v, browser_v)))
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of parameters """
