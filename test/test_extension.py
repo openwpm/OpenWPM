@@ -6,6 +6,7 @@ import os
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
 import utilities
+import expected
 
 class TestExtension():
     NUM_BROWSERS = 1
@@ -42,35 +43,26 @@ class TestExtension():
         con = sqlite3.connect(db)
         cur = con.cursor()
         cur.execute("SELECT script_url, symbol FROM javascript")
-        expected_symbols= {
-            "window.navigator.appCodeName",
-            "window.navigator.appMinorVersion",
-            "window.navigator.appName",
-            "window.navigator.appVersion",
-            "window.navigator.buildID",
-            "window.navigator.cookieEnabled",
-            "window.navigator.cpuClass",
-            "window.navigator.doNotTrack",
-            "window.navigator.geolocation",
-            "window.navigator.language",
-            "window.navigator.languages",
-            "window.navigator.onLine",
-            "window.navigator.opsProfile",
-            "window.navigator.oscpu",
-            "window.navigator.platform",
-            "window.navigator.product",
-            "window.navigator.productSub",
-            "window.navigator.systemLanguage",
-            "window.navigator.userAgent",
-            "window.navigator.userLanguage",
-            "window.navigator.userProfile",
-            "window.navigator.vendorSub",
-            "window.navigator.vendor",
-            "window.screen.pixelDepth",
-            "window.screen.colorDepth"}
         observed_symbols = set()
         for script_url, symbol in cur.fetchall():
             assert script_url == 'http://localhost:8000/test_pages/property_enumeration.html'
             observed_symbols.add(symbol)
         con.close()
-        assert expected_symbols == observed_symbols
+        assert expected.properties == observed_symbols
+
+    def test_canvas_fingerprinting(self, tmpdir):
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get('http://localhost:8000/test_pages/canvas_fingerprinting.html')
+        manager.close(post_process=False)
+
+        # Check that all calls and methods are recorded
+        db = os.path.join(manager_params['data_directory'], manager_params['database_name'])
+        con = sqlite3.connect(db)
+        cur = con.cursor()
+        cur.execute("SELECT script_url, symbol, operation, value, parameter_index, parameter_value FROM javascript")
+        observed_rows = set()
+        for item in cur.fetchall():
+            observed_rows.add(item)
+        con.close()
+        assert expected.canvas == observed_rows
