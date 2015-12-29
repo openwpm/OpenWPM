@@ -24,7 +24,7 @@ exports.run = function(crawlID) {
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
 		
-                if (data.operation == 'call') {
+                if (data.operation == 'call' && data.args.length > 0) {
                     for(var i = 0; i < data.args.length; i++) {
                         update["parameter_index"] = i;
                         update["parameter_value"] = loggingDB.escapeString(data.args[i]);
