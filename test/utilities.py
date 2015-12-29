@@ -3,6 +3,7 @@ import SimpleHTTPServer
 import SocketServer
 import threading
 import codecs
+import os
 
 PSL_CACHE_LOC = '/tmp/public_suffix_list.dat'
 
