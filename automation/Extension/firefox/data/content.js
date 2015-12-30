@@ -232,17 +232,22 @@ Object.getPropertyNames = function (subject, name) {
  *  Direct instrumentation of javascript objects
  */
 
-// Use for direct objects
-function instrumentObject(object, objectName, excludedProperties=[]) {
+// Use for objects or object prototypes
+// be sure to set the `prototype` flag for prototypes
+function instrumentObject(object, objectName, prototype=false, excludedProperties=[]) {
     var properties = Object.getPropertyNames(object);
     for (var i = 0; i < properties.length; i++) {
         if (excludedProperties.indexOf(properties[i]) > -1) {
             continue;
         }
-        instrumentObjectProperty(object, objectName, properties[i]);
+        if (prototype) {
+            instrumentPrototypeProperty(object, objectName, properties[i]);
+        } else {
+            instrumentObjectProperty(object, objectName, properties[i]);
+        }
     }
 }
-        
+
 function instrumentObjectProperty(object, objectName, propertyName) {
     try {
         var property = object[propertyName];
@@ -256,17 +261,6 @@ function instrumentObjectProperty(object, objectName, propertyName) {
     }
 }
 
-// Use for prototypes of Objects
-function instrumentPrototype(object, objectName, excludedProperties=[]) {
-    var properties = Object.getPropertyNames(object);
-    for (var i = 0; i < properties.length; i++) {
-        if (excludedProperties.indexOf(properties[i]) > -1) {
-            continue;
-        }
-        instrumentPrototypeProperty(object, objectName, properties[i]);
-    }
-}
-
 function instrumentPrototypeProperty(object, objectName, propertyName) {
     try {
         var property = object[propertyName];
@@ -274,11 +268,12 @@ function instrumentPrototypeProperty(object, objectName, propertyName) {
             logFunction(object, objectName, propertyName);
         }
     } catch(err) {
-        logPropertyPrototype(object, objectName, propertyName);
+        // can't access static properties on prototypes
+        logProperty(object, objectName, propertyName);
     }
 }
 
-// Log calls to methods
+// Log calls to object/prototype methods
 function logFunction(object, objectName, method) {
   var originalMethod = object[method];
   object[method] = function () {
@@ -288,39 +283,19 @@ function logFunction(object, objectName, method) {
   };
 }
 
-// Logging for properties of prototype objects
-var instrumentedData = {};
-function logPropertyPrototype(object, objectName, property) {
-    instrumentedData[objectName + property] = undefined;
-    Object.defineProperty(object, property, {
-        configurable: true,
-        get: function() {
-            var scriptUrl = getOriginatingScriptUrl();
-            logValue(objectName + '.' + property, instrumentedData[objectName + property], "get", scriptUrl);
-            return instrumentedData[objectName + property];
-        },
-        set: function(value) {
-            var scriptUrl = getOriginatingScriptUrl();
-            logValue(objectName + '.' + property, value, "set", scriptUrl);
-            instrumentedData[objectName + property] = value;
-        }
-    });
-}
-
-// Logging properties of objects
+// Log properties of objects/prototypes
 function logProperty(object, objectName, property) {
-    var originalProperty = object[property];
     Object.defineProperty(object, property, {
         configurable: true,
         get: function() {
             var scriptUrl = getOriginatingScriptUrl();
-            logValue(objectName + '.' + property, originalProperty, "get", scriptUrl);
-            return originalProperty;
+            logValue(objectName + '.' + property, this[property], "get", scriptUrl);
+            return this[property];
         },
         set: function(value) {
             var scriptUrl = getOriginatingScriptUrl();
             logValue(objectName + '.' + property, value, "set", scriptUrl);
-            originalProperty = value;
+            this[property] = value;
         }
     });
 }
@@ -348,23 +323,23 @@ for (var i = 0; i < window.navigator.plugins.length; i++) {
 }
 
 // Name, localStorage, and sessionsStorage logging
-// Instrumenting window.localStorage directly doesn't seem to work, so the Storage 
-// prototype must be instrumented instead. Unfortunately this fails to differentiate 
-// between sessionStorage and localStorage. Instead, you'll have to look for a sequence 
+// Instrumenting window.localStorage directly doesn't seem to work, so the Storage
+// prototype must be instrumented instead. Unfortunately this fails to differentiate
+// between sessionStorage and localStorage. Instead, you'll have to look for a sequence
 // of a get for the localStorage object followed by a getItem/setItem for the Storage object.
 windowProperties = [ "name", "localStorage", "sessionStorage" ];
 windowProperties.forEach(function(property) {
     instrumentObjectProperty(window, "window", property);
 });
-instrumentPrototype(window.Storage.prototype, "window.Storage")
+instrumentObject(window.Storage.prototype, "window.Storage", true);
 
 // Access to canvas
-instrumentPrototype(window.HTMLCanvasElement.prototype,"HTMLCanvasElement");
+instrumentObject(window.HTMLCanvasElement.prototype,"HTMLCanvasElement", true);
 var excludedProperties = [ "quadraticCurveTo", "lineTo", "transform", "globalAlpha", "moveTo", "drawImage" ];
-instrumentPrototype(window.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D", excludedProperties);
+instrumentObject(window.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D", true, excludedProperties);
 
 // Access to webRTC
-instrumentPrototype(window.mozRTCPeerConnection.prototype,"mozRTCPeerConnection");
+instrumentObject(window.mozRTCPeerConnection.prototype,"mozRTCPeerConnection", true);
 
 }
 
