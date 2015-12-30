@@ -24,9 +24,9 @@ sudo -H python get-pip.py
 rm get-pip.py
 
 sudo -H pip install -U setuptools
-sudo -H pip install -U pyvirtualdisplay beautifulsoup4 pyasn1 PyOPenSSL python-dateutil tld pyamf psutil pyhash plyvel tblib tabulate
+sudo -H pip install -U pyvirtualdisplay beautifulsoup4 pyasn1 PyOPenSSL python-dateutil tld pyamf psutil pyhash plyvel tblib tabulate pytest publicsuffix
 
-# Install specific mitmproxy version since we rely on some internal structure of 
+# Install specific mitmproxy version since we rely on some internal structure of
 # netlib and mitmproxy. New releases tend to break things and should be tested
 sudo -H  pip install mitmproxy==0.13
 
@@ -34,7 +34,7 @@ sudo -H  pip install mitmproxy==0.13
 sudo -H pip install selenium==2.48.0
 
 # Install specific version of Firefox known to work well with the selenium version above
-wget https://ftp.mozilla.org/pub/firefox/releases/41.0.2/linux-x86_64/en-US/firefox-41.0.2.tar.bz2 
+wget https://ftp.mozilla.org/pub/firefox/releases/41.0.2/linux-x86_64/en-US/firefox-41.0.2.tar.bz2
 tar jxf firefox*.tar.bz2
 mv firefox firefox-bin
 rm firefox*.tar.bz2
