@@ -1,0 +1,34 @@
+<html>
+<title>WebRTC Local IP Test Page</title>
+<p> WebRTC Local IP Test Page</p>
+<pre id='results'></pre>
+
+<script>
+var PeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+var connection = new PeerConnection({
+    iceServers: []
+}, {
+    optional: [{
+        RtpDataChannels: !0
+    }]
+});
+window.mozRTCPeerConnection && connection.createDataChannel("", {reliable: !1});
+connection.onicecandidate = function(a) {
+    if (a.candidate) {
+        var b = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(a.candidate.candidate);
+        a = "";
+        b && 1 < b.length && (a = b[1]);
+        a.match(/^(192\.168\.|169\.254\.|10\.|172\.(1[6-9]|2\d|3[01]))/);
+        var pre = document.getElementById('results');
+        pre.innerHTML = a;
+    }
+};
+
+connection.createDataChannel("")
+connection.createOffer(function(a) {
+    connection.setLocalDescription(a)
+}, function(err) {})
+
+</script>
+
+</html>
