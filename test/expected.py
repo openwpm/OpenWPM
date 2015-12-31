@@ -39,7 +39,7 @@ canvas = {
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillRect",u"call",u"",1,u"1"),
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillRect",u"call",u"",2,u"62"),
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillRect",u"call",u"",3,u"20"),
-    (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillStyle",u"set",u"#069", None, None), 
+    (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillStyle",u"set",u"#069", None, None),
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillText",u"call",u"",0,u"BrowserLeaks,com <canvas> 1.0"),
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillText",u"call",u"",1,u"2"),
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillText",u"call",u"",2,u"15"),

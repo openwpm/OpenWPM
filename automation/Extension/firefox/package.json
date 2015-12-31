@@ -8,7 +8,7 @@
   "dependencies": {
     "bufferpack": "0.0.6"
   },
-  "permissions": { 
-    "unsafe-content-script": true 
+  "permissions": {
+    "unsafe-content-script": true
   }
 }

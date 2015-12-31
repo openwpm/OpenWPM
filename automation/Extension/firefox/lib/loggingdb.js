@@ -13,7 +13,7 @@ exports.open = function(host, port, crawlID) {
 
     console.log("Opening socket connections")
     crawlID = crawlID;
-    
+
     // Connect to database for saving data
     socket.connect(host, port);
 
@@ -60,7 +60,7 @@ exports.createInsert = function(table, update) {
         topURL = url_queue.shift();
         console.log("Top URL:",topURL);
     }
-    
+
     update["top_url"] = topURL;
 
     var statement = "INSERT INTO " + table + " (";

@@ -85,13 +85,13 @@ def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
             time.sleep(0.001)
     if extension_socket is not None:
         extension_socket.send(url)
-    
+
     # Execute a get through selenium
     try:
         webdriver.get(url)
     except TimeoutException:
         pass
-    
+
     # Close modal dialog if exists
     try:
         WebDriverWait(webdriver, .5).until(EC.alert_is_present())
@@ -159,7 +159,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manag
             break
         r = int(random.random()*len(links)-1)
         logger.info("BROWSER %i: visiting internal link %s" % (browser_params['crawl_id'], links[r].get_attribute("href")))
-        
+
         try:
             links[r].click()
             wait_until_loaded(webdriver, 300)
@@ -197,7 +197,7 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager
                       host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (browser_params['crawl_id'], top_url) + row)
             sock.send(query)
-    
+
     # localStorage - TODO this doesn't have a modified time support
     #rows = get_localStorage(profile_dir, start_time)
     #if rows is not None:

@@ -25,7 +25,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     sock = serversocket()
     status_queue.put(sock.sock.getsockname())  # let TM know location
     sock.start_accepting()
-    
+
     # sets up DB connection
     db_path = os.path.join(manager_params['data_directory'], 'javascript.ldb')
     db = plyvel.DB(db_path,
@@ -79,16 +79,16 @@ def process_script(script, batch, db, counter, logger):
     #    return
     #key = record[0]
     #value = record[1]
-   
+
     # Hash script for deduplication on disk
     hasher = pyhash.murmur3_x64_128()
     script_hash = str(hasher(script) >> 64)
 
     if db.get(script_hash) is not None:
         return
-    
+
     compressed_script = zlib.compress(script)
-    
+
     batch.put(script_hash, compressed_script)
     counter += 1
 

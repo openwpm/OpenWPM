@@ -10,9 +10,9 @@ import zlib
 import os
 
 def encode_to_unicode(msg):
-    """ 
-    Tries different encodings before setting on utf8 ignoring any errors 
-    We can likely inspect the headers for an encoding as well, though it 
+    """
+    Tries different encodings before setting on utf8 ignoring any errors
+    We can likely inspect the headers for an encoding as well, though it
     won't always be correct.
     """
     try:
@@ -45,9 +45,9 @@ def process_general_mitm_response(db_socket, ldb_socket, logger, browser_params,
     """ Logs a HTTP response object and, if necessary, """
     referrer = msg.request.headers['referer'][0] if len(msg.request.headers['referer']) > 0 else ''
     location = msg.response.headers['location'][0] if len(msg.response.headers['location']) > 0 else ''
-    
+
     content_hash = save_javascript_content(ldb_socket, logger, browser_params, msg)
-    
+
     data = (browser_params['crawl_id'],
             encode_to_unicode(msg.request.url),
             encode_to_unicode(msg.request.method),
@@ -59,11 +59,11 @@ def process_general_mitm_response(db_socket, ldb_socket, logger, browser_params,
             top_url,
             str(datetime.datetime.now()),
             content_hash)
-    
+
     db_socket.send(("INSERT INTO http_responses (crawl_id, url, method, referrer, response_status, "
                     "response_status_text, headers, location, top_url, time_stamp, content_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)", data))
 
- 
+
 def save_javascript_content(ldb_socket, logger, browser_params, msg):
     """ Save javascript files de-duplicated and compressed on disk """
     if not browser_params['save_javascript']:
@@ -107,11 +107,11 @@ def save_javascript_content(ldb_socket, logger, browser_params, msg):
     else:
         logger.error('BROWSER %i: Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % (browser_params['crawl_id'], str(content_encoding)))
         return
-    
+
     ldb_socket.send(script)
-    
+
     # Hash script for deduplication on disk
     hasher = pyhash.murmur3_x64_128()
     script_hash = str(hasher(script) >> 64)
-    
+
     return script_hash

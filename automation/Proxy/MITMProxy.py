@@ -16,11 +16,11 @@ class InterceptingMaster (controller.Master):
     Inspired by the following example. Note the gist has a lot of bugs.
     https://gist.github.com/dannvix/5285924
     """
-    
+
     def __init__(self, server, url_queue, browser_params, manager_params):
         self.browser_params = browser_params
         self.manager_params = manager_params
-        
+
         # Attributes used to flag the first-party domain
         self.url_queue = url_queue  # first-party domain provided by BrowserManager
         self.prev_top_url, self.curr_top_url = None, None  # previous and current top level domains
@@ -29,7 +29,7 @@ class InterceptingMaster (controller.Master):
         # Open a socket to communicate with DataAggregator
         self.db_socket = clientsocket()
         self.db_socket.connect(*manager_params['aggregator_address'])
-        
+
         # Open a socket to communicate with LevelDBAggregator
         self.ldb_socket = None
         if browser_params['save_javascript']:

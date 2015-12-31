@@ -52,26 +52,26 @@ def save_flash_files(logger, browser_params, dump_location, clear=False):
 
         logger.debug("BROWSER %i: SAVING %s during flash file archive" % (browser_params['crawl_id'], location))
         (head, tail) = os.path.split(location)
-        
+
         #Remove old backups if exist
         if os.path.exists(os.path.join(dump_location,tail)):
             shutil.rmtree(os.path.join(dump_location,tail))
 
         #Make new backups
         shutil.copytree(location, os.path.join(dump_location,tail))
-    
+
         if clear:
             logger.debug("BROWSER %i: CLEARING %s during flash file archive" % (browser_params['crawl_id'], location))
             rmsubtree(location)
 
 def load_flash_files(logger, browser_params, tar_location):
-    """ clear old flash cookies and load ones from dump """ 
+    """ clear old flash cookies and load ones from dump """
     #Clear previous objects prior to loading
     for location in FLASH_LOCS:
         if not os.path.isdir(location):
             logger.warning("BROWSER %i: %s not found when attempting to load flash files, skipping..." % (browser_params['crawl_id'], location))
             continue
-        
+
         logger.debug("BROWSER %i: CLEARING %s before loading flash files" % (browser_params['crawl_id'], location))
         shutil.rmtree(location)
 
@@ -83,7 +83,7 @@ def load_flash_files(logger, browser_params, tar_location):
             logger.warning("BROWSER %i: %s not found while loading flash files, skipping..." % (browser_params['crawl_id'], os.path.join(tar_location, tail)))
             continue
 
-def dump_profile(browser_profile_folder, manager_params, browser_params, tar_location, 
+def dump_profile(browser_profile_folder, manager_params, browser_params, tar_location,
                  close_webdriver, webdriver=None, browser_settings=None, save_flash=False,
                  compress=False):
     """
@@ -151,7 +151,7 @@ def dump_profile(browser_profile_folder, manager_params, browser_params, tar_loc
     # save flash cookies
     if save_flash:
         save_flash_files(logger, browser_params, tar_location)
-    
+
     # save the browser settings
     if browser_settings is not None:
         save_browser_settings(tar_location, browser_settings)
@@ -166,7 +166,7 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
     try:
         # Connect to logger
         logger = loggingclient(*manager_params['logger_address'])
-        
+
         # ensures that folder paths end with slashes
         browser_profile_folder = browser_profile_folder if browser_profile_folder.endswith("/") \
             else browser_profile_folder + "/"
@@ -180,7 +180,7 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
         # Copy and untar the loaded profile
         logger.debug("BROWSER %i: Copying profile tar from %s to %s" % (browser_params['crawl_id'], tar_location+tar_name, browser_profile_folder))
         shutil.copy(tar_location + tar_name, browser_profile_folder)
-        
+
         if tar_name == 'profile.tar.gz':
             f = tarfile.open(browser_profile_folder + tar_name, 'r:gz', errorlevel=1)
         else:

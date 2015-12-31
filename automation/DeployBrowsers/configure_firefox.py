@@ -40,7 +40,7 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
         src = os.path.join(root_dir,'firefox_extensions/ghostery/store.json') # settings - block all trackers/cookies
         dst = os.path.join(browser_profile_path,'jetpack/firefox@ghostery.com/simple-storage/store.json')
         shutil.copy(src,dst)
-    
+
     # Enable HTTPS Everywhere
     if browser_params['https-everywhere']:
         fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/https-everywhere-5.0.7.xpi'))
@@ -82,7 +82,7 @@ def optimize_prefs(fp):
     fp.set_preference("toolkit.telemetry.unified", False)
     fp.set_preference("breakpad.reportURL", "")
     fp.set_preference("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False)
-    
+
     # Predictive Actions / Prefetch
     fp.set_preference('network.seer.enabled', False)
     fp.set_preference('network.dns.disablePrefetch', True)
@@ -103,7 +103,7 @@ def optimize_prefs(fp):
     fp.set_preference("browser.search.update", False) # search
     fp.set_preference("extensions.update.enabled", False) # extensions
     fp.set_preference("extensions.update.autoUpdateDefault", False) # addons
-    fp.set_preference("extensions.getAddons.cache.enabled", False) 
+    fp.set_preference("extensions.getAddons.cache.enabled", False)
     fp.set_preference("lightweightThemes.update.enabled", False) # Personas
 
     # Disable Safebrowsing

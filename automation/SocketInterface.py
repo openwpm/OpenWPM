@@ -20,7 +20,7 @@ class serversocket:
         self.queue = Queue.Queue()
         if self.verbose:
             print "Server bound to: " + str(self.sock.getsockname())
-    
+
     def start_accepting(self):
         """ Start the listener thread """
         thread = threading.Thread(target=self._accept, args=())
@@ -34,7 +34,7 @@ class serversocket:
             thread = threading.Thread(target=self._handle_conn, args=(client, address))
             thread.daemon = True
             thread.start()
-            
+
     def _handle_conn(self, client, address):
         """
         Recieve messages and pass to queue. Messages are prefixed with
@@ -90,13 +90,13 @@ class serversocket:
 class clientsocket:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
+
     def connect(self, host, port):
         self.sock.connect((host, port))
 
     def send(self, msg):
         """
-        Sends an arbitrary python object to the connected socket. Serializes (json) if 
+        Sends an arbitrary python object to the connected socket. Serializes (json) if
         not str, and prepends msg len (4-bytes) and serialization status (1-byte).
         """
         #if input not string, serialize to string
@@ -105,7 +105,7 @@ class clientsocket:
             is_serialized = True
         else:
             is_serialized = False
-        
+
         #prepend with message length
         msg = struct.pack('>I?', len(msg), is_serialized) + msg
         totalsent = 0
@@ -114,7 +114,7 @@ class clientsocket:
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
-    
+
     def close(self):
         self.sock.close()
 

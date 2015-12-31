@@ -20,11 +20,11 @@ function createListeningSocket() {
     console.log("Setting up server socket listening");
     var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
                              .createInstance(Ci.nsIServerSocket);
-    
+
     // init with random port
     serverSocket.init(-1, true, -1);
     console.log("Extension serverSocket listening on port:",serverSocket.port);
-    
+
     // write port to file for OpenWPM
     var path = system.pathFor("ProfD") + '/extension_port.txt';
     var file = fileIO.open(path, 'w');
@@ -32,7 +32,7 @@ function createListeningSocket() {
         file.write(serverSocket.port);
         file.close();
     }
-    
+
     var queue = [];
     serverSocket.asyncListen({
         onSocketAccepted: function(sock, transport) {
@@ -51,9 +51,9 @@ function createListeningSocket() {
 function updateQueue(inputStream, queue) {
     var bInputStream = Cc["@mozilla.org/binaryinputstream;1"]
                             .createInstance(Ci.nsIBinaryInputStream);
-    
+
     bInputStream.setInputStream(inputStream);
-    
+
     var buff = bInputStream.readByteArray(5);
     var meta = bufferpack.unpack('>Ib', buff);
     string = bInputStream.readBytes(meta[0]);
@@ -61,7 +61,7 @@ function updateQueue(inputStream, queue) {
         string = JSON.parse(string);
     }
     queue.push(string);
-    
+
     inputStream.asyncWait({
         onInputStreamReady: function() {
             updateQueue(inputStream, queue);

@@ -21,8 +21,8 @@ def get_psl():
 
 def start_server():
     """ Start a simple http server to run local tests
-    
-    We need this since page-mod events in the extension 
+
+    We need this since page-mod events in the extension
     don't fire on `file://*`. Instead, point test code to
     `http://localhost:8000/test_pages/...`
     """

@@ -50,7 +50,7 @@ function getPathToDomElement(element) {
 
 // Helper for JSONifying objects
 function serializeObject(object) {
-	
+
     // Handle permissions errors
     try {
         if(object == null)
@@ -70,7 +70,7 @@ function serializeObject(object) {
                 if("wrappedJSObject" in value) {
                     value = value.wrappedJSObject;
                 }
-                
+
                 // Serialize DOM elements
                 if(value instanceof HTMLElement)
                     return getPathToDomElement(value);
@@ -156,7 +156,7 @@ function logValue(instrumentedVariableName, value, operation, scriptUrl) {
         inLog = false;
         return;
     }
-    
+
     try {
         self.port.emit("instrumentation", {
             operation: operation,
@@ -178,14 +178,14 @@ function logCall(instrumentedFunctionName, args, scriptUrl) {
     if(inLog)
         return;
     inLog = true;
-    
+
     var overLimit = updateCounterAndCheckIfOver(scriptUrl, instrumentedFunctionName);
     if (overLimit) {
         inLog = false;
         return;
     }
-    
-    try {	
+
+    try {
         // Convert special arguments array to a standard array for JSONifying
         var serialArgs = [ ];
         for(var i = 0; i < args.length; i++)

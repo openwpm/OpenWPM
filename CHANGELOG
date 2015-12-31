@@ -54,7 +54,7 @@ Known Issues:
 
 0.3.1 - Fixes #5
 0.3.0 - Experimental merge of Fourthparty + framework to allow additional javascript instrumentation.
-0.2.3 - Timeout logging 
+0.2.3 - Timeout logging
 0.2.2 - Browse command + better scrolling + bugfixes
 0.2.1 - Support for MITMProxy v0.11 + minor bugfixes
 0.2.0 - Complete re-write of HTTP Cookie parsing

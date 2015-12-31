@@ -7,11 +7,11 @@ var crawlID = null;
 
 exports.setup = function(crawl_ID) {
     crawlID = crawl_ID;
-    
+
     // Set up logging
     var createPagesTable = data.load("create_pages_table.sql");
     loggingDB.executeSQL(createPagesTable, false);
-    
+
     // Log new windows
     events.on("content-document-global-created", function(event) {
         var window = event.subject;
@@ -20,7 +20,7 @@ exports.setup = function(crawl_ID) {
         var location = window.document && window.document.location ? window.document.location : "";
         insertPage(pageID, location, parentID);
     }, true);
-    
+
 };
 
 var insertPage = function(pageID, location, parentID) {

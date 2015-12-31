@@ -17,7 +17,7 @@ exports.run = function(crawlID) {
 	var InstrumentContentPolicy = Class({
 		extends: Unknown,
 		interfaces: [ "nsIContentPolicy" ],
-		
+
 		shouldLoad: function(contentType, contentLocation, requestOrigin, context, mimeTypeGuess, extra) {
 			var update = { };
 			update["crawl_id"] = crawlID;
@@ -48,21 +48,21 @@ exports.run = function(crawlID) {
 
 			return Ci.nsIContentPolicy.ACCEPT;
 		},
-		
+
 		// Fires infrequently, instrumentation unused
 		shouldProcess: function(contentType, contentLocation, requestOrigin, context, mimeType, extra) {
 			return Ci.nsIContentPolicy.ACCEPT;
 		}
 	});
-	
+
 	var contractID = "@stanford.edu/instrument-content-policy;1";
-	
+
 	var instrumentContentPolicyService = Service({
 		contract: contractID,
 		Component: InstrumentContentPolicy
 	});
-	
+
 	var categoryManager = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
 	categoryManager.addCategoryEntry("content-policy", contractID, contractID, false, false);
-	
+
 };

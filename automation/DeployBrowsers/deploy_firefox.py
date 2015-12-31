@@ -28,7 +28,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Enable logging
     #LOGGER.setLevel(logging.WARNING)
     #fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
-    
+
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
         logger.debug("BROWSER %i: Loading initial browser profile from: %s" % (browser_params['crawl_id'], browser_params['profile_tar']))
@@ -40,7 +40,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         profile_settings = load_profile(browser_profile_path, manager_params, browser_params,
                                         browser_params['profile_tar'])
     status_queue.put(('STATUS','Profile Tar',None))
-    
+
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser" % browser_params['crawl_id'])
         profile_settings = dict()
@@ -58,7 +58,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             for line in f:
                 ua_strings.append(line.strip())
         profile_settings['ua_string'] = random.choice(ua_strings)
-    
+
     # If profile settings still not set - set defaults
     if profile_settings is None:
         profile_settings = dict()
@@ -114,7 +114,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         # a previous tmp selenium profile
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/key3.db'), fp.path + '/key3.db')
         shutil.copy(os.path.join(root_dir + "/../", 'Proxy/cert8.db'), fp.path + '/cert8.db')
-        
+
     # Disable flash
     if browser_params['disable_flash']:
         fp.set_preference('plugin.state.flash', 0)

@@ -48,10 +48,10 @@ class TestCrawl():
         browser_params[0]['profile_archive_dir'] = os.path.join(data_dir,'browser_profile')
         browser_params[0]['headless'] = True
         return manager_params, browser_params
-    
+
     def test_browser_profile_coverage(self, tmpdir):
-        """ Test the coverage of the browser's profile 
-        
+        """ Test the coverage of the browser's profile
+
         This verifies that Firefox's places.sqlite database contains
         all visited sites (with a few exceptions). If it does not,
         it is likely the profile is lost at some point during the crawl
@@ -65,15 +65,15 @@ class TestCrawl():
         fp = manager.browsers[0].current_profile_path
         ff_db_tar = os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz')
         manager.close(post_process=False)
-        
+
         # Extract crawl profile
         with tarfile.open(ff_db_tar) as tar:
             tar.extractall(browser_params[0]['profile_archive_dir'])
-        
+
         # Output databases
         ff_db = os.path.join(browser_params[0]['profile_archive_dir'],'places.sqlite')
         crawl_db = os.path.join(manager_params['data_directory'], manager_params['database_name'])
-        
+
         # Grab urls from crawl database
         crawl_con = sqlite3.connect(crawl_db)
         ccur = crawl_con.cursor()

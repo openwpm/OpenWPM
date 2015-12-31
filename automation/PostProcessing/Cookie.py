@@ -245,7 +245,7 @@ class CookieError(Exception):
 # These are taken from RFC2068 and RFC2109.
 #       _LegalChars       is the list of chars which don't require "'s
 #       _Translator       hash-table for fast quoting
-# 
+#
 # The legal chars have been expanded a bit to match modern browsers
 
 _LegalChars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~[]:/@{}(),?<>"

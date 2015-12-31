@@ -23,12 +23,12 @@ import os
 class Browser:
     """
      The Browser class is responsbile for holding all of the
-     configuration and status information on BrowserManager process 
+     configuration and status information on BrowserManager process
      it corresponds to. It also includes a set of methods for managing
      the BrowserManager process and its child processes/threads.
 
      <manager_params> are the TaskManager configuration settings.
-     <browser_params> are per-browser parameter settings (e.g. whether 
+     <browser_params> are per-browser parameter settings (e.g. whether
                       this browser is using a proxy, headless, etc.)
 
      """
@@ -40,7 +40,7 @@ class Browser:
         self.crawl_id = browser_params['crawl_id']
         self.browser_params = browser_params
         self.manager_params = manager_params
-        
+
         # Queues and process IDs for BrowserManager
         self.command_thread = None  # thread to run commands issues from TaskManager
         self.command_queue = None  # queue for passing command tuples to BrowserManager
@@ -48,7 +48,7 @@ class Browser:
         self.browser_pid = None  # pid for browser instance controlled by BrowserManager
         self.display_pid = None  # the pid of the display for the headless browser (if it exists)
         self.display_port = None  # the port of the display for the headless browser (if it exists)
-        
+
         self.is_fresh = True  # boolean that says if the BrowserManager new (used to optimize restarts)
         self.restart_required = False # boolean indicating if the browser should be restarted
 
@@ -86,7 +86,7 @@ class Browser:
             tempdir = None
             crashed_profile_path = None
             crash_recovery = False
-        
+
         # Try to spawn the browser within the timelimit
         unsuccessful_spawns = 0
         retry = False
@@ -145,7 +145,7 @@ class Browser:
                 shutil.rmtree(crashed_profile_path, ignore_errors=True)
 
             self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
-        
+
         return success
 
     def restart_browser_manager(self, clear_profile=False):
@@ -155,7 +155,7 @@ class Browser:
         """
         if self.is_fresh: # Return success if browser is fresh
             return True
-        
+
         self.kill_browser_manager()
 
         # if crawl should be stateless we can clear profile
@@ -231,14 +231,14 @@ class Browser:
 def BrowserManager(command_queue, status_queue, browser_params, manager_params, crash_recovery):
     """
     The BrowserManager function runs in each new browser process.
-    It is responsible for listening to command instructions from 
+    It is responsible for listening to command instructions from
     the Task Manager and passing them to the command module to execute
     and interface with Selenium. Command execution status is sent back
     to the TaskManager.
     """
     try:
         logger = loggingclient(*manager_params['logger_address'])
-        
+
         # Start the proxy
         proxy_site_queue = None  # used to pass the current site down to the proxy
         if browser_params['proxy']:

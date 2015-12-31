@@ -8,7 +8,7 @@ exports.run = function(crawlID) {
     // Set up logging
     var createJavascriptTable = data.load("create_javascript_table.sql");
     loggingDB.executeSQL(createJavascriptTable, false);
-  
+
     // Inject content script to instrument JavaScript API
     pageMod.PageMod({
         include: "*",
@@ -23,7 +23,7 @@ exports.run = function(crawlID) {
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
-		
+
                 if (data.operation == 'call' && data.args.length > 0) {
                     for(var i = 0; i < data.args.length; i++) {
                         update["parameter_index"] = i;

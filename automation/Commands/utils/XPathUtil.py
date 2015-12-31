@@ -67,7 +67,7 @@ def ExtractXPath(element, use_id = True):
     #Check id first
     if use_id and element.get('id') != None:
         return '//*/' + element.name + '[@id=\"' + element.get('id') + '\"]'
-    
+
     xpath = check_previous_tags(element)
 
     ##### Parent Nodes
@@ -75,7 +75,7 @@ def ExtractXPath(element, use_id = True):
         #End of XPath - exclude from string
         if parent.name == '[document]':
             break
-        
+
         #Check id first
         if use_id and parent.get('id') != None:
             return '//*/' + parent.name + '[@id=\"' + parent.get('id') + '\"]/' + xpath
@@ -105,21 +105,21 @@ def xp1_wildcard(attr, string, normalize=True):
 
     if normalize:
         attr = 'normalize-space(' + attr + ')'
-    
+
     if len(parts) != 2:
         print "ERROR: This function is meant to support 1 wildcard"
         return '[' + attr + '=' + string + ']'
     else:
         pt1 = ''
         pt2 = ''
-        
+
         if parts[0] != '':
             pt1 = 'starts-with(' + attr + ', \'' + parts[0] + '\')'
         if parts[1] != '':
             pt2 = ('contains(substring(' + attr +
                      ', string-length(' + attr + ')-'+ str(len(parts[1])-1) +
                      '), \'' + parts[1] + '\')')
-        
+
         if pt1 == '' and pt2 != '':
             return '[' + pt2 + ']'
         elif pt1 != '' and pt2 == '':

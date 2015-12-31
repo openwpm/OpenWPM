@@ -7,7 +7,7 @@ var jsInstrument        = require("./lib/javascript-instrument.js");
 var cpInstrument        = require("./lib/content-policy-instrument.js");
 
 exports.main = function(options, callbacks) {
-    
+
     // Read the db address from file
     var path = system.pathFor("ProfD") + '/database_settings.txt';
     if (fileIO.exists(path)) {
@@ -18,7 +18,7 @@ exports.main = function(options, callbacks) {
         var enableCK = dbstring[3].trim() == 'True';
         var enableJS = dbstring[4].trim() == 'True';
         var enableCP = dbstring[5].trim() == 'True';
-        console.log("Host:",host,"Port:",port,"CrawlID:",crawlID,"Cookie:",enableCK,"JS:",enableJS,"CP:",enableCP); 
+        console.log("Host:",host,"Port:",port,"CrawlID:",crawlID,"Cookie:",enableCK,"JS:",enableJS,"CP:",enableCP);
     } else {
         console.log("ERROR: database settings not found -- outputting all queries to console");
         var enableCK = true;
@@ -28,7 +28,7 @@ exports.main = function(options, callbacks) {
         var port = '';
         var crawlID = '';
     }
-    
+
     // Turn on instrumentation
     if (enableCK || enableJS || enableCP) {
         loggingDB.open(host, port, crawlID);

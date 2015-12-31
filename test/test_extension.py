@@ -37,7 +37,7 @@ class TestExtension():
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://localhost:8000/test_pages/property_enumeration.html')
         manager.close(post_process=False)
-        
+
         # Check that all property access was recorded
         db = os.path.join(manager_params['data_directory'], manager_params['database_name'])
         con = sqlite3.connect(db)

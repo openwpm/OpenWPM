@@ -13,19 +13,19 @@ exports.run = function(crawlID) {
     events.on("cookie-changed", function(event) {
         var data = event.data;
         // TODO: Support other cookie operations
-        if(data == "deleted" || data == "added" || data == "changed") {    
+        if(data == "deleted" || data == "added" || data == "changed") {
             var update = {};
             update["change"] = loggingDB.escapeString(data);
             update["crawl_id"] = crawlID;
 
             var cookie = event.subject.QueryInterface(Ci.nsICookie2);
-            
+
             // Creation time (in microseconds)
             var creationTime = new Date(cookie.creationTime / 1000); // requires milliseconds
             update["creationTime"] = creationTime.toLocaleFormat('%Y-%m-%d %H:%M:%S');
-            
+
             // Expiry time (in seconds)
-            // May return ~Max(int64). I believe this is a session 
+            // May return ~Max(int64). I believe this is a session
             // cookie which doesn't expire. Sessions cookies with
             // non-max expiry time expire after session or at expiry.
             var expiryTime = cookie.expiry; // returns seconds
@@ -43,7 +43,7 @@ exports.run = function(crawlID) {
             var lastAccessedTime = new Date(cookie.lastAccessed / 1000); // requires milliseconds
             update["last_accessed"] = lastAccessedTime.toLocaleFormat('%Y-%m-%d %H:%M:%S');
             update["raw_host"] = loggingDB.escapeString(cookie.rawHost);
-            
+
             cookie = cookie.QueryInterface(Ci.nsICookie);
             update["expires"] = cookie.expires;
             update["host"] = loggingDB.escapeString(cookie.host);
@@ -54,9 +54,9 @@ exports.run = function(crawlID) {
             update["policy"] = cookie.policy;
             update["status"] = cookie.status;
             update["value"] = loggingDB.escapeString(cookie.value);
-            
+
             loggingDB.executeSQL(loggingDB.createInsert("javascript_cookies", update), true);
         }
     }, true);
-    
+
 };

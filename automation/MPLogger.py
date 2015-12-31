@@ -11,12 +11,12 @@ import sys
 import os
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
-    """ 
+    """
     Make SocketHandler compatible with SocketInterface.py
     """
     def makePickle(self, record):
         """
-        Serializes the record via json and prepends a length/serialization 
+        Serializes the record via json and prepends a length/serialization
         flag. Returns it ready for transmission across the socket.
         """
         ei = record.exc_info
@@ -36,10 +36,10 @@ def loggingclient(logger_address, logger_port, level=logging.DEBUG):
     """ Establishes a logger that sends log records to loggingserver """
     logger = logging.getLogger(__name__)
     logger.setLevel(level)
-    
+
     # Logger object shared, so we only want to connect handlers once
     if not len(logger.handlers):
-        
+
         # Set up the SocketHandler - formatted server-side
         socketHandler = ClientSocketHandler(logger_address, logger_port)
         socketHandler.setLevel(level)
@@ -59,7 +59,7 @@ def loggingserver(log_file, status_queue):
     A logging server to serialize writes to the log file from multiple
     processes.
 
-    <log_file> location of the log file on disk 
+    <log_file> location of the log file on disk
     <status_queue> is a queue connect to the TaskManager used for communication
     """
     # Configure the log file
@@ -85,7 +85,7 @@ def loggingserver(log_file, status_queue):
         try:
             obj = sock.queue.get(True, 10)
             _handleLogRecord(obj)
-        except EmptyQueue: 
+        except EmptyQueue:
             pass
 
 def _handleLogRecord(obj):
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     rootLogger.setLevel(logging.DEBUG)
     socketHandler = ClientSocketHandler(*server_address)
     rootLogger.addHandler(socketHandler)
-    
+
     # Send some sample logs
     logging.info('Test1')
     logging.error('Test2')

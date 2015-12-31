@@ -16,7 +16,7 @@ DATE_FORMATS = ['%a, %d-%b-%Y %H:%M:%S %Z','%a, %d %b %Y %H:%M:%S %Z',
                 '%a, %d-%m-%y %H:%M:%S %Z','%a, %d %m %y %H:%M:%S %Z']
 
 def encode_to_unicode(string):
-    """ 
+    """
     Encode from UTF-8/ISO-8859-1 to unicode.
     Ignore errors if both of these don't work
     """
@@ -102,7 +102,7 @@ def parse_cookie_attributes(cookie, key, url):
     return (domain, path, expires, max_age, httponly, secure, comment, version)
 
 def parse_cookies(cookie_string, verbose, url = None, response_cookie = False):
-    """ 
+    """
     Parses the cookie string from an HTTP header into a query
     * Request 'Cookie'
         query = (name, value)
