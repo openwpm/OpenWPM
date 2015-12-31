@@ -17,8 +17,12 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
                                         proxy_queue, browser_params, manager_params,
                                         extension_socket)
 
-    if command[0] == 'DUMP_STORAGE_VECTORS':
-        browser_commands.dump_storage_vectors(command[1], command[2], webdriver,
+    if command[0] == 'DUMP_FLASH_COOKIES':
+        browser_commands.dump_flash_cookies(command[1], command[2], webdriver,
+                                              browser_params, manager_params)
+
+    if command[0] == 'DUMP_PROFILE_COOKIES':
+        browser_commands.dump_profile_cookies(command[1], command[2], webdriver,
                                               browser_params, manager_params)
 
     if command[0] == 'DUMP_PROF':

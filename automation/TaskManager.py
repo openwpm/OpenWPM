@@ -455,9 +455,13 @@ class TaskManager:
         """ browse a website and visit <num_links> links on the page """
         self._distribute_command(('BROWSE', url, num_links), index, timeout, reset)
 
-    def dump_storage_vectors(self, url, start_time, index=None, timeout=60):
-        """ dumps the local storage vectors (flash, localStorage, cookies) to db """
-        self._distribute_command(('DUMP_STORAGE_VECTORS', url, start_time), index, timeout)
+    def dump_flash_cookies(self, url, start_time, index=None, timeout=60):
+        """ dumps all Flash LSOs to db """
+        self._distribute_command(('DUMP_FLASH_COOKIES', url, start_time), index, timeout)
+
+    def dump_profile_cookies(self, url, start_time, index=None, timeout=60):
+        """ dumps changes to Firefox's cookies.sqlite to db """
+        self._distribute_command(('DUMP_PROFILE_COOKIES', url, start_time), index, timeout)
 
     def dump_profile(self, dump_folder, close_webdriver=False, compress=True, index=None, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """

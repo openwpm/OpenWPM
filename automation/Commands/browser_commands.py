@@ -170,15 +170,17 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manag
         except Exception, e:
             pass
 
-def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager_params):
-    """ Grab the newly changed items in supported storage vectors """
+def dump_flash_cookies(top_url, start_time, webdriver, browser_params, manager_params):
+    """ Save newly changed Flash LSOs to database
 
+    We determine which LSOs to save by the `start_time` timestamp.
+    This timestamp should be taken prior to calling the `get` for
+    which creates these changes.
+    """
     # Set up a connection to DataAggregator
     tab_restart_browser(webdriver)  # kills traffic so we can cleanly record data
     sock = clientsocket()
     sock.connect(*manager_params['aggregator_address'])
-
-    # Wait for SQLite Checkpointing - never happens when browser open
 
     # Flash cookies
     flash_cookies = get_flash_cookies(start_time)
@@ -189,6 +191,25 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager
                                                           cookie.key, cookie.content))
         sock.send(query)
 
+    # Close connection to db
+    sock.close()
+
+def dump_profile_cookies(top_url, start_time, webdriver, browser_params, manager_params):
+    """ Save changes to Firefox's cookies.sqlite to database
+
+    We determine which cookies to save by the `start_time` timestamp.
+    This timestamp should be taken prior to calling the `get` for
+    which creates these changes.
+
+    Note that the extension's cookieInstrument is preferred to this approach,
+    as this is likely to miss changes still present in the sqlite `wal` files.
+    This will likely be removed in a future version.
+    """
+    # Set up a connection to DataAggregator
+    tab_restart_browser(webdriver)  # kills traffic so we can cleanly record data
+    sock = clientsocket()
+    sock.connect(*manager_params['aggregator_address'])
+
     # Cookies
     rows = get_cookies(browser_params['profile_path'], start_time)
     if rows is not None:
@@ -197,14 +218,6 @@ def dump_storage_vectors(top_url, start_time, webdriver, browser_params, manager
                       host, path, expiry, accessed, creationTime, isSecure, isHttpOnly) \
                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (browser_params['crawl_id'], top_url) + row)
             sock.send(query)
-
-    # localStorage - TODO this doesn't have a modified time support
-    #rows = get_localStorage(profile_dir, start_time)
-    #if rows is not None:
-    #    for row in rows:
-    #        query = ("INSERT INTO localStorage (crawl_id, page_url, scope, KEY, value) \
-    #                  VALUES (?,?,?,?)",(crawl_id, top_url) + row)
-    #        sock.send(query)
 
     # Close connection to db
     sock.close()
