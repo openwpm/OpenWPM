@@ -33,6 +33,10 @@ class Browser:
 
      """
     def __init__(self, manager_params, browser_params):
+        # Constants
+        self._SPAWN_TIMEOUT = 120 #seconds
+        self._UNSUCCESSFUL_SPAWN_LIMIT = 4
+
         # manager parameters
         self.current_profile_path = None
         self.db_socket_address = manager_params['aggregator_address']
@@ -61,19 +65,17 @@ class Browser:
         """ return if the browser is ready to accept a command """
         return self.command_thread is None or not self.command_thread.is_alive()
 
-    def launch_browser_manager(self, spawn_timeout=120):
+    def launch_browser_manager(self):
         """
         sets up the BrowserManager and gets the process id, browser pid and, if applicable, screen pid
         loads associated user profile if necessary
-        <spawn_timeout> is the timeout for creating BrowserManager
         """
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
-            crashed_profile_path = self.current_profile_path
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp() + "/"
-            profile_commands.dump_profile(crashed_profile_path,
+            profile_commands.dump_profile(self.current_profile_path,
                                           self.manager_params,
                                           self.browser_params,
                                           tempdir,
@@ -84,8 +86,8 @@ class Browser:
             crash_recovery = True
         else:
             tempdir = None
-            crashed_profile_path = None
             crash_recovery = False
+        self.is_fresh = not crash_recovery
 
         # Try to spawn the browser within the timelimit
         unsuccessful_spawns = 0
@@ -93,14 +95,14 @@ class Browser:
         success = False
 
         def check_queue(launch_status):
-            result = self.status_queue.get(True, spawn_timeout)
+            result = self.status_queue.get(True, self._SPAWN_TIMEOUT)
             if result[0] == 'STATUS':
                 launch_status[result[1]] = True
                 return result[2]
             elif result[0] == 'CRITICAL':
                 reraise(*cPickle.loads(result[1]))
 
-        while not success and unsuccessful_spawns < 4:
+        while not success and unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT:
             self.logger.debug("BROWSER %i: Spawn attempt %i " % (self.crawl_id, unsuccessful_spawns))
             # Resets the command/status queues
             (self.command_queue, self.status_queue) = (Queue(), Queue())
@@ -114,7 +116,8 @@ class Browser:
             # Read success status of browser manager
             launch_status = dict()
             try:
-                self.current_profile_path = check_queue(launch_status) # selenium profile created
+                check_queue(launch_status) # proxy enabled (if necessary)
+                spawned_profile_path = check_queue(launch_status) # selenium profile created
                 check_queue(launch_status) # profile tar loaded (if necessary)
                 (self.display_pid, self.display_port) = check_queue(launch_status) # Display launched
                 check_queue(launch_status) # browser launch attempted
@@ -127,24 +130,25 @@ class Browser:
             except EmptyQueue:
                 unsuccessful_spawns += 1
                 error_string = ''
-                status_strings = ['Profile Created','Profile Tar','Display','Launch Attempted', 'Browser Launched', 'Browser Ready']
+                status_strings = ['Proxy Ready','Profile Created','Profile Tar','Display','Launch Attempted', 'Browser Launched', 'Browser Ready']
                 for string in status_strings:
                     error_string += " | %s: %s " % (string, launch_status.get(string, False))
                 self.logger.error("BROWSER %i: Spawn unsuccessful %s" % (self.crawl_id, error_string))
                 self.kill_browser_manager()
-                if self.current_profile_path is not None:
-                    shutil.rmtree(self.current_profile_path, ignore_errors=True)
+                if launch_status.has_key('Profile Created'):
+                    shutil.rmtree(spawned_profile_path, ignore_errors=True)
 
-        # if recovering from a crash, new browser has a new profile dir
-        # so the crashed dir and temporary tar dump can be cleaned up
+        # If the browser spawned successfully, we should update the
+        # current profile path class variable and clean up the tempdir
+        # and previous profile path.
         if success:
             self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.crawl_id)
+            previous_profile_path = self.current_profile_path
+            self.current_profile_path = spawned_profile_path
+            if previous_profile_path is not None:
+                shutil.rmtree(previous_profile_path, ignore_errors=True)
             if tempdir is not None:
                 shutil.rmtree(tempdir, ignore_errors=True)
-            if crashed_profile_path is not None:
-                shutil.rmtree(crashed_profile_path, ignore_errors=True)
-
-            self.is_fresh = crashed_profile_path is None  # browser is fresh iff it starts from a blank profile
 
         return success
 
@@ -245,6 +249,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
             (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params,
                                                                           manager_params)
             browser_params['proxy'] = local_port
+        status_queue.put(('STATUS','Proxy Ready','READY'))
 
         # Start the virtualdisplay (if necessary), webdriver, and browser
         (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, manager_params, crash_recovery)
