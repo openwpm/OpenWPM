@@ -37,7 +37,7 @@ exports.main = function(options, callbacks) {
     }
     if (enableCK) {
         console.log("Cookie instrumentation enabled");
-        //cookieInstrument.run(crawlID);
+        cookieInstrument.run(crawlID);
     }
     if (enableJS) {
         console.log("Javascript instrumentation enabled");
@@ -45,6 +45,6 @@ exports.main = function(options, callbacks) {
     }
     if (enableCP) {
         console.log("Content Policy instrumentation enabled");
-        //cpInstrument.run(crawlID);
+        cpInstrument.run(crawlID);
     }
 };
