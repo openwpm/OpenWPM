@@ -1,7 +1,7 @@
 OpenWPM
 =======
 
-OpenWPM is a web privacy measurement framework which makes to easy to collect
+OpenWPM is a web privacy measurement framework which makes it easy to collect
 data for privacy studies on a scale of thousands to millions of site. OpenWPM
 is built on top of Firefox, with automation provided by Selenium. It includes
 several hooks for data collection, including a proxy, a Firefox extension, and
