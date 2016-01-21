@@ -8,7 +8,13 @@ class CommandExecutionError(Exception):
         super(CommandExecutionError, self).__init__(message, command, *args)
 
 class ProfileLoadError(Exception):
-    """ Raise for errors related to executing commands """
+    """ Raise for errors that occur while loading profile """
     def __init__(self, message, *args):
         self.message = message
         super(ProfileLoadError, self).__init__(message, *args)
+
+class BrowserConfigError(Exception):
+    """ Raise for errors that occur from a misconfiguration of the browser """
+    def __init__(self, message, *args):
+        self.message = message
+        super(BrowserConfigError, self).__init__(message, *args)

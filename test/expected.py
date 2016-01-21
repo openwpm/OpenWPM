@@ -49,3 +49,7 @@ canvas = {
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"CanvasRenderingContext2D.fillText",u"call",u"",2,u"17"),
     (u"http://localhost:8000/test_pages/canvas_fingerprinting.html",u"HTMLCanvasElement.toDataURL",u"call",u"", None, None)
 }
+
+adblockplus = {
+        "http://localhost:8000/abp/adblock_plus_test.html",
+        "http://localhost:8000/favicon.ico"}

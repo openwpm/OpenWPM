@@ -1,8 +1,14 @@
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from pyvirtualdisplay import Display
 from collections import OrderedDict
+from selenium import webdriver
 from tabulate import tabulate
 from copy import deepcopy
 import subprocess
+import shutil
 import json
+import time
+import sys
 import os
 
 def get_version():
@@ -98,3 +104,48 @@ def get_configuration_string(manager_params, browser_params, versions):
 
     config_str += '\n\n'
     return config_str
+
+def fetch_adblockplus_list(output_directory, wait_time=20):
+    """ Saves an updated AdBlock Plus list to the specified directory.
+    <output_directory> - The directory to save lists to. Will be created if it
+                         does not already exist.
+    """
+    # Start a virtual display
+    display = Display(visible=0)
+    display.start()
+
+    root_dir = os.path.dirname(__file__)
+    fb = FirefoxBinary(os.path.join(root_dir,'../firefox-bin/firefox'))
+
+    fp = webdriver.FirefoxProfile()
+    browser_path = fp.path + '/'
+
+    # Enable AdBlock Plus - Uses "Easy List" by default
+    # "Allow some non-intrusive advertising" disabled
+    fp.add_extension(extension=os.path.join(root_dir,'DeployBrowsers/firefox_extensions/adblock_plus-2.7.xpi'))
+    fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
+    fp.set_preference('extensions.adblockplus.subscriptions_listurl', '')
+    fp.set_preference('extensions.adblockplus.subscriptions_fallbackurl', '')
+    fp.set_preference('extensions.adblockplus.subscriptions_antiadblockurl', '')
+    fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
+    fp.set_preference('extensions.adblockplus.notificationurl', '')
+
+    # Force pre-loading so we don't allow some ads through
+    fp.set_preference('extensions.adblockplus.please_kill_startup_performance', True)
+
+    print "Starting webdriver with AdBlockPlus activated"
+    driver = webdriver.Firefox(firefox_profile = fp, firefox_binary = fb)
+    print "Sleeping %i seconds to give the list time to download" % wait_time
+    time.sleep(wait_time)
+
+    if not os.path.isdir(output_directory):
+        print "Output directory %s does not exist, creating." % output_directory
+        os.makedirs(output_directory)
+
+    print "Copying blocklists to %s" % output_directory
+    try:
+        shutil.copy(browser_path+'adblockplus/patterns.ini', output_directory)
+        shutil.copy(browser_path+'adblockplus/elemhide.css', output_directory)
+    finally:
+        driver.close()
+        display.stop()

@@ -1,0 +1,38 @@
+<html>
+<title>AdBlock Plus Test Page</title>
+<p> If functioning correctly, we expect AdBlock Plus to prevent the included
+requests from succeeding.</p>
+
+<p>
+Script 1: <pre id='1'></pre><br />
+Script 2: <pre id='2'></pre><br />
+Script 3: <pre id='3'></pre><br />
+</p>
+
+<script type="text/javascript" src='adspot/1.js'></script>
+<script type="text/javascript" src='bannerads/2.js'></script>
+<script type="text/javascript" src='adsystem/3.js'></script>
+
+<script>
+
+if (typeof window.include_1 != 'undefined') {
+  document.getElementById('1').innerHTML = "Successfully Loaded";
+} else {
+  document.getElementById('1').innerHTML = "Did not load";
+}
+
+if (typeof window.include_2 != 'undefined') {
+  document.getElementById('2').innerHTML = "Successfully Loaded";
+} else {
+  document.getElementById('2').innerHTML = "Did not load";
+}
+
+if (typeof window.include_3 != 'undefined') {
+  document.getElementById('3').innerHTML = "Successfully Loaded";
+} else {
+  document.getElementById('3').innerHTML = "Did not load";
+}
+
+</script>
+
+</html>

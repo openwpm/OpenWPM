@@ -1,4 +1,5 @@
 """ Set prefs and load extensions in Firefox """
+from ..Errors import BrowserConfigError
 import shutil
 import sys
 import os
@@ -53,9 +54,32 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
     # Enable AdBlock Plus - Uses "Easy List" by default
     # "Allow some non-intrusive advertising" disabled
     if browser_params['adblock-plus']:
-        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/adblock-plus-2.6.11.xpi'))
-        fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
+        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/adblock_plus-2.7.xpi'))
         fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
+        fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
+        fp.set_preference('extensions.adblockplus.subscriptions_listurl', '')
+        fp.set_preference('extensions.adblockplus.subscriptions_fallbackurl', '')
+        fp.set_preference('extensions.adblockplus.subscriptions_antiadblockurl', '')
+        fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
+        fp.set_preference('extensions.adblockplus.notificationurl', '')
+
+        # Force pre-loading so we don't allow some ads through
+        fp.set_preference('extensions.adblockplus.please_kill_startup_performance', True)
+
+        # Don't allow auto-update -- pull list from user location
+        fp.set_preference('extensions.adblockplus.subscriptions_autoupdate', False)
+        os.mkdir(browser_profile_path + 'adblockplus')
+        try:
+            list_loc = os.path.expanduser(browser_params['adblock-plus_list_location'])
+            shutil.copy(os.path.join(list_loc,'patterns.ini'),
+                    browser_profile_path+'adblockplus/')
+            shutil.copy(os.path.join(list_loc,'elemhide.css'),
+                    browser_profile_path+'adblockplus/')
+        except (KeyError, IOError):
+            raise BrowserConfigError(("In order to use AdBlock Plus, you must "
+                "specify the location of an updated `patterns.ini` via "
+                "`browser_params['adblock-plus_list_location']`. This can be "
+                "generated with `platform_utils.fetch_adblockplus_list()`."))
 
 def optimize_prefs(fp):
     """
@@ -95,6 +119,10 @@ def optimize_prefs(fp):
     fp.set_preference('browser.search.geoip.url', '')
     fp.set_preference("browser.search.countryCode", "US")
     fp.set_preference("browser.search.region", "US")
+
+    # Disable pinging Mozilla for geo-specific search
+    fp.set_preference("browser.search.geoSpecificDefaults", False)
+    fp.set_preference("browser.search.geoSpecificDefaults.url", "")
 
     # Disable auto-updating
     fp.set_preference("app.update.enabled", False) # browser

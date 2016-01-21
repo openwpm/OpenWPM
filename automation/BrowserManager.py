@@ -4,7 +4,7 @@ from Commands import profile_commands
 from Proxy import deploy_mitm_proxy
 from SocketInterface import clientsocket
 from MPLogger import loggingclient
-from Errors import ProfileLoadError
+from Errors import ProfileLoadError, BrowserConfigError
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
@@ -293,8 +293,9 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
                                              manager_params,
                                              extension_socket)
             status_queue.put("OK")
-    except ProfileLoadError:
-        logger.info("BROWSER %i: ProfileLoadError thrown, informing parent and raising" % browser_params['crawl_id'])
+    except (ProfileLoadError, BrowserConfigError) as e:
+        logger.info("BROWSER %i: %s thrown, informing parent and raising" %
+                (browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL',cPickle.dumps(err_info)))
         return
