@@ -36,7 +36,7 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
 
     # Load Ghostery - Enable all blocking
     if browser_params['ghostery']:
-        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/ghostery/ghostery-5.4.6.xpi'))
+        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/ghostery/ghostery-5.4.10.xpi'))
         os.makedirs(browser_profile_path+'jetpack/firefox@ghostery.com/simple-storage/')
         src = os.path.join(root_dir,'firefox_extensions/ghostery/store.json') # settings - block all trackers/cookies
         dst = os.path.join(browser_profile_path,'jetpack/firefox@ghostery.com/simple-storage/store.json')
@@ -44,7 +44,7 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
 
     # Enable HTTPS Everywhere
     if browser_params['https-everywhere']:
-        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/https-everywhere-5.0.7.xpi'))
+        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/https_everywhere-5.1.0.xpi'))
         fp.set_preference("extensions.https_everywhere.firstrun_context_menu", True)
         fp.set_preference("extensions.https_everywhere.prefs_version", 1)
         fp.set_preference("extensions.https_everywhere.toolbar_hint_shown", True)

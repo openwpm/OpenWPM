@@ -110,6 +110,7 @@ def fetch_adblockplus_list(output_directory, wait_time=20):
     <output_directory> - The directory to save lists to. Will be created if it
                          does not already exist.
     """
+    output_directory = os.path.expanduser(output_directory)
     # Start a virtual display
     display = Display(visible=0)
     display.start()
