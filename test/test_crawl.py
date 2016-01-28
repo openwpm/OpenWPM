@@ -116,10 +116,13 @@ class TestCrawl():
             ccur.execute("SELECT COUNT(*) FROM http_responses WHERE top_url = ?",('http://'+url,))
             if ccur.fetchone()[0] > 1:
                 continue
-            ccur.execute("SELECT response_status FROM http_responses WHERE top_url = ?",('http://'+url,))
-            if ccur.fetchone()[0] == 204:
+            ccur.execute("SELECT response_status, location FROM http_responses WHERE top_url = ?",('http://'+url,))
+            response_status, location = ccur.fetchone()
+            if response_status == 204:
                 continue
-            unexpected_missing_url.add(url)
+            if location == 'http://':
+                continue
+            unexpected_missing_urls.add(url)
 
         crawl_con.close()
         assert len(unexpected_missing_urls) == 0
