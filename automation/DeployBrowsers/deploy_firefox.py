@@ -3,13 +3,11 @@ from ..Commands.profile_commands import load_profile
 import configure_firefox
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.remote.remote_connection import LOGGER
 from selenium import webdriver
 
 from pyvirtualdisplay import Display
 import shutil
 import os
-import cPickle
 import random
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
@@ -24,10 +22,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     fp = webdriver.FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(('STATUS','Profile Created',browser_profile_path))
-
-    # Enable logging
-    #LOGGER.setLevel(logging.WARNING)
-    #fp.set_preference("webdriver.log.file", os.path.expanduser('~/selenium_logging'))
 
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
