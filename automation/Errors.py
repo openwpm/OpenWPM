@@ -18,3 +18,9 @@ class BrowserConfigError(Exception):
     def __init__(self, message, *args):
         self.message = message
         super(BrowserConfigError, self).__init__(message, *args)
+
+class BrowserCrashError(Exception):
+    """ Raise for non-critical crashes within the BrowserManager process """
+    def __init__(self, message, *args):
+        self.message = message
+        super(BrowserCrashError, self).__init__(message, *args)

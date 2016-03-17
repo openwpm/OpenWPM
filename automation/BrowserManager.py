@@ -4,7 +4,7 @@ from Commands import profile_commands
 from Proxy import deploy_mitm_proxy
 from SocketInterface import clientsocket
 from MPLogger import loggingclient
-from Errors import ProfileLoadError, BrowserConfigError
+from Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
@@ -100,6 +100,8 @@ class Browser:
                 return result[2]
             elif result[0] == 'CRITICAL':
                 reraise(*cPickle.loads(result[1]))
+            elif result[0] == 'FAILED':
+                raise BrowserCrashError('Browser spawn returned failure status')
 
         while not success and unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT:
             self.logger.debug("BROWSER %i: Spawn attempt %i " % (self.crawl_id, unsuccessful_spawns))
@@ -126,7 +128,7 @@ class Browser:
                     unsuccessful_spawns += 1
                     continue
                 success = True
-            except EmptyQueue:
+            except (EmptyQueue, BrowserCrashError):
                 unsuccessful_spawns += 1
                 error_string = ''
                 status_strings = ['Proxy Ready','Profile Created','Profile Tar','Display','Launch Attempted', 'Browser Launched', 'Browser Ready']
@@ -301,5 +303,5 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
     except Exception as e:
         excp = traceback.format_exception(*sys.exc_info())
         logger.info("BROWSER %i: Crash in driver, restarting browser manager \n %s" % (browser_params['crawl_id'], ''.join(excp)))
-        status_queue.put("FAILED")
+        status_queue.put(('FAILED',None))
         return
