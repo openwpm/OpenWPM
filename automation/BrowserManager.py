@@ -11,8 +11,8 @@ from Queue import Empty as EmptyQueue
 from tblib import pickling_support
 pickling_support.install()
 from six import reraise
+import traceback
 import tempfile
-import logging
 import cPickle
 import shutil
 import signal
@@ -91,7 +91,6 @@ class Browser:
 
         # Try to spawn the browser within the timelimit
         unsuccessful_spawns = 0
-        retry = False
         success = False
 
         def check_queue(launch_status):
@@ -300,6 +299,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         status_queue.put(('CRITICAL',cPickle.dumps(err_info)))
         return
     except Exception as e:
-        logger.info("BROWSER %i: Crash in driver, restarting browser manager \n %s \n %s" % (browser_params['crawl_id'], str(type(e)), str(e)))
+        excp = traceback.format_exception(*sys.exc_info())
+        logger.info("BROWSER %i: Crash in driver, restarting browser manager \n %s" % (browser_params['crawl_id'], ''.join(excp)))
         status_queue.put("FAILED")
         return
