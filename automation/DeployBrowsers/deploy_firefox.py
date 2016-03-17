@@ -121,7 +121,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
 
     # Launch the webdriver
     status_queue.put(('STATUS','Launch Attempted',None))
-    #fb = FirefoxBinary(root_dir  + "/../../firefox/firefox", log_file=open(root_dir + '/../../firefox_logging','w'))
     fb = FirefoxBinary(root_dir  + "/../../firefox-bin/firefox")
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
     status_queue.put(('STATUS','Browser Launched',(int(driver.binary.process.pid), profile_settings)))

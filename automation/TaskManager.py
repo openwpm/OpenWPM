@@ -2,13 +2,12 @@ from BrowserManager import Browser
 from DataAggregator import DataAggregator, LevelDBAggregator
 from SocketInterface import clientsocket
 from PostProcessing import post_processing
-from Errors import CommandExecutionError, ProfileLoadError
+from Errors import CommandExecutionError
 from platform_utils import get_version, get_configuration_string
 import MPLogger
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
-from sqlite3 import OperationalError
 from six import reraise
 import threading
 import cPickle
@@ -18,8 +17,6 @@ import sqlite3
 import time
 import json
 import psutil
-import shutil
-import sys
 
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500 # in MB
@@ -197,7 +194,7 @@ class TaskManager:
                         self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
                             % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
                         browser.restart_required = True
-                except psutil.NoSuchProcess as e:
+                except psutil.NoSuchProcess:
                     pass
 
             # Check for browsers or displays that were not closed correctly
