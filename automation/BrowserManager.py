@@ -248,7 +248,8 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         proxy_site_queue = None  # used to pass the current site down to the proxy
         if browser_params['proxy']:
             (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params,
-                                                                          manager_params)
+                                                                          manager_params,
+                                                                          status_queue)
             browser_params['proxy'] = local_port
         status_queue.put(('STATUS','Proxy Ready','READY'))
 

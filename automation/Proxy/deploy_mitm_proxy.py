@@ -9,11 +9,12 @@ import Queue
 import os
 
 
-def init_proxy(browser_params, manager_params):
+def init_proxy(browser_params, manager_params, status_queue):
     """
     Uses mitmproxy used to log HTTP Requests and Responses
     <browser params> configuration parameters of host browser
     <manager_params> configuration parameters of the TaskManager
+    <status_queue> a Queue to report proxy status back to TaskManager
     """
     logger = loggingclient(*manager_params['logger_address'])
     proxy_site_queue = Queue.Queue()  # queue for crawler to communicate with proxy
@@ -27,7 +28,7 @@ def init_proxy(browser_params, manager_params):
     config = proxy.ProxyConfig(cadir=os.path.join(os.path.dirname(__file__), 'cert'),port=proxy_port)
     server = ProxyServer(config)
     logger.info('BROWSER %i: Intercepting Proxy listening on %i' % (browser_params['crawl_id'], proxy_port))
-    m = MITMProxy.InterceptingMaster(server, proxy_site_queue, browser_params, manager_params)
+    m = MITMProxy.InterceptingMaster(server, proxy_site_queue, browser_params, manager_params, status_queue)
     thread = threading.Thread(target=m.run, args=())
     thread.daemon = True
     thread.start()

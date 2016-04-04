@@ -5,6 +5,7 @@ import mitm_commands
 from libmproxy import controller
 import Queue
 import sys
+import traceback
 
 
 class InterceptingMaster (controller.Master):
@@ -17,7 +18,7 @@ class InterceptingMaster (controller.Master):
     https://gist.github.com/dannvix/5285924
     """
 
-    def __init__(self, server, url_queue, browser_params, manager_params):
+    def __init__(self, server, url_queue, browser_params, manager_params, status_queue):
         self.browser_params = browser_params
         self.manager_params = manager_params
 
@@ -38,6 +39,9 @@ class InterceptingMaster (controller.Master):
 
         # Open a socket to communicate with MPLogger
         self.logger = loggingclient(*manager_params['logger_address'])
+
+        # Store status_queue for communication back to TaskManager
+        self.status_queue = status_queue
 
         controller.Master.__init__(self, server)
 
@@ -73,7 +77,9 @@ class InterceptingMaster (controller.Master):
             self.shutdown()
             sys.exit(0)
         except Exception as ex:
-            self.logger.critical('BROWSER %i: Exception. Shutting down proxy!\n%s' % (self.browser_params['crawl_id'], str(ex)))
+            excp = traceback.format_exception(*sys.exc_info())
+            self.logger.critical('BROWSER %i: Exception. Shutting down proxy!\n%s' % (self.browser_params['crawl_id'], excp))
+            self.status_queue.put(('FAILED', None))
             self.shutdown()
             raise
 
@@ -100,7 +106,6 @@ class InterceptingMaster (controller.Master):
             self.curr_requests.remove(msg.request)
         else:  # ignore responses for which we cannot match the request
             return
-
         mitm_commands.process_general_mitm_response(self.db_socket,
                                                     self.ldb_socket,
                                                     self.logger,
