@@ -76,7 +76,7 @@ class InterceptingMaster (controller.Master):
             print 'KeyboardInterrupt received. Shutting down'
             self.shutdown()
             sys.exit(0)
-        except Exception as ex:
+        except Exception:
             excp = traceback.format_exception(*sys.exc_info())
             self.logger.critical('BROWSER %i: Exception. Shutting down proxy!\n%s' % (self.browser_params['crawl_id'], excp))
             self.status_queue.put(('FAILED', None))
