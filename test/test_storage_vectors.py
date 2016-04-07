@@ -57,7 +57,7 @@ class TestStorageVectors():
         start_time = time.time()
         manager.get(url)
         time.sleep(5)
-        manager.dump_profile_cookies(url, start_time)
+        manager.dump_profile_cookies(url, start_time, timeout=90)
         manager.close(post_process=False)
 
         # Check that some flash cookies are recorded

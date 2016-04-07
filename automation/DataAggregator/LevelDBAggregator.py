@@ -57,7 +57,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
 
         # process record
         script = sock.queue.get()
-        process_script(script, batch, db, counter, logger)
+        counter = process_script(script, batch, db, counter, logger)
 
         # batch commit if necessary
         if counter >= batch_size:
@@ -74,27 +74,21 @@ def process_script(script, batch, db, counter, logger):
     """
     adds a script to the batch
     """
-    #if len(record) != 2:
-    #    logger.error("Unsupported record (incorrect length): %s" % str(record))
-    #    return
-    #key = record[0]
-    #value = record[1]
-
     # Hash script for deduplication on disk
     hasher = pyhash.murmur3_x64_128()
     script_hash = str(hasher(script) >> 64)
 
     if db.get(script_hash) is not None:
-        return
+        return counter
 
     compressed_script = zlib.compress(script)
 
     batch.put(script_hash, compressed_script)
-    counter += 1
+    return counter + 1
 
 def drain_queue(sock_queue, batch, db, counter, logger):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
     while not sock_queue.empty():
         script = sock_queue.get()
-        process_script(script, batch, db, counter, logger)
+        counter = process_script(script, batch, db, counter, logger)

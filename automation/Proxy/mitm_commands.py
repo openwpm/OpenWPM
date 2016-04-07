@@ -4,7 +4,6 @@
 from urlparse import urlparse
 import datetime
 import pyhash
-import plyvel
 import json
 import zlib
 import os
