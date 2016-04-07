@@ -1,22 +1,19 @@
 // Wrap in a function closure to hide variables
 (function () {
 
-// Bypass the Jetpack DOM wrapper
-let(window = unsafeWindow) {
-
 // Header guard workaround for Jetpack multiple script loading bug
-if(typeof window.navigator.instrumented == "undefined") {
-Object.defineProperty(window.navigator, "instrumented", { get: function() { return true; }});
+if(typeof unsafeWindow.navigator.instrumented == "undefined") {
+Object.defineProperty(unsafeWindow.navigator, "instrumented", { get: function() { return true; }});
 
 // Debugging
 
 // Default is off, to enable include in your script
-Object.defineProperty(window.navigator, "instrumented_debugging", { get: function() { return true; }});
-function debugging() { return window.navigator.instrumentation_debugging; }
+Object.defineProperty(unsafeWindow.navigator, "instrumented_debugging", { get: function() { return true; }});
+function debugging() { return unsafeWindow.navigator.instrumentation_debugging; }
 
 // Debugging tool - last accessed variable
 var last_accessed = "";
-Object.defineProperty(window.navigator, "last_accessed", { get: function() { return last_accessed; }});
+Object.defineProperty(unsafeWindow.navigator, "last_accessed", { get: function() { return last_accessed; }});
 
 /*
  * Instrumentation helpers
@@ -307,19 +304,19 @@ function logProperty(object, objectName, property) {
 // Access to navigator properties
 var navigatorProperties = [ "appCodeName", "appMinorVersion", "appName", "appVersion", "buildID", "cookieEnabled", "cpuClass", "doNotTrack", "geolocation", "language", "languages", "onLine", "opsProfile", "oscpu", "platform", "product", "productSub", "systemLanguage", "userAgent", "userLanguage", "userProfile", "vendorSub", "vendor" ];
 navigatorProperties.forEach(function(property) {
-    instrumentObjectProperty(window.navigator, "window.navigator", property);
+    instrumentObjectProperty(unsafeWindow.navigator, "window.navigator", property);
 });
 
 // Access to screen properties
 //instrumentObject(window.screen, "window.screen");
 var screenProperties =  [ "pixelDepth", "colorDepth" ];
 screenProperties.forEach(function(property) {
-    instrumentObjectProperty(window.screen, "window.screen", property);
+    instrumentObjectProperty(unsafeWindow.screen, "window.screen", property);
 });
 
 // Access to plugins
-for (var i = 0; i < window.navigator.plugins.length; i++) {
-    instrumentObject(window.navigator.plugins[i], "window.navigator.plugins[" + i + "]");
+for (var i = 0; i < unsafeWindow.navigator.plugins.length; i++) {
+    instrumentObject(unsafeWindow.navigator.plugins[i], "window.navigator.plugins[" + i + "]");
 }
 
 // Name, localStorage, and sessionsStorage logging
@@ -329,19 +326,17 @@ for (var i = 0; i < window.navigator.plugins.length; i++) {
 // of a get for the localStorage object followed by a getItem/setItem for the Storage object.
 windowProperties = [ "name", "localStorage", "sessionStorage" ];
 windowProperties.forEach(function(property) {
-    instrumentObjectProperty(window, "window", property);
+    instrumentObjectProperty(unsafeWindow, "window", property);
 });
-instrumentObject(window.Storage.prototype, "window.Storage", true);
+instrumentObject(unsafeWindow.Storage.prototype, "window.Storage", true);
 
 // Access to canvas
-instrumentObject(window.HTMLCanvasElement.prototype,"HTMLCanvasElement", true);
+instrumentObject(unsafeWindow.HTMLCanvasElement.prototype,"HTMLCanvasElement", true);
 var excludedProperties = [ "quadraticCurveTo", "lineTo", "transform", "globalAlpha", "moveTo", "drawImage" ];
-instrumentObject(window.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D", true, excludedProperties);
+instrumentObject(unsafeWindow.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D", true, excludedProperties);
 
 // Access to webRTC
-instrumentObject(window.mozRTCPeerConnection.prototype,"mozRTCPeerConnection", true);
-
-}
+instrumentObject(unsafeWindow.RTCPeerConnection.prototype,"RTCPeerConnection", true);
 
 }
 
