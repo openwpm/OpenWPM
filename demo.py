@@ -24,7 +24,7 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites with both browsers simultaneously
 for site in sites:
-    manager.get(site, index='**') # ** = synchronized browsers
+    manager.get(site, sleep=30, index='**') # ** = synchronized browsers
 
 # Shuts down the browsers and waits for the data to finish logging
 manager.close()

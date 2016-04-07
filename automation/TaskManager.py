@@ -444,9 +444,9 @@ class TaskManager:
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
 
-    def get(self, url, index=None, timeout=60, reset=False):
+    def get(self, url, sleep=0, index=None, timeout=60, reset=False):
         """ goes to a url """
-        self._distribute_command(('GET', url), index, timeout, reset)
+        self._distribute_command(('GET', url, sleep), index, timeout, reset)
 
     def browse(self, url, num_links = 2, index=None, timeout=60, reset=False):
         """ browse a website and visit <num_links> links on the page """

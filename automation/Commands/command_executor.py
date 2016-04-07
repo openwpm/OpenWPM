@@ -9,7 +9,7 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
     the only imports in this file should be imports to helper libraries
     """
     if command[0] == 'GET':
-        browser_commands.get_website(command[1], webdriver,
+        browser_commands.get_website(command[1], command[2], webdriver,
                                      proxy_queue, browser_params, extension_socket)
 
     if command[0] == 'BROWSE':

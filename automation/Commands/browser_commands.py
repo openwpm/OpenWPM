@@ -68,7 +68,7 @@ def tab_restart_browser(webdriver):
     time.sleep(0.5)
 
 
-def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
+def get_website(url, sleep, webdriver, proxy_queue, browser_params, extension_socket):
     """
     goes to <url> using the given <webdriver> instance
     <proxy_queue> is queue for sending the proxy the current first party site
@@ -91,6 +91,9 @@ def get_website(url, webdriver, proxy_queue, browser_params, extension_socket):
         webdriver.get(url)
     except TimeoutException:
         pass
+
+    # Sleep after get returns
+    time.sleep(sleep)
 
     # Close modal dialog if exists
     try:
