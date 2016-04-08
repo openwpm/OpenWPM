@@ -141,7 +141,8 @@ def extract_links(webdriver, browser_params, manager_params):
 
     sock.close()
 
-def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manager_params, extension_socket):
+def browse_website(url, num_links, sleep, webdriver, proxy_queue,
+                   browser_params, manager_params, extension_socket):
     """
     calls get_website before visiting <num_links> present on the page
     NOTE: top_url will NOT be properly labeled for requests to subpages
@@ -149,7 +150,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manag
           to this function.
     """
     # First get the site
-    get_website(url, webdriver, proxy_queue, browser_params, extension_socket)
+    get_website(url, sleep, webdriver, proxy_queue, browser_params, extension_socket)
 
     # Connect to logger
     logger = loggingclient(*manager_params['logger_address'])
@@ -166,7 +167,7 @@ def browse_website(url, num_links, webdriver, proxy_queue, browser_params, manag
         try:
             links[r].click()
             wait_until_loaded(webdriver, 300)
-            time.sleep(1)
+            time.sleep(max(1,sleep))
             if browser_params['bot_mitigation']:
                 bot_mitigation(webdriver)
             webdriver.back()

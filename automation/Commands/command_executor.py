@@ -13,9 +13,9 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
                                      proxy_queue, browser_params, extension_socket)
 
     if command[0] == 'BROWSE':
-        browser_commands.browse_website(command[1], command[2], webdriver,
-                                        proxy_queue, browser_params, manager_params,
-                                        extension_socket)
+        browser_commands.browse_website(command[1], command[2], command[3],
+                                        webdriver, proxy_queue, browser_params,
+                                        manager_params, extension_socket)
 
     if command[0] == 'DUMP_FLASH_COOKIES':
         browser_commands.dump_flash_cookies(command[1], command[2], webdriver,
