@@ -1,3 +1,19 @@
+v0.6.1 - 2016-04-08
+======
+
+Critical:
+    * Bugfix in LevelDBAggregator preventing data loss
+
+Changes:
+    * Bump to Firefox 45 & Selenium 2.53.0
+    * Update certificate stored
+    * Added sleep argument to `get` command
+    * Added install script for development dependencies
+    * Improved error handling in TaskManager and Proxy
+    * Version bumps and bugfixes in HTTPS Everywhere, Ghostery, and ABP
+    * Tests added!
+    * Numerous bugfixes and improvements in Javascript Instrumentation
+
 v0.6.0 - 2015-12-22
 ======
 
