@@ -40,7 +40,7 @@ class TestStorageVectors():
                                                           lso_value)
         test_url = utilities.BASE_TEST_URL + '/lso/setlso.html' + qry_str
         start_time = time.time()
-        manager.get(test_url)
+        manager.get(test_url, 120)
         time.sleep(5)
         manager.dump_flash_cookies(test_url, start_time)
         manager.close(post_process=False)
@@ -66,7 +66,7 @@ class TestStorageVectors():
         start_time = time.time()
         manager.get(url)
         time.sleep(5)
-        manager.dump_profile_cookies(url, start_time)
+        manager.dump_profile_cookies(url, start_time, timeout=90)
         manager.close(post_process=False)
 
         # Check that some flash cookies are recorded
