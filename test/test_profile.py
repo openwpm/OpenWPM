@@ -1,8 +1,8 @@
 import pytest
 import os
-
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
+
 
 class TestProfile():
     NUM_BROWSERS = 1
@@ -52,7 +52,7 @@ class TestProfile():
             manager = TaskManager.TaskManager(manager_params, browser_params)
 
     def test_profile_saved_when_launch_crashes(self, tmpdir):
-        manager_params, browser_params=self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config(str(tmpdir))
         browser_params[0]['save_javascript'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://example.com')

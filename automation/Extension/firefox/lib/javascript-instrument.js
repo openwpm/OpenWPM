@@ -5,7 +5,7 @@ var pageManager = require("./page-manager.js");
 
 exports.run = function(crawlID) {
 
-    // Set up logging
+    // Set up tables
     var createJavascriptTable = data.load("create_javascript_table.sql");
     loggingDB.executeSQL(createJavascriptTable, false);
 
@@ -16,10 +16,13 @@ exports.run = function(crawlID) {
         contentScriptFile: data.url("./content.js"),
         onAttach: function onAttach(worker) {
             var url = worker.url;
-            worker.port.on("instrumentation", function(data) {
+            function processCallsAndValues(data) {
                 var update = {};
                 update["crawl_id"] = crawlID;
                 update["script_url"] = loggingDB.escapeString(data.scriptUrl);
+                update["script_line"] = loggingDB.escapeString(data.scriptLine);
+                update["script_col"] = loggingDB.escapeString(data.scriptCol);
+                update["call_stack"] = loggingDB.escapeString(data.callStack);
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
@@ -33,7 +36,9 @@ exports.run = function(crawlID) {
                 } else {
                     loggingDB.executeSQL(loggingDB.createInsert("javascript", update), true);
                 }
-            });
+            }
+            worker.port.on("logCall", function(data){processCallsAndValues(data)});
+            worker.port.on("logValue", function(data){processCallsAndValues(data)});
         }
     });
 };

@@ -1,4 +1,4 @@
-import sqlite3
+from urlparse import urlparse
 import pytest
 import os
 
@@ -8,20 +8,11 @@ from ..automation.platform_utils import fetch_adblockplus_list
 import utilities
 import expected
 
+psl = utilities.get_psl()
+
+
 class TestABP():
     NUM_BROWSERS = 1
-    server = None
-    server_thread = None
-
-    @classmethod
-    def setup_class(cls):
-        cls.server, cls.server_thread = utilities.start_server()
-
-    @classmethod
-    def teardown_class(cls):
-        print "Closing server thread..."
-        cls.server.shutdown()
-        cls.server_thread.join()
 
     def get_config(self, data_dir):
         manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
@@ -44,16 +35,17 @@ class TestABP():
         fetch_adblockplus_list(list_loc)
         browser_params[0]['adblock-plus_list_location'] = list_loc
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        manager.get('http://localhost:8000/abp/adblock_plus_test.html')
+        manager.get(utilities.BASE_TEST_URL + '/abp/adblock_plus_test.html')
         manager.close(post_process=False)
 
-        db = os.path.join(data_dir,manager_params['database_name'])
-        con = sqlite3.connect(db)
-        cur = con.cursor()
-        cur.execute("SELECT url FROM http_requests")
+        db = os.path.join(data_dir, manager_params['database_name'])
+        rows = utilities.query_db(db, "SELECT url FROM http_requests")
         urls = set()
-        for url, in cur.fetchall():
-            urls.add(url)
+        for url, in rows:
+            ps1 = psl.get_public_suffix(urlparse(url).hostname)
+            # exclude requests to safebrowsing and tracking protection backends
+            if ps1 not in ("mozilla.com", "mozilla.net"):
+                urls.add(url)
         assert urls == expected.adblockplus
 
     def test_error_with_missing_option(self, tmpdir):
