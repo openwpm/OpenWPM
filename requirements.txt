@@ -1,0 +1,20 @@
+setuptools
+pyvirtualdisplay
+beautifulsoup4
+pyasn1
+PyOPenSSL
+python-dateutil
+tld
+pyamf
+psutil
+plyvel
+tblib
+tabulate
+pytest
+publicsuffix
+# Install specific mitmproxy version since we rely on some internal structure of
+# netlib and mitmproxy. New releases tend to break things and should be tested
+mitmproxy==0.13
+# Install specific version of selenium known to work well with the Firefox install we use
+selenium==2.53.0
+mmh3

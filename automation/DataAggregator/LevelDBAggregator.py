@@ -1,7 +1,7 @@
 from ..SocketInterface import serversocket
 from ..MPLogger import loggingclient
 import plyvel
-import pyhash
+import mmh3
 import zlib
 import time
 import os
@@ -75,7 +75,7 @@ def process_script(script, batch, db, counter, logger):
     adds a script to the batch
     """
     # Hash script for deduplication on disk
-    hasher = pyhash.murmur3_x64_128()
+    hasher = mmh3.hash128
     script_hash = str(hasher(script) >> 64)
 
     if db.get(script_hash) is not None:

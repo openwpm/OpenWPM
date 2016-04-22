@@ -1,0 +1,16 @@
+sudo: required
+language: python
+os: linux
+dist: trusty
+git:
+  depth: 3
+before_install:
+  - "export DISPLAY=:99.0"
+  - "npm install -g jpm"
+install:
+  - echo "y" | ./install.sh
+  - pip install -r requirements.txt
+before_script:
+  - cd test
+script:
+  - py.test -s -v
