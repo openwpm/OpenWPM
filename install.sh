@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ev
+set -e
 
 echo "Would you like to install Adobe Flash Player? (Only required for crawls with Flash) [y,N]"
 read -s -n 1 response
