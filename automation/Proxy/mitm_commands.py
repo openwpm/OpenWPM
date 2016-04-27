@@ -3,7 +3,7 @@
 
 from urlparse import urlparse
 import datetime
-import pyhash
+import mmh3
 import json
 import zlib
 import os
@@ -110,7 +110,7 @@ def save_javascript_content(ldb_socket, logger, browser_params, msg):
     ldb_socket.send(script)
 
     # Hash script for deduplication on disk
-    hasher = pyhash.murmur3_x64_128()
+    hasher = mmh3.hash128
     script_hash = str(hasher(script) >> 64)
 
     return script_hash

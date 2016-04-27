@@ -15,7 +15,7 @@ class TestDependencies(OpenWPMTest):
         # use  requirements.txt to test the dependencies
         py_pkgs = ["setuptools", "pyvirtualdisplay", "beautifulsoup4",
                    "pyasn1", "pyOpenSSL", "python-dateutil", "tld", "pyamf",
-                   "psutil", "pyhash", "plyvel", "tblib", "tabulate",
+                   "psutil", "mmh3", "plyvel", "tblib", "tabulate",
                    "pytest", "publicsuffix"]
 
         for pkg in py_pkgs:
