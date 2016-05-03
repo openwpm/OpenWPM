@@ -2,9 +2,24 @@ import pytest
 import time
 import os
 import utilities
-import expected
+from ..automation import CommandSequence
 from ..automation import TaskManager
 
+expected_lso_content = [
+               1, # visit id
+               u'localtest.me',
+               u'FlashCookie.sol',
+               u'localtest.me/FlashCookie.sol',
+               u'test_key',
+               u'REPLACEME']
+
+expected_js_cookie = (
+             1, # visit id
+             u'%s' % utilities.BASE_TEST_URL_DOMAIN,
+             u'test_cookie',
+             u'Test-0123456789',
+             u'%s' % utilities.BASE_TEST_URL_DOMAIN,
+             u'/')
 
 class TestStorageVectors():
     """ Runs some basic tests to check that the saving of
@@ -33,16 +48,14 @@ class TestStorageVectors():
 
         # Get a site we know sets Flash cookies
         lso_value = utilities.rand_str(8)
-        expected.lso_content[5] = lso_value  # we'll expect this to be present
-        expected.lso_content[0] = expected.lso_content[0].replace("REPLACEME",
-                                                                  lso_value)
+        expected_lso_content[5] = lso_value  # we'll expect this to be present
         qry_str = '?lso_test_key=%s&lso_test_value=%s' % ("test_key",
                                                           lso_value)
         test_url = utilities.BASE_TEST_URL + '/lso/setlso.html' + qry_str
-        start_time = time.time()
-        manager.get(test_url, 120)
-        time.sleep(5)
-        manager.dump_flash_cookies(test_url, start_time)
+        cs = CommandSequence.CommandSequence(test_url)
+        cs.get(sleep=3, timeout=120)
+        cs.dump_flash_cookies()
+        manager.execute_command_sequence(cs)
         manager.close(post_process=False)
 
         #  Check that some flash cookies are recorded
@@ -54,7 +67,7 @@ class TestStorageVectors():
         # remove randomly generated LSO directory name
         # e.g. TY2FOJUG/localtest.me/Flash.sol -> localtest.me/Flash.sol
         lso_content[3] = lso_content[3].split("/", 1)[-1]  # remove LSO dirname
-        assert lso_content == expected.lso_content
+        assert lso_content == expected_lso_content
 
     def test_profile_cookies(self, tmpdir):
         """ Check that some profile cookies are saved """
@@ -63,10 +76,10 @@ class TestStorageVectors():
         manager = TaskManager.TaskManager(manager_params, browser_params)
         # TODO update this to local test site
         url = 'http://www.yahoo.com'
-        start_time = time.time()
-        manager.get(url)
-        time.sleep(5)
-        manager.dump_profile_cookies(url, start_time, timeout=90)
+        cs = CommandSequence.CommandSequence(url)
+        cs.get(sleep=3, timeout=120)
+        cs.dump_profile_cookies()
+        manager.execute_command_sequence(cs)
         manager.close(post_process=False)
 
         # Check that some flash cookies are recorded
@@ -81,14 +94,14 @@ class TestStorageVectors():
         manager_params, browser_params = self.get_config(str(tmpdir))
         manager = TaskManager.TaskManager(manager_params, browser_params)
         url = utilities.BASE_TEST_URL + "/js_cookie.html"
-        start_time = time.time()
-        manager.get(url)
-        time.sleep(5)
-        manager.dump_profile_cookies(url, start_time)
+        cs = CommandSequence.CommandSequence(url)
+        cs.get(sleep=3, timeout=120)
+        cs.dump_profile_cookies()
+        manager.execute_command_sequence(cs)
         manager.close(post_process=False)
         # Check that the JS cookie we stored is recorded
         qry_res = utilities.query_db(manager_params['db'], "SELECT * FROM profile_cookies")
         assert len(qry_res) == 1  # we store only one cookie
         cookies = qry_res[0]  # take the first cookie
         # compare URL, domain, name, value, origin, path
-        assert cookies[2:8] == expected.js_cookie
+        assert cookies[2:8] == expected_js_cookie

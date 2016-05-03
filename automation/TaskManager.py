@@ -4,6 +4,7 @@ from SocketInterface import clientsocket
 from PostProcessing import post_processing
 from Errors import CommandExecutionError
 from platform_utils import get_version, get_configuration_string
+import CommandSequence
 import MPLogger
 
 from multiprocessing import Process, Queue
@@ -388,7 +389,7 @@ class TaskManager:
         if self.failure_flag:
             self.logger.debug("TaskManager failure threshold exceeded, raising CommandExecutionError")
             self._cleanup_before_fail()
-            raise CommandExecutionError("TaskManager failure threshold exceeded", command)
+            raise CommandExecutionError("TaskManager failure threshold exceeded", command_sequence)
 
         browser.set_visit_id(self.next_visit_id)
         self.sock.send(("INSERT INTO site_visits (visit_id, crawl_id, site_url) VALUES (?,?,?)",
@@ -450,7 +451,7 @@ class TaskManager:
             if command_succeeded != 1:
                 with self.threadlock:
                     self.failurecount += 1
-                if self.failurecount > self.num_browsers * 2 + 10:
+                if self.failurecount > self.failure_limit:
                     self.logger.critical("BROWSER %i: Command execution failure"
                                          " pushes failure count above the allowable limit."
                                          " Setting failure_flag." % browser.crawl_id)

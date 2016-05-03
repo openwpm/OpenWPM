@@ -80,11 +80,11 @@ class TestCrawl():
 
         # Grab urls from crawl database
         rows = utilities.query_db(crawl_db, "SELECT url FROM http_requests")
-        req_ps = set()
+        req_ps = set()  # visited domains from http_requests table
         for url, in rows:
             req_ps.add(psl.get_public_suffix(urlparse(url).hostname))
 
-        hist_ps = set()
+        hist_ps = set()  # visited domains from CrawlHistory Table
         successes = dict()
         rows = utilities.query_db(crawl_db, "SELECT arguments, bool_success "
                                   "FROM CrawlHistory WHERE command='GET'")
@@ -94,7 +94,7 @@ class TestCrawl():
             successes[ps] = success
 
         # Grab urls from Firefox database
-        profile_ps = set()
+        profile_ps = set()  # visited domains from firefox profile
         rows = utilities.query_db(ff_db, "SELECT url FROM moz_places")
         for host, in rows:
             try:
@@ -113,20 +113,28 @@ class TestCrawl():
             if successes[url] == 0 or successes[url] == -1:
                 continue
 
+            # Get the visit id for the url
+            rows = utilities.query_db(crawl_db,
+                                      "SELECT visit_id FROM site_visits "
+                                      "WHERE site_url = ?",
+                                      ('http://' + url,))
+            visit_id = rows[0]
+
             rows = utilities.query_db(crawl_db,
                                       "SELECT COUNT(*) FROM http_responses "
-                                      "WHERE top_url = ?",
-                                      ('http://' + url,))
+                                      "WHERE visit_id = ?",
+                                      (visit_id,))
             if rows[0] > 1:
                 continue
+
             rows = utilities.query_db(crawl_db,
                                       "SELECT response_status, location FROM "
-                                      "http_responses WHERE top_url = ?",
-                                      ('http://' + url,))
+                                      "http_responses WHERE visit_id = ?",
+                                      (visit_id,))
             response_status, location = rows[0]
             if response_status == 204:
                 continue
-            if location == 'http://':
+            if location == 'http://':  # site returned a blank redirect
                 continue
             unexpected_missing_urls.add(url)
 

@@ -68,7 +68,7 @@ def tab_restart_browser(webdriver):
     time.sleep(0.5)
 
 
-def get_website(url, visit_id, sleep, webdriver, proxy_queue, browser_params, extension_socket):
+def get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, extension_socket):
     """
     goes to <url> using the given <webdriver> instance
     <proxy_queue> is queue for sending the proxy the current first party site
@@ -141,7 +141,7 @@ def extract_links(webdriver, browser_params, manager_params):
 
     sock.close()
 
-def browse_website(url, num_links, visit_id, sleep, webdriver, proxy_queue,
+def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
                    browser_params, manager_params, extension_socket):
     """
     calls get_website before visiting <num_links> present on the page

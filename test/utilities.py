@@ -6,13 +6,12 @@ import codecs
 import os
 import sqlite3
 from random import choice
-LOCAL_WEBSERVER_PORT = 8000
+LOCAL_WEBSERVER_PORT = 9000
 PSL_CACHE_LOC = '/tmp/public_suffix_list.dat'
 BASE_TEST_URL_DOMAIN = "localtest.me"
 BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
                                          LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
-
 
 class MyTCPServer(SocketServer.TCPServer):
     """Subclass TCPServer to be able to reuse the same port (Errno 98)."""

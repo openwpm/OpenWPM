@@ -9,13 +9,15 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
     the only imports in this file should be imports to helper libraries
     """
     if command[0] == 'GET':
-        browser_commands.get_website(command[1], command[2], webdriver,
-                                     proxy_queue, browser_params, extension_socket)
+        browser_commands.get_website(url=command[1], sleep=command[2], visit_id=command[3],
+                                     webdriver=webdriver, proxy_queue=proxy_queue,
+                                     browser_params=browser_params, extension_socket=extension_socket)
 
     if command[0] == 'BROWSE':
-        browser_commands.browse_website(command[1], command[2], command[3],
-                                        webdriver, proxy_queue, browser_params,
-                                        manager_params, extension_socket)
+        browser_commands.browse_website(url=command[1], num_links=command[2], sleep=command[3],
+                                        visit_id=command[4], webdriver=webdriver,
+                                        proxy_queue=proxy_queue, browser_params=browser_params,
+                                        manager_params=manager_params, extension_socket=extension_socket)
 
     if command[0] == 'DUMP_FLASH_COOKIES':
         browser_commands.dump_flash_cookies(command[1], command[2], webdriver,
