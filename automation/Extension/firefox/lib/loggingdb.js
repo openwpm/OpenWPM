@@ -1,8 +1,8 @@
 var socket              = require("./socket.js");
 
 var crawlID = null;
-var topURL = null;
-var url_queue = null;
+var visitID = null;
+var visit_id_queue = null;
 var debugging = false;
 
 exports.open = function(host, port, crawlID) {
@@ -17,8 +17,8 @@ exports.open = function(host, port, crawlID) {
     // Connect to database for saving data
     socket.connect(host, port);
 
-    // Listen for incomming urls
-    url_queue = socket.createListeningSocket();
+    // Listen for incomming urls as visit ids
+    visit_id_queue = socket.createListeningSocket();
 };
 
 exports.close = function() {
@@ -55,13 +55,13 @@ exports.boolToInt = function(bool) {
 };
 
 exports.createInsert = function(table, update) {
-    // Add top url if changed
-    while (!debugging && url_queue.length != 0) {
-        topURL = url_queue.shift();
-        console.log("Top URL:",topURL);
+    // Add top url visit id if changed
+    while (!debugging && visit_id_queue.length != 0) {
+        visitID = visit_id_queue.shift();
+        console.log("Visit Id:",visitID);
     }
 
-    update["top_url"] = topURL;
+    update["visit_id"] = visitID;
 
     var statement = "INSERT INTO " + table + " (";
     var value_str = "VALUES (";
