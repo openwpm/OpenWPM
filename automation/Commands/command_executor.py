@@ -20,17 +20,22 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
                                         manager_params=manager_params, extension_socket=extension_socket)
 
     if command[0] == 'DUMP_FLASH_COOKIES':
-        browser_commands.dump_flash_cookies(command[1], command[2], webdriver,
-                                              browser_params, manager_params)
+        browser_commands.dump_flash_cookies(start_time=command[1], visit_id=command[2],
+                                            webdriver=webdriver, browser_params=browser_params,
+                                            manager_params=manager_params)
 
     if command[0] == 'DUMP_PROFILE_COOKIES':
-        browser_commands.dump_profile_cookies(command[1], command[2], webdriver,
-                                              browser_params, manager_params)
+        browser_commands.dump_profile_cookies(start_time=command[1], visit_id=command[2],
+                                              webdriver=webdriver, browser_params=browser_params,
+                                              manager_params=manager_params)
 
     if command[0] == 'DUMP_PROF':
-        profile_commands.dump_profile(browser_params['profile_path'], manager_params,
-                                      browser_params, command[1], command[2], webdriver,
-                                      browser_settings, compress=command[3],
+        profile_commands.dump_profile(browser_profile_folder=browser_params['profile_path'],
+                                      manager_params=manager_params,
+                                      browser_params=browser_params,
+                                      tar_location=command[1], close_webdriver=command[2],
+                                      webdriver=webdriver, browser_settings=browser_settings,
+                                      compress=command[3],
                                       save_flash=browser_params['disable_flash'] is False)
 
     if command[0] == 'EXTRACT_LINKS':

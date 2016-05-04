@@ -147,7 +147,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
     calls get_website before visiting <num_links> present on the page
     """
     # First get the site
-    get_website(url, visit_id, sleep, webdriver, proxy_queue, browser_params, extension_socket)
+    get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, extension_socket)
 
     # Connect to logger
     logger = loggingclient(*manager_params['logger_address'])
