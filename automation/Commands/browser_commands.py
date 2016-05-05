@@ -143,8 +143,10 @@ def extract_links(webdriver, browser_params, manager_params):
 
 def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
                    browser_params, manager_params, extension_socket):
-    """
-    calls get_website before visiting <num_links> present on the page
+    """Calls get_website before visiting <num_links> present on the page.
+
+    Note: the site_url in the site_visits table for the links visited will
+    be the site_url of the original page and NOT the url of the links visited.
     """
     # First get the site
     get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, extension_socket)

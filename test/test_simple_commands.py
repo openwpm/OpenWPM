@@ -24,7 +24,7 @@ class TestSimpleCommands():
         browser_params[0]['headless'] = True
         return manager_params, browser_params
 
-    def test_get_siteVisitsTableCorrect(self, tmpdir):
+    def test_get_site_visits_table_valid(self, tmpdir):
         """Check that get works and populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(str(tmpdir))
@@ -50,7 +50,7 @@ class TestSimpleCommands():
         assert qry_res[0][0] == url_a
         assert qry_res[1][0] == url_b
 
-    def test_get_httpTablesCorrect(self, tmpdir):
+    def test_get_http_tables_valid(self, tmpdir):
         """Check that get works and populates http tables correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(str(tmpdir))
@@ -94,7 +94,7 @@ class TestSimpleCommands():
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
 
-    def test_browse_siteVisitsTableCorrect(self, tmpdir):
+    def test_browse_site_visits_table_valid(self, tmpdir):
         """Check that 'browse' works and populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(str(tmpdir))
@@ -119,7 +119,7 @@ class TestSimpleCommands():
         assert qry_res[0][0] == url_a
         assert qry_res[1][0] == url_b
 
-    def test_browse_httpTablesCorrect(self, tmpdir):
+    def test_browse_http_table_valid(self, tmpdir):
         """Check that 'browse' works and populates http tables correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(str(tmpdir))

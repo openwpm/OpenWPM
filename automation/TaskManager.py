@@ -113,19 +113,10 @@ class TaskManager:
 
         # read the last used site visit id
         cur = self.db.cursor()
-        last_visit_id = 0
-        query_successful = False
-        while not query_successful:
-            try:
-                cur.execute("SELECT MAX(visit_id) from site_visits")
-                self.db.commit()
-                last_visit_id = cur.fetchone()[0]
-                if last_visit_id is None:
-                    last_visit_id = 0
-                query_successful = True
-            except OperationalError:
-                time.sleep(0.1)
-                pass
+        cur.execute("SELECT MAX(visit_id) from site_visits")
+        last_visit_id = cur.fetchone()[0]
+        if last_visit_id is None:
+            last_visit_id = 0
         self.next_visit_id = last_visit_id + 1
 
         # sets up the BrowserManager(s) + associated queues

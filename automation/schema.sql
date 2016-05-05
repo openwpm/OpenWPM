@@ -3,10 +3,6 @@
  * IF NOT EXISTS, otherwise there will be errors
  */
 
-
-/* SCHEMA VERSION */
-/* PRAGMA schema.user_version = 2; */
-
 /* Crawler Tables */
 
 CREATE TABLE IF NOT EXISTS task (
