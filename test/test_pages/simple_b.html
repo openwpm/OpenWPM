@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head>
+<title>Simple Page B</title>
+  <script type="application/javascript">
+    function set_cookie() {
+        document.cookie = 'test_cookie=Test-Page-B; expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/';
+        console.log(window.navigator.platform);
+     }
+  </script>
+ </head>
+ <body onload="set_cookie()">
+ </body></html>

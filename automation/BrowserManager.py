@@ -26,11 +26,9 @@ class Browser:
      configuration and status information on BrowserManager process
      it corresponds to. It also includes a set of methods for managing
      the BrowserManager process and its child processes/threads.
-
      <manager_params> are the TaskManager configuration settings.
      <browser_params> are per-browser parameter settings (e.g. whether
                       this browser is using a proxy, headless, etc.)
-
      """
     def __init__(self, manager_params, browser_params):
         # Constants
@@ -42,6 +40,7 @@ class Browser:
         self.db_socket_address = manager_params['aggregator_address']
         self.logger_address = manager_params['logger_address']
         self.crawl_id = browser_params['crawl_id']
+        self.curr_visit_id = None
         self.browser_params = browser_params
         self.manager_params = manager_params
 
@@ -64,6 +63,9 @@ class Browser:
     def ready(self):
         """ return if the browser is ready to accept a command """
         return self.command_thread is None or not self.command_thread.is_alive()
+
+    def set_visit_id(self, visit_id):
+        self.curr_visit_id = visit_id
 
     def launch_browser_manager(self):
         """
@@ -295,6 +297,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
                                              manager_params,
                                              extension_socket)
             status_queue.put("OK")
+
     except (ProfileLoadError, BrowserConfigError) as e:
         logger.info("BROWSER %i: %s thrown, informing parent and raising" %
                 (browser_params['crawl_id'], e.__class__.__name__))

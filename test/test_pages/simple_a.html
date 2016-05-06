@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+<head>
+<title>Simple Page A</title>
+  <script type="application/javascript">
+    function set_cookie() {
+        document.cookie = 'test_cookie=Test-Page-A; expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/';
+        console.log(window.navigator.userAgent);
+     }
+  </script>
+ </head>
+ <body onload="set_cookie()">
+ <a href="http://localtest.me:8000/test_pages/simple_c.html">Click me!</a>
+ </body></html>

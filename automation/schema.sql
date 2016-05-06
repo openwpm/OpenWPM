@@ -31,6 +31,12 @@ CREATE TABLE IF NOT EXISTS xpath (
     ctime DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(name, url));
 
+CREATE TABLE IF NOT EXISTS site_visits (
+    visit_id INTEGER PRIMARY KEY,
+    crawl_id INTEGER NOT NULL,
+    site_url VARCHAR(500) NOT NULL,
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+
 /* Proxy Tables */
 
 /* TODO: add publix_suffix to db structure */
@@ -42,7 +48,7 @@ CREATE TABLE IF NOT EXISTS http_requests (
     method VARCHAR(500) NOT NULL,
     referrer VARCHAR(500) NOT NULL,
     headers VARCHAR(500) NOT NULL,
-    top_url VARCHAR(500) NOT NULL,
+    visit_id INTEGER NOT NULL,
     time_stamp VARCHAR(500) NOT NULL);
 
 /* TODO: add publix_suffix to db structure */
@@ -58,7 +64,7 @@ CREATE TABLE IF NOT EXISTS http_responses (
     response_status_text VARCHAR(500) NOT NULL,
     headers VARCHAR(500) NOT NULL,
     location VARCHAR(500) NOT NULL,
-    top_url VARCHAR(500) NOT NULL,
+    visit_id INTEGER NOT NULL,
     time_stamp VARCHAR(500) NOT NULL,
     content_hash VARCHAR(50));
 
@@ -67,18 +73,19 @@ CREATE TABLE IF NOT EXISTS http_responses (
 CREATE TABLE IF NOT EXISTS flash_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
-    page_url VARCHAR(500) NOT NULL,
+    visit_id INTEGER NOT NULL,
     domain VARCHAR(500),
     filename VARCHAR(500),
     local_path VARCHAR(1000),
     key TEXT,
     content TEXT,
-    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id),
+    FOREIGN KEY(visit_id) REFERENCES site_visits(id));
 
 CREATE TABLE IF NOT EXISTS profile_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
-    page_url VARCHAR(500) NOT NULL,
+    visit_id INTEGER NOT NULL,
     baseDomain TEXT,
     name TEXT,
     value TEXT,
@@ -89,7 +96,8 @@ CREATE TABLE IF NOT EXISTS profile_cookies (
     creationTime INTEGER,
     isSecure INTEGER,
     isHttpOnly INTEGER,
-    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+    FOREIGN KEY(crawl_id) REFERENCES crawl(id),
+    FOREIGN KEY(visit_id) REFERENCES site_visits(id));
 
 CREATE TABLE IF NOT EXISTS localStorage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,3 +116,4 @@ CREATE TABLE IF NOT EXISTS CrawlHistory (
     bool_success INTEGER,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+

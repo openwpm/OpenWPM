@@ -3,7 +3,7 @@
     "extension": {
         "enabled": false,
         "cookieInstrument": false,
-	"jsInstrument": false,
+        "jsInstrument": false,
         "cpInstrument": false
     },
     "save_javascript": false,
