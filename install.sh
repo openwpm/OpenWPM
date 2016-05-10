@@ -28,7 +28,7 @@ if [ "$TRAVIS" != "true" ]; then
 	wget https://bootstrap.pypa.io/get-pip.py
 	sudo -H python get-pip.py
 	rm get-pip.py
-	sudo pip install -r requirements.txt
+	sudo pip install -U -r requirements.txt
 fi
 
 # Install specific version of Firefox known to work well with the selenium version above
