@@ -117,15 +117,15 @@ Citation
 --------
 
 If you use OpenWPM in your research, please cite our current [Technical
-Report](http://www.cs.princeton.edu/~ste/papers/openwpm_03-2015.pdf) on the
+Report](http://randomwalker.info/publications/OpenWPM_1_million_site_tracking_measurement.pdf) on the
 infrastructure. You can use the following BibTeX.
 
-    @unpublished{englehardt2015openwpm,
-        author = "Steven Englehardt and Christian Eubank and Peter Zimmerman and Dillon Reisman and Arvind Narayanan",
-        title  = "{OpenWPM: An Automated Platform for Web Privacy Measurement}",
-        month = "March",
-        year   = "2015",
-        note = "Manuscript"
+    @unpublished{englehardt2015census,
+        author = "Steven Englehardt and Arvind Narayanan",
+        title  = "{Online tracking: A 1-million-site measurement and analysis}",
+        month = may,
+        year   = "2016",
+        note = "[Technical Report]"
     }
 
 License
