@@ -58,7 +58,7 @@ OpenWPM includes the following instrumentation by default:
         * NOTE: this will not include cookies set by Javascript, see our
             Firefox extension option below.
     * De-duplicated content storage
-        * Right new we detect and store javascript, but this can be expanded
+        * Right now we detect and store javascript, but this can be expanded
 * A Firefox Extension
     * Javascript calls
     * Cookie setting and access
