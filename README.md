@@ -131,7 +131,7 @@ infrastructure. You can use the following BibTeX.
 License
 -------
 
-OpenWPM is licenced under GNU GPLv3. Additional code has been included from
+OpenWPM is licensed under GNU GPLv3. Additional code has been included from
 [FourthParty](https://github.com/fourthparty/fourthparty) and
 [Privacy Badger](https://github.com/EFForg/privacybadgerfirefox), both of which 
 are licensed GPLv3+.
