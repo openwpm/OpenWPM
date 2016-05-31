@@ -8,7 +8,7 @@ from selenium.common.exceptions import NoSuchElementException
 from urlparse import urlparse
 import random
 import time
-
+from publicsuffixlist import PublicSuffixList
 import XPathUtil
 
 #### Basic functions
@@ -35,7 +35,11 @@ def wait_until_loaded(webdriver, timeout, period=0.25):
     return False
 
 def get_intra_links(webdriver, url):
-    domain = urlparse(url).hostname
+    """
+    Extract href tags from the webdriver instance
+    """
+    domain = psl.privatesuffix(url) 
+    # domain = urlparse(url).hostname
     links = filter(lambda x: (x.get_attribute("href") and x.get_attribute("href").find(domain) > 0 and x.get_attribute("href").find("http") == 0), webdriver.find_elements_by_tag_name("a"))
     return links
 
