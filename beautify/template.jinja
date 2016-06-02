@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{ title }}</title>
+        <style>
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+                overflow:hidden;
+            }
+            th, td {
+                padding: 5px;
+                text-align: left;
+                overflow:hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content">
+            <h1>Results: {{ len_rows }}</h1>
+            <table style="width:100%">
+                <tr>
+                {% for h in headings %}
+                    <th>{{h}}</th>
+                {% endfor %}
+                </tr>
+                {% for r in rows %}
+                <tr>
+                    {% for c in r %}
+                    <td>{{c}}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </body>
+</html>
