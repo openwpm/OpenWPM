@@ -170,6 +170,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
             if browser_params['bot_mitigation']:
                 bot_mitigation(webdriver)
             webdriver.back()
+            wait_until_loaded(webdriver, 300)
         except Exception, e:
             pass
 
