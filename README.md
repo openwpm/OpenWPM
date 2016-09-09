@@ -116,16 +116,15 @@ scripts.
 Citation
 --------
 
-If you use OpenWPM in your research, please cite our current [Technical
-Report](http://randomwalker.info/publications/OpenWPM_1_million_site_tracking_measurement.pdf) on the
-infrastructure. You can use the following BibTeX.
+If you use OpenWPM in your research, please cite our CCS 2016 (to appear)
+[publication](http://randomwalker.info/publications/OpenWPM_1_million_site_tracking_measurement.pdf)
+on the infrastructure. You can use the following BibTeX.
 
-    @unpublished{englehardt2015census,
+    @inproceedings{englehardt2016census,
         author = "Steven Englehardt and Arvind Narayanan",
         title  = "{Online tracking: A 1-million-site measurement and analysis}",
-        month = may,
+				booktitle = {Proceedings of ACM CCS 2016},
         year   = "2016",
-        note = "[Technical Report]"
     }
 
 License
