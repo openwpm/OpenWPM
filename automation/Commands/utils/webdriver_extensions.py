@@ -5,10 +5,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import NoSuchElementException
-from urlparse import urlparse
+from urlparse import urljoin
 import random
 import time
 
+import domain_utils as du
 import XPathUtil
 
 #### Basic functions
@@ -35,8 +36,10 @@ def wait_until_loaded(webdriver, timeout, period=0.25):
     return False
 
 def get_intra_links(webdriver, url):
-    domain = urlparse(url).hostname
-    links = filter(lambda x: (x.get_attribute("href") and x.get_attribute("href").find(domain) > 0 and x.get_attribute("href").find("http") == 0), webdriver.find_elements_by_tag_name("a"))
+    ps1 = du.get_ps_plus_1(url)
+    links = filter(lambda x: (x.get_attribute("href") and
+                              du.get_ps_plus_1(urljoin(url, x.get_attribute("href"))) == ps1),
+                   webdriver.find_elements_by_tag_name("a"))
     return links
 
 ##### Search/Block Functions
@@ -106,7 +109,7 @@ def is_clickable(driver, full_xpath, xpath, timeout = 1):
         w = WebDriverWait(driver, timeout)
         w.until(EC.element_to_be_clickable(('xpath',xpath)))
         return XPathUtil.is_clickable(full_xpath)
-    except TimeoutException, ElementNotVisibleException:
+    except (TimeoutException, ElementNotVisibleException):
         return False
 
 #TODO Update this. No direct access to DB right now

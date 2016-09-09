@@ -49,7 +49,7 @@ class TestProfile():
         manager_params, browser_params = self.get_config(str(tmpdir))
         browser_params[0]['profile_tar'] = '/tmp/NOTREAL'
         with pytest.raises(ProfileLoadError):
-            manager = TaskManager.TaskManager(manager_params, browser_params)
+            manager = TaskManager.TaskManager(manager_params, browser_params) # noqa
 
     def test_profile_saved_when_launch_crashes(self, tmpdir):
         manager_params, browser_params = self.get_config(str(tmpdir))

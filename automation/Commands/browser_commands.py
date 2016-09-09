@@ -160,7 +160,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
         links = filter(lambda x: x.is_displayed() == True, links)
         if len(links) == 0:
             break
-        r = int(random.random()*len(links)-1)
+        r = int(random.random()*len(links))
         logger.info("BROWSER %i: visiting internal link %s" % (browser_params['crawl_id'], links[r].get_attribute("href")))
 
         try:
@@ -171,7 +171,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
                 bot_mitigation(webdriver)
             webdriver.back()
             wait_until_loaded(webdriver, 300)
-        except Exception, e:
+        except Exception:
             pass
 
 def dump_flash_cookies(start_time, visit_id, webdriver, browser_params, manager_params):
