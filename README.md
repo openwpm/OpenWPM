@@ -121,10 +121,10 @@ If you use OpenWPM in your research, please cite our CCS 2016 (to appear)
 on the infrastructure. You can use the following BibTeX.
 
     @inproceedings{englehardt2016census,
-        author = "Steven Englehardt and Arvind Narayanan",
-        title  = "{Online tracking: A 1-million-site measurement and analysis}",
-				booktitle = {Proceedings of ACM CCS 2016},
-        year   = "2016",
+        author    = "Steven Englehardt and Arvind Narayanan",
+        title     = "{Online tracking: A 1-million-site measurement and analysis}",
+        booktitle = {Proceedings of ACM CCS 2016},
+        year      = "2016",
     }
 
 License
