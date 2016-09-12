@@ -443,8 +443,6 @@ function getPageScript() {
     
     //Access to AudioContent
     
-        // Acces to AudioContext
-    
     instrumentObject(window.AudioContext.prototype, "AudioContext", true);
     instrumentObject(window.webkitAudioContext.prototype, "webkitAudioContext", true);
     instrumentObject(window.window.webkitOfflineAudioContext.prototype, "window.webkitOfflineAudioContext", true);
