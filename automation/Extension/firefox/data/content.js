@@ -441,6 +441,14 @@ function getPageScript() {
     // Access to webRTC
     instrumentObject(window.RTCPeerConnection.prototype,"RTCPeerConnection", true);
 
+    // Access to Audio API
+    instrumentObject(window.AudioContext.prototype, "AudioContext", true);
+    instrumentObject(window.OfflineAudioContext.prototype, "OfflineAudioContext", true);
+    instrumentObject(window.OscillatorNode.prototype, "OscillatorNode", true);
+    instrumentObject(window.AnalyserNode.prototype, "AnalyserNode", true);
+    instrumentObject(window.GainNode.prototype, "GainNode", true);
+    instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode", true);
+
     console.log("Successfully started all instrumentation.");
 
   } + "());";

@@ -95,3 +95,13 @@ class TestExtension(OpenWPMTest):
             else:
                 observed_rows.add(item)
         assert set(expected.webrtc_calls) == observed_rows
+
+    def test_audio_fingerprinting(self, tmpdir):
+        db = self.visit('/audio_fingerprinting.html', str(tmpdir))
+        # Check that all calls and methods are recorded
+        rows = utilities.get_javascript_entries(db)
+        observed_symbols = set()
+        for item in rows:
+            observed_symbols.add(item[1])
+        assert expected.audio == observed_symbols
+
