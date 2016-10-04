@@ -73,6 +73,7 @@ class CommandSequence:
         self.commands_with_timeout.append((command, timeout))
 
     def save_screenshot(self, screenshot_name, timeout=30):
+        """Saves screenshot of page to 'screenshots' directory in data directory."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
@@ -81,6 +82,7 @@ class CommandSequence:
         self.commands_with_timeout.append((command, timeout))
 
     def dump_page_source(self, dump_name, timeout=30):
+        """Dumps rendered source of current page visit to 'sources' directory."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
