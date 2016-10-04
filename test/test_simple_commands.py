@@ -1,4 +1,6 @@
 import pytest # noqa
+
+import filecmp
 import os
 import utilities
 from ..automation import CommandSequence
@@ -191,3 +193,15 @@ class TestSimpleCommands():
         assert qry_res[0][0] == 4
 
 
+    def test_save_screenshot_valid(self, tmpdir):
+        """Check that 'save_screenshot' works and screenshot is created properly."""
+        # Run the test crawl
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        cs = CommandSequence.CommandSequence(url_a)
+        cs.get(sleep=1)
+        cs.save_screenshot('test_screenshot')
+        manager.execute_command_sequence(cs)
+        manager.close(post_process=False)
+
+        assert filecmp.cmp(os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'), './test_pages/expected_screenshot.png')

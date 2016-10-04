@@ -229,8 +229,6 @@ def dump_profile_cookies(start_time, visit_id, webdriver, browser_params, manage
 
 def save_screenshot(screenshot_name, webdriver, browser_params, manager_params):
     # Connect to logger
-    logger = loggingclient(*manager_params['logger_address'])
-    logger.info(os.path.join(manager_params['screenshot_path'], screenshot_name, '.png'))
     webdriver.save_screenshot(os.path.join(manager_params['screenshot_path'], screenshot_name + '.png'))
 
 def dump_page_source(visit_id, webdriver, browser_params, manager_params):
