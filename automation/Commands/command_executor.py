@@ -40,3 +40,10 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
 
     if command[0] == 'EXTRACT_LINKS':
         browser_commands.extract_links(webdriver, browser_params, manager_params)
+
+    if command[0] == 'SAVE_SCREENSHOT':
+        browser_commands.save_screenshot(webdriver=webdriver,
+                                         browser_params=browser_params, manager_params=manager_params)
+
+    if command[0] == 'DUMP_PAGE_SOURCE':
+        pass

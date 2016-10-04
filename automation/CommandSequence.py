@@ -38,7 +38,8 @@ class CommandSequence:
         self.contains_get_or_browse = True
 
     def dump_flash_cookies(self, timeout=60):
-        """ dumps the local storage vectors (flash, localStorage, cookies) to db """
+        """ dumps the local storage vectors (flash, localStorage, cookies) to db
+        Side effect: closes the current tab."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
@@ -47,7 +48,8 @@ class CommandSequence:
         self.commands_with_timeout.append((command, timeout))
 
     def dump_profile_cookies(self, timeout=60):
-        """ dumps from the profile path to a given file (absolute path) """
+        """ dumps from the profile path to a given file (absolute path)
+        Side effect: closes the current tab."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
@@ -69,3 +71,21 @@ class CommandSequence:
                                         "the dump storage vectors command", self)
         command = ('EXTRACT_LINKS',)
         self.commands_with_timeout.append((command, timeout))
+
+    def save_screenshot(self, timeout=30):
+        self.total_timeout += timeout
+        if not self.contains_get_or_browse:
+            raise CommandExecutionError("No get or browse request preceding "
+                                        "the save screenshot command", self)
+        command = ('SAVE_SCREENSHOT',)
+        self.commands_with_timeout.append((command, timeout))
+
+    def dump_page_source(self, timeout=30):
+        self.total_timeout += timeout
+        if not self.contains_get_or_browse:
+            raise CommandExecutionError("No get or browse request preceding "
+                                        "the dump page source command", self)
+        command = ('DUMP_PAGE_SOURCE',)
+        self.commands_with_timeout.append((command, timeout))
+
+

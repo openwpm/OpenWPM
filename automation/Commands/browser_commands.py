@@ -4,6 +4,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
+import os
 import random
 import time
 
@@ -225,3 +226,13 @@ def dump_profile_cookies(start_time, visit_id, webdriver, browser_params, manage
 
     # Close connection to db
     sock.close()
+
+def save_screenshot(webdriver, browser_params, manager_params):
+    # Connect to logger
+    logger = loggingclient(*manager_params['logger_address'])
+    screenshot_path = os.path.join('/home/dillon/Desktop', 'test_shot.png')
+    logger.info(screenshot_path)
+    webdriver.save_screenshot(screenshot_path)
+
+def dump_page_source(visit_id, webdriver, browser_params, manager_params):
+    pass
