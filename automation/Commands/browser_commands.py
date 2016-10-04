@@ -228,8 +228,8 @@ def dump_profile_cookies(start_time, visit_id, webdriver, browser_params, manage
     sock.close()
 
 def save_screenshot(screenshot_name, webdriver, browser_params, manager_params):
-    # Connect to logger
     webdriver.save_screenshot(os.path.join(manager_params['screenshot_path'], screenshot_name + '.png'))
 
-def dump_page_source(visit_id, webdriver, browser_params, manager_params):
-    pass
+def dump_page_source(dump_name, webdriver, browser_params, manager_params):
+    with open(os.path.join(manager_params['source_dump_path'], dump_name + '.html'), 'wb') as f:
+        f.write(webdriver.page_source.encode('utf8') + '\n')

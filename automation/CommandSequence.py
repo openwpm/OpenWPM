@@ -80,12 +80,12 @@ class CommandSequence:
         command = ('SAVE_SCREENSHOT', screenshot_name,)
         self.commands_with_timeout.append((command, timeout))
 
-    def dump_page_source(self, timeout=30):
+    def dump_page_source(self, dump_name, timeout=30):
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
                                         "the dump page source command", self)
-        command = ('DUMP_PAGE_SOURCE',)
+        command = ('DUMP_PAGE_SOURCE', dump_name,)
         self.commands_with_timeout.append((command, timeout))
 
 

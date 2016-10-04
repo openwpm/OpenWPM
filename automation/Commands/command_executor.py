@@ -46,4 +46,5 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
                                          browser_params=browser_params, manager_params=manager_params)
 
     if command[0] == 'DUMP_PAGE_SOURCE':
-        pass
+        browser_commands.dump_page_source(dump_name=command[1], webdriver=webdriver,
+                                          browser_params=browser_params, manager_params=manager_params)
