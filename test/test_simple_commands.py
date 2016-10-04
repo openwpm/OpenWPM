@@ -1,5 +1,6 @@
 import pytest # noqa
 
+from PIL import Image
 import filecmp
 import os
 import utilities
@@ -206,7 +207,14 @@ class TestSimpleCommands():
         manager.execute_command_sequence(cs)
         manager.close(post_process=False)
 
-        assert filecmp.cmp(os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'), './test_pages/expected_screenshot.png')
+
+        # Check that image is not blank
+        im = Image.open(os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'))
+        bands = im.split()
+
+        isBlank = all(band.getextrema() == (255, 255) for band in bands)
+
+        assert not isBlank
 
 
     def test_dump_page_source_valid(self, tmpdir):
