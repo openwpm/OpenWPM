@@ -96,6 +96,7 @@ class TestExtension(OpenWPMTest):
                 observed_rows.add(item)
         assert set(expected.webrtc_calls) == observed_rows
 
+    @pytest.mark.skipif("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", reason='Flaky on Travis CI')
     def test_audio_fingerprinting(self, tmpdir):
         db = self.visit('/audio_fingerprinting.html', str(tmpdir))
         # Check that all calls and methods are recorded

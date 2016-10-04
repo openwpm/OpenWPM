@@ -4,6 +4,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
+import os
 import random
 import time
 
@@ -225,3 +226,10 @@ def dump_profile_cookies(start_time, visit_id, webdriver, browser_params, manage
 
     # Close connection to db
     sock.close()
+
+def save_screenshot(screenshot_name, webdriver, browser_params, manager_params):
+    webdriver.save_screenshot(os.path.join(manager_params['screenshot_path'], screenshot_name + '.png'))
+
+def dump_page_source(dump_name, webdriver, browser_params, manager_params):
+    with open(os.path.join(manager_params['source_dump_path'], dump_name + '.html'), 'wb') as f:
+        f.write(webdriver.page_source.encode('utf8') + '\n')
