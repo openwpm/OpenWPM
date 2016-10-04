@@ -72,12 +72,12 @@ class CommandSequence:
         command = ('EXTRACT_LINKS',)
         self.commands_with_timeout.append((command, timeout))
 
-    def save_screenshot(self, timeout=30):
+    def save_screenshot(self, screenshot_name, timeout=30):
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
                                         "the save screenshot command", self)
-        command = ('SAVE_SCREENSHOT',)
+        command = ('SAVE_SCREENSHOT', screenshot_name,)
         self.commands_with_timeout.append((command, timeout))
 
     def dump_page_source(self, timeout=30):

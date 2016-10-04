@@ -64,6 +64,12 @@ class TaskManager:
         manager_params['source_dump_path'] = os.path.join(manager_params['data_directory'], 'source_dump')
         self.manager_params = manager_params
 
+        # Create data directories if they do not exist
+        if not os.path.exists(manager_params['screenshot_path']):
+            os.makedirs(manager_params['screenshot_path'])
+        if not os.path.exists(manager_params['source_dump_path']):
+            os.makedirs(manager_params['source_dump_path'])
+
         # check size of parameter dictionary
         self.num_browsers = manager_params['num_browsers']
         if len(browser_params) != self.num_browsers:
