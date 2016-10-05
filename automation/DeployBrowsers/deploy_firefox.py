@@ -86,6 +86,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             f.write(','+str(browser_params['extension']['cookieInstrument']))
             f.write(','+str(browser_params['extension']['jsInstrument']))
             f.write(','+str(browser_params['extension']['cpInstrument']))
+            f.write(','+str(browser_params['extension']['httpInstrument']))
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded" % browser_params['crawl_id'])
 
     if browser_params['proxy']:

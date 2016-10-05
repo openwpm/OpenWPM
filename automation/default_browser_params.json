@@ -4,7 +4,8 @@
         "enabled": false,
         "cookieInstrument": false,
         "jsInstrument": false,
-        "cpInstrument": false
+        "cpInstrument": false,
+        "httpInstrument": false
     },
     "save_javascript": false,
 

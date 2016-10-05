@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS http_requests_ext(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
+  url VARCHAR(500) NOT NULL,
+  top_level_url TEXT,
+  method VARCHAR(500) NOT NULL,
+  referrer VARCHAR(500) NOT NULL,
+  headers VARCHAR(500) NOT NULL,
+  is_XHR BOOLEAN,
+  is_frame_load BOOLEAN,
+  is_full_page BOOLEAN,
+  is_third_party_channel BOOLEAN,
+  is_third_party_window BOOLEAN,
+  triggering_origin TEXT,
+  loading_origin TEXT,
+  loading_href TEXT,
+  content_policy_type INTEGER NOT NULL,
+  time_stamp VARCHAR(500) NOT NULL
+);
