@@ -1,5 +1,5 @@
 // TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
-const {Cc, Ci, CC, Cu} = require("chrome");
+const {Cc, Ci, CC, Cu, components} = require("chrome");
 var events = require("sdk/system/events");
 const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
@@ -15,6 +15,25 @@ var StorageStream = CC('@mozilla.org/storagestream;1',
     'nsIStorageStream', 'init');
 const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
                        Ci.mozIThirdPartyUtil);
+
+function get_stack_trace_str(){
+  // return the stack trace as a string
+  // TODO: check if http-on-modify-request is a good place to capture the stack
+  // In the manual tests we could capture exactly the same trace as the
+  // "Cause" column of the devtools network panel.
+  var stacktrace = [];
+  var frame = components.stack;
+  if (frame && frame.caller) {
+    // internal/chrome callers occupy the first three frames, pop them!
+    frame = frame.caller.caller.caller;
+    while (frame) {
+      stacktrace.push(frame.name + "@" + frame.filename + ":" +
+          frame.lineNumber + ":" + frame.columnNumber + ";" + frame.asyncCause);
+      frame = frame.caller || frame.asyncCaller;
+    }
+  }
+  return stacktrace.join("\n");
+}
 
 exports.run = function(crawlID) {
   // Set up logging
@@ -34,6 +53,9 @@ exports.run = function(crawlID) {
     var update = {};
 
     update["crawl_id"] = crawlID;
+
+    var stacktrace_str = get_stack_trace_str();
+    update["req_call_stack"] = stacktrace_str;
 
     var url = httpChannel.URI.spec;
     update["url"] = loggingDB.escapeString(url);

@@ -4,6 +4,8 @@ import utilities
 import expected
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
+from ..automation.platform_utils import parse_http_stack_trace_str
+
 
 class TestHTTPInstrument(OpenWPMTest):
     NUM_BROWSERS = 1
@@ -45,3 +47,14 @@ class TestHTTPInstrument(OpenWPMTest):
     #refresh page.
 
     #TODO: test that javascript content is saved correctly
+
+    def test_http_stacktrace(self, tmpdir):
+        test_url = utilities.BASE_TEST_URL + '/http_stacktrace/http_stack_trace.html'
+        db = self.visit(test_url, str(tmpdir), sleep_after=20)
+        rows = utilities.query_db(db, (
+            "SELECT url, req_call_stack FROM http_requests_ext"))
+        for row in rows:
+            url, stacktrace = row
+            if url.endswith("shared/test_script.js"):
+                stack_frames = parse_http_stack_trace_str(stacktrace)
+                assert stack_frames == expected_http_call_stack

@@ -99,6 +99,21 @@ http_responses = {
         u'')
 }
 
+# HTTP request call stack instrumentation
+# Expected stack frames from http_stack_trace.html page
+expected_http_call_stack = [{"func_name": "inject_js",
+                             "filename": BASE_TEST_URL + "/http_stacktrace/http_stack_trace.html",  # noqa
+                             "line_no": "11",
+                             "col_no": "7",
+                             "async_cause": "null"
+                             },
+                            {"func_name": "onload",
+                             "filename": BASE_TEST_URL + "/http_stacktrace/http_stack_trace.html",  # noqa
+                             "line_no": "1",
+                             "col_no": "1",
+                             "async_cause": "null"
+                             }]
+
 # Canvas Fingerprinting DB calls and property sets
 CANVAS_TEST_URL = u"%s/canvas_fingerprinting.html" % BASE_TEST_URL
 

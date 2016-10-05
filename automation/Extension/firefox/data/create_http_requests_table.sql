@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS http_requests_ext(
   triggering_origin TEXT,
   loading_origin TEXT,
   loading_href TEXT,
+  req_call_stack TEXT,
   content_policy_type INTEGER NOT NULL,
   time_stamp VARCHAR(500) NOT NULL
 );

@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+<title>async load by script</title>
+  <script type="application/javascript">
+    function inject_js() {
+  	  var js=window.document.createElement("script");
+      js.setAttribute("async","true");
+      js.type="text/javascript"
+      js.src="../shared/test_script.js";
+      window.document.body.appendChild(js);
+    }
+  </script>
+ </head>
+ <body onload="inject_js()">
+ <p> The script injects another script element and triggers an aysnc load.</p>
+</body></html>
