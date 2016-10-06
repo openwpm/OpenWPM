@@ -5,6 +5,7 @@ pyasn1
 PyOPenSSL
 python-dateutil
 tld
+dill
 pyamf
 psutil
 plyvel
