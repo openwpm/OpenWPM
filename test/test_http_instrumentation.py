@@ -57,4 +57,4 @@ class TestHTTPInstrument(OpenWPMTest):
             url, stacktrace = row
             if url.endswith("shared/test_script.js"):
                 stack_frames = parse_http_stack_trace_str(stacktrace)
-                assert stack_frames == expected_http_call_stack
+                assert stack_frames == expected.http_call_stack
