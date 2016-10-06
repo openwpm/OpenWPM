@@ -50,7 +50,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
     def test_http_stacktrace(self, tmpdir):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace/http_stack_trace.html'
-        db = self.visit(test_url, str(tmpdir), sleep_after=20)
+        db = self.visit(test_url, str(tmpdir), sleep_after=3)
         rows = utilities.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests_ext"))
         for row in rows:
@@ -58,3 +58,16 @@ class TestHTTPInstrument(OpenWPMTest):
             if url.endswith("shared/test_script.js"):
                 stack_frames = parse_http_stack_trace_str(stacktrace)
                 assert stack_frames == expected.http_call_stack
+
+    def test_http_stacktrace_nonjs_loads(self, tmpdir):
+        # First request of each visit has chrome scripts as the caller.
+        # Perhaps a side effect of webdriver.
+        chrome_stack_frame_prefix = "_loadURIWithFlags@chrome://"
+        test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
+        db = self.visit(test_url, str(tmpdir), sleep_after=3)
+        rows = utilities.query_db(db, (
+            "SELECT url, req_call_stack FROM http_requests_ext"))
+        for row in rows:
+            _, stacktrace = row
+            if not stacktrace.startswith(chrome_stack_frame_prefix):
+                assert stacktrace == ""
