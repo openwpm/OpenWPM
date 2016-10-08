@@ -27,8 +27,12 @@ function get_stack_trace_str(){
     // internal/chrome callers occupy the first three frames, pop them!
     frame = frame.caller.caller.caller;
     while (frame) {
-      stacktrace.push(frame.name + "@" + frame.filename + ":" +
-          frame.lineNumber + ":" + frame.columnNumber + ";" + frame.asyncCause);
+      // chrome scripts appear as callers in some cases, filter them out
+      var scheme = frame.filename.split("://")[0];
+      if ( ["resource", "chrome", "file"].indexOf(scheme) === -1 ) {  // ignore chrome scripts
+        stacktrace.push(frame.name + "@" + frame.filename + ":" +
+            frame.lineNumber + ":" + frame.columnNumber + ";" + frame.asyncCause);
+      }
       frame = frame.caller || frame.asyncCaller;
     }
   }
