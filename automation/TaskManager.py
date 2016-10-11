@@ -7,7 +7,7 @@ from platform_utils import get_version, get_configuration_string
 import CommandSequence
 import MPLogger
 
-from multiprocessing import Process, Queue
+from multiprocess import Process, Queue
 from Queue import Empty as EmptyQueue
 import threading
 import copy

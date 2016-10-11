@@ -104,7 +104,7 @@ def _drain_queue(sock_queue):
 if __name__ == '__main__':
     # Some tests
     import logging, logging.handlers
-    import multiprocessing as mp
+    import multiprocess as mp
 
     # Set up loggingserver
     log_file = '~/mplogger.log'
