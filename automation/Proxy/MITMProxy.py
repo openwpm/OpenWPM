@@ -28,7 +28,7 @@ class InterceptingMaster (controller.Master):
         self.prev_requests, self.curr_requests = set(), set()  # set of requests for previous and current site
 
         # Open a socket to communicate with DataAggregator
-        self.db_socket = clientsocket(serlialization='dill')
+        self.db_socket = clientsocket(serialization='dill')
         self.db_socket.connect(*manager_params['aggregator_address'])
 
         # Open a socket to communicate with LevelDBAggregator
