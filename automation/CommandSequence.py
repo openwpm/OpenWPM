@@ -1,5 +1,3 @@
-import dill
-
 from Errors import CommandExecutionError
 
 class CommandSequence:
@@ -103,7 +101,5 @@ class CommandSequence:
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
                                         "the dump page source command", self)
-        #serialized_function = dill.dumps(function_handle)
-        #command = ('RUN_CUSTOM_FUNCTION', serialized_function, func_args)
         command = ('RUN_CUSTOM_FUNCTION', function_handle, func_args)
         self.commands_with_timeout.append((command, timeout))
