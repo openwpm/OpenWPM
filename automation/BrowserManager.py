@@ -267,7 +267,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
             time.sleep(0.5)
             with open(prof_folder + 'extension_port.txt', 'r') as f:
                 port = f.read().strip()
-            extension_socket = clientsocket()
+            extension_socket = clientsocket(serialization='json')
             extension_socket.connect('127.0.0.1',int(port))
         else:
             extension_socket = None

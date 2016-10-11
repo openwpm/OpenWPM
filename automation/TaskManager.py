@@ -9,9 +9,7 @@ import MPLogger
 
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
-from six import reraise
 import threading
-import cPickle
 import copy
 import os
 import sqlite3
@@ -114,7 +112,7 @@ class TaskManager:
         self._launch_aggregators()
 
         # open client socket
-        self.sock = clientsocket()
+        self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
         self._save_configuration(browser_params)
