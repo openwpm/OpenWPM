@@ -62,7 +62,22 @@ class serversocket:
                         if serialization == 'd': # dill serialization
                             msg = dill.loads(msg)
                         elif serialization == 'j': # json serialization
-                            msg = json.loads(msg)
+                            try:
+                                msg = json.loads(msg)
+                            except UnicodeDecodeError:
+                                try:
+                                    msg = json.loads(unicode(msg, 'ISO-8859-1', 'ignore'))
+                                except ValueError:
+                                    if self.verbose:
+                                        "Unrecognized character encoding during de-serialization."
+                                    continue
+                            except ValueError as e:
+                                try:
+                                    msg = json.loads(unicode(msg, 'utf-8', 'ignore'))
+                                except ValueError:
+                                    if self.verbose:
+                                        print "Unrecognized character encoding during de-serialization."
+                                    continue
                         else:
                             print "Unrecognized serialization type: %s" % serialization
                             continue
