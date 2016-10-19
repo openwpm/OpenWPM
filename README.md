@@ -1,4 +1,4 @@
-OpenWPM [![Build Status](https://travis-ci.org/citp/OpenWPM.svg)](https://travis-ci.org/citp/OpenWPM)
+OpenWPM [![Build Status](https://travis-ci.org/citp/OpenWPM.svg?branch=master)](https://travis-ci.org/citp/OpenWPM)
 =======
 
 OpenWPM is a web privacy measurement framework which makes it easy to collect
@@ -24,7 +24,7 @@ us know!
 Quick Start
 -----------
 
-Once installed, it's very easy to run a quick test of OpenWPM. Check out
+Once installed, it is very easy to run a quick test of OpenWPM. Check out
 `demo.py` for an example. This will the default setting specified in
 `automation/default_manager_params.json` and
 `automation/default_browser_params.json`, with the exception of the changes

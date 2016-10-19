@@ -1,4 +1,7 @@
 import pytest # noqa
+
+from PIL import Image
+import filecmp
 import os
 import utilities
 from ..automation import CommandSequence
@@ -8,6 +11,8 @@ url_a = utilities.BASE_TEST_URL + '/simple_a.html'
 url_b = utilities.BASE_TEST_URL + '/simple_b.html'
 url_c = utilities.BASE_TEST_URL + '/simple_c.html'
 url_d = utilities.BASE_TEST_URL + '/simple_d.html'
+
+rendered_js_url = utilities.BASE_TEST_URL + '/property_enumeration.html'
 
 class TestSimpleCommands():
     """Test correctness of simple commands and check
@@ -191,3 +196,41 @@ class TestSimpleCommands():
         assert qry_res[0][0] == 4
 
 
+    def test_save_screenshot_valid(self, tmpdir):
+        """Check that 'save_screenshot' works and screenshot is created properly."""
+        # Run the test crawl
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        cs = CommandSequence.CommandSequence(url_a)
+        cs.get(sleep=1)
+        cs.save_screenshot('test_screenshot')
+        manager.execute_command_sequence(cs)
+        manager.close(post_process=False)
+
+
+        # Check that image is not blank
+        im = Image.open(os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'))
+        bands = im.split()
+
+        isBlank = all(band.getextrema() == (255, 255) for band in bands)
+
+        assert not isBlank
+
+
+    def test_dump_page_source_valid(self, tmpdir):
+        """Check that 'dump_page_source' works and source is saved properly."""
+        # Run the test crawl
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        cs = CommandSequence.CommandSequence(url_a)
+        cs.get(sleep=1)
+        cs.dump_page_source('test_source')
+        manager.execute_command_sequence(cs)
+        manager.close(post_process=False)
+
+        with open(os.path.join(str(tmpdir), 'sources', 'test_source.html'), 'rb') as f:
+            actual_source = f.read()
+        with open('./test_pages/expected_source.html', 'rb') as f:
+            expected_source = f.read()
+
+        assert actual_source == expected_source
