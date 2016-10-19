@@ -5,7 +5,9 @@ set -e
 # * Required for compiling Firefox extension
 sudo apt-get install npm
 
-# Fix naming issue
-sudo ln -s /usr/bin/nodejs /usr/bin/node
+# Fix naming issue (exists in 14.04 and 16.04)
+if [ ! -f /usr/bin/node ]; then
+    sudo ln -s /usr/bin/nodejs /usr/bin/node
+fi
 
 sudo npm install jpm -g
