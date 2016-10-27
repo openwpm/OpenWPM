@@ -13,6 +13,11 @@ class CommandSequence:
 
     CommandSequence guarantees that a series of commands will be performed
     by a single browser instance.
+
+    NOTE: Commands dump_profile_cookies and dump_flash_cookies will close
+    the current tab - any command that relies on the page still being open,
+    like save_screenshot, extract_links, or dump_page_source, should be
+    called prior to one of those two commands.
     """
 
     def __init__(self, url, reset=False):
