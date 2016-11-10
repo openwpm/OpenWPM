@@ -126,8 +126,8 @@ exports.run = function(crawlID) {
     // The loadingDocument is the document the element resides, regardless of
     // how the load was triggered.
     var loadingHref;
-    if (httpChannel.loadInfo.loadingDocument)
-      loadingHref = httpChannel.loadInfo.loadingDocument.location.href
+    if (httpChannel.loadInfo.loadingDocument && httpChannel.loadInfo.loadingDocument.location)
+      loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
     update["loading_href"] = loadingHref;
 
     // contentPolicyType of the requesting node. This is set by the type of
