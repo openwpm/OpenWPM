@@ -55,7 +55,7 @@ function updateQueue(inputStream, queue) {
     bInputStream.setInputStream(inputStream);
 
     var buff = bInputStream.readByteArray(5);
-    var meta = bufferpack.unpack('>Ic', buff);
+    var meta = bufferpack.unpack('>Lc', buff);
     string = bInputStream.readBytes(meta[0]);
     if (meta[1] != 'n' && meta[1] == 'j') {
         string = JSON.parse(string);
@@ -77,7 +77,7 @@ exports.connect = connect;
 function connect(host, port) {
     try {
         transport = socket_service.createTransport(null, 0, host, port, null);
-        stream = transport.openOutputStream(0, 0, 0);
+        stream = transport.openOutputStream(1, 4096, 1048575);
         binaryStream.setOutputStream(stream)
         return true;
     } catch (err) {
@@ -92,7 +92,7 @@ exports.send = send;
 function send(query) {
     try {
         var msg = JSON.stringify(query);
-        var buff = bufferpack.pack('>Ic',[msg.length,'j']);
+        var buff = bufferpack.pack('>Lc',[msg.length,'j']);
         binaryStream.writeByteArray(buff, buff.length);
         stream.write(msg, msg.length);
         return true;

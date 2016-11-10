@@ -53,7 +53,7 @@ class serversocket:
         try:
             while True:
                 msg = self.receive_msg(client, 5)
-                msglen, serialization = struct.unpack('>ic', msg)
+                msglen, serialization = struct.unpack('>Lc', msg)
                 if self.verbose:
                     print "Msglen: " + str(msglen) + " is_serialized: " + str(serialization != 'n')
                 msg = self.receive_msg(client, msglen)
@@ -68,15 +68,13 @@ class serversocket:
                                 try:
                                     msg = json.loads(unicode(msg, 'ISO-8859-1', 'ignore'))
                                 except ValueError:
-                                    if self.verbose:
-                                        "Unrecognized character encoding during de-serialization."
+                                    print "****** Unrecognized character encoding during de-serialization."
                                     continue
                             except ValueError as e:
                                 try:
                                     msg = json.loads(unicode(msg, 'utf-8', 'ignore'))
                                 except ValueError:
-                                    if self.verbose:
-                                        print "Unrecognized character encoding during de-serialization."
+                                    print "****** Unrecognized character encoding during de-serialization."
                                     continue
                         else:
                             print "Unrecognized serialization type: %s" % serialization
@@ -142,7 +140,7 @@ class clientsocket:
         if self.verbose: print "Sending message with serialization %s" % serialization
 
         #prepend with message length
-        msg = struct.pack('>Ic', len(msg), serialization) + msg
+        msg = struct.pack('>Lc', len(msg), serialization) + msg
         totalsent = 0
         while totalsent < len(msg):
             sent = self.sock.send(msg[totalsent:])
