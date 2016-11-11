@@ -46,7 +46,7 @@ http_requests = {
         None,
         0, None, None, None, None,
         u'http://localtest.me:8000',
-        None, 3),
+        u'undefined', 3),
     (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, None, None, 0, 0,
