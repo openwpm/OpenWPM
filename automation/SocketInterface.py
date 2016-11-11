@@ -57,15 +57,13 @@ class serversocket:
                         try:
                             msg = json.loads(unicode(msg, 'ISO-8859-1', 'ignore'))
                         except ValueError:
-                            if self.verbose:
-                                "Unrecognized character encoding during de-serialization."
+                            print "Unrecognized character encoding during de-serialization."
                             continue
-                    except ValueError as e:
+                    except ValueError:
                         try:
                             msg = json.loads(unicode(msg, 'utf-8', 'ignore'))
                         except ValueError:
-                            if self.verbose:
-                                print "Unrecognized character encoding during de-serialization."
+                            print "Unrecognized character encoding during de-serialization."
                             continue
                 if self.verbose:
                     print "Message:"
