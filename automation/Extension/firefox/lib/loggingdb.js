@@ -42,17 +42,22 @@ exports.executeSQL = function(statement, async) {
     socket.send(statement);
 };
 
+function encode_utf8(s) {
+  return unescape(encodeURIComponent(s));
+}
+
 exports.escapeString = function(string) {
     // Convert to string if necessary
     if(typeof string != "string")
         string = "" + string;
 
-    return string;
+    return encode_utf8(string);
 };
 
 exports.boolToInt = function(bool) {
     return bool ? 1 : 0;
 };
+
 
 exports.createInsert = function(table, update) {
     // Add top url visit id if changed

@@ -59,7 +59,7 @@ exports.run = function(crawlID) {
     update["crawl_id"] = crawlID;
 
     var stacktrace_str = get_stack_trace_str();
-    update["req_call_stack"] = stacktrace_str;
+    update["req_call_stack"] = loggingDB.escapeString(stacktrace_str);
 
     var url = httpChannel.URI.spec;
     update["url"] = loggingDB.escapeString(url);
@@ -119,8 +119,8 @@ exports.run = function(crawlID) {
       triggeringOrigin = httpChannel.loadInfo.triggeringPrincipal.origin
     if (httpChannel.loadInfo.loadingPrincipal)
       loadingOrigin = httpChannel.loadInfo.loadingPrincipal.origin
-    update["triggering_origin"] = triggeringOrigin;
-    update["loading_origin"] = loadingOrigin;
+    update["triggering_origin"] = loggingDB.escapeString(triggeringOrigin);
+    update["loading_origin"] = loggingDB.escapeString(loadingOrigin);
 
     // loadingDocument's href
     // The loadingDocument is the document the element resides, regardless of
@@ -128,7 +128,7 @@ exports.run = function(crawlID) {
     var loadingHref;
     if (httpChannel.loadInfo.loadingDocument && httpChannel.loadInfo.loadingDocument.location)
       loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
-    update["loading_href"] = loadingHref;
+    update["loading_href"] = loggingDB.escapeString(loadingHref);
 
     // contentPolicyType of the requesting node. This is set by the type of
     // node making the request (i.e. an <img src=...> node will set to type 3).
@@ -151,7 +151,7 @@ exports.run = function(crawlID) {
         var isThirdPartyWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI);
         update["is_third_party_window"] = isThirdPartyWindow;
         update["is_third_party_channel"] = isThirdPartyChannel;
-        update["top_level_url"] = topUrl;
+        update["top_level_url"] = loggingDB.escapeString(topUrl);
       }
     } catch (e) {
       //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
@@ -251,7 +251,7 @@ exports.run = function(crawlID) {
     catch (e) {
       location = "";
     }
-    update["location"] = location;
+    update["location"] = loggingDB.escapeString(location);
 
     var headers = [];
     httpChannel.visitResponseHeaders({visitHeader: function(name, value) {
