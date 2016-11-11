@@ -76,7 +76,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         fp.set_preference("extensions.firebug.currentVersion", "1.11.0")  # Avoid startup screen
 
     if browser_params['extension']['enabled']:
-        ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/@openwpm-0.0.1.xpi')
+        ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
         with open(browser_profile_path + 'database_settings.txt', 'w') as f:
