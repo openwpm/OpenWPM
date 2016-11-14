@@ -1,3 +1,5 @@
+import dill
+
 import browser_commands
 import profile_commands
 
@@ -48,3 +50,15 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
     if command[0] == 'DUMP_PAGE_SOURCE':
         browser_commands.dump_page_source(dump_name=command[1], webdriver=webdriver,
                                           browser_params=browser_params, manager_params=manager_params)
+
+    if command[0] == 'RUN_CUSTOM_FUNCTION':
+        arg_dict = {"command": command,
+                           "webdriver": webdriver,
+                           "proxy_queue": proxy_queue,
+                           "browser_settings": browser_settings,
+                           "browser_params": browser_params,
+                           "manager_params": manager_params,
+                           "extension_socket": extension_socket}
+        #function_handle = dill.loads(command[1])
+        function_handle = command[1]
+        function_handle(*command[2], **arg_dict)
