@@ -28,13 +28,13 @@ class InterceptingMaster (controller.Master):
         self.prev_requests, self.curr_requests = set(), set()  # set of requests for previous and current site
 
         # Open a socket to communicate with DataAggregator
-        self.db_socket = clientsocket()
+        self.db_socket = clientsocket(serialization='dill')
         self.db_socket.connect(*manager_params['aggregator_address'])
 
         # Open a socket to communicate with LevelDBAggregator
         self.ldb_socket = None
         if browser_params['save_javascript']:
-            self.ldb_socket = clientsocket()
+            self.ldb_socket = clientsocket(serialization='dill')
             self.ldb_socket.connect(*manager_params['ldb_address'])
 
         # Open a socket to communicate with MPLogger

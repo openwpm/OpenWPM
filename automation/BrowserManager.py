@@ -6,7 +6,7 @@ from SocketInterface import clientsocket
 from MPLogger import loggingclient
 from Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
 
-from multiprocessing import Process, Queue
+from multiprocess import Process, Queue
 from Queue import Empty as EmptyQueue
 from tblib import pickling_support
 pickling_support.install()
@@ -267,7 +267,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
             time.sleep(0.5)
             with open(prof_folder + 'extension_port.txt', 'r') as f:
                 port = f.read().strip()
-            extension_socket = clientsocket()
+            extension_socket = clientsocket(serialization='json')
             extension_socket.connect('127.0.0.1',int(port))
         else:
             extension_socket = None

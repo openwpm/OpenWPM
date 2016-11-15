@@ -1,8 +1,7 @@
 import pytest # noqa
-
 from PIL import Image
-import filecmp
 import os
+
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
@@ -195,7 +194,6 @@ class TestSimpleCommands():
                                      " WHERE visit_id = ?", (visit_ids[url_a],))
         assert qry_res[0][0] == 4
 
-
     def test_save_screenshot_valid(self, tmpdir):
         """Check that 'save_screenshot' works and screenshot is created properly."""
         # Run the test crawl
@@ -215,7 +213,6 @@ class TestSimpleCommands():
         isBlank = all(band.getextrema() == (255, 255) for band in bands)
 
         assert not isBlank
-
 
     def test_dump_page_source_valid(self, tmpdir):
         """Check that 'dump_page_source' works and source is saved properly."""

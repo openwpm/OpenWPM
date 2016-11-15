@@ -80,6 +80,8 @@ def process_query(query, curr, logger):
     for i in range(len(args)):
         if type(args[i]) == str:
             args[i] = unicode(args[i], errors='ignore')
+        elif callable(args[i]):
+            args[i] = str(args[i])
     try:
         if len(args) == 0:
             curr.execute(statement)

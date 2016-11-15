@@ -55,10 +55,13 @@ function updateQueue(inputStream, queue) {
     bInputStream.setInputStream(inputStream);
 
     var buff = bInputStream.readByteArray(5);
-    var meta = bufferpack.unpack('>Ib', buff);
+    var meta = bufferpack.unpack('>Ic', buff);
     string = bInputStream.readBytes(meta[0]);
-    if (meta[1]) {
+    if (meta[1] != 'n' && meta[1] == 'j') {
         string = JSON.parse(string);
+    } else if (meta[1] != 'n') {
+      console.log("ERROR: Unsupported serialization type (",meta[1],").");
+      return;
     }
     queue.push(string);
 
@@ -89,7 +92,7 @@ exports.send = send;
 function send(query) {
     try {
         var msg = JSON.stringify(query);
-        var buff = bufferpack.pack('>Ib',[msg.length,1]);
+        var buff = bufferpack.pack('>Ic',[msg.length,'j']);
         binaryStream.writeByteArray(buff, buff.length);
         stream.write(msg, msg.length);
         return true;

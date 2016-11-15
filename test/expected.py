@@ -123,6 +123,12 @@ set_property = [(SET_PROP_TEST_PAGE,
                  u'window.HTMLFormElement.action',
                  u'set', u'TEST-ACTION', None, None)]
 
+page_links = {
+    (u'http://localtest.me:8000/test_pages/simple_a.html', u'http://localtest.me:8000/test_pages/simple_c.html'),
+    (u'http://localtest.me:8000/test_pages/simple_a.html', u'http://localtest.me:8000/test_pages/simple_d.html'),
+    (u'http://localtest.me:8000/test_pages/simple_a.html', u'http://example.com/test.html?localtest.me'),
+}
+
 # AudioContext and AudioNode symbols we expect from our test script
 audio = {
     u"AudioContext.createOscillator",
