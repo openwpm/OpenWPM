@@ -1,3 +1,21 @@
+v0.7.0 - 2016-11-15
+======
+
+Changes:
+  * Bugfixes to extension instrumentation where records would be dropped when
+    the extension was under heavy load and fail to re-enable until the browser
+    was restarted.
+  * Bugfix to extension / socket interface
+  * Add `run_custom_function` command
+  * Using alternative serialization/parallelization with `dill` and
+    `multiprocess`
+  * Better documentation
+  * Bugfixes to install script
+  * Add `save_screenshot` and `dump_page_source` commands
+  * Add Audio API instrumentation
+  * Bugfix to `browse` command
+  * Bugfix to extension instrumentation injection to avoid Security Errors
+
 v0.6.2 - 2016-04-08
 ======
 
@@ -44,7 +62,8 @@ v0.5.0 - 2015-10-14
 
 Changes:
     * Added support for saving all javascript files de-duplicated and compressed
-    * Created two configuration dictionaries. One for individual browsers and another for the entire infrastructure
+    * Created two configuration dictionaries. One for individual browsers and 
+      another for the entire infrastructure
     * Support for using OpenWPM as a submodule
     * Firefox (v39) and Selenium (v2.47.1)
     * Added support for launching Ghostery, HTTPS Everywhere, and AdBlock Plus
@@ -62,20 +81,25 @@ Changes:
     * Support for logging with logging module
     * A large number of bugfixes related to process handling
     * Prevention of a large number of stray tmp files/folders during long crawls
-    * Process/memory watchdog to handle orphaned processes and keep memory usage reasonable
+    * Process/memory watchdog to handle orphaned processes and keep memory usage
+      reasonable
     * Numerous bugfixes for extension
-    * Failure thresholds to prevent infinite loops of browser respawns or command execution attempts (instead, Errors and raised)
+    * Failure thresholds to prevent infinite loops of browser respawns or
+      command execution attempts (instead, Errors and raised)
     * Script to install dependencies
     * API changes to command timeouts
     * Move SocketInterface from pickle to json serialization
 
 Known Issues:
-    * Encoding issues cause a very small percentage of data to be dropped by the extension
-    * Malformed queries are occassionally sent to the DataAggregator and are dropped. The cause is unknown.
+    * Encoding issues cause a very small percentage of data to be dropped by the
+      extension
+    * Malformed queries are occassionally sent to the DataAggregator and are
+      dropped. The cause is unknown.
     * Forking can be done in a more memory efficient way
 
 0.3.1 - Fixes #5
-0.3.0 - Experimental merge of Fourthparty + framework to allow additional javascript instrumentation.
+0.3.0 - Experimental merge of Fourthparty + framework to allow additional
+        javascript instrumentation.
 0.2.3 - Timeout logging
 0.2.2 - Browse command + better scrolling + bugfixes
 0.2.1 - Support for MITMProxy v0.11 + minor bugfixes
