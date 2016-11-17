@@ -343,13 +343,6 @@ function getPageScript() {
       };
     }
 
-    function removeWebdriverAttributes(){
-      if ("webdriver" in navigator){
-        delete window.navigator["webdriver"];
-      }
-      document.documentElement.removeAttribute("webdriver");
-    }
-
     // Log properties of prototypes and objects
     function logProperty(object, objectName, property, logSettings) {
       var propDesc = Object.getPropertyDescriptor(object, property);
@@ -395,9 +388,6 @@ function getPageScript() {
      * Start Instrumentation
      */
     // TODO: user should be able to choose what to instrument
-
-    // Remove "webdriver" attributes from the DOM (Issue #91)
-    removeWebdriverAttributes();
 
     // Access to navigator properties
     var navigatorProperties = [ "appCodeName", "appName", "appVersion", "buildID", "cookieEnabled", "doNotTrack", "geolocation", "language", "languages", "onLine", "oscpu", "platform", "product", "productSub", "userAgent", "vendorSub", "vendor" ];
