@@ -298,7 +298,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
                                              extension_socket)
             status_queue.put("OK")
 
-    except (ProfileLoadError, BrowserConfigError) as e:
+    except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
         logger.info("BROWSER %i: %s thrown, informing parent and raising" %
                 (browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()

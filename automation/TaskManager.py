@@ -9,6 +9,10 @@ import MPLogger
 
 from multiprocess import Process, Queue
 from Queue import Empty as EmptyQueue
+from tblib import pickling_support
+pickling_support.install()
+from six import reraise
+import cPickle
 import threading
 import copy
 import os
@@ -75,7 +79,7 @@ class TaskManager:
 
         # Flow control
         self.closing = False
-        self.failure_flag = False
+        self.failure_status = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
         if manager_params['failure_limit'] is not None:
@@ -313,9 +317,35 @@ class TaskManager:
         Execute shutdown commands before throwing an exception
         This should keep us from having a bunch of hanging processes
         and incomplete data.
-        <during_init> flag to indicator if this shutdown is occuring during the TaskManager initialization
+        <during_init> flag to indicator if this shutdown is occuring during
+                      the TaskManager initialization
         """
         self._shutdown_manager(failure=True, during_init=during_init)
+
+    def _check_failure_status(self):
+        """ Check the status of command failures. Raise exceptions as necessary
+
+        The failure status property is used by the various asynchronous
+        command execution threads which interface with the
+        remote browser manager processes. If a failure status is found, the
+        appropriate steps are taken to gracefully close the infrastructure
+        """
+        self.logger.debug("Checking command failure status indicator...")
+        if self.failure_status:
+            self.logger.debug("TaskManager failure status set, halting command execution.")
+            self._cleanup_before_fail()
+            if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
+                raise CommandExecutionError(
+                    "TaskManager exceeded maximum consecutive command "
+                    "execution failures.", self.failure_status['CommandSequence']
+                )
+            elif self.failure_status['ErrorType'] == 'ExceedLaunchFailureLimit':
+                raise CommandExecutionError(
+                    "TaskManager failed to launch browser within allowable "
+                    "failure limit.", self.failure_status['CommandSequence']
+                )
+            if self.failure_status['ErrorType'] == 'CriticalChildException':
+                reraise(*cPickle.loads(self.failure_status['Exception']))
 
     # CRAWLER COMMAND CODE
 
@@ -379,6 +409,7 @@ class TaskManager:
 
         if command_sequence.blocking:
             thread.join()
+            self._check_failure_status()
 
     def _start_thread(self, browser, command_sequence, condition=None):
         """  starts the command execution thread """
@@ -387,10 +418,7 @@ class TaskManager:
         if self.closing:
             self.logger.error("Attempted to execute command on a closed TaskManager")
             return
-        if self.failure_flag:
-            self.logger.debug("TaskManager failure threshold exceeded, raising CommandExecutionError")
-            self._cleanup_before_fail()
-            raise CommandExecutionError("TaskManager failure threshold exceeded", command_sequence)
+        self._check_failure_status()
 
         browser.set_visit_id(self.next_visit_id)
         self.sock.send(("INSERT INTO site_visits (visit_id, crawl_id, site_url) VALUES (?,?,?)",
@@ -437,6 +465,17 @@ class TaskManager:
                 status = browser.status_queue.get(True, browser.current_timeout)
                 if status == "OK":
                     command_succeeded = 1
+                elif status[0] == "CRITICAL":
+                    self.logger.critical("BROWSER %i: Received critical error "
+                                         "from browser process while executing "
+                                         "command %s. Setting failure status." % (
+                                             browser.crawl_id, str(command)))
+                    self.failure_status = {
+                        'ErrorType': 'CriticalChildException',
+                        'CommandSequence': command_sequence,
+                        'Exception': status[1]
+                    }
+                    return
                 else:
                     command_succeeded = 0
                     self.logger.info("BROWSER %i: Received failure status while"
@@ -456,8 +495,11 @@ class TaskManager:
                 if self.failurecount > self.failure_limit:
                     self.logger.critical("BROWSER %i: Command execution failure"
                                          " pushes failure count above the allowable limit."
-                                         " Setting failure_flag." % browser.crawl_id)
-                    self.failure_flag = True
+                                         " Setting failure_status." % browser.crawl_id)
+                    self.failure_status = {
+                        'ErrorType': 'ExceedCommandFailureLimit',
+                        'CommandSequence': command_sequence
+                    }
                     return
                 browser.restart_required = True
             else:
@@ -475,8 +517,11 @@ class TaskManager:
             if not success:
                 self.logger.critical("BROWSER %i: Exceeded the maximum allowable "
                                      "consecutive browser launch failures. "
-                                     "Setting failure_flag." % browser.crawl_id)
-                self.failure_flag = True
+                                     "Setting failure_status." % browser.crawl_id)
+                self.failure_status = {
+                    'ErrorType': 'ExceedLaunchFailureLimit',
+                    'CommandSequence': command_sequence
+                }
                 return
             browser.restart_required = False
 
