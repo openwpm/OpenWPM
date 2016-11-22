@@ -335,7 +335,7 @@ class TaskManager:
                 for browser in self.browsers:
                     if browser.ready():
                         browser.current_timeout = command_sequence.total_timeout
-                        self._start_thread(browser, command_sequence)
+                        thread = self._start_thread(browser, command_sequence)
                         command_executed = True
                         break
                 if command_executed:
@@ -347,7 +347,7 @@ class TaskManager:
             while True:
                 if self.browsers[index].ready():
                     self.browsers[index].current_timeout = command_sequence.total_timeout
-                    self._start_thread(self.browsers[index], command_sequence)
+                    thread = self._start_thread(self.browsers[index], command_sequence)
                     break
                 time.sleep(SLEEP_CONS)
         elif index == '*':
@@ -357,7 +357,7 @@ class TaskManager:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.browsers[i].current_timeout = command_sequence.total_timeout
-                        self._start_thread(self.browsers[i], command_sequence)
+                        thread = self._start_thread(self.browsers[i], command_sequence)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
         elif index == '**':
@@ -368,13 +368,17 @@ class TaskManager:
                 for i in xrange(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.browsers[i].current_timeout = command_sequence.total_timeout
-                        self._start_thread(self.browsers[i], command_sequence, condition)
+                        thread = self._start_thread(self.browsers[i], command_sequence, condition)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
             with condition:
                 condition.notifyAll()  # All browsers loaded, tell them to start
         else:
             self.logger.info("Command index type is not supported or out of range")
+            return
+
+        if command_sequence.blocking:
+            thread.join()
 
     def _start_thread(self, browser, command_sequence, condition=None):
         """  starts the command execution thread """
@@ -399,6 +403,7 @@ class TaskManager:
         browser.command_thread = thread
         thread.daemon = True
         thread.start()
+        return thread
 
     def _issue_command(self, browser, command_sequence, condition=None):
         """

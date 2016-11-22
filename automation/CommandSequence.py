@@ -20,10 +20,21 @@ class CommandSequence:
     called prior to one of those two commands.
     """
 
-    def __init__(self, url, reset=False):
-        """Nothing to do here"""
+    def __init__(self, url, reset=False, blocking=False):
+        """Initialize command sequence.
+
+        Parameters
+        ----------
+        url : str
+            url of page visit the command sequence should execute on
+        reset : bool
+            True if browser should clear state and restart after sequence
+        blocking : bool
+            True if sequence should block parent process during execution
+        """
         self.url = url
         self.reset = reset
+        self.blocking = blocking
         self.commands_with_timeout = []
         self.total_timeout = 0
         self.contains_get_or_browse = False
