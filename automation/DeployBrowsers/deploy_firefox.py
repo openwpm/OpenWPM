@@ -81,6 +81,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
+        fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         extension_config = dict()
         extension_config.update(browser_params)
         extension_config['aggregator_address'] = manager_params['aggregator_address']
