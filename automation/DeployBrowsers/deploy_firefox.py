@@ -6,9 +6,10 @@ from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
 
 from pyvirtualdisplay import Display
-import shutil
-import os
 import random
+import shutil
+import json
+import os
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
@@ -75,17 +76,16 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         fp.add_extension(extension=firebug_loc)
         fp.set_preference("extensions.firebug.currentVersion", "1.11.0")  # Avoid startup screen
 
-    if browser_params['extension']['enabled']:
+    # Write extension configuration
+    if browser_params['extension_enabled']:
         ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
-        with open(browser_profile_path + 'database_settings.txt', 'w') as f:
-            host, port = manager_params['aggregator_address']
-            crawl_id = browser_params['crawl_id']
-            f.write(host + ',' + str(port) + ',' + str(crawl_id))
-            f.write(','+str(browser_params['extension']['cookieInstrument']))
-            f.write(','+str(browser_params['extension']['jsInstrument']))
-            f.write(','+str(browser_params['extension']['cpInstrument']))
+        extension_config = dict()
+        extension_config.update(browser_params)
+        extension_config['aggregator_address'] = manager_params['aggregator_address']
+        with open(browser_profile_path + 'browser_params.json', 'w') as f:
+            json.dump(extension_config, f)
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded" % browser_params['crawl_id'])
 
     if browser_params['proxy']:

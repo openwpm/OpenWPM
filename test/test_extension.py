@@ -15,8 +15,7 @@ class TestExtension(OpenWPMTest):
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
         browser_params[0]['headless'] = True
-        browser_params[0]['extension']['enabled'] = True
-        browser_params[0]['extension']['jsInstrument'] = True
+        browser_params[0]['js_instrument'] = True
         manager_params['db'] = os.path.join(manager_params['data_directory'],
                                             manager_params['database_name'])
         return manager_params, browser_params

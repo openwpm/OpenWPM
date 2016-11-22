@@ -37,11 +37,10 @@ def get_configuration_string(manager_params, browser_params, versions):
                              indent=2, separators=(',', ': '))
     config_str += "\n\n========== Browser Configuration ==========\n"
     print_params = [deepcopy(x) for x in browser_params]
-    ext_settings = list()
     table_input = list()
     profile_dirs = OrderedDict()
     archive_dirs = OrderedDict()
-    extension_all_disabled = profile_all_none = archive_all_none = True
+    profile_all_none = archive_all_none = True
     for item in print_params:
         crawl_id = item['crawl_id']
 
@@ -50,14 +49,6 @@ def get_configuration_string(manager_params, browser_params, versions):
             profile_all_none = False
         if item['profile_archive_dir'] is not None:
             archive_all_none = False
-        if item['extension']['enabled']:
-            extension_all_disabled = False
-
-        # Separate out extension settings
-        dct = OrderedDict()
-        dct['crawl_id'] = crawl_id
-        dct.update(item.pop('extension'))
-        ext_settings.append(dct)
 
         # Separate out long profile directory strings
         profile_dirs[crawl_id] = item.pop('profile_tar')
@@ -80,12 +71,6 @@ def get_configuration_string(manager_params, browser_params, versions):
                              separators=(',', ': '))
     config_str += '\n\n'
     config_str += tabulate(table_input, headers=key_dict)
-
-    config_str += "\n\n========== Extension Configuration ==========\n"
-    if extension_all_disabled:
-        config_str += "  No extensions enabled"
-    else:
-        config_str += tabulate(ext_settings, headers="keys")
 
     config_str += "\n\n========== Input profile tar files ==========\n"
     if profile_all_none:

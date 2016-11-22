@@ -260,7 +260,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
 
         # Read the extension port -- if extension is enabled
         # TODO: This needs to be cleaner
-        if browser_params['browser'] == 'firefox' and browser_params['extension']['enabled']:
+        if browser_params['browser'] == 'firefox' and browser_params['extension_enabled']:
             logger.debug("BROWSER %i: Looking for extension port information in %s" % (browser_params['crawl_id'], prof_folder))
             while not os.path.isfile(prof_folder + 'extension_port.txt'):
                 time.sleep(0.1)
