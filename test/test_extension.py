@@ -20,36 +20,6 @@ class TestExtension(OpenWPMTest):
                                             manager_params['database_name'])
         return manager_params, browser_params
 
-    def test_disable_self_id(self, tmpdir):
-        """Verify webdriver self-identification removed from DOM.
-
-        Selenium webdriver self-identifies in two locations in the DOM, see:
-        * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/server.js#L49
-        * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/dommessenger.js#L98
-        """
-
-        from ..automation import CommandSequence
-        def check_for_webdriver(**kwargs):
-            """ Check if webdriver self-identification attributes in the DOM"""
-            driver = kwargs['driver']
-
-            # Check if document element has `webdriver` attribute
-            assert 'true' != driver.execute_script(
-                    'return document.documentElement.getAttribute("webdriver")')
-            # Check if navigator has webdriver property
-            assert not driver.execute_script('return navigator.webdriver')
-            assert not driver.execute_script('return !!("webdriver" in navigator)')
-
-        manager_params, browser_params = self.get_config(str(tmpdir))
-        browser_params[0]['disable_webdriver_self_id'] = True
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        test_url = utilities.BASE_TEST_URL + '/simple_a.html'
-        cs = CommandSequence.CommandSequence(test_url, blocking=True)
-        cs.get(sleep=5, timeout=60)
-        cs.run_custom_function(check_for_webdriver)
-        manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
-
     def test_property_enumeration(self, tmpdir):
         test_url = utilities.BASE_TEST_URL + '/property_enumeration.html'
         db = self.visit(test_url, str(tmpdir))

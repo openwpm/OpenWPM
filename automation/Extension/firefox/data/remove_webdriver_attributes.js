@@ -8,11 +8,10 @@ function getPageScript() {
   return "(" + function() {
     if ("webdriver" in navigator) {
       console.log("Webdriver attributes present, remove immediately");
-
       // Attributes can be removed immediately
       document.documentElement.removeAttribute("webdriver");
       delete window.navigator["webdriver"];
-
+      console.log("Webdriver attributes removed!");
     } else {
       // Listener for `document` attribute
       document.addEventListener("DOMAttrModified", function monitor(ev) {
@@ -38,8 +37,8 @@ function getPageScript() {
           return originalDefineProperty(obj, prop, descriptor);
         }
       });
+      console.log("Webdriver attribute handlers started!");
     }
-    console.log("Everything Started!");
   } + "());";
 }
 
