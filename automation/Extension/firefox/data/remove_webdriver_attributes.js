@@ -31,8 +31,7 @@ function getPageScript() {
             Object.defineProperty(Object, 'defineProperty', {
               value: originalDefineProperty
             });
-            delete originalDefineProperty;
-            return;
+            return undefined;
           }
           return originalDefineProperty(obj, prop, descriptor);
         }
