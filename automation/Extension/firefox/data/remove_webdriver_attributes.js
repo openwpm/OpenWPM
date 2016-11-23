@@ -1,25 +1,55 @@
 // We don't know the order the content scripts will load
 // so let's try to remove the attributes now (if they already exist)
 // or register an event handler if they don't.
-console.log("BEFORE navigator.webdriver: ", navigator.webdriver);
-console.log("BEFORE webdriver in navigator: ", !!("webdriver" in navigator));
-console.log("BEFORE documentElement attribute webdriver: ", document.documentElement.getAttribute("webdriver"));
-
-if ("webdriver" in navigator) {
-  document.documentElement.removeAttribute("webdriver");
-  delete window.navigator["webdriver"];
-  console.log("AFTER IMMEDIATE navigator.webdriver: ", navigator.webdriver);
-  console.log("AFTER IMMEDIATE webdriver in navigator: ", !!("webdriver" in navigator));
-  console.log("AFTER IMMEDIATE documentElement attribute webdriver: ", document.documentElement.getAttribute("webdriver"));
-} else {
-  document.addEventListener("DOMAttrModified", function(ev) {
-    document.documentElement.removeAttribute("webdriver");
+// * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/server.js#L49
+// * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/dommessenger.js#L98
+function getPageScript() {
+  // return a string
+  return "(" + function() {
     if ("webdriver" in navigator) {
+      console.log("Webdriver attributes present, remove immediately");
+
+      // Attributes can be removed immediately
+      document.documentElement.removeAttribute("webdriver");
       delete window.navigator["webdriver"];
+
+    } else {
+      // Listener for `document` attribute
+      document.addEventListener("DOMAttrModified", function monitor(ev) {
+        console.log("Removing webdriver attribute from document");
+        document.documentElement.removeAttribute("webdriver");
+        document.removeEventListener("DOMAttrModified", monitor, false);
+      }, false);
+
+      // Prevent webdriver attribute from getting set on navigator
+      var originalDefineProperty = Object.defineProperty;
+      Object.defineProperty(Object, 'defineProperty', {
+        value: function(obj, prop, descriptor) {
+          if (obj == window.navigator && prop == 'webdriver') {
+            console.log("Preventing definition of webdriver property on navigator.");
+
+            // Return Object.defineProperty to original state
+            Object.defineProperty(Object, 'defineProperty', {
+              value: originalDefineProperty
+            });
+            delete originalDefineProperty;
+            return;
+          }
+          return originalDefineProperty(obj, prop, descriptor);
+        }
+      });
     }
-    document.documentElement.removeAttribute("webdriver");
-    console.log("AFTER ME navigator.webdriver: ", navigator.webdriver);
-    console.log("AFTER ME webdriver in navigator: ", !!("webdriver" in navigator));
-    console.log("AFTER ME documentElement attribute webdriver: ", document.documentElement.getAttribute("webdriver"));
-  }, {once: true});
+    console.log("Everything Started!");
+  } + "());";
 }
+
+function insertScript(text) {
+  var parent = document.documentElement,
+    script = document.createElement('script');
+  script.text = text;
+  script.async = false;
+
+  parent.insertBefore(script, parent.firstChild);
+  parent.removeChild(script);
+}
+insertScript(getPageScript());

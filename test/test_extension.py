@@ -14,7 +14,7 @@ class TestExtension(OpenWPMTest):
         manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
-        browser_params[0]['headless'] = False
+        browser_params[0]['headless'] = True
         browser_params[0]['js_instrument'] = True
         manager_params['db'] = os.path.join(manager_params['data_directory'],
                                             manager_params['database_name'])
@@ -48,8 +48,6 @@ class TestExtension(OpenWPMTest):
         cs.get(sleep=5, timeout=60)
         cs.run_custom_function(check_for_webdriver)
         manager.execute_command_sequence(cs)
-        import time
-        time.sleep(60)
         manager.close(post_process=False)
 
     def test_property_enumeration(self, tmpdir):
