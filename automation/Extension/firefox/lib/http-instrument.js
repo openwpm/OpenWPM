@@ -16,6 +16,10 @@ var StorageStream = CC('@mozilla.org/storagestream;1',
 const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
                        Ci.mozIThirdPartyUtil);
 
+/*
+ * HTTP Request Handler and Helper Functions
+ */
+
 function get_stack_trace_str(){
   // return the stack trace as a string
   // TODO: check if http-on-modify-request is a good place to capture the stack
@@ -39,6 +43,169 @@ function get_stack_trace_str(){
   return stacktrace.join("\n");
 }
 
+var httpRequestHandler = function(reqEvent, crawlID) {
+  var httpChannel = reqEvent.subject.QueryInterface(Ci.nsIHttpChannel);
+
+  // http_requests table schema:
+  // id [auto-filled], crawl_id, url, method, referrer,
+  // headers, visit_id [auto-filled], time_stamp
+  var update = {};
+
+  update["crawl_id"] = crawlID;
+
+  var stacktrace_str = get_stack_trace_str();
+  update["req_call_stack"] = loggingDB.escapeString(stacktrace_str);
+
+  var url = httpChannel.URI.spec;
+  update["url"] = loggingDB.escapeString(url);
+
+  var requestMethod = httpChannel.requestMethod;
+  update["method"] = loggingDB.escapeString(requestMethod);
+
+  var referrer = "";
+  if(httpChannel.referrer)
+    referrer = httpChannel.referrer.spec;
+  update["referrer"] = loggingDB.escapeString(referrer);
+
+  var current_time = new Date();
+  update["time_stamp"] = current_time.toISOString();
+
+  var headers = [];
+  httpChannel.visitRequestHeaders({visitHeader: function(name, value) {
+    var header_pair = [];
+    header_pair.push(loggingDB.escapeString(name));
+    header_pair.push(loggingDB.escapeString(value));
+    headers.push(header_pair);
+  }});
+  update["headers"] = JSON.stringify(headers);
+
+  // Check if xhr
+  var isXHR;
+  try {
+      var callbacks = httpChannel.notificationCallbacks;
+      var xhr = callbacks ? callbacks.getInterface(Ci.nsIXMLHttpRequest) : null;
+      isXHR = !!xhr;
+  } catch (e) {
+      isXHR = false;
+  }
+  update["is_XHR"] = isXHR;
+
+  // Check if frame OR full page load
+  var isFrameLoad;
+  var isFullPageLoad;
+  if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_INITIAL_DOCUMENT_URI) {
+      isFullPageLoad = true;
+      isFrameLoad = false;
+  } else if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_DOCUMENT_URI) {
+      isFrameLoad = true;
+      isFullPageLoad = false;
+  }
+  update["is_full_page"] = isFullPageLoad;
+  update["is_frame_load"] = isFrameLoad;
+
+  // Grab the triggering and loading Principals
+  var triggeringOrigin;
+  var loadingOrigin;
+  if (httpChannel.loadInfo.triggeringPrincipal)
+    triggeringOrigin = httpChannel.loadInfo.triggeringPrincipal.origin
+  if (httpChannel.loadInfo.loadingPrincipal)
+    loadingOrigin = httpChannel.loadInfo.loadingPrincipal.origin
+  update["triggering_origin"] = loggingDB.escapeString(triggeringOrigin);
+  update["loading_origin"] = loggingDB.escapeString(loadingOrigin);
+
+  // loadingDocument's href
+  // The loadingDocument is the document the element resides, regardless of
+  // how the load was triggered.
+  var loadingHref;
+  if (httpChannel.loadInfo.loadingDocument && httpChannel.loadInfo.loadingDocument.location)
+    loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
+  update["loading_href"] = loggingDB.escapeString(loadingHref);
+
+  // contentPolicyType of the requesting node. This is set by the type of
+  // node making the request (i.e. an <img src=...> node will set to type 3).
+  // For a mapping of integers to types see:
+  // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
+  update["content_policy_type"] = httpChannel.loadInfo.externalContentPolicyType;
+
+  // Do third-party checks
+  // These specific checks are done because it's what's used in Tracking Protection
+  // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
+  try {
+    var isThirdPartyChannel = ThirdPartyUtil.isThirdPartyChannel(httpChannel);
+    var topWindow = ThirdPartyUtil.getTopWindowForChannel(httpChannel);
+    var topURI = ThirdPartyUtil.getURIFromWindow(topWindow);
+    if (topURI) {
+      var topUrl = topURI.spec;
+      var channelURI = httpChannel.URI;
+      var isThirdPartyWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI);
+      update["is_third_party_window"] = isThirdPartyWindow;
+      update["is_third_party_channel"] = isThirdPartyChannel;
+      update["top_level_url"] = loggingDB.escapeString(topUrl);
+    }
+  } catch (e) {
+    //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
+    //TODO probably a cleaner way to handle this
+  }
+  loggingDB.executeSQL(loggingDB.createInsert("http_requests_ext", update), true);
+};
+
+/*
+ * HTTP Response Handler and Helper Functions
+ */
+
+// Used to parse Response stream to log content
+function TracingListener() {
+  // array for incoming data.
+  // onStopRequest we combine these to get the full source
+  this.receivedChunks = [];
+  this.responseBody;
+  this.responseStatusCode;
+
+  this.deferredDone = {
+    promise: null,
+    resolve: null,
+    reject: null
+  };
+  this.deferredDone.promise = new Promise(function(resolve, reject) {
+    this.resolve = resolve;
+    this.reject = reject;
+  }.bind(this.deferredDone));
+  Object.freeze(this.deferredDone);
+  this.promiseDone = this.deferredDone.promise;
+}
+TracingListener.prototype = {
+  onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
+    var iStream = new BinaryInputStream(aInputStream) // binaryaInputStream
+    var sStream = new StorageStream(8192, aCount, null);
+    var oStream = new BinaryOutputStream(sStream.getOutputStream(0));
+
+    // Copy received data as they come.
+    var data = iStream.readBytes(aCount);
+    this.receivedChunks.push(data);
+    oStream.writeBytes(data, aCount);
+
+    this.originalListener.onDataAvailable(aRequest, aContext,
+        sStream.newInputStream(0), aOffset, aCount);
+  },
+  onStartRequest: function(aRequest, aContext) {
+    this.originalListener.onStartRequest(aRequest, aContext);
+  },
+  onStopRequest: function(aRequest, aContext, aStatusCode) {
+    this.responseBody = this.receivedChunks.join("");
+    delete this.receivedChunks;
+    this.responseStatus = aStatusCode;
+
+    this.originalListener.onStopRequest(aRequest, aContext, aStatusCode);
+    this.deferredDone.resolve();
+  },
+  QueryInterface: function(aIID) {
+    if (aIID.equals(Ci.nsIStreamListener) || aIID.equals(Ci.nsISupports)) {
+      return this;
+    }
+    throw Cr.NS_NOINTERFACE;
+  }
+};
+
 function getResponseBody(respEvent) {
   // return the response body from an 'http-on-examine(-cached)?-response' event
   var newListener = new TracingListener();
@@ -55,248 +222,91 @@ function getResponseBody(respEvent) {
   });
 }
 
+// Instrument HTTP responses
+var httpResponseHandler = function(respEvent, isCached, crawlID) {
+  var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
+
+  // http_responses table schema:
+  // id [auto-filled], crawl_id, url, method, referrer, response_status,
+  // response_status_text, headers, location, visit_id [auto-filled],
+  // time_stamp, content_hash
+  var update = {};
+
+  update["crawl_id"] = crawlID;
+
+  update["is_cached"] = isCached;
+
+  var url = httpChannel.URI.spec;
+  update["url"] = loggingDB.escapeString(url);
+
+  var requestMethod = httpChannel.requestMethod;
+  update["method"] = loggingDB.escapeString(requestMethod);
+
+  var referrer = "";
+  if(httpChannel.referrer)
+    referrer = httpChannel.referrer.spec;
+  update["referrer"] = loggingDB.escapeString(referrer);
+
+  var responseStatus = httpChannel.responseStatus;
+  update["response_status"] = responseStatus;
+
+  var responseStatusText = httpChannel.responseStatusText;
+  update["response_status_text"] = loggingDB.escapeString(responseStatusText);
+
+  var current_time = new Date();
+  update["time_stamp"] = current_time.toISOString();
+
+  var location = "";
+  try {
+    location = httpChannel.getResponseHeader("location");
+  }
+  catch (e) {
+    location = "";
+  }
+  update["location"] = loggingDB.escapeString(location);
+
+  var headers = [];
+  httpChannel.visitResponseHeaders({visitHeader: function(name, value) {
+    var header_pair = [];
+    header_pair.push(loggingDB.escapeString(name));
+    header_pair.push(loggingDB.escapeString(value));
+    headers.push(header_pair);
+  }});
+  update["headers"] = JSON.stringify(headers);
+
+  // Record response body if channel is for a script
+  if (httpChannel.loadInfo.externalContentPolicyType == 2) {
+    var js = getResponseBody(respEvent);
+    // TODO hash the javascript content
+    update["content_hash"] = 'TODO';
+    // TODO send the content to levelDBAgg
+  }
+
+  loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
+};
+
+/*
+ * Attach handlers to event monitor
+ */
+
 exports.run = function(crawlID) {
-  // Set up logging
+  // Create sql tables
   var createHttpRequestTable = data.load("create_http_requests_table.sql");
   loggingDB.executeSQL(createHttpRequestTable, false);
 
   var createHttpResponseTable = data.load("create_http_responses_table.sql");
   loggingDB.executeSQL(createHttpResponseTable, false);
 
-  // Instrument HTTP requests
+  // Monitor http events
   events.on("http-on-modify-request", function(event) {
-    var httpChannel = event.subject.QueryInterface(Ci.nsIHttpChannel);
-
-    // http_requests table schema:
-    // id [auto-filled], crawl_id, url, method, referrer,
-    // headers, visit_id [auto-filled], time_stamp
-    var update = {};
-
-    update["crawl_id"] = crawlID;
-
-    var stacktrace_str = get_stack_trace_str();
-    update["req_call_stack"] = loggingDB.escapeString(stacktrace_str);
-
-    var url = httpChannel.URI.spec;
-    update["url"] = loggingDB.escapeString(url);
-
-    var requestMethod = httpChannel.requestMethod;
-    update["method"] = loggingDB.escapeString(requestMethod);
-
-    var referrer = "";
-    if(httpChannel.referrer)
-      referrer = httpChannel.referrer.spec;
-    update["referrer"] = loggingDB.escapeString(referrer);
-
-    var current_time = new Date();
-    update["time_stamp"] = current_time.toISOString();
-
-    var headers = [];
-    httpChannel.visitRequestHeaders({visitHeader: function(name, value) {
-      var header_pair = [];
-      header_pair.push(loggingDB.escapeString(name));
-      header_pair.push(loggingDB.escapeString(value));
-      headers.push(header_pair);
-    }});
-    update["headers"] = JSON.stringify(headers);
-
-    //
-    // Let's grab some extra information here
-    //
-
-    // Test if xhr
-    var isXHR;
-    try {
-        var callbacks = httpChannel.notificationCallbacks;
-        var xhr = callbacks ? callbacks.getInterface(Ci.nsIXMLHttpRequest) : null;
-        isXHR = !!xhr;
-    } catch (e) {
-        isXHR = false;
-    }
-    update["is_XHR"] = isXHR;
-
-    // Test if frame OR full page load
-    var isFrameLoad;
-    var isFullPageLoad;
-    if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_INITIAL_DOCUMENT_URI) {
-        isFullPageLoad = true;
-        isFrameLoad = false;
-    } else if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_DOCUMENT_URI) {
-        isFrameLoad = true;
-        isFullPageLoad = false;
-    }
-    update["is_full_page"] = isFullPageLoad;
-    update["is_frame_load"] = isFrameLoad;
-
-    // Triggering and loading Principal
-    var triggeringOrigin;
-    var loadingOrigin;
-    if (httpChannel.loadInfo.triggeringPrincipal)
-      triggeringOrigin = httpChannel.loadInfo.triggeringPrincipal.origin
-    if (httpChannel.loadInfo.loadingPrincipal)
-      loadingOrigin = httpChannel.loadInfo.loadingPrincipal.origin
-    update["triggering_origin"] = loggingDB.escapeString(triggeringOrigin);
-    update["loading_origin"] = loggingDB.escapeString(loadingOrigin);
-
-    // loadingDocument's href
-    // The loadingDocument is the document the element resides, regardless of
-    // how the load was triggered.
-    var loadingHref;
-    if (httpChannel.loadInfo.loadingDocument && httpChannel.loadInfo.loadingDocument.location)
-      loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
-    update["loading_href"] = loggingDB.escapeString(loadingHref);
-
-    // contentPolicyType of the requesting node. This is set by the type of
-    // node making the request (i.e. an <img src=...> node will set to type 3).
-    // For a mapping of integers to types see:
-    // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
-    update["content_policy_type"] = httpChannel.loadInfo.externalContentPolicyType;
-
-    // Do third-party checks
-    // These specific checks are done because it's what's used in Tracking Protection
-    // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
-    try {
-      var isThirdPartyChannel = ThirdPartyUtil.isThirdPartyChannel(httpChannel);
-      var topWindow = ThirdPartyUtil.getTopWindowForChannel(httpChannel);
-      var topURI = ThirdPartyUtil.getURIFromWindow(topWindow);
-      if (topURI) {
-        var topUrl = topURI.spec;
-        var channelURI = httpChannel.URI;
-        var isThirdPartyWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI);
-        update["is_third_party_window"] = isThirdPartyWindow;
-        update["is_third_party_channel"] = isThirdPartyChannel;
-        update["top_level_url"] = loggingDB.escapeString(topUrl);
-      }
-    } catch (e) {
-      //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
-      //TODO probably a cleaner way to handle this
-    }
-    loggingDB.executeSQL(loggingDB.createInsert("http_requests_ext", update), true);
+    httpRequestHandler(event, crawlID);
   }, true);
-
-
-  function TracingListener() {
-    // array for incoming data.
-    // onStopRequest we combine these to get the full source
-    this.receivedChunks = [];
-    this.responseBody;
-    this.responseStatusCode;
-
-    this.deferredDone = {
-      promise: null,
-      resolve: null,
-      reject: null
-    };
-    this.deferredDone.promise = new Promise(function(resolve, reject) {
-      this.resolve = resolve;
-      this.reject = reject;
-    }.bind(this.deferredDone));
-    Object.freeze(this.deferredDone);
-    this.promiseDone = this.deferredDone.promise;
-  }
-  TracingListener.prototype = {
-    onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
-      var iStream = new BinaryInputStream(aInputStream) // binaryaInputStream
-      var sStream = new StorageStream(8192, aCount, null);
-      var oStream = new BinaryOutputStream(sStream.getOutputStream(0));
-
-      // Copy received data as they come.
-      var data = iStream.readBytes(aCount);
-      this.receivedChunks.push(data);
-      oStream.writeBytes(data, aCount);
-
-      this.originalListener.onDataAvailable(aRequest, aContext,
-          sStream.newInputStream(0), aOffset, aCount);
-    },
-    onStartRequest: function(aRequest, aContext) {
-      this.originalListener.onStartRequest(aRequest, aContext);
-    },
-    onStopRequest: function(aRequest, aContext, aStatusCode) {
-      this.responseBody = this.receivedChunks.join("");
-      delete this.receivedChunks;
-      this.responseStatus = aStatusCode;
-
-      this.originalListener.onStopRequest(aRequest, aContext, aStatusCode);
-      this.deferredDone.resolve();
-    },
-    QueryInterface: function(aIID) {
-      if (aIID.equals(Ci.nsIStreamListener) || aIID.equals(Ci.nsISupports)) {
-        return this;
-      }
-      throw Cr.NS_NOINTERFACE;
-    }
-  };
-
-  // Instrument HTTP responses
-  var httpResponseHandler = function(respEvent, isCached) {
-    var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
-
-    // http_responses table schema:
-    // id [auto-filled], crawl_id, url, method, referrer, response_status,
-    // response_status_text, headers, location, visit_id [auto-filled],
-    // time_stamp, content_hash
-    var update = {};
-
-    update["crawl_id"] = crawlID;
-
-    update["is_cached"] = isCached;
-
-    var url = httpChannel.URI.spec;
-    update["url"] = loggingDB.escapeString(url);
-
-    var requestMethod = httpChannel.requestMethod;
-    update["method"] = loggingDB.escapeString(requestMethod);
-
-    var referrer = "";
-    if(httpChannel.referrer)
-      referrer = httpChannel.referrer.spec;
-    update["referrer"] = loggingDB.escapeString(referrer);
-
-    var responseStatus = httpChannel.responseStatus;
-    update["response_status"] = responseStatus;
-
-    var responseStatusText = httpChannel.responseStatusText;
-    update["response_status_text"] = loggingDB.escapeString(responseStatusText);
-
-    var current_time = new Date();
-    update["time_stamp"] = current_time.toISOString();
-
-    var location = "";
-    try {
-      location = httpChannel.getResponseHeader("location");
-    }
-    catch (e) {
-      location = "";
-    }
-    update["location"] = loggingDB.escapeString(location);
-
-    var headers = [];
-    httpChannel.visitResponseHeaders({visitHeader: function(name, value) {
-      var header_pair = [];
-      header_pair.push(loggingDB.escapeString(name));
-      header_pair.push(loggingDB.escapeString(value));
-      headers.push(header_pair);
-    }});
-    update["headers"] = JSON.stringify(headers);
-
-    // Record response body if channel is for a script
-		if (httpChannel.loadInfo.externalContentPolicyType == 2) {
-      var js = getResponseBody(respEvent);
-      // TODO hash the javascript content
-      update["content_hash"] = 'TODO';
-      // TODO send the content to levelDBAgg
-    }
-
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
-  };
 
   events.on("http-on-examine-response", function(event) {
-    httpResponseHandler(event, false);
+    httpResponseHandler(event, false, crawlID);
   }, true);
 
-  // Instrument cached HTTP responses
   events.on("http-on-examine-cached-response", function(event) {
-    httpResponseHandler(event, true);
+    httpResponseHandler(event, true, crawlID);
   }, true);
-
 };
