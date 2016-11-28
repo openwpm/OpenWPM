@@ -1,13 +1,13 @@
 {
     "proxy": true,
-    "extension": {
-        "enabled": false,
-        "cookieInstrument": false,
-        "jsInstrument": false,
-        "cpInstrument": false,
-        "httpInstrument": false
-    },
     "save_javascript": false,
+
+    "extension_enabled": true,
+    "disable_webdriver_self_id": true,
+    "cookie_instrument": false,
+    "js_instrument": false,
+    "cp_instrument": false,
+    "http_instrument": false,
 
     "random_attributes": false,
     "bot_mitigation": false,

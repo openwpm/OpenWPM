@@ -116,8 +116,7 @@ scripts.
 Citation
 --------
 
-If you use OpenWPM in your research, please cite our CCS 2016 (to appear)
-[publication](http://randomwalker.info/publications/OpenWPM_1_million_site_tracking_measurement.pdf)
+If you use OpenWPM in your research, please cite our CCS 2016 [publication](http://randomwalker.info/publications/OpenWPM_1_million_site_tracking_measurement.pdf)
 on the infrastructure. You can use the following BibTeX.
 
     @inproceedings{englehardt2016census,

@@ -1,6 +1,5 @@
 import utilities
 import pytest
-from time import sleep
 import commands
 from ..automation import TaskManager
 
