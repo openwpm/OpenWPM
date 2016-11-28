@@ -1,11 +1,8 @@
 // TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
 const {Cc, Ci, CC, Cu, components} = require("chrome");
-var events = require("sdk/system/events");
-const data = require("sdk/self").data;
-var loggingDB = require("./loggingdb.js");
-var timers = require("sdk/timers");
-var pageManager = require("./page-manager.js");
-Cu.import('resource://gre/modules/Services.jsm');
+const events      = require("sdk/system/events");
+const data        = require("sdk/self").data;
+var loggingDB     = require("./loggingdb.js");
 
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
     'nsIBinaryInputStream', 'setInputStream');
@@ -15,6 +12,12 @@ var StorageStream = CC('@mozilla.org/storagestream;1',
     'nsIStorageStream', 'init');
 const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
                        Ci.mozIThirdPartyUtil);
+
+var cryptoHash = Cc["@mozilla.org/security/hash;1"]
+         .createInstance(Ci.nsICryptoHash);
+var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+         .createInstance(Ci.nsIScriptableUnicodeConverter);
+converter.charset = "UTF-8";
 
 /*
  * HTTP Request Handler and Helper Functions
@@ -206,19 +209,38 @@ TracingListener.prototype = {
   }
 };
 
-function getResponseBody(respEvent) {
-  // return the response body from an 'http-on-examine(-cached)?-response' event
+// Helper functions to convert hash data to hex
+function toHexString(charCode) {
+  return ("0" + charCode.toString(16)).slice(-2);
+}
+function binaryHashtoHex(hash) {
+  return Array.from(hash, (c, i) => toHexString(hash.charCodeAt(i))).join("");
+}
+
+function logWithResponseBody(respEvent, update) {
+  // log with response body from an 'http-on-examine(-cached)?-response' event
   var newListener = new TracingListener();
   respEvent.subject.QueryInterface(Ci.nsITraceableChannel);
   newListener.originalListener = respEvent.subject.setNewListener(newListener);
   newListener.promiseDone.then(function() {
-    return newListener.responseBody;
+    var respBody = newListener.responseBody; // get response body as a string
+    var bodyBytes = converter.convertToByteArray(respBody); // convert to bytes
+    cryptoHash.init(cryptoHash.MD5);
+    cryptoHash.update(bodyBytes, bodyBytes.length);
+    var contentHash = binaryHashtoHex(cryptoHash.finish(false));
+    update["content_hash"] = contentHash;
+    console.log("$$$$$$$$$$$$$$$$$$$$$",update['url'], contentHash);
+    // TODO send the content to levelDBAgg
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   }, function(aReason) {
     console.error("Unable to retrieve response body.",aReason);
-    return undefined;
+    update["content_hash"] = "<error>";
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   }).catch(function(aCatch) {
     console.error('Unable to retrieve response body.',
         'Likely caused by a programming error. Error Message:', aCatch);
+    update["content_hash"] = "<error>";
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   });
 }
 
@@ -276,13 +298,10 @@ var httpResponseHandler = function(respEvent, isCached, crawlID) {
 
   // Record response body if channel is for a script
   if (httpChannel.loadInfo.externalContentPolicyType == 2) {
-    var js = getResponseBody(respEvent);
-    // TODO hash the javascript content
-    update["content_hash"] = 'TODO';
-    // TODO send the content to levelDBAgg
+    logWithResponseBody(respEvent, update);
+  } else {
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   }
-
-  loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
 };
 
 /*
