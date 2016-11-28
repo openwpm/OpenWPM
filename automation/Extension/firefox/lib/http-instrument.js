@@ -39,6 +39,22 @@ function get_stack_trace_str(){
   return stacktrace.join("\n");
 }
 
+function getResponseBody(respEvent) {
+  // return the response body from an 'http-on-examine(-cached)?-response' event
+  var newListener = new TracingListener();
+  respEvent.subject.QueryInterface(Ci.nsITraceableChannel);
+  newListener.originalListener = respEvent.subject.setNewListener(newListener);
+  newListener.promiseDone.then(function() {
+    return newListener.responseBody;
+  }, function(aReason) {
+    console.error("Unable to retrieve response body.",aReason);
+    return undefined;
+  }).catch(function(aCatch) {
+    console.error('Unable to retrieve response body.',
+        'Likely caused by a programming error. Error Message:', aCatch);
+  });
+}
+
 exports.run = function(crawlID) {
   // Set up logging
   var createHttpRequestTable = data.load("create_http_requests_table.sql");
@@ -134,8 +150,6 @@ exports.run = function(crawlID) {
     // node making the request (i.e. an <img src=...> node will set to type 3).
     // For a mapping of integers to types see:
     // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
-    // TODO: can we include the string types directly?
-    var contentPolicyType;
     update["content_policy_type"] = httpChannel.loadInfo.externalContentPolicyType;
 
     // Do third-party checks
@@ -162,7 +176,9 @@ exports.run = function(crawlID) {
 
 
   function TracingListener() {
-    this.receivedChunks = []; // array for incoming data. onStopRequest we combine these to get the full source
+    // array for incoming data.
+    // onStopRequest we combine these to get the full source
+    this.receivedChunks = [];
     this.responseBody;
     this.responseStatusCode;
 
@@ -189,7 +205,8 @@ exports.run = function(crawlID) {
       this.receivedChunks.push(data);
       oStream.writeBytes(data, aCount);
 
-      this.originalListener.onDataAvailable(aRequest, aContext, sStream.newInputStream(0), aOffset, aCount);
+      this.originalListener.onDataAvailable(aRequest, aContext,
+          sStream.newInputStream(0), aOffset, aCount);
     },
     onStartRequest: function(aRequest, aContext) {
       this.originalListener.onStartRequest(aRequest, aContext);
@@ -211,8 +228,8 @@ exports.run = function(crawlID) {
   };
 
   // Instrument HTTP responses
-  var httpResponseHandler = function(event, isCached) {
-    var httpChannel = event.subject.QueryInterface(Ci.nsIHttpChannel);
+  var httpResponseHandler = function(respEvent, isCached) {
+    var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
 
     // http_responses table schema:
     // id [auto-filled], crawl_id, url, method, referrer, response_status,
@@ -221,6 +238,8 @@ exports.run = function(crawlID) {
     var update = {};
 
     update["crawl_id"] = crawlID;
+
+    update["is_cached"] = isCached;
 
     var url = httpChannel.URI.spec;
     update["url"] = loggingDB.escapeString(url);
@@ -238,8 +257,6 @@ exports.run = function(crawlID) {
 
     var responseStatusText = httpChannel.responseStatusText;
     update["response_status_text"] = loggingDB.escapeString(responseStatusText);
-
-    // TODO: add "is_cached" boolean?
 
     var current_time = new Date();
     update["time_stamp"] = current_time.toISOString();
@@ -262,26 +279,15 @@ exports.run = function(crawlID) {
     }});
     update["headers"] = JSON.stringify(headers);
 
-    var newListener = new TracingListener();
-    event.subject.QueryInterface(Ci.nsITraceableChannel);
-    newListener.originalListener = event.subject.setNewListener(newListener);
-    newListener.promiseDone.then(
-      function() {
-        // no error happened
-        update["content_hash"] = "testing";
-        loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
+    // Record response body if channel is for a script
+		if (httpChannel.loadInfo.externalContentPolicyType == 2) {
+      var js = getResponseBody(respEvent);
+      // TODO hash the javascript content
+      update["content_hash"] = 'TODO';
+      // TODO send the content to levelDBAgg
+    }
 
-      },
-      function(aReason) {
-        // promise was rejected
-      }
-    ).catch(
-      function(aCatch) {
-        console.error('something went wrong, a typo by dev probably:', aCatch);
-      }
-    );
-
-
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   };
 
   events.on("http-on-examine-response", function(event) {
