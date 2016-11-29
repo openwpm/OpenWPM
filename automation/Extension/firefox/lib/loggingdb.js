@@ -1,45 +1,61 @@
+const fileIO            = require("sdk/io/file");
+const system            = require("sdk/system");
 var socket              = require("./socket.js");
 
 var crawlID = null;
 var visitID = null;
-var visit_id_queue = null;
 var debugging = false;
+var sqliteAggregator = null;
+var listeningSocket = null;
 
-exports.open = function(host, port, crawlID) {
-    if (host == '' && port == '' && crawlID == '') {
+exports.open = function(sqliteAddress, crawlID) {
+    if (sqliteAddress == null && crawlID == '') {
+        console.log("Debugging, everything will output to console");
         debugging = true;
         return;
     }
-
-    console.log("Opening socket connections")
     crawlID = crawlID;
 
-    // Connect to database for saving data
-    socket.connect(host, port);
+    // Connect to databases for saving data
+    console.log("Opening socket connections...");
+    if (sqliteAddress != ['','']) {
+        sqliteAggregator = new socket.SendingSocket();
+        var rv = sqliteAggregator.connect(sqliteAddress[0], sqliteAddress[1]);
+        console.log("sqliteSocket started?",rv);
+    }
 
     // Listen for incomming urls as visit ids
-    visit_id_queue = socket.createListeningSocket();
+    listeningSocket = new socket.ListeningSocket();
+    var path = system.pathFor("ProfD") + '/extension_port.txt';
+    var file = fileIO.open(path, 'w');
+    if (!file.closed) {
+        file.write(listeningSocket.port);
+        file.close();
+    }
+    listeningSocket.startListening();
 };
 
 exports.close = function() {
-    socket.close();
+    if (sqliteAggregator != null) {
+        sqliteAggregator.close();
+    }
 };
 
-// async statement kept around for API compatibility
 exports.executeSQL = function(statement, async) {
     // send to console if debugging
+    // TODO remove async argument
     if (debugging) {
         if (typeof statement == 'string')
-            console.log(statement);
+            console.log("SQLite",statement);
         else
-            console.log(statement[1]);
+            console.log("SQLite",statement[1]);
         return;
     }
     // catch statements without arguments
     if (typeof statement == "string") {
         var statement = [statement, []];
     }
-    socket.send(statement);
+    sqliteAggregator.send(statement);
 };
 
 function encode_utf8(s) {
@@ -58,11 +74,10 @@ exports.boolToInt = function(bool) {
     return bool ? 1 : 0;
 };
 
-
 exports.createInsert = function(table, update) {
     // Add top url visit id if changed
-    while (!debugging && visit_id_queue.length != 0) {
-        visitID = visit_id_queue.shift();
+    while (!debugging && listeningSocket.queue.length != 0) {
+        visitID = listeningSocket.queue.shift();
         console.log("Visit Id:",visitID);
     }
 
