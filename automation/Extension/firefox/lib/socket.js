@@ -23,14 +23,15 @@ class ListeningSocket {
   }
 
   startListening() {
+    var thisSocket = this; // self reference for closure
     this._serverSocket.asyncListen({
       onSocketAccepted: function(sock, transport) {
-        this._inputStream = transport.openInputStream(0, 0, 0);
-        this._inputStream.asyncWait({
-          onInputStreamReady: function() {
-            this._updateQueue();
-          }
-        }, 0, 0, tm.mainThread);
+          thisSocket._inputStream = transport.openInputStream(0, 0, 0);
+          thisSocket._inputStream.asyncWait({
+            onInputStreamReady: function() {
+              thisSocket._updateQueue();
+            }
+          }, 0, 0, tm.mainThread);
       }
     });
   }
@@ -38,22 +39,23 @@ class ListeningSocket {
   _updateQueue() {
     var bInputStream = Cc["@mozilla.org/binaryinputstream;1"]
                               .createInstance(Ci.nsIBinaryInputStream);
-    bInputStream.setInputStream(inputStream);
+    bInputStream.setInputStream(this._inputStream);
 
     var buff = bInputStream.readByteArray(5);
     var meta = bufferpack.unpack('>Lc', buff);
-    string = bInputStream.readBytes(meta[0]);
+    var string = bInputStream.readBytes(meta[0]);
     if (meta[1] != 'n' && meta[1] == 'j') {
       string = JSON.parse(string);
     } else if (meta[1] != 'n') {
-      console.log("ERROR: Unsupported serialization type (",meta[1],").");
+      console.error("Unsupported serialization type (",meta[1],").");
       return;
     }
     this.queue.push(string);
 
+    var thisSocket = this; // self reference for closure
     this._inputStream.asyncWait({
-      onInputStreamReady: function() {
-        this._updateQueue(inputStream, queue);
+      onInputStreamReady: function(){
+        thisSocket._updateQueue();
       }
     }, 0, 0, tm.mainThread);
   }

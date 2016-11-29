@@ -27,11 +27,14 @@ exports.open = function(sqliteAddress, crawlID) {
     // Listen for incomming urls as visit ids
     listeningSocket = new socket.ListeningSocket();
     var path = system.pathFor("ProfD") + '/extension_port.txt';
+    console.log("Writing listening socket port to disk at:", path);
     var file = fileIO.open(path, 'w');
     if (!file.closed) {
         file.write(listeningSocket.port);
         file.close();
+        console.log("Port",listeningSocket.port,"written to disk.");
     }
+    console.log("Starting socket listening for incomming connections.");
     listeningSocket.startListening();
 };
 
