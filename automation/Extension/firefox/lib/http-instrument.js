@@ -229,8 +229,7 @@ function logWithResponseBody(respEvent, update) {
     cryptoHash.update(bodyBytes, bodyBytes.length);
     var contentHash = binaryHashtoHex(cryptoHash.finish(false));
     update["content_hash"] = contentHash;
-    console.log("$$$$$$$$$$$$$$$$$$$$$",update['url'], contentHash);
-    // TODO send the content to levelDBAgg
+    loggingDB.saveContent(respBody, contentHash);
     loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   }, function(aReason) {
     console.error("Unable to retrieve response body.",aReason);

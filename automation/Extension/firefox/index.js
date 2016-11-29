@@ -21,6 +21,7 @@ exports.main = function(options, callbacks) {
                 "the extension. Outputting all queries to console.");
     var config = {
       sqlite_address:null,
+      leveldb_address:null,
       disable_webdriver_self_id:true,
       cookie_instrument:true,
       js_instrument:true,
@@ -31,6 +32,7 @@ exports.main = function(options, callbacks) {
   }
 
   loggingDB.open(config['sqlite_address'],
+                 config['leveldb_address'],
                  config['crawl_id']);
 
   // Prevent the webdriver from identifying itself in the DOM. See #91

@@ -6,10 +6,11 @@ var crawlID = null;
 var visitID = null;
 var debugging = false;
 var sqliteAggregator = null;
+var ldbAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(sqliteAddress, crawlID) {
-    if (sqliteAddress == null && crawlID == '') {
+exports.open = function(sqliteAddress, ldbAddress, crawlID) {
+    if (sqliteAddress == null && ldbAddress == null && crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
@@ -18,10 +19,15 @@ exports.open = function(sqliteAddress, crawlID) {
 
     // Connect to databases for saving data
     console.log("Opening socket connections...");
-    if (sqliteAddress != ['','']) {
+    if (sqliteAddress != null) {
         sqliteAggregator = new socket.SendingSocket();
         var rv = sqliteAggregator.connect(sqliteAddress[0], sqliteAddress[1]);
         console.log("sqliteSocket started?",rv);
+    }
+    if (ldbAddress != null) {
+        ldbAggregator = new socket.SendingSocket();
+        var rv = ldbSocket.connect(ldbAddress[0], ldbAddress[1]);
+        console.log("ldbSocket started?",rv);
     }
 
     // Listen for incomming urls as visit ids
@@ -42,6 +48,9 @@ exports.close = function() {
     if (sqliteAggregator != null) {
         sqliteAggregator.close();
     }
+    if (ldbAggregator != null) {
+        ldbAggregator.close();
+    }
 };
 
 exports.executeSQL = function(statement, async) {
@@ -60,6 +69,16 @@ exports.executeSQL = function(statement, async) {
     }
     sqliteAggregator.send(statement);
 };
+
+exports.saveContent = function(content, contentHash) {
+  // send content to levelDBAggregator which stores content
+  // deduplicated by contentHash in a levelDB database
+  if (debugging) {
+    console.log("LDB contentHash:",contentHash,"with length",content.length);
+    return;
+  }
+  ldbAggregator.send([content, contentHash]);
+}
 
 function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
