@@ -52,6 +52,11 @@ http_requests = {
         0, None, None, 0, 0,
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html', 3),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html', 2),
     (u'http://localtest.me:8000/test_pages/shared/test_script.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, None, None, 0, 0,
@@ -95,6 +100,9 @@ http_responses = {
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u'')
 }

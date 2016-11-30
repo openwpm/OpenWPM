@@ -1,5 +1,7 @@
 import pytest # NOQA
+import hashlib
 import os
+
 import utilities
 import expected
 from openwpmtest import OpenWPMTest
@@ -16,6 +18,7 @@ class TestHTTPInstrument(OpenWPMTest):
         manager_params['log_directory'] = data_dir
         browser_params[0]['headless'] = True
         browser_params[0]['http_instrument'] = True
+        browser_params[0]['save_javascript_ext'] = True
         manager_params['db'] = os.path.join(manager_params['data_directory'],
                                             manager_params['database_name'])
         return manager_params, browser_params
@@ -45,8 +48,6 @@ class TestHTTPInstrument(OpenWPMTest):
     #TODO: test that cache hits are recorded. Will need a custom command to
     #refresh page.
 
-    #TODO: test that javascript content is saved correctly
-
     def test_http_stacktrace(self, tmpdir):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
         db = self.visit(test_url, str(tmpdir), sleep_after=3)
@@ -75,3 +76,16 @@ class TestHTTPInstrument(OpenWPMTest):
         for row in rows:
             _, stacktrace = row
             assert stacktrace == ""
+
+    def test_javascript_saving(self, tmpdir):
+        """ check that javascript content is saved and hashed correctly """
+        test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
+        db = self.visit(test_url, str(tmpdir), sleep_after=3)
+        expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
+                           'a6475af1ad58b55cf781ca5e1218c7b1'}
+        for chash, content in utilities.get_javascript_content(str(tmpdir)):
+            pyhash = hashlib.md5(content).hexdigest()
+            assert pyhash == chash # Verify expected key (md5 of content)
+            assert chash in expected_hashes
+            expected_hashes.remove(chash)
+        assert len(expected_hashes) == 0 # All expected hashes have been seen

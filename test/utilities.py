@@ -3,6 +3,7 @@ import SimpleHTTPServer
 import SocketServer
 import threading
 import codecs
+import plyvel
 import os
 import sqlite3
 from random import choice
@@ -66,6 +67,23 @@ def query_db(db, query, params=None):
         else:
             rows = con.execute(query, params).fetchall()
     return rows
+
+
+def get_javascript_content(data_directory):
+    """Yield key, value pairs from the deduplicated leveldb content database
+
+    Parameters
+    ----------
+    data_directory : str
+        root directory of the crawl files containing `javascript.ldb`
+    """
+    db_path = os.path.join(data_directory, 'javascript.ldb')
+    db = plyvel.DB(db_path,
+            create_if_missing = False,
+            compression = 'snappy')
+    for content_hash, content in db.iterator():
+        yield content_hash, content
+    db.close()
 
 
 def get_javascript_entries(db, all_columns=False):

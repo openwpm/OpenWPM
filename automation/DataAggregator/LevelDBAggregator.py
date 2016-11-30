@@ -74,10 +74,10 @@ def process_content(content, content_hash, batch, db, counter, logger):
     """
     adds content to the batch
     """
-    if db.get(content_hash) is not None:
+    if db.get(str(content_hash)) is not None:
         return counter
 
-    batch.put(content_hash, content)
+    batch.put(str(content_hash), str(content))
     return counter + 1
 
 def drain_queue(sock_queue, batch, db, counter, logger):

@@ -229,7 +229,8 @@ function logWithResponseBody(respEvent, update) {
     cryptoHash.update(bodyBytes, bodyBytes.length);
     var contentHash = binaryHashtoHex(cryptoHash.finish(false));
     update["content_hash"] = contentHash;
-    loggingDB.saveContent(respBody, contentHash);
+    loggingDB.saveContent(loggingDB.escapeString(respBody),
+                          loggingDB.escapeString(contentHash));
     loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
   }, function(aReason) {
     console.error("Unable to retrieve response body.",aReason);
@@ -244,7 +245,7 @@ function logWithResponseBody(respEvent, update) {
 }
 
 // Instrument HTTP responses
-var httpResponseHandler = function(respEvent, isCached, crawlID) {
+var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript) {
   var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
 
   // http_responses table schema:
@@ -296,7 +297,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID) {
   update["headers"] = JSON.stringify(headers);
 
   // Record response body if channel is for a script
-  if (httpChannel.loadInfo.externalContentPolicyType == 2) {
+  if (saveJavascript && httpChannel.loadInfo.externalContentPolicyType == 2) {
     logWithResponseBody(respEvent, update);
   } else {
     loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
@@ -307,7 +308,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID) {
  * Attach handlers to event monitor
  */
 
-exports.run = function(crawlID) {
+exports.run = function(crawlID, saveJavascript) {
   // Create sql tables
   var createHttpRequestTable = data.load("create_http_requests_table.sql");
   loggingDB.executeSQL(createHttpRequestTable, false);
@@ -321,10 +322,10 @@ exports.run = function(crawlID) {
   }, true);
 
   events.on("http-on-examine-response", function(event) {
-    httpResponseHandler(event, false, crawlID);
+    httpResponseHandler(event, false, crawlID, saveJavascript);
   }, true);
 
   events.on("http-on-examine-cached-response", function(event) {
-    httpResponseHandler(event, true, crawlID);
+    httpResponseHandler(event, true, crawlID, saveJavascript);
   }, true);
 };

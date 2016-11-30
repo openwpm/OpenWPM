@@ -26,7 +26,7 @@ exports.open = function(sqliteAddress, ldbAddress, crawlID) {
     }
     if (ldbAddress != null) {
         ldbAggregator = new socket.SendingSocket();
-        var rv = ldbSocket.connect(ldbAddress[0], ldbAddress[1]);
+        var rv = ldbAggregator.connect(ldbAddress[0], ldbAddress[1]);
         console.log("ldbSocket started?",rv);
     }
 
