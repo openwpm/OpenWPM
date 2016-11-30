@@ -56,6 +56,9 @@ var httpRequestHandler = function(reqEvent, crawlID) {
 
   update["crawl_id"] = crawlID;
 
+  // Requires FF49+. See Issue #109.
+  //update['channel_id'] = httpChannel.channelId;
+
   var stacktrace_str = get_stack_trace_str();
   update["req_call_stack"] = loggingDB.escapeString(stacktrace_str);
 
@@ -256,6 +259,9 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
 
   update["crawl_id"] = crawlID;
 
+  // Requires FF49+. See Issue #109.
+  //update['channel_id'] = httpChannel.channelId;
+
   update["is_cached"] = isCached;
 
   var url = httpChannel.URI.spec;
@@ -326,6 +332,10 @@ exports.run = function(crawlID, saveJavascript) {
   }, true);
 
   events.on("http-on-examine-cached-response", function(event) {
+    httpResponseHandler(event, true, crawlID, saveJavascript);
+  }, true);
+
+  events.on("http-on-examine-merged-response", function(event) {
     httpResponseHandler(event, true, crawlID, saveJavascript);
   }, true);
 };

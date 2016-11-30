@@ -107,6 +107,53 @@ http_responses = {
         u'')
 }
 
+http_cached_requests = {
+    (u'http://localtest.me:8000/test_pages/http_test_page.html',
+        None,
+        0, 0, 1, None, None,
+        u'[System Principal]',
+        u'chrome://browser/content/browser.xul', 6),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html', 2),
+    (u'http://localtest.me:8000/test_pages/shared/test_script.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 2),
+    (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 1, 0, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 7),
+    (u'http://localtest.me:8000/test_pages/shared/test_style.css',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 4)
+}
+
+# format: (request_url, referrer, is_cached)
+http_cached_responses = {
+    (u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u'',
+        1),
+    (u'http://localtest.me:8000/test_pages/shared/test_style.css',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        1),
+    (u'http://localtest.me:8000/test_pages/shared/test_script.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        1),
+    (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        1),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        1)
+}
+
 # HTTP request call stack instrumentation
 # Expected stack frames from http_stack_trace.html page
 HTTP_STACKTRACE_TEST_URL = BASE_TEST_URL + "/http_stack_trace.html"

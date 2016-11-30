@@ -45,8 +45,41 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add(row)
         assert expected.http_responses == observed_records
 
-    #TODO: test that cache hits are recorded. Will need a custom command to
-    #refresh page.
+    def test_cache_hits_recorded(self, tmpdir):
+        """Verify all http responses are recorded, including cached responses
+
+        Note that we expect to see all of the same requests and responses
+        during the second vist (even if cached) except for images. Cached
+        images do not trigger Observer Notification events.
+        See Bug 634073: https://bugzilla.mozilla.org/show_bug.cgi?id=634073
+        """
+        test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get(test_url, sleep=3)
+        manager.get(test_url, sleep=3)
+        manager.close(post_process=False)
+        db = manager_params['db']
+
+        # HTTP Requests
+        rows = utilities.query_db(db, (
+            "SELECT url, top_level_url, is_XHR, is_frame_load, is_full_page, "
+            "is_third_party_channel, is_third_party_window, triggering_origin "
+            "loading_origin, loading_href, content_policy_type "
+            "FROM http_requests_ext WHERE visit_id = 2"))
+        observed_records = set()
+        for row in rows:
+            observed_records.add(row)
+        assert expected.http_cached_requests == observed_records
+
+        # HTTP Responses
+        rows = utilities.query_db(db, (
+            "SELECT url, referrer, is_cached FROM http_responses_ext "
+            "WHERE visit_id = 2"))
+        observed_records = set()
+        for row in rows:
+            observed_records.add(row)
+        assert expected.http_cached_responses == observed_records
 
     def test_http_stacktrace(self, tmpdir):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
