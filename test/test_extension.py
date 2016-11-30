@@ -105,3 +105,12 @@ class TestExtension(OpenWPMTest):
             observed_symbols.add(item[1])
         assert expected.audio == observed_symbols
 
+    def test_js_call_stack(self, tmpdir):
+        db = self.visit('/js_call_stack.html', str(tmpdir))
+        # Check that all stack info are recorded
+        rows = utilities.get_javascript_entries(db, all_columns=True)
+        observed_rows = set()
+        for item in rows:
+            observed_rows.add(item[3:11])
+        assert set(expected.js_stack_calls) == observed_rows
+
