@@ -12,7 +12,12 @@ import os
 
 def get_version():
     """Return OpenWPM version tag/current commit and Firefox version """
-    openwpm = subprocess.check_output(["git","describe","--tags","--always"]).strip()
+    try:
+        openwpm = subprocess.check_output(["git","describe","--tags","--always"]).strip()
+    except subprocess.CalledProcessError:
+        ver = os.path.join(os.path.dirname(__file__), '../VERSION')
+        with open(ver, 'r') as f:
+            openwpm = f.readline().strip()
 
     ff_ini = os.path.join(os.path.dirname(__file__), '../firefox-bin/application.ini')
     with open(ff_ini, 'r') as f:
