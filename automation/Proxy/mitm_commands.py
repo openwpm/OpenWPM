@@ -109,7 +109,7 @@ def save_javascript_content(ldb_socket, logger, browser_params, msg):
 
     # Hash script for deduplication on disk
     hasher = mmh3.hash128
-    script_hash = str(hasher(script) >> 64)
+    script_hash = str(hasher(script.encode('utf-8')) >> 64)
 
     ldb_socket.send((script, script_hash))
 
