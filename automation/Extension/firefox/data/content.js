@@ -144,8 +144,6 @@ function getPageScript() {
     }
 
     // Helper to get originating script urls
-    // from https://github.com/csnover/TraceKit/blob/b76ad786f84ed0c94701c83d8963458a8da54d57/tracekit.js#L641
-    var geckoCallSiteRe = /^\s*(.*?)(?:\((.*?)\))?@?((?:file|https?|chrome):.*?)(?: line \d* > eval)?:(\d+)(?::(\d+))?\s*$/i;
     function getStackTrace() {
       var stack;
 
@@ -157,23 +155,51 @@ function getPageScript() {
 
       return stack;
     }
+
+    // from http://stackoverflow.com/a/5202185
+    String.prototype.rsplit = function(sep, maxsplit) {
+      var split = this.split(sep);
+      return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
+    }
+
     function getOriginatingScriptContext(getCallStack=false) {
       var trace = getStackTrace().split('\n');
 
       if (trace.length < 4) {
         return '';
       }
-      // this script is at 0, 1 and 2
+      // 0, 1 and 2 are OpenWPM's own functions (e.g. getStackTrace), skip them.
       var callSite = trace[3];
-      var scriptUrlMatches = callSite.match(geckoCallSiteRe);
-      var scriptUrl = scriptUrlMatches && scriptUrlMatches[3] || '';
-      var items = callSite.split(":");
-      var col = (items[items.length-1]);
-      var line = (items[items.length-2]);
+      /*
+       * Stack frame format is simply: FUNC_NAME@SCRIPT_URL:LINE_NO:COLUMN_NO
+       *
+       * If eval or Function is involved we have an additional part after the URL, e.g.:
+       * FUNC_NAME@SCRIPT_URL line 123 > eval line 1 > eval:LINE_NO:COLUMN_NO
+       * or FUNC_NAME@SCRIPT_URL line 234 > Function:LINE_NO:COLUMN_NO
+       *
+       * We store the part between the URL and the LINE_NO in scriptLocEval
+       */
+      var scriptUrl = "";
+      var scriptLocEval = ""; // for eval or Function calls
+      var callSiteParts = callSite.split("@");
+      var funcName = callSiteParts[0] || '';
+      var items = callSiteParts[1].rsplit(":", 2);
+      var columnNo = items[items.length-1];
+      var lineNo = items[items.length-2];
+      var scriptLoc = items[items.length-3] || '';
+      var lineNoIdx = scriptLoc.indexOf(" line ");  // line in the URL means eval or Function
+      if (lineNoIdx == -1){
+        scriptUrl = scriptLoc;
+      }else{
+        scriptUrl = scriptLoc.slice(0, lineNoIdx);
+        scriptLocEval = scriptLoc.slice(lineNoIdx+1, scriptLoc.length);
+      }
       var callContext = {
           scriptUrl: scriptUrl,
-          scriptLine: items[items.length-2],
-          scriptCol: items[items.length-1],
+          scriptLine: lineNo,
+          scriptCol: columnNo,
+          funcName: funcName,
+          scriptLocEval: scriptLocEval,
           callStack: getCallStack ? trace.slice(3).join("\n") : ""
       };
       return callContext;
@@ -214,6 +240,8 @@ function getPageScript() {
         scriptUrl: callContext.scriptUrl,
         scriptLine: callContext.scriptLine,
         scriptCol: callContext.scriptCol,
+        funcName: callContext.funcName,
+        scriptLocEval: callContext.scriptLocEval,
         callStack: callContext.callStack
       };
 
@@ -253,6 +281,8 @@ function getPageScript() {
           scriptUrl: callContext.scriptUrl,
           scriptLine: callContext.scriptLine,
           scriptCol: callContext.scriptCol,
+          funcName: callContext.funcName,
+          scriptLocEval: callContext.scriptLocEval,
           callStack: callContext.callStack
         }
         send('logCall', msg);

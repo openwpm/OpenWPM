@@ -320,3 +320,23 @@ audio = {
     u"ScriptProcessorNode.disconnect",
     u"GainNode.disconnect",
     u"OscillatorNode.stop"}
+
+JS_STACK_TEST_URL = u"%s/js_call_stack.html" % BASE_TEST_URL
+JS_STACK_TEST_SCRIPT_URL = u"%s/stack.js" % BASE_TEST_URL
+
+js_stack_calls = (
+    (JS_STACK_TEST_URL, u'1', u'1', u'', u'line 10 > eval', u'',
+     u'window.navigator.appName', u'get'),
+    (JS_STACK_TEST_SCRIPT_URL, u'3', u'5', u'js_check_navigator', u'', u'',
+     u'window.navigator.userAgent', u'get'),
+    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'', u'line 4 > eval', u'',
+     u'window.navigator.platform', u'get'),
+    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'', u'line 11 > eval', u'',
+     u'window.navigator.buildID', u'get'),
+    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'anonymous', u'line 14 > Function', u'',
+     u'window.navigator.appVersion', u'get'),
+    (JS_STACK_TEST_URL, u'7', u'9', u'check_navigator', u'', u'',
+     u'window.navigator.userAgent', u'get'),
+    (JS_STACK_TEST_URL, u'1', u'1', u'', u'line 8 > eval', u'',
+     u'window.navigator.appCodeName', u'get'))
+

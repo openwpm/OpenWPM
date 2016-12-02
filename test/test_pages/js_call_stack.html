@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+<title>Simple Page A</title>
+  <script type="application/javascript">
+    function check_navigator() {
+        console.log(window.navigator.userAgent);
+        var foo = eval("window.navigator.appCodeName");
+    }
+    var bar = eval("window.navigator.appName");
+  </script>
+  <script src="stack.js"></script>
+ </head>
+ <body onload="check_navigator()">
+ </body></html>
