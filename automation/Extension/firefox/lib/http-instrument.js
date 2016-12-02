@@ -247,6 +247,30 @@ function logWithResponseBody(respEvent, update) {
   });
 }
 
+function isJS(httpChannel) {
+  // Return true if this channel is loading javascript
+  // We rely mostly on the content policy type to filter responses
+  // and fall back to the URI and content type string for types that can
+  // load various resource types.
+  // See: http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl
+  var contentPolicyType = httpChannel.loadInfo.externalContentPolicyType;
+  if (contentPolicyType == 2) // script
+    return true;
+  if (contentPolicyType != 5 && // object
+      contentPolicyType != 7 && // subdocument (iframe)
+      contentPolicyType != 11 && // XMLHTTPRequest
+      contentPolicyType != 16 && // websocket
+      contentPolicyType != 19) // beacon response
+    return false;
+  var contentType = httpChannel.getResponseHeader("Content-Type");
+  if (contentType && contentType.toLowerCase().includes('javascript'))
+    return true;
+  var path = httpChannel.URI.path;
+  if (path && path.split('?')[0].split('#')[0].endsWith('.js'))
+    return true;
+  return false;
+}
+
 // Instrument HTTP responses
 var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript) {
   var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
@@ -302,8 +326,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
   }});
   update["headers"] = JSON.stringify(headers);
 
-  // Record response body if channel is for a script
-  if (saveJavascript && httpChannel.loadInfo.externalContentPolicyType == 2) {
+  if (saveJavascript && isJS(httpChannel)) {
     logWithResponseBody(respEvent, update);
   } else {
     loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
