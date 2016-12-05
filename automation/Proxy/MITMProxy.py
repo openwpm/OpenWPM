@@ -33,7 +33,7 @@ class InterceptingMaster (controller.Master):
 
         # Open a socket to communicate with LevelDBAggregator
         self.ldb_socket = None
-        if browser_params['save_javascript']:
+        if browser_params['save_javascript_proxy']:
             self.ldb_socket = clientsocket(serialization='dill')
             self.ldb_socket.connect(*manager_params['ldb_address'])
 

@@ -25,6 +25,7 @@ class TestSimpleCommands():
         manager_params['log_directory'] = data_dir
         manager_params['db'] = os.path.join(manager_params['data_directory'],
                                             manager_params['database_name'])
+        browser_params[0]['http_instrument'] = True
         browser_params[0]['headless'] = True
         return manager_params, browser_params
 
@@ -43,7 +44,7 @@ class TestSimpleCommands():
         # Perform the get commands
         manager.execute_command_sequence(cs_a)
         manager.execute_command_sequence(cs_b)
-        manager.close(post_process=False)
+        manager.close()
 
         qry_res = utilities.query_db(manager_params['db'],
                                      "SELECT site_url FROM site_visits")
@@ -68,7 +69,7 @@ class TestSimpleCommands():
 
         manager.execute_command_sequence(cs_a)
         manager.execute_command_sequence(cs_b)
-        manager.close(post_process=False)
+        manager.close()
 
         qry_res = utilities.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
@@ -112,7 +113,7 @@ class TestSimpleCommands():
 
         manager.execute_command_sequence(cs_a)
         manager.execute_command_sequence(cs_b)
-        manager.close(post_process=False)
+        manager.close()
 
         qry_res = utilities.query_db(manager_params['db'],
                                      "SELECT site_url FROM site_visits")
@@ -142,7 +143,7 @@ class TestSimpleCommands():
 
         manager.execute_command_sequence(cs_a)
         manager.execute_command_sequence(cs_b)
-        manager.close(post_process=False)
+        manager.close()
 
         qry_res = utilities.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
@@ -203,7 +204,7 @@ class TestSimpleCommands():
         cs.get(sleep=1)
         cs.save_screenshot('test_screenshot')
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
 
 
         # Check that image is not blank
@@ -223,7 +224,7 @@ class TestSimpleCommands():
         cs.get(sleep=1)
         cs.dump_page_source('test_source')
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
 
         with open(os.path.join(str(tmpdir), 'sources', 'test_source.html'), 'rb') as f:
             actual_source = f.read()

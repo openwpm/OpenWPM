@@ -27,7 +27,7 @@ exports.main = function(options, callbacks) {
       js_instrument:true,
       cp_instrument:true,
       http_instrument:true,
-      save_javascript_ext:true,
+      save_javascript:true,
       crawl_id:''
     };
   }
@@ -59,6 +59,6 @@ exports.main = function(options, callbacks) {
   }
   if (config['http_instrument']) {
     console.log("HTTP Instrumentation enabled");
-    httpInstrument.run(config['crawl_id'], config['save_javascript_ext']);
+    httpInstrument.run(config['crawl_id'], config['save_javascript']);
   }
 };

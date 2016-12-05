@@ -44,7 +44,7 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
         cs.run_custom_function(check_webdriver_id_not_exists)
         with pytest.raises(AssertionError):
             manager.execute_command_sequence(cs)
-            manager.close(post_process=False)
+            manager.close()
 
     def test_disable_self_id(self, tmpdir):
         manager_params, browser_params = self.get_config(str(tmpdir))
@@ -66,7 +66,7 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
         cs.get(sleep=5, timeout=60)
         cs.run_custom_function(check_webdriver_id_not_exists)
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
         assert not utilities.any_command_failed(manager_params['db'])
 
     def test_define_property(self, tmpdir):
@@ -152,5 +152,5 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
         cs.get(sleep=5, timeout=60)
         cs.run_custom_function(check_define_property_works)
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
         assert not utilities.any_command_failed(manager_params['db'])

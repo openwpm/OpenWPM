@@ -94,6 +94,9 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded" % browser_params['crawl_id'])
 
     if browser_params['proxy']:
+        logger.warning("BROWSER %i: Use of the proxy is DEPRECATED and will be "
+                       "removed from future releases. Use http_instrument." %
+                       browser_params['crawl_id'])
         PROXY_HOST = "localhost"
         PROXY_PORT = browser_params['proxy']
 

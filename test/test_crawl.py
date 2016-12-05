@@ -48,6 +48,7 @@ class TestCrawl():
         manager_params['db'] = os.path.join(manager_params['data_directory'],
                                             manager_params['database_name'])
         browser_params[0]['profile_archive_dir'] = os.path.join(data_dir, 'browser_profile')
+        browser_params[0]['http_instrument'] = True
         browser_params[0]['headless'] = True
         return manager_params, browser_params
 
@@ -67,7 +68,7 @@ class TestCrawl():
             manager.get(site)
         ff_db_tar = os.path.join(browser_params[0]['profile_archive_dir'],
                                  'profile.tar.gz')
-        manager.close(post_process=False)
+        manager.close()
 
         # Extract crawl profile
         with tarfile.open(ff_db_tar) as tar:

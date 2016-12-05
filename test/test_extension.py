@@ -49,7 +49,7 @@ class TestExtension(OpenWPMTest):
 
         manager.get(url_a)
         manager.get(url_b)
-        manager.close(post_process=False)
+        manager.close()
         qry_res = utilities.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
 

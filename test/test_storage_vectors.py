@@ -1,5 +1,4 @@
-import pytest
-import time
+import pytest # noqa
 import os
 import utilities
 from ..automation import CommandSequence
@@ -76,7 +75,7 @@ class TestStorageVectors():
         cs.dump_flash_cookies()
         manager.execute_command_sequence(cs)
 
-        manager.close(post_process=False)
+        manager.close()
 
         #  Check that some flash cookies are recorded
         qry_res = utilities.query_db(manager_params['db'],
@@ -103,7 +102,7 @@ class TestStorageVectors():
         cs.get(sleep=3, timeout=120)
         cs.dump_profile_cookies()
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
 
         # Check that some flash cookies are recorded
         qry_res = utilities.query_db(manager_params['db'],
@@ -121,7 +120,7 @@ class TestStorageVectors():
         cs.get(sleep=3, timeout=120)
         cs.dump_profile_cookies()
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
         # Check that the JS cookie we stored is recorded
         qry_res = utilities.query_db(manager_params['db'], "SELECT * FROM profile_cookies")
         assert len(qry_res) == 1  # we store only one cookie

@@ -1,9 +1,8 @@
 from BrowserManager import Browser
 from DataAggregator import DataAggregator, LevelDBAggregator
 from SocketInterface import clientsocket
-from PostProcessing import post_processing
 from Errors import CommandExecutionError
-from platform_utils import get_version, get_configuration_string
+from utilities.platform_utils import get_version, get_configuration_string
 import CommandSequence
 import MPLogger
 
@@ -108,7 +107,7 @@ class TaskManager:
         # Mark if LDBAggregator is needed (if js is enabled on any browser)
         self.ldb_enabled = False
         for params in browser_params:
-            if params['save_javascript'] or params['save_javascript_ext']:
+            if params['save_javascript'] or params['save_javascript_proxy']:
                 self.ldb_enabled = True
                 break
 
@@ -184,7 +183,7 @@ class TaskManager:
 
             if not success:
                 self.logger.critical("Browser spawn failure during TaskManager initialization, exiting...")
-                self.close(post_process=False)
+                self.close()
                 break
 
             # Update our DB with the random browser settings
@@ -548,14 +547,11 @@ class TaskManager:
         self.execute_command_sequence(command_sequence, index=index)
 
 
-    def close(self, post_process=True):
+    def close(self):
         """
         Execute shutdown procedure for TaskManager
-        <post_process> flag to launch post_processing pipeline
         """
         if self.closing:
             self.logger.error("TaskManager already closed")
             return
         self._shutdown_manager()
-        if post_process:
-            post_processing.run(self.manager_params) # launch post-crawl processing

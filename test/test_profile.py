@@ -3,7 +3,7 @@ import os
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
 
-
+#TODO update these tests to make use of blocking commands
 class TestProfile():
     NUM_BROWSERS = 1
 
@@ -19,7 +19,7 @@ class TestProfile():
         manager_params, browser_params = self.get_config(str(tmpdir))
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://example.com')
-        manager.close(post_process=False)
+        manager.close()
         assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
 
     def test_crash(self, tmpdir):
@@ -53,6 +53,7 @@ class TestProfile():
 
     def test_profile_saved_when_launch_crashes(self, tmpdir):
         manager_params, browser_params = self.get_config(str(tmpdir))
+        browser_params[0]['proxy'] = True
         browser_params[0]['save_javascript'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://example.com')
@@ -69,7 +70,7 @@ class TestProfile():
             manager.get('http://example.com')
         except CommandExecutionError:
             pass
-        manager.close(post_process=False)
+        manager.close()
         assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
 
     #TODO Check for Flash

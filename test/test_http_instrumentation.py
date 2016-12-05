@@ -6,7 +6,7 @@ import utilities
 import expected
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
-from ..automation.platform_utils import parse_http_stack_trace_str
+from ..automation.utilities.platform_utils import parse_http_stack_trace_str
 
 
 class TestHTTPInstrument(OpenWPMTest):
@@ -17,11 +17,8 @@ class TestHTTPInstrument(OpenWPMTest):
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
         browser_params[0]['headless'] = True
-        # disabled the proxy due to a cert error for the rawgit.com HTTPS URL
-        # alternatively we could switch to an insecure HTTP URL
-        browser_params[0]['proxy'] = False
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['save_javascript_ext'] = True
+        browser_params[0]['save_javascript'] = True
         manager_params['db'] = os.path.join(manager_params['data_directory'],
                                             manager_params['database_name'])
         return manager_params, browser_params
@@ -34,7 +31,7 @@ class TestHTTPInstrument(OpenWPMTest):
         rows = utilities.query_db(db, (
             "SELECT url, top_level_url, is_XHR, is_frame_load, is_full_page, "
             "is_third_party_channel, is_third_party_window, triggering_origin "
-            "loading_origin, loading_href, content_policy_type FROM http_requests_ext"))
+            "loading_origin, loading_href, content_policy_type FROM http_requests"))
         observed_records = set()
         for row in rows:
             observed_records.add(row)
@@ -42,7 +39,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
         # HTTP Responses
         rows = utilities.query_db(db,
-            "SELECT url, referrer, location FROM http_responses_ext")
+            "SELECT url, referrer, location FROM http_responses")
         observed_records = set()
         for row in rows:
             observed_records.add(row)
@@ -61,7 +58,7 @@ class TestHTTPInstrument(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get(test_url, sleep=3)
         manager.get(test_url, sleep=3)
-        manager.close(post_process=False)
+        manager.close()
         db = manager_params['db']
 
         # HTTP Requests
@@ -69,7 +66,7 @@ class TestHTTPInstrument(OpenWPMTest):
             "SELECT url, top_level_url, is_XHR, is_frame_load, is_full_page, "
             "is_third_party_channel, is_third_party_window, triggering_origin "
             "loading_origin, loading_href, content_policy_type "
-            "FROM http_requests_ext WHERE visit_id = 2"))
+            "FROM http_requests WHERE visit_id = 2"))
         observed_records = set()
         for row in rows:
             observed_records.add(row)
@@ -77,7 +74,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
         # HTTP Responses
         rows = utilities.query_db(db, (
-            "SELECT url, referrer, is_cached FROM http_responses_ext "
+            "SELECT url, referrer, is_cached FROM http_responses "
             "WHERE visit_id = 2"))
         observed_records = set()
         for row in rows:
@@ -88,7 +85,7 @@ class TestHTTPInstrument(OpenWPMTest):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
         db = self.visit(test_url, str(tmpdir), sleep_after=3)
         rows = utilities.query_db(db, (
-            "SELECT url, req_call_stack FROM http_requests_ext"))
+            "SELECT url, req_call_stack FROM http_requests"))
         observed_records = set()
         for row in rows:
             url, stacktrace = row
@@ -108,7 +105,7 @@ class TestHTTPInstrument(OpenWPMTest):
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
         db = self.visit(test_url, str(tmpdir), sleep_after=3)
         rows = utilities.query_db(db, (
-            "SELECT url, req_call_stack FROM http_requests_ext"))
+            "SELECT url, req_call_stack FROM http_requests"))
         for row in rows:
             _, stacktrace = row
             assert stacktrace == ""

@@ -1,14 +1,11 @@
 {
-    "proxy": true,
-    "save_javascript": false,
-
     "extension_enabled": true,
     "disable_webdriver_self_id": true,
     "cookie_instrument": false,
     "js_instrument": false,
     "cp_instrument": false,
     "http_instrument": false,
-    "save_javascript_ext": false,
+    "save_javascript": false,
 
     "random_attributes": false,
     "bot_mitigation": false,
@@ -24,5 +21,8 @@
     "ghostery": false,
     "https-everywhere": false,
     "adblock-plus": false,
-    "tracking-protection": false
+    "tracking-protection": false,
+
+    "proxy": false,
+    "save_javascript_proxy": false
 }

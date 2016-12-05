@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS site_visits (
 
 /* TODO: add publix_suffix to db structure */
 /* TODO: link with headers */
-CREATE TABLE IF NOT EXISTS http_requests (
+CREATE TABLE IF NOT EXISTS http_requests_proxy (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
     url VARCHAR(500) NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS http_requests (
 /* TODO: add publix_suffix to db structure */
 /* TODO: link with headers */
 /* TODO: link with requests */
-CREATE TABLE IF NOT EXISTS http_responses (
+CREATE TABLE IF NOT EXISTS http_responses_proxy (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
     url VARCHAR(500) NOT NULL,

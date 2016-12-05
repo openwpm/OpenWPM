@@ -11,11 +11,13 @@ details.
 Installation
 ------------
 
-OpenWPM has been developed and tested on Ubuntu 14.04. An installation script,
-`install.sh` is included to install both the system and python dependencies
-automatically. A few of the python dependencies require specific versions, so
-you should install the dependencies in a virtual environment if you're
-installing a shared machine.
+OpenWPM has been developed and tested on Ubuntu 14.04/16.04. An installation
+script, `install.sh` is included to install both the system and python
+dependencies automatically. A few of the python dependencies require specific
+versions, so you should install the dependencies in a virtual environment if
+you're installing a shared machine. If you plan to develop OpenWPM's
+instrumentation extension or run tests you will also need to install the
+development dependencies included in `install-dev.sh`.
 
 It is likely that OpenWPM will also work on Mac OSX, however this has not been
 tested. If you have experience running OpenWPM on other platforms, please let
@@ -34,68 +36,132 @@ You can test other configurations by changing the values in these two
 dictionaries. `manager_params` is meant to specify the platform-wide settings,
 while `browser_params` specifies browser-specific settings (and as such
 defaults to a `list` of settings, of length equal to the number of browsers you
-are using. We are currently working on full documentation of these settings.
+are using. A description of the instrumentation available is included below.
 
 The [wiki](https://github.com/citp/OpenWPM/wiki) provides a more in-depth
-tutorial, however it is currently out of date. In particular you can find
+tutorial, however portions of it are currently outdated. In particular you can find
 [advanced features](https://github.com/citp/OpenWPM/wiki/Advanced-Features),
 and [additional
 commands](https://github.com/citp/OpenWPM/wiki/Available-Commands).
-You can also take a look at two of our past studies (1) and (2),  which use the
-infrastructure.
+You can also take a look at two of our past studies,  which use the
+infrastructure:
 
-(1) [The Web Never Forgets](https://github.com/citp/TheWebNeverForgets)
-(2) [Cookies that Give You Away](https://github.com/englehardt/cookies-that-give-you-away)
+1. [The Web Never Forgets](https://github.com/citp/TheWebNeverForgets)
+2. [Cookies that Give You Away](https://github.com/englehardt/cookies-that-give-you-away)
 
-Instrumentation
----------------
+Instrumentation and Data Access
+-------------------------------
 
-OpenWPM includes the following instrumentation by default:
+OpenWPM provides several instrumentation modules which can be enabled
+independently of each other for each crawl. With the exception of Javascript
+response body content, all instrumentation saves to a SQLite database specified
+by `manager_params['database_name']` in the main output directory. Javascript
+bodies are saved to `javascript.ldb`. The SQLite schema specified by:
+`automation/schema.sql`, instrumentation may specify additional tables necessary
+for their measurement data (see
+[extension tables](https://github.com/citp/OpenWPM/tree/master/automation/Extension/firefox/data)).
 
-* An HTTP Proxy (mitmproxy)
-    * HTTP Requests and Responses
-    * Parsing of HTTP Request and Response Cookies
-        * NOTE: this will not include cookies set by Javascript, see our
-            Firefox extension option below.
-    * De-duplicated content storage
-        * Right now we detect and store javascript, but this can be expanded
-* A Firefox Extension
-    * Javascript calls
-    * Cookie setting and access
-* Disk Scans
-    * Flash cookie setting
-    * Cookie access
-
-Data Format
------------
-
-OpenWPM saves crawl data in several outputs. The bulk of the data is stored
-in a SQLite database, but additional data may be stored in locations detailed
-below.
-
-* HTTP, Cookie, Javascript calls, and meta-data
-    * SQLite database specified by `manager_params['database_name']`.
-    * Schema specified by: `automation/schema.sql`, instrumentation may specify
-        additional tables necessary for their measurements.
-* Javascript files
-    * Collected when `browser_params['save_javascript'] = True`
-    * Javascript files are stored in `javascript.ldb`. The location of this
-        database is specified by `manager_params['data_directory']`.
-    * The files are stored with `zlib` compression by the hash of the
-        uncompressed content.
-    * The files are stored in a `LevelDB` database, accessed with `plyvel`.
-    * This hash is used to reference the scripts from the SQLite database, for
-        example the `content_hash` column of HTTP Responses.
+* HTTP Request and Response Headers
+    * Set `browser_params['http_instrument'] = True`
+    * Data is saved to the `http_requests` and `http_responses` tables.
+    * Note: request and response headers for cached content are also saved,
+        with the exception of images.
+        See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
+* Javascript Calls
+    * Records all method calls (with arguments) and property accesses for APIs
+      of potential fingerprinting interest:
+          * HTML5 Canvas
+          * HTML5 WebRTC
+          * HTML5 Audio
+          * Plugin access (via `navigator.plugins`)
+          * MIMEType access (via `navigator.mimeTypes`)
+          * `window.Storage`, `window.localStorage`, `window.sessionStorage`,
+              and `window.name` access.
+          * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
+          * Window properties (via `window.screen`)
+    * Set `browser_params['js_instrument'] = True`
+    * Data is saved to the `javascript` table.
+* Javascript Files
+    * Saves all Javascript files encountered during the crawl to a `LevelDB`
+        database de-duplicated by the md5 hash of the content.
+    * Set `browser_params['save_javascript'] = True`
+    * The `content_hash` column of the `http_responses` table contains the md5
+        hash for each script, and can be used to do content lookups in the
+        LevelDB content database.
+    * This instrumentation can be easily expanded to other content types.
+* Flash Cookies
+    * Recorded by scanning the respective Flash directories after each page visit.
+    * To enable: call the `CommandSequence::dump_flash_cookies` command after
+        a page visit. Note that calling this command will close the current tab
+        before recording the cookie changes.
+    * Data is saved to the `flash_cookies` table.
+    * NOTE: Flash cookies are shared across browsers, so this instrumentation
+        will not correctly attribute flash cookie changes if more than 1
+        browser is running on the machine.
+* Cookie Access (*Experimental* -- Needs tests)
+    * Set `browser_params['cookie_instrument'] = True`
+    * Data is saved to the `javascript_cookies` table.
+    * Will record cookies set both by Javascript and via HTTP Responses
+* Content Policy Calls (*Experimental* -- Needs tests)
+    * Set `browser_params['cp_instrument'] = True`
+    * Data is saved to the `content_policy` table.
+    * Provides additional information about what caused a request and what it's for
+    * NOTE: This instrumentation is largely unchanged since it was ported from
+        [FourthParty](https://github.com/fourthparty/fourthparty), and is not
+        linked to any other instrumentation tables.
+* Cookie Access (Alternate)
+    * Recorded by scanning the `cookies.sqlite` database in the Firefox profile
+        directory.
+    * Should contain both cookies added by Javascript and by HTTP Responses
+    * To enable: call the `CommandSequence::dump_profile_cookies` command after
+        a page visit. Note that calling this command will close the current tab
+        before recording the cookie changes.
+    * Data is saved to the `profile_cookies` table
 * Log Files
     * Stored in the directory specified by `manager_params['data_directory']`.
     * Name specified by `manager_params['log_file']`.
 * Browser Profile
     * Contains cookies, Flash objects, and so on that are dumped after a crawl
         is finished
-    * Dumped to the location specified in `dump_profile` command.
-
-The database is keyed by the crawler ID and the `top_url` being visited (the
-url typed into the browser address bar).
+    * Automatically saved when the platform closes or crashes by specifying
+        `browser_params['profile_archive_dir']`.
+    * Save on-demand with the `CommandSequence::dump_profile` command.
+* **DEPRECATED** HTTP Request and Response Headers via mitmproxy
+    * This will be removed in future releases
+    * Set `browser_params['proxy'] = True`
+    * Data is saved to the `http_requests_proxy` and `http_responses_proxy`
+        tables.
+    * Saves both HTTP and HTTPS request and response headers
+    * Several drawbacks:
+        * Cached requests and responses are missed entirely (See #71)
+        * Some HTTPS connections fail with certificate warnings (See #53)
+        * The mitmproxy version used (v0.13) is a few releases behind the
+            current mitmproxy library and will likely continue to have more
+            issues unless updated.
+        * Has significantly less context available around a request/response
+            than is available from within the browser.
+* **DEPRECATED** Javascript Response Bodies via mitmproxy
+    * This will be removed in future releases
+    * Set `browser_params['save_javascript_proxy'] = True`
+    * Saves javascript response bodies to a LevelDB database de-duplicated by
+        the murmurhash3 of the content. `content_hash` in `http_response_proxy`
+        keys into this content database.
+    * NOTE: In addition to the other drawbacks of proxy-based measurements,
+        content must be decoded before saving and not all current encodings are
+        supported. In particular, brotli (`br`) is not supported.
+* **DEPRECATED** HTTP Request and Response Cookies via mitmproxy
+    * This will be removed in future releases
+    * Derived post-crawl from proxy-based HTTP instrumentation
+    * To enable: call
+      `python automation/utilities/build_cookie_table.py <sqlite_database>`.
+    * Data is saved to the `http_request_cookies_proxy` and
+        `http_response_cookies_proxy` tables.
+    * Several drawbacks:
+        * Will not detect cookies set via Javascript, but will still record
+            when those cookies are sent with requests.
+        * Cookie parsing is done using a custom `Cookie.py` module. Although a
+            significant effort went into replicating Firefox's cookie parsing,
+            it may not be a faithful reproduction.
 
 Disclaimer
 -----------
@@ -131,5 +197,5 @@ License
 
 OpenWPM is licensed under GNU GPLv3. Additional code has been included from
 [FourthParty](https://github.com/fourthparty/fourthparty) and
-[Privacy Badger](https://github.com/EFForg/privacybadgerfirefox), both of which 
+[Privacy Badger](https://github.com/EFForg/privacybadgerfirefox), both of which
 are licensed GPLv3+.

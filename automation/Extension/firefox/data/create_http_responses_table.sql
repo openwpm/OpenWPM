@@ -1,5 +1,5 @@
 /* TODO: link with requests */
-CREATE TABLE IF NOT EXISTS http_responses_ext(
+CREATE TABLE IF NOT EXISTS http_responses(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   crawl_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,

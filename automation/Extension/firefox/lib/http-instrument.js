@@ -152,7 +152,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
     //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
     //TODO probably a cleaner way to handle this
   }
-  loggingDB.executeSQL(loggingDB.createInsert("http_requests_ext", update), true);
+  loggingDB.executeSQL(loggingDB.createInsert("http_requests", update), true);
 };
 
 /*
@@ -234,16 +234,16 @@ function logWithResponseBody(respEvent, update) {
     update["content_hash"] = contentHash;
     loggingDB.saveContent(loggingDB.escapeString(respBody),
                           loggingDB.escapeString(contentHash));
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }, function(aReason) {
     console.error("Unable to retrieve response body.",aReason);
     update["content_hash"] = "<error>";
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }).catch(function(aCatch) {
     console.error('Unable to retrieve response body.',
         'Likely caused by a programming error. Error Message:', aCatch);
     update["content_hash"] = "<error>";
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   });
 }
 
@@ -329,7 +329,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
   if (saveJavascript && isJS(httpChannel)) {
     logWithResponseBody(respEvent, update);
   } else {
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses_ext", update), true);
+    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }
 };
 

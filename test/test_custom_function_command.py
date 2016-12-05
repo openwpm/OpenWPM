@@ -53,7 +53,7 @@ class TestCustomFunctionCommand():
         cs.get(sleep=0, timeout=60)
         cs.run_custom_function(collect_links, ('page_links', 'http'))
         manager.execute_command_sequence(cs)
-        manager.close(post_process=False)
+        manager.close()
         query_result = utilities.query_db(manager_params['db'],
                                      "SELECT top_url, link FROM page_links;")
         assert expected.page_links == set(query_result)

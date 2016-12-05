@@ -162,7 +162,7 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http request cookies
     commit = 0
     last_commit = 0
-    cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests \
+    cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests_proxy \
                     WHERE id NOT IN (SELECT header_id FROM http_request_cookies)")
     row = cur1.fetchone()
     while row is not None:
@@ -191,7 +191,7 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http response cookies
     commit = 0
     last_commit = 0
-    cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses \
+    cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses_proxy \
                     WHERE id NOT IN (SELECT header_id FROM http_response_cookies)")
     row = cur1.fetchone()
     while row is not None:

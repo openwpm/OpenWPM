@@ -36,11 +36,12 @@ def get_version():
     try:
         openwpm = subprocess.check_output(["git","describe","--tags","--always"]).strip()
     except subprocess.CalledProcessError:
-        ver = os.path.join(os.path.dirname(__file__), '../VERSION')
+        ver = os.path.join(os.path.dirname(__file__), '../../VERSION')
         with open(ver, 'r') as f:
             openwpm = f.readline().strip()
 
-    ff_ini = os.path.join(os.path.dirname(__file__), '../firefox-bin/application.ini')
+    ff_ini = os.path.join(os.path.dirname(__file__),
+            '../../firefox-bin/application.ini')
     with open(ff_ini, 'r') as f:
         ff = None
         for line in f:
@@ -125,7 +126,7 @@ def fetch_adblockplus_list(output_directory, wait_time=20):
     display = Display(visible=0)
     display.start()
 
-    root_dir = os.path.dirname(__file__)
+    root_dir = os.path.join(os.path.dirname(__file__),'..')
     fb = FirefoxBinary(os.path.join(root_dir,'../firefox-bin/firefox'))
 
     fp = webdriver.FirefoxProfile()

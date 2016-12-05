@@ -4,7 +4,7 @@ import os
 
 from ..automation import TaskManager
 from ..automation.Errors import BrowserConfigError
-from ..automation.platform_utils import fetch_adblockplus_list
+from ..automation.utilities.platform_utils import fetch_adblockplus_list
 import utilities
 import expected
 
@@ -19,6 +19,7 @@ class TestABP():
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
         browser_params[0]['headless'] = True
+        browser_params[0]['http_instrument'] = True
         browser_params[0]['adblock-plus'] = True
         return manager_params, browser_params
 
@@ -36,7 +37,7 @@ class TestABP():
         browser_params[0]['adblock-plus_list_location'] = list_loc
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get(utilities.BASE_TEST_URL + '/abp/adblock_plus_test.html')
-        manager.close(post_process=False)
+        manager.close()
 
         db = os.path.join(data_dir, manager_params['database_name'])
         rows = utilities.query_db(db, "SELECT url FROM http_requests")
@@ -52,7 +53,7 @@ class TestABP():
         manager_params, browser_params = self.get_config(str(tmpdir))
         with pytest.raises(BrowserConfigError):
             manager = TaskManager.TaskManager(manager_params, browser_params)
-            manager.close(post_process=False)
+            manager.close()
 
     def test_error_with_missing_list(self, tmpdir):
         data_dir = str(tmpdir)
@@ -61,4 +62,4 @@ class TestABP():
         browser_params[0]['adblock-plus_list_location'] = list_loc
         with pytest.raises(BrowserConfigError):
             manager = TaskManager.TaskManager(manager_params, browser_params)
-            manager.close(post_process=False)
+            manager.close()

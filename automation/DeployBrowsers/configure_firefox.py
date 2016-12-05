@@ -79,7 +79,7 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
             raise BrowserConfigError(("In order to use AdBlock Plus, you must "
                 "specify the location of an updated `patterns.ini` via "
                 "`browser_params['adblock-plus_list_location']`. This can be "
-                "generated with `platform_utils.fetch_adblockplus_list()`."))
+                "generated with `utilities.platform_utils.fetch_adblockplus_list()`."))
 
 def optimize_prefs(fp):
     """
