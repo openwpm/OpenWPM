@@ -85,7 +85,7 @@ class TestHTTPInstrument(OpenWPMTest):
         assert expected.http_cached_responses == observed_records
 
     def test_http_stacktrace(self, tmpdir):
-        test_url = utilities.BASE_TEST_URL + '/http_stack_trace.html'
+        test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
         db = self.visit(test_url, str(tmpdir), sleep_after=3)
         rows = utilities.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests_ext"))
