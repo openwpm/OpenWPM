@@ -70,16 +70,15 @@ for their measurement data (see
 * Javascript Calls
     * Records all method calls (with arguments) and property accesses for APIs
       of potential fingerprinting interest:
-
-          * HTML5 Canvas
-          * HTML5 WebRTC
-          * HTML5 Audio
-          * Plugin access (via `navigator.plugins`)
-          * MIMEType access (via `navigator.mimeTypes`)
-          * `window.Storage`, `window.localStorage`, `window.sessionStorage`,
+        * HTML5 Canvas
+        * HTML5 WebRTC
+        * HTML5 Audio
+        * Plugin access (via `navigator.plugins`)
+        * MIMEType access (via `navigator.mimeTypes`)
+        * `window.Storage`, `window.localStorage`, `window.sessionStorage`,
               and `window.name` access.
-          * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
-          * Window properties (via `window.screen`)
+        * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
+        * Window properties (via `window.screen`)
     * Set `browser_params['js_instrument'] = True`
     * Data is saved to the `javascript` table.
 * Javascript Files
