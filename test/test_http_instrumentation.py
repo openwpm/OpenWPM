@@ -17,6 +17,9 @@ class TestHTTPInstrument(OpenWPMTest):
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
         browser_params[0]['headless'] = True
+        # disabled the proxy due to a cert error for the rawgit.com HTTPS URL
+        # alternatively we could switch to an insecure HTTP URL
+        browser_params[0]['proxy'] = False
         browser_params[0]['http_instrument'] = True
         browser_params[0]['save_javascript_ext'] = True
         manager_params['db'] = os.path.join(manager_params['data_directory'],
@@ -86,14 +89,14 @@ class TestHTTPInstrument(OpenWPMTest):
         db = self.visit(test_url, str(tmpdir), sleep_after=3)
         rows = utilities.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests_ext"))
+        observed_records = set()
         for row in rows:
             url, stacktrace = row
-            if url.endswith("inject_pixel.js"):
-                assert stacktrace == expected.stack_trace_inject_js
-            if url.endswith("test_image.png"):
-                assert stacktrace == expected.stack_trace_inject_image
-            if url.endswith("Blank.gif"):
-                assert stacktrace == expected.stack_trace_inject_pixel
+            if (url.endswith("inject_pixel.js") or
+                url.endswith("test_image.png") or
+                url.endswith("Blank.gif")):
+                observed_records.add(stacktrace)
+        assert observed_records == expected.http_stacktraces
 
     def test_parse_http_stack_trace_str(self, tmpdir):
         stacktrace = expected.stack_trace_inject_image
