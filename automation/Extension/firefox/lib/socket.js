@@ -1,109 +1,105 @@
 const {Cc, Ci}  = require("chrome");
-const fileIO    = require("sdk/io/file");
-const system    = require("sdk/system");
 
 var bufferpack  = require("bufferpack/bufferpack");
 
 var tm = Cc["@mozilla.org/thread-manager;1"].getService();
-var socket_service = Cc["@mozilla.org/network/socket-transport-service;1"]
+var socketService = Cc["@mozilla.org/network/socket-transport-service;1"]
                           .getService(Ci.nsISocketTransportService);
-var binaryStream = Cc["@mozilla.org/binaryoutputstream;1"]
-                             .createInstance(Ci.nsIBinaryOutputStream);
 
-// Socket connection handle
-var stream = null;
-var binStream = null;
+class ListeningSocket {
+  // Socket which feeds incomming messages to a queue
+  constructor() {
 
-// Feeds incomming messages to a queue
-exports.createListeningSocket = createListeningSocket;
-function createListeningSocket() {
-    console.log("Setting up server socket listening");
-    var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
-                             .createInstance(Ci.nsIServerSocket);
+    console.log("Initializing a listening sever socket...");
+    this._serverSocket = Cc["@mozilla.org/network/server-socket;1"]
+                              .createInstance(Ci.nsIServerSocket);
+    this._inputStream = null;
+    this._serverSocket.init(-1, true, -1); // init with random port
 
-    // init with random port
-    serverSocket.init(-1, true, -1);
-    console.log("Extension serverSocket listening on port:",serverSocket.port);
+    this.port = this._serverSocket.port;
+    this.queue = []; // stores messages sent to socket
+    console.log("...serverSocket listening on port:",this.port);
 
-    // write port to file for OpenWPM
-    var path = system.pathFor("ProfD") + '/extension_port.txt';
-    var file = fileIO.open(path, 'w');
-    if (!file.closed) {
-        file.write(serverSocket.port);
-        file.close();
-    }
+  }
 
-    var queue = [];
-    serverSocket.asyncListen({
-        onSocketAccepted: function(sock, transport) {
-            var inputStream = transport.openInputStream(0, 0, 0);
-            inputStream.asyncWait({
-                onInputStreamReady: function() {
-                    updateQueue(inputStream, queue);
-                }
-            }, 0, 0, tm.mainThread);
-        }
+  startListening() {
+    var thisSocket = this; // self reference for closure
+    this._serverSocket.asyncListen({
+      onSocketAccepted: function(sock, transport) {
+          thisSocket._inputStream = transport.openInputStream(0, 0, 0);
+          thisSocket._inputStream.asyncWait({
+            onInputStreamReady: function() {
+              thisSocket._updateQueue();
+            }
+          }, 0, 0, tm.mainThread);
+      }
     });
+  }
 
-    return queue;
-}
-
-function updateQueue(inputStream, queue) {
+  _updateQueue() {
     var bInputStream = Cc["@mozilla.org/binaryinputstream;1"]
-                            .createInstance(Ci.nsIBinaryInputStream);
-
-    bInputStream.setInputStream(inputStream);
+                              .createInstance(Ci.nsIBinaryInputStream);
+    bInputStream.setInputStream(this._inputStream);
 
     var buff = bInputStream.readByteArray(5);
     var meta = bufferpack.unpack('>Lc', buff);
-    string = bInputStream.readBytes(meta[0]);
+    var string = bInputStream.readBytes(meta[0]);
     if (meta[1] != 'n' && meta[1] == 'j') {
-        string = JSON.parse(string);
+      string = JSON.parse(string);
     } else if (meta[1] != 'n') {
-      console.log("ERROR: Unsupported serialization type (",meta[1],").");
+      console.error("Unsupported serialization type (",meta[1],").");
       return;
     }
-    queue.push(string);
+    this.queue.push(string);
 
-    inputStream.asyncWait({
-        onInputStreamReady: function() {
-            updateQueue(inputStream, queue);
-        }
+    var thisSocket = this; // self reference for closure
+    this._inputStream.asyncWait({
+      onInputStreamReady: function(){
+        thisSocket._updateQueue();
+      }
     }, 0, 0, tm.mainThread);
+  }
 }
+exports.ListeningSocket = ListeningSocket;
 
-// Open socket connection
-exports.connect = connect;
-function connect(host, port) {
+class SendingSocket {
+  // Socket which encodes messages and sets to specified (host, port)
+  constructor() {
+    this._stream = null;
+    this._bOutputStream = Cc["@mozilla.org/binaryoutputstream;1"]
+                              .createInstance(Ci.nsIBinaryOutputStream);
+  }
+
+  connect(host, port) {
+    // Open socket connection to remote host
     try {
-        transport = socket_service.createTransport(null, 0, host, port, null);
-        stream = transport.openOutputStream(1, 4096, 1048575);
-        binaryStream.setOutputStream(stream)
-        return true;
+      var transport = socketService.createTransport(null, 0, host, port, null);
+      this._stream = transport.openOutputStream(1, 4096, 1048575);
+      this._bOutputStream.setOutputStream(this._stream)
+      return true;
     } catch (err) {
-        console.log("ERROR:",err,err.message);
-        return false;
+      console.error(err,err.message);
+      return false;
     }
-}
+  }
 
-// Format: [sql_query, [arg1, arg2, arg3]]
-// e.g. ["INSERT INTO table (item1, item2) VALUES (?,?)", [val1, val2]]
-exports.send = send;
-function send(query) {
+  send(query) {
+    // Format: [sql_query, [arg1, arg2, arg3]]
+    // e.g. ["INSERT INTO table (item1, item2) VALUES (?,?)", [val1, val2]]
     try {
-        var msg = JSON.stringify(query);
-        var buff = bufferpack.pack('>Lc',[msg.length,'j']);
-        binaryStream.writeByteArray(buff, buff.length);
-        stream.write(msg, msg.length);
-        return true;
+      var msg = JSON.stringify(query);
+      var buff = bufferpack.pack('>Lc',[msg.length,'j']);
+      this._bOutputStream.writeByteArray(buff, buff.length);
+      this._stream.write(msg, msg.length);
+      return true;
     } catch (err) {
-        console.log("ERROR:",err,err.message);
-        return false;
+      console.error(err,err.message);
+      return false;
     }
-}
+  }
 
-// Close socket connection
-exports.close = close;
-function close() {
-    stream.close();
+  close() {
+    this._stream.close();
+  }
 }
+exports.SendingSocket = SendingSocket;

@@ -84,7 +84,11 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         extension_config = dict()
         extension_config.update(browser_params)
-        extension_config['aggregator_address'] = manager_params['aggregator_address']
+        extension_config['sqlite_address'] = manager_params['aggregator_address']
+        if manager_params.has_key('ldb_address'):
+            extension_config['leveldb_address'] = manager_params['ldb_address']
+        else:
+            extension_config['leveldb_address'] = None
         with open(browser_profile_path + 'browser_params.json', 'w') as f:
             json.dump(extension_config, f)
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded" % browser_params['crawl_id'])

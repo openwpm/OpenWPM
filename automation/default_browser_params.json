@@ -7,6 +7,8 @@
     "cookie_instrument": false,
     "js_instrument": false,
     "cp_instrument": false,
+    "http_instrument": false,
+    "save_javascript_ext": false,
 
     "random_attributes": false,
     "bot_mitigation": false,

@@ -1,17 +1,16 @@
 from ..SocketInterface import serversocket
 from ..MPLogger import loggingclient
 import plyvel
-import mmh3
-import zlib
 import time
 import os
 
 
 def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     """
-     Receives <key, value> pairs from other processes and writes them to the central database.
-     Executes queries until being told to die (then it will finish work and shut down).
-     This process should never be terminated un-gracefully.
+     Receives <key, value> pairs from other processes and writes them to the
+     central database. Executes queries until being told to die (then it will
+     finish work and shut down).This process should never be terminated
+     un-gracefully.
 
      <manager_params> TaskManager configuration parameters
      <status_queue> is a queue connect to the TaskManager used for communication
@@ -32,7 +31,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
             create_if_missing = True,
             lru_cache_size = 10**9,
             write_buffer_size = 128*10**4,
-            compression = None)
+            compression = 'snappy')
     batch = db.write_batch()
 
     counter = 0  # number of executions made since last write
@@ -56,8 +55,9 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
             continue
 
         # process record
-        script = sock.queue.get()
-        counter = process_script(script, batch, db, counter, logger)
+        content, content_hash = sock.queue.get()
+        counter = process_content(content, content_hash,
+                batch, db, counter, logger)
 
         # batch commit if necessary
         if counter >= batch_size:
@@ -70,25 +70,22 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     batch.write()
     db.close()
 
-def process_script(script, batch, db, counter, logger):
+def process_content(content, content_hash, batch, db, counter, logger):
     """
-    adds a script to the batch
+    adds content to the batch
     """
-    # Hash script for deduplication on disk
-    hasher = mmh3.hash128
-    script_hash = str(hasher(script) >> 64)
-
-    if db.get(script_hash) is not None:
+    content = content.encode('utf-8')
+    content_hash = str(content_hash)
+    if db.get(content_hash) is not None:
         return counter
 
-    compressed_script = zlib.compress(script)
-
-    batch.put(script_hash, compressed_script)
+    batch.put(content_hash, content)
     return counter + 1
 
 def drain_queue(sock_queue, batch, db, counter, logger):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
     while not sock_queue.empty():
-        script = sock_queue.get()
-        counter = process_script(script, batch, db, counter, logger)
+        content, content_hash = sock_queue.get()
+        counter = process_content(content, content_hash,
+                batch, db, counter, logger)

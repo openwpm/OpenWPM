@@ -6,7 +6,6 @@ import datetime
 import mmh3
 import json
 import zlib
-import os
 
 def encode_to_unicode(msg):
     """
@@ -106,11 +105,12 @@ def save_javascript_content(ldb_socket, logger, browser_params, msg):
     else:
         logger.error('BROWSER %i: Received Content-Encoding %s. Not supported by Firefox, skipping archive.' % (browser_params['crawl_id'], str(content_encoding)))
         return
-
-    ldb_socket.send(script)
+    script = encode_to_unicode(script)
 
     # Hash script for deduplication on disk
     hasher = mmh3.hash128
-    script_hash = str(hasher(script) >> 64)
+    script_hash = str(hasher(script.encode('utf-8')) >> 64)
+
+    ldb_socket.send((script, script_hash))
 
     return script_hash

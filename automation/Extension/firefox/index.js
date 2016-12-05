@@ -7,6 +7,7 @@ var pageManager         = require("./lib/page-manager.js");
 var cookieInstrument    = require("./lib/cookie-instrument.js");
 var jsInstrument        = require("./lib/javascript-instrument.js");
 var cpInstrument        = require("./lib/content-policy-instrument.js");
+var httpInstrument      = require("./lib/http-instrument.js");
 
 exports.main = function(options, callbacks) {
 
@@ -19,17 +20,20 @@ exports.main = function(options, callbacks) {
     console.log("WARNING: config not found. Assuming this is a test run of",
                 "the extension. Outputting all queries to console.");
     var config = {
-      aggregator_address:['',''],
+      sqlite_address:null,
+      leveldb_address:null,
       disable_webdriver_self_id:true,
       cookie_instrument:true,
       js_instrument:true,
       cp_instrument:true,
+      http_instrument:true,
+      save_javascript_ext:true,
       crawl_id:''
     };
   }
 
-  loggingDB.open(config['aggregator_address'][0], // host
-                 config['aggregator_address'][1], // port
+  loggingDB.open(config['sqlite_address'],
+                 config['leveldb_address'],
                  config['crawl_id']);
 
   // Prevent the webdriver from identifying itself in the DOM. See #91
@@ -52,5 +56,9 @@ exports.main = function(options, callbacks) {
   if (config['cp_instrument']) {
     console.log("Content Policy instrumentation enabled");
     cpInstrument.run(config['crawl_id']);
+  }
+  if (config['http_instrument']) {
+    console.log("HTTP Instrumentation enabled");
+    httpInstrument.run(config['crawl_id'], config['save_javascript_ext']);
   }
 };
