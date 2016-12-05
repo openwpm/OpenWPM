@@ -70,6 +70,7 @@ for their measurement data (see
 * Javascript Calls
     * Records all method calls (with arguments) and property accesses for APIs
       of potential fingerprinting interest:
+
           * HTML5 Canvas
           * HTML5 WebRTC
           * HTML5 Audio
