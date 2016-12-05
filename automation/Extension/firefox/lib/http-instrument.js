@@ -181,7 +181,7 @@ function TracingListener() {
 }
 TracingListener.prototype = {
   onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
-    var iStream = new BinaryInputStream(aInputStream) // binaryaInputStream
+    var iStream = new BinaryInputStream(aInputStream);
     var sStream = new StorageStream(8192, aCount, null);
     var oStream = new BinaryOutputStream(sStream.getOutputStream(0));
 

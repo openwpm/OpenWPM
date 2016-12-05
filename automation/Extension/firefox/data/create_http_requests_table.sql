@@ -2,11 +2,11 @@ CREATE TABLE IF NOT EXISTS http_requests_ext(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   crawl_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
-  url VARCHAR(500) NOT NULL,
+  url TEXT NOT NULL,
   top_level_url TEXT,
-  method VARCHAR(500) NOT NULL,
-  referrer VARCHAR(500) NOT NULL,
-  headers VARCHAR(500) NOT NULL,
+  method TEXT NOT NULL,
+  referrer TEXT NOT NULL,
+  headers TEXT NOT NULL,
   is_XHR BOOLEAN,
   is_frame_load BOOLEAN,
   is_full_page BOOLEAN,
@@ -17,5 +17,5 @@ CREATE TABLE IF NOT EXISTS http_requests_ext(
   loading_href TEXT,
   req_call_stack TEXT,
   content_policy_type INTEGER NOT NULL,
-  time_stamp VARCHAR(500) NOT NULL
+  time_stamp TEXT NOT NULL
 );

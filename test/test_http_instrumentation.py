@@ -82,7 +82,7 @@ class TestHTTPInstrument(OpenWPMTest):
         assert expected.http_cached_responses == observed_records
 
     def test_http_stacktrace(self, tmpdir):
-        test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
+        test_url = utilities.BASE_TEST_URL + '/http_stack_trace.html'
         db = self.visit(test_url, str(tmpdir), sleep_after=3)
         rows = utilities.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests_ext"))
@@ -113,7 +113,7 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_javascript_saving(self, tmpdir):
         """ check that javascript content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        db = self.visit(test_url, str(tmpdir), sleep_after=3)
+        db = self.visit(test_url, str(tmpdir), sleep_after=3) # NOQA
         expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
                            'a6475af1ad58b55cf781ca5e1218c7b1'}
         for chash, content in utilities.get_javascript_content(str(tmpdir)):
