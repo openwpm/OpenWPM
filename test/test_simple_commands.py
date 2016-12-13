@@ -100,7 +100,7 @@ class TestSimpleCommands():
         assert qry_res[0][0] == visit_ids[url_b]
 
     def test_browse_site_visits_table_valid(self, tmpdir):
-        """Check that 'browse' works and populates db correctly."""
+        """Check that CommandSequence.browse() works and populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(str(tmpdir))
         manager = TaskManager.TaskManager(manager_params, browser_params)
@@ -125,7 +125,7 @@ class TestSimpleCommands():
         assert qry_res[1][0] == url_b
 
     def test_browse_http_table_valid(self, tmpdir):
-        """Check that 'browse' works and populates http tables correctly.
+        """Check CommandSequence.browse() works and populates http tables correctly.
 
         NOTE: Since the browse command is choosing links randomly, there is a
               (very small -- 2*0.5^20) chance this test will fail with valid
@@ -143,6 +143,72 @@ class TestSimpleCommands():
 
         manager.execute_command_sequence(cs_a)
         manager.execute_command_sequence(cs_b)
+        manager.close()
+
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id, site_url FROM site_visits")
+
+        # Construct dict mapping site_url to visit_id
+        visit_ids = dict()
+        for row in qry_res:
+            visit_ids[row[1]] = row[0]
+
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id FROM http_requests"
+                                     " WHERE url = ?", (url_a,))
+        assert qry_res[0][0] == visit_ids[url_a]
+
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id FROM http_requests"
+                                     " WHERE url = ?", (url_b,))
+        assert qry_res[0][0] == visit_ids[url_b]
+
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id FROM http_responses"
+                                     " WHERE url = ?", (url_a,))
+        assert qry_res[0][0] == visit_ids[url_a]
+
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id FROM http_responses"
+                                     " WHERE url = ?", (url_b,))
+        assert qry_res[0][0] == visit_ids[url_b]
+
+        # Page simple_a.html has three links:
+        # 1) An absolute link to simple_c.html
+        # 2) A relative link to simple_d.html
+        # 3) A javascript: link
+        # 4) A link to www.google.com
+        # 5) A link to example.com?localtest.me
+        # We should see page visits for 1 and 2, but not 3-5.
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id FROM http_responses"
+                                     " WHERE url = ?", (url_c,))
+        assert qry_res[0][0] == visit_ids[url_a]
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT visit_id FROM http_responses"
+                                     " WHERE url = ?", (url_d,))
+        assert qry_res[0][0] == visit_ids[url_a]
+
+        # We expect 4 urls: a,c,d and a favicon request
+        qry_res = utilities.query_db(manager_params['db'],
+                                     "SELECT COUNT(DISTINCT url) FROM http_responses"
+                                     " WHERE visit_id = ?", (visit_ids[url_a],))
+        assert qry_res[0][0] == 4
+
+    def test_browse_wrapper_http_table_valid(self, tmpdir):
+        """Check that TaskManager.browse() wrapper works and populates http tables correctly.
+
+        NOTE: Since the browse command is choosing links randomly, there is a
+              (very small -- 2*0.5^20) chance this test will fail with valid
+              code.
+        """
+        # Run the test crawl
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+
+        # Set up two sequential browse commands to two URLS
+        manager.browse(url_a, num_links=20, sleep=1)
+        manager.browse(url_b, num_links=1, sleep=1)
         manager.close()
 
         qry_res = utilities.query_db(manager_params['db'],
