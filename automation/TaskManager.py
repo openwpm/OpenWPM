@@ -542,7 +542,7 @@ class TaskManager:
     def browse(self, url, num_links=2, sleep=0, index=None, timeout=60, reset=False):
         """ browse a website and visit <num_links> links on the page """
         command_sequence = CommandSequence.CommandSequence(url)
-        command_sequence.get(sleep=sleep, timeout=timeout)
+        command_sequence.browse(num_links=num_links, sleep=sleep, timeout=timeout)
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
