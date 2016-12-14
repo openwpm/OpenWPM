@@ -3,6 +3,7 @@ const {Cc, Ci, CC, Cu, components} = require("chrome");
 const events      = require("sdk/system/events");
 const data        = require("sdk/self").data;
 var loggingDB     = require("./loggingdb.js");
+var httpPostParser    = require("./http-post-parser.js");
 
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
     'nsIBinaryInputStream', 'setInputStream');
@@ -23,7 +24,7 @@ converter.charset = "UTF-8";
  * HTTP Request Handler and Helper Functions
  */
 
-function get_stack_trace_str(){
+function get_stack_trace_str() {
   // return the stack trace as a string
   // TODO: check if http-on-modify-request is a good place to capture the stack
   // In the manual tests we could capture exactly the same trace as the
@@ -69,20 +70,50 @@ var httpRequestHandler = function(reqEvent, crawlID) {
   update["method"] = loggingDB.escapeString(requestMethod);
 
   var referrer = "";
-  if(httpChannel.referrer)
+  if (httpChannel.referrer)
     referrer = httpChannel.referrer.spec;
   update["referrer"] = loggingDB.escapeString(referrer);
 
   var current_time = new Date();
   update["time_stamp"] = current_time.toISOString();
 
+  var encodingType = "";
   var headers = [];
+  var isOcsp= false;
   httpChannel.visitRequestHeaders({visitHeader: function(name, value) {
     var header_pair = [];
     header_pair.push(loggingDB.escapeString(name));
     header_pair.push(loggingDB.escapeString(value));
     headers.push(header_pair);
+    if (name == "Content-Type") {
+      encodingType = value;
+      if (encodingType.indexOf("application/ocsp-request") != -1)
+        isOcsp = true;
+    }
   }});
+
+  if (requestMethod == 'POST' && !isOcsp) {  // don't process OCSP requests
+    reqEvent.subject.QueryInterface(components.interfaces.nsIUploadChannel);
+    if (reqEvent.subject.uploadStream) {
+      reqEvent.subject.uploadStream.QueryInterface(components.interfaces.nsISeekableStream);
+      var postParser = new httpPostParser.HttpPostParser(reqEvent.subject.uploadStream);
+      var postObj = postParser.parsePostRequest(encodingType);
+
+      // Add (POST) request headers from upload stream
+      if ("post_headers" in postObj) {
+        for (var name in postObj["post_headers"]) {
+          var header_pair = [];
+          header_pair.push(loggingDB.escapeString(name));
+          header_pair.push(loggingDB.escapeString(postObj["post_headers"][name]));
+          headers.push(header_pair);
+        }
+      }
+      // we store POST body in JSON format, except when it's a string without a (key-value) structure
+      if ("post_body" in postObj)
+        update["post_body"] = postObj["post_body"];
+    }
+  }
+
   update["headers"] = JSON.stringify(headers);
 
   // Check if xhr
@@ -262,7 +293,14 @@ function isJS(httpChannel) {
       contentPolicyType != 16 && // websocket
       contentPolicyType != 19) // beacon response
     return false;
-  var contentType = httpChannel.getResponseHeader("Content-Type");
+
+  var contentType;
+  try {
+    contentType = httpChannel.getResponseHeader("Content-Type");
+  }catch (e) {  // Content-Type may not be present
+    contentType = "";
+  }
+
   if (contentType && contentType.toLowerCase().includes('javascript'))
     return true;
   var path = httpChannel.URI.path;
@@ -295,7 +333,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
   update["method"] = loggingDB.escapeString(requestMethod);
 
   var referrer = "";
-  if(httpChannel.referrer)
+  if (httpChannel.referrer)
     referrer = httpChannel.referrer.spec;
   update["referrer"] = loggingDB.escapeString(referrer);
 

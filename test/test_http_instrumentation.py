@@ -114,3 +114,78 @@ class TestHTTPInstrument(OpenWPMTest):
             assert chash in expected_hashes
             expected_hashes.remove(chash)
         assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+
+class TestPOSTInstrument(OpenWPMTest):
+    """Make sure we can capture all the POST request data.
+
+    The encoding types tested are explained here:
+    https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Using_nothing_but_XMLHttpRequest
+    """
+    post_data = '{"email":"test@example.com","username":"name surname+"}'
+    post_data_multiline = r'{"email":"test@example.com","username":'\
+        r'"name surname+","multiline_text":"line1\r\n\r\nline2 line2_word2"}'
+
+    def get_config(self, data_dir=""):
+        manager_params, browser_params = self.get_test_config(data_dir)
+        browser_params[0]['http_instrument'] = True
+        return manager_params, browser_params
+
+    def get_post_requests_from_db(self, db):
+        """Query the crawl database and return the POST requests."""
+        return utilities.query_db(db, "SELECT * FROM http_requests\
+                                       WHERE method = 'POST'")
+
+    def get_post_request_body_from_db(self, db):
+        """Return the body of the first POST request in crawl db."""
+        posts = self.get_post_requests_from_db(db)
+        return posts[0][19]  # Column 19 is post body
+
+    def test_record_post_data_x_www_form_urlencoded(self):
+        enc_type = "application/x-www-form-urlencoded"
+        db = self.visit("/post_request.html?enc_type=" + enc_type)
+        post_body = self.get_post_request_body_from_db(db)
+        assert post_body == self.post_data_multiline
+
+    def test_record_post_data_text_plain(self):
+        enc_type = "text/plain"
+        db = self.visit('/post_request.html?enc_type=' + enc_type)
+        post_body = self.get_post_request_body_from_db(db)
+        assert post_body == self.post_data_multiline
+
+    def test_record_post_data_multipart_formdata(self):
+        encoding_type = "multipart/form-data"
+        db = self.visit('/post_request.html?encoding_type=' + encoding_type)
+        post_body = self.get_post_request_body_from_db(db)
+        assert post_body == self.post_data_multiline
+        post_row = self.get_post_requests_from_db(db)[0]
+        headers = post_row[7]
+        # make sure the "request headers from upload stream" are stored in db
+        assert "Content-Type" in headers
+        assert encoding_type in headers
+        assert "Content-Length" in post_row[7]
+
+    def test_record_post_data_ajax(self, tmpdir):
+        post_format = "object"
+        db = self.visit("/post_request_ajax.html?format=" + post_format)
+        post_body = self.get_post_request_body_from_db(db)
+        assert post_body == self.post_data
+
+    def test_record_post_data_ajax_no_key_value(self):
+        """Test AJAX payloads that are not in the key=value form."""
+        post_format = "noKeyValue"
+        db = self.visit("/post_request_ajax.html?format=" + post_format)
+        post_body = self.get_post_request_body_from_db(db)
+        assert post_body == "test@example.com + name surname"
+
+    def test_record_post_formdata(self):
+        post_format = "formData"
+        db = self.visit("/post_request_ajax.html?format=" + post_format)
+        post_body = self.get_post_request_body_from_db(db)
+        assert post_body == self.post_data
+
+    def test_record_binary_post_data(self):
+        post_format = "binary"
+        db = self.visit("/post_request_ajax.html?format=" + post_format)
+        post_body = self.get_post_request_body_from_db(db)
+        assert str(bytearray(range(100))) == post_body
