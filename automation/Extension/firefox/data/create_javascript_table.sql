@@ -12,5 +12,6 @@ CREATE TABLE IF NOT EXISTS javascript(
     operation TEXT,
     value TEXT,
     parameter_index INTEGER,
-    parameter_value TEXT
+    parameter_value TEXT,
+    time_stamp TEXT NOT NULL
 );

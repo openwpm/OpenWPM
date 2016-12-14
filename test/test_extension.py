@@ -4,6 +4,7 @@ import utilities
 import expected
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
+from datetime import datetime
 # TODO: add test for setter instrumentation
 
 
@@ -114,3 +115,15 @@ class TestExtension(OpenWPMTest):
             observed_rows.add(item[3:11])
         assert set(expected.js_stack_calls) == observed_rows
 
+    def test_js_time_stamp(self, tmpdir):
+        # Check that timestamp is recorded correctly for the javascript table
+        MAX_TIMEDELTA = 30  # max time diff in seconds
+        db = self.visit('/canvas_fingerprinting.html', str(tmpdir))
+        utc_now = datetime.utcnow()  # OpenWPM stores timestamp in UTC time
+        rows = utilities.get_javascript_entries(db, all_columns=True)
+        assert len(rows)  # make sure we have some JS events captured
+        for row in rows:
+            js_time = datetime.strptime(row[14], "%Y-%m-%dT%H:%M:%S.%fZ")
+            # compare UTC now and the timestamp recorded at the visit
+            assert (utc_now - js_time).seconds < MAX_TIMEDELTA
+        assert not utilities.any_command_failed(db)

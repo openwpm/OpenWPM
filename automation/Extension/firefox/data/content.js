@@ -242,7 +242,8 @@ function getPageScript() {
         scriptCol: callContext.scriptCol,
         funcName: callContext.funcName,
         scriptLocEval: callContext.scriptLocEval,
-        callStack: callContext.callStack
+        callStack: callContext.callStack,
+        timeStamp: new Date().toISOString()
       };
 
       try {
@@ -283,7 +284,8 @@ function getPageScript() {
           scriptCol: callContext.scriptCol,
           funcName: callContext.funcName,
           scriptLocEval: callContext.scriptLocEval,
-          callStack: callContext.callStack
+          callStack: callContext.callStack,
+          timeStamp: new Date().toISOString()
         }
         send('logCall', msg);
       }

@@ -28,6 +28,7 @@ exports.run = function(crawlID) {
                 update["symbol"] = loggingDB.escapeString(data.symbol);
                 update["operation"] = loggingDB.escapeString(data.operation);
                 update["value"] = loggingDB.escapeString(data.value);
+                update["time_stamp"] = data.timeStamp;
 
                 if (data.operation == 'call' && data.args.length > 0) {
                     for(var i = 0; i < data.args.length; i++) {
