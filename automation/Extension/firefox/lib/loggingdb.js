@@ -57,10 +57,12 @@ exports.executeSQL = function(statement, async) {
     // send to console if debugging
     // TODO remove async argument
     if (debugging) {
-        if (typeof statement == 'string')
+        if (typeof statement == 'string'){
             console.log("SQLite",statement);
-        else
-            console.log("SQLite",statement[1]);
+        }else{  // log the table name and values to be inserted
+            var table_name = statement[0].replace("INSERT INTO ", "").split(" ")[0];
+            console.log("SQLite", table_name, statement[1]);
+        }
         return;
     }
     // catch statements without arguments
