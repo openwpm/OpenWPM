@@ -7,6 +7,7 @@ import plyvel
 import os
 import sqlite3
 from random import choice
+from os.path import realpath, dirname
 LOCAL_WEBSERVER_PORT = 8000
 PSL_CACHE_LOC = '/tmp/public_suffix_list.dat'
 BASE_TEST_URL_DOMAIN = "localtest.me"
@@ -27,6 +28,8 @@ def start_server():
     `http://localtest.me:8000/test_pages/...`
     """
     print "Starting HTTP Server in a separate thread"
+    # switch to test dir, this is where the test files are
+    os.chdir(dirname(realpath(__file__)))
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
     server = MyTCPServer(("localhost", LOCAL_WEBSERVER_PORT), Handler)
     thread = threading.Thread(target=server.serve_forever)
