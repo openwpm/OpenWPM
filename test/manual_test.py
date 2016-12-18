@@ -22,6 +22,7 @@ def get_command_output(command, cwd=None):
                              stderr=subprocess.STDOUT, cwd=cwd)
     return iter(popen.stdout.readline, b"")
 
+
 def colorize(line):
     if INSERT_PREFIX in line:  # print long DB insert lines in blue
         line = line.replace(INSERT_PREFIX, bcolors.OKBLUE + INSERT_PREFIX)
@@ -30,12 +31,13 @@ def colorize(line):
                             OPENWPM_LOG_PREFIX + bcolors.OKGREEN)
     return line
 
+
 def start_manual_test():
     base_dir = dirname(dirname(realpath(__file__)))
     ext_path = join(base_dir, 'automation', 'Extension', 'firefox')
     ff_bin_path = join(base_dir, 'firefox-bin', 'firefox')
     cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" % (BASE_TEST_URL,
-                                                        ff_bin_path)
+                                                            ff_bin_path)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416

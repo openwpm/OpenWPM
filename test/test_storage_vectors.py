@@ -1,8 +1,7 @@
-import pytest # noqa
-import os
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
+from openwpmtest import OpenWPMTest
 
 expected_lso_content_a = [
                1, # visit id
@@ -28,29 +27,23 @@ expected_js_cookie = (
              u'%s' % utilities.BASE_TEST_URL_DOMAIN,
              u'/')
 
-class TestStorageVectors():
+
+class TestStorageVectors(OpenWPMTest):
     """ Runs some basic tests to check that the saving of
     storage vectors (i.e. Flash LSOs, profile cookies) works.
 
     NOTE: These tests are very basic and should be expanded
     on to check for completeness and correctness.
     """
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        manager_params['db'] = os.path.join(manager_params['data_directory'],
-                                            manager_params['database_name'])
-        browser_params[0]['headless'] = True
-        return manager_params, browser_params
+    def get_config(self, data_dir=""):
+        return self.get_test_config(data_dir)
 
-    def test_flash_cookies(self, tmpdir):
+    def test_flash_cookies(self):
         """ Check that some Flash LSOs are saved and
         are properly keyed in db."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         browser_params[0]['disable_flash'] = False
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
@@ -91,10 +84,10 @@ class TestStorageVectors():
         assert lso_content_a == expected_lso_content_a
         assert lso_content_b == expected_lso_content_b
 
-    def test_profile_cookies(self, tmpdir):
+    def test_profile_cookies(self):
         """ Check that some profile cookies are saved """
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         # TODO update this to local test site
         url = 'http://www.yahoo.com'
@@ -110,10 +103,10 @@ class TestStorageVectors():
         prof_cookie_count = qry_res[0]
         assert prof_cookie_count > 0
 
-    def test_js_profile_cookies(self, tmpdir):
+    def test_js_profile_cookies(self):
         """ Check that profile cookies set by JS are saved """
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         url = utilities.BASE_TEST_URL + "/js_cookie.html"
         cs = CommandSequence.CommandSequence(url)

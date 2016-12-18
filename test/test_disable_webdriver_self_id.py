@@ -1,9 +1,9 @@
-import pytest # NOQA
-import os
+import pytest
 import utilities
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation import CommandSequence
+
 
 class TestDisableWebdriverSelfId(OpenWPMTest):
     """Verify webdriver self-identification removed from DOM.
@@ -12,19 +12,12 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
     * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/server.js#L49
     * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/dommessenger.js#L98
     """
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        browser_params[0]['headless'] = True
-        manager_params['db'] = os.path.join(manager_params['data_directory'],
-                                            manager_params['database_name'])
-        return manager_params, browser_params
+    def get_config(self, data_dir=""):
+        return self.get_test_config(data_dir)
 
-    def test_self_id_present(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_self_id_present(self):
+        manager_params, browser_params = self.get_config()
         browser_params[0]['disable_webdriver_self_id'] = False
         manager = TaskManager.TaskManager(manager_params, browser_params)
         test_url = utilities.BASE_TEST_URL + '/simple_a.html'
@@ -46,8 +39,8 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
             manager.execute_command_sequence(cs)
             manager.close()
 
-    def test_disable_self_id(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_disable_self_id(self):
+        manager_params, browser_params = self.get_config()
         browser_params[0]['disable_webdriver_self_id'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
         test_url = utilities.BASE_TEST_URL + '/simple_a.html'
@@ -69,8 +62,8 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
         manager.close()
         assert not utilities.any_command_failed(manager_params['db'])
 
-    def test_define_property(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_define_property(self):
+        manager_params, browser_params = self.get_config()
         browser_params[0]['disable_webdriver_self_id'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
         test_url = utilities.BASE_TEST_URL + '/simple_a.html'

@@ -1,13 +1,16 @@
+from os.path import join
 import utilities
 import pytest
+from tempfile import mkdtemp
 import commands
 from ..automation import TaskManager
 
 
 class OpenWPMTest(object):
+    NUM_BROWSERS = 1
 
-    def visit(self, page_url, data_dir, sleep_after=0):
-        """Visits a given test page according to given parameters."""
+    def visit(self, page_url, data_dir="", sleep_after=0):
+        """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
         manager = TaskManager.TaskManager(manager_params, browser_params)
         if not page_url.startswith("http"):
@@ -15,6 +18,20 @@ class OpenWPMTest(object):
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
         return manager_params['db']
+
+    def get_test_config(self, data_dir="",
+                        num_browsers=NUM_BROWSERS):
+        """Load and return the default test parameters."""
+        if not data_dir:
+            data_dir = mkdtemp()
+        manager_params, browser_params = TaskManager.\
+            load_default_params(num_browsers)
+        manager_params['data_directory'] = data_dir
+        manager_params['log_directory'] = data_dir
+        browser_params[0]['headless'] = True
+        manager_params['db'] = join(manager_params['data_directory'],
+                                    manager_params['database_name'])
+        return manager_params, browser_params
 
     def is_installed(self, pkg_name):
         """Check if a Linux package is installed."""

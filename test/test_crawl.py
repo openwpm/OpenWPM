@@ -5,6 +5,8 @@ import os
 
 from ..automation import TaskManager
 import utilities
+from openwpmtest import OpenWPMTest
+
 
 TEST_SITES = [
     'http://google.com',
@@ -32,24 +34,19 @@ TEST_SITES = [
 psl = utilities.get_psl()
 
 
-class TestCrawl():
+class TestCrawl(OpenWPMTest):
     """ Runs a short test crawl.
 
     This should be used to test any features that require real
     crawl data. This should be avoided if possible, as controlled
     tests will be easier to debug
     """
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        manager_params['db'] = os.path.join(manager_params['data_directory'],
-                                            manager_params['database_name'])
-        browser_params[0]['profile_archive_dir'] = os.path.join(data_dir, 'browser_profile')
+    def get_config(self, data_dir=""):
+        manager_params, browser_params = self.get_test_config(data_dir)
+        browser_params[0]['profile_archive_dir'] =\
+            os.path.join(manager_params['data_directory'], 'browser_profile')
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['headless'] = True
         return manager_params, browser_params
 
     @pytest.mark.slow

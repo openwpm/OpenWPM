@@ -1,10 +1,10 @@
-import pytest # noqa
 from PIL import Image
 import os
 
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
+from openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'
 url_b = utilities.BASE_TEST_URL + '/simple_b.html'
@@ -13,26 +13,21 @@ url_d = utilities.BASE_TEST_URL + '/simple_d.html'
 
 rendered_js_url = utilities.BASE_TEST_URL + '/property_enumeration.html'
 
-class TestSimpleCommands():
+
+class TestSimpleCommands(OpenWPMTest):
     """Test correctness of simple commands and check
     that resulting data is properly keyed.
     """
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        manager_params['db'] = os.path.join(manager_params['data_directory'],
-                                            manager_params['database_name'])
+    def get_config(self, data_dir=""):
+        manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['headless'] = True
         return manager_params, browser_params
 
-    def test_get_site_visits_table_valid(self, tmpdir):
+    def test_get_site_visits_table_valid(self):
         """Check that get works and populates db correctly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
@@ -55,10 +50,10 @@ class TestSimpleCommands():
         assert qry_res[0][0] == url_a
         assert qry_res[1][0] == url_b
 
-    def test_get_http_tables_valid(self, tmpdir):
+    def test_get_http_tables_valid(self):
         """Check that get works and populates http tables correctly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
@@ -99,10 +94,10 @@ class TestSimpleCommands():
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
 
-    def test_browse_site_visits_table_valid(self, tmpdir):
+    def test_browse_site_visits_table_valid(self):
         """Check that CommandSequence.browse() works and populates db correctly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
@@ -124,7 +119,7 @@ class TestSimpleCommands():
         assert qry_res[0][0] == url_a
         assert qry_res[1][0] == url_b
 
-    def test_browse_http_table_valid(self, tmpdir):
+    def test_browse_http_table_valid(self):
         """Check CommandSequence.browse() works and populates http tables correctly.
 
         NOTE: Since the browse command is choosing links randomly, there is a
@@ -132,7 +127,7 @@ class TestSimpleCommands():
               code.
         """
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
@@ -195,7 +190,7 @@ class TestSimpleCommands():
                                      " WHERE visit_id = ?", (visit_ids[url_a],))
         assert qry_res[0][0] == 4
 
-    def test_browse_wrapper_http_table_valid(self, tmpdir):
+    def test_browse_wrapper_http_table_valid(self):
         """Check that TaskManager.browse() wrapper works and populates http tables correctly.
 
         NOTE: Since the browse command is choosing links randomly, there is a
@@ -203,7 +198,7 @@ class TestSimpleCommands():
               code.
         """
         # Run the test crawl
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
