@@ -1,27 +1,19 @@
-import pytest # noqa
-import os
-
 import expected
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
+from openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'
 
-class TestCustomFunctionCommand():
+
+class TestCustomFunctionCommand(OpenWPMTest):
     """Test `custom_function` command's ability to handle various inline functions"""
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        manager_params['db'] = os.path.join(manager_params['data_directory'],
-                                            manager_params['database_name'])
-        browser_params[0]['headless'] = True
-        return manager_params, browser_params
+    def get_config(self, data_dir=""):
+        return self.get_test_config(data_dir)
 
-    def test_custom_function(self, tmpdir):
+    def test_custom_function(self):
         """ Test `custom_function` with an inline function that collects links """
 
         from ..automation.SocketInterface import clientsocket
@@ -47,7 +39,7 @@ class TestCustomFunctionCommand():
                 sock.send((query, (current_url, link)))
             sock.close()
 
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=0, timeout=60)

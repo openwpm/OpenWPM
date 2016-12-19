@@ -1,29 +1,28 @@
 import pytest
-import os
+from os.path import join, isfile
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
+from openwpmtest import OpenWPMTest
 
-#TODO update these tests to make use of blocking commands
-class TestProfile():
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        browser_params[0]['profile_archive_dir'] = os.path.join(data_dir,'browser_profile')
-        browser_params[0]['headless'] = True
+# TODO update these tests to make use of blocking commands
+class TestProfile(OpenWPMTest):
+
+    def get_config(self, data_dir=""):
+        manager_params, browser_params = self.get_test_config(data_dir)
+        browser_params[0]['profile_archive_dir'] =\
+            join(manager_params['data_directory'], 'browser_profile')
         return manager_params, browser_params
 
-    def test_saving(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_saving(self):
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://example.com')
         manager.close()
-        assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
+        assert isfile(join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
 
-    def test_crash(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_crash(self):
+        manager_params, browser_params = self.get_config()
         manager_params['failure_limit'] = 0
         manager = TaskManager.TaskManager(manager_params, browser_params)
         with pytest.raises(CommandExecutionError):
@@ -31,8 +30,8 @@ class TestProfile():
             manager.get('example.com') # Selenium requires scheme prefix
             manager.get('example.com') # Requires two commands to shut down
 
-    def test_crash_profile(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_crash_profile(self):
+        manager_params, browser_params = self.get_config()
         manager_params['failure_limit'] = 2
         manager = TaskManager.TaskManager(manager_params, browser_params)
         try:
@@ -43,16 +42,16 @@ class TestProfile():
             manager.get('example.com') # Requires two commands to shut down
         except CommandExecutionError:
             pass
-        assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
+        assert isfile(join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
 
-    def test_profile_error(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_profile_error(self):
+        manager_params, browser_params = self.get_config()
         browser_params[0]['profile_tar'] = '/tmp/NOTREAL'
         with pytest.raises(ProfileLoadError):
-            manager = TaskManager.TaskManager(manager_params, browser_params) # noqa
+            TaskManager.TaskManager(manager_params, browser_params)  # noqa
 
-    def test_profile_saved_when_launch_crashes(self, tmpdir):
-        manager_params, browser_params = self.get_config(str(tmpdir))
+    def test_profile_saved_when_launch_crashes(self):
+        manager_params, browser_params = self.get_config()
         browser_params[0]['proxy'] = True
         browser_params[0]['save_javascript'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
@@ -71,7 +70,7 @@ class TestProfile():
         except CommandExecutionError:
             pass
         manager.close()
-        assert os.path.isfile(os.path.join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
+        assert isfile(join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
 
     #TODO Check for Flash
     #TODO Check contents of profile (tests should fail anyway if profile doesn't contain everything)

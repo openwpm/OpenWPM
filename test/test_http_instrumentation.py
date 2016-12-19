@@ -1,6 +1,4 @@
-import pytest # NOQA
 import hashlib
-import os
 
 import utilities
 import expected
@@ -10,22 +8,16 @@ from ..automation.utilities.platform_utils import parse_http_stack_trace_str
 
 
 class TestHTTPInstrument(OpenWPMTest):
-    NUM_BROWSERS = 1
 
-    def get_config(self, data_dir):
-        manager_params, browser_params = TaskManager.load_default_params(self.NUM_BROWSERS)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        browser_params[0]['headless'] = True
+    def get_config(self, data_dir=""):
+        manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0]['http_instrument'] = True
         browser_params[0]['save_javascript'] = True
-        manager_params['db'] = os.path.join(manager_params['data_directory'],
-                                            manager_params['database_name'])
         return manager_params, browser_params
 
-    def test_page_visit(self, tmpdir):
+    def test_page_visit(self):
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        db = self.visit(test_url, str(tmpdir))
+        db = self.visit(test_url)
 
         # HTTP Requests
         rows = utilities.query_db(db, (
@@ -45,7 +37,7 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add(row)
         assert expected.http_responses == observed_records
 
-    def test_cache_hits_recorded(self, tmpdir):
+    def test_cache_hits_recorded(self):
         """Verify all http responses are recorded, including cached responses
 
         Note that we expect to see all of the same requests and responses
@@ -54,7 +46,7 @@ class TestHTTPInstrument(OpenWPMTest):
         See Bug 634073: https://bugzilla.mozilla.org/show_bug.cgi?id=634073
         """
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get(test_url, sleep=3)
         manager.get(test_url, sleep=3)
@@ -81,9 +73,9 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add(row)
         assert expected.http_cached_responses == observed_records
 
-    def test_http_stacktrace(self, tmpdir):
+    def test_http_stacktrace(self):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
-        db = self.visit(test_url, str(tmpdir), sleep_after=3)
+        db = self.visit(test_url, sleep_after=3)
         rows = utilities.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests"))
         observed_records = set()
@@ -95,15 +87,15 @@ class TestHTTPInstrument(OpenWPMTest):
                 observed_records.add(stacktrace)
         assert observed_records == expected.http_stacktraces
 
-    def test_parse_http_stack_trace_str(self, tmpdir):
+    def test_parse_http_stack_trace_str(self):
         stacktrace = expected.stack_trace_inject_image
         stack_frames = parse_http_stack_trace_str(stacktrace)
         assert stack_frames == expected.call_stack_inject_image
 
-    def test_http_stacktrace_nonjs_loads(self, tmpdir):
+    def test_http_stacktrace_nonjs_loads(self):
         # stacktrace should be empty for requests NOT triggered by scripts
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        db = self.visit(test_url, str(tmpdir), sleep_after=3)
+        db = self.visit(test_url, sleep_after=3)
         rows = utilities.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests"))
         for row in rows:
@@ -113,12 +105,12 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_javascript_saving(self, tmpdir):
         """ check that javascript content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        db = self.visit(test_url, str(tmpdir), sleep_after=3) # NOQA
+        self.visit(test_url, str(tmpdir), sleep_after=3)
         expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
                            'a6475af1ad58b55cf781ca5e1218c7b1'}
         for chash, content in utilities.get_javascript_content(str(tmpdir)):
             pyhash = hashlib.md5(content).hexdigest()
-            assert pyhash == chash # Verify expected key (md5 of content)
+            assert pyhash == chash  # Verify expected key (md5 of content)
             assert chash in expected_hashes
             expected_hashes.remove(chash)
-        assert len(expected_hashes) == 0 # All expected hashes have been seen
+        assert len(expected_hashes) == 0  # All expected hashes have been seen
