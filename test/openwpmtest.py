@@ -1,13 +1,21 @@
 from os.path import join
 import utilities
 import pytest
-from tempfile import mkdtemp
 import commands
 from ..automation import TaskManager
 
 
 class OpenWPMTest(object):
     NUM_BROWSERS = 1
+
+    @pytest.fixture(autouse=True)
+    def set_tmpdir(self, tmpdir):
+        """Create a tmpdir fixture to be used in `get_test_config`.
+
+        Based on:
+        https://mail.python.org/pipermail/pytest-dev/2014-April/002484.html
+        """
+        self.tmpdir = str(tmpdir)
 
     def visit(self, page_url, data_dir="", sleep_after=0):
         """Visit a test page with the given parameters."""
@@ -23,7 +31,7 @@ class OpenWPMTest(object):
                         num_browsers=NUM_BROWSERS):
         """Load and return the default test parameters."""
         if not data_dir:
-            data_dir = mkdtemp()
+            data_dir = self.tmpdir
         manager_params, browser_params = TaskManager.\
             load_default_params(num_browsers)
         manager_params['data_directory'] = data_dir
