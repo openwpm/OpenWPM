@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import json
 import time
+import sys
 import os
 
 
@@ -42,12 +43,22 @@ def get_version():
 
     ff_ini = os.path.join(os.path.dirname(__file__),
             '../../firefox-bin/application.ini')
-    with open(ff_ini, 'r') as f:
-        ff = None
-        for line in f:
-            if line.startswith('Version='):
-                ff = line[8:].strip()
-                break
+    try:
+        with open(ff_ini, 'r') as f:
+            ff = None
+            for line in f:
+                if line.startswith('Version='):
+                    ff = line[8:].strip()
+                    break
+    except IOError as e:
+        raise IOError, \
+              IOError("%s \n Did you run `./install.sh`? OpenWPM "
+                      "requires a Firefox package installed within "
+                      "a `firefox-bin` directory in the root "
+                      "directory of the platform. \n The `application.ini` "
+                      "file is used to determine the version of Firefox "
+                      "present in that directory." % str(e)), \
+              sys.exc_info()[2]
     return openwpm, ff
 
 def get_configuration_string(manager_params, browser_params, versions):
