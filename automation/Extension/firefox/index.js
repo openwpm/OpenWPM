@@ -16,7 +16,7 @@ exports.main = function(options, callbacks) {
   var path = system.pathFor("ProfD") + '/browser_params.json';
   if (fileIO.exists(path)) {
     var config = JSON.parse(fileIO.read(path, 'r'));
-    console.log("Browser Config: + " + config);
+    console.log("Browser Config:", config);
   } else {
     console.log("WARNING: config not found. Assuming this is a test run of",
                 "the extension. Outputting all queries to console.");
