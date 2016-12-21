@@ -93,6 +93,58 @@ exports.logInfo = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
+exports.logDebug = function(msg) {
+    // Always log to browser console
+    console.log(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level DEBUG == 10
+    var log_json = makeLogJSON(10, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logWarn = function(msg) {
+    // Always log to browser console
+    console.warn(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level WARN == 30
+    var log_json = makeLogJSON(30, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logError = function(msg) {
+    // Always log to browser console
+    console.error(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level INFO == 40
+    var log_json = makeLogJSON(40, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logCritical = function(msg) {
+    // Always log to browser console
+    console.error(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level CRITICAL == 50
+    var log_json = makeLogJSON(50, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
 exports.executeSQL = function(statement, async) {
     // send to console if debugging
     // TODO remove async argument

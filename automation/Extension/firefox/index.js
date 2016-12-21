@@ -39,8 +39,6 @@ exports.main = function(options, callbacks) {
                  config['logger_address'],
                  config['crawl_id']);
 
-  loggingDB.logInfo('WOW WE GOT THE EXTENSION LOGGING BABY');
-
   // Prevent the webdriver from identifying itself in the DOM. See #91
   if (config['disable_webdriver_self_id']) {
     console.log("Disabling webdriver self identification");

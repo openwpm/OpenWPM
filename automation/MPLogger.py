@@ -93,7 +93,6 @@ def _handleLogRecord(obj):
 
     # Log message came from browser extension: requires special handling
     if len(obj) == 2 and obj[0] == 'EXT':
-        print "got a log message! : " + obj[1]
         obj = json.loads(obj[1])
         record = logging.LogRecord(name=__name__,
                                    level=obj['level'],
@@ -105,7 +104,6 @@ def _handleLogRecord(obj):
                                    func=obj['func'])
     else:
         record = logging.makeLogRecord(obj)
-    print record
     logger = logging.getLogger(record.name)
     logger.handle(record)
 
