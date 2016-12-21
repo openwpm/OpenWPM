@@ -10,13 +10,13 @@ var ldbAggregator = null;
 var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(sqliteAddress, ldbAddress, logAddress, crawlID) {
-    if (sqliteAddress == null && ldbAddress == null && logAddress == null && crawlID == '') {
+exports.open = function(sqliteAddress, ldbAddress, logAddress, curr_crawlID) {
+    if (sqliteAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
     }
-    crawlID = crawlID;
+    crawlID = curr_crawlID;
 
     console.log("Opening socket connections...");
 
@@ -194,12 +194,11 @@ exports.createInsert = function(table, update) {
     // Add top url visit id if changed
     while (!debugging && listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
-        logDebug("Visit Id:",visitID);
+        exports.logDebug("Visit Id: " + visitID);
     }
-
     if (!visitId) {
-        logCritical('EXTENSION-' + crawlID + ' : visitID is null attempting while attempting to insert ' +
-                    update);
+        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
+                    JSON.stringify(update));
     }
     update["visit_id"] = visitID;
 
