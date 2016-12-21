@@ -121,3 +121,10 @@ class TestExtension(OpenWPMTest):
             # compare UTC now and the timestamp recorded at the visit
             assert (utc_now - js_time).seconds < MAX_TIMEDELTA
         assert not utilities.any_command_failed(db)
+
+    def test_document_cookie_instrumentation(self):
+        db = self.visit(utilities.BASE_TEST_URL + "/js_cookie.html")
+        rows = utilities.get_javascript_entries(db, all_columns=True)
+        # [3:12] exclude id and empty columns
+        captured_cookie_calls = set([row[3:12] for row in rows])
+        assert captured_cookie_calls == expected.document_cookie_read_write

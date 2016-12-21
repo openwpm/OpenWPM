@@ -5,7 +5,8 @@
   <script type="application/javascript">
     function set_cookie() {
         document.cookie = 'test_cookie=Test-0123456789; expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/';
-     }
+        console.log(document.cookie);
+    }
   </script>
  </head>
  <body onload="set_cookie()">
