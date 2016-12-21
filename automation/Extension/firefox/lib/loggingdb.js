@@ -70,7 +70,7 @@ var makeLogJSON = function(lvl, msg) {
     var log_json = {
         'name': 'Extension-Logger',
         'level': lvl,
-        'pathname': '[Extension]',
+        'pathname': 'FirefoxExtension',
         'lineno': 1,
         'msg': msg,
         'args': null,
@@ -194,9 +194,13 @@ exports.createInsert = function(table, update) {
     // Add top url visit id if changed
     while (!debugging && listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
-        console.log("Visit Id:",visitID);
+        logDebug("Visit Id:",visitID);
     }
 
+    if (!visitId) {
+        logCritical('EXTENSION-' + crawlID + ' : visitID is null attempting while attempting to insert ' +
+                    update);
+    }
     update["visit_id"] = visitID;
 
     var statement = "INSERT INTO " + table + " (";
