@@ -7,18 +7,27 @@ var visitID = null;
 var debugging = false;
 var sqliteAggregator = null;
 var ldbAggregator = null;
+var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(sqliteAddress, ldbAddress, crawlID) {
-    if (sqliteAddress == null && ldbAddress == null && crawlID == '') {
+exports.open = function(sqliteAddress, ldbAddress, logAddress, crawlID) {
+    if (sqliteAddress == null && ldbAddress == null && logAddress == null && crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
     }
     crawlID = crawlID;
 
-    // Connect to databases for saving data
     console.log("Opening socket connections...");
+
+    // Connect to MPLogger for extension info/debug/error logging
+    if (logAddress != null) {
+        logAggregator = new socket.SendingSocket();
+        var rv = logAggregator.connect(logAddress[0], logAddress[1]);
+        console.log("logSocket started?", rv)
+    }
+
+    // Connect to databases for saving data
     if (sqliteAddress != null) {
         sqliteAggregator = new socket.SendingSocket();
         var rv = sqliteAggregator.connect(sqliteAddress[0], sqliteAddress[1]);
@@ -29,6 +38,7 @@ exports.open = function(sqliteAddress, ldbAddress, crawlID) {
         var rv = ldbAggregator.connect(ldbAddress[0], ldbAddress[1]);
         console.log("ldbSocket started?",rv);
     }
+
 
     // Listen for incomming urls as visit ids
     listeningSocket = new socket.ListeningSocket();
@@ -51,6 +61,36 @@ exports.close = function() {
     if (ldbAggregator != null) {
         ldbAggregator.close();
     }
+    if (logAggregator != null) {
+        logAggregator.close();
+    }
+};
+
+var makeLogJSON = function(lvl, msg) {
+    var log_json = {
+        'name': 'Extension-Logger',
+        'level': lvl,
+        'pathname': '[Extension]',
+        'lineno': 1,
+        'msg': msg,
+        'args': null,
+        'exc_info': null,
+        'func': null
+    }
+    return log_json;
+}
+
+exports.logInfo = function(msg) {
+    // Always log to browser console
+    console.log(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level INFO == 20
+    var log_json = makeLogJSON(20, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 exports.executeSQL = function(statement, async) {
