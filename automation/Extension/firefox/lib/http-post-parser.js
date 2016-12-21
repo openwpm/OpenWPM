@@ -124,41 +124,32 @@ HttpPostParser.prototype.parsePostRequest = function(encodingType){
     return {};
   }
 
-  var isMultiPart = false;
   var postBody = this.postBody;
+
+  if (!postBody)  // some scripts strangely sends empty post bodies (confirmed with the developer tools)
+    return {};
+
+  var isMultiPart = false;  // encType: multipart/form-data
   var postHeaders = this.postHeaders;  // request headers from upload stream
   // See, http://stackoverflow.com/questions/16548517/what-is-request-headers-from-upload-stream
 
-  // post lines are part of the post body that are not in key=value form
-  var postLinesStr = this.postLines.join('\r\n');
-
-  // add encodingType found in "request headers from upload stream"
+  // add encodingType from postHeaders if it's missing
   if (!encodingType && postHeaders && ("Content-Type" in postHeaders))
     encodingType = postHeaders["Content-Type"];
 
   if (encodingType.indexOf("multipart/form-data") != -1)
     isMultiPart = true;
 
-  var formData =  postBody;
-  if (!postBody && postLinesStr){
-    // We've never observed a case where the post body is empty but the post lines are not.
-    // The jmeter code handles the case:
-    // https://github.com/redline13/selenium-jmeter/blob/6966d4b326cd78261e31e6e317076569051cac37/content/library/selenium-jmeter.js#L67-L72
-    // We add the following string to debug:
-    formData = postLinesStr + "__DEBUG_EMPTY_POST_BODY_TO_LINES_FALLBACK__";
-    // TODO: Remove the debug string after testing with a small scale crawl.
-  }
-
-  var jsonFormData = "";
-  var parsedPostBody = "";
+  var jsonPostData = "";
+  var escapedJsonPostData = "";
   if (isMultiPart) {
-    jsonFormData = this.parseMultiPartData(formData, encodingType);
-    parsedPostBody = loggingDB.escapeString(jsonFormData);
+    jsonPostData = this.parseMultiPartData(postBody, encodingType);
+    escapedJsonPostData = loggingDB.escapeString(jsonPostData);
   } else {
-    jsonFormData = this.parseEncodedFormData(formData, encodingType);
-    parsedPostBody = loggingDB.escapeString(jsonFormData);
+    jsonPostData = this.parseEncodedFormData(postBody, encodingType);
+    escapedJsonPostData = loggingDB.escapeString(jsonPostData);
   }
-  return {post_headers: postHeaders, post_body: parsedPostBody};
+  return {post_headers: postHeaders, post_body: escapedJsonPostData};
 };
 
 

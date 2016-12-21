@@ -101,11 +101,16 @@ var httpRequestHandler = function(reqEvent, crawlID) {
 
       // Add (POST) request headers from upload stream
       if ("post_headers" in postObj) {
+        // Only store POST headers that we know and need. We may misinterpret POST data as headers
+        // as detection is based on "key:value" format (non-header POST data can be in this format as well)
+        contentHeaders = ["Content-Type", "Content-Disposition", "Content-Length"];
         for (var name in postObj["post_headers"]) {
-          var header_pair = [];
-          header_pair.push(loggingDB.escapeString(name));
-          header_pair.push(loggingDB.escapeString(postObj["post_headers"][name]));
-          headers.push(header_pair);
+          if (contentHeaders.includes(name)){
+            var header_pair = [];
+            header_pair.push(loggingDB.escapeString(name));
+            header_pair.push(loggingDB.escapeString(postObj["post_headers"][name]));
+            headers.push(header_pair);
+          }
         }
       }
       // we store POST body in JSON format, except when it's a string without a (key-value) structure
