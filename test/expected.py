@@ -240,7 +240,9 @@ adblockplus = {
     # favicon request is made to URL without a path
     "%s/favicon.ico" % BASE_TEST_URL_NOPATH}
 
-js_cookie = (u'%s/js_cookie.html' % BASE_TEST_URL,
+JS_COOKIE_TEST_URL = u'%s/js_cookie.html' % BASE_TEST_URL
+
+js_cookie = (JS_COOKIE_TEST_URL,
              u'%s' % BASE_TEST_URL_DOMAIN,
              u'test_cookie',
              u'Test-0123456789',
@@ -341,3 +343,28 @@ js_stack_calls = (
     (JS_STACK_TEST_URL, u'1', u'1', u'', u'line 8 > eval', u'',
      u'window.navigator.appCodeName', u'get'))
 
+document_cookie_read = (
+    JS_COOKIE_TEST_URL,
+    u'8',
+    u'9',
+    u'set_cookie',
+    u'',
+    u'set_cookie@' + JS_COOKIE_TEST_URL + ':8:9'
+    '\nonload@' + JS_COOKIE_TEST_URL + ':1:1',
+    u'window.document.cookie', u'get',
+    u'test_cookie=Test-0123456789')
+
+document_cookie_write = (
+    JS_COOKIE_TEST_URL,
+    u'7',
+    u'9',
+    u'set_cookie',
+    u'',
+    u'set_cookie@' + JS_COOKIE_TEST_URL + ':7:9'
+    '\nonload@' + JS_COOKIE_TEST_URL + ':1:1',
+    u'window.document.cookie', u'set',
+    u'test_cookie=Test-0123456789; '
+    'expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/')
+
+document_cookie_read_write = set([document_cookie_read,
+                                  document_cookie_write])

@@ -200,7 +200,7 @@ function getPageScript() {
           scriptCol: columnNo,
           funcName: funcName,
           scriptLocEval: scriptLocEval,
-          callStack: getCallStack ? trace.slice(3).join("\n") : ""
+          callStack: getCallStack ? trace.slice(3).join("\n").trim() : ""
       };
       return callContext;
     }
@@ -462,6 +462,11 @@ function getPageScript() {
       instrumentObjectProperty(window, "window", property);
     });
     instrumentObject(window.Storage.prototype, "window.Storage", true);
+
+    // Access to document.cookie
+    instrumentObjectProperty(window.document, "window.document", "cookie", {
+      logCallStack: true
+    });
 
     // Access to canvas
     instrumentObject(window.HTMLCanvasElement.prototype,"HTMLCanvasElement", true);
