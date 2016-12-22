@@ -196,7 +196,7 @@ exports.createInsert = function(table, update) {
         visitID = listeningSocket.queue.shift();
         exports.logDebug("Visit Id: " + visitID);
     }
-    if (!visitId) {
+    if (!visitID) {
         exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
                     JSON.stringify(update));
     }
