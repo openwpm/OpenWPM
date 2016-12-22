@@ -88,7 +88,7 @@ exports.logInfo = function(msg) {
         return;
     }
 
-    // Log level INFO == 20
+    // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(20, msg);
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
@@ -101,7 +101,7 @@ exports.logDebug = function(msg) {
         return;
     }
 
-    // Log level DEBUG == 10
+    // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(10, msg);
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
@@ -114,7 +114,7 @@ exports.logWarn = function(msg) {
         return;
     }
 
-    // Log level WARN == 30
+    // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(30, msg);
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
@@ -127,7 +127,7 @@ exports.logError = function(msg) {
         return;
     }
 
-    // Log level INFO == 40
+    // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(40, msg);
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
@@ -140,7 +140,7 @@ exports.logCritical = function(msg) {
         return;
     }
 
-    // Log level CRITICAL == 50
+    // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(50, msg);
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
