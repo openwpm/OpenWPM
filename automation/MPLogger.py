@@ -90,7 +90,20 @@ def loggingserver(log_file, status_queue):
 
 def _handleLogRecord(obj):
     """ Handle log, logs everything sent. Should filter client-side """
-    record = logging.makeLogRecord(obj)
+
+    # Log message came from browser extension: requires special handling
+    if len(obj) == 2 and obj[0] == 'EXT':
+        obj = json.loads(obj[1])
+        record = logging.LogRecord(name=__name__,
+                                   level=obj['level'],
+                                   pathname=obj['pathname'],
+                                   lineno=obj['lineno'],
+                                   msg=obj['msg'],
+                                   args=obj['args'],
+                                   exc_info=obj['exc_info'],
+                                   func=obj['func'])
+    else:
+        record = logging.makeLogRecord(obj)
     logger = logging.getLogger(record.name)
     logger.handle(record)
 

@@ -7,18 +7,27 @@ var visitID = null;
 var debugging = false;
 var sqliteAggregator = null;
 var ldbAggregator = null;
+var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(sqliteAddress, ldbAddress, crawlID) {
-    if (sqliteAddress == null && ldbAddress == null && crawlID == '') {
+exports.open = function(sqliteAddress, ldbAddress, logAddress, curr_crawlID) {
+    if (sqliteAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
     }
-    crawlID = crawlID;
+    crawlID = curr_crawlID;
+
+    console.log("Opening socket connections...");
+
+    // Connect to MPLogger for extension info/debug/error logging
+    if (logAddress != null) {
+        logAggregator = new socket.SendingSocket();
+        var rv = logAggregator.connect(logAddress[0], logAddress[1]);
+        console.log("logSocket started?", rv)
+    }
 
     // Connect to databases for saving data
-    console.log("Opening socket connections...");
     if (sqliteAddress != null) {
         sqliteAggregator = new socket.SendingSocket();
         var rv = sqliteAggregator.connect(sqliteAddress[0], sqliteAddress[1]);
@@ -29,6 +38,7 @@ exports.open = function(sqliteAddress, ldbAddress, crawlID) {
         var rv = ldbAggregator.connect(ldbAddress[0], ldbAddress[1]);
         console.log("ldbSocket started?",rv);
     }
+
 
     // Listen for incomming urls as visit ids
     listeningSocket = new socket.ListeningSocket();
@@ -51,6 +61,88 @@ exports.close = function() {
     if (ldbAggregator != null) {
         ldbAggregator.close();
     }
+    if (logAggregator != null) {
+        logAggregator.close();
+    }
+};
+
+var makeLogJSON = function(lvl, msg) {
+    var log_json = {
+        'name': 'Extension-Logger',
+        'level': lvl,
+        'pathname': 'FirefoxExtension',
+        'lineno': 1,
+        'msg': msg,
+        'args': null,
+        'exc_info': null,
+        'func': null
+    }
+    return log_json;
+}
+
+exports.logInfo = function(msg) {
+    // Always log to browser console
+    console.log(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
+    var log_json = makeLogJSON(20, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logDebug = function(msg) {
+    // Always log to browser console
+    console.log(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
+    var log_json = makeLogJSON(10, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logWarn = function(msg) {
+    // Always log to browser console
+    console.warn(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
+    var log_json = makeLogJSON(30, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logError = function(msg) {
+    // Always log to browser console
+    console.error(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
+    var log_json = makeLogJSON(40, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+};
+
+exports.logCritical = function(msg) {
+    // Always log to browser console
+    console.error(msg);
+
+    if (debugging) {
+        return;
+    }
+
+    // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
+    var log_json = makeLogJSON(50, msg);
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 exports.executeSQL = function(statement, async) {
@@ -102,9 +194,12 @@ exports.createInsert = function(table, update) {
     // Add top url visit id if changed
     while (!debugging && listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
-        console.log("Visit Id:",visitID);
+        exports.logDebug("Visit Id: " + visitID);
     }
-
+    if (!visitID) {
+        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
+                    JSON.stringify(update));
+    }
     update["visit_id"] = visitID;
 
     var statement = "INSERT INTO " + table + " (";

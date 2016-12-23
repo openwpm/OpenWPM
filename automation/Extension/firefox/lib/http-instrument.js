@@ -236,12 +236,12 @@ function logWithResponseBody(respEvent, update) {
                           loggingDB.escapeString(contentHash));
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }, function(aReason) {
-    console.error("Unable to retrieve response body.",aReason);
+    loggingDB.logError("Unable to retrieve response body." + JSON.stringify(aReason));
     update["content_hash"] = "<error>";
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }).catch(function(aCatch) {
-    console.error('Unable to retrieve response body.',
-        'Likely caused by a programming error. Error Message:', aCatch);
+    loggingDB.logError('Unable to retrieve response body.' +
+        'Likely caused by a programming error. Error Message:' + JSON.stringify(aCatch));
     update["content_hash"] = "<error>";
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   });
