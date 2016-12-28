@@ -9,7 +9,11 @@
 	    console.log("encoding_type:", enc_type);
 	    var form = document.getElementById("email_form");
 	    form.setAttribute("enctype", enc_type);
-	    form.submit();
+	    if (enc_type) {
+	      form.submit();
+	    } else {
+	      console.error("Can't find the encoding_type HTTP param, will not submit the form.");
+	    }
 	  }
   	</script>
   </head>
@@ -24,5 +28,11 @@
 line2 line2_word2</textarea> <br />            
 	  <input type="submit" value="Submit" />
 	</form>
+	<p>Automated tests uses the following URLs to submit data in different encodings</p>
+  <ul>
+  <li><a href="/test_pages/post_request.html?encoding_type=application/x-www-form-urlencoded">application/x-www-form-urlencoded</a></li>
+  <li><a href="/test_pages/post_request.html?encoding_type=text/plain">text/plain</a></li>
+  <li><a href="/test_pages/post_request.html?encoding_type=multipart/form-data">multipart/form-data</a></li>
+  </ul>
   </body>
 </html>

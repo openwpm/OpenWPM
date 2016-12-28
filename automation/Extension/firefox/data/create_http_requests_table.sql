@@ -17,6 +17,6 @@ CREATE TABLE IF NOT EXISTS http_requests(
   loading_href TEXT,
   req_call_stack TEXT,
   content_policy_type INTEGER NOT NULL,
-  time_stamp TEXT NOT NULL,
-  post_body TEXT
+  post_body TEXT,
+  time_stamp TEXT NOT NULL
 );

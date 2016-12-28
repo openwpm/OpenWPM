@@ -38,15 +38,25 @@
           send_form_data();
         } else if (format == "object") {
           var post_obj = {email:"test@example.com", username:"name surname+"};
-          $.post("ajax_post.html", post_obj);
+          $.post("bogus_submit.html", post_obj);
         } else if (format == "noKeyValue") {
-          $.post("ajax_post.html", 'test@example.com + name surname');
+          $.post("bogus_submit.html", 'test@example.com + name surname');
+        } else if (format == "noKeyValueBase64") {
+          $.post("bogus_submit.html", btoa('test@example.com + name surname'));
         } else if (format == "binary") {
           send_binary_data();
         }
       });
     </script>
   </head>
-  <body onload="start_test()">
+  <body>
+  <p>Automated tests uses the following URLs to submit data in different formats using AJAX POST</p>
+  <ul>
+  <li><a href="/test_pages/post_request_ajax.html?format=formData">FormData</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=object">JS Object</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=noKeyValue">No Key Value (string)</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=noKeyValueBase64">No Key Value (Base64 encoded string)</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=binary">Binary data</a></li>
+  </ul>
   </body>
 </html>
