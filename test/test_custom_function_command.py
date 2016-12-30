@@ -2,6 +2,7 @@ import expected
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
+from ..automation.utilities import db_utils
 from openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'
@@ -46,6 +47,6 @@ class TestCustomFunctionCommand(OpenWPMTest):
         cs.run_custom_function(collect_links, ('page_links', 'http'))
         manager.execute_command_sequence(cs)
         manager.close()
-        query_result = utilities.query_db(manager_params['db'],
+        query_result = db_utils.query_db(manager_params['db'],
                                      "SELECT top_url, link FROM page_links;")
         assert expected.page_links == set(query_result)

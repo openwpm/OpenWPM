@@ -7,6 +7,7 @@ import expected
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation.utilities.platform_utils import parse_http_stack_trace_str
+from ..automation.utilities import db_utils
 from ..automation import CommandSequence
 from time import sleep
 
@@ -24,7 +25,7 @@ class TestHTTPInstrument(OpenWPMTest):
         db = self.visit(test_url)
 
         # HTTP Requests
-        rows = utilities.query_db(db, (
+        rows = db_utils.query_db(db, (
             "SELECT url, top_level_url, is_XHR, is_frame_load, is_full_page, "
             "is_third_party_channel, is_third_party_window, triggering_origin "
             "loading_origin, loading_href, content_policy_type FROM http_requests"))
@@ -34,7 +35,7 @@ class TestHTTPInstrument(OpenWPMTest):
         assert expected.http_requests == observed_records
 
         # HTTP Responses
-        rows = utilities.query_db(db,
+        rows = db_utils.query_db(db,
             "SELECT url, referrer, location FROM http_responses")
         observed_records = set()
         for row in rows:
@@ -58,7 +59,7 @@ class TestHTTPInstrument(OpenWPMTest):
         db = manager_params['db']
 
         # HTTP Requests
-        rows = utilities.query_db(db, (
+        rows = db_utils.query_db(db, (
             "SELECT url, top_level_url, is_XHR, is_frame_load, is_full_page, "
             "is_third_party_channel, is_third_party_window, triggering_origin "
             "loading_origin, loading_href, content_policy_type "
@@ -69,7 +70,7 @@ class TestHTTPInstrument(OpenWPMTest):
         assert expected.http_cached_requests == observed_records
 
         # HTTP Responses
-        rows = utilities.query_db(db, (
+        rows = db_utils.query_db(db, (
             "SELECT url, referrer, is_cached FROM http_responses "
             "WHERE visit_id = 2"))
         observed_records = set()
@@ -80,7 +81,7 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_http_stacktrace(self):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
         db = self.visit(test_url, sleep_after=3)
-        rows = utilities.query_db(db, (
+        rows = db_utils.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests"))
         observed_records = set()
         for row in rows:
@@ -100,7 +101,7 @@ class TestHTTPInstrument(OpenWPMTest):
         # stacktrace should be empty for requests NOT triggered by scripts
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
         db = self.visit(test_url, sleep_after=3)
-        rows = utilities.query_db(db, (
+        rows = db_utils.query_db(db, (
             "SELECT url, req_call_stack FROM http_requests"))
         for row in rows:
             _, stacktrace = row
@@ -112,7 +113,7 @@ class TestHTTPInstrument(OpenWPMTest):
         self.visit(test_url, str(tmpdir), sleep_after=3)
         expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
                            'a6475af1ad58b55cf781ca5e1218c7b1'}
-        for chash, content in utilities.get_javascript_content(str(tmpdir)):
+        for chash, content in db_utils.get_javascript_content(str(tmpdir)):
             pyhash = hashlib.md5(content).hexdigest()
             assert pyhash == chash  # Verify expected key (md5 of content)
             assert chash in expected_hashes
@@ -137,7 +138,7 @@ class TestPOSTInstrument(OpenWPMTest):
 
     def get_post_requests_from_db(self, db):
         """Query the crawl database and return the POST requests."""
-        return utilities.query_db(db, "SELECT * FROM http_requests\
+        return db_utils.query_db(db, "SELECT * FROM http_requests\
                                        WHERE method = 'POST'")
 
     def get_post_request_body_from_db(self, db):
