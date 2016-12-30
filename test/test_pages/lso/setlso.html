@@ -4,15 +4,9 @@
 <title>Flash cookie example</title>
 </head>
 <body>
+<script type="text/javascript" src="../shared/utils.js"></script>
 <script type="text/javascript" src="flash-cookie.js"></script>
 <script type="text/javascript">
-  function getParameterByName(name) {
-	// Taken from http://stackoverflow.com/a/901144
-    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-      results = regex.exec(location.search);
-    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-  }
 
   FlashCookie.onReady(function (cookie) {
 	var lso_key = getParameterByName("lso_test_key"),

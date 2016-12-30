@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <script type="text/javascript" src="shared/utils.js"></script>
+    <title>POST request test page</title>
+    <script type="application/javascript">
+	  function start_test() {
+	    var enc_type = getParameterByName("encoding_type");
+	    console.log("encoding_type:", enc_type);
+	    var form = document.getElementById("email_form");
+	    form.setAttribute("enctype", enc_type);
+	    if (enc_type) {
+	      form.submit();
+	    } else {
+	      console.error("Can't find the encoding_type HTTP param, will not submit the form.");
+	    }
+	  }
+  	</script>
+  </head>
+  <body onload="start_test()">
+    <p>Submit a form with the given encoding type in the URL params.</p>
+    <!-- start_test will the "enc_type" attribute to the form -->
+    <form id= "email_form" action="" method="post">
+      <input type="email" id="email" name="email" value="test@example.com" /><br />
+      <input type="text" id="username" name="username" value="name surname+" /><br />
+      <textarea id="multiline_text" name="multiline_text" />line1
+
+line2 line2_word2</textarea> <br />            
+	  <input type="submit" value="Submit" />
+	</form>
+	<p>Automated tests uses the following URLs to submit data in different encodings</p>
+  <ul>
+  <li><a href="/test_pages/post_request.html?encoding_type=application/x-www-form-urlencoded">application/x-www-form-urlencoded</a></li>
+  <li><a href="/test_pages/post_request.html?encoding_type=text/plain">text/plain</a></li>
+  <li><a href="/test_pages/post_request.html?encoding_type=multipart/form-data">multipart/form-data</a></li>
+  </ul>
+  </body>
+</html>

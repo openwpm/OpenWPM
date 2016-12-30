@@ -61,9 +61,10 @@ bodies are saved to `javascript.ldb`. The SQLite schema specified by:
 for their measurement data (see
 [extension tables](https://github.com/citp/OpenWPM/tree/master/automation/Extension/firefox/data)).
 
-* HTTP Request and Response Headers
+* HTTP Request and Response Headers, POST request bodies
     * Set `browser_params['http_instrument'] = True`
     * Data is saved to the `http_requests` and `http_responses` tables.
+    * OCSP POST request bodies are not recorded
     * Note: request and response headers for cached content are also saved,
         with the exception of images.
         See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).

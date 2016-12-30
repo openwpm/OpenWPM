@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page - POST request using AJAX</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"></script>
+    <script type="text/javascript" src="shared/utils.js"></script>
+    <script type="application/javascript">
+
+	    function send_form_data() {
+	      // Use "FormData"
+	      var formData = new FormData();
+	      formData.append("email", "test@example.com");
+	      formData.append("username", "name surname+");
+	      var request = new XMLHttpRequest();
+	      request.open("POST", "/bogus_submit");
+	      request.send(formData);
+	    }
+
+	    function send_binary_data(){
+	      // Taken from: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data#Sending_typed_arrays_as_binary_data
+	      var myArray = new ArrayBuffer(100);
+	      var longInt8View = new Uint8Array(myArray);
+
+	      for (var i=0; i< longInt8View.length; i++) {
+	        longInt8View[i] = i % 255;
+	      }
+
+	      var xhr = new XMLHttpRequest;
+	      xhr.open("POST", "ajax_post.html", false);
+	      xhr.send(myArray);
+	    }
+
+      $(document).ready(function(){
+        var format = getParameterByName("format");
+        if (format == "formData") {
+          send_form_data();
+        } else if (format == "object") {
+          var post_obj = {email:"test@example.com", username:"name surname+"};
+          $.post("bogus_submit.html", post_obj);
+        } else if (format == "noKeyValue") {
+          $.post("bogus_submit.html", 'test@example.com + name surname');
+        } else if (format == "noKeyValueBase64") {
+          $.post("bogus_submit.html", btoa('test@example.com + name surname'));
+        } else if (format == "binary") {
+          send_binary_data();
+        }
+      });
+    </script>
+  </head>
+  <body>
+  <p>Automated tests uses the following URLs to submit data in different formats using AJAX POST</p>
+  <ul>
+  <li><a href="/test_pages/post_request_ajax.html?format=formData">FormData</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=object">JS Object</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=noKeyValue">No Key Value (string)</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=noKeyValueBase64">No Key Value (Base64 encoded string)</a></li>
+  <li><a href="/test_pages/post_request_ajax.html?format=binary">Binary data</a></li>
+  </ul>
+  </body>
+</html>
