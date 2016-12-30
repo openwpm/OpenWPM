@@ -3,5 +3,6 @@
     "log_directory": "~/openwpm/",
     "database_name": "crawl-data.sqlite",
     "log_file": "openwpm.log",
-    "failure_limit": null
+    "failure_limit": null,
+    "testing": false
 }

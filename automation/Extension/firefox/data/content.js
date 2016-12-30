@@ -68,6 +68,9 @@ function getPageScript() {
      * Instrumentation helpers
      */
 
+    var testing = document.currentScript.getAttribute('data-testing');
+    console.log("Currently testing?",testing);
+
     // Recursively generates a path for an element
     function getPathToDomElement(element, visibilityAttr=false) {
       if(element == document.body)
@@ -391,6 +394,9 @@ function getPageScript() {
         }
       }
     }
+    if (testing) {
+      window.instrumentObject = instrumentObject;
+    }
 
     function instrumentObjectProperty(object, objectName, propertyName, logSettings={}) {
       try {
@@ -591,5 +597,6 @@ document.addEventListener(event_id, function (e) {
 });
 
 insertScript(getPageScript(), {
-  event_id: event_id
+  event_id: event_id,
+  testing: self.options.testing
 });

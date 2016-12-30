@@ -30,6 +30,7 @@ exports.main = function(options, callbacks) {
       cp_instrument:true,
       http_instrument:true,
       save_javascript:true,
+      testing:true,
       crawl_id:''
     };
   }
@@ -54,7 +55,7 @@ exports.main = function(options, callbacks) {
   }
   if (config['js_instrument']) {
     loggingDB.logDebug("Javascript instrumentation enabled");
-    jsInstrument.run(config['crawl_id']);
+    jsInstrument.run(config['crawl_id'], config['testing']);
   }
   if (config['cp_instrument']) {
     loggingDB.logDebug("Content Policy instrumentation enabled");
