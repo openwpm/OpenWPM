@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <script type="text/javascript" src="shared/utils.js"></script>
+    <title>File upload form test page</title>
+    <script type="application/javascript">
+	  function start_test() {
+	    var form = document.getElementById("file_upload_form");
+	    form.submit();
+	  }
+  	</script>
+  </head>
+  <body onload="setTimeout(start_test, 3000)"> <!-- Wait 3 seconds for selenium to fill in the file inputs -->
+    <p>Submit a form with the given encoding type in the URL params.</p>
+    <!-- start_test will the "enc_type" attribute to the form -->
+    <form id= "file_upload_form" action="" method="post" enctype="multipart/form-data">
+      <input type="text" id="username" name="username" value="name surname+" /><br />
+      <input type="file" id="upload-css" name="upload-css" /><br />
+      <input type="file" id="upload-img" name="upload-img" /><br />
+      <input type="submit" value="Submit" />
+	</form>
+  </body>
+</html>
