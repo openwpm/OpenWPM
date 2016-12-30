@@ -194,7 +194,7 @@ function getPageScript() {
         var columnNo = items[items.length-1];
         var lineNo = items[items.length-2];
         var scriptFileName = items[items.length-3] || '';
-        var lineNoIdx = scriptFileName.indexOf(" line ");  // line in the URL means eval or Functi    on
+        var lineNoIdx = scriptFileName.indexOf(" line ");  // line in the URL means eval or Function
         if (lineNoIdx == -1){
           scriptUrl = scriptFileName;  // TODO: sometimes we have filename only, e.g. XX.js
         }else{
