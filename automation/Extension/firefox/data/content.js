@@ -351,19 +351,32 @@ function getPageScript() {
      *  Direct instrumentation of javascript objects
      */
 
-    // Use for objects or object prototypes
-    // Set the `prototype` flag for prototypes
-    // logSettings options
-    // -------------------
-    //   propertiesToInstrument : Array
-    //     An array of properties to instrument on this object. Default is all properties.
-    //   excludedProperties : Array
-    //     Properties excluded from instrumentation. Default is an empty array.
-    //   logCallStack : boolean
-    //     Set to true save the call stack info with each property call. Default is false.
-    //   logFunctionsAsStrings : boolean
-    //     Set to true to save functional arguments as strings during argument serialization. Default is false.
     function instrumentObject(object, objectName, prototype=false, logSettings={}) {
+      // Use for objects or object prototypes
+      //
+      // Parameters
+      // ----------
+      //   prototype : boolean
+      //     Set to `true` when instrumenting the prototype of the object to be
+      //     monitored. Default is `false`.
+      //   logSettings : Object
+      //     Option object that can be used to specify additional logging
+      //     configurations. See available options below.
+      //
+      // logSettings options
+      // -------------------
+      //   propertiesToInstrument : Array
+      //     An array of properties to instrument on this object. Default is
+      //     all properties.
+      //   excludedProperties : Array
+      //     Properties excluded from instrumentation. Default is an empty
+      //     array.
+      //   logCallStack : boolean
+      //     Set to true save the call stack info with each property call.
+      //     Default is `false`.
+      //   logFunctionsAsStrings : boolean
+      //     Set to true to save functional arguments as strings during
+      //     argument serialization. Default is `false`.
       var properties = logSettings.propertiesToInstrument ?
         logSettings.propertiesToInstrument : Object.getPropertyNames(object);
       for (var i = 0; i < properties.length; i++) {
@@ -418,39 +431,52 @@ function getPageScript() {
     function logProperty(object, objectName, property, logSettings) {
       var propDesc = Object.getPropertyDescriptor(object, property);
       if (!propDesc){
-        console.log("logProperty error", objectName, property, object);
+        console.error("Property descriptor not found for", objectName, property, object);
         return;
       }
       // store the original getter in the closure
       var originalGetter = propDesc.get;
       var originalSetter = propDesc.set;
-      // TODO what if the getter is undefined
+      var originalValue = propDesc.value;
       Object.defineProperty(object, property, {
         configurable: true,
         get: (function() {
-          return function(){
-            if (!originalGetter){
-              console.log("originalGetter is undefined!")
+          return function() {
+            var origProperty;
+            var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
+            if (!originalGetter && !('value' in propDesc)) {
+              console.error("Property descriptor for", objectName + '.' + property,
+                            "doesn't have getter or value?");
               logValue(objectName + '.' + property, "", "get(failed)", callContext, logSettings);
               return;
+            } else if (!originalGetter) {
+              origProperty = originalValue;
+            } else {
+              origProperty = originalGetter.call(this);
             }
-            var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
-            var origProperty = originalGetter.call(this);
             logValue(objectName + '.' + property, origProperty, "get", callContext, logSettings);
             return origProperty;
           }
 
         })(),
         set: (function() {
-         return function(value) {
-           var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
-           if (!originalSetter) {
-             logValue(objectName + '.' + property, value, "set(failed)", callContext, logSettings);
-             return value;
-           }
-           logValue(objectName + '.' + property, value, "set", callContext, logSettings);
-           return originalSetter.call(this, value);
-         }
+          return function(value) {
+            var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
+            var returnValue;
+            if (!originalSetter && !('value' in propDesc)) {
+              console.error("Property descriptor for", objectName + '.' + property,
+                            "doesn't have setter or value?");
+              logValue(objectName + '.' + property, value, "set(failed)", callContext, logSettings);
+              return value;
+            } else if (!originalSetter) {
+              originalValue = value;
+              returnValue = value;
+            } else {
+              retunValue = originalSetter.call(this, value);
+            }
+            logValue(objectName + '.' + property, value, "set", callContext, logSettings);
+            return returnValue;
+          }
         })()
       });
     }
