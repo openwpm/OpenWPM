@@ -69,7 +69,7 @@ function getPageScript() {
      */
 
     // Recursively generates a path for an element
-    function getPathToDomElement(element) {
+    function getPathToDomElement(element, visibilityAttr=false) {
       if(element == document.body)
         return element.tagName;
       if(element.parentNode == null)
@@ -80,12 +80,17 @@ function getPageScript() {
       for (var i = 0; i < siblings.length; i++) {
         var sibling = siblings[i];
         if (sibling == element) {
-          var path = getPathToDomElement(element.parentNode);
+          var path = getPathToDomElement(element.parentNode, visibilityAttr);
           path += '/' + element.tagName + '[' + siblingIndex;
           path += ',' + element.id;
           path += ',' + element.className;
+          if (visibilityAttr) {
+            path += ',' + element.hidden;
+            path += ',' + element.style.display;
+            path += ',' + element.style.visibility;
+          }
           if(element.tagName == 'A')
-              path += ',' + element.href;
+            path += ',' + element.href;
           path += ']';
           return path;
         }
@@ -95,29 +100,40 @@ function getPageScript() {
     }
 
     // Helper for JSONifying objects
-    function serializeObject(object) {
+    function serializeObject(object, stringifyFunctions=false) {
+
       // Handle permissions errors
       try {
         if(object == null)
           return "null";
-        if(typeof object == "function")
-          return "FUNCTION";
+        if(typeof object == "function") {
+          if (stringifyFunctions)
+            return object.toString();
+          else
+            return "FUNCTION";
+        }
         if(typeof object != "object")
           return object;
         var seenObjects = [];
         return JSON.stringify(object, function(key, value) {
           if(value == null)
             return "null";
-          if(typeof value == "function")
-            return "FUNCTION";
+          if(typeof value == "function") {
+            if (stringifyFunctions)
+              return value.toString();
+            else
+              return "FUNCTION";
+          }
           if(typeof value == "object") {
             // Remove wrapping on content objects
             if("wrappedJSObject" in value) {
               value = value.wrappedJSObject;
             }
+
             // Serialize DOM elements
             if(value instanceof HTMLElement)
               return getPathToDomElement(value);
+
             // Prevent serialization cycles
             if(key == "" || seenObjects.indexOf(value) < 0) {
               seenObjects.push(value);
@@ -128,8 +144,7 @@ function getPageScript() {
           }
           return value;
         });
-      }
-      catch(error) {
+      } catch(error) {
         console.log("SERIALIZATION ERROR: " + error);
         return "SERIALIZATION ERROR: " + error;
       }
@@ -230,8 +245,10 @@ function getPageScript() {
       }
       return false;
     }
+
     // Prevent logging of gets arising from logging
     var inLog = false;
+
     // For gets, sets, etc. on a single value
     function logValue(instrumentedVariableName, value, operation, callContext, logSettings) {
       if(inLog)
@@ -247,7 +264,7 @@ function getPageScript() {
       var msg = {
         operation: operation,
         symbol: instrumentedVariableName,
-        value: serializeObject(value),
+        value: serializeObject(value, !!logSettings.logFunctionsAsStrings),
         scriptUrl: callContext.scriptUrl,
         scriptLine: callContext.scriptLine,
         scriptCol: callContext.scriptCol,
@@ -284,7 +301,7 @@ function getPageScript() {
         // Convert special arguments array to a standard array for JSONifying
         var serialArgs = [ ];
         for(var i = 0; i < args.length; i++)
-          serialArgs.push(serializeObject(args[i]));
+          serialArgs.push(serializeObject(args[i], !!logSettings.logFunctionsAsStrings));
         var msg = {
           operation: "call",
           symbol: instrumentedFunctionName,
@@ -335,9 +352,20 @@ function getPageScript() {
      */
 
     // Use for objects or object prototypes
-    // be sure to set the `prototype` flag for prototypes
+    // Set the `prototype` flag for prototypes
+    // logSettings options
+    // -------------------
+    //   propertiesToInstrument : Array
+    //     An array of properties to instrument on this object. Default is all properties.
+    //   excludedProperties : Array
+    //     Properties excluded from instrumentation. Default is an empty array.
+    //   logCallStack : boolean
+    //     Set to true save the call stack info with each property call. Default is false.
+    //   logFunctionsAsStrings : boolean
+    //     Set to true to save functional arguments as strings during argument serialization. Default is false.
     function instrumentObject(object, objectName, prototype=false, logSettings={}) {
-      var properties = Object.getPropertyNames(object);
+      var properties = logSettings.propertiesToInstrument ?
+        logSettings.propertiesToInstrument : Object.getPropertyNames(object);
       for (var i = 0; i < properties.length; i++) {
         if (logSettings.excludedProperties &&
             logSettings.excludedProperties.indexOf(properties[i]) > -1) {
