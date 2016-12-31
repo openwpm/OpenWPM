@@ -2,6 +2,17 @@ sudo: required
 language: python
 os: linux
 dist: trusty
+env:
+# See, https://docs.travis-ci.com/user/speeding-up-the-build/
+# We need a balanced distribution of the tests
+# Once we add and remove tests, this distribution may become unbalanced.
+# Feel free to move tests around to make the running time of the jobs
+# as close as possible.
+  - TESTS=test_[a-b,d-e]*
+# test_crawl.py is the longest running test.
+  - TESTS=test_c*
+  - TESTS=test_[f-h]*
+  - TESTS=test_[i-z]*
 git:
   depth: 3
 before_install:
@@ -13,4 +24,4 @@ install:
 before_script:
   - cd test
 script:
-  - py.test -s -v
+  - py.test -s -v --durations=10 $TESTS
