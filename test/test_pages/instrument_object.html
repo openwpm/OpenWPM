@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument's instrumentObject method</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrument's instrumentObject method</h3>
+    <p> This page defines several types of objects and tests the js
+    instrument's instrumentObject() method. <br/>
+    NOTE: The platform config option `manager_params['testing']` must be set
+    to True otherwise the instrumentObject method won't be exposed to this
+    test script.
+    </p>
+    <script type="text/javascript">
+      function interactWithObjects() {
+        // get and set prop1 (data property)
+        console.log("prop1 before set",window.test.prop1);
+        window.test.prop1 = 'blah';
+        console.log("prop1 after set",window.test.prop1);
+
+        // get and set prop2 (accessor property)
+        console.log("prop2 before set",window.test.prop2);
+        window.test.prop2 = 'blah';
+        console.log("prop2 after set",window.test.prop2);
+      }
+
+      // Build test objects
+
+      // create data property
+      window.test = {};
+      test.prop1 = 'prop1';
+      test.method1 = function() {
+        console.log('method1');
+      };
+
+      // create accessor property
+      var valueHolder = "default-value";
+      Object.defineProperty(test, 'prop2', {
+        get: function() { return valueHolder; },
+        set: function(newValue) { valueHolder = newValue; },
+        enumerable: true,
+        configurable: true
+      });
+
+      // Instrument objects
+      console.log("Instrumenting window.test!");
+      window.instrumentObject(window.test,"window.test");
+
+      interactWithObjects();
+    </script>
+  </body>
+</html>
