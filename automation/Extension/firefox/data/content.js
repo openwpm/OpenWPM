@@ -359,6 +359,10 @@ function getPageScript() {
       //
       // Parameters
       // ----------
+      //   object : Object
+      //     Object to instrument
+      //   objectName : String
+      //     Name of the object to be instrumented (saved to database)
       //   prototype : boolean
       //     Set to `true` when instrumenting the prototype of the object to be
       //     monitored. Default is `false`.
