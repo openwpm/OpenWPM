@@ -4,6 +4,7 @@ import utilities
 import expected
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
+from ..automation.utilities import db_utils
 from datetime import datetime
 # TODO: add test for setter instrumentation
 
@@ -18,7 +19,7 @@ class TestExtension(OpenWPMTest):
     def test_property_enumeration(self):
         test_url = utilities.BASE_TEST_URL + '/property_enumeration.html'
         db = self.visit(test_url)
-        rows = utilities.query_db(db,
+        rows = db_utils.query_db(db,
                                   "SELECT script_url, symbol FROM javascript")
         observed_symbols = set()
         for script_url, symbol in rows:
@@ -29,7 +30,7 @@ class TestExtension(OpenWPMTest):
     def test_canvas_fingerprinting(self):
         db = self.visit('/canvas_fingerprinting.html')
         # Check that all calls and methods are recorded
-        rows = utilities.get_javascript_entries(db)
+        rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for item in rows:
             observed_rows.add(item)
@@ -45,7 +46,7 @@ class TestExtension(OpenWPMTest):
         manager.get(url_a)
         manager.get(url_b)
         manager.close()
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
 
         # Construct dict mapping site_url to visit_id
@@ -53,12 +54,12 @@ class TestExtension(OpenWPMTest):
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        simple_a_visit_id = utilities.query_db(
+        simple_a_visit_id = db_utils.query_db(
                                     manager_params['db'],
                                     "SELECT visit_id FROM javascript WHERE "
                                     "symbol=?", ("window.navigator.userAgent",))
 
-        simple_b_visit_id = utilities.query_db(
+        simple_b_visit_id = db_utils.query_db(
                                     manager_params['db'],
                                     "SELECT visit_id FROM javascript WHERE "
                                     "symbol=?", ("window.navigator.platform",))
@@ -79,7 +80,7 @@ class TestExtension(OpenWPMTest):
     def test_webrtc_localip(self):
         db = self.visit('/webrtc_localip.html')
         # Check that all calls and methods are recorded
-        rows = utilities.get_javascript_entries(db)
+        rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for item in rows:
             if item[1] == "RTCPeerConnection.setLocalDescription":
@@ -94,7 +95,7 @@ class TestExtension(OpenWPMTest):
     def test_audio_fingerprinting(self):
         db = self.visit('/audio_fingerprinting.html')
         # Check that all calls and methods are recorded
-        rows = utilities.get_javascript_entries(db)
+        rows = db_utils.get_javascript_entries(db)
         observed_symbols = set()
         for item in rows:
             observed_symbols.add(item[1])
@@ -103,7 +104,7 @@ class TestExtension(OpenWPMTest):
     def test_js_call_stack(self):
         db = self.visit('/js_call_stack.html')
         # Check that all stack info are recorded
-        rows = utilities.get_javascript_entries(db, all_columns=True)
+        rows = db_utils.get_javascript_entries(db, all_columns=True)
         observed_rows = set()
         for item in rows:
             observed_rows.add(item[3:11])
@@ -114,17 +115,17 @@ class TestExtension(OpenWPMTest):
         MAX_TIMEDELTA = 30  # max time diff in seconds
         db = self.visit('/canvas_fingerprinting.html')
         utc_now = datetime.utcnow()  # OpenWPM stores timestamp in UTC time
-        rows = utilities.get_javascript_entries(db, all_columns=True)
+        rows = db_utils.get_javascript_entries(db, all_columns=True)
         assert len(rows)  # make sure we have some JS events captured
         for row in rows:
             js_time = datetime.strptime(row[14], "%Y-%m-%dT%H:%M:%S.%fZ")
             # compare UTC now and the timestamp recorded at the visit
             assert (utc_now - js_time).seconds < MAX_TIMEDELTA
-        assert not utilities.any_command_failed(db)
+        assert not db_utils.any_command_failed(db)
 
     def test_document_cookie_instrumentation(self):
         db = self.visit(utilities.BASE_TEST_URL + "/js_cookie.html")
-        rows = utilities.get_javascript_entries(db, all_columns=True)
+        rows = db_utils.get_javascript_entries(db, all_columns=True)
         # [3:12] exclude id and empty columns
         captured_cookie_calls = set([row[3:12] for row in rows])
         assert captured_cookie_calls == expected.document_cookie_read_write

@@ -1,6 +1,7 @@
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
+from ..automation.utilities import db_utils
 from openwpmtest import OpenWPMTest
 
 expected_lso_content_a = [
@@ -71,7 +72,7 @@ class TestStorageVectors(OpenWPMTest):
         manager.close()
 
         #  Check that some flash cookies are recorded
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT * FROM flash_cookies")
         lso_count = len(qry_res)
         assert lso_count == 2
@@ -98,7 +99,7 @@ class TestStorageVectors(OpenWPMTest):
         manager.close()
 
         # Check that some flash cookies are recorded
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT COUNT(*) FROM profile_cookies")
         prof_cookie_count = qry_res[0]
         assert prof_cookie_count > 0
@@ -115,7 +116,7 @@ class TestStorageVectors(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
         # Check that the JS cookie we stored is recorded
-        qry_res = utilities.query_db(manager_params['db'], "SELECT * FROM profile_cookies")
+        qry_res = db_utils.query_db(manager_params['db'], "SELECT * FROM profile_cookies")
         assert len(qry_res) == 1  # we store only one cookie
         cookies = qry_res[0]  # take the first cookie
         # compare URL, domain, name, value, origin, path

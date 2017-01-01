@@ -3,6 +3,7 @@ import utilities
 from openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation import CommandSequence
+from ..automation.utilities import db_utils
 
 
 class TestDisableWebdriverSelfId(OpenWPMTest):
@@ -60,7 +61,7 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
         cs.run_custom_function(check_webdriver_id_not_exists)
         manager.execute_command_sequence(cs)
         manager.close()
-        assert not utilities.any_command_failed(manager_params['db'])
+        assert not db_utils.any_command_failed(manager_params['db'])
 
     def test_define_property(self):
         manager_params, browser_params = self.get_config()
@@ -146,4 +147,4 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
         cs.run_custom_function(check_define_property_works)
         manager.execute_command_sequence(cs)
         manager.close()
-        assert not utilities.any_command_failed(manager_params['db'])
+        assert not db_utils.any_command_failed(manager_params['db'])
