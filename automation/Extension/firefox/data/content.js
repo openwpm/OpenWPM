@@ -516,6 +516,13 @@ function getPageScript() {
 
     // Access to webRTC
     instrumentObject(window.RTCPeerConnection.prototype,"RTCPeerConnection", true);
+    
+    //Access to AudioContent
+    
+    instrumentObject(window.AudioContext.prototype, "AudioContext", true);
+    instrumentObject(window.webkitAudioContext.prototype, "webkitAudioContext", true);
+    instrumentObject(window.window.webkitOfflineAudioContext.prototype, "window.webkitOfflineAudioContext", true);
+    instrumentObject(window.OfflineAudioContext.prototype, "OfflineAudioContext", true);
 
     // Access to Audio API
     instrumentObject(window.AudioContext.prototype, "AudioContext", true);
