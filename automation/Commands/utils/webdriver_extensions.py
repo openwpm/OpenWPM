@@ -9,7 +9,7 @@ from urlparse import urljoin
 import random
 import time
 
-import domain_utils as du
+from ...utilities import domain_utils as du
 import XPathUtil
 
 #### Basic functions

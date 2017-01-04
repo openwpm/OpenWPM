@@ -4,7 +4,7 @@ import pytest
 import os
 
 from ..automation import TaskManager
-import utilities
+from ..automation.utilities import domain_utils, db_utils
 from openwpmtest import OpenWPMTest
 
 
@@ -31,7 +31,7 @@ TEST_SITES = [
     'http://yahoo.co.jp'
 ]
 
-psl = utilities.get_psl()
+psl = domain_utils.get_psl()
 
 
 class TestCrawl(OpenWPMTest):
@@ -77,14 +77,14 @@ class TestCrawl(OpenWPMTest):
         crawl_db = manager_params['db']
 
         # Grab urls from crawl database
-        rows = utilities.query_db(crawl_db, "SELECT url FROM http_requests")
+        rows = db_utils.query_db(crawl_db, "SELECT url FROM http_requests")
         req_ps = set()  # visited domains from http_requests table
         for url, in rows:
             req_ps.add(psl.get_public_suffix(urlparse(url).hostname))
 
         hist_ps = set()  # visited domains from CrawlHistory Table
         successes = dict()
-        rows = utilities.query_db(crawl_db, "SELECT arguments, bool_success "
+        rows = db_utils.query_db(crawl_db, "SELECT arguments, bool_success "
                                   "FROM CrawlHistory WHERE command='GET'")
         for url, success in rows:
             ps = psl.get_public_suffix(urlparse(url).hostname)
@@ -93,7 +93,7 @@ class TestCrawl(OpenWPMTest):
 
         # Grab urls from Firefox database
         profile_ps = set()  # visited domains from firefox profile
-        rows = utilities.query_db(ff_db, "SELECT url FROM moz_places")
+        rows = db_utils.query_db(ff_db, "SELECT url FROM moz_places")
         for host, in rows:
             try:
                 profile_ps.add(psl.get_public_suffix(urlparse(host).hostname))
@@ -112,20 +112,20 @@ class TestCrawl(OpenWPMTest):
                 continue
 
             # Get the visit id for the url
-            rows = utilities.query_db(crawl_db,
+            rows = db_utils.query_db(crawl_db,
                                       "SELECT visit_id FROM site_visits "
                                       "WHERE site_url = ?",
                                       ('http://' + url,))
             visit_id = rows[0]
 
-            rows = utilities.query_db(crawl_db,
+            rows = db_utils.query_db(crawl_db,
                                       "SELECT COUNT(*) FROM http_responses "
                                       "WHERE visit_id = ?",
                                       (visit_id,))
             if rows[0] > 1:
                 continue
 
-            rows = utilities.query_db(crawl_db,
+            rows = db_utils.query_db(crawl_db,
                                       "SELECT response_status, location FROM "
                                       "http_responses WHERE visit_id = ?",
                                       (visit_id,))

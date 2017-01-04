@@ -4,6 +4,7 @@ import os
 import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
+from ..automation.utilities import db_utils
 from openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'
@@ -41,7 +42,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs_b)
         manager.close()
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT site_url FROM site_visits")
 
         # We had two separate page visits
@@ -66,7 +67,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs_b)
         manager.close()
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
 
         # Construct dict mapping site_url to visit_id
@@ -74,22 +75,22 @@ class TestSimpleCommands(OpenWPMTest):
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_requests"
                                      " WHERE url = ?", (url_a,))
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_requests"
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_a,))
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
@@ -110,7 +111,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs_b)
         manager.close()
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT site_url FROM site_visits")
 
         # We had two separate page visits
@@ -140,7 +141,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs_b)
         manager.close()
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
 
         # Construct dict mapping site_url to visit_id
@@ -148,22 +149,22 @@ class TestSimpleCommands(OpenWPMTest):
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_requests"
                                      " WHERE url = ?", (url_a,))
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_requests"
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_a,))
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
@@ -175,17 +176,17 @@ class TestSimpleCommands(OpenWPMTest):
         # 4) A link to www.google.com
         # 5) A link to example.com?localtest.me
         # We should see page visits for 1 and 2, but not 3-5.
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_c,))
         assert qry_res[0][0] == visit_ids[url_a]
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_d,))
         assert qry_res[0][0] == visit_ids[url_a]
 
         # We expect 4 urls: a,c,d and a favicon request
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT COUNT(DISTINCT url) FROM http_responses"
                                      " WHERE visit_id = ?", (visit_ids[url_a],))
         assert qry_res[0][0] == 4
@@ -206,7 +207,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.browse(url_b, num_links=1, sleep=1)
         manager.close()
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id, site_url FROM site_visits")
 
         # Construct dict mapping site_url to visit_id
@@ -214,22 +215,22 @@ class TestSimpleCommands(OpenWPMTest):
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_requests"
                                      " WHERE url = ?", (url_a,))
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_requests"
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_a,))
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_b,))
         assert qry_res[0][0] == visit_ids[url_b]
@@ -241,17 +242,17 @@ class TestSimpleCommands(OpenWPMTest):
         # 4) A link to www.google.com
         # 5) A link to example.com?localtest.me
         # We should see page visits for 1 and 2, but not 3-5.
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_c,))
         assert qry_res[0][0] == visit_ids[url_a]
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT visit_id FROM http_responses"
                                      " WHERE url = ?", (url_d,))
         assert qry_res[0][0] == visit_ids[url_a]
 
         # We expect 4 urls: a,c,d and a favicon request
-        qry_res = utilities.query_db(manager_params['db'],
+        qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT COUNT(DISTINCT url) FROM http_responses"
                                      " WHERE visit_id = ?", (visit_ids[url_a],))
         assert qry_res[0][0] == 4

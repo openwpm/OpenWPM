@@ -5,11 +5,13 @@ import os
 from ..automation import TaskManager
 from ..automation.Errors import BrowserConfigError
 from ..automation.utilities.platform_utils import fetch_adblockplus_list
+from ..automation.utilities import domain_utils, db_utils
+
 import utilities
 import expected
 from openwpmtest import OpenWPMTest
 
-psl = utilities.get_psl()
+psl = domain_utils.get_psl()
 
 
 class TestABP(OpenWPMTest):
@@ -37,7 +39,7 @@ class TestABP(OpenWPMTest):
         manager.close()
 
         db = os.path.join(data_dir, manager_params['database_name'])
-        rows = utilities.query_db(db, "SELECT url FROM http_requests")
+        rows = db_utils.query_db(db, "SELECT url FROM http_requests")
         urls = set()
         for url, in rows:
             ps1 = psl.get_public_suffix(urlparse(url).hostname)
