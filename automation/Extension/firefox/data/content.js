@@ -354,7 +354,7 @@ function getPageScript() {
      *  Direct instrumentation of javascript objects
      */
 
-    function instrumentObject(object, objectName, prototype=false, logSettings={}) {
+    function instrumentObject(object, objectName, logSettings={}) {
       // Use for objects or object prototypes
       //
       // Parameters
@@ -363,9 +363,6 @@ function getPageScript() {
       //     Object to instrument
       //   objectName : String
       //     Name of the object to be instrumented (saved to database)
-      //   prototype : boolean
-      //     Set to `true` when instrumenting the prototype of the object to be
-      //     monitored. Default is `false`.
       //   logSettings : Object
       //     Option object that can be used to specify additional logging
       //     configurations. See available options below.
@@ -391,10 +388,10 @@ function getPageScript() {
             logSettings.excludedProperties.indexOf(properties[i]) > -1) {
           continue;
         }
-        if (prototype) {
-          instrumentPrototypeProperty(object, objectName, properties[i], logSettings);
-        } else {
+        try {
           instrumentObjectProperty(object, objectName, properties[i], logSettings);
+        } catch(error) {
+          logErrorToConsole(error);
         }
       }
     }
@@ -402,89 +399,93 @@ function getPageScript() {
       window.instrumentObject = instrumentObject;
     }
 
-    function instrumentObjectProperty(object, objectName, propertyName, logSettings={}) {
-      try {
-        var property = object[propertyName];
-        if (typeof property == 'function') {
-          logFunction(object, objectName, propertyName, logSettings);
-        } else {
-          logProperty(object, objectName, propertyName, logSettings);
-        }
-      } catch(error) {
-        logErrorToConsole(error);
-      }
-    }
-
-    function instrumentPrototypeProperty(object, objectName, propertyName, logSettings={}) {
-      try {
-        var property = object[propertyName];
-        if (typeof property == 'function') {
-          logFunction(object, objectName, propertyName, logSettings);
-        }
-      } catch(err) {
-        // can't access static properties on prototypes
-        logProperty(object, objectName, propertyName, logSettings);
-      }
-    }
-
-    // Log calls to object/prototype methods
-    function logFunction(object, objectName, method, logSettings) {
-      var originalMethod = object[method];
-      object[method] = function () {
+    // Log calls to a given function
+    // This helper function returns a wrapper around `func` which logs calls
+    // to `func`. `objectName` and `methodName` are used strictly to identify
+    // which object method `func` is coming from in the logs
+    function instrumentFunction(objectName, methodName, func, logSettings) {
+      return function () {
         var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
-        logCall(objectName + '.' + method, arguments, callContext, logSettings);
-        return originalMethod.apply(this, arguments);
+        logCall(objectName + '.' + methodName, arguments, callContext, logSettings);
+        return func.apply(this, arguments);
       };
     }
 
     // Log properties of prototypes and objects
-    function logProperty(object, objectName, property, logSettings) {
-      var propDesc = Object.getPropertyDescriptor(object, property);
+    function instrumentObjectProperty(object, objectName, propertyName, logSettings={}) {
+
+      // Store original descriptor in closure
+      var propDesc = Object.getPropertyDescriptor(object, propertyName);
       if (!propDesc){
-        console.error("Property descriptor not found for", objectName, property, object);
+        console.error("Property descriptor not found for", objectName, propertyName, object);
         return;
       }
-      // store the original getter in the closure
+
+      // Instrument data or accessor property descriptors
       var originalGetter = propDesc.get;
       var originalSetter = propDesc.set;
       var originalValue = propDesc.value;
-      Object.defineProperty(object, property, {
+
+      // We overwrite both data and accessor properties as an instrumented
+      // accessor property
+      Object.defineProperty(object, propertyName, {
         configurable: true,
         get: (function() {
           return function() {
             var origProperty;
             var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
+
+            // get original value
             if (!originalGetter && !('value' in propDesc)) {
-              console.error("Property descriptor for", objectName + '.' + property,
+              console.error("Property descriptor for",
+                            objectName + '.' + propertyName,
                             "doesn't have getter or value?");
-              logValue(objectName + '.' + property, "", "get(failed)", callContext, logSettings);
+              logValue(objectName + '.' + propertyName, "",
+                  "get(failed)", callContext, logSettings);
               return;
-            } else if (!originalGetter) {
+            } else if (!originalGetter) { // if data property
               origProperty = originalValue;
-            } else {
+            } else { // if accessor property
               origProperty = originalGetter.call(this);
             }
-            logValue(objectName + '.' + property, origProperty, "get", callContext, logSettings);
-            return origProperty;
-          }
 
+            // log get
+            logValue(objectName + '.' + propertyName, origProperty,
+                "get", callContext, logSettings);
+
+            // return original value or an instrumented wrapper if a function
+            if (typeof origProperty == 'function') {
+              return instrumentFunction(objectName, propertyName, origProperty, logSettings);
+            } else {
+              return origProperty;
+            }
+          }
         })(),
         set: (function() {
           return function(value) {
             var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
             var returnValue;
+
+            // set new value to original setter/location
             if (!originalSetter && !('value' in propDesc)) {
-              console.error("Property descriptor for", objectName + '.' + property,
+              console.error("Property descriptor for",
+                            objectName + '.' + propertyName,
                             "doesn't have setter or value?");
-              logValue(objectName + '.' + property, value, "set(failed)", callContext, logSettings);
+              logValue(objectName + '.' + propertyName, value,
+                  "set(failed)", callContext, logSettings);
               return value;
-            } else if (!originalSetter) {
+            } else if (!originalSetter) { // if data property
               originalValue = value;
               returnValue = value;
-            } else {
+            } else { // if accessor property
               returnValue = originalSetter.call(this, value);
             }
-            logValue(objectName + '.' + property, value, "set", callContext, logSettings);
+
+            // log set
+            logValue(objectName + '.' + propertyName, value,
+                "set", callContext, logSettings);
+
+            // return new value
             return returnValue;
           }
         })()
@@ -536,7 +537,7 @@ function getPageScript() {
     windowProperties.forEach(function(property) {
       instrumentObjectProperty(window, "window", property);
     });
-    instrumentObject(window.Storage.prototype, "window.Storage", true);
+    instrumentObject(window.Storage.prototype, "window.Storage");
 
     // Access to document.cookie
     instrumentObjectProperty(window.document, "window.document", "cookie", {

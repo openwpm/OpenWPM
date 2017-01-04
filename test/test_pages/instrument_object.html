@@ -34,14 +34,19 @@
         console.log("prop3 after set",window.test.prop3);
 
         // call object method
-        console.log("method1",window.test.method1);
         window.test.method1('hello', {'world': true});
-        window.test.method1 = function() { console.log("hello world"); };
 
-        // TODO get and set not instrumented for methods
+        // overwrite a method and call
+        window.test.method1 = function(arg) {console.log("new method1", arg);};
+        window.test.method1('new argument');
 
-        // TODO calls not instrumented for functions set on previously
-        // non-function properties.
+        // overwrite a property with a function and call
+        window.test.prop1 = function(arg) {console.log("prop now method", arg);};
+        window.test.prop1('now accepting arugments');
+
+        // overwrite a function with property
+        window.test.method1 = 'now static';
+        console.log("method turned static",window.test.method1);
       }
 
       // Build test object
