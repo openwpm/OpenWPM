@@ -1,7 +1,7 @@
 from openwpmtest import OpenWPMTest
-import utilities
+from ..automation.utilities import db_utils
 
-gets_and_sets = {
+GETS_AND_SETS = {
     ("window.test.prop1", "get", "prop1"),
     ("window.test.prop1", "set", "blah1"),
     ("window.test.prop1", "get", "blah1"),
@@ -15,7 +15,8 @@ gets_and_sets = {
     ("window.test.prop3", "set", "blah3"),
     ("window.test.prop3", "get", "blah3")
 }
-method_calls = {
+
+METHOD_CALLS = {
     ("window.test.method1", "call", 0, "hello"),
     ("window.test.method1", "call", 1, "{\"world\":true}")
 }
@@ -32,7 +33,7 @@ class TestJSInstrument(OpenWPMTest):
     def test_instrument_object(self):
         """ Ensure instrumentObject logs all property gets, sets, and calls """
         db = self.visit('/instrument_object.html')
-        rows = utilities.get_javascript_entries(db)
+        rows = db_utils.get_javascript_entries(db)
         observed_gets_and_sets = set()
         observed_calls = set()
         for script_url, symbol, operation, value, pindex, pvalue in rows:
@@ -40,5 +41,5 @@ class TestJSInstrument(OpenWPMTest):
                 observed_gets_and_sets.add((symbol, operation, value))
             else:
                 observed_calls.add((symbol, operation, pindex, pvalue))
-        assert observed_calls == method_calls
-        assert observed_gets_and_sets == gets_and_sets
+        assert observed_calls == METHOD_CALLS
+        assert observed_gets_and_sets == GETS_AND_SETS
