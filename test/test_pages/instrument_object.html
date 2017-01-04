@@ -13,38 +13,71 @@
     </p>
     <script type="text/javascript">
       function interactWithObjects() {
-        // get and set prop1 (data property)
+        // get and set prop1 (data property 1)
         console.log("prop1 before set",window.test.prop1);
-        window.test.prop1 = 'blah';
+        window.test.prop1 = 'blah1';
         console.log("prop1 after set",window.test.prop1);
 
-        // get and set prop2 (accessor property)
+        // get and set prop2 (data property 2)
         console.log("prop2 before set",window.test.prop2);
-        window.test.prop2 = 'blah';
+        window.test.prop2 = 'blah2';
         console.log("prop2 after set",window.test.prop2);
+
+        // get and set objProp (data property)
+        console.log("objProp before set",window.test.objProp);
+        window.test.objProp = {'key': 'value'};
+        console.log("objProp after set",window.test.objProp);
+
+        // get and set prop3 (accessor property)
+        console.log("prop3 before set",window.test.prop3);
+        window.test.prop3 = 'blah3';
+        console.log("prop3 after set",window.test.prop3);
+
+        // call object method
+        console.log("method1",window.test.method1);
+        window.test.method1('hello', {'world': true});
+        window.test.method1 = function() { console.log("hello world"); };
+
+        // TODO get and set not instrumented for methods
+
+        // TODO calls not instrumented for functions set on previously
+        // non-function properties.
       }
 
-      // Build test objects
+      // Build test object
+      window.test = {};
+
+      // create a method
+      test.method1 = function(arg1, arg2) {
+        console.log('method1', arg1, arg2);
+      };
 
       // create data property
-      window.test = {};
       test.prop1 = 'prop1';
-      test.method1 = function() {
-        console.log('method1');
-      };
+
+      // create an object data property
+      test.objProp = {'hello': 'world'};
+
+      // create data property with defineProperty
+      Object.defineProperty(test, 'prop2', {
+        value: 'prop2',
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
 
       // create accessor property
       var valueHolder = "default-value";
-      Object.defineProperty(test, 'prop2', {
+      Object.defineProperty(test, 'prop3', {
         get: function() { return valueHolder; },
         set: function(newValue) { valueHolder = newValue; },
         enumerable: true,
         configurable: true
       });
 
-      // Instrument objects
+      // Instrument object
       console.log("Instrumenting window.test!");
-      window.instrumentObject(window.test,"window.test");
+      window.instrumentObject(window.test, "window.test");
 
       interactWithObjects();
     </script>

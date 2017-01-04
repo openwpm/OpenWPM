@@ -412,8 +412,8 @@ function getPageScript() {
         }
       } catch(error) {
         logErrorToConsole(error);
-        }
       }
+    }
 
     function instrumentPrototypeProperty(object, objectName, propertyName, logSettings={}) {
       try {
@@ -482,7 +482,7 @@ function getPageScript() {
               originalValue = value;
               returnValue = value;
             } else {
-              retunValue = originalSetter.call(this, value);
+              returnValue = originalSetter.call(this, value);
             }
             logValue(objectName + '.' + property, value, "set", callContext, logSettings);
             return returnValue;
