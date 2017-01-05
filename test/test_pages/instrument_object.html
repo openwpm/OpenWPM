@@ -12,7 +12,12 @@
     test script.
     </p>
     <script type="text/javascript">
-      function interactWithObjects() {
+      function interactWithTestObjects() {
+
+        /*
+         * Interact with object instrumented non-recursively
+         */
+
         // get and set prop1 (data property 1)
         console.log("prop1 before set",window.test.prop1);
         window.test.prop1 = 'blah1';
@@ -47,6 +52,56 @@
         // overwrite a function with property
         window.test.method1 = 'now static';
         console.log("method turned static",window.test.method1);
+
+        // get nested object (should be recorded)
+        console.log("nested object",window.test.nestedObj);
+
+        // interact with nested object (should not be recorded)
+        console.log("nested prop1",window.test.nestedObj.prop1);
+        console.log("nested prop2",window.test.nestedObj.prop2);
+        console.log("nested method call",window.test.nestedObj.method1());
+
+        /*
+         * Interact with object instrumented recursively
+         */
+
+        // get and set of nested property
+        console.log("window.test2.nestedObj.prop1 (before set)=",
+            window.test2.nestedObj.prop1);
+        window.test2.nestedObj.prop1 = "updatedprop1";
+        console.log("window.test2.nestedObj.prop1 (after set)=",
+            window.test2.nestedObj.prop1);
+        console.log("window.test2.nestedObj.prop2 =",
+            window.test2.nestedObj.prop2);
+
+        // get, call, and set of nested method
+        console.log("window.test2.nestedObj.method1 =",
+            window.test2.nestedObj.method1);
+        window.test2.nestedObj.method1('arg-before');
+        window.test2.nestedObj.method1 = function (arg) {console.log("Updated", arg);};
+        window.test2.nestedObj.method1('arg-after');
+
+        // get and set of double nested property
+        console.log("window.test2.nestedObj.doubleNested.prop1 (before set)= ",
+            window.test2.nestedObj.doubleNested.prop1);
+        window.test2.nestedObj.doubleNested.prop1 = 'doubleprop1';
+        console.log("window.test2.nestedObj.doubleNested.prop1 (after set)= ",
+            window.test2.nestedObj.doubleNested.prop1);
+
+        // get, call, and set of double nested method
+        console.log("window.test2.nestedObj.doubleNested.method1 =",
+            window.test2.nestedObj.doubleNested.method1);
+        window.test2.nestedObj.doubleNested.method1('blah');
+        window.test2.nestedObj.doubleNested.method1 = function(arg) {
+          console.log("doubleNestedupdated",arg);
+        };
+        window.test2.nestedObj.doubleNested.method1('blah');
+
+        // test recursion limit (default is 5)
+        console.log("level 5 depth property = ",
+            window.test2.l1.l2.l3.l4.l5.prop); // should log
+        console.log("level 6 depth property = ",
+            window.test2.l1.l2.l3.l4.l5.l6.prop); // should not log
       }
 
       // Build test object
@@ -80,11 +135,47 @@
         configurable: true
       });
 
-      // Instrument object
+      // add a nested object property
+      window.test.nestedObj = {};
+      window.test.nestedObj.prop1 = 'default1';
+      window.test.nestedObj.prop2 = 'default2';
+      window.test.nestedObj.method1 = function() {
+        console.log("nestedObj call 1");
+      }
+
+      // Build a nested test object to be instrumented recursively
+      window.test2 = {};
+      window.test2.nestedObj = {};
+      window.test2.nestedObj.prop1 = 'default1';
+      window.test2.nestedObj.prop2 = 'default2';
+      window.test2.nestedObj.method1 = function(arg) {
+        console.log("nestedObj call 1",arg);
+      }
+      window.test2.nestedObj.doubleNested = {};
+      window.test2.nestedObj.doubleNested.prop1 = 'double default';
+      window.test2.nestedObj.doubleNested.method1 = function(arg) {
+        console.log("doubleNested call 1",arg);
+      };
+
+      // Nest to default instrumentation depth
+      window.test2.l1 = {};
+      window.test2.l1.l2 = {};
+      window.test2.l1.l2.l3 = {};
+      window.test2.l1.l2.l3.l4 = {};
+      window.test2.l1.l2.l3.l4.l5 = {};
+      window.test2.l1.l2.l3.l4.l5.prop = 'level5prop';
+      window.test2.l1.l2.l3.l4.l5.l6 = {};
+      window.test2.l1.l2.l3.l4.l5.l6.prop = 'level6prop';
+
+      // Instrument object non-recursively
       console.log("Instrumenting window.test!");
       window.instrumentObject(window.test, "window.test");
 
-      interactWithObjects();
+      // Instrument object recursively
+      console.log("Instrumenting window.test2!");
+      window.instrumentObject(window.test2, "window.test2", {'recursive': true});
+
+      interactWithTestObjects();
     </script>
   </body>
 </html>

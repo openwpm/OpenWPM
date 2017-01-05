@@ -268,7 +268,7 @@ class TestExtension(OpenWPMTest):
         observed_rows = set()
         for item in rows:
             if (item[1] == "RTCPeerConnection.setLocalDescription" and
-                    item[2] == 'call' and item[5] == 0):
+                    item[2] == 'call' and item[4] == 0):
                 sdp_offer = item[5]
                 self.check_webrtc_sdp_offer(sdp_offer)
             else:

@@ -354,6 +354,18 @@ function getPageScript() {
      *  Direct instrumentation of javascript objects
      */
 
+    function isObject(object, propertyName) {
+      try {
+        var property = object[propertyName];
+      } catch(error) {
+        return false;
+      }
+      if (property === null) { // null is type "object"
+        return false;
+      }
+      return typeof property == 'object';
+    }
+
     function instrumentObject(object, objectName, logSettings={}) {
       // Use for objects or object prototypes
       //
@@ -364,10 +376,10 @@ function getPageScript() {
       //   objectName : String
       //     Name of the object to be instrumented (saved to database)
       //   logSettings : Object
-      //     Option object that can be used to specify additional logging
+      //     (optional) object that can be used to specify additional logging
       //     configurations. See available options below.
       //
-      // logSettings options
+      // logSettings options (all optional)
       // -------------------
       //   propertiesToInstrument : Array
       //     An array of properties to instrument on this object. Default is
@@ -381,12 +393,40 @@ function getPageScript() {
       //   logFunctionsAsStrings : boolean
       //     Set to true to save functional arguments as strings during
       //     argument serialization. Default is `false`.
+      //   recursive : boolean
+      //     Set to `true` to recursively instrument all object properties of
+      //     the given `object`. Default is `false`
+      //     NOTE:
+      //       (1)`logSettings['propertiesToInstrument']` does not propagate
+      //           to sub-objects.
+      //       (2) Sub-objects of prototypes can not be instrumented
+      //           recursively as these properties can not be accessed
+      //           until an instance of the prototype is created.
+      //   depth : integer
+      //     Recursion limit when instrumenting object recursively.
+      //     Default is `5`.
       var properties = logSettings.propertiesToInstrument ?
         logSettings.propertiesToInstrument : Object.getPropertyNames(object);
       for (var i = 0; i < properties.length; i++) {
         if (logSettings.excludedProperties &&
             logSettings.excludedProperties.indexOf(properties[i]) > -1) {
           continue;
+        }
+        if (!!logSettings.recursive && properties[i] != '__proto__' &&
+            isObject(object, properties[i]) &&
+            (!('depth' in logSettings) || logSettings.depth > 0)) {
+
+          // set recursion limit to default if not specified
+          if (!('depth' in logSettings)) {
+            logSettings['depth'] = 5;
+          }
+          instrumentObject(object[properties[i]], objectName + '.' + properties[i], {
+                'excludedProperties': logSettings['excludedProperties'],
+                'logCallStack': logSettings['logCallStack'],
+                'logFunctionsAsStrings': logSettings['logFunctionsAsStrings'],
+                'recursive': logSettings['recursive'],
+                'depth': logSettings['depth'] - 1
+          });
         }
         try {
           instrumentObjectProperty(object, objectName, properties[i], logSettings);
@@ -498,7 +538,12 @@ function getPageScript() {
     // TODO: user should be able to choose what to instrument
 
     // Access to navigator properties
-    var navigatorProperties = [ "appCodeName", "appName", "appVersion", "buildID", "cookieEnabled", "doNotTrack", "geolocation", "language", "languages", "onLine", "oscpu", "platform", "product", "productSub", "userAgent", "vendorSub", "vendor" ];
+    var navigatorProperties = [ "appCodeName", "appName", "appVersion",
+                                "buildID", "cookieEnabled", "doNotTrack",
+                                "geolocation", "language", "languages",
+                                "onLine", "oscpu", "platform", "product",
+                                "productSub", "userAgent", "vendorSub",
+                                "vendor" ];
     navigatorProperties.forEach(function(property) {
       instrumentObjectProperty(window.navigator, "window.navigator", property);
     });
@@ -516,7 +561,9 @@ function getPageScript() {
       for (var i = 0; i < window.navigator.plugins.length; i++) {
       let pluginName = window.navigator.plugins[i].name;
       pluginProperties.forEach(function(property) {
-        instrumentObjectProperty(window.navigator.plugins[pluginName], "window.navigator.plugins[" + pluginName + "]", property);
+        instrumentObjectProperty(
+            window.navigator.plugins[pluginName],
+            "window.navigator.plugins[" + pluginName + "]", property);
       });
     }
 
@@ -525,7 +572,9 @@ function getPageScript() {
     for (var i = 0; i < window.navigator.mimeTypes.length; i++) {
       let mimeTypeName = window.navigator.mimeTypes[i].type;
       mimeTypeProperties.forEach(function(property) {
-        instrumentObjectProperty(window.navigator.mimeTypes[mimeTypeName], "window.navigator.mimeTypes[" + mimeTypeName + "]", property);
+        instrumentObjectProperty(
+            window.navigator.mimeTypes[mimeTypeName],
+            "window.navigator.mimeTypes[" + mimeTypeName + "]", property);
       });
     }
     // Name, localStorage, and sessionsStorage logging
@@ -545,22 +594,28 @@ function getPageScript() {
     });
 
     // Access to canvas
-    instrumentObject(window.HTMLCanvasElement.prototype,"HTMLCanvasElement", true);
+    instrumentObject(window.HTMLCanvasElement.prototype,"HTMLCanvasElement");
 
-    var excludedProperties = [ "quadraticCurveTo", "lineTo", "transform", "globalAlpha", "moveTo", "drawImage", "setTransform", "clearRect", "closePath", "beginPath", "canvas", "translate" ];
-
-    instrumentObject(window.CanvasRenderingContext2D.prototype, "CanvasRenderingContext2D", true, excludedProperties);
+    var excludedProperties = [ "quadraticCurveTo", "lineTo", "transform",
+                               "globalAlpha", "moveTo", "drawImage",
+                               "setTransform", "clearRect", "closePath",
+                               "beginPath", "canvas", "translate" ];
+    instrumentObject(
+        window.CanvasRenderingContext2D.prototype,
+        "CanvasRenderingContext2D",
+        {'excludedProperties': excludedProperties}
+    );
 
     // Access to webRTC
-    instrumentObject(window.RTCPeerConnection.prototype,"RTCPeerConnection", true);
+    instrumentObject(window.RTCPeerConnection.prototype,"RTCPeerConnection");
 
     // Access to Audio API
-    instrumentObject(window.AudioContext.prototype, "AudioContext", true);
-    instrumentObject(window.OfflineAudioContext.prototype, "OfflineAudioContext", true);
-    instrumentObject(window.OscillatorNode.prototype, "OscillatorNode", true);
-    instrumentObject(window.AnalyserNode.prototype, "AnalyserNode", true);
-    instrumentObject(window.GainNode.prototype, "GainNode", true);
-    instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode", true);
+    instrumentObject(window.AudioContext.prototype, "AudioContext");
+    instrumentObject(window.OfflineAudioContext.prototype, "OfflineAudioContext");
+    instrumentObject(window.OscillatorNode.prototype, "OscillatorNode");
+    instrumentObject(window.AnalyserNode.prototype, "AnalyserNode");
+    instrumentObject(window.GainNode.prototype, "GainNode");
+    instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
 
     console.log("Successfully started all instrumentation.");
 
