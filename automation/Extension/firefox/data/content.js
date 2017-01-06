@@ -363,7 +363,7 @@ function getPageScript() {
       if (property === null) { // null is type "object"
         return false;
       }
-      return typeof property == 'object';
+      return typeof property === 'object';
     }
 
     function instrumentObject(object, objectName, logSettings={}) {
@@ -412,6 +412,9 @@ function getPageScript() {
             logSettings.excludedProperties.indexOf(properties[i]) > -1) {
           continue;
         }
+        // If `recursive` flag set we want to recursively instrument any
+        // object properties that aren't the prototype object. Only recurse if
+        // depth not set (at which point its set to default) or not at limit.
         if (!!logSettings.recursive && properties[i] != '__proto__' &&
             isObject(object, properties[i]) &&
             (!('depth' in logSettings) || logSettings.depth > 0)) {
@@ -476,17 +479,17 @@ function getPageScript() {
             var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
 
             // get original value
-            if (!originalGetter && !('value' in propDesc)) {
+            if (originalGetter) { // if accessor property
+              origProperty = originalGetter.call(this);
+            } else if ('value' in propDesc) { // if data property
+              origProperty = originalValue;
+            } else {
               console.error("Property descriptor for",
                             objectName + '.' + propertyName,
                             "doesn't have getter or value?");
               logValue(objectName + '.' + propertyName, "",
                   "get(failed)", callContext, logSettings);
               return;
-            } else if (!originalGetter) { // if data property
-              origProperty = originalValue;
-            } else { // if accessor property
-              origProperty = originalGetter.call(this);
             }
 
             // log get
@@ -507,18 +510,18 @@ function getPageScript() {
             var returnValue;
 
             // set new value to original setter/location
-            if (!originalSetter && !('value' in propDesc)) {
+            if (originalSetter) { // if accessor property
+              returnValue = originalSetter.call(this, value);
+            } else if ('value' in propDesc) { // if data property
+              originalValue = value;
+              returnValue = value;
+            } else {
               console.error("Property descriptor for",
                             objectName + '.' + propertyName,
                             "doesn't have setter or value?");
               logValue(objectName + '.' + propertyName, value,
                   "set(failed)", callContext, logSettings);
               return value;
-            } else if (!originalSetter) { // if data property
-              originalValue = value;
-              returnValue = value;
-            } else { // if accessor property
-              returnValue = originalSetter.call(this, value);
             }
 
             // log set
