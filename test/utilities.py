@@ -10,6 +10,7 @@ BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
                                          LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
 
+
 class MyTCPServer(SocketServer.TCPServer):
     """Subclass TCPServer to be able to reuse the same port (Errno 98)."""
     allow_reuse_address = True

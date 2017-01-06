@@ -90,6 +90,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             extension_config['leveldb_address'] = manager_params['ldb_address']
         else:
             extension_config['leveldb_address'] = None
+        extension_config['testing'] = manager_params['testing']
         with open(browser_profile_path + 'browser_params.json', 'w') as f:
             json.dump(extension_config, f)
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded" % browser_params['crawl_id'])

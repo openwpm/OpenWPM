@@ -1,27 +1,8 @@
 """ Contains lists of expected data and or rows for tests """
 from utilities import BASE_TEST_URL, BASE_TEST_URL_DOMAIN, BASE_TEST_URL_NOPATH
 
-# Navigator and Screen properties
-properties = {
-    "window.navigator.appCodeName",
-    "window.navigator.appName",
-    "window.navigator.appVersion",
-    "window.navigator.buildID",
-    "window.navigator.cookieEnabled",
-    "window.navigator.doNotTrack",
-    "window.navigator.geolocation",
-    "window.navigator.language",
-    "window.navigator.languages",
-    "window.navigator.onLine",
-    "window.navigator.oscpu",
-    "window.navigator.platform",
-    "window.navigator.product",
-    "window.navigator.productSub",
-    "window.navigator.userAgent",
-    "window.navigator.vendorSub",
-    "window.navigator.vendor",
-    "window.screen.pixelDepth",
-    "window.screen.colorDepth"}
+# XXX DO NOT PLACE NEW PROPERTIES HERE. Move anything you need to edit out
+# XXX of this file and into the respective test file. See Issue #73.
 
 # HTTP Requests and Responses Instrumentation
 # NOTE: The [System Principal] favicon request will change in future versions
@@ -194,47 +175,6 @@ call_stack_inject_image =\
      "async_cause": "null"
      }]
 
-# Canvas Fingerprinting DB calls and property sets
-CANVAS_TEST_URL = u"%s/canvas_fingerprinting.html" % BASE_TEST_URL
-
-canvas = {(CANVAS_TEST_URL,
-           u"HTMLCanvasElement.getContext", u"call", u"", 0, u"2d"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.textBaseline",
-           u"set", u"top", None, None),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.font", u"set",
-           u"14px 'Arial'", None, None),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.textBaseline",
-           u"set", u"alphabetic", None, None),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
-           u"set", u"#f60", None, None),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-           u"call", u"", 0, u"125"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-           u"call", u"", 1, u"1"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-           u"call", u"", 2, u"62"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-           u"call", u"", 3, u"20"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
-           u"set", u"#069", None, None),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-           u"call", u"", 0, u"BrowserLeaks,com <canvas> 1.0"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-           u"call", u"", 1, u"2"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-           u"call", u"", 2, u"15"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
-           u"set", u"rgba(102, 204, 0, 0.7)", None, None),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-           u"call", u"", 0, u"BrowserLeaks,com <canvas> 1.0"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-           u"call", u"", 1, u"4"),
-          (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-           u"call", u"", 2, u"17"),
-          (CANVAS_TEST_URL, u"HTMLCanvasElement.toDataURL", u"call",
-           u"", None, None)
-          }
-
 adblockplus = {
     "%s/abp/adblock_plus_test.html" % BASE_TEST_URL,
     # favicon request is made to URL without a path
@@ -256,38 +196,6 @@ lso_content = [u'%s/lso/setlso.html?lso_test_key=test_key&lso_test_value=REPLACE
                u'test_key',
                u'REPLACEME']
 
-WEBRTC_TEST_URL = u"%s/webrtc_localip.html" % BASE_TEST_URL
-
-webrtc_calls = ((WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
-                 u'call', u'', 0, u''),
-                (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
-                 u'call', u'', 1, u'{"reliable":false}'),
-                (WEBRTC_TEST_URL, u'RTCPeerConnection.onicecandidate',
-                 u'set', u'FUNCTION', None, None),
-                (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
-                 u'call', u'', 0, u''),
-                (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
-                 u'call', u'', 0, u'FUNCTION'),
-                (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
-                 u'call', u'', 1, u'FUNCTION'))
-
-# we expect these strings to be present in the WebRTC SDP
-webrtc_sdp_offer_strings = ("a=ice-options",
-                            "o=mozilla...THIS_IS_SDPARTA",
-                            "IN IP4",
-                            "a=fingerprint:sha-256",
-                            "a=ice-options:",
-                            "a=msid-semantic",
-                            "m=application",
-                            "a=sendrecv",
-                            "a=ice-pwd:",
-                            "a=ice-ufrag:",
-                            "a=mid:sdparta",
-                            "a=sctpmap:",
-                            "a=setup:",
-                            "a=ssrc:",
-                            "cname:")
-
 SET_PROP_TEST_PAGE = u'%s/set_property/set_property.js' % BASE_TEST_URL
 set_property = [(SET_PROP_TEST_PAGE,
                  u'5', u'3',
@@ -301,70 +209,3 @@ page_links = {
     (u'http://localtest.me:8000/test_pages/simple_a.html', u'http://localtest.me:8000/test_pages/simple_d.html'),
     (u'http://localtest.me:8000/test_pages/simple_a.html', u'http://example.com/test.html?localtest.me'),
 }
-
-# AudioContext and AudioNode symbols we expect from our test script
-audio = {
-    u"AudioContext.createOscillator",
-    u"AudioContext.createAnalyser",
-    u"AudioContext.createGain",
-    u"AudioContext.createScriptProcessor",
-    u"GainNode.gain",
-    u"OscillatorNode.type",
-    u"OscillatorNode.connect",
-    u"AnalyserNode.connect",
-    u"ScriptProcessorNode.connect",
-    u"AudioContext.destination",
-    u"GainNode.connect",
-    u"ScriptProcessorNode.onaudioprocess",
-    u"OscillatorNode.start",
-    u"AnalyserNode.frequencyBinCount",
-    u"AnalyserNode.getFloatFrequencyData",
-    u"AnalyserNode.disconnect",
-    u"ScriptProcessorNode.disconnect",
-    u"GainNode.disconnect",
-    u"OscillatorNode.stop"}
-
-JS_STACK_TEST_URL = u"%s/js_call_stack.html" % BASE_TEST_URL
-JS_STACK_TEST_SCRIPT_URL = u"%s/stack.js" % BASE_TEST_URL
-
-js_stack_calls = (
-    (JS_STACK_TEST_URL, u'1', u'1', u'', u'line 10 > eval', u'',
-     u'window.navigator.appName', u'get'),
-    (JS_STACK_TEST_SCRIPT_URL, u'3', u'5', u'js_check_navigator', u'', u'',
-     u'window.navigator.userAgent', u'get'),
-    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'', u'line 4 > eval', u'',
-     u'window.navigator.platform', u'get'),
-    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'', u'line 11 > eval', u'',
-     u'window.navigator.buildID', u'get'),
-    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'anonymous', u'line 14 > Function', u'',
-     u'window.navigator.appVersion', u'get'),
-    (JS_STACK_TEST_URL, u'7', u'9', u'check_navigator', u'', u'',
-     u'window.navigator.userAgent', u'get'),
-    (JS_STACK_TEST_URL, u'1', u'1', u'', u'line 8 > eval', u'',
-     u'window.navigator.appCodeName', u'get'))
-
-document_cookie_read = (
-    JS_COOKIE_TEST_URL,
-    u'8',
-    u'9',
-    u'set_cookie',
-    u'',
-    u'set_cookie@' + JS_COOKIE_TEST_URL + ':8:9'
-    '\nonload@' + JS_COOKIE_TEST_URL + ':1:1',
-    u'window.document.cookie', u'get',
-    u'test_cookie=Test-0123456789')
-
-document_cookie_write = (
-    JS_COOKIE_TEST_URL,
-    u'7',
-    u'9',
-    u'set_cookie',
-    u'',
-    u'set_cookie@' + JS_COOKIE_TEST_URL + ':7:9'
-    '\nonload@' + JS_COOKIE_TEST_URL + ':1:1',
-    u'window.document.cookie', u'set',
-    u'test_cookie=Test-0123456789; '
-    'expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/')
-
-document_cookie_read_write = set([document_cookie_read,
-                                  document_cookie_write])

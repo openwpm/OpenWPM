@@ -3,7 +3,7 @@ const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
 var pageManager = require("./page-manager.js");
 
-exports.run = function(crawlID) {
+exports.run = function(crawlID, testing) {
 
     // Set up tables
     var createJavascriptTable = data.load("create_javascript_table.sql");
@@ -14,6 +14,9 @@ exports.run = function(crawlID) {
         include: "*",
         contentScriptWhen: "start",
         contentScriptFile: data.url("./content.js"),
+        contentScriptOptions: {
+          'testing': testing
+        },
         onAttach: function onAttach(worker) {
             var url = worker.url;
             function processCallsAndValues(data) {
