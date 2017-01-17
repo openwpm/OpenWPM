@@ -508,6 +508,10 @@ class TaskManager:
             if browser.restart_required:
                 break
 
+        # Sleep after executing CommandSequence to provide extra time for
+        # internal buffers to drain. Stopgap in support of #135
+        time.sleep(2)
+
         if self.closing:
             return
 
