@@ -36,7 +36,13 @@ if [ "$TRAVIS" != "true" ]; then
 fi
 
 # Install specific version of Firefox known to work well with the selenium version above
-wget https://ftp.mozilla.org/pub/firefox/releases/45.6.0esr/linux-x86_64/en-US/firefox-45.6.0esr.tar.bz2
+if [ $(uname -m) == 'x86_64' ]; then
+  echo Downloading 64-bit Firefox
+  wget https://ftp.mozilla.org/pub/firefox/releases/45.6.0esr/linux-x86_64/en-US/firefox-45.6.0esr.tar.bz2
+else
+  echo Downloading 32-bit Firefox
+  wget https://ftp.mozilla.org/pub/firefox/releases/45.6.0esr/linux-i686/en-US/firefox-45.6.0esr.tar.bz2
+fi
 tar jxf firefox*.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
