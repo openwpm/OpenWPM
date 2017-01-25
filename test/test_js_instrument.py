@@ -14,12 +14,10 @@ GETS_AND_SETS = {
     ("window.test.prop3", "get", "default-value"),
     ("window.test.prop3", "set", "blah3"),
     ("window.test.prop3", "get", "blah3"),
-    ('window.test.method1', 'get', 'FUNCTION'),
     ('window.test.method1', 'set', 'FUNCTION'),
     ('window.test.method1', 'set', 'now static'),
     ('window.test.method1', 'get', 'now static'),
     ('window.test.prop1', 'set', 'FUNCTION'),
-    ('window.test.prop1', 'get', 'FUNCTION'),
     ('window.test.nestedObj', 'get',
      '{"prop1":"default1","prop2":"default2","method1":"FUNCTION"}')
 }
@@ -32,18 +30,14 @@ METHOD_CALLS = {
 }
 
 RECURSIVE_GETS_AND_SETS = {
-    ("window.test2.nestedObj", "get"),
     ("window.test2.nestedObj.prop1", "get", "default1"),
     ("window.test2.nestedObj.prop1", "set", "updatedprop1"),
     ("window.test2.nestedObj.prop1", "get", "updatedprop1"),
     ("window.test2.nestedObj.prop2", "get", "default2"),
-    ("window.test2.nestedObj.method1", "get", "FUNCTION"),
     ("window.test2.nestedObj.method1", "set", "FUNCTION"),
-    ("window.test2.nestedObj.doubleNested", "get"),
     ("window.test2.nestedObj.doubleNested.prop1", "get", "double default"),
     ("window.test2.nestedObj.doubleNested.prop1", "set", "doubleprop1"),
     ("window.test2.nestedObj.doubleNested.prop1", "get", "doubleprop1"),
-    ("window.test2.nestedObj.doubleNested.method1", "get", "FUNCTION"),
     ("window.test2.nestedObj.doubleNested.method1", "set", "FUNCTION")
 }
 
@@ -54,7 +48,8 @@ RECURSIVE_METHOD_CALLS = {
 }
 
 RECURSIVE_PROP_SET = {
-    ('window.test2.l1.l2.l3.l4.l5.prop', 'get', 'level5prop')
+    ('window.test2.l1.l2.l3.l4.l5.prop', 'get', 'level5prop'),
+    ('window.test2.l1.l2.l3.l4.l5.l6', 'get', '{"prop":"level6prop"}')
 }
 
 
@@ -109,6 +104,5 @@ class TestJSInstrument(OpenWPMTest):
         for script_url, symbol, operation, value, pindex, pvalue in rows:
             if not symbol.startswith('window.test2.l1'):
                 continue
-            if symbol.endswith('.prop'):
-                prop_access.add((symbol, operation, value))
+            prop_access.add((symbol, operation, value))
         assert prop_access == RECURSIVE_PROP_SET

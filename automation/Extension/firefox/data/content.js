@@ -492,14 +492,19 @@ function getPageScript() {
               return;
             }
 
-            // log get
-            logValue(objectName + '.' + propertyName, origProperty,
-                "get", callContext, logSettings);
-
-            // return original value or an instrumented wrapper if a function
+            // Log `gets` except those that have instrumented return values
+            // * All returned functions are instrumented with a wrapper
+            // * Returned objects may be instrumented if recursive
+            //   instrumentation is enabled and this isn't at the depth limit.
             if (typeof origProperty == 'function') {
               return instrumentFunction(objectName, propertyName, origProperty, logSettings);
+            } else if (typeof origProperty == 'object' &&
+              !!logSettings.recursive &&
+              (!('depth' in logSettings) || logSettings.depth > 0)) {
+              return origProperty;
             } else {
+              logValue(objectName + '.' + propertyName, origProperty,
+                  "get", callContext, logSettings);
               return origProperty;
             }
           }

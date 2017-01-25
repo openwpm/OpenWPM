@@ -98,10 +98,15 @@
         window.test2.nestedObj.doubleNested.method1('blah');
 
         // test recursion limit (default is 5)
+        // at the end of recursion limit object gets are logged
+
+        // should not log object get, should log prop get
         console.log("level 5 depth property = ",
-            window.test2.l1.l2.l3.l4.l5.prop); // should log
+            window.test2.l1.l2.l3.l4.l5.prop);
+
+        // should log object get, should not log prop get
         console.log("level 6 depth property = ",
-            window.test2.l1.l2.l3.l4.l5.l6.prop); // should not log
+            window.test2.l1.l2.l3.l4.l5.l6.prop);
       }
 
       // Build test object

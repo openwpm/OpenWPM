@@ -33,8 +33,6 @@ PROPERTIES = {
 CANVAS_TEST_URL = u"%s/canvas_fingerprinting.html" % utilities.BASE_TEST_URL
 
 CANVAS_CALLS = {
-    (CANVAS_TEST_URL, u"HTMLCanvasElement.getContext",
-     u"get", u"FUNCTION", None, None),
     (CANVAS_TEST_URL,
      u"HTMLCanvasElement.getContext", u"call", u"", 0, u"2d"),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.textBaseline",
@@ -46,8 +44,6 @@ CANVAS_CALLS = {
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
      u"set", u"#f60", None, None),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-     u"get", u"FUNCTION", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
      u"call", u"", 0, u"125"),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
      u"call", u"", 1, u"1"),
@@ -57,8 +53,6 @@ CANVAS_CALLS = {
      u"call", u"", 3, u"20"),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
      u"set", u"#069", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"get", u"FUNCTION", None, None),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
      u"call", u"", 0, u"BrowserLeaks,com <canvas> 1.0"),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
@@ -73,8 +67,6 @@ CANVAS_CALLS = {
      u"call", u"", 1, u"4"),
     (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
      u"call", u"", 2, u"17"),
-    (CANVAS_TEST_URL, u"HTMLCanvasElement.toDataURL",
-     u"get", u"FUNCTION", None, None),
     (CANVAS_TEST_URL, u"HTMLCanvasElement.toDataURL", u"call",
      u"", None, None)
 }
@@ -83,21 +75,15 @@ WEBRTC_TEST_URL = u"%s/webrtc_localip.html" % utilities.BASE_TEST_URL
 
 WEBRTC_CALLS = {
     (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
-     u'get', u'FUNCTION', None, None),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
      u'call', u'', 0, u''),
     (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
      u'call', u'', 1, u'{"reliable":false}'),
     (WEBRTC_TEST_URL, u'RTCPeerConnection.onicecandidate',
      u'set', u'FUNCTION', None, None),
     (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
-     u'get', u'FUNCTION', None, None),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
      u'call', u'', 0, u'FUNCTION'),
     (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
      u'call', u'', 1, u'FUNCTION'),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.setLocalDescription',
-     u'get', u'FUNCTION', None, None),
 }
 
 # we expect these strings to be present in the WebRTC SDP
