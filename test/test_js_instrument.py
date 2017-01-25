@@ -23,10 +23,9 @@ GETS_AND_SETS = {
 }
 
 METHOD_CALLS = {
-    ("window.test.method1", "call", 0, "hello"),
-    ("window.test.method1", "call", 1, "{\"world\":true}"),
-    ("window.test.method1", "call", 0, "new argument"),
-    ("window.test.prop1", "call", 0, "now accepting arugments")
+    ('window.test.prop1', 'call', '{"0":"now accepting arugments"}'),
+    ('window.test.method1', 'call', '{"0":"hello","1":"{\\"world\\":true}"}'),
+    ('window.test.method1', 'call', '{"0":"new argument"}')
 }
 
 RECURSIVE_GETS_AND_SETS = {
@@ -42,9 +41,9 @@ RECURSIVE_GETS_AND_SETS = {
 }
 
 RECURSIVE_METHOD_CALLS = {
-    ("window.test2.nestedObj.method1", "call", 0, "arg-before"),
-    ("window.test2.nestedObj.method1", "call", 0, "arg-after"),
-    ("window.test2.nestedObj.doubleNested.method1", "call", 0, "blah")
+    ('window.test2.nestedObj.method1', 'call', '{"0":"arg-before"}'),
+    ('window.test2.nestedObj.method1', 'call', '{"0":"arg-after"}'),
+    ('window.test2.nestedObj.doubleNested.method1', 'call', '{"0":"blah"}')
 }
 
 RECURSIVE_PROP_SET = {
@@ -53,8 +52,8 @@ RECURSIVE_PROP_SET = {
 }
 
 SET_PREVENT_CALLS = {
-    (u'window.test3.method1', u'call', None, None),
-    ('window.test3.obj1.method2', 'call', None, None)
+    (u'window.test3.method1', u'call', None),
+    ('window.test3.obj1.method2', 'call', None)
 }
 
 SET_PREVENT_GETS_AND_SETS = {
@@ -86,26 +85,26 @@ class TestJSInstrument(OpenWPMTest):
         # Check calls of non-recursive instrumentation
         observed_gets_and_sets = set()
         observed_calls = set()
-        for script_url, symbol, operation, value, pindex, pvalue in rows:
+        for script_url, symbol, operation, value, arguments in rows:
             if not symbol.startswith('window.test.'):
                 continue
             if operation == 'get' or operation == 'set':
                 observed_gets_and_sets.add((symbol, operation, value))
             else:
-                observed_calls.add((symbol, operation, pindex, pvalue))
+                observed_calls.add((symbol, operation, arguments))
         assert observed_calls == METHOD_CALLS
         assert observed_gets_and_sets == GETS_AND_SETS
 
         # Check calls of recursive instrumentation
         observed_gets_and_sets = set()
         observed_calls = set()
-        for script_url, symbol, operation, value, pindex, pvalue in rows:
+        for script_url, symbol, operation, value, arguments in rows:
             if not symbol.startswith('window.test2.nestedObj'):
                 continue
             if operation == 'get' or operation == 'set':
                 observed_gets_and_sets.add((symbol, operation, value))
             else:
-                observed_calls.add((symbol, operation, pindex, pvalue))
+                observed_calls.add((symbol, operation, arguments))
         assert observed_calls == RECURSIVE_METHOD_CALLS
         assert observed_gets_and_sets == RECURSIVE_GETS_AND_SETS
 
@@ -113,7 +112,7 @@ class TestJSInstrument(OpenWPMTest):
         # We should only see the window.test2.l1.l2.l3.l4.l5.prop access
         # and not window.test2.l1.l2.l3.l4.l5.l6.prop access.
         prop_access = set()
-        for script_url, symbol, operation, value, pindex, pvalue in rows:
+        for script_url, symbol, operation, value, arguments in rows:
             if not symbol.startswith('window.test2.l1'):
                 continue
             prop_access.add((symbol, operation, value))
@@ -122,11 +121,11 @@ class TestJSInstrument(OpenWPMTest):
         # Check calls of object with sets prevented
         observed_gets_and_sets = set()
         observed_calls = set()
-        for script_url, symbol, operation, value, pindex, pvalue in rows:
+        for script_url, symbol, operation, value, arguments in rows:
             if not symbol.startswith('window.test3'):
                 continue
             if operation == 'call':
-                observed_calls.add((symbol, operation, pindex, pvalue))
+                observed_calls.add((symbol, operation, arguments))
             else:
                 observed_gets_and_sets.add((symbol, operation, value))
         assert observed_calls == SET_PREVENT_CALLS

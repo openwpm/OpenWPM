@@ -27,8 +27,8 @@ def get_javascript_content(data_directory):
     """
     db_path = os.path.join(data_directory, 'javascript.ldb')
     db = plyvel.DB(db_path,
-            create_if_missing = False,
-            compression = 'snappy')
+                   create_if_missing=False,
+                   compression='snappy')
     for content_hash, content in db.iterator():
         yield content_hash, content
     db.close()
@@ -38,8 +38,7 @@ def get_javascript_entries(db, all_columns=False):
     if all_columns:
         select_columns = "*"
     else:
-        select_columns = "script_url, symbol, operation, value, parameter_index,\
-             parameter_value"
+        select_columns = "script_url, symbol, operation, value, arguments"
 
     return query_db(db, "SELECT %s FROM javascript" % select_columns)
 

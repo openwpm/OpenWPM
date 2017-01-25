@@ -33,57 +33,41 @@ PROPERTIES = {
 CANVAS_TEST_URL = u"%s/canvas_fingerprinting.html" % utilities.BASE_TEST_URL
 
 CANVAS_CALLS = {
-    (CANVAS_TEST_URL,
-     u"HTMLCanvasElement.getContext", u"call", u"", 0, u"2d"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.textBaseline",
-     u"set", u"top", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.font", u"set",
-     u"14px 'Arial'", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.textBaseline",
-     u"set", u"alphabetic", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
-     u"set", u"#f60", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-     u"call", u"", 0, u"125"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-     u"call", u"", 1, u"1"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-     u"call", u"", 2, u"62"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillRect",
-     u"call", u"", 3, u"20"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
-     u"set", u"#069", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"call", u"", 0, u"BrowserLeaks,com <canvas> 1.0"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"call", u"", 1, u"2"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"call", u"", 2, u"15"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillStyle",
-     u"set", u"rgba(102, 204, 0, 0.7)", None, None),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"call", u"", 0, u"BrowserLeaks,com <canvas> 1.0"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"call", u"", 1, u"4"),
-    (CANVAS_TEST_URL, u"CanvasRenderingContext2D.fillText",
-     u"call", u"", 2, u"17"),
-    (CANVAS_TEST_URL, u"HTMLCanvasElement.toDataURL", u"call",
-     u"", None, None)
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillStyle',
+     'set', '#f60', None),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.textBaseline', 'set',
+     'alphabetic', None),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.textBaseline', 'set',
+     'top', None),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.font', 'set',
+     "14px 'Arial'", None),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillStyle', 'set',
+     '#069', None),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillStyle', 'set',
+     'rgba(102, 204, 0, 0.7)', None),
+    (CANVAS_TEST_URL, 'HTMLCanvasElement.getContext', 'call',
+     '', '{"0":"2d"}'),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillRect', 'call',
+     '', '{"0":125,"1":1,"2":62,"3":20}'),
+    (CANVAS_TEST_URL, 'HTMLCanvasElement.toDataURL', 'call',
+     '', None),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillText', 'call',
+     '', '{"0":"BrowserLeaks,com <canvas> 1.0","1":4,"2":17}'),
+    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillText', 'call',
+     '', '{"0":"BrowserLeaks,com <canvas> 1.0","1":2,"2":15}')
 }
 
 WEBRTC_TEST_URL = u"%s/webrtc_localip.html" % utilities.BASE_TEST_URL
 
 WEBRTC_CALLS = {
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
-     u'call', u'', 0, u''),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel',
-     u'call', u'', 1, u'{"reliable":false}'),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.onicecandidate',
-     u'set', u'FUNCTION', None, None),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
-     u'call', u'', 0, u'FUNCTION'),
-    (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer',
-     u'call', u'', 1, u'FUNCTION'),
+    (WEBRTC_TEST_URL, 'RTCPeerConnection.createOffer', 'call',
+     '', '{"0":"FUNCTION","1":"FUNCTION"}'),
+    (WEBRTC_TEST_URL, 'RTCPeerConnection.createDataChannel', 'call',
+     '', '{"0":""}'),
+    (WEBRTC_TEST_URL, 'RTCPeerConnection.createDataChannel', 'call',
+     '', '{"0":"","1":"{\\"reliable\\":false}"}'),
+    (WEBRTC_TEST_URL, 'RTCPeerConnection.onicecandidate', 'set',
+     'FUNCTION', None)
 }
 
 # we expect these strings to be present in the WebRTC SDP
@@ -254,8 +238,8 @@ class TestExtension(OpenWPMTest):
         observed_rows = set()
         for item in rows:
             if (item[1] == "RTCPeerConnection.setLocalDescription" and
-                    item[2] == 'call' and item[4] == 0):
-                sdp_offer = item[5]
+                    item[2] == 'call'):
+                sdp_offer = item[4]
                 self.check_webrtc_sdp_offer(sdp_offer)
             else:
                 observed_rows.add(item)
@@ -290,7 +274,7 @@ class TestExtension(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
         assert len(rows)  # make sure we have some JS events captured
         for row in rows:
-            js_time = datetime.strptime(row[14], "%Y-%m-%dT%H:%M:%S.%fZ")
+            js_time = datetime.strptime(row[13], "%Y-%m-%dT%H:%M:%S.%fZ")
             # compare UTC now and the timestamp recorded at the visit
             assert (utc_now - js_time).seconds < MAX_TIMEDELTA
         assert not db_utils.any_command_failed(db)
