@@ -393,6 +393,11 @@ function getPageScript() {
       //   logFunctionsAsStrings : boolean
       //     Set to true to save functional arguments as strings during
       //     argument serialization. Default is `false`.
+      //   preventSets : boolean
+      //     Set to true to prevent nested objects and functions from being
+      //     overwritten (and thus having their instrumentation removed).
+      //     Other properties (static values) can still be set with this is
+      //     enabled. Default is `false`.
       //   recursive : boolean
       //     Set to `true` to recursively instrument all object properties of
       //     the given `object`. Default is `false`
@@ -427,6 +432,7 @@ function getPageScript() {
                 'excludedProperties': logSettings['excludedProperties'],
                 'logCallStack': logSettings['logCallStack'],
                 'logFunctionsAsStrings': logSettings['logFunctionsAsStrings'],
+                'preventSets': logSettings['preventSets'],
                 'recursive': logSettings['recursive'],
                 'depth': logSettings['depth'] - 1
           });
@@ -513,6 +519,15 @@ function getPageScript() {
           return function(value) {
             var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
             var returnValue;
+
+            // Prevent sets for functions and objects if enabled
+            if (!!logSettings.preventSets && (
+                typeof originalValue === 'function' ||
+                typeof originalValue === 'object')) {
+              logValue(objectName + '.' + propertyName, value,
+                  "set(prevented)", callContext, logSettings);
+              return value;
+            }
 
             // set new value to original setter/location
             if (originalSetter) { // if accessor property

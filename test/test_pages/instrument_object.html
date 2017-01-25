@@ -107,6 +107,26 @@
         // should log object get, should not log prop get
         console.log("level 6 depth property = ",
             window.test2.l1.l2.l3.l4.l5.l6.prop);
+
+        /*
+         * Interact with object that has sets prevented
+         */
+
+        // Try to set
+        window.test3.prop1 = 'newprop1'; // should work
+        window.test3.method1 = function(){console.log("set success");};
+        window.test3.obj1 = {'new':'object'};
+        window.test3.obj1.prop2 = 'newprop2'; // should work
+        window.test3.obj1.method2 = function(){console.log("set2 success");};
+        window.test3.obj1.obj2 = {'new':'object2'};
+
+        // Ensure gets / calls are the originals
+        console.log("window.test3.prop1", window.test3.prop1);
+        console.log("window.test3.method1", window.test3.method1());
+        console.log("window.test3.obj1", window.test3.obj1);
+        console.log("window.test3.obj1.prop2", window.test3.obj1.prop2);
+        console.log("window.test3.obj1.method2", window.test3.obj1.method2());
+        console.log("window.test3.obj1.obj2", window.test3.obj1.obj2);
       }
 
       // Build test object
@@ -172,6 +192,16 @@
       window.test2.l1.l2.l3.l4.l5.l6 = {};
       window.test2.l1.l2.l3.l4.l5.l6.prop = 'level6prop';
 
+      // Build a test object for `preventSets` instrumentation
+      window.test3 = {};
+      window.test3.prop1 = 'default1';
+      window.test3.method1 = function(){console.log("window.test3.method1");};
+      window.test3.obj1 = {
+        'prop2': 'default2',
+        'method2': function(){console.log("window.test3.obj1.method2");},
+        'obj2': {'testobj':'nested'}
+      };
+
       // Instrument object non-recursively
       console.log("Instrumenting window.test!");
       window.instrumentObject(window.test, "window.test");
@@ -180,6 +210,13 @@
       console.log("Instrumenting window.test2!");
       window.instrumentObject(window.test2, "window.test2", {'recursive': true});
 
+      // Instrument object with setting prevented
+      console.log("Instrumenting window.test3!");
+      window.instrumentObject(window.test3, "window.test3", {
+        'recursive': true,
+        'depth': 1,
+        'preventSets': true
+      });
       interactWithTestObjects();
     </script>
   </body>

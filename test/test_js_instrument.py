@@ -52,6 +52,23 @@ RECURSIVE_PROP_SET = {
     ('window.test2.l1.l2.l3.l4.l5.l6', 'get', '{"prop":"level6prop"}')
 }
 
+SET_PREVENT_CALLS = {
+    (u'window.test3.method1', u'call', None, None),
+    ('window.test3.obj1.method2', 'call', None, None)
+}
+
+SET_PREVENT_GETS_AND_SETS = {
+    (u'window.test3.prop1', u'set', u'newprop1'),
+    ('window.test3.method1', 'set(prevented)', 'FUNCTION'),
+    ('window.test3.obj1', 'set(prevented)', '{"new":"object"}'),
+    (u'window.test3.obj1.prop2', u'set', u'newprop2'),
+    ('window.test3.obj1.method2', 'set(prevented)', 'FUNCTION'),
+    ('window.test3.obj1.obj2', 'set(prevented)', '{"new":"object2"}'),
+    (u'window.test3.prop1', u'get', u'newprop1'),
+    ('window.test3.obj1.obj2', 'get', '{"testobj":"nested"}'),
+    ('window.test3.obj1.prop2', 'get', 'newprop2'),
+}
+
 
 class TestJSInstrument(OpenWPMTest):
 
@@ -85,11 +102,6 @@ class TestJSInstrument(OpenWPMTest):
         for script_url, symbol, operation, value, pindex, pvalue in rows:
             if not symbol.startswith('window.test2.nestedObj'):
                 continue
-            if (operation == 'get' and
-                (symbol == 'window.test2.nestedObj' or
-                 symbol == 'window.test2.nestedObj.doubleNested')):
-                observed_gets_and_sets.add((symbol, operation))
-                continue
             if operation == 'get' or operation == 'set':
                 observed_gets_and_sets.add((symbol, operation, value))
             else:
@@ -106,3 +118,16 @@ class TestJSInstrument(OpenWPMTest):
                 continue
             prop_access.add((symbol, operation, value))
         assert prop_access == RECURSIVE_PROP_SET
+
+        # Check calls of object with sets prevented
+        observed_gets_and_sets = set()
+        observed_calls = set()
+        for script_url, symbol, operation, value, pindex, pvalue in rows:
+            if not symbol.startswith('window.test3'):
+                continue
+            if operation == 'call':
+                observed_calls.add((symbol, operation, pindex, pvalue))
+            else:
+                observed_gets_and_sets.add((symbol, operation, value))
+        assert observed_calls == SET_PREVENT_CALLS
+        assert observed_gets_and_sets == SET_PREVENT_GETS_AND_SETS
