@@ -393,6 +393,11 @@ function getPageScript() {
       //   logFunctionsAsStrings : boolean
       //     Set to true to save functional arguments as strings during
       //     argument serialization. Default is `false`.
+      //   preventSets : boolean
+      //     Set to true to prevent nested objects and functions from being
+      //     overwritten (and thus having their instrumentation removed).
+      //     Other properties (static values) can still be set with this is
+      //     enabled. Default is `false`.
       //   recursive : boolean
       //     Set to `true` to recursively instrument all object properties of
       //     the given `object`. Default is `false`
@@ -427,6 +432,7 @@ function getPageScript() {
                 'excludedProperties': logSettings['excludedProperties'],
                 'logCallStack': logSettings['logCallStack'],
                 'logFunctionsAsStrings': logSettings['logFunctionsAsStrings'],
+                'preventSets': logSettings['preventSets'],
                 'recursive': logSettings['recursive'],
                 'depth': logSettings['depth'] - 1
           });
@@ -492,14 +498,19 @@ function getPageScript() {
               return;
             }
 
-            // log get
-            logValue(objectName + '.' + propertyName, origProperty,
-                "get", callContext, logSettings);
-
-            // return original value or an instrumented wrapper if a function
+            // Log `gets` except those that have instrumented return values
+            // * All returned functions are instrumented with a wrapper
+            // * Returned objects may be instrumented if recursive
+            //   instrumentation is enabled and this isn't at the depth limit.
             if (typeof origProperty == 'function') {
               return instrumentFunction(objectName, propertyName, origProperty, logSettings);
+            } else if (typeof origProperty == 'object' &&
+              !!logSettings.recursive &&
+              (!('depth' in logSettings) || logSettings.depth > 0)) {
+              return origProperty;
             } else {
+              logValue(objectName + '.' + propertyName, origProperty,
+                  "get", callContext, logSettings);
               return origProperty;
             }
           }
@@ -508,6 +519,15 @@ function getPageScript() {
           return function(value) {
             var callContext = getOriginatingScriptContext(!!logSettings.logCallStack);
             var returnValue;
+
+            // Prevent sets for functions and objects if enabled
+            if (!!logSettings.preventSets && (
+                typeof originalValue === 'function' ||
+                typeof originalValue === 'object')) {
+              logValue(objectName + '.' + propertyName, value,
+                  "set(prevented)", callContext, logSettings);
+              return value;
+            }
 
             // set new value to original setter/location
             if (originalSetter) { // if accessor property
