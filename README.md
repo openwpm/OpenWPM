@@ -164,6 +164,40 @@ for their measurement data (see
             significant effort went into replicating Firefox's cookie parsing,
             it may not be a faithful reproduction.
 
+Troubleshooting
+---------------
+
+1. `IOError: [Errno 2] No such file or directory: '../../firefox-bin/application.ini'`
+
+This error occurs when the platform can't find a standalone Firefox binary in
+the root directory of OpenWPM. The `install.sh` script will download and unzip
+the appropriate version of Firefox for you. If you've run this script but still
+don't have the binary installed note that the script will exit if any command
+fails, so re-run the install script checking that no command fails.
+
+2. `WebDriverException: Message: The browser appears to have exited before we could connect...`
+
+This error indicates that Firefox exited during startup (or was prevented from
+starting). There are many possible causes of this error: If you are seeing this
+error for all browser spawn attempts check that:
+* Both selenium and Firefox are the appropriate versions. Run the following
+commands and check that the versions output match the required versions in
+`install.sh` and `requirements.txt`. If not, re-run the install script.
+```sh
+cd firefox-bin/
+firefox --version
+```
+
+and
+
+```sh
+	pip show selenium
+```
+* If you are running in a headless environment (e.g. a remote server), ensure
+that all browsers have the `headless` browser parameter set to `True` before
+launching.
+
+
 Disclaimer
 -----------
 
