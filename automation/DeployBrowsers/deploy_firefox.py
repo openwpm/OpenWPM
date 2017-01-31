@@ -71,11 +71,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         display_port = display.cmd_param[5][1:]
     status_queue.put(('STATUS','Display',(display_pid, display_port)))
 
-    if browser_params['debugging']:
-        firebug_loc = os.path.join(root_dir, 'firefox_extensions/firebug-1.11.0.xpi')
-        fp.add_extension(extension=firebug_loc)
-        fp.set_preference("extensions.firebug.currentVersion", "1.11.0")  # Avoid startup screen
-
     # Write extension configuration
     if browser_params['extension_enabled']:
         ext_loc = os.path.join(root_dir + "/../", 'Extension/firefox/openwpm.xpi')
