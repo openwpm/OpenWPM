@@ -27,23 +27,21 @@ Quick Start
 -----------
 
 Once installed, it is very easy to run a quick test of OpenWPM. Check out
-`demo.py` for an example. This will the default setting specified in
+`demo.py` for an example. This will use the default setting specified in
 `automation/default_manager_params.json` and
 `automation/default_browser_params.json`, with the exception of the changes
 specified in `demo.py`.
 
-You can test other configurations by changing the values in these two
-dictionaries. `manager_params` is meant to specify the platform-wide settings,
-while `browser_params` specifies browser-specific settings (and as such
-defaults to a `list` of settings, of length equal to the number of browsers you
-are using. A description of the instrumentation available is included below.
+More information on the instrumentation and configuration parameters is given
+below.
+
 
 The [wiki](https://github.com/citp/OpenWPM/wiki) provides a more in-depth
-tutorial, however portions of it are currently outdated. In particular you can find
-[advanced features](https://github.com/citp/OpenWPM/wiki/Advanced-Features),
-and [additional
-commands](https://github.com/citp/OpenWPM/wiki/Available-Commands).
-You can also take a look at two of our past studies,  which use the
+tutorial, including a
+[platform demo](https://github.com/citp/OpenWPM/wiki/Platform-Demo)
+and a description of the
+[additional commands](https://github.com/citp/OpenWPM/wiki/Available-Commands)
+available. You can also take a look at two of our past studies, which use the
 infrastructure:
 
 1. [The Web Never Forgets](https://github.com/citp/TheWebNeverForgets)
@@ -164,7 +162,114 @@ for their measurement data (see
             significant effort went into replicating Firefox's cookie parsing,
             it may not be a faithful reproduction.
 
-Browser profile options
+Browser and Platform Configuration
+----------------------------------
+
+The browser and platform can be configured by two separate dictionaries. The
+platform configuration options can be set in `manager_params`, while the
+browser configuration options can be set in `browser_params`. The default
+settings are given in `automation/default_manager_params.json` and
+`automation/default_browser_params.json`.
+
+To load the default configuration parameter dictionaries we provide a helper
+function `TaskManager::load_default_params`. For example:
+
+```python
+from automation import TaskManager
+manager_params, browser_params = TaskManager.load_default_params(num_browsers=5)
+```
+
+where `manager_params` is a dictionary and `browser_params` is a length 5 list
+of configuration dictionaries.
+
+### Platform Configuration Options
+
+* `data_directory`
+  * The directory in which to output the crawl database and related files. The
+    directory given will be created if it does not exist.
+* `log_directory`
+  * The directory in which to output platform logs. The
+    directory given will be created if it does not exist.
+* `log_file`
+  * The name of the log file to be written to `log_directory`.
+* `database_name`
+  * The name of the database file to be written to `data_directory`
+* `failure_limit`
+  * The number of successive command failures the platform will tolerate before
+    raising a `CommandExecutionError` exception. Otherwise the default is set
+    to 2 x the number of browsers plus 10.
+* `testing`
+  * A platform wide flag that can be used to only run certain functionality
+    while testing. For example, the Javascript instrumentation
+    [exposes its instrumentation function](https://github.com/citp/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/automation/Extension/firefox/data/content.js#L447-L449)
+    on the page script global to allow test scripts to instrument objects
+    on-the-fly. Depending on where you would like to add test functionality,
+    you may need to propagate the flag.
+  * This is not something you should enable during normal crawls.
+
+### Browser Configuration Options
+
+Note: Instrumentation configuration options are described in the
+*Instrumentation and Data Access* section and profile configuration options are
+described in the *Browser Profile Support* section. As such, these options are
+left out of this section.
+
+* `disable_webdriver_self_id`
+  * Prevents Selenium from identifying itself in the DOM. See
+    [Issue #91](https://github.com/citp/OpenWPM/issues/91).
+* `bot_mitigation`
+  * Performs some actions to prevent the platform from being detected as a bot.
+  * Note, these aren't comprehensive and automated interaction with the site
+    will still appear very bot-like.
+* `disable_flash`
+  * Flash is disabled by default. Set this to `False` to re-enable. Note that
+    flash cookies are shared between browsers.
+* `headless`
+  * Launch the browser in a virtual frame buffer, no GUI will be visible.
+  * Use this when running browsers on a remote machine or to run crawls in the
+      background on a local machine.
+* `browser`
+  * Used to specify which browser to launch. Currently only `firefox` is
+    supported.
+  * Other browsers may be added in the future.
+* `tp_cookies`
+  * Specifies the third-party cookie policy to set in Firefox.
+  * The following options are supported:
+    * `always`: Accept all third-party cookies
+    * `never`: Never accept any third-party cookies
+    * `from_visited`: Only accept third-party cookies from sites that have been
+      visited as a first party.
+* `donottrack`
+  * Set to `True` to enable Do Not Track in the browser.
+* `ghostery`
+  * Set to `True` to enable Ghostery with all blocking enabled
+  * NOTE: The Ghostery version used (including filter lists) may be outdated.
+    It's recommended that you update the xpi and `store.json` file (included in
+    the extension profile directory). These can be placed
+    [here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions/ghostery)
+* `https-everywhere`
+  * Set to `True` to enable HTTPS Everywhere in the browser.
+  * NOTE: The HTTPS Everywhere version may be outdated. It's recommended you
+    update the xpi
+    [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
+    before crawling.
+* `adblock-plus`
+  * Set to `True` to enable AdBlock Plus in the browser.
+  * The filter lists should be automatically downloaded and installed, but the
+    xpi, [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
+    , might be outdated.
+  * NOTE: There is a known issue of AdBlock Plus not blocking all resources
+    on the first page visit. See
+    [Issue #35](https://github.com/citp/OpenWPM/issues/35)
+    for more information.
+* **NOT SUPPORTED** ` tracking-protection`
+  * Set to `True` to enable Firefox's built-in
+    [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
+  * NOTE: This is not currently supported. See
+    [Issue #101](https://github.com/citp/OpenWPM/issues/101) for more
+    information.
+
+Browser Profile Support
 -----------------------
 
 ### Stateful vs Stateless crawls
@@ -276,21 +381,21 @@ Troubleshooting
 
   * If you are seeing this error for all browser spawn attempts check that:
     * Both selenium and Firefox are the appropriate versions. Run the following
-    commands and check that the versions output match the required versions in
-    `install.sh` and `requirements.txt`. If not, re-run the install script.
-    ```sh
-    cd firefox-bin/
-    firefox --version
-    ```
+      commands and check that the versions output match the required versions in
+      `install.sh` and `requirements.txt`. If not, re-run the install script.
+      ```sh
+      cd firefox-bin/
+      firefox --version
+      ```
 
-    and
+      and
 
-    ```sh
-      pip show selenium
-    ```
+      ```sh
+        pip show selenium
+      ```
     * If you are running in a headless environment (e.g. a remote server), ensure
-    that all browsers have the `headless` browser parameter set to `True` before
-    launching.
+      that all browsers have the `headless` browser parameter set to `True` before
+      launching.
   * If you are seeing this error randomly during crawls it can be caused by
     an overtaxed system, either memory or CPU usage. Try lowering the number of
     concurrent browsers.
