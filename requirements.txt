@@ -20,3 +20,4 @@ mitmproxy==0.13
 # Install specific version of selenium known to work well with the Firefox install we use
 selenium==2.53.0
 mmh3
+ipython

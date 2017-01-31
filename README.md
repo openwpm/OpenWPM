@@ -354,6 +354,27 @@ developing a Firefox extension, we recommend reading this
 [MDN introductory tutorial](https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Getting_Started_(jpm)),
  as well as the [jpm reference page](https://developer.mozilla.org/en-US/Add-ons/SDK/Tools/jpm).
 
+### Debugging the platform
+
+Manual debugging with OpenWPM can be difficult. By design the platform runs all
+browsers in separate processes and swallows all exceptions (with the intent of
+continuing the crawl). We recommend using
+[manual_test.py](https://github.com/citp/OpenWPM/blob/master/test/manual_test.py).
+
+This utility allows manual debugging of the extension instrumentation with or
+without Selenium enabled, as well as makes it easy to launch a Selenium
+instance (without any instrumentation)
+* `python manual_test.py` uses `jpm` to build the current extension directory
+  and launch a Firefox instance with it.
+* `python manual_test.py --selenium` launches a Firefox Selenium instance
+  after using `jpm` to automatically rebuild `openwpm.xpi`. The script then
+  drops into an `ipython` shell where the webdriver instance is available
+  through variable `driver`.
+* `python manual_test.py --selenium --no_extension` launches a Firefox Selenium
+  instance with no instrumentation. The script then
+  drops into an `ipython` shell where the webdriver instance is available
+  through variable `driver`.
+
 
 ### Running tests
 
