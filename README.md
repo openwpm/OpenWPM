@@ -164,6 +164,100 @@ for their measurement data (see
             significant effort went into replicating Firefox's cookie parsing,
             it may not be a faithful reproduction.
 
+Browser profile options
+-----------------------
+
+### Stateful vs Stateless crawls
+
+By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
+browser profile between page visits in the same browser. If the browser
+freezes or crashes during the crawl, the profile is saved to disk and restored
+before the next page visit.
+
+It's also possible to run "stateless" crawls, in which each new page visit uses
+a fresh browser profile. To perform a stateless crawl you can restart the
+browser after each command sequence by setting the `reset` initialization
+argument to `True` when creating the command sequence. As an example:
+
+```python
+manager = TaskManager.TaskManager(manager_params, browser_params)
+
+for site in sites:
+    command_sequence = CommandSequence.CommandSequence(site, reset=True)
+    command_sequence.get(sleep=30, timeout=60)
+    command_sequence.dump_profile_cookies(120)
+    manager.execute_command_sequence(command_sequence)
+```
+
+In this example, the browser will `get` the requested `site`, sleep for 30
+seconds, dump the profile cookies to the crawl database, and then restart the
+browser before visiting the next `site` in `sites`.
+
+### Loading and saving a browser profile
+
+It's possible to load and save profiles during stateful crawls. Profile dumps
+currently consist of the following browser storage items:
+
+* cookies
+* localStorage
+* IndexedDB
+* browser history
+
+Other browser state, such as the browser cache, is not saved. In
+[Issue #62](https://github.com/citp/OpenWPM/issues/62) we plan to expand
+profiles to include all browser storage.
+
+#### Save a profile
+
+A browser's profile can be saved to disk for use in later crawls. This can be
+done using a browser command or by setting a browser configuration parameter.
+For long running crawls we recommend saving the profile using the browser
+configuration parameter as the platform will take steps to save the
+profile in the event of a platform-level crash, whereas there is no guarantee
+the browser command will run before a crash.
+
+**Browser configuration parameter:** Set the `profile_archive_dir` browser
+parameter to a directory where the browser profile should be saved. The profile
+will be automatically saved when `TaskManager::close` is called or when a
+platform-level crash occurs.
+
+**Browser command:** See the command definition
+[wiki page](https://github.com/citp/OpenWPM/wiki/Available-Commands#dump_profile)
+for more information.
+
+#### Load a profile
+
+To load a profile, specify the `profile_tar` browser parameter in the browser
+configuration dictionary. This should point to the location of the
+`profile.tar` or (`profile.tar.gz` if compressed) file produced by OpenWPM.
+The profile will be automatically extracted and loaded into the browser
+instance for which the configuration parameter was set.
+
+Development pointers
+--------------------
+
+Much of OpenWPM's instrumentation is included in a Firefox add-on SDK extension.
+Thus, in order to add or change instrumentation you will need a few additional
+dependencies, which can be installed with `install-dev.sh`.
+
+### Editing instrumentation
+
+The extension instrumentation is included in `/automation/Extension/firefox/`.
+Any edits within this directory will require the extension to be re-built with
+`jpm` to produce a new `openwpm.xpi` with your updates. For more information on
+developing a Firefox extension, we recommend reading this
+[MDN introductory tutorial](https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Getting_Started_(jpm)),
+ as well as the [jpm reference page](https://developer.mozilla.org/en-US/Add-ons/SDK/Tools/jpm).
+
+
+### Running tests
+
+OpenWPM's tests are build on `py.test`. To run the tests you will need a few
+additional dependencies, which can be installed by running `install-dev.sh`.
+
+Once installed, execute `py.test -vv` in the test directory to run all tests.
+
+
 Troubleshooting
 ---------------
 
