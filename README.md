@@ -178,24 +178,28 @@ Troubleshooting
 2. `WebDriverException: Message: The browser appears to have exited before we could connect...`
 
   This error indicates that Firefox exited during startup (or was prevented from
-  starting). There are many possible causes of this error: If you are seeing this
-  error for all browser spawn attempts check that:
-  * Both selenium and Firefox are the appropriate versions. Run the following
-  commands and check that the versions output match the required versions in
-  `install.sh` and `requirements.txt`. If not, re-run the install script.
-  ```sh
-  cd firefox-bin/
-  firefox --version
-  ```
+  starting). There are many possible causes of this error:
 
-  and
+  * If you are seeing this error for all browser spawn attempts check that:
+    * Both selenium and Firefox are the appropriate versions. Run the following
+    commands and check that the versions output match the required versions in
+    `install.sh` and `requirements.txt`. If not, re-run the install script.
+    ```sh
+    cd firefox-bin/
+    firefox --version
+    ```
 
-  ```sh
-    pip show selenium
-  ```
-  * If you are running in a headless environment (e.g. a remote server), ensure
-  that all browsers have the `headless` browser parameter set to `True` before
-  launching.
+    and
+
+    ```sh
+      pip show selenium
+    ```
+    * If you are running in a headless environment (e.g. a remote server), ensure
+    that all browsers have the `headless` browser parameter set to `True` before
+    launching.
+  * If you are seeing this error randomly during crawls it can be caused by
+    an overtaxed system, either memory or CPU usage. Try lowering the number of
+    concurrent browsers.
 
 
 Disclaimer
