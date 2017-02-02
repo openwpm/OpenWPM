@@ -196,11 +196,14 @@ exports.createInsert = function(table, update) {
         visitID = listeningSocket.queue.shift();
         exports.logDebug("Visit Id: " + visitID);
     }
+
+    update["visit_id"] = visitID;
+    
     if (!visitID && !debugging) {
         exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
                     JSON.stringify(update));
+        update["visit_id"] = -1;
     }
-    update["visit_id"] = visitID;
 
     var statement = "INSERT INTO " + table + " (";
     var value_str = "VALUES (";
