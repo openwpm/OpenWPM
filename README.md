@@ -19,9 +19,10 @@ you're installing a shared machine. If you plan to develop OpenWPM's
 instrumentation extension or run tests you will also need to install the
 development dependencies included in `install-dev.sh`.
 
-It is likely that OpenWPM will also work on Mac OSX, however this has not been
-tested. If you have experience running OpenWPM on other platforms, please let
-us know!
+It is likely that OpenWPM will work on platforms other than Ubuntu, however
+we do not officially support anything else. For pointers on alternative
+platform support see
+[the wiki](https://github.com/citp/OpenWPM/wiki/OpenWPM-on-Alternate-Platforms).
 
 Quick Start
 -----------
