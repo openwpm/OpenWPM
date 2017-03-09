@@ -91,28 +91,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded" % browser_params['crawl_id'])
 
     if browser_params['proxy']:
-        logger.warning("BROWSER %i: Use of the proxy is DEPRECATED and will be "
-                       "removed from future releases. Use http_instrument." %
-                       browser_params['crawl_id'])
-        PROXY_HOST = "localhost"
-        PROXY_PORT = browser_params['proxy']
-
-        # Direct = 0, Manual = 1, PAC = 2, AUTODETECT = 4, SYSTEM = 5
-        fp.set_preference("network.proxy.type", 1)
-        fp.set_preference("network.proxy.http", PROXY_HOST)
-        fp.set_preference("network.proxy.http_port", PROXY_PORT)
-        fp.set_preference("network.proxy.ssl", PROXY_HOST)  # https sites
-        fp.set_preference("network.proxy.ssl_port", PROXY_PORT)
-
-        # set this to exclude sites from using proxy
-        # http://kb.mozillazine.org/Network.proxy.no_proxies_on
-        fp.set_preference("network.proxy.no_proxies_on", "")
-
-        # copy the dbs into temp profile
-        # these were created by manually adding the cert to
-        # a previous tmp selenium profile
-        shutil.copy(os.path.join(root_dir + "/../", 'Proxy/key3.db'), fp.path + '/key3.db')
-        shutil.copy(os.path.join(root_dir + "/../", 'Proxy/cert8.db'), fp.path + '/cert8.db')
+        logger.error("BROWSER %i: MITMProxy support has been removed. "
+                     "Use http_instrument instead. ")
 
     # Disable flash
     if browser_params['disable_flash']:

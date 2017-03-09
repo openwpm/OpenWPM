@@ -54,9 +54,9 @@ class OpenWPMTest(object):
         # some modules are imported using a different name than the ones used
         # at the installation.
         pkg_name_mapping = {"pyopenssl": "OpenSSL",
-                            "mitmproxy": "libmproxy",
                             "beautifulsoup4": "bs4",
-                            "python-dateutil": "dateutil"
+                            "python-dateutil": "dateutil",
+                            "mini-amf": "miniamf"
                             }
         # get the mapped name if it exists.
         pkg_importable = pkg_name_mapping.get(pkg.lower(), pkg)

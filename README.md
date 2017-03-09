@@ -1,12 +1,11 @@
 OpenWPM [![Build Status](https://travis-ci.org/citp/OpenWPM.svg?branch=master)](https://travis-ci.org/citp/OpenWPM)
 =======
 
-OpenWPM is a web privacy measurement framework which makes it easy to collect
-data for privacy studies on a scale of thousands to millions of site. OpenWPM
-is built on top of Firefox, with automation provided by Selenium. It includes
-several hooks for data collection, including a proxy, a Firefox extension, and
-access to Flash cookies. Check out the instrumentation section below for more
-details.
+OpenWPM is a web privacy measurement framework which makes it easy to
+collect data for privacy studies on a scale of thousands to millions
+of site. OpenWPM is built on top of Firefox, with automation provided
+by Selenium. It includes several hooks for data collection. Check out
+the instrumentation section below for more details.
 
 Installation
 ------------
@@ -126,42 +125,6 @@ for their measurement data (see
     * Automatically saved when the platform closes or crashes by specifying
         `browser_params['profile_archive_dir']`.
     * Save on-demand with the `CommandSequence::dump_profile` command.
-* **DEPRECATED** HTTP Request and Response Headers via mitmproxy
-    * This will be removed in future releases
-    * Set `browser_params['proxy'] = True`
-    * Data is saved to the `http_requests_proxy` and `http_responses_proxy`
-        tables.
-    * Saves both HTTP and HTTPS request and response headers
-    * Several drawbacks:
-        * Cached requests and responses are missed entirely (See #71)
-        * Some HTTPS connections fail with certificate warnings (See #53)
-        * The mitmproxy version used (v0.13) is a few releases behind the
-            current mitmproxy library and will likely continue to have more
-            issues unless updated.
-        * Has significantly less context available around a request/response
-            than is available from within the browser.
-* **DEPRECATED** Javascript Response Bodies via mitmproxy
-    * This will be removed in future releases
-    * Set `browser_params['save_javascript_proxy'] = True`
-    * Saves javascript response bodies to a LevelDB database de-duplicated by
-        the murmurhash3 of the content. `content_hash` in `http_response_proxy`
-        keys into this content database.
-    * NOTE: In addition to the other drawbacks of proxy-based measurements,
-        content must be decoded before saving and not all current encodings are
-        supported. In particular, brotli (`br`) is not supported.
-* **DEPRECATED** HTTP Request and Response Cookies via mitmproxy
-    * This will be removed in future releases
-    * Derived post-crawl from proxy-based HTTP instrumentation
-    * To enable: call
-      `python automation/utilities/build_cookie_table.py <sqlite_database>`.
-    * Data is saved to the `http_request_cookies_proxy` and
-        `http_response_cookies_proxy` tables.
-    * Several drawbacks:
-        * Will not detect cookies set via Javascript, but will still record
-            when those cookies are sent with requests.
-        * Cookie parsing is done using a custom `Cookie.py` module. Although a
-            significant effort went into replicating Firefox's cookie parsing,
-            it may not be a faithful reproduction.
 
 Browser and Platform Configuration
 ----------------------------------

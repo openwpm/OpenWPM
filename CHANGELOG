@@ -1,3 +1,9 @@
+v0.8.0 - under development
+======
+
+Changes:
+  * MITMProxy support has been removed.  Use `http_instrument` instead.
+
 v0.7.0 - 2016-11-15
 ======
 

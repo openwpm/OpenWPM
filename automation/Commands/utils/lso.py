@@ -1,6 +1,6 @@
 ### This is code adapted from KU Leuven crawler code written by
 ### Gunes Acar and Marc Juarez
-from pyamf import sol
+from miniamf import sol
 import fnmatch
 import os
 

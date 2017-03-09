@@ -10,7 +10,6 @@ class TestDependencies(OpenWPMTest):
     def test_dependencies(self):
         self.assert_is_installed("npm")
         self.assert_is_installed("jpm")
-        self.assert_is_installed('mitmdump')
         self.assert_is_installed('firefox')
         ff_bin_dir = join(self.BASE_DIR, "firefox-bin")
         assert isdir(ff_bin_dir)

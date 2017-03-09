@@ -1,7 +1,6 @@
 from Commands import command_executor
 from DeployBrowsers import deploy_browser
 from Commands import profile_commands
-from Proxy import deploy_mitm_proxy
 from SocketInterface import clientsocket
 from MPLogger import loggingclient
 from Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
@@ -247,12 +246,11 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         logger = loggingclient(*manager_params['logger_address'])
 
         # Start the proxy
-        proxy_site_queue = None  # used to pass the current site down to the proxy
+        # MITMProxy support has been removed, but this logic remains as a
+        # stub for potential future support for other kinds of proxies.
+        proxy_site_queue = None  # to pass the current site down to the proxy
         if browser_params['proxy']:
-            (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params,
-                                                                          manager_params,
-                                                                          status_queue)
-            browser_params['proxy'] = local_port
+            raise RuntimeError("mitmproxy support has been removed")
         status_queue.put(('STATUS','Proxy Ready','READY'))
 
         # Start the virtualdisplay (if necessary), webdriver, and browser
