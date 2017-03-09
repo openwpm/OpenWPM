@@ -85,10 +85,10 @@ class serversocket:
                 print("Client socket: " + str(address) + " closed")
 
     def receive_msg(self, client, msglen):
-        msg = ''
+        msg = b''
         while len(msg) < msglen:
             chunk = client.recv(msglen-len(msg))
-            if chunk == '':
+            if not chunk:
                 raise RuntimeError("socket connection broken")
             msg = msg + chunk
         return msg
