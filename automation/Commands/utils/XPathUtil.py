@@ -136,10 +136,10 @@ def xp1_wildcard(attr, string, normalize=True):
 if __name__=='__main__':
     #Output some sample XPaths
     print("--- Sample XPaths ---")
-    import urllib2
+    from six.moves.urllib.request import urlopen
     import re
     from random import choice
-    rsp = urllib2.urlopen('http://www.reddit.com/')
+    rsp = urlopen('http://www.reddit.com/')
     if rsp.getcode() == 200:
         soup = bs(rsp.read(), 'lxml')
         elements = soup.findAll(text = re.compile('[A-Za-z0-9]{10,}'))
