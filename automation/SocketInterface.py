@@ -61,7 +61,7 @@ class serversocket:
                 msglen, serialization = struct.unpack('>Lc', msg)
                 if self.verbose:
                     print("Received message, length %d, serialization %r"
-                          % (msglen, serialization)
+                          % (msglen, serialization))
                 msg = self.receive_msg(client, msglen)
                 if serialization != b'n':
                     try:
