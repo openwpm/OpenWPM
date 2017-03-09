@@ -22,8 +22,9 @@ class TestDependencies(OpenWPMTest):
         PY_REQUIREMENTS_TXT = join(self.BASE_DIR, "requirements.txt")
         assert isfile(PY_REQUIREMENTS_TXT)
         for line in open(PY_REQUIREMENTS_TXT):
-            if line.startswith("#"):
+            line = line.strip()
+            if line == "" or line[0] == "#":
                 continue
-            pkg = re.split(r'[>=<]', line.strip())[0]
+            pkg = re.split(r'[>=<]', line)[0]
             print("Checking Python package", pkg)
             self.assert_py_pkg_installed(pkg)
