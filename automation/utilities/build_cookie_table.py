@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 from netlib.odict import ODictCaseless
 import sqlite3
 import json
