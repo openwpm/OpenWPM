@@ -18,5 +18,6 @@ tabulate
 tblib
 tld
 
-# Install specific version of selenium known to work well with the Firefox install we use
-selenium==2.53.0
+# Python 3 is not fully supported prior to Selenium 3.x.
+# Versions prior to 3.3.0 may work but have not been tested.
+selenium>=3.3.0
