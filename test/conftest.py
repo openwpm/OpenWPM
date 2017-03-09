@@ -2,14 +2,13 @@ from __future__ import absolute_import
 from __future__ import print_function
 import pytest
 from . import utilities
-import commands
+import subprocess
 
 
 def create_xpi():
     """Creates a new xpi using jpm."""
-    cmd_cd = "cd ../automation/Extension/firefox/"
-    cmd_jpm = "jpm xpi"
-    print(commands.getstatusoutput("%s && %s" % (cmd_cd, cmd_jpm)))
+    subprocess.check_call(["jpm", "xpi"],
+                          cwd="../automation/Extension/firefox")
 
 
 @pytest.fixture(scope="session", autouse=True)
