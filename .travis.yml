@@ -21,6 +21,7 @@ before_install:
 install:
   - echo "y" | ./install.sh
   - pip install -r requirements.txt
+  - pip install pillow
 before_script:
   - cd test
 script:
