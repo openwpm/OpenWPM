@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -10,9 +11,10 @@ import time
 
 from ..SocketInterface import clientsocket
 from ..MPLogger import loggingclient
-from utils.lso import get_flash_cookies
-from utils.firefox_profile import get_cookies  # todo: add back get_localStorage,
-from utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links
+from .utils.lso import get_flash_cookies
+from .utils.firefox_profile import get_cookies  # todo: add back get_localStorage,
+from .utils.webdriver_extensions import scroll_down, wait_until_loaded, get_intra_links
+from six.moves import range
 
 # Library for core WebDriver-based browser commands
 
@@ -157,9 +159,9 @@ def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
 
     # Then visit a few subpages
     for i in range(num_links):
-        links = get_intra_links(webdriver, url)
-        links = filter(lambda x: x.is_displayed() == True, links)
-        if len(links) == 0:
+        links = [x for x in get_intra_links(webdriver, url)
+                 if x.is_displayed() == True]
+        if not links:
             break
         r = int(random.random()*len(links))
         logger.info("BROWSER %i: visiting internal link %s" % (browser_params['crawl_id'], links[r].get_attribute("href")))

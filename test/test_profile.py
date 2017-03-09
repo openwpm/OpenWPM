@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import pytest
 from os.path import join, isfile
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 
 # TODO update these tests to make use of blocking commands

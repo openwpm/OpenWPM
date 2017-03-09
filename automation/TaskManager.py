@@ -1,17 +1,19 @@
-from BrowserManager import Browser
-from DataAggregator import DataAggregator, LevelDBAggregator
-from SocketInterface import clientsocket
-from Errors import CommandExecutionError
-from utilities.platform_utils import get_version, get_configuration_string
-import CommandSequence
-import MPLogger
+from __future__ import absolute_import
+from .BrowserManager import Browser
+from .DataAggregator import DataAggregator, LevelDBAggregator
+from .SocketInterface import clientsocket
+from .Errors import CommandExecutionError
+from .utilities.platform_utils import get_version, get_configuration_string
+from . import CommandSequence
+from . import MPLogger
 
 from multiprocess import Process, Queue
-from Queue import Empty as EmptyQueue
+from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
+from six.moves import range
 pickling_support.install()
 from six import reraise
-import cPickle
+from six.moves import cPickle as pickle
 import threading
 import copy
 import os
@@ -31,7 +33,7 @@ def load_default_params(num_browsers=1):
     fp = open(os.path.join(os.path.dirname(__file__), 'default_browser_params.json'))
     preferences = json.load(fp)
     fp.close()
-    browser_params = [copy.deepcopy(preferences) for i in xrange(0, num_browsers)]
+    browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
 
     fp = open(os.path.join(os.path.dirname(__file__), 'default_manager_params.json'))
     manager_params = json.load(fp)
@@ -153,7 +155,7 @@ class TaskManager:
         self.task_id = cur.lastrowid
 
         # Record browser details for each brower
-        for i in xrange(self.num_browsers):
+        for i in range(self.num_browsers):
             cur.execute("INSERT INTO crawl (task_id, browser_params) VALUES (?,?)",
                         (self.task_id, json.dumps(browser_params[i])))
             self.db.commit()
@@ -167,7 +169,7 @@ class TaskManager:
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of parameters """
         browsers = list()
-        for i in xrange(self.num_browsers):
+        for i in range(self.num_browsers):
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -344,7 +346,7 @@ class TaskManager:
                     "failure limit.", self.failure_status['CommandSequence']
                 )
             if self.failure_status['ErrorType'] == 'CriticalChildException':
-                reraise(*cPickle.loads(self.failure_status['Exception']))
+                reraise(*pickle.loads(self.failure_status['Exception']))
 
     # CRAWLER COMMAND CODE
 
@@ -383,7 +385,7 @@ class TaskManager:
             #send the command to all browsers
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
-                for i in xrange(len(self.browsers)):
+                for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.browsers[i].current_timeout = command_sequence.total_timeout
                         thread = self._start_thread(self.browsers[i], command_sequence)
@@ -394,7 +396,7 @@ class TaskManager:
             condition = threading.Condition()  # Used to block threads until ready
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
-                for i in xrange(len(self.browsers)):
+                for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
                         self.browsers[i].current_timeout = command_sequence.total_timeout
                         thread = self._start_thread(self.browsers[i], command_sequence, condition)

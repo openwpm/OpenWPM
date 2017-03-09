@@ -1,16 +1,17 @@
 # A set of extensions to the functions normally provided by the selenium
 # webdriver. These are primarily for parsing and searching.
+from __future__ import absolute_import
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import NoSuchElementException
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 import random
 import time
 
 from ...utilities import domain_utils as du
-import XPathUtil
+from . import XPathUtil
 
 #### Basic functions
 def scroll_down(driver):
@@ -37,10 +38,11 @@ def wait_until_loaded(webdriver, timeout, period=0.25):
 
 def get_intra_links(webdriver, url):
     ps1 = du.get_ps_plus_1(url)
-    links = filter(lambda x: (x.get_attribute("href") and
-                              du.get_ps_plus_1(urljoin(url, x.get_attribute("href"))) == ps1),
-                   webdriver.find_elements_by_tag_name("a"))
-    return links
+    return [
+        x for x in webdriver.find_elements_by_tag_name("a")
+        if (x.get_attribute("href") and
+            du.get_ps_plus_1(urljoin(url, x.get_attribute("href"))) == ps1)
+    ]
 
 ##### Search/Block Functions
 # locator_type: a text representation of the standard
@@ -67,7 +69,7 @@ def wait_and_find(driver, locator_type, locator, timeout=3, check_iframes=True):
 
             #If we get here, search also fails in iframes
             driver.switch_to_default_content()
-        raise NoSuchElementException, "Element not found during wait_and_find"
+        raise NoSuchElementException("Element not found during wait_and_find")
 
 def is_found(driver, locator_type, locator, timeout=3):
     try:

@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from os.path import join
-import utilities
+from . import utilities
 import pytest
 import commands
 from ..automation import TaskManager

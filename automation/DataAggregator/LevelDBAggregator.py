@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from ..SocketInterface import serversocket
 from ..MPLogger import loggingclient
 import plyvel

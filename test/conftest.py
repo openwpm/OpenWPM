@@ -1,5 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import pytest
-import utilities
+from . import utilities
 import commands
 
 
@@ -7,18 +9,18 @@ def create_xpi():
     """Creates a new xpi using jpm."""
     cmd_cd = "cd ../automation/Extension/firefox/"
     cmd_jpm = "jpm xpi"
-    print commands.getstatusoutput("%s && %s" % (cmd_cd, cmd_jpm))
+    print(commands.getstatusoutput("%s && %s" % (cmd_cd, cmd_jpm)))
 
 
 @pytest.fixture(scope="session", autouse=True)
 def prepare_test_setup(request):
     """Run an HTTP server during the tests."""
     create_xpi()
-    print "\nStarting local_http_server"
+    print("\nStarting local_http_server")
     server, server_thread = utilities.start_server()
 
     def local_http_server_stop():
-        print "\nClosing server thread..."
+        print("\nClosing server thread...")
         server.shutdown()
         server_thread.join()
 

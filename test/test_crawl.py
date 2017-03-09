@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from urlparse import urlparse
 import tarfile
 import pytest
@@ -5,7 +6,7 @@ import os
 
 from ..automation import TaskManager
 from ..automation.utilities import domain_utils, db_utils
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 
 TEST_SITES = [

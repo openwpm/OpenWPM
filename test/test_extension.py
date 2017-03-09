@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import pytest
 import os
-import utilities
-from openwpmtest import OpenWPMTest
+from . import utilities
+from .openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
 from datetime import datetime

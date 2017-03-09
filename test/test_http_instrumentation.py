@@ -1,15 +1,18 @@
+from __future__ import absolute_import
 import hashlib
 import os
 import json
 
-import utilities
-import expected
-from openwpmtest import OpenWPMTest
+from . import utilities
+from . import expected
+from .openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation.utilities.platform_utils import parse_http_stack_trace_str
 from ..automation.utilities import db_utils
 from ..automation import CommandSequence
 from time import sleep
+import six
+from six.moves import range
 
 
 class TestHTTPInstrument(OpenWPMTest):
@@ -200,7 +203,7 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "binary"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert str(bytearray(range(100))) == post_body
+        assert str(bytearray(list(range(100)))) == post_body
 
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.
@@ -235,7 +238,7 @@ class TestPOSTInstrument(OpenWPMTest):
         post_body = self.get_post_request_body_from_db(manager_params['db'])
         img_file_content = open(img_file_path).read().strip()
         # DB strings are unicode and seems to use latin-1 encoding
-        img_file_content = unicode(img_file_content, 'latin-1')
+        img_file_content = six.text_type(img_file_content, 'latin-1')
         css_file_content = open(css_file_path).read().strip()
         # POST data is stored as JSON in the DB
         post_body_decoded = json.loads(post_body)

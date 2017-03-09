@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 import pytest
-import utilities
-from openwpmtest import OpenWPMTest
+from . import utilities
+from .openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation import CommandSequence
 from ..automation.utilities import db_utils

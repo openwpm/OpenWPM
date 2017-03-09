@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from publicsuffix import PublicSuffixList, fetch
 from ipaddress import ip_address
 from urlparse import urlparse
@@ -5,6 +7,8 @@ from functools import wraps
 import tempfile
 import codecs
 import os
+import six
+from six.moves import range
 
 # We cache the Public Suffix List in temp directory
 PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(),'public_suffix_list.dat')
@@ -14,18 +18,18 @@ def get_psl():
     Grabs an updated public suffix list.
     """
     if not os.path.isfile(PSL_CACHE_LOC):
-        print "%s does not exist, downloading a copy." % PSL_CACHE_LOC
+        print("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
         psl_file = fetch()
         with codecs.open(PSL_CACHE_LOC, 'w', encoding='utf8') as f:
             f.write(psl_file.read())
-    print "Using psl from cache: %s" % PSL_CACHE_LOC
+    print("Using psl from cache: %s" % PSL_CACHE_LOC)
     psl_cache = codecs.open(PSL_CACHE_LOC, encoding='utf8')
     return PublicSuffixList(psl_cache)
 
 def load_psl(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
-        if not kwargs.has_key('psl'):
+        if 'psl' not in kwargs:
             if wrapper.psl is None:
                 wrapper.psl = get_psl()
             return function(*args, psl=wrapper.psl, **kwargs)
@@ -39,7 +43,7 @@ def is_ip_address(hostname):
     Check if the given string is a valid IP address
     """
     try:
-        ip_address(unicode(hostname))
+        ip_address(six.text_type(hostname))
         return True
     except ValueError:
         return False
@@ -54,7 +58,7 @@ def get_ps_plus_1(url, **kwargs):
     An (optional) PublicSuffixList object can be passed with keyword arg 'psl',
     otherwise a version cached in the system temp directory is used.
     """
-    if not kwargs.has_key('psl'):
+    if 'psl' not in kwargs:
         raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
     if is_ip_address(hostname):
@@ -81,7 +85,7 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     An (optional) PublicSuffixList object can be passed with keyword arg 'psl'.
     otherwise a version cached in the system temp directory is used.
     """
-    if not kwargs.has_key('psl'):
+    if 'psl' not in kwargs:
         raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
 

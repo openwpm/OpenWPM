@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from ..MPLogger import loggingclient
 from ..Commands.profile_commands import load_profile
-import configure_firefox
+from . import configure_firefox
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
@@ -81,7 +82,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         extension_config.update(browser_params)
         extension_config['logger_address'] = manager_params['logger_address']
         extension_config['sqlite_address'] = manager_params['aggregator_address']
-        if manager_params.has_key('ldb_address'):
+        if 'ldb_address' in manager_params:
             extension_config['leveldb_address'] = manager_params['ldb_address']
         else:
             extension_config['leveldb_address'] = None

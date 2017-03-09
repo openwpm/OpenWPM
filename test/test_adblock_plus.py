@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from urlparse import urlparse
 import pytest
 import os
@@ -7,9 +8,9 @@ from ..automation.Errors import BrowserConfigError
 from ..automation.utilities.platform_utils import fetch_adblockplus_list
 from ..automation.utilities import domain_utils, db_utils
 
-import utilities
-import expected
-from openwpmtest import OpenWPMTest
+from . import utilities
+from . import expected
+from .openwpmtest import OpenWPMTest
 
 psl = domain_utils.get_psl()
 

@@ -1,18 +1,19 @@
-from Commands import command_executor
-from DeployBrowsers import deploy_browser
-from Commands import profile_commands
-from SocketInterface import clientsocket
-from MPLogger import loggingclient
-from Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
+from __future__ import absolute_import
+from .Commands import command_executor
+from .DeployBrowsers import deploy_browser
+from .Commands import profile_commands
+from .SocketInterface import clientsocket
+from .MPLogger import loggingclient
+from .Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
 
 from multiprocess import Process, Queue
-from Queue import Empty as EmptyQueue
+from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 pickling_support.install()
 from six import reraise
 import traceback
 import tempfile
-import cPickle
+from six.moves import cPickle as pickle
 import shutil
 import signal
 import time
@@ -100,7 +101,7 @@ class Browser:
                 launch_status[result[1]] = True
                 return result[2]
             elif result[0] == 'CRITICAL':
-                reraise(*cPickle.loads(result[1]))
+                reraise(*pickle.loads(result[1]))
             elif result[0] == 'FAILED':
                 raise BrowserCrashError('Browser spawn returned failure status')
 
@@ -137,7 +138,7 @@ class Browser:
                     error_string += " | %s: %s " % (string, launch_status.get(string, False))
                 self.logger.error("BROWSER %i: Spawn unsuccessful %s" % (self.crawl_id, error_string))
                 self.kill_browser_manager()
-                if launch_status.has_key('Profile Created'):
+                if 'Profile Created' in launch_status:
                     shutil.rmtree(spawned_profile_path, ignore_errors=True)
 
         # If the browser spawned successfully, we should update the
@@ -300,7 +301,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         logger.info("BROWSER %i: %s thrown, informing parent and raising" %
                 (browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()
-        status_queue.put(('CRITICAL',cPickle.dumps(err_info)))
+        status_queue.put(('CRITICAL',pickle.dumps(err_info)))
         return
     except Exception as e:
         excp = traceback.format_exception(*sys.exc_info())

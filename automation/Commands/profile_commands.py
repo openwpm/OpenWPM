@@ -1,13 +1,14 @@
+from __future__ import absolute_import
 import tarfile
-import cPickle
+from six.moves import cPickle as pickle
 import shutil
 import sys
 import os
 
 from ..Errors import ProfileLoadError
 from ..MPLogger import loggingclient
-from utils.firefox_profile import sleep_until_sqlite_checkpoint
-from utils.file_utils import rmsubtree
+from .utils.firefox_profile import sleep_until_sqlite_checkpoint
+from .utils.file_utils import rmsubtree
 
 # Flash Plugin Storage Location -- Linux ONLY
 HOME = os.path.expanduser('~')
@@ -25,13 +26,13 @@ def save_browser_settings(location, browser_settings):
             os.remove(location + 'browser_settings.p')
 
         with open(location + 'browser_settings.p', 'wb') as f:
-            cPickle.dump(browser_settings, f)
+            pickle.dump(browser_settings, f)
 
 def load_browser_settings(location):
     """ loads the browser settings from a pickled dictionary in <location>"""
     try:
         with open(location + 'browser_settings.p', 'rb') as f:
-            browser_settings = cPickle.load(f)
+            browser_settings = pickle.load(f)
     except IOError:
         browser_settings = None
     return browser_settings

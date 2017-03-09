@@ -212,12 +212,11 @@ Finis.
 #
 # Import our required modules
 #
+from __future__ import absolute_import
 import string
-
-try:
-    from cPickle import dumps, loads
-except ImportError:
-    from pickle import dumps, loads
+from six.moves import map
+from six.moves import range
+from six.moves.cPickle import dumps, loads
 
 import re, warnings
 
@@ -314,9 +313,9 @@ _Translator       = {
     '\375' : '\\375',  '\376' : '\\376',  '\377' : '\\377'
     }
 
-_idmap = ''.join(chr(x) for x in xrange(256))
+_idmap = ''.join(chr(x) for x in range(256))
 
-def _quote(str, LegalChars=_LegalChars,
+def _quote(s, LegalChars=_LegalChars,
            idmap=_idmap, translate=string.translate):
     #
     # If the string does not need to be double-quoted,
@@ -324,10 +323,10 @@ def _quote(str, LegalChars=_LegalChars,
     # the string in doublequotes and precede quote (with a \)
     # special characters.
     #
-    if "" == translate(str, idmap, LegalChars):
-        return str
+    if "" == translate(s, idmap, LegalChars):
+        return s
     else:
-        return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
+        return '"' + _nulljoin(map(_Translator.get, s, s)) + '"'
 # end _quote
 
 
@@ -503,7 +502,7 @@ class Morsel(dict):
         # Now add any defined attributes
         if attrs is None:
             attrs = self._reserved
-        items = self.items()
+        items = list(self.items())
         items.sort()
         for K,V in items:
             if V == "": continue
@@ -599,9 +598,7 @@ class BaseCookie(dict):
     def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
         """Return a string suitable for HTTP."""
         result = []
-        items = self.items()
-        items.sort()
-        for K,V in items:
+        for K,V in sorted(self.items()):
             result.append( V.output(attrs, header) )
         return sep.join(result)
     # end output
@@ -610,18 +607,14 @@ class BaseCookie(dict):
 
     def __repr__(self):
         L = []
-        items = self.items()
-        items.sort()
-        for K,V in items:
+        for K,V in sorted(self.items()):
             L.append( '%s=%s' % (K,repr(V.value) ) )
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
 
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
         result = []
-        items = self.items()
-        items.sort()
-        for K,V in items:
+        for K,V in sorted(self.items()):
             result.append( V.js_output(attrs) )
         return _nulljoin(result)
     # end js_output
@@ -757,12 +750,9 @@ Cookie = SmartCookie
 #
 ###########################################################
 
-def _test():
-    import doctest, Cookie
-    return doctest.testmod(Cookie)
-
 if __name__ == "__main__":
-    _test()
+    import doctest
+    doctest.testmod()
 
 
 #Local Variables:

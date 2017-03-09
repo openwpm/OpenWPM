@@ -1,6 +1,8 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 from os.path import realpath, dirname, join, isfile, isdir
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 
 class TestDependencies(OpenWPMTest):
@@ -23,5 +25,5 @@ class TestDependencies(OpenWPMTest):
             if line.startswith("#"):
                 continue
             pkg = re.split(r'[>=<]', line.strip())[0]
-            print "Checking Python package", pkg
+            print("Checking Python package", pkg)
             self.assert_py_pkg_installed(pkg)

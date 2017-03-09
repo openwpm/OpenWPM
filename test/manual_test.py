@@ -1,5 +1,7 @@
-from utilities import BASE_TEST_URL, start_server
-from conftest import create_xpi
+from __future__ import absolute_import
+from __future__ import print_function
+from .utilities import BASE_TEST_URL, start_server
+from .conftest import create_xpi
 from os.path import dirname, join, realpath
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
@@ -63,12 +65,12 @@ def start_webdriver(with_extension=False):
         driver.get(BASE_TEST_URL)
 
         def cleanup_server():
-            print "Cleanup before shutdown..."
+            print("Cleanup before shutdown...")
             server.shutdown()
             thread.join()
-            print "...sever shutdown"
+            print("...sever shutdown")
             driver.quit()
-            print "...webdriver closed"
+            print("...webdriver closed")
 
         atexit.register(cleanup_server)
         return driver
@@ -94,10 +96,10 @@ def start_jpm():
     try:
         # http://stackoverflow.com/a/4417735/3104416
         for line in get_command_output(cmd_jpm_run, cwd=EXT_PATH):
-            print colorize(line), bcolors.ENDC,
+            print(colorize(line), bcolors.ENDC, end=' ')
     except KeyboardInterrupt:
-        print "Keyboard Interrupt detected, shutting down..."
-    print "\nClosing server thread..."
+        print("Keyboard Interrupt detected, shutting down...")
+    print("\nClosing server thread...")
     server.shutdown()
     thread.join()
 
@@ -114,10 +116,10 @@ if __name__ == '__main__':
             driver = start_webdriver(False)
         else:
             driver = start_webdriver(True)
-        print "\nDropping into ipython shell...."
-        print "  * Interact with the webdriver instance using `driver`"
-        print "  * The webdriver and test page server will close automatically"
-        print "  * Use `exit` to quit the ipython shell\n"
+        print("\nDropping into ipython shell....")
+        print("  * Interact with the webdriver instance using `driver`")
+        print("  * The webdriver and test page server will close automatically")
+        print("  * Use `exit` to quit the ipython shell\n")
         IPython.embed()
     else:
         print ("Unrecognized arguments. Usage:\n"
