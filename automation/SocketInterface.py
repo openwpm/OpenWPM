@@ -7,6 +7,7 @@ import socket
 import struct
 import json
 import dill
+import six
 from six.moves import input
 
 #TODO - Implement a cleaner shutdown for server socket
@@ -48,6 +49,7 @@ class serversocket:
 
         Supported serialization formats:
             'n' : no serialization
+            'u' : Unicode string in UTF-8
             'd' : dill pickle
             'j' : json
         """
@@ -58,16 +60,20 @@ class serversocket:
                 msg = self.receive_msg(client, 5)
                 msglen, serialization = struct.unpack('>Lc', msg)
                 if self.verbose:
-                    print("Msglen: " + str(msglen) + " is_serialized: " + str(serialization != 'n'))
+                    print("Received message, length %d, serialization %r"
+                          % (msglen, serialization)
                 msg = self.receive_msg(client, msglen)
-                if serialization != 'n':
+                if serialization != b'n':
                     try:
-                        if serialization == 'd': # dill serialization
+                        if serialization == b'd': # dill serialization
                             msg = dill.loads(msg)
-                        elif serialization == 'j': # json serialization
-                            msg = json.loads(msg)
+                        elif serialization == b'j': # json serialization
+                            msg = json.loads(msg.decode('utf-8'))
+                        elif serialization == b'u': # utf-8 serialization
+                            msg = msg.decode('utf-8')
                         else:
-                            print("Unrecognized serialization type: %s" % serialization)
+                            print("Unrecognized serialization type: %r"
+                                  % serialization)
                             continue
                     except (UnicodeDecodeError, ValueError) as e:
                         print("Error de-serializing message: %s \n %s" % (
@@ -114,20 +120,23 @@ class clientsocket:
         using dill if not str, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
-        #if input not string, serialize to string
-        if type(msg) is not str:
-            if self.serialization == 'dill':
-                msg = dill.dumps(msg)
-                serialization = 'd'
-            elif self.serialization == 'json':
-                msg = json.dumps(msg)
-                serialization = 'j'
-            else:
-                raise ValueError("Unsupported serialization type set: %s" % serialization)
+        if isinstance(msg, six.binary_type):
+            serialization = b'n'
+        elif isinstance(msg, six.text_type):
+            serialization = b'u'
+            msg = msg.encode('utf-8')
+        elif self.serialization == 'dill':
+            msg = dill.dumps(msg, dill.HIGHEST_PROTOCOL)
+            serialization = b'd'
+        elif self.serialization == 'json':
+            msg = json.dumps(msg).encode('utf-8')
+            serialization = b'j'
         else:
-            serialization = 'n'
+            raise ValueError("Unsupported serialization type set: %s"
+                             % serialization)
 
-        if self.verbose: print("Sending message with serialization %s" % serialization)
+        if self.verbose:
+            print("Sending message with serialization %s" % serialization)
 
         #prepend with message length
         msg = struct.pack('>Lc', len(msg), serialization) + msg

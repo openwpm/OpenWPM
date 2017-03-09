@@ -29,10 +29,10 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         d = dict(record.__dict__)
         d['msg'] = record.getMessage()
         d['args'] = None
-        s = json.dumps(d)
+        s = json.dumps(d).encode('utf-8')
         if ei:
             record.exc_info = ei  # for next handler
-        return struct.pack('>Ic', len(s), 'j') + s
+        return struct.pack('>Lc', len(s), b'j') + s
 
 def loggingclient(logger_address, logger_port, level=logging.DEBUG):
     """ Establishes a logger that sends log records to loggingserver """
