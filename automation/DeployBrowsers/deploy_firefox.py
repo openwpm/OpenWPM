@@ -14,10 +14,23 @@ import os
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
+def adjust_path(root_dir):
+    """
+    If ../../firefox-bin/ exists, add it to the PATH.
+    If it doesn't exist, do nothing - system firefox and geckodriver will
+    be used.
+    """
+    ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
+    if os.path.isdir(ffbin):
+        curpath = os.environ["PATH"]
+        if ffbin not in curpath:
+            os.environ["PATH"] = ffbin + os.pathsep + curpath
+
 def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
     """ launches a firefox instance with parameters set by the input dictionary """
     root_dir = os.path.dirname(__file__)  # directory of this file
     logger = loggingclient(*manager_params['logger_address'])
+    adjust_path(root_dir)
 
     display_pid = None
     display_port = None
@@ -107,7 +120,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
 
     # Launch the webdriver
     status_queue.put(('STATUS','Launch Attempted',None))
-    fb = FirefoxBinary(root_dir  + "/../../firefox-bin/firefox")
+    fb = FirefoxBinary("firefox")
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
     status_queue.put(('STATUS','Browser Launched',(int(driver.binary.process.pid), profile_settings)))
 
