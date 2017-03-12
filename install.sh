@@ -42,10 +42,10 @@ fi
 FIREFOX_VERSION=52.0esr
 
 wget https://ftp.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}/linux-$(uname -m)/en-US/firefox-${FIREFOX_VERSION}.tar.bz2
-tar jxf firefox*.tar.bz2
+tar jxf firefox-${FIREFOX_VERSION}.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
-rm firefox*.tar.bz2
+rm firefox-${FIREFOX_VERSION}.tar.bz2
 
 # Selenium 3.3 requires a 'geckodriver' helper executable, which is not
 # yet packaged.
