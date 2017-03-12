@@ -351,15 +351,7 @@ Once installed, execute `py.test -vv` in the test directory to run all tests.
 Troubleshooting
 ---------------
 
-1. `IOError: [Errno 2] No such file or directory: '../../firefox-bin/application.ini'`
-
-  This error occurs when the platform can't find a standalone Firefox binary in
-  the root directory of OpenWPM. The `install.sh` script will download and unzip
-  the appropriate version of Firefox for you. If you've run this script but still
-  don't have the binary installed note that the script will exit if any command
-  fails, so re-run the install script checking that no command fails.
-
-2. `WebDriverException: Message: The browser appears to have exited before we could connect...`
+1. `WebDriverException: Message: The browser appears to have exited before we could connect...`
 
   This error indicates that Firefox exited during startup (or was prevented from
   starting). There are many possible causes of this error:

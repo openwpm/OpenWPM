@@ -1,36 +1,29 @@
 from __future__ import absolute_import
-from ..MPLogger import loggingclient
-from ..Commands.profile_commands import load_profile
+
+import json
+import os
+import random
+import shutil
+
 from . import configure_firefox
+from ..Commands.profile_commands import load_profile
+from ..MPLogger import loggingclient
+from ..utilities.platform_utils import ensure_firefox_in_path
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
 
 from pyvirtualdisplay import Display
-import random
-import shutil
-import json
-import os
 
 DEFAULT_SCREEN_RES = (1366, 768)  # Default screen res when no preferences are given
 
-def adjust_path(root_dir):
-    """
-    If ../../firefox-bin/ exists, add it to the PATH.
-    If it doesn't exist, do nothing - system firefox and geckodriver will
-    be used.
-    """
-    ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
-    if os.path.isdir(ffbin):
-        curpath = os.environ["PATH"]
-        if ffbin not in curpath:
-            os.environ["PATH"] = ffbin + os.pathsep + curpath
-
 def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
     """ launches a firefox instance with parameters set by the input dictionary """
+    ensure_firefox_in_path()
+
     root_dir = os.path.dirname(__file__)  # directory of this file
     logger = loggingclient(*manager_params['logger_address'])
-    adjust_path(root_dir)
+
 
     display_pid = None
     display_port = None
@@ -120,7 +113,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
 
     # Launch the webdriver
     status_queue.put(('STATUS','Launch Attempted',None))
-    fb = FirefoxBinary("firefox")
+    fb = FirefoxBinary()
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb)
     status_queue.put(('STATUS','Browser Launched',(int(driver.binary.process.pid), profile_settings)))
 

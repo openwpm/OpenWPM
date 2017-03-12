@@ -36,34 +36,38 @@ def parse_http_stack_trace_str(trace_str):
             print("Exception parsing the stack frame %s %s" % (frame, exc))
     return stack_trace
 
+def ensure_firefox_in_path():
+    """
+    If ../../firefox-bin/ exists, add it to the PATH.
+    If it doesn't exist, do nothing - system firefox and geckodriver will
+    be used.
+    """
+    root_dir = os.path.dirname(__file__)  # directory of this file
+    ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
+    if os.path.isdir(ffbin):
+        curpath = os.environ["PATH"]
+        if ffbin not in curpath:
+            os.environ["PATH"] = ffbin + os.pathsep + curpath
+
 def get_version():
     """Return OpenWPM version tag/current commit and Firefox version """
     try:
-        openwpm = subprocess.check_output(["git","describe","--tags","--always"]).strip()
+        openwpm = subprocess.check_output(
+            ["git", "describe", "--tags", "--always"]).strip()
     except subprocess.CalledProcessError:
         ver = os.path.join(os.path.dirname(__file__), '../../VERSION')
         with open(ver, 'r') as f:
             openwpm = f.readline().strip()
 
-    ff_ini = os.path.join(os.path.dirname(__file__),
-            '../../firefox-bin/application.ini')
+    ensure_firefox_in_path()
     try:
-        with open(ff_ini, 'r') as f:
-            ff = None
-            for line in f:
-                if line.startswith('Version='):
-                    ff = line[8:].strip()
-                    break
-    except IOError as e:
-        six.reraise(IOError, IOError(
-            "%s \n Did you run `./install.sh`? OpenWPM "
-            "requires a Firefox package installed within "
-            "a `firefox-bin` directory in the root "
-            "directory of the platform. \n The `application.ini` "
-            "file is used to determine the version of Firefox "
-            "present in that directory." % str(e)),
-                    sys.exc_info()[2])
+        firefox = subprocess.check_output(["firefox", "--version"])
+    except subprocess.CalledProcessError as e:
+        six.raise_from(
+            RuntimeError("Firefox not found.  Did you run `./install.sh`?"),
+            e)
 
+    ff = firefox.split()[-1]
     return openwpm, ff
 
 def get_configuration_string(manager_params, browser_params, versions):
@@ -137,43 +141,46 @@ def fetch_adblockplus_list(output_directory, wait_time=20):
     <output_directory> - The directory to save lists to. Will be created if it
                          does not already exist.
     """
+    ensure_firefox_in_path()
+
     output_directory = os.path.expanduser(output_directory)
-    # Start a virtual display
-    display = Display(visible=0)
-    display.start()
-
-    root_dir = os.path.join(os.path.dirname(__file__),'..')
-    fb = FirefoxBinary(os.path.join(root_dir,'../firefox-bin/firefox'))
-
-    fp = webdriver.FirefoxProfile()
-    browser_path = fp.path + '/'
-
-    # Enable AdBlock Plus - Uses "Easy List" by default
-    # "Allow some non-intrusive advertising" disabled
-    fp.add_extension(extension=os.path.join(root_dir,'DeployBrowsers/firefox_extensions/adblock_plus-2.7.xpi'))
-    fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
-    fp.set_preference('extensions.adblockplus.subscriptions_listurl', '')
-    fp.set_preference('extensions.adblockplus.subscriptions_fallbackurl', '')
-    fp.set_preference('extensions.adblockplus.subscriptions_antiadblockurl', '')
-    fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
-    fp.set_preference('extensions.adblockplus.notificationurl', '')
-
-    # Force pre-loading so we don't allow some ads through
-    fp.set_preference('extensions.adblockplus.please_kill_startup_performance', True)
-
-    print("Starting webdriver with AdBlockPlus activated")
-    driver = webdriver.Firefox(firefox_profile = fp, firefox_binary = fb)
-    print("Sleeping %i seconds to give the list time to download" % wait_time)
-    time.sleep(wait_time)
-
-    if not os.path.isdir(output_directory):
-        print("Output directory %s does not exist, creating." % output_directory)
-        os.makedirs(output_directory)
-
-    print("Copying blocklists to %s" % output_directory)
+    display = None
+    driver = None
     try:
+        # Start a virtual display
+        display = Display(visible=0)
+        display.start()
+
+        fb = FirefoxBinary()
+        fp = webdriver.FirefoxProfile()
+        browser_path = fp.path + '/'
+
+        # Enable AdBlock Plus - Uses "Easy List" by default
+        # "Allow some non-intrusive advertising" disabled
+        root_dir = os.path.dirname(os.path.dirname(__file__))  # parent of directory of this file
+        fp.add_extension(extension=os.path.join(root_dir,'DeployBrowsers/firefox_extensions/adblock_plus-2.7.xpi'))
+        fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
+        fp.set_preference('extensions.adblockplus.subscriptions_listurl', '')
+        fp.set_preference('extensions.adblockplus.subscriptions_fallbackurl', '')
+        fp.set_preference('extensions.adblockplus.subscriptions_antiadblockurl', '')
+        fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
+        fp.set_preference('extensions.adblockplus.notificationurl', '')
+
+        # Force pre-loading so we don't allow some ads through
+        fp.set_preference('extensions.adblockplus.please_kill_startup_performance', True)
+
+        print("Starting webdriver with AdBlockPlus activated")
+        driver = webdriver.Firefox(firefox_profile = fp, firefox_binary = fb)
+        print("Sleeping %i seconds to give the list time to download" % wait_time)
+        time.sleep(wait_time)
+
+        if not os.path.isdir(output_directory):
+            print("Output directory %s does not exist, creating." % output_directory)
+            os.makedirs(output_directory)
+
+        print("Copying blocklists to %s" % output_directory)
         shutil.copy(browser_path+'adblockplus/patterns.ini', output_directory)
         shutil.copy(browser_path+'adblockplus/elemhide.css', output_directory)
     finally:
-        driver.close()
-        display.stop()
+        if driver is not None: driver.close()
+        if display is not None: display.stop()
