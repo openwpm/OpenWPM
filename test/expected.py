@@ -176,11 +176,6 @@ call_stack_inject_image =\
      "async_cause": "null"
      }]
 
-adblockplus = {
-    "%s/abp/adblock_plus_test.html" % BASE_TEST_URL,
-    # favicon request is made to URL without a path
-    "%s/favicon.ico" % BASE_TEST_URL_NOPATH}
-
 JS_COOKIE_TEST_URL = u'%s/js_cookie.html' % BASE_TEST_URL
 
 js_cookie = (JS_COOKIE_TEST_URL,

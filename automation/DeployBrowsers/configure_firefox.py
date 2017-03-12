@@ -1,7 +1,8 @@
 """ Set prefs and load extensions in Firefox """
+
 from __future__ import absolute_import
 from __future__ import print_function
-from ..Errors import BrowserConfigError
+
 import shutil
 import sys
 import os
@@ -30,58 +31,41 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
 
     # Tracking Protection
     if browser_params['tracking-protection']:
-        print("ERROR: Tracking Protection doesn't seem to work in Firefox 41 with selenium.")
-        print("       It does work in 42 Beta. This will be enabled once that lands in release.")
-        print("       Press Ctrl+C to exit")
-        sys.exit(1)
-        #fp.set_preference('privacy.trackingprotection.enabled', True)
+        fp.set_preference('privacy.trackingprotection.enabled', True)
 
-    # Load Ghostery - Enable all blocking
+    # Ghostery -> Disconnect
     if browser_params['ghostery']:
-        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/ghostery/ghostery-5.4.10.xpi'))
-        os.makedirs(browser_profile_path+'jetpack/firefox@ghostery.com/simple-storage/')
-        src = os.path.join(root_dir,'firefox_extensions/ghostery/store.json') # settings - block all trackers/cookies
-        dst = os.path.join(browser_profile_path,'jetpack/firefox@ghostery.com/simple-storage/store.json')
-        shutil.copy(src,dst)
+        sys.stderr.write(
+            "WARNING: Using Disconnect instead of Ghostery.\n"
+            "WARNING: Update to browser_params['disconnect'].\n")
+        browser_params['disconnect'] = True
+
+    # Disconnect: tracking protection
+    if browser_params['disconnect']:
+        fp.add_extension(extension=os.path.join(
+            root_dir, 'firefox_extensions/2.0@disconnect.me.xpi'))
 
     # Enable HTTPS Everywhere
     if browser_params['https-everywhere']:
-        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/https_everywhere-5.1.0.xpi'))
+        fp.add_extension(extension=os.path.join(
+            root_dir, 'firefox_extensions/https-everywhere@eff.org.xpi'))
         fp.set_preference("extensions.https_everywhere.firstrun_context_menu", True)
         fp.set_preference("extensions.https_everywhere.prefs_version", 1)
         fp.set_preference("extensions.https_everywhere.toolbar_hint_shown", True)
         fp.set_preference("extensions.https_everywhere._observatory.popup_shown", True)
         fp.set_preference("extensions.https_everywhere._observatory.clean_config", True)
 
-    # Enable AdBlock Plus - Uses "Easy List" by default
-    # "Allow some non-intrusive advertising" disabled
+    # ABP -> uBlock Origin
     if browser_params['adblock-plus']:
-        fp.add_extension(extension=os.path.join(root_dir,'firefox_extensions/adblock_plus-2.7.xpi'))
-        fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
-        fp.set_preference('extensions.adblockplus.subscriptions_exceptionsurl', '')
-        fp.set_preference('extensions.adblockplus.subscriptions_listurl', '')
-        fp.set_preference('extensions.adblockplus.subscriptions_fallbackurl', '')
-        fp.set_preference('extensions.adblockplus.subscriptions_antiadblockurl', '')
-        fp.set_preference('extensions.adblockplus.suppress_first_run_page', True)
-        fp.set_preference('extensions.adblockplus.notificationurl', '')
+        sys.stderr.write(
+            "WARNING: Using uBlock Origin instead of Adblock Plus.\n"
+            "WARNING: Update to browser_params['ublock-origin'].\n")
+        browser_params['ublock-origin'] = True
 
-        # Force pre-loading so we don't allow some ads through
-        fp.set_preference('extensions.adblockplus.please_kill_startup_performance', True)
-
-        # Don't allow auto-update -- pull list from user location
-        fp.set_preference('extensions.adblockplus.subscriptions_autoupdate', False)
-        os.mkdir(browser_profile_path + 'adblockplus')
-        try:
-            list_loc = os.path.expanduser(browser_params['adblock-plus_list_location'])
-            shutil.copy(os.path.join(list_loc,'patterns.ini'),
-                    browser_profile_path+'adblockplus/')
-            shutil.copy(os.path.join(list_loc,'elemhide.css'),
-                    browser_profile_path+'adblockplus/')
-        except (KeyError, IOError):
-            raise BrowserConfigError(("In order to use AdBlock Plus, you must "
-                "specify the location of an updated `patterns.ini` via "
-                "`browser_params['adblock-plus_list_location']`. This can be "
-                "generated with `utilities.platform_utils.fetch_adblockplus_list()`."))
+    # uBlock Origin, with default settings
+    if browser_params['ublock-origin']:
+        fp.add_extension(extension=os.path.join(
+            root_dir, 'firefox_extensions/uBlock0@raymondhill.net.xpi'))
 
 def optimize_prefs(fp):
     """
@@ -116,6 +100,7 @@ def optimize_prefs(fp):
     fp.set_preference("browser.search.suggest.enabled", False)
     fp.set_preference("network.http.speculative-parallel-limit", 0)
     fp.set_preference("keyword.enabled", False) # location bar using search
+    fp.set_preference("browser.urlbar.userMadeSearchSuggestionsChoice", True)
 
     # Disable pinging Mozilla for geoip
     fp.set_preference('browser.search.geoip.url', '')

@@ -205,33 +205,23 @@ left out of this section.
       visited as a first party.
 * `donottrack`
   * Set to `True` to enable Do Not Track in the browser.
-* `ghostery`
-  * Set to `True` to enable Ghostery with all blocking enabled
-  * NOTE: The Ghostery version used (including filter lists) may be outdated.
-    It's recommended that you update the xpi and `store.json` file (included in
-    the extension profile directory). These can be placed
-    [here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions/ghostery)
+* `disconnect`
+  * Set to `True` to enable Disconnect with all blocking enabled
+  * NOTE: The extension may be outdated.
+    It's recommended that you update the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
 * `https-everywhere`
   * Set to `True` to enable HTTPS Everywhere in the browser.
   * NOTE: The HTTPS Everywhere version may be outdated. It's recommended you
     update the xpi
     [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
     before crawling.
-* `adblock-plus`
-  * Set to `True` to enable AdBlock Plus in the browser.
+* `ublock-origin`
+  * Set to `True` to enable uBlock Origin in the browser.
   * The filter lists should be automatically downloaded and installed, but the
-    xpi, [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
-    , might be outdated.
-  * NOTE: There is a known issue of AdBlock Plus not blocking all resources
-    on the first page visit. See
-    [Issue #35](https://github.com/citp/OpenWPM/issues/35)
-    for more information.
-* **NOT SUPPORTED** ` tracking-protection`
+    xpi, [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), might be outdated.
+* `tracking-protection`
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
-  * NOTE: This is not currently supported. See
-    [Issue #101](https://github.com/citp/OpenWPM/issues/101) for more
-    information.
 
 Browser Profile Support
 -----------------------

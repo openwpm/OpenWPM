@@ -17,9 +17,11 @@
 
     "tp_cookies": "always",
     "donottrack": false,
+    "disconnect": false,
     "ghostery": false,
     "https-everywhere": false,
     "adblock-plus": false,
+    "ublock-origin": false,
     "tracking-protection": false,
 
     "proxy": false,
