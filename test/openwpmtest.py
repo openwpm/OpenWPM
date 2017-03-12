@@ -1,8 +1,10 @@
 from __future__ import absolute_import
+
 import os
 from os.path import join, isfile
-from . import utilities
 import pytest
+
+from . import utilities
 from ..automation import TaskManager
 
 

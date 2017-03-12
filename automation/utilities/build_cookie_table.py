@@ -1,16 +1,18 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
+import json
+import os
+import six
+import time
 from six.moves.urllib.parse import urlparse
+
 from netlib.odict import ODictCaseless
 import sqlite3
-import json
-import time
-import os
 
 # This should be the modified Cookie.py included
 # the standard lib Cookie.py has many bugs
 from . import Cookie
-import six
 
 #Potential formats for expires timestamps
 DATE_FORMATS = ['%a, %d-%b-%Y %H:%M:%S %Z','%a, %d %b %Y %H:%M:%S %Z',
@@ -223,6 +225,8 @@ def build_http_cookie_table(database, verbose=False):
     print("Processing HTTP Response Cookies Complete")
     con.close()
 
-if __name__=='__main__':
+def main():
     import sys
     build_http_cookie_table(sys.argv[1], verbose=True)
+
+if __name__ == '__main__': main()

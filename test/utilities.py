@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
 import six.moves.SimpleHTTPServer
 import six.moves.socketserver
 import threading
@@ -7,17 +8,33 @@ import os
 from random import choice
 from os.path import realpath, dirname
 from six.moves import range
+
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"
 BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
                                          LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
 
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 class MyTCPServer(six.moves.socketserver.TCPServer):
     """Subclass TCPServer to be able to reuse the same port (Errno 98)."""
     allow_reuse_address = True
-
 
 def start_server():
     """ Start a simple HTTP server to run local tests.

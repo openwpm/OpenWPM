@@ -116,7 +116,7 @@ def _drain_queue(sock_queue):
         obj = sock_queue.get()
         _handleLogRecord(obj)
 
-if __name__ == '__main__':
+def main():
     # Some tests
     import logging, logging.handlers
     import multiprocess as mp
@@ -151,3 +151,5 @@ if __name__ == '__main__':
     status_queue.put('DIE')
     loggingserver.join()
     print("Server closed, exiting...")
+
+if __name__ == '__main__': main()

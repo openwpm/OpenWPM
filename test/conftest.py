@@ -1,14 +1,19 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
+import os
 import pytest
-from . import utilities
 import subprocess
 
+from . import utilities
 
 def create_xpi():
     """Creates a new xpi using jpm."""
-    subprocess.check_call(["jpm", "xpi"],
-                          cwd="../automation/Extension/firefox")
+    if utilities.which("jpm"):
+        subprocess.check_call(["jpm", "xpi"],
+                              cwd="../automation/Extension/firefox/")
+    else:
+        assert os.path.exists("../automation/Extension/firefox/openwpm.xpi")
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,8 +1,9 @@
 from __future__ import absolute_import
-from six.moves.urllib.parse import urlparse
-import tarfile
-import pytest
+
 import os
+import pytest
+import tarfile
+from six.moves.urllib.parse import urlparse
 
 from ..automation import TaskManager
 from ..automation.utilities import domain_utils, db_utils

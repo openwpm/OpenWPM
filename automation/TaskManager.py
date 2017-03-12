@@ -1,26 +1,28 @@
+from __future__ import division
 from __future__ import absolute_import
+
+import copy
+import json
+from multiprocess import Process, Queue
+import os
+import psutil
+from six.moves import cPickle as pickle
+from six.moves.queue import Empty as EmptyQueue
+from six.moves import range
+from six import reraise
+import sqlite3
+import threading
+import time
+
+from tblib import pickling_support
+pickling_support.install()
+
+from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
 from .DataAggregator import DataAggregator, LevelDBAggregator
-from .SocketInterface import clientsocket
 from .Errors import CommandExecutionError
+from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_version, get_configuration_string
-from . import CommandSequence
-from . import MPLogger
-
-from multiprocess import Process, Queue
-from six.moves.queue import Empty as EmptyQueue
-from tblib import pickling_support
-from six.moves import range
-pickling_support.install()
-from six import reraise
-from six.moves import cPickle as pickle
-import threading
-import copy
-import os
-import sqlite3
-import time
-import json
-import psutil
 
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500 # in MB

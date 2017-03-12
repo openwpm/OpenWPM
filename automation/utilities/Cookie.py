@@ -502,9 +502,8 @@ class Morsel(dict):
         # Now add any defined attributes
         if attrs is None:
             attrs = self._reserved
-        items = list(self.items())
-        items.sort()
-        for K,V in items:
+
+        for K,V in sorted(self.items()):
             if V == "": continue
             if K not in attrs: continue
             if K == "expires" and type(V) == type(1):
@@ -753,7 +752,6 @@ Cookie = SmartCookie
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
 
 #Local Variables:
 #tab-width: 4

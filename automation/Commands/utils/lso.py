@@ -1,11 +1,14 @@
 ### This is code adapted from KU Leuven crawler code written by
 ### Gunes Acar and Marc Juarez
+
 from __future__ import absolute_import
 from __future__ import print_function
-from miniamf import sol
+
 import fnmatch
 import os
 import six
+
+from miniamf import sol
 
 #TODO: Linux only
 FLASH_DIRS = ['~/.macromedia/Flash_Player/#SharedObjects/']

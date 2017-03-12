@@ -3,12 +3,15 @@
 # XPaths encountered while scraping.
 #
 # Steven Englehardt (github.com/englehardt)
+
 from __future__ import absolute_import
 from __future__ import print_function
-from bs4 import BeautifulSoup as bs
-import bs4
-import re
+
 from six.moves import range
+import re
+
+import bs4
+from bs4 import BeautifulSoup as bs
 
 def is_clickable(xpath):
     #We consider any xpath that has an 'a', 'button',
@@ -133,7 +136,7 @@ def xp1_wildcard(attr, string, normalize=True):
             print("ERROR: The string is empty")
             return '[' + attr + '=' + string + ']'
 
-if __name__=='__main__':
+def main():
     #Output some sample XPaths
     print("--- Sample XPaths ---")
     from six.moves.urllib.request import urlopen
@@ -150,3 +153,5 @@ if __name__=='__main__':
             print("XPath")
             print(ExtractXPath(element))
             print("**************")
+
+if __name__=='__main__': main()

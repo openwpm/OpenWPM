@@ -1,19 +1,20 @@
 from __future__ import absolute_import
 from __future__ import print_function
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from pyvirtualdisplay import Display
-from collections import OrderedDict
-from selenium import webdriver
-from tabulate import tabulate
-from copy import deepcopy
-import subprocess
-import shutil
-import json
-import time
-import sys
-import os
-import six
 
+from collections import OrderedDict
+from copy import deepcopy
+import json
+import os
+import shutil
+import six
+import subprocess
+import sys
+import time
+
+from pyvirtualdisplay import Display
+from selenium import webdriver
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from tabulate import tabulate
 
 def parse_http_stack_trace_str(trace_str):
     """Parse a stacktrace string and return an array of dict."""
@@ -62,6 +63,7 @@ def get_version():
             "file is used to determine the version of Firefox "
             "present in that directory." % str(e)),
                     sys.exc_info()[2])
+
     return openwpm, ff
 
 def get_configuration_string(manager_params, browser_params, versions):

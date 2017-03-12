@@ -104,7 +104,7 @@ def start_jpm():
     thread.join()
 
 
-if __name__ == '__main__':
+def main():
     import IPython
     import sys
 
@@ -124,3 +124,5 @@ if __name__ == '__main__':
     else:
         print ("Unrecognized arguments. Usage:\n"
                "python manual_test.py ('--selenium')? ('--no-extension')?")
+
+if __name__ == '__main__': main()

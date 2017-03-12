@@ -150,7 +150,7 @@ class clientsocket:
     def close(self):
         self.sock.close()
 
-if __name__ == '__main__':
+def main():
     import sys
 
     #Just for testing
@@ -189,3 +189,5 @@ if __name__ == '__main__':
             else:
                 sock.send(msg)
         sock.close()
+
+if __name__ == '__main__': main()
