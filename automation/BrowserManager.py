@@ -76,7 +76,7 @@ class Browser:
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
-            tempdir = tempfile.mkdtemp() + "/"
+            tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_") + "/"
             profile_commands.dump_profile(self.current_profile_path,
                                           self.manager_params,
                                           self.browser_params,
@@ -125,7 +125,8 @@ class Browser:
                 (self.display_pid, self.display_port) = check_queue(launch_status) # Display launched
                 check_queue(launch_status) # browser launch attempted
                 (self.browser_pid, self.browser_settings) = check_queue(launch_status) # Browser launched
-                if check_queue(launch_status) != 'READY':
+                (driver_profile_path, ready) = check_queue(launch_status)
+                if ready != 'READY':
                     self.logger.error("BROWSER %i: Mismatch of status queue return values, trying again..." % self.crawl_id)
                     unsuccessful_spawns += 1
                     continue
@@ -147,7 +148,9 @@ class Browser:
         if success:
             self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.crawl_id)
             previous_profile_path = self.current_profile_path
-            self.current_profile_path = spawned_profile_path
+            self.current_profile_path = driver_profile_path
+            if driver_profile_path != spawned_profile_path:
+                shutil.rmtree(spawned_profile_path, ignore_errors=True)
             if previous_profile_path is not None:
                 shutil.rmtree(previous_profile_path, ignore_errors=True)
             if tempdir is not None:
@@ -256,24 +259,42 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
 
         # Start the virtualdisplay (if necessary), webdriver, and browser
         (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, manager_params, crash_recovery)
+        if prof_folder[-1] != '/':
+            prof_folder += '/'
 
         # Read the extension port -- if extension is enabled
         # TODO: This needs to be cleaner
         if browser_params['browser'] == 'firefox' and browser_params['extension_enabled']:
             logger.debug("BROWSER %i: Looking for extension port information in %s" % (browser_params['crawl_id'], prof_folder))
-            while not os.path.isfile(prof_folder + 'extension_port.txt'):
+            elapsed = 0
+            port = None
+            ep_filename = os.path.join(prof_folder, 'extension_port.txt')
+            while elapsed < 5:
+                try:
+                    with open(ep_filename, 'rt') as f:
+                        port = int(f.read().strip())
+                        break
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
                 time.sleep(0.1)
-            time.sleep(0.5)
-            with open(prof_folder + 'extension_port.txt', 'r') as f:
-                port = f.read().strip()
+                elapsed += 0.1
+            if port is None:
+                # try one last time, allowing all exceptions to propagate
+                with open(ep_filename, 'rt') as f:
+                    port = int(f.read().strip())
+
+            logger.debug("BROWSER %i: Connecting to extension on port %i" % (browser_params['crawl_id'], port))
             extension_socket = clientsocket(serialization='json')
             extension_socket.connect('127.0.0.1',int(port))
         else:
             extension_socket = None
 
+        logger.debug("BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])
+
         # passes the profile folder, WebDriver pid and display pid back to the TaskManager
         # now, the TaskManager knows that the browser is successfully set up
-        status_queue.put(('STATUS','Browser Ready','READY'))
+        status_queue.put(('STATUS','Browser Ready',(prof_folder,'READY')))
         browser_params['profile_path'] = prof_folder
 
         # starts accepting arguments until told to die

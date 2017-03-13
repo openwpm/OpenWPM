@@ -121,7 +121,11 @@ def optimize_prefs(fp):
     fp.set_preference("extensions.getAddons.cache.enabled", False)
     fp.set_preference("lightweightThemes.update.enabled", False) # Personas
     fp.set_preference("browser.safebrowsing.provider.mozilla.updateURL", "") # Safebrowsing
+    fp.set_preference("browser.safebrowsing.provider.mozilla.gethashURL", "") # Safebrowsing
     fp.set_preference("browser.safebrowsing.provider.mozilla.lists", "") # Tracking Protection Lists
+    fp.set_preference("browser.safebrowsing.provider.google.updateURL", "") # Safebrowsing
+    fp.set_preference("browser.safebrowsing.provider.google.gethashURL", "") # Safebrowsing
+    fp.set_preference("browser.safebrowsing.provider.google.lists", "") # Tracking Protection Lists
 
     # Disable Safebrowsing
     fp.set_preference("browser.safebrowsing.enabled", False)
