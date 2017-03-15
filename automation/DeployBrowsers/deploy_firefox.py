@@ -31,7 +31,7 @@ def mktempfifo(suffix="", prefix="tmp", dir=None):
         dir = tempfile.gettempdir()
     names = tempfile._get_candidate_names()
     for seq in range(tempfile.TMP_MAX):
-        name = names.next()
+        name = next(names)
         file = os.path.join(dir, prefix + name + suffix)
         try:
             os.mkfifo(file, 384) # 0600
