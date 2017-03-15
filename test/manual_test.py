@@ -1,19 +1,26 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
+import atexit
+import os
+from os.path import dirname, join, realpath
+import subprocess
+
 from .utilities import BASE_TEST_URL, start_server
 from .conftest import create_xpi
-from os.path import dirname, join, realpath
+
+import automation
+from automation.DeployBrowsers import configure_firefox
+from automation.Commands import browser_commands
+
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
-import subprocess
-import atexit
 
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
-FF_BIN_PATH = join(BASE_DIR, 'firefox-bin', 'firefox')
-
+FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
 
 class bcolors:
     HEADER = '\033[95m'
@@ -58,7 +65,11 @@ def start_webdriver(with_extension=False):
     webdriver
         A selenium webdriver instance.
     """
-    fb = FirefoxBinary(FF_BIN_PATH)
+    path = os.environ['PATH']
+    if FF_BIN_PATH not in path:
+        os.environ['PATH'] = FF_BIN_PATH + os.pathsep + path
+
+    fb = FirefoxBinary()
     server, thread = start_server()
 
     def register_cleanup(driver):
@@ -75,15 +86,15 @@ def start_webdriver(with_extension=False):
         atexit.register(cleanup_server)
         return driver
 
-    if not with_extension:
-        return register_cleanup(webdriver.Firefox(firefox_binary=fb))
-
-    # add openwpm extension to profile
-    create_xpi()
     fp = webdriver.FirefoxProfile()
-    ext_xpi = join(EXT_PATH, 'openwpm.xpi')
-    fp.add_extension(extension=ext_xpi)
-    fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
+    if with_extension:
+        # add openwpm extension to profile
+        create_xpi()
+        ext_xpi = join(EXT_PATH, 'openwpm.xpi')
+        fp.add_extension(extension=ext_xpi)
+        fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
+
+        configure_firefox.optimize_prefs(fp)
 
     return register_cleanup(
         webdriver.Firefox(firefox_binary=fb, firefox_profile=fp))

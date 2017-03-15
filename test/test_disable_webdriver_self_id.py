@@ -13,33 +13,14 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
     Selenium webdriver self-identifies in two locations in the DOM, see:
     * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/server.js#L49
     * https://github.com/SeleniumHQ/selenium/blob/b82512999938d41f6765ce8017284dcabe437d4c/javascript/firefox-driver/extension/content/dommessenger.js#L98
+
+    Newer Selenium (using Marionette under the hood) doesn't
+    self-identify in the DOM, so its signature may be absent even if
+    'disable_webdriver_self_id' is not set.
     """
 
     def get_config(self, data_dir=""):
         return self.get_test_config(data_dir)
-
-    def test_self_id_present(self):
-        manager_params, browser_params = self.get_config()
-        browser_params[0]['disable_webdriver_self_id'] = False
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        test_url = utilities.BASE_TEST_URL + '/simple_a.html'
-
-        def check_webdriver_id_not_exists(**kwargs):
-            """ Check if webdriver self-identification attributes in the DOM"""
-            driver = kwargs['driver']
-            # Check if document element has `webdriver` attribute
-            assert driver.execute_script(
-                    'return null === document.documentElement.getAttribute("webdriver")')
-            # Check if navigator has webdriver property
-            assert driver.execute_script('return undefined === navigator.webdriver')
-            assert driver.execute_script('return false === ("webdriver" in navigator)')
-
-        cs = CommandSequence.CommandSequence(test_url, blocking=True)
-        cs.get(sleep=5, timeout=60)
-        cs.run_custom_function(check_webdriver_id_not_exists)
-        with pytest.raises(AssertionError):
-            manager.execute_command_sequence(cs)
-            manager.close()
 
     def test_disable_self_id(self):
         manager_params, browser_params = self.get_config()
@@ -52,10 +33,13 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
             driver = kwargs['driver']
             # Check if document element has `webdriver` attribute
             assert driver.execute_script(
-                    'return null === document.documentElement.getAttribute("webdriver")')
+                'return null === '
+                'document.documentElement.getAttribute("webdriver")')
             # Check if navigator has webdriver property
-            assert driver.execute_script('return undefined === navigator.webdriver')
-            assert driver.execute_script('return false === ("webdriver" in navigator)')
+            assert driver.execute_script(
+                'return undefined === navigator.webdriver')
+            assert driver.execute_script(
+                'return false === ("webdriver" in navigator)')
 
         cs = CommandSequence.CommandSequence(test_url, blocking=True)
         cs.get(sleep=5, timeout=60)
@@ -75,7 +59,8 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
             driver = kwargs['driver']
             # Set the `webdriver` attribute (our instrumentation should only
             # remove the first instance, set by Selenium).
-            assert driver.execute_script("return undefined === navigator.webdriver")
+            assert driver.execute_script(
+                "return undefined === navigator.webdriver")
             driver.execute_script("""
                 Object.defineProperty(navigator,'webdriver',{
                     configurable: true,
@@ -87,13 +72,15 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
                     configurable: true,
                     value:'blah'
                 });""")
-            assert driver.execute_script("return 'blah' === navigator.webdriver")
+            assert driver.execute_script(
+                "return 'blah' === navigator.webdriver")
             driver.execute_script("""
                 Object.defineProperty(navigator,'webdriver',{
                     configurable: true,
                     value:'test'
                 });""")
-            assert driver.execute_script("return 'test' === navigator.webdriver")
+            assert driver.execute_script(
+                "return 'test' === navigator.webdriver")
 
             # Setting on a custom object
             assert driver.execute_script("""
@@ -111,7 +98,8 @@ class TestDisableWebdriverSelfId(OpenWPMTest):
                     }
                 });
                 return 'testing' === someObject.testProp;""")
-            # local variables not available to next `execute_script`. Need to recreate
+            # local variables not available to next `execute_script`.
+            # Need to recreate
             assert not driver.execute_script("""
                 var someObject = {
                     prop1:"testing"

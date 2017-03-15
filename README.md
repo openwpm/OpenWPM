@@ -318,13 +318,13 @@ continuing the crawl). We recommend using
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
-* `python manual_test.py` uses `jpm` to build the current extension directory
+* `python -m test.manual_test` uses `jpm` to build the current extension directory
   and launch a Firefox instance with it.
-* `python manual_test.py --selenium` launches a Firefox Selenium instance
+* `python -m test.manual_test --selenium` launches a Firefox Selenium instance
   after using `jpm` to automatically rebuild `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
-* `python manual_test.py --selenium --no_extension` launches a Firefox Selenium
+* `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
   instance with no instrumentation. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.

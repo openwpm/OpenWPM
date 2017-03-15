@@ -55,21 +55,45 @@ def bot_mitigation(webdriver):
     time.sleep(random.randrange(RANDOM_SLEEP_LOW, RANDOM_SLEEP_HIGH))
 
 
+def close_other_windows(webdriver):
+    """
+    close all open pop-up windows and tabs other than the current one
+    """
+    main_handle = webdriver.current_window_handle
+    windows = webdriver.window_handles
+    if len(windows) > 1:
+        for window in windows:
+            if window != main_handle:
+                webdriver.switch_to_window(window)
+                webdriver.close()
+        webdriver.switch_to_window(main_handle)
+
 def tab_restart_browser(webdriver):
     """
     kills the current tab and creates a new one to stop traffic
-    note: this code if firefox-specific for now
     """
+    # note: this technically uses windows, not tabs, due to problems with
+    # chrome-targeted keyboard commands in Selenium 3 (intermittent
+    # nonsense WebDriverExceptions are thrown). windows can be reliably
+    # created, although we do have to detour into JS to do it.
+    close_other_windows(webdriver)
+
     if webdriver.current_url.lower() == 'about:blank':
         return
 
-    switch_to_new_tab = ActionChains(webdriver)
-    switch_to_new_tab.key_down(Keys.CONTROL).send_keys('t').key_up(Keys.CONTROL)
-    switch_to_new_tab.key_down(Keys.CONTROL).send_keys(Keys.PAGE_UP).key_up(Keys.CONTROL)
-    switch_to_new_tab.key_down(Keys.CONTROL).send_keys('w').key_up(Keys.CONTROL)
-    switch_to_new_tab.perform()
-    time.sleep(0.5)
+    # Create a new window.  Note that it is not practical to use
+    # noopener here, as we would then be forced to specify a bunch of
+    # other "features" that we don't know whether they are on or off.
+    # Closing the old window will kill the opener anyway.
+    webdriver.execute_script("window.open('')")
 
+    # This closes the _old_ window, and does _not_ switch to the new one.
+    webdriver.close()
+
+    # The only remaining window handle will be for the new window;
+    # switch to it.
+    assert len(webdriver.window_handles) == 1
+    webdriver.switch_to_window(webdriver.window_handles[0])
 
 def get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, extension_socket):
     """
@@ -78,7 +102,6 @@ def get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, ex
     """
 
     tab_restart_browser(webdriver)
-    main_handle = webdriver.current_window_handle
 
     # sends top-level domain to proxy and extension (if enabled)
     # then, waits for it to finish marking traffic in proxy before moving to new site
@@ -107,14 +130,7 @@ def get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, ex
     except TimeoutException:
         pass
 
-    # Close other windows (popups or "tabs")
-    windows = webdriver.window_handles
-    if len(windows) > 1:
-        for window in windows:
-            if window != main_handle:
-                webdriver.switch_to_window(window)
-                webdriver.close()
-        webdriver.switch_to_window(main_handle)
+    close_other_windows(webdriver)
 
     if browser_params['bot_mitigation']:
         bot_mitigation(webdriver)
