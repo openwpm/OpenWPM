@@ -7,6 +7,8 @@ from __future__ import print_function
 import fnmatch
 import os
 import six
+import sys
+import traceback
 
 from miniamf import sol
 
@@ -41,10 +43,11 @@ def get_flash_cookies(mod_since=0):
                     flash_cookies.extend(parse_flash_cookies(lso_file))
                 except (KeyboardInterrupt, SystemExit):
                     raise
-                except Exception as e:
-                    print("Exception reading", lso_file)
-                    print(e)
-                    pass
+                except Exception:
+                    sys.stderr.write("Exception reading {!r}:\n"
+                                     .format(lso_file))
+                    traceback.print_exc()
+
     return flash_cookies
 
 def parse_flash_cookies(lso_file):
