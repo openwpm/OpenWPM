@@ -119,6 +119,9 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Disable flash
     if browser_params['disable_flash']:
         fp.set_preference('plugin.state.flash', 0)
+    else:
+        fp.set_preference('plugin.state.flash', 2)
+        fp.set_preference('plugins.click_to_play', False)
 
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fp, root_dir, browser_profile_path)
