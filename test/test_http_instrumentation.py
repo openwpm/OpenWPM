@@ -117,6 +117,7 @@ class TestHTTPInstrument(OpenWPMTest):
         expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
                            'a6475af1ad58b55cf781ca5e1218c7b1'}
         for chash, content in db_utils.get_javascript_content(str(tmpdir)):
+            chash = chash.decode('ascii')
             pyhash = hashlib.md5(content).hexdigest()
             assert pyhash == chash  # Verify expected key (md5 of content)
             assert chash in expected_hashes
