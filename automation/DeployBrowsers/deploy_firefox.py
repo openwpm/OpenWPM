@@ -1,87 +1,20 @@
 from __future__ import absolute_import
 
-import errno
 import json
-import os
+import os.path
 import random
-import six
-from six.moves import range
 import shutil
-import threading
-import tempfile
 
 from . import configure_firefox
+from .selenium_firefox import *
 from ..Commands.profile_commands import load_profile
 from ..MPLogger import loggingclient
 from ..utilities.platform_utils import ensure_firefox_in_path
-
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium import webdriver
 
 from pyvirtualdisplay import Display
 
 DEFAULT_SCREEN_RES = (1366, 768)
 
-def mktempfifo(suffix="", prefix="tmp", dir=None):
-    """
-    Same as 'tempfile.mkdtemp' but creates a fifo instead of a
-    directory.
-    """
-    if dir is None:
-        dir = tempfile.gettempdir()
-    names = tempfile._get_candidate_names()
-    for seq in range(tempfile.TMP_MAX):
-        name = next(names)
-        file = os.path.join(dir, prefix + name + suffix)
-        try:
-            os.mkfifo(file, 384) # 0600
-            return file
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                continue
-            raise
-    if hasattr(__builtins__, 'FileExistsError'):
-        exc = FileExistsError
-    else:
-        exc = IOError
-    raise exc(errno.EEXIST, "No usable fifo name found")
-
-class WebdriverLogInterceptor(threading.Thread):
-    """
-    Intercept logs from Selenium and/or geckodriver, using a named pipe
-    and a detached thread, and feed them to the primary logger for this
-    instance.  Also responsible for extracting the _real_ profile location
-    from geckodriver's log output (geckodriver copies the profile).
-    """
-    def __init__(self, crawl_id, logger, profile_path):
-        threading.Thread.__init__(self, name="log-interceptor-%i" % crawl_id)
-        self.crawl_id = crawl_id
-        self.logger = logger
-        self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
-        self.profile_path = profile_path
-        self.daemon = True
-
-    def run(self):
-        # We might not ever get EOF on the FIFO, so instead we delete
-        # it after we receive the first line (which means the other
-        # end has actually opened it).
-        try:
-            with open(self.fifo, "rt") as f:
-                for line in f:
-                    self.logger.debug("BROWSER %i: driver: %s"
-                                      % (self.crawl_id, line.strip()))
-                    if "Using profile path" in line:
-                        self.profile_path = \
-                            line.partition("Using profile path")[-1].strip()
-
-                    if self.fifo is not None:
-                        os.unlink(self.fifo)
-                        self.fifo = None
-
-        finally:
-            if self.fifo is not None:
-                os.unlink(self.fifo)
-                self.fifo = None
 
 def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
     """
@@ -95,7 +28,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
 
     display_pid = None
     display_port = None
-    fp = webdriver.FirefoxProfile()
+    fp = FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(('STATUS','Profile Created',browser_profile_path))
 
@@ -196,15 +129,15 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.  This will also inform us where the real profile
     # directory is hiding.
-    webdriver_logger = WebdriverLogInterceptor(
+    interceptor = FirefoxLogInterceptor(
         browser_params['crawl_id'], logger, browser_profile_path)
-    webdriver_logger.start()
+    interceptor.start()
 
     # Launch the webdriver
     status_queue.put(('STATUS','Launch Attempted',None))
     fb = FirefoxBinary()
-    driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb,
-                               log_path=webdriver_logger.fifo)
+    driver = FirefoxDriver(firefox_profile=fp, firefox_binary=fb,
+                           log_path=interceptor.fifo)
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])
@@ -219,4 +152,4 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     status_queue.put(('STATUS','Browser Launched',
                       (int(pid), profile_settings)))
 
-    return driver, webdriver_logger.profile_path, profile_settings
+    return driver, interceptor.profile_path, profile_settings
