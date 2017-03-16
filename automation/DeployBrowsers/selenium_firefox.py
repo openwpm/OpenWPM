@@ -13,7 +13,7 @@ import tempfile
 from selenium.webdriver.common.service import Service as BaseService
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxDriver
+from selenium.webdriver.firefox.webdriver import WebDriver as BaseFirefoxDriver
 from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
 
 __all__ = [
@@ -127,3 +127,10 @@ class PatchedGeckoDriverService(BaseService):
         pass
 
 FirefoxDriverModule.Service = PatchedGeckoDriverService
+
+class FirefoxDriver(BaseFirefoxDriver):
+    """Hook class for patching bugs in Selenium's FirefoxDriver."""
+    def __init__(self, *args, **kwargs):
+        BaseFirefoxDriver.__init__(self, *args, **kwargs)
+        # https://github.com/SeleniumHQ/selenium/issues/3670
+        self._is_remote = False
