@@ -203,7 +203,7 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "binary"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert str(bytearray(list(range(100)))) == post_body
+        assert six.binary_type(bytearray(range(100))) == post_body
 
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.
