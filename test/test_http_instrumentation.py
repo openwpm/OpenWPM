@@ -334,7 +334,8 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "binary"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert six.binary_type(bytearray(range(100))) == post_body
+        # Binary strings get put into the database as-if they were latin-1.
+        assert six.binary_type(bytearray(range(100))) == post_body.encode('latin-1')
 
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.
@@ -367,10 +368,9 @@ class TestPOSTInstrument(OpenWPMTest):
         manager.close()
 
         post_body = self.get_post_request_body_from_db(manager_params['db'])
-        img_file_content = open(img_file_path).read().strip()
-        # DB strings are unicode and seems to use latin-1 encoding
-        img_file_content = six.text_type(img_file_content, 'latin-1')
-        css_file_content = open(css_file_path).read().strip()
+        # Binary strings get put into the database as-if they were latin-1.
+        img_file_content = open(img_file_path, 'rb').read().strip().decode('latin-1')
+        css_file_content = open(css_file_path, 'rt').read().strip()
         # POST data is stored as JSON in the DB
         post_body_decoded = json.loads(post_body)
         expected_body = {u"username": u"name surname+",

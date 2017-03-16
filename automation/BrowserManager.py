@@ -6,6 +6,7 @@ from .SocketInterface import clientsocket
 from .MPLogger import loggingclient
 from .Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
 
+import errno
 from multiprocess import Process, Queue
 from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
