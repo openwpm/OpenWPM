@@ -22,7 +22,7 @@ DATE_FORMATS = ['%a, %d-%b-%Y %H:%M:%S %Z','%a, %d %b %Y %H:%M:%S %Z',
 
 def encode_to_unicode(string):
     """
-    Encode from UTF-8/ISO-8859-1 to unicode.
+    Encode from UTF-8/ISO-8859-1 to Unicode.
     Ignore errors if both of these don't work
     """
     try:
@@ -119,7 +119,7 @@ def parse_cookies(cookie_string, verbose, url = None, response_cookie = False):
     try:
         if type(cookie_string) == six.text_type:
             cookie_string = cookie_string.encode('utf-8')
-        cookie = Cookie.BaseCookie(cookie_string) # requires str type
+        cookie = Cookie.BaseCookie(cookie_string)
         for key in cookie.keys():
             name = encode_to_unicode(key)
             value = encode_to_unicode(cookie[key].coded_value)
@@ -188,7 +188,7 @@ def build_http_cookie_table(database, verbose=False):
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
             con.commit()
-            if verbose: print(str(commit) + " Cookies Processed")
+            if verbose: print("%d Cookies Processed" % commit)
         row = cur1.fetchone()
     con.commit()
     print("Processing HTTP Request Cookies Complete")
@@ -219,7 +219,7 @@ def build_http_cookie_table(database, verbose=False):
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
             con.commit()
-            if verbose: print(str(commit) + " Cookies Processed")
+            if verbose: print("%d Cookies Processed" % commit)
         row = cur1.fetchone()
     con.commit()
     print("Processing HTTP Response Cookies Complete")

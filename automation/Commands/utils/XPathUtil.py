@@ -57,7 +57,7 @@ def check_previous_tags(node, use_id=True):
 
     #XPath name
     if counter > 1:
-        xpath = node.name + '[' + str(counter) + ']'
+        xpath = node.name + '[%d]' % counter
     else:
         xpath = node.name
 
@@ -66,8 +66,11 @@ def check_previous_tags(node, use_id=True):
 def ExtractXPath(element, use_id = True):
     # Check that element is a tag node
     if type(element) != bs4.element.Tag:
-        raise ExtractXPathError(str(type(element)) +
-                ' is not a supported data type. Only tag nodes from the tag tree are accepted.')
+        raise ExtractXPathError(
+            '%s is not a supported data type. '
+            'Only tag nodes from the tag tree are accepted.'
+            % type(element)
+        )
 
     ##### Starting node
     #Check id first

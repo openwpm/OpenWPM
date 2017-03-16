@@ -82,21 +82,20 @@ def process_query(query, curr, logger):
     statement = query[0]
     args = list(query[1])
     for i in range(len(args)):
-        if type(args[i]) == str:
+        if isinstance(args[i], six.binary_type):
             args[i] = six.text_type(args[i], errors='ignore')
         elif callable(args[i]):
-            args[i] = str(args[i])
+            args[i] = six.text_type(args[i])
     try:
         if len(args) == 0:
             curr.execute(statement)
         else:
             curr.execute(statement,args)
-    except OperationalError as e:
-        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + str(e) + '\n' + statement + '\n' + str(args))
-        pass
-    except ProgrammingError as e:
-        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + str(e) + '\n' + statement + '\n' + str(args))
-        pass
+
+    except (OperationalError, ProgrammingError) as e:
+        logger.error(
+            "Unsupported query:\n%s\n%s\n%s\n%s\n"
+            % (type(e), e, statement, repr(args)))
 
 
 def drain_queue(sock_queue, curr, logger):

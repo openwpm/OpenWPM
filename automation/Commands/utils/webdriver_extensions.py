@@ -20,8 +20,8 @@ from ...utilities import domain_utils as du
 def scroll_down(driver):
     at_bottom = False
     while random.random() > .20 and not at_bottom:
-        k = str(10 + int(200*random.random()))
-        driver.execute_script("window.scrollBy(0,"+k+")")
+        driver.execute_script("window.scrollBy(0,%d)"
+                              % (10 + int(200*random.random())))
         at_bottom = driver.execute_script("return (((window.scrollY + window.innerHeight ) +100 > document.body.clientHeight ))")
         time.sleep(0.5 + random.random())
 

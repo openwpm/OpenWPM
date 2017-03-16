@@ -100,7 +100,7 @@ class clientsocket:
     """A client socket for sending messages"""
     def __init__(self, serialization='json', verbose=False):
         """ `serialization` specifies the type of serialization to use for
-        non-str messages. Supported formats:
+        non-string messages. Supported formats:
             * 'json' uses the json module. Cross-language support. (default)
             * 'dill' uses the dill pickle module. Python only.
         """
@@ -117,7 +117,7 @@ class clientsocket:
     def send(self, msg):
         """
         Sends an arbitrary python object to the connected socket. Serializes
-        using dill if not str, and prepends msg len (4-bytes) and
+        using dill if not string, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
         if isinstance(msg, six.binary_type):

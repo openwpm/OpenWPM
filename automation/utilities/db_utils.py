@@ -23,7 +23,7 @@ def get_javascript_content(data_directory):
 
     Parameters
     ----------
-    data_directory : str
+    data_directory : string
         root directory of the crawl files containing `javascript.ldb`
     """
     db_path = os.path.join(data_directory, 'javascript.ldb')

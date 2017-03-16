@@ -55,13 +55,8 @@ def parse_flash_cookies(lso_file):
         flash_cookie.local_path = lso_file.split("#SharedObjects/")[1]
         flash_cookie.filename = os.path.basename(lso_file)
         flash_cookie.domain = lso_file.split("#SharedObjects/")[1].split("/")[1]
-        flash_cookie.key = six.text_type(k)
-        try:
-            flash_cookie.content = six.text_type(v)
-        except UnicodeDecodeError:
-            # obj is byte string
-            ascii_text = str(v).encode('string_escape')
-            flash_cookie.content = six.text_type(ascii_text)
+        flash_cookie.key = six.text_type(k, errors='backslashreplace')
+        flash_cookie.content = six.text_type(v, errors='backslashreplace')
 
         flash_cookies.append(flash_cookie)
     return flash_cookies
