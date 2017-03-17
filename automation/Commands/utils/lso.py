@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+from collections import namedtuple
 import fnmatch
 import os
 import six
@@ -12,15 +13,42 @@ import traceback
 
 from miniamf import sol
 
+def ensure_unicode(val):
+    """Coerce VAL to a Unicode string by any means necessary."""
+    if isinstance(val, six.text_type):
+        return val
+    if not isinstance(val, six.binary_type):
+        return six.text_type(val)
+    try:
+        return val.decode("utf-8", "backslashescape")
+    except (UnicodeDecodeError, TypeError):
+        # Backslash escaping on decode doesn't work in Python 2.
+        # This does approximately the same thing.
+        return (val.decode("latin1")
+                .encode("ascii", "backslashreplace")
+                .decode("ascii"))
+
 #TODO: Linux only
 FLASH_DIRS = ['~/.macromedia/Flash_Player/#SharedObjects/']
 
-class FlashCookie(object):
-    filename = ''
-    domain = ''
-    local_path = ''
-    key = ''
-    content = ''
+_BaseFlashCookie = namedtuple(
+    '_BaseFlashCookie',
+    ('filename', 'domain', 'local_path', 'key', 'content'))
+
+class FlashCookie(_BaseFlashCookie):
+    def __new__(self, path, key, content):
+        local_path = path.split("#SharedObjects/")[1]
+        filename = os.path.basename(path)
+        domain = local_path.split("/")[1]
+        key = ensure_unicode(key)
+        content = ensure_unicode(content)
+
+        return _BaseFlashCookie.__new__(
+            self, filename, domain, local_path, key, content)
+
+def parse_flash_cookies(lso_file):
+    lso_dict = sol.load(lso_file)
+    return [FlashCookie(lso_file, k, v) for k, v in six.iteritems(lso_dict)]
 
 def gen_find_files(filepat, top):
     """
@@ -41,27 +69,9 @@ def get_flash_cookies(mod_since=0):
             if mtime > mod_since:
                 try:
                     flash_cookies.extend(parse_flash_cookies(lso_file))
-                except (KeyboardInterrupt, SystemExit):
-                    raise
                 except Exception:
                     sys.stderr.write("Exception reading {!r}:\n"
                                      .format(lso_file))
                     traceback.print_exc()
 
-    return flash_cookies
-
-def parse_flash_cookies(lso_file):
-    lso_dict = sol.load(lso_file)
-    flash_cookies = list()
-    for k, v in six.iteritems(lso_dict):
-        flash_cookie = FlashCookie()
-        flash_cookie.local_path = lso_file.split("#SharedObjects/")[1]
-        flash_cookie.filename = os.path.basename(lso_file)
-        flash_cookie.domain = lso_file.split("#SharedObjects/")[1].split("/")[1]
-        if not isinstance(k, six.text_type):
-            flash_cookie.key = six.text_type(k, errors='backslashreplace')
-        if not isinstance(v, six.text_type):
-            flash_cookie.content = six.text_type(v, errors='backslashreplace')
-
-        flash_cookies.append(flash_cookie)
     return flash_cookies
