@@ -566,7 +566,7 @@ function getPageScript() {
                                 "geolocation", "language", "languages",
                                 "onLine", "oscpu", "platform", "product",
                                 "productSub", "userAgent", "vendorSub",
-                                "vendor" ];
+                                "vendor", "getBattery" ];
     navigatorProperties.forEach(function(property) {
       instrumentObjectProperty(window.navigator, "window.navigator", property);
     });
@@ -639,6 +639,9 @@ function getPageScript() {
     instrumentObject(window.AnalyserNode.prototype, "AnalyserNode");
     instrumentObject(window.GainNode.prototype, "GainNode");
     instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
+
+    // Access to Battery API
+    instrumentObject(window.BatteryManager.prototype, "BatteryManager");
 
     console.log("Successfully started all instrumentation.");
 

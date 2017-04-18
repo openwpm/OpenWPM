@@ -110,6 +110,22 @@ AUDIO_SYMBOLS = {
     u"OscillatorNode.stop"
 }
 
+# Symbols used during battery fingerprinting
+BATTERY_SYMBOLS = {
+    "window.navigator.getBattery",
+    "BatteryManager.charging",
+    "BatteryManager.level",
+    "BatteryManager.chargingTime",
+    "BatteryManager.dischargingTime",
+    "BatteryManager.addEventListener"
+}
+BATTERY_ARGUMENTS = {
+    '{"0":"chargingtimechange","1":"FUNCTION"}',
+    '{"0":"chargingchange","1":"FUNCTION"}',
+    '{"0":"levelchange","1":"FUNCTION"}',
+    '{"0":"dischargingtimechange","1":"FUNCTION"}'
+}
+
 JS_STACK_TEST_URL = u"%s/js_call_stack.html" % utilities.BASE_TEST_URL
 JS_STACK_TEST_SCRIPT_URL = u"%s/stack.js" % utilities.BASE_TEST_URL
 
@@ -278,6 +294,20 @@ class TestExtension(OpenWPMTest):
             # compare UTC now and the timestamp recorded at the visit
             assert (utc_now - js_time).seconds < MAX_TIMEDELTA
         assert not db_utils.any_command_failed(db)
+
+    def test_battery_fingerprinting(self):
+        db = self.visit('/battery_fingerprinting.html')
+        # Check that all calls and methods are recorded
+        rows = db_utils.get_javascript_entries(db)
+        observed_symbols = set()
+        observed_arguments = set()
+        for script_url, symbol, operation, value, args in rows:
+            if symbol == "BatteryManager.addEventListener":
+                observed_arguments.add(args)
+            observed_symbols.add(symbol)
+        assert BATTERY_SYMBOLS == observed_symbols
+        assert BATTERY_ARGUMENTS == observed_arguments
+
 
     def test_document_cookie_instrumentation(self):
         db = self.visit(utilities.BASE_TEST_URL + "/js_cookie.html")
