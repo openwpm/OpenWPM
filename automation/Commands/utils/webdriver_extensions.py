@@ -1,23 +1,27 @@
 # A set of extensions to the functions normally provided by the selenium
 # webdriver. These are primarily for parsing and searching.
+
+from __future__ import absolute_import
+
+import random
+import time
+from six.moves.urllib.parse import urljoin
+
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import NoSuchElementException
-from urlparse import urljoin
-import random
-import time
 
+from . import XPathUtil
 from ...utilities import domain_utils as du
-import XPathUtil
 
 #### Basic functions
 def scroll_down(driver):
     at_bottom = False
     while random.random() > .20 and not at_bottom:
-        k = str(10 + int(200*random.random()))
-        driver.execute_script("window.scrollBy(0,"+k+")")
+        driver.execute_script("window.scrollBy(0,%d)"
+                              % (10 + int(200*random.random())))
         at_bottom = driver.execute_script("return (((window.scrollY + window.innerHeight ) +100 > document.body.clientHeight ))")
         time.sleep(0.5 + random.random())
 
@@ -37,10 +41,11 @@ def wait_until_loaded(webdriver, timeout, period=0.25):
 
 def get_intra_links(webdriver, url):
     ps1 = du.get_ps_plus_1(url)
-    links = filter(lambda x: (x.get_attribute("href") and
-                              du.get_ps_plus_1(urljoin(url, x.get_attribute("href"))) == ps1),
-                   webdriver.find_elements_by_tag_name("a"))
-    return links
+    return [
+        x for x in webdriver.find_elements_by_tag_name("a")
+        if (x.get_attribute("href") and
+            du.get_ps_plus_1(urljoin(url, x.get_attribute("href"))) == ps1)
+    ]
 
 ##### Search/Block Functions
 # locator_type: a text representation of the standard
@@ -67,7 +72,7 @@ def wait_and_find(driver, locator_type, locator, timeout=3, check_iframes=True):
 
             #If we get here, search also fails in iframes
             driver.switch_to_default_content()
-        raise NoSuchElementException, "Element not found during wait_and_find"
+        raise NoSuchElementException("Element not found during wait_and_find")
 
 def is_found(driver, locator_type, locator, timeout=3):
     try:

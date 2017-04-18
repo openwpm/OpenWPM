@@ -1,4 +1,6 @@
-from automation import TaskManager, CommandSequence
+from __future__ import absolute_import
+from .automation import TaskManager, CommandSequence
+from six.moves import range
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 3
@@ -10,7 +12,7 @@ sites = ['http://www.example.com',
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Update browser configuration (use this for per-browser settings)
-for i in xrange(NUM_BROWSERS):
+for i in range(NUM_BROWSERS):
     browser_params[i]['http_instrument'] = True # Record HTTP Requests and Responses
     browser_params[i]['disable_flash'] = False #Enable flash for all three browsers
 browser_params[0]['headless'] = True #Launch only browser 0 headless

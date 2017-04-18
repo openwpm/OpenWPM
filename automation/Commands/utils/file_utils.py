@@ -1,4 +1,5 @@
 # A collection of file utilities
+from __future__ import absolute_import
 import shutil
 import os
 

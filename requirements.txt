@@ -1,23 +1,23 @@
-setuptools
-pyvirtualdisplay
 beautifulsoup4
+dill
+IPython
+mini-amf
+mmh3
+multiprocess
+plyvel
+psutil
+publicsuffix
 pyasn1
 PyOPenSSL
-python-dateutil
-tld
-multiprocess
-dill
-pyamf
-psutil
-plyvel
-tblib
-tabulate
 pytest
-publicsuffix
-# Install specific mitmproxy version since we rely on some internal structure of
-# netlib and mitmproxy. New releases tend to break things and should be tested
-mitmproxy==0.13
-# Install specific version of selenium known to work well with the Firefox install we use
-selenium==2.53.0
-mmh3
-IPython
+python-dateutil
+pyvirtualdisplay
+setuptools
+six
+tabulate
+tblib
+tld
+
+# Python 3 is not fully supported prior to Selenium 3.x.
+# Versions prior to 3.3.0 may work but have not been tested.
+selenium>=3.3.0
