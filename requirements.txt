@@ -21,3 +21,5 @@ mitmproxy==0.13
 selenium==2.53.0
 mmh3
 IPython
+# See https://github.com/ActiveState/appdirs/issues/89
+appdirs>=1.4.3
