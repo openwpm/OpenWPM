@@ -68,7 +68,7 @@ function getPageScript() {
      * Instrumentation helpers
      */
 
-    var testing = document.currentScript.getAttribute('data-testing');
+    var testing = document.currentScript.getAttribute('data-testing') === 'true';
     console.log("Currently testing?",testing);
 
     // Recursively generates a path for an element
