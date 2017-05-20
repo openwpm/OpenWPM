@@ -72,7 +72,7 @@ var makeLogJSON = function(lvl, msg) {
         'level': lvl,
         'pathname': 'FirefoxExtension',
         'lineno': 1,
-        'msg': msg,
+        'msg': escapeString(msg),
         'args': null,
         'exc_info': null,
         'func': null
@@ -178,13 +178,14 @@ function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
 }
 
-exports.escapeString = function(string) {
+var escapeString = function(string) {
     // Convert to string if necessary
     if(typeof string != "string")
         string = "" + string;
 
     return encode_utf8(string);
 };
+exports.escapeString = escapeString;
 
 exports.boolToInt = function(bool) {
     return bool ? 1 : 0;
@@ -198,7 +199,7 @@ exports.createInsert = function(table, update) {
     }
 
     update["visit_id"] = visitID;
-    
+
     if (!visitID && !debugging) {
         exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
                     JSON.stringify(update));
