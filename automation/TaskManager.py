@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import copy
 import json
-from multiprocess import Process, Queue
+from multiprocessing import Process, Queue
 import os
 import psutil
 from six.moves import cPickle as pickle
