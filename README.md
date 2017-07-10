@@ -63,6 +63,8 @@ for their measurement data (see
 * HTTP Request and Response Headers, POST request bodies
     * Set `browser_params['http_instrument'] = True`
     * Data is saved to the `http_requests` and `http_responses` tables.
+        * `http_requests` schema
+            [documentation](https://github.com/citp/OpenWPM/wiki/Instrumentation-Schema-Documentation#http-requests)
     * OCSP POST request bodies are not recorded
     * Note: request and response headers for cached content are also saved,
         with the exception of images.
