@@ -95,20 +95,14 @@ def tab_restart_browser(webdriver):
     assert len(webdriver.window_handles) == 1
     webdriver.switch_to_window(webdriver.window_handles[0])
 
-def get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, extension_socket):
+def get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket):
     """
     goes to <url> using the given <webdriver> instance
-    <proxy_queue> is queue for sending the proxy the current first party site
     """
 
     tab_restart_browser(webdriver)
 
-    # sends top-level domain to proxy and extension (if enabled)
-    # then, waits for it to finish marking traffic in proxy before moving to new site
-    if proxy_queue is not None:
-        proxy_queue.put(visit_id)
-        while not proxy_queue.empty():
-            time.sleep(0.001)
+    # sends top-level domain to the extension (if enabled)
     if extension_socket is not None:
         extension_socket.send(visit_id)
 
@@ -160,7 +154,7 @@ def extract_links(webdriver, browser_params, manager_params):
 
     sock.close()
 
-def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
+def browse_website(url, num_links, sleep, visit_id, webdriver,
                    browser_params, manager_params, extension_socket):
     """Calls get_website before visiting <num_links> present on the page.
 
@@ -168,7 +162,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver, proxy_queue,
     be the site_url of the original page and NOT the url of the links visited.
     """
     # First get the site
-    get_website(url, sleep, visit_id, webdriver, proxy_queue, browser_params, extension_socket)
+    get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket)
 
     # Connect to logger
     logger = loggingclient(*manager_params['logger_address'])

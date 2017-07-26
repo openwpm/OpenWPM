@@ -29,7 +29,7 @@ class Browser:
      the BrowserManager process and its child processes/threads.
      <manager_params> are the TaskManager configuration settings.
      <browser_params> are per-browser parameter settings (e.g. whether
-                      this browser is using a proxy, headless, etc.)
+                      this browser is headless, etc.)
      """
     def __init__(self, manager_params, browser_params):
         # Constants
@@ -120,7 +120,6 @@ class Browser:
             # Read success status of browser manager
             launch_status = dict()
             try:
-                check_queue(launch_status) # proxy enabled (if necessary)
                 spawned_profile_path = check_queue(launch_status) # selenium profile created
                 check_queue(launch_status) # profile tar loaded (if necessary)
                 (self.display_pid, self.display_port) = check_queue(launch_status) # Display launched
@@ -250,14 +249,6 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
     try:
         logger = loggingclient(*manager_params['logger_address'])
 
-        # Start the proxy
-        # MITMProxy support has been removed, but this logic remains as a
-        # stub for potential future support for other kinds of proxies.
-        proxy_site_queue = None  # to pass the current site down to the proxy
-        if browser_params['proxy']:
-            raise RuntimeError("mitmproxy support has been removed")
-        status_queue.put(('STATUS','Proxy Ready','READY'))
-
         # Start the virtualdisplay (if necessary), webdriver, and browser
         (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, manager_params, crash_recovery)
         if prof_folder[-1] != '/':
@@ -312,7 +303,6 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
             # if command fails for whatever reason, tell the TaskMaster to kill and restart its worker processes
             command_executor.execute_command(command,
                                              driver,
-                                             proxy_site_queue,
                                              browser_settings,
                                              browser_params,
                                              manager_params,

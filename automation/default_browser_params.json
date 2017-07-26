@@ -22,8 +22,5 @@
     "https-everywhere": false,
     "adblock-plus": false,
     "ublock-origin": false,
-    "tracking-protection": false,
-
-    "proxy": false,
-    "save_javascript_proxy": false
+    "tracking-protection": false
 }

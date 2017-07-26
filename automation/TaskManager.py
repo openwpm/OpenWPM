@@ -111,7 +111,7 @@ class TaskManager:
         # Mark if LDBAggregator is needed (if js is enabled on any browser)
         self.ldb_enabled = False
         for params in browser_params:
-            if params['save_javascript'] or params['save_javascript_proxy']:
+            if params['save_javascript']:
                 self.ldb_enabled = True
                 break
 
