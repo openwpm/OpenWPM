@@ -1,12 +1,13 @@
 from __future__ import absolute_import
 
+from selenium import webdriver
 import json
 import os.path
 import random
-import shutil
 
 from . import configure_firefox
-from .selenium_firefox import *
+from .selenium_firefox import (FirefoxProfile, FirefoxBinary,
+                               FirefoxLogInterceptor)
 from ..Commands.profile_commands import load_profile
 from ..MPLogger import loggingclient
 from ..utilities.platform_utils import ensure_firefox_in_path
@@ -16,7 +17,8 @@ from pyvirtualdisplay import Display
 DEFAULT_SCREEN_RES = (1366, 768)
 
 
-def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
+def deploy_firefox(status_queue, browser_params, manager_params,
+                   crash_recovery):
     """
     launches a firefox instance with parameters set by the input dictionary
     """
@@ -25,12 +27,11 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     root_dir = os.path.dirname(__file__)  # directory of this file
     logger = loggingclient(*manager_params['logger_address'])
 
-
     display_pid = None
     display_port = None
     fp = FirefoxProfile()
     browser_profile_path = fp.path + '/'
-    status_queue.put(('STATUS','Profile Created',browser_profile_path))
+    status_queue.put(('STATUS', 'Profile Created', browser_profile_path))
 
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
@@ -51,7 +52,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
                                         manager_params,
                                         browser_params,
                                         browser_params['profile_tar'])
-    status_queue.put(('STATUS','Profile Tar',None))
+    status_queue.put(('STATUS', 'Profile Tar', None))
 
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser"
@@ -90,7 +91,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         display.start()
         display_pid = display.pid
         display_port = display.cmd_param[5][1:]
-    status_queue.put(('STATUS','Display',(display_pid, display_port)))
+    status_queue.put(('STATUS', 'Display', (display_pid, display_port)))
 
     # Write extension configuration
     if browser_params['extension_enabled']:
@@ -101,7 +102,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         extension_config = dict()
         extension_config.update(browser_params)
         extension_config['logger_address'] = manager_params['logger_address']
-        extension_config['sqlite_address'] = manager_params['aggregator_address']
+        extension_config['sqlite_address'] = manager_params[
+            'aggregator_address']
         if 'ldb_address' in manager_params:
             extension_config['leveldb_address'] = manager_params['ldb_address']
         else:
@@ -124,7 +126,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         fp.set_preference('plugins.click_to_play', False)
 
     # Configure privacy settings
-    configure_firefox.privacy(browser_params, fp, root_dir, browser_profile_path)
+    configure_firefox.privacy(browser_params, fp, root_dir,
+                              browser_profile_path)
 
     # Set various prefs to improve speed and eliminate traffic to Mozilla
     configure_firefox.optimize_prefs(fp)
@@ -137,14 +140,15 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     interceptor.start()
 
     # Launch the webdriver
-    status_queue.put(('STATUS','Launch Attempted',None))
+    status_queue.put(('STATUS', 'Launch Attempted', None))
     fb = FirefoxBinary()
-    driver = FirefoxDriver(firefox_profile=fp, firefox_binary=fb,
-                           log_path=interceptor.fifo)
+    driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb,
+                               log_path=interceptor.fifo)
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])
 
+    # Get browser process pid
     if hasattr(driver, 'service') and hasattr(driver.service, 'process'):
         pid = driver.service.process.pid
     elif hasattr(driver, 'binary') and hasattr(driver.binary, 'process'):
@@ -152,7 +156,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     else:
         raise RuntimeError("Unable to identify Firefox process ID.")
 
-    status_queue.put(('STATUS','Browser Launched',
+    status_queue.put(('STATUS', 'Browser Launched',
                       (int(pid), profile_settings)))
 
     return driver, interceptor.profile_path, profile_settings
