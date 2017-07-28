@@ -21,6 +21,7 @@ __all__ = [
     'FirefoxLogInterceptor'
 ]
 
+
 def mktempfifo(suffix="", prefix="tmp", dir=None):
     """
     Same as 'tempfile.mkdtemp' but creates a fifo instead of a
@@ -33,17 +34,18 @@ def mktempfifo(suffix="", prefix="tmp", dir=None):
         name = next(names)
         file = os.path.join(dir, prefix + name + suffix)
         try:
-            os.mkfifo(file, 384) # 0600
+            os.mkfifo(file, 384)  # 0600
             return file
         except OSError as e:
             if e.errno == errno.EEXIST:
                 continue
             raise
     if hasattr(__builtins__, 'FileExistsError'):
-        exc = FileExistsError
+        exc = FileExistsError  # noqa
     else:
         exc = IOError
     raise exc(errno.EEXIST, "No usable fifo name found")
+
 
 class FirefoxLogInterceptor(threading.Thread):
     """
@@ -81,6 +83,7 @@ class FirefoxLogInterceptor(threading.Thread):
             if self.fifo is not None:
                 os.unlink(self.fifo)
                 self.fifo = None
+
 
 class PatchedGeckoDriverService(BaseService):
     """Object that manages the starting and stopping of the GeckoDriver.
@@ -126,7 +129,9 @@ class PatchedGeckoDriverService(BaseService):
     def send_remote_shutdown_command(self):
         pass
 
+
 FirefoxDriverModule.Service = PatchedGeckoDriverService
+
 
 class FirefoxDriver(BaseFirefoxDriver):
     """Hook class for patching bugs in Selenium's FirefoxDriver."""
