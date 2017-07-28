@@ -15,7 +15,6 @@ import threading
 import time
 
 from tblib import pickling_support
-pickling_support.install()
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
@@ -23,26 +22,32 @@ from .DataAggregator import DataAggregator, LevelDBAggregator
 from .Errors import CommandExecutionError
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_version, get_configuration_string
+pickling_support.install()
 
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
-BROWSER_MEMORY_LIMIT = 1500 # in MB
+BROWSER_MEMORY_LIMIT = 1500  # in MB
+
 
 def load_default_params(num_browsers=1):
     """
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
     """
-    fp = open(os.path.join(os.path.dirname(__file__), 'default_browser_params.json'))
+    fp = open(os.path.join(os.path.dirname(__file__),
+                           'default_browser_params.json'))
     preferences = json.load(fp)
     fp.close()
-    browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
+    browser_params = [copy.deepcopy(preferences) for i in range(
+        0, num_browsers)]
 
-    fp = open(os.path.join(os.path.dirname(__file__), 'default_manager_params.json'))
+    fp = open(os.path.join(os.path.dirname(__file__),
+                           'default_manager_params.json'))
     manager_params = json.load(fp)
     fp.close()
     manager_params['num_browsers'] = num_browsers
 
     return manager_params, browser_params
+
 
 class TaskManager:
     """
@@ -52,21 +57,28 @@ class TaskManager:
         - MPLogger to aggregate logs across processes
         - BrowserManager processes to isolate Browsers in a separate process
     <manager_params> dict of TaskManager configuration parameters
-    <browser_params> is a list of (or a single) dictionaries that specify preferences for browsers to instantiate
-    <process_watchdog> will monitor firefox and Xvfb processes, killing any not indexed in TaskManager's browser list.
-        NOTE: Only run this in isolated environments. It kills processes by name, indiscriminately.
+    <browser_params> is a list of (or a single) dictionaries that specify
+    preferences for browsers to instantiate
+    <process_watchdog> will monitor firefox and Xvfb processes, killing
+    any not indexed in TaskManager's browser list.
+        NOTE: Only run this in isolated environments. It kills processes
+        by name, indiscriminately.
     """
 
     def __init__(self, manager_params, browser_params, process_watchdog=False):
 
         # Make paths absolute in manager_params
-        for path in ['data_directory','log_directory']:
+        for path in ['data_directory', 'log_directory']:
             if manager_params[path] is not None:
                 manager_params[path] = os.path.expanduser(manager_params[path])
-        manager_params['database_name'] = os.path.join(manager_params['data_directory'],manager_params['database_name'])
-        manager_params['log_file'] = os.path.join(manager_params['log_directory'],manager_params['log_file'])
-        manager_params['screenshot_path'] = os.path.join(manager_params['data_directory'], 'screenshots')
-        manager_params['source_dump_path'] = os.path.join(manager_params['data_directory'], 'sources')
+        manager_params['database_name'] = os.path.join(
+            manager_params['data_directory'], manager_params['database_name'])
+        manager_params['log_file'] = os.path.join(
+            manager_params['log_directory'], manager_params['log_file'])
+        manager_params['screenshot_path'] = os.path.join(
+            manager_params['data_directory'], 'screenshots')
+        manager_params['source_dump_path'] = os.path.join(
+            manager_params['data_directory'], 'sources')
         self.manager_params = manager_params
 
         # Create data directories if they do not exist
@@ -78,7 +90,8 @@ class TaskManager:
         # check size of parameter dictionary
         self.num_browsers = manager_params['num_browsers']
         if len(browser_params) != self.num_browsers:
-            raise Exception("Number of <browser_params> dicts is not the same as manager_params['num_browsers']")
+            raise Exception("Number of <browser_params> dicts is not the same "
+                            "as manager_params['num_browsers']")
 
         # Flow control
         self.closing = False
@@ -97,7 +110,8 @@ class TaskManager:
         if not os.path.exists(manager_params['data_directory']):
             os.mkdir(manager_params['data_directory'])
         self.db = sqlite3.connect(db_path)
-        with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r') as f:
+        with open(os.path.join(os.path.dirname(__file__),
+                               'schema.sql'), 'r') as f:
             self.db.executescript(f.read())
         self.db.commit()
 
@@ -106,7 +120,8 @@ class TaskManager:
         self.loggingserver = self._launch_loggingserver()
         # socket location: (address, port)
         self.manager_params['logger_address'] = self.logging_status_queue.get()
-        self.logger = MPLogger.loggingclient(*self.manager_params['logger_address'])
+        self.logger = MPLogger.loggingclient(
+            *self.manager_params['logger_address'])
 
         # Mark if LDBAggregator is needed (if js is enabled on any browser)
         self.ldb_enabled = False
@@ -133,7 +148,7 @@ class TaskManager:
         self.next_visit_id = last_visit_id + 1
 
         # sets up the BrowserManager(s) + associated queues
-        self.browsers = self._initialize_browsers(browser_params)  # List of the Browser(s)
+        self.browsers = self._initialize_browsers(browser_params)
         self._launch_browsers()
 
         # start the manager watchdog
@@ -152,13 +167,14 @@ class TaskManager:
         cur.execute(("INSERT INTO task "
                      "(manager_params, openwpm_version, browser_version) "
                      "VALUES (?,?,?)"),
-                (json.dumps(self.manager_params), openwpm_v, browser_v))
+                    (json.dumps(self.manager_params), openwpm_v, browser_v))
         self.db.commit()
         self.task_id = cur.lastrowid
 
         # Record browser details for each brower
         for i in range(self.num_browsers):
-            cur.execute("INSERT INTO crawl (task_id, browser_params) VALUES (?,?)",
+            cur.execute("INSERT INTO crawl (task_id, browser_params) "
+                        "VALUES (?,?)",
                         (self.task_id, json.dumps(browser_params[i])))
             self.db.commit()
             browser_params[i]['crawl_id'] = cur.lastrowid
@@ -169,7 +185,7 @@ class TaskManager:
                                                   (openwpm_v, browser_v)))
 
     def _initialize_browsers(self, browser_params):
-        """ initialize the browser classes, each its unique set of parameters """
+        """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
             browsers.append(Browser(self.manager_params, browser_params[i]))
@@ -186,16 +202,18 @@ class TaskManager:
                 raise
 
             if not success:
-                self.logger.critical("Browser spawn failure during TaskManager initialization, exiting...")
+                self.logger.critical("Browser spawn failure during "
+                                     "TaskManager initialization, exiting...")
                 self.close()
                 break
 
             # Update our DB with the random browser settings
-            # These are found within the scope of each instance of Browser in the browsers list
+            # These are properties of each Browser in the browsers list
             screen_res = str(browser.browser_settings['screen_res'])
             ua_string = str(browser.browser_settings['ua_string'])
-            self.sock.send(("UPDATE crawl SET screen_res = ?, ua_string = ? \
-                             WHERE crawl_id = ?", (screen_res, ua_string, browser.crawl_id)))
+            self.sock.send(("UPDATE crawl SET screen_res = ?, ua_string = ? "
+                            "WHERE crawl_id = ?",
+                            (screen_res, ua_string, browser.crawl_id)))
 
     def _manager_watchdog(self):
         """
@@ -212,15 +230,17 @@ class TaskManager:
                     process = psutil.Process(browser.browser_pid)
                     mem = process.memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
-                        self.logger.info("BROWSER %i: Memory usage: %iMB, exceeding limit of %iMB"
-                            % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT))
+                        self.logger.info("BROWSER %i: Memory usage: %iMB"
+                                         ", exceeding limit of %iMB" % (
+                                             browser.crawl_id, int(mem),
+                                             BROWSER_MEMORY_LIMIT))
                         browser.restart_required = True
                 except psutil.NoSuchProcess:
                     pass
 
             # Check for browsers or displays that were not closed correctly
-            # Provide a 300 second buffer to avoid killing freshly launched browsers
-            # TODO This buffer should correspond to the maximum browser spawn timeout
+            # 300 second buffer to avoid killing freshly launched browsers
+            # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:
                 browser_pids = set()
                 display_pids = set()
@@ -231,35 +251,46 @@ class TaskManager:
                     if browser.display_pid is not None:
                         display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
-                    if (process.create_time() + 300 < check_time and
-                            ((process.name() == 'firefox' and process.pid not in browser_pids) or
-                            (process.name() == 'Xvfb' and process.pid not in display_pids))):
-                        self.logger.debug("Process: %s (pid: %i) with start time %s found running but not in browser process list. Killing."
-                                % (process.name(), process.pid, process.create_time()))
+                    if (process.create_time() + 300 < check_time and (
+                            (process.name() == 'firefox' and
+                             process.pid not in browser_pids) or
+                            (process.name() == 'Xvfb' and
+                             process.pid not in display_pids))):
+                        self.logger.debug("Process: %s (pid: %i) with start "
+                                          "time %s found running but not in "
+                                          "browser process list. Killing." % (
+                                              process.name(), process.pid,
+                                              process.create_time()))
                         process.kill()
 
     def _launch_aggregators(self):
         """
-        Launches the various data aggregators, which serialize data from all processes.
+        Launch the data aggregators, which serialize data from all processes.
         * DataAggregator - sqlite database for crawl data
         * LevelDBAggregator - leveldb database for javascript files
         """
         # DataAggregator
         self.aggregator_status_queue = Queue()
         self.data_aggregator = Process(target=DataAggregator.DataAggregator,
-                             args=(self.manager_params, self.aggregator_status_queue))
+                                       args=(self.manager_params,
+                                             self.aggregator_status_queue))
         self.data_aggregator.daemon = True
         self.data_aggregator.start()
-        self.manager_params['aggregator_address'] = self.aggregator_status_queue.get()  # socket location: (address, port)
+        # socket location: (address, port)
+        self.manager_params[
+            'aggregator_address'] = self.aggregator_status_queue.get()
 
         # LevelDB Aggregator
         if self.ldb_enabled:
             self.ldb_status_queue = Queue()
-            self.ldb_aggregator = Process(target=LevelDBAggregator.LevelDBAggregator,
-                                 args=(self.manager_params, self.ldb_status_queue))
+            self.ldb_aggregator = Process(
+                target=LevelDBAggregator.LevelDBAggregator,
+                args=(self.manager_params, self.ldb_status_queue)
+            )
             self.ldb_aggregator.daemon = True
             self.ldb_aggregator.start()
-            self.manager_params['ldb_address'] = self.ldb_status_queue.get()  # socket location: (address, port)
+            # socket location: (address, port)
+            self.manager_params['ldb_address'] = self.ldb_status_queue.get()
 
     def _kill_aggregators(self):
         """ Terminates the aggregators gracefully """
@@ -268,7 +299,8 @@ class TaskManager:
         self.aggregator_status_queue.put("DIE")
         start_time = time.time()
         self.data_aggregator.join(300)
-        self.logger.debug("DataAggregator took " + str(time.time() - start_time) + " seconds to close")
+        self.logger.debug("DataAggregator took %s seconds to close." % (
+            str(time.time() - start_time)))
 
         # LevelDB Aggregator
         if self.ldb_enabled:
@@ -276,13 +308,15 @@ class TaskManager:
             self.ldb_status_queue.put("DIE")
             start_time = time.time()
             self.ldb_aggregator.join(300)
-            self.logger.debug("LevelDBAggregator took " + str(time.time() - start_time) + " seconds to close")
+            self.logger.debug("LevelDBAggregator took %s seconds to close." % (
+                str(time.time() - start_time)))
 
     def _launch_loggingserver(self):
         """ sets up logging server """
         self.logging_status_queue = Queue()
         loggingserver = Process(target=MPLogger.loggingserver,
-                             args=(self.manager_params['log_file'], self.logging_status_queue, ))
+                                args=(self.manager_params['log_file'],
+                                      self.logging_status_queue, ))
         loggingserver.daemon = True
         loggingserver.start()
         return loggingserver
@@ -296,19 +330,23 @@ class TaskManager:
         """
         Wait for current commands to finish, close all child processes and
         threads
-        <failure> flag to indicate manager failure (True) or end of crawl (False)
-        <during_init> flag to indicator if this shutdown is occuring during the TaskManager initialization
+        <failure> flag to indicate manager failure (True) or
+                  end of crawl (False)
+        <during_init> flag to indicator if this shutdown is occuring during
+                      the TaskManager initialization
         """
         self.closing = True
 
         for browser in self.browsers:
             browser.shutdown_browser(during_init)
             if failure:
-                self.sock.send(("UPDATE crawl SET finished = -1 WHERE crawl_id = ?",
-                                (browser.crawl_id,)))
+                self.sock.send(
+                    ("UPDATE crawl SET finished = -1 WHERE crawl_id = ?",
+                     (browser.crawl_id,)))
             else:
-                self.sock.send(("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
-                                (browser.crawl_id,)))
+                self.sock.send(
+                    ("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
+                     (browser.crawl_id,)))
 
         self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
@@ -335,14 +373,16 @@ class TaskManager:
         """
         self.logger.debug("Checking command failure status indicator...")
         if self.failure_status:
-            self.logger.debug("TaskManager failure status set, halting command execution.")
+            self.logger.debug(
+                "TaskManager failure status set, halting command execution.")
             self._cleanup_before_fail()
             if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
                 raise CommandExecutionError(
                     "TaskManager exceeded maximum consecutive command "
-                    "execution failures.", self.failure_status['CommandSequence']
+                    "execution failures.",
+                    self.failure_status['CommandSequence']
                 )
-            elif self.failure_status['ErrorType'] == 'ExceedLaunchFailureLimit':
+            elif self.failure_status['ErrorType'] == 'ExceedLaunchFailureLimit':  # noqa
                 raise CommandExecutionError(
                     "TaskManager failed to launch browser within allowable "
                     "failure limit.", self.failure_status['CommandSequence']
@@ -352,7 +392,7 @@ class TaskManager:
 
     # CRAWLER COMMAND CODE
 
-    def _distribute_command(self, command_sequence, index=None):
+    def _distribute_command(self, command_seq, index=None):
         """
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
@@ -362,13 +402,13 @@ class TaskManager:
         = **    -> sends command to all browsers (synchronized)
         """
         if index is None:
-            #send to first browser available
+            # send to first browser available
             command_executed = False
             while True:
                 for browser in self.browsers:
                     if browser.ready():
-                        browser.current_timeout = command_sequence.total_timeout
-                        thread = self._start_thread(browser, command_sequence)
+                        browser.current_timeout = command_seq.total_timeout
+                        thread = self._start_thread(browser, command_seq)
                         command_executed = True
                         break
                 if command_executed:
@@ -376,41 +416,48 @@ class TaskManager:
                 time.sleep(SLEEP_CONS)
 
         elif 0 <= index < len(self.browsers):
-            #send the command to this specific browser
+            # send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self.browsers[index].current_timeout = command_sequence.total_timeout
-                    thread = self._start_thread(self.browsers[index], command_sequence)
+                    self.browsers[
+                        index].current_timeout = command_seq.total_timeout
+                    thread = self._start_thread(
+                        self.browsers[index], command_seq)
                     break
                 time.sleep(SLEEP_CONS)
         elif index == '*':
-            #send the command to all browsers
+            # send the command to all browsers
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
                 for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[i].current_timeout = command_sequence.total_timeout
-                        thread = self._start_thread(self.browsers[i], command_sequence)
+                        self.browsers[
+                            i].current_timeout = command_seq.total_timeout
+                        thread = self._start_thread(
+                            self.browsers[i], command_seq)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
         elif index == '**':
-            #send the command to all browsers and sync it
-            condition = threading.Condition()  # Used to block threads until ready
+            # send the command to all browsers and sync it
+            condition = threading.Condition()  # block threads until ready
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
                 for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[i].current_timeout = command_sequence.total_timeout
-                        thread = self._start_thread(self.browsers[i], command_sequence, condition)
+                        self.browsers[
+                            i].current_timeout = command_seq.total_timeout
+                        thread = self._start_thread(
+                            self.browsers[i], command_seq, condition)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
             with condition:
-                condition.notifyAll()  # All browsers loaded, tell them to start
+                condition.notifyAll()  # All browsers loaded, start
         else:
-            self.logger.info("Command index type is not supported or out of range")
+            self.logger.info(
+                "Command index type is not supported or out of range")
             return
 
-        if command_sequence.blocking:
+        if command_seq.blocking:
             thread.join()
             self._check_failure_status()
 
@@ -419,13 +466,17 @@ class TaskManager:
 
         # Check status flags before starting thread
         if self.closing:
-            self.logger.error("Attempted to execute command on a closed TaskManager")
+            self.logger.error(
+                "Attempted to execute command on a closed TaskManager")
             return
         self._check_failure_status()
 
         browser.set_visit_id(self.next_visit_id)
-        self.sock.send(("INSERT INTO site_visits (visit_id, crawl_id, site_url) VALUES (?,?,?)",
-                        (self.next_visit_id, browser.crawl_id, command_sequence.url)))
+        self.sock.send(
+            ("INSERT INTO site_visits (visit_id, crawl_id, site_url) "
+             "VALUES (?,?,?)", (self.next_visit_id, browser.crawl_id,
+                                command_sequence.url))
+        )
         self.next_visit_id += 1
 
         # Start command execution thread
@@ -440,7 +491,7 @@ class TaskManager:
         """
         sends command tuple to the BrowserManager
         """
-        browser.is_fresh = False  # since we are issuing a command, the BrowserManager is no longer a fresh instance
+        browser.is_fresh = False
 
         # if this is a synced call, block on condition
         if condition is not None:
@@ -448,8 +499,7 @@ class TaskManager:
                 condition.wait()
 
         reset = command_sequence.reset
-        start_time = None  # tracks when a site visit started, so that flash/profile
-                           # cookies can be properly tracked.
+        start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
             if command[0] in ['GET', 'BROWSE']:
@@ -460,19 +510,20 @@ class TaskManager:
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
-            command_succeeded = 0 #1 success, 0 failure from error, -1 timeout
+            command_succeeded = 0  # 1 success, 0 error, -1 timeout
             command_arguments = command[1] if len(command) > 1 else None
 
-            # received reply from BrowserManager, either success signal or failure notice
+            # received reply from BrowserManager, either success or failure
             try:
-                status = browser.status_queue.get(True, browser.current_timeout)
+                status = browser.status_queue.get(
+                    True, browser.current_timeout)
                 if status == "OK":
                     command_succeeded = 1
                 elif status[0] == "CRITICAL":
-                    self.logger.critical("BROWSER %i: Received critical error "
-                                         "from browser process while executing "
-                                         "command %s. Setting failure status." % (
-                                             browser.crawl_id, str(command)))
+                    self.logger.critical(
+                        "BROWSER %i: Received critical error from browser "
+                        "process while executing command %s. Setting failure "
+                        "status." % (browser.crawl_id, str(command)))
                     self.failure_status = {
                         'ErrorType': 'CriticalChildException',
                         'CommandSequence': command_sequence,
@@ -481,24 +532,31 @@ class TaskManager:
                     return
                 else:
                     command_succeeded = 0
-                    self.logger.info("BROWSER %i: Received failure status while"
-                                     " executing command: %s" % (browser.crawl_id, command[0]))
+                    self.logger.info(
+                        "BROWSER %i: Received failure status while executing "
+                        "command: %s" % (browser.crawl_id, command[0]))
             except EmptyQueue:
                 command_succeeded = -1
-                self.logger.info("BROWSER %i: Timeout while executing command, "
-                                 "%s, killing browser manager" % (browser.crawl_id, command[0]))
+                self.logger.info(
+                    "BROWSER %i: Timeout while executing command, %s, killing "
+                    "browser manager" % (browser.crawl_id, command[0]))
 
-            self.sock.send(("INSERT INTO CrawlHistory (crawl_id, command, arguments, bool_success)"
-                            " VALUES (?,?,?,?)",
-                            (browser.crawl_id, command[0], command_arguments, command_succeeded)))
+            self.sock.send(
+                ("INSERT INTO CrawlHistory "
+                 "(crawl_id, command, arguments, bool_success) "
+                 "VALUES (?,?,?,?)",
+                 (browser.crawl_id, command[0],
+                  command_arguments, command_succeeded))
+            )
 
             if command_succeeded != 1:
                 with self.threadlock:
                     self.failurecount += 1
                 if self.failurecount > self.failure_limit:
-                    self.logger.critical("BROWSER %i: Command execution failure"
-                                         " pushes failure count above the allowable limit."
-                                         " Setting failure_status." % browser.crawl_id)
+                    self.logger.critical(
+                        "BROWSER %i: Command execution failure pushes failure "
+                        "count above the allowable limit. Setting "
+                        "failure_status." % browser.crawl_id)
                     self.failure_status = {
                         'ErrorType': 'ExceedCommandFailureLimit',
                         'CommandSequence': command_sequence
@@ -520,11 +578,12 @@ class TaskManager:
             return
 
         if browser.restart_required or reset:
-            success = browser.restart_browser_manager(clear_profile = reset)
+            success = browser.restart_browser_manager(clear_profile=reset)
             if not success:
-                self.logger.critical("BROWSER %i: Exceeded the maximum allowable "
-                                     "consecutive browser launch failures. "
-                                     "Setting failure_status." % browser.crawl_id)
+                self.logger.critical(
+                    "BROWSER %i: Exceeded the maximum allowable consecutive "
+                    "browser launch failures. Setting failure_status." % (
+                        browser.crawl_id))
                 self.failure_status = {
                     'ErrorType': 'ExceedLaunchFailureLimit',
                     'CommandSequence': command_sequence
@@ -547,13 +606,14 @@ class TaskManager:
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def browse(self, url, num_links=2, sleep=0, index=None, timeout=60, reset=False):
+    def browse(self, url, num_links=2, sleep=0, index=None,
+               timeout=60, reset=False):
         """ browse a website and visit <num_links> links on the page """
         command_sequence = CommandSequence.CommandSequence(url)
-        command_sequence.browse(num_links=num_links, sleep=sleep, timeout=timeout)
+        command_sequence.browse(
+            num_links=num_links, sleep=sleep, timeout=timeout)
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
-
 
     def close(self):
         """
