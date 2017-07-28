@@ -9,9 +9,7 @@ import subprocess
 from .utilities import BASE_TEST_URL, start_server
 from .conftest import create_xpi
 
-import automation
 from automation.DeployBrowsers import configure_firefox
-from automation.Commands import browser_commands
 
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
@@ -20,7 +18,8 @@ OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
-FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
+FF_BIN_PATH = join(BASE_DIR, 'firefox-bin', 'firefox')
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -126,14 +125,16 @@ def main():
         if len(sys.argv) == 3 and sys.argv[2] == '--no-extension':
             driver = start_webdriver(False)
         else:
-            driver = start_webdriver(True)
-        print("\nDropping into ipython shell....")
-        print("  * Interact with the webdriver instance using `driver`")
-        print("  * The webdriver and test page server will close automatically")
-        print("  * Use `exit` to quit the ipython shell\n")
+            driver = start_webdriver(True)  # noqa
+        print("\nDropping into ipython shell....\n"
+              "  * Interact with the webdriver instance using `driver`\n"
+              "  * The webdriver and server will close automatically\n"
+              "  * Use `exit` to quit the ipython shell\n")
         IPython.embed()
     else:
         print ("Unrecognized arguments. Usage:\n"
                "python manual_test.py ('--selenium')? ('--no-extension')?")
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+    main()
