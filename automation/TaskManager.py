@@ -220,7 +220,13 @@ class TaskManager:
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
         - presence of processes that are no longer in use
+
+        TODO: process watchdog needs to be updated since `psutil` won't
+              kill browser processes started by Selenium 3 (with `subprocess`)
         """
+        if self.process_watchdog:
+            self.logger.error("BROWSER %i: Process watchdog is not currently "
+                              "supported." % self.crawl_id)
         while not self.closing:
             time.sleep(10)
 
@@ -382,7 +388,8 @@ class TaskManager:
                     "execution failures.",
                     self.failure_status['CommandSequence']
                 )
-            elif self.failure_status['ErrorType'] == 'ExceedLaunchFailureLimit':  # noqa
+            elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
+                                                       "FailureLimit")):
                 raise CommandExecutionError(
                     "TaskManager failed to launch browser within allowable "
                     "failure limit.", self.failure_status['CommandSequence']
@@ -563,6 +570,8 @@ class TaskManager:
                     }
                     return
                 browser.restart_required = True
+                self.logger.debug("BROWSER %i: Browser restart required" % (
+                    browser.crawl_id))
             else:
                 with self.threadlock:
                     self.failurecount = 0

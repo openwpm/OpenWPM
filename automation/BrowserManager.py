@@ -200,7 +200,11 @@ class Browser:
         kill and restart the two worker processes
         <clear_profile> marks whether we want to wipe the old profile
         """
+        self.logger.info("BROWSER %i: BrowserManager restart initiated. "
+                         "Clear profile? %s" % (self.crawl_id, clear_profile))
         if self.is_fresh:  # Return success if browser is fresh
+            self.logger.info("BROWSER %i: Skipping restart since the browser "
+                             "is a fresh instance already" % self.crawl_id)
             return True
 
         self.kill_browser_manager()
@@ -213,10 +217,16 @@ class Browser:
 
         return self.launch_browser_manager()
 
-    # terminates a BrowserManager, its browser instance and its virtual display
     def kill_browser_manager(self):
-        if (self.browser_manager is not None and
-                self.browser_manager.pid is not None):
+        """Kill the BrowserManager process and all of its children"""
+        self.logger.debug(
+            "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
+            "Display PID: %s | Display Port: %s | Browser PID: %s" % (
+                self.crawl_id, self.browser_manager.pid, self.display_pid,
+                self.display_port, self.browser_pid)
+        )
+        if (self.browser_manager is not None
+                and self.browser_manager.pid is not None):
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
@@ -243,7 +253,11 @@ class Browser:
                 pass
         if self.browser_pid is not None:
             try:
-                os.kill(self.browser_pid, signal.SIGKILL)
+                # Selenium 3's WebDriver uses `subprocess.Popen`
+                # to open the browser process. `os.kill` doesn't seem to be
+                # able to kill processes opened this way, so we use a system
+                # command in place of `os.kill(pid, signal.SIGKILL)`.
+                os.system("pkill -SIGKILL -P %i" % self.browser_pid)
             except OSError:
                 self.logger.debug("BROWSER %i: Browser process does not "
                                   "exist" % self.crawl_id)
@@ -315,7 +329,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
             prof_folder += '/'
 
         # Read the extension port -- if extension is enabled
-        # TODO: This needs to be cleaner
+        # TODO: Initial communication from extension to TM should use sockets
         if (browser_params['browser'] == 'firefox' and
                 browser_params['extension_enabled']):
             logger.debug("BROWSER %i: Looking for extension port information "
