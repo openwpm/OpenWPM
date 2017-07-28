@@ -57,11 +57,11 @@ if [ "$TRAVIS" != "true" ]; then
 	sudo pip install -U -r requirements.txt
 fi
 
-# This is the latest version of Firefox 52ESR as of March 10, 2017.
+# This is the latest version of Firefox 52ESR as of July 28, 2017.
 # For security reasons it is very important to keep up with patch releases
 # of the ESR, but a major version bump needs to be tested carefully.
 # Older ESRs are not supported by geckodriver.
-FIREFOX_VERSION=52.0esr
+FIREFOX_VERSION=52.2.1esr
 
 wget https://ftp.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}/linux-$(uname -m)/en-US/firefox-${FIREFOX_VERSION}.tar.bz2
 tar jxf firefox-${FIREFOX_VERSION}.tar.bz2
@@ -69,8 +69,9 @@ rm -rf firefox-bin
 mv firefox firefox-bin
 rm firefox-${FIREFOX_VERSION}.tar.bz2
 
-# Selenium 3.3 requires a 'geckodriver' helper executable, which is not
-# yet packaged.
+# Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
+# packaged. `geckodriver` 0.16.0+ is not compatible with Firefox 52. See:
+# https://github.com/mozilla/geckodriver/issues/743
 GECKODRIVER_VERSION=0.15.0
 case $(uname -m) in
     (x86_64)

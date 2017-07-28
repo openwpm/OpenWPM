@@ -19,5 +19,6 @@ tblib
 tld
 
 # Python 3 is not fully supported prior to Selenium 3.x.
-# Versions prior to 3.3.0 may work but have not been tested.
-selenium>=3.3.0
+# Geckodriver requires Selenium 3.4+, see:
+# https://github.com/mozilla/geckodriver#selenium
+selenium>=3.4.0
