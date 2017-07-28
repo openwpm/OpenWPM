@@ -7,6 +7,7 @@ import subprocess
 
 from . import utilities
 
+
 def create_xpi():
     """Creates a new xpi using jpm."""
     if utilities.which("jpm"):
