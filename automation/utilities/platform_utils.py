@@ -5,16 +5,11 @@ from collections import OrderedDict
 from copy import deepcopy
 import json
 import os
-import shutil
 import six
 import subprocess
-import sys
-import time
 
-from pyvirtualdisplay import Display
-from selenium import webdriver
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from tabulate import tabulate
+
 
 def parse_http_stack_trace_str(trace_str):
     """Parse a stacktrace string and return an array of dict."""
@@ -36,11 +31,14 @@ def parse_http_stack_trace_str(trace_str):
             print("Exception parsing the stack frame %s %s" % (frame, exc))
     return stack_trace
 
+
 def ensure_firefox_in_path():
     """
     If ../../firefox-bin/ exists, add it to the PATH.
     If it doesn't exist, do nothing - system firefox and geckodriver will
     be used.
+    TODO - We shouldn't fall back to system FF/Geckodriver. We need a specific
+           version of FF and this might cause confusing errors for the user.
     """
     root_dir = os.path.dirname(__file__)  # directory of this file
     ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
@@ -48,6 +46,7 @@ def ensure_firefox_in_path():
         curpath = os.environ["PATH"]
         if ffbin not in curpath:
             os.environ["PATH"] = ffbin + os.pathsep + curpath
+
 
 def get_version():
     """Return OpenWPM version tag/current commit and Firefox version """
@@ -69,6 +68,7 @@ def get_version():
 
     ff = firefox.split()[-1]
     return openwpm, ff
+
 
 def get_configuration_string(manager_params, browser_params, versions):
     """Construct a well-formatted string for {manager,browser}params
@@ -126,7 +126,7 @@ def get_configuration_string(manager_params, browser_params, versions):
         config_str += json.dumps(profile_dirs, indent=2,
                                  separators=(',', ': '))
 
-    config_str += "\n\n========== Output (archive) profile directories ==========\n"
+    config_str += "\n\n========== Output (archive) profile dirs ==========\n"
     if archive_all_none:
         config_str += "  No profile archive directories specified"
     else:
