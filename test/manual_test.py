@@ -18,7 +18,8 @@ OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
-FF_BIN_PATH = join(BASE_DIR, 'firefox-bin', 'firefox')
+FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
+FF_BIN = join(FF_BIN_PATH, 'firefox')
 
 
 class bcolors:
@@ -101,7 +102,7 @@ def start_webdriver(with_extension=False):
 
 def start_jpm():
     cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" % (BASE_TEST_URL,
-                                                            FF_BIN_PATH)
+                                                            FF_BIN)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416
