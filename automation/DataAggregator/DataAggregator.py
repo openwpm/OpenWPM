@@ -6,21 +6,21 @@ from sqlite3 import OperationalError
 from sqlite3 import ProgrammingError
 import sqlite3
 import time
-import os
 import six
 from six.moves import range
 
 
 def DataAggregator(manager_params, status_queue, commit_batch_size=1000):
     """
-     Receives SQL queries from other processes and writes them to the central database
-     Executes queries until being told to die (then it will finish work and shut down)
-     This process should never be terminated un-gracefully
-     Currently uses SQLite but may move to different platform
+     Receives SQL queries from other processes and writes them to the central
+     database. Executes queries until being told to die (then it will finish
+     work and shut down). This process should never be terminated un-gracefully
 
      <manager_params> TaskManager configuration parameters
-     <status_queue> is a queue connect to the TaskManager used for communication
-     <commit_batch_size> is the number of execution statements that should be made before a commit (used for speedup)
+     <status_queue> is a queue connect to the TaskManager used for
+        communication
+     <commit_batch_size> is the number of execution statements that should be
+        made before a commit (used for speedup)
     """
 
     # sets up DB connection
@@ -90,7 +90,7 @@ def process_query(query, curr, logger):
         if len(args) == 0:
             curr.execute(statement)
         else:
-            curr.execute(statement,args)
+            curr.execute(statement, args)
 
     except (OperationalError, ProgrammingError) as e:
         logger.error(
