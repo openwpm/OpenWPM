@@ -162,9 +162,11 @@ HttpPostParser.prototype.parseEncodedFormData = function(formData, encodingType)
     // We expect to have parsing failures due to unstructured POST data
     // e.g. In test_record_binary_post_data, decodeURIComponent throws a URIError
     // for binary data posted via AJAX.
-    loggingDB.logDebug("POST data is not parseable:" + e + " EncodingType:" + encodingType
-        + " PostDataLength:" + origFormData.length + " PostDataType:" + (typeof origFormData)
-        + " PostData:" + origFormData + "\n");
+    loggingDB.logDebug("POST data is not parseable:" + e +
+        " EncodingType:" + encodingType +
+        " PostDataLength:" + origFormData.length +
+        " PostDataType:" + (typeof origFormData) +
+        " PostData:" + loggingDB.escapeString(origFormData) + "\n");
     return origFormData;  // return the original body
   }
 }
