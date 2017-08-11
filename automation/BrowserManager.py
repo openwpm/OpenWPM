@@ -16,6 +16,7 @@ import tempfile
 from six.moves import cPickle as pickle
 import shutil
 import signal
+import psutil
 import time
 import sys
 import os
@@ -252,15 +253,32 @@ class Browser:
                                   "removed" % self.crawl_id)
                 pass
         if self.browser_pid is not None:
+            """`browser_pid` is the geckodriver process. We first kill
+            the child processes (i.e. firefox) and then kill the geckodriver
+            process."""
             try:
-                # Selenium 3's WebDriver uses `subprocess.Popen`
-                # to open the browser process. `os.kill` doesn't seem to be
-                # able to kill processes opened this way, so we use a system
-                # command in place of `os.kill(pid, signal.SIGKILL)`.
-                os.system("pkill -SIGKILL -P %i" % self.browser_pid)
-            except OSError:
-                self.logger.debug("BROWSER %i: Browser process does not "
-                                  "exist" % self.crawl_id)
+                geckodriver = psutil.Process(pid=self.browser_pid)
+                for child in geckodriver.children():
+                    try:
+                        child.kill()
+                    except psutil.NoSuchProcess:
+                        self.logger.debug(
+                            "BROWSER %i: Geckodriver child process already "
+                            "killed (pid=%i)." % (self.crawl_id, child.pid))
+                        pass
+                geckodriver.kill()
+                geckodriver.wait(timeout=20)
+                for child in geckodriver.children():
+                    child.wait(timeout=20)
+            except psutil.NoSuchProcess:
+                self.logger.debug(
+                    "BROWSER %i: Geckodriver process already "
+                    "killed (pid=%i)." % (self.crawl_id, geckodriver.pid))
+                pass
+            except psutil.TimeoutExpired:
+                self.logger.debug("BROWSER %i: Timeout while waiting for "
+                                  "geckodriver or browser process to close " %
+                                  self.crawl_id)
                 pass
 
     def shutdown_browser(self, during_init):
