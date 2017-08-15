@@ -271,9 +271,8 @@ class Browser:
                 for child in geckodriver.children():
                     child.wait(timeout=20)
             except psutil.NoSuchProcess:
-                self.logger.debug(
-                    "BROWSER %i: Geckodriver process already "
-                    "killed (pid=%i)." % (self.crawl_id, geckodriver.pid))
+                self.logger.debug("BROWSER %i: Geckodriver process already "
+                                  "killed." % self.crawl_id)
                 pass
             except psutil.TimeoutExpired:
                 self.logger.debug("BROWSER %i: Timeout while waiting for "
