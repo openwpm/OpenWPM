@@ -14,12 +14,36 @@ from automation.DeployBrowsers import configure_firefox
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
 
+# import commonly used modules and utilities so they can be easily accessed
+# in the interactive session
+from automation.Commands.utils import webdriver_extensions as wd_ext  # noqa
+from automation.utilities import domain_utils as du  # noqa
+from selenium.webdriver.common.keys import Keys  # noqa
+from selenium.common.exceptions import *  # noqa
+
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
 FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
 FF_BIN = join(FF_BIN_PATH, 'firefox')
+
+
+class Logger():
+    def __init__(self):
+        return
+
+    def info(self, message):
+        print(message)
+
+    def debug(self, message):
+        print(message)
+
+    def error(self, message):
+        print(message)
+
+    def critical(self, message):
+        print(message)
 
 
 class bcolors:
@@ -131,6 +155,7 @@ def main():
               "  * Interact with the webdriver instance using `driver`\n"
               "  * The webdriver and server will close automatically\n"
               "  * Use `exit` to quit the ipython shell\n")
+        logger = Logger()  # noqa
         IPython.embed()
     else:
         print ("Unrecognized arguments. Usage:\n"
