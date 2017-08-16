@@ -46,10 +46,13 @@ def is_loaded(webdriver):
         "return document.readyState") == "complete")
 
 
-def wait_until_loaded(webdriver, timeout, period=0.25):
+def wait_until_loaded(webdriver, timeout, period=0.25, min_time=0):
+    start_time = time.time()
     mustend = time.time() + timeout
     while time.time() < mustend:
         if is_loaded(webdriver):
+            if time.time() - start_time < min_time:
+                time.sleep(min_time + start_time - time.time())
             return True
         time.sleep(period)
     return False
@@ -175,7 +178,7 @@ def is_clickable(driver, full_xpath, xpath, timeout=1):
         return False
 
 
-def click_to_elem(element, sleep_after=0.5):
+def click_to_element(element, sleep_after=0.5):
     """Click to element and handle WebDriverException."""
     try:
         element.click()
@@ -189,6 +192,22 @@ def move_to_element(driver, element):
         ActionChains(driver).move_to_element(element).perform()
     except WebDriverException:
         pass
+
+
+def scroll_to_element(driver, element):
+    try:
+        driver.execute_script("window.scrollTo(%s, %s);" % (
+            element.location['x'], element.location['y']))
+    except WebDriverException:
+        pass
+
+
+def move_to_and_click(driver, element, sleep_after=0.5):
+    """Scroll to the element, hover over it, and click it"""
+    scroll_to_element(driver, element)
+    move_to_element(driver, element)
+    click_to_element(element, sleep_after)
+    return
 
 
 def is_displayed(element):
