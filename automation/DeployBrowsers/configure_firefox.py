@@ -3,9 +3,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import shutil
 import sys
 import os
+
 
 def privacy(browser_params, fp, root_dir, browser_profile_path):
     """
@@ -49,11 +49,15 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
     if browser_params['https-everywhere']:
         fp.add_extension(extension=os.path.join(
             root_dir, 'firefox_extensions/https-everywhere@eff.org.xpi'))
-        fp.set_preference("extensions.https_everywhere.firstrun_context_menu", True)
+        fp.set_preference(
+            "extensions.https_everywhere.firstrun_context_menu", True)
         fp.set_preference("extensions.https_everywhere.prefs_version", 1)
-        fp.set_preference("extensions.https_everywhere.toolbar_hint_shown", True)
-        fp.set_preference("extensions.https_everywhere._observatory.popup_shown", True)
-        fp.set_preference("extensions.https_everywhere._observatory.clean_config", True)
+        fp.set_preference(
+            "extensions.https_everywhere.toolbar_hint_shown", True)
+        fp.set_preference(
+            "extensions.https_everywhere._observatory.popup_shown", True)
+        fp.set_preference(
+            "extensions.https_everywhere._observatory.clean_config", True)
 
     # ABP -> uBlock Origin
     if browser_params['adblock-plus']:
@@ -66,6 +70,7 @@ def privacy(browser_params, fp, root_dir, browser_profile_path):
     if browser_params['ublock-origin']:
         fp.add_extension(extension=os.path.join(
             root_dir, 'firefox_extensions/uBlock0@raymondhill.net.xpi'))
+
 
 def optimize_prefs(fp):
     """
@@ -85,13 +90,15 @@ def optimize_prefs(fp):
     fp.set_preference('devtools.profiler.enabled', False)
 
     # Disable health reports / telemetry / crash reports
-    fp.set_preference("datareporting.policy.dataSubmissionEnabled", False) #FF41+ Master Switch
+    # FF41+ Master Switch
+    fp.set_preference("datareporting.policy.dataSubmissionEnabled", False)
     fp.set_preference('datareporting.healthreport.uploadEnabled', False)
     fp.set_preference("datareporting.healthreport.service.enabled", False)
     fp.set_preference('toolkit.telemetry.enabled', False)
     fp.set_preference("toolkit.telemetry.unified", False)
     fp.set_preference("breakpad.reportURL", "")
-    fp.set_preference("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False)
+    fp.set_preference(
+        "dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False)
 
     # Predictive Actions / Prefetch
     fp.set_preference('network.seer.enabled', False)
@@ -99,7 +106,7 @@ def optimize_prefs(fp):
     fp.set_preference('network.prefetch-next', False)
     fp.set_preference("browser.search.suggest.enabled", False)
     fp.set_preference("network.http.speculative-parallel-limit", 0)
-    fp.set_preference("keyword.enabled", False) # location bar using search
+    fp.set_preference("keyword.enabled", False)  # location bar using search
     fp.set_preference("browser.urlbar.userMadeSearchSuggestionsChoice", True)
 
     # Disable pinging Mozilla for geoip
@@ -112,20 +119,26 @@ def optimize_prefs(fp):
     fp.set_preference("browser.search.geoSpecificDefaults.url", "")
 
     # Disable auto-updating
-    fp.set_preference("app.update.enabled", False) # browser
-    fp.set_preference("app.update.url", "") # browser
-    fp.set_preference("media.gmp-manager.url", "") # OpenH264 Codec
-    fp.set_preference("browser.search.update", False) # search
-    fp.set_preference("extensions.update.enabled", False) # extensions
-    fp.set_preference("extensions.update.autoUpdateDefault", False) # addons
+    fp.set_preference("app.update.enabled", False)  # browser
+    fp.set_preference("app.update.url", "")  # browser
+    fp.set_preference("media.gmp-manager.url", "")  # OpenH264 Codec
+    fp.set_preference("browser.search.update", False)  # search
+    fp.set_preference("extensions.update.enabled", False)  # extensions
+    fp.set_preference("extensions.update.autoUpdateDefault", False)  # addons
     fp.set_preference("extensions.getAddons.cache.enabled", False)
-    fp.set_preference("lightweightThemes.update.enabled", False) # Personas
-    fp.set_preference("browser.safebrowsing.provider.mozilla.updateURL", "") # Safebrowsing
-    fp.set_preference("browser.safebrowsing.provider.mozilla.gethashURL", "") # Safebrowsing
-    fp.set_preference("browser.safebrowsing.provider.mozilla.lists", "") # Tracking Protection Lists
-    fp.set_preference("browser.safebrowsing.provider.google.updateURL", "") # Safebrowsing
-    fp.set_preference("browser.safebrowsing.provider.google.gethashURL", "") # Safebrowsing
-    fp.set_preference("browser.safebrowsing.provider.google.lists", "") # Tracking Protection Lists
+    fp.set_preference("lightweightThemes.update.enabled", False)  # Personas
+    fp.set_preference(
+        "browser.safebrowsing.provider.mozilla.updateURL", "")  # Safebrowsing
+    fp.set_preference(
+        "browser.safebrowsing.provider.mozilla.gethashURL", "")  # Safebrowsing
+    fp.set_preference(
+        "browser.safebrowsing.provider.mozilla.lists", "")  # Tracking Protect
+    fp.set_preference(
+        "browser.safebrowsing.provider.google.updateURL", "")  # Safebrowsing
+    fp.set_preference(
+        "browser.safebrowsing.provider.google.gethashURL", "")  # Safebrowsing
+    fp.set_preference(
+        "browser.safebrowsing.provider.google.lists", "")  # TrackingProtection
 
     # Disable Safebrowsing
     fp.set_preference("browser.safebrowsing.enabled", False)
