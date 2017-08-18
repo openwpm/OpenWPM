@@ -13,9 +13,11 @@ import tempfile
 from selenium.webdriver.common.service import Service as BaseService
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
 
-__all__ = ['FirefoxBinary', 'FirefoxProfile', 'FirefoxLogInterceptor']
+__all__ = ['FirefoxBinary', 'FirefoxProfile', 'FirefoxLogInterceptor',
+           'Options']
 
 
 def mktempfifo(suffix="", prefix="tmp", dir=None):

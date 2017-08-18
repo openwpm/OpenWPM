@@ -7,7 +7,7 @@ import random
 
 from . import configure_firefox
 from .selenium_firefox import (FirefoxProfile, FirefoxBinary,
-                               FirefoxLogInterceptor)
+                               FirefoxLogInterceptor, Options)
 from ..Commands.profile_commands import load_profile
 from ..MPLogger import loggingclient
 from ..utilities.platform_utils import ensure_firefox_in_path
@@ -32,6 +32,11 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     fp = FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(('STATUS', 'Profile Created', browser_profile_path))
+
+    # Use Options instead of FirefoxProfile to set preferences since the
+    # Options method has no "frozen"/restricted options.
+    # https://github.com/SeleniumHQ/selenium/issues/2106#issuecomment-320238039
+    fo = Options()
 
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
@@ -83,7 +88,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         logger.debug("BROWSER %i: Overriding user agent string to '%s'"
                      % (browser_params['crawl_id'],
                         profile_settings['ua_string']))
-        fp.set_preference("general.useragent.override",
+        fo.set_preference("general.useragent.override",
                           profile_settings['ua_string'])
 
     if browser_params['headless']:
@@ -98,7 +103,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         ext_loc = os.path.join(root_dir, '../Extension/firefox/openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
-        fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
+        fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         extension_config = dict()
         extension_config.update(browser_params)
         extension_config['logger_address'] = manager_params['logger_address']
@@ -120,17 +125,17 @@ def deploy_firefox(status_queue, browser_params, manager_params,
 
     # Disable flash
     if browser_params['disable_flash']:
-        fp.set_preference('plugin.state.flash', 0)
+        fo.set_preference('plugin.state.flash', 0)
     else:
-        fp.set_preference('plugin.state.flash', 2)
-        fp.set_preference('plugins.click_to_play', False)
+        fo.set_preference('plugin.state.flash', 2)
+        fo.set_preference('plugins.click_to_play', False)
 
     # Configure privacy settings
-    configure_firefox.privacy(browser_params, fp, root_dir,
+    configure_firefox.privacy(browser_params, fp, fo, root_dir,
                               browser_profile_path)
 
     # Set various prefs to improve speed and eliminate traffic to Mozilla
-    configure_firefox.optimize_prefs(fp)
+    configure_firefox.optimize_prefs(fo)
 
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.  This will also inform us where the real profile
@@ -139,11 +144,19 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         browser_params['crawl_id'], logger, browser_profile_path)
     interceptor.start()
 
+    # Set custom prefs. These are set after all of the default prefs to allow
+    # our defaults to be overwritten.
+    for name, value in browser_params['prefs'].items():
+        logger.info(
+            "BROWSER %i: Setting custom preference: %s = %s" %
+            (browser_params['crawl_id'], name, value))
+        fo.set_preference(name, value)
+
     # Launch the webdriver
     status_queue.put(('STATUS', 'Launch Attempted', None))
     fb = FirefoxBinary()
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb,
-                               log_path=interceptor.fifo)
+                               firefox_options=fo, log_path=interceptor.fifo)
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])

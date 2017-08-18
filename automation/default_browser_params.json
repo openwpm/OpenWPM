@@ -14,6 +14,7 @@
     "profile_archive_dir": null,
     "headless": false,
     "browser": "firefox",
+    "prefs": {},
 
     "tp_cookies": "always",
     "donottrack": false,
