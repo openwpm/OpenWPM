@@ -2,8 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from ..SocketInterface import serversocket
 from ..MPLogger import loggingclient
-from sqlite3 import OperationalError
-from sqlite3 import ProgrammingError
+from sqlite3 import (OperationalError, ProgrammingError, IntegrityError)
 import sqlite3
 import time
 import six
@@ -92,7 +91,7 @@ def process_query(query, curr, logger):
         else:
             curr.execute(statement, args)
 
-    except (OperationalError, ProgrammingError) as e:
+    except (OperationalError, ProgrammingError, IntegrityError) as e:
         logger.error(
             "Unsupported query:\n%s\n%s\n%s\n%s\n"
             % (type(e), e, statement, repr(args)))
