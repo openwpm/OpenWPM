@@ -10,8 +10,9 @@ import dill
 import six
 from six.moves import input
 
-#TODO - Implement a cleaner shutdown for server socket
-# see: https://stackoverflow.com/questions/1148062/python-socket-accept-blocks-prevents-app-from-quitting
+# TODO - Implement a cleaner shutdown for server socket
+# see: https://stackoverflow.com/a/1148237
+
 
 class serversocket:
     """
@@ -37,7 +38,8 @@ class serversocket:
         """ Listen for connections and pass handling to a new thread """
         while True:
             (client, address) = self.sock.accept()
-            thread = threading.Thread(target=self._handle_conn, args=(client, address))
+            thread = threading.Thread(target=self._handle_conn,
+                                      args=(client, address))
             thread.daemon = True
             thread.start()
 
@@ -54,7 +56,8 @@ class serversocket:
             'j' : json
         """
         if self.verbose:
-            print("Thread: " + str(threading.current_thread()) + " connected to: " + str(address))
+            print("Thread: %s connected to: %s" %
+                  (threading.current_thread(), address))
         try:
             while True:
                 msg = self.receive_msg(client, 5)
@@ -65,11 +68,11 @@ class serversocket:
                 msg = self.receive_msg(client, msglen)
                 if serialization != b'n':
                     try:
-                        if serialization == b'd': # dill serialization
+                        if serialization == b'd':  # dill serialization
                             msg = dill.loads(msg)
-                        elif serialization == b'j': # json serialization
+                        elif serialization == b'j':  # json serialization
                             msg = json.loads(msg.decode('utf-8'))
-                        elif serialization == b'u': # utf-8 serialization
+                        elif serialization == b'u':  # utf-8 serialization
                             msg = msg.decode('utf-8')
                         else:
                             print("Unrecognized serialization type: %r"
@@ -96,6 +99,7 @@ class serversocket:
     def close(self):
         self.sock.close()
 
+
 class clientsocket:
     """A client socket for sending messages"""
     def __init__(self, serialization='json', verbose=False):
@@ -106,12 +110,14 @@ class clientsocket:
         """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if serialization != 'json' and serialization != 'dill':
-            raise ValueError("Unsupported serialization type: %s" % serialization)
+            raise ValueError(
+                "Unsupported serialization type: %s" % serialization)
         self.serialization = serialization
         self.verbose = verbose
 
     def connect(self, host, port):
-        if self.verbose: print("Connecting to: %s:%i" % (host, port))
+        if self.verbose:
+            print("Connecting to: %s:%i" % (host, port))
         self.sock.connect((host, port))
 
     def send(self, msg):
@@ -138,7 +144,7 @@ class clientsocket:
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
 
-        #prepend with message length
+        # prepend with message length
         msg = struct.pack('>Lc', len(msg), serialization) + msg
         totalsent = 0
         while totalsent < len(msg):
@@ -150,10 +156,11 @@ class clientsocket:
     def close(self):
         self.sock.close()
 
+
 def main():
     import sys
 
-    #Just for testing
+    # Just for testing
     if sys.argv[1] == 's':
         sock = serversocket(verbose=True)
         sock.start_accepting()
@@ -162,7 +169,8 @@ def main():
     elif sys.argv[1] == 'c':
         host = input("Enter the host name:\n")
         port = input("Enter the port:\n")
-        serialization = input("Enter the serialization type (default: 'json'):\n")
+        serialization = input(
+            "Enter the serialization type (default: 'json'):\n")
         if serialization == '':
             serialization = 'json'
         sock = clientsocket(serialization=serialization)
@@ -170,10 +178,12 @@ def main():
         msg = None
 
         # some predefined messages
-        tuple_msg = ('hello','world')
-        list_msg = ['hello','world']
-        dict_msg = {'hello':'world'}
-        def function_msg(x): return x
+        tuple_msg = ('hello', 'world')
+        list_msg = ['hello', 'world']
+        dict_msg = {'hello': 'world'}
+
+        def function_msg(x):
+            return x
 
         # read user input
         while msg != "quit":
@@ -190,4 +200,6 @@ def main():
                 sock.send(msg)
         sock.close()
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+    main()
