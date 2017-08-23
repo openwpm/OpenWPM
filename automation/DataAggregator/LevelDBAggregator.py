@@ -30,8 +30,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     db_path = os.path.join(manager_params['data_directory'], 'javascript.ldb')
     db = plyvel.DB(db_path,
                    create_if_missing=True,
-                   lru_cache_size=10**9,
-                   write_buffer_size=128*10**4,
+                   write_buffer_size=128*10**6,
                    compression='snappy')
     batch = db.write_batch()
 
@@ -47,10 +46,11 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
 
         # no command for now -> sleep to avoid pegging CPU on blocking get
         if sock.queue.empty():
-            time.sleep(0.1)
-
+            time.sleep(1)
             # commit every five seconds to avoid blocking the db for too long
-            if counter > 0 and time.time() - commit_time > 5:
+            if counter > 0 and (time.time() - commit_time) > 5:
+                counter = 0
+                commit_time = time.time()
                 batch.write()
                 batch = db.write_batch()
             continue
