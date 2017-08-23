@@ -14,7 +14,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
      un-gracefully.
 
      <manager_params> TaskManager configuration parameters
-     <status_queue> is a queue connect to the TaskManager used for communication
+     <status_queue> queue connect to the TaskManager used for communication
      <batch_size> is the size of the write batch
     """
 
@@ -29,10 +29,10 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     # sets up DB connection
     db_path = os.path.join(manager_params['data_directory'], 'javascript.ldb')
     db = plyvel.DB(db_path,
-            create_if_missing = True,
-            lru_cache_size = 10**9,
-            write_buffer_size = 128*10**4,
-            compression = 'snappy')
+                   create_if_missing=True,
+                   lru_cache_size=10**9,
+                   write_buffer_size=128*10**4,
+                   compression='snappy')
     batch = db.write_batch()
 
     counter = 0  # number of executions made since last write
@@ -57,8 +57,8 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
 
         # process record
         content, content_hash = sock.queue.get()
-        counter = process_content(content, content_hash,
-                batch, db, counter, logger)
+        counter = process_content(
+            content, content_hash, batch, db, counter, logger)
 
         # batch commit if necessary
         if counter >= batch_size:
@@ -70,6 +70,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     # finishes work and gracefully stops
     batch.write()
     db.close()
+
 
 def process_content(content, content_hash, batch, db, counter, logger):
     """
@@ -83,10 +84,11 @@ def process_content(content, content_hash, batch, db, counter, logger):
     batch.put(content_hash, content)
     return counter + 1
 
+
 def drain_queue(sock_queue, batch, db, counter, logger):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
     while not sock_queue.empty():
         content, content_hash = sock_queue.get()
-        counter = process_content(content, content_hash,
-                batch, db, counter, logger)
+        counter = process_content(
+            content, content_hash, batch, db, counter, logger)
