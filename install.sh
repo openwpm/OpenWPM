@@ -1,20 +1,42 @@
 #!/bin/bash
 set -e
 
-echo "Would you like to install Adobe Flash Player? (Only required for crawls with Flash) [y,N]"
-read -s -n 1 response
-if [[ $response = "" ]] || [ $response == 'n' ] || [ $response == 'N' ]; then
-    flash=false
-    echo Not installing Adobe Flash Plugin
-elif [ $response == 'y' ] || [ $response == 'Y' ]; then
-    flash=true
-    echo Installing Adobe Flash Plugin
-    sudo sh -c 'echo "deb http://archive.canonical.com/ubuntu/ trusty partner" >> /etc/apt/sources.list.d/canonical_partner.list'
-else
-    echo Unrecognized response, exiting
+if [[ $# -gt 1 ]]; then
+    echo "Usage: install.sh [--flash | --no-flash]" >&2
     exit 1
 fi
 
+if [[ $# -gt 0 ]]; then
+    case "$1" in
+        "--flash")
+            flash=true
+            ;;
+        "--no-flash")
+            flash=false
+            ;;
+        *)
+            echo "Usage: install.sh [--flash | --no-flash]" >&2
+            exit 1
+            ;;
+    esac
+else
+    echo "Would you like to install Adobe Flash Player? (Only required for crawls with Flash) [y,N]"
+    read -s -n 1 response
+    if [[ $response = "" ]] || [ $response == 'n' ] || [ $response == 'N' ]; then
+        flash=false
+        echo Not installing Adobe Flash Plugin
+    elif [ $response == 'y' ] || [ $response == 'Y' ]; then
+        flash=true
+        echo Installing Adobe Flash Plugin
+    else
+        echo Unrecognized response, exiting
+        exit 1
+    fi
+fi
+
+if [ "$flash" = true ]; then
+    sudo sh -c 'echo "deb http://archive.canonical.com/ubuntu/ trusty partner" >> /etc/apt/sources.list.d/canonical_partner.list'
+fi
 sudo apt-get update
 
 sudo apt-get install -y firefox htop git python-dev libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb libboost-python-dev libleveldb-dev libjpeg-dev
