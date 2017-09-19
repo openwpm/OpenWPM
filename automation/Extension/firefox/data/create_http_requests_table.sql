@@ -19,5 +19,6 @@ CREATE TABLE IF NOT EXISTS http_requests(
   req_call_stack TEXT,
   content_policy_type INTEGER NOT NULL,
   post_body TEXT,
-  time_stamp TEXT NOT NULL
+  time_stamp TEXT NOT NULL,
+  top_url TEXT
 );

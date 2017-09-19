@@ -12,5 +12,6 @@ CREATE TABLE IF NOT EXISTS javascript(
     operation TEXT,
     value TEXT,
     arguments TEXT,
-    time_stamp TEXT NOT NULL
+    time_stamp TEXT NOT NULL,
+    top_url TEXT
 );

@@ -2,6 +2,7 @@ var pageMod = require("sdk/page-mod");
 const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
 var pageManager = require("./page-manager.js");
+var tabs = require('sdk/tabs');
 
 exports.run = function(crawlID, testing) {
 
@@ -32,6 +33,7 @@ exports.run = function(crawlID, testing) {
         update["operation"] = loggingDB.escapeString(data.operation);
         update["value"] = loggingDB.escapeString(data.value);
         update["time_stamp"] = data.timeStamp;
+        update["top_url"] = loggingDB.escapeString(tabs.activeTab.url);
 
         // Create a json object for function arguments
         // We create an object that maps array positon to argument

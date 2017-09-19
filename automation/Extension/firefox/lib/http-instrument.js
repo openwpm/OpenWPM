@@ -2,6 +2,7 @@
 const {Cc, Ci, CC, Cu, Cr, components} = require("chrome");
 const events      = require("sdk/system/events");
 const data        = require("sdk/self").data;
+var tabs          = require('sdk/tabs');
 var loggingDB     = require("./loggingdb.js");
 var httpPostParser    = require("./http-post-parser.js");
 
@@ -142,6 +143,8 @@ var httpRequestHandler = function(reqEvent, crawlID) {
 
   var current_time = new Date();
   update["time_stamp"] = current_time.toISOString();
+
+  update["top_url"] = loggingDB.escapeString(tabs.activeTab.url);
 
   var encodingType = "";
   var headers = [];
@@ -453,7 +456,8 @@ var httpResponseHandler = function(respEvent, isCached, crawlID,
     headers.push(header_pair);
   }});
   update["headers"] = JSON.stringify(headers);
-
+  update["top_url"] = loggingDB.escapeString(tabs.activeTab.url);
+  
   if (saveAllContent) {
     logWithResponseBody(respEvent, update);
   } else if (saveJavascript && isJS(httpChannel)) {

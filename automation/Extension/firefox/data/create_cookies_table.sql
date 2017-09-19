@@ -17,5 +17,6 @@ CREATE TABLE IF NOT EXISTS javascript_cookies(
     path TEXT,
     policy INTEGER,
     status INTEGER,
-    value TEXT
+    value TEXT,
+    top_url TEXT
 );

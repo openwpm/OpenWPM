@@ -2,6 +2,8 @@ const {Cc, Ci} = require("chrome");
 var events = require("sdk/system/events");
 const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
+var tabs = require('sdk/tabs');
+
 
 exports.run = function(crawlID) {
 
@@ -54,6 +56,19 @@ exports.run = function(crawlID) {
             update["policy"] = cookie.policy;
             update["status"] = cookie.status;
             update["value"] = loggingDB.escapeString(cookie.value);
+
+            /*
+             * This records the current URL in the tab with the cookie.
+             *
+             * There is a known limitation of this code, it actually really
+             * just records the current URL in the tab. Assume that the browser
+             * is on a.tld and the user clicks to a link pointing to b.tld.
+             * The server on b.tld sends an HTTP redirect response pointing
+             * to c.tld and also sets a cookie. Then the current URL in the
+             * tab is still a.tld when the cookie is set, but as seen from a
+             * first/third party perspective, the browser is on b.tld.
+             */
+            update["top_url"] = loggingDB.escapeString(tabs.activeTab.url);
 
             loggingDB.executeSQL(loggingDB.createInsert("javascript_cookies", update), true);
         }

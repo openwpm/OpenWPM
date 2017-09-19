@@ -13,5 +13,6 @@ CREATE TABLE IF NOT EXISTS http_responses(
   channel_id TEXT NOT NULL,
   location TEXT NOT NULL,
   time_stamp TEXT NOT NULL,
-  content_hash TEXT
+  content_hash TEXT,
+  top_url TEXT
 );
