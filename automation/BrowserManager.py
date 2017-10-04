@@ -1,19 +1,20 @@
-from Commands import command_executor
-from DeployBrowsers import deploy_browser
-from Commands import profile_commands
-from Proxy import deploy_mitm_proxy
-from SocketInterface import clientsocket
-from MPLogger import loggingclient
-from Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
+from __future__ import absolute_import
+from .Commands import command_executor
+from .DeployBrowsers import deploy_browser
+from .Commands import profile_commands
+from .SocketInterface import clientsocket
+from .MPLogger import loggingclient
+from .Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
 
+import errno
 from multiprocess import Process, Queue
-from Queue import Empty as EmptyQueue
+from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 pickling_support.install()
 from six import reraise
 import traceback
 import tempfile
-import cPickle
+from six.moves import cPickle as pickle
 import shutil
 import signal
 import time
@@ -76,7 +77,7 @@ class Browser:
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
-            tempdir = tempfile.mkdtemp() + "/"
+            tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_") + "/"
             profile_commands.dump_profile(self.current_profile_path,
                                           self.manager_params,
                                           self.browser_params,
@@ -101,7 +102,7 @@ class Browser:
                 launch_status[result[1]] = True
                 return result[2]
             elif result[0] == 'CRITICAL':
-                reraise(*cPickle.loads(result[1]))
+                reraise(*pickle.loads(result[1]))
             elif result[0] == 'FAILED':
                 raise BrowserCrashError('Browser spawn returned failure status')
 
@@ -125,7 +126,8 @@ class Browser:
                 (self.display_pid, self.display_port) = check_queue(launch_status) # Display launched
                 check_queue(launch_status) # browser launch attempted
                 (self.browser_pid, self.browser_settings) = check_queue(launch_status) # Browser launched
-                if check_queue(launch_status) != 'READY':
+                (driver_profile_path, ready) = check_queue(launch_status)
+                if ready != 'READY':
                     self.logger.error("BROWSER %i: Mismatch of status queue return values, trying again..." % self.crawl_id)
                     unsuccessful_spawns += 1
                     continue
@@ -138,7 +140,7 @@ class Browser:
                     error_string += " | %s: %s " % (string, launch_status.get(string, False))
                 self.logger.error("BROWSER %i: Spawn unsuccessful %s" % (self.crawl_id, error_string))
                 self.kill_browser_manager()
-                if launch_status.has_key('Profile Created'):
+                if 'Profile Created' in launch_status:
                     shutil.rmtree(spawned_profile_path, ignore_errors=True)
 
         # If the browser spawned successfully, we should update the
@@ -147,7 +149,9 @@ class Browser:
         if success:
             self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.crawl_id)
             previous_profile_path = self.current_profile_path
-            self.current_profile_path = spawned_profile_path
+            self.current_profile_path = driver_profile_path
+            if driver_profile_path != spawned_profile_path:
+                shutil.rmtree(spawned_profile_path, ignore_errors=True)
             if previous_profile_path is not None:
                 shutil.rmtree(previous_profile_path, ignore_errors=True)
             if tempdir is not None:
@@ -247,34 +251,51 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         logger = loggingclient(*manager_params['logger_address'])
 
         # Start the proxy
-        proxy_site_queue = None  # used to pass the current site down to the proxy
+        # MITMProxy support has been removed, but this logic remains as a
+        # stub for potential future support for other kinds of proxies.
+        proxy_site_queue = None  # to pass the current site down to the proxy
         if browser_params['proxy']:
-            (local_port, proxy_site_queue) = deploy_mitm_proxy.init_proxy(browser_params,
-                                                                          manager_params,
-                                                                          status_queue)
-            browser_params['proxy'] = local_port
+            raise RuntimeError("mitmproxy support has been removed")
         status_queue.put(('STATUS','Proxy Ready','READY'))
 
         # Start the virtualdisplay (if necessary), webdriver, and browser
         (driver, prof_folder, browser_settings) = deploy_browser.deploy_browser(status_queue, browser_params, manager_params, crash_recovery)
+        if prof_folder[-1] != '/':
+            prof_folder += '/'
 
         # Read the extension port -- if extension is enabled
         # TODO: This needs to be cleaner
         if browser_params['browser'] == 'firefox' and browser_params['extension_enabled']:
             logger.debug("BROWSER %i: Looking for extension port information in %s" % (browser_params['crawl_id'], prof_folder))
-            while not os.path.isfile(prof_folder + 'extension_port.txt'):
+            elapsed = 0
+            port = None
+            ep_filename = os.path.join(prof_folder, 'extension_port.txt')
+            while elapsed < 5:
+                try:
+                    with open(ep_filename, 'rt') as f:
+                        port = int(f.read().strip())
+                        break
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
                 time.sleep(0.1)
-            time.sleep(0.5)
-            with open(prof_folder + 'extension_port.txt', 'r') as f:
-                port = f.read().strip()
+                elapsed += 0.1
+            if port is None:
+                # try one last time, allowing all exceptions to propagate
+                with open(ep_filename, 'rt') as f:
+                    port = int(f.read().strip())
+
+            logger.debug("BROWSER %i: Connecting to extension on port %i" % (browser_params['crawl_id'], port))
             extension_socket = clientsocket(serialization='json')
             extension_socket.connect('127.0.0.1',int(port))
         else:
             extension_socket = None
 
+        logger.debug("BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])
+
         # passes the profile folder, WebDriver pid and display pid back to the TaskManager
         # now, the TaskManager knows that the browser is successfully set up
-        status_queue.put(('STATUS','Browser Ready','READY'))
+        status_queue.put(('STATUS','Browser Ready',(prof_folder,'READY')))
         browser_params['profile_path'] = prof_folder
 
         # starts accepting arguments until told to die
@@ -302,7 +323,7 @@ def BrowserManager(command_queue, status_queue, browser_params, manager_params, 
         logger.info("BROWSER %i: %s thrown, informing parent and raising" %
                 (browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()
-        status_queue.put(('CRITICAL',cPickle.dumps(err_info)))
+        status_queue.put(('CRITICAL',pickle.dumps(err_info)))
         return
     except Exception as e:
         excp = traceback.format_exception(*sys.exc_info())

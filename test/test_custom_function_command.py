@@ -1,9 +1,10 @@
-import expected
-import utilities
+from __future__ import absolute_import
+from . import expected
+from . import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'
 
@@ -22,9 +23,13 @@ class TestCustomFunctionCommand(OpenWPMTest):
             """ Collect links with matching `scheme` and save in table `table_name` """
             driver = kwargs['driver']
             manager_params = kwargs['manager_params']
-            link_elements = driver.find_elements_by_tag_name('a')
-            link_urls = [element.get_attribute("href") for element in link_elements]
-            link_urls = filter(lambda x: x.startswith(scheme+'://'), link_urls)
+            link_urls = [
+                x for x in (
+                    element.get_attribute("href")
+                    for element in driver.find_elements_by_tag_name('a')
+                )
+                if x.startswith(scheme+'://')
+            ]
             current_url = driver.current_url
 
             sock = clientsocket()

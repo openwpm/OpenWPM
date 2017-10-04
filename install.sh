@@ -57,15 +57,31 @@ if [ "$TRAVIS" != "true" ]; then
 	sudo pip install -U -r requirements.txt
 fi
 
-# Install specific version of Firefox known to work well with the selenium version above
-if [ $(uname -m) == 'x86_64' ]; then
-  echo Downloading 64-bit Firefox
-  wget https://ftp.mozilla.org/pub/firefox/releases/45.9.0esr/linux-x86_64/en-US/firefox-45.9.0esr.tar.bz2
-else
-  echo Downloading 32-bit Firefox
-  wget https://ftp.mozilla.org/pub/firefox/releases/45.9.0esr/linux-i686/en-US/firefox-45.9.0esr.tar.bz2
-fi
-tar jxf firefox*.tar.bz2
+# This is the latest version of Firefox 52ESR as of March 10, 2017.
+# For security reasons it is very important to keep up with patch releases
+# of the ESR, but a major version bump needs to be tested carefully.
+# Older ESRs are not supported by geckodriver.
+FIREFOX_VERSION=52.0esr
+
+wget https://ftp.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}/linux-$(uname -m)/en-US/firefox-${FIREFOX_VERSION}.tar.bz2
+tar jxf firefox-${FIREFOX_VERSION}.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
-rm firefox*.tar.bz2
+rm firefox-${FIREFOX_VERSION}.tar.bz2
+
+# Selenium 3.3 requires a 'geckodriver' helper executable, which is not
+# yet packaged.
+GECKODRIVER_VERSION=0.15.0
+case $(uname -m) in
+    (x86_64)
+        GECKODRIVER_ARCH=linux64
+        ;;
+    (*)
+        echo Platform $(uname -m) not known to be supported by geckodriver >&2
+        exit 1
+        ;;
+esac
+wget https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
+tar zxf geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
+rm geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
+mv geckodriver firefox-bin

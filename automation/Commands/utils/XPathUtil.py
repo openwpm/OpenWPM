@@ -3,9 +3,15 @@
 # XPaths encountered while scraping.
 #
 # Steven Englehardt (github.com/englehardt)
-from bs4 import BeautifulSoup as bs
-import bs4
+
+from __future__ import absolute_import
+from __future__ import print_function
+
+from six.moves import range
 import re
+
+import bs4
+from bs4 import BeautifulSoup as bs
 
 def is_clickable(xpath):
     #We consider any xpath that has an 'a', 'button',
@@ -51,7 +57,7 @@ def check_previous_tags(node, use_id=True):
 
     #XPath name
     if counter > 1:
-        xpath = node.name + '[' + str(counter) + ']'
+        xpath = node.name + '[%d]' % counter
     else:
         xpath = node.name
 
@@ -60,8 +66,11 @@ def check_previous_tags(node, use_id=True):
 def ExtractXPath(element, use_id = True):
     # Check that element is a tag node
     if type(element) != bs4.element.Tag:
-        raise ExtractXPathError(str(type(element)) +
-                ' is not a supported data type. Only tag nodes from the tag tree are accepted.')
+        raise ExtractXPathError(
+            '%s is not a supported data type. '
+            'Only tag nodes from the tag tree are accepted.'
+            % type(element)
+        )
 
     ##### Starting node
     #Check id first
@@ -107,7 +116,7 @@ def xp1_wildcard(attr, string, normalize=True):
         attr = 'normalize-space(' + attr + ')'
 
     if len(parts) != 2:
-        print "ERROR: This function is meant to support 1 wildcard"
+        print("ERROR: This function is meant to support 1 wildcard")
         return '[' + attr + '=' + string + ']'
     else:
         pt1 = ''
@@ -127,23 +136,25 @@ def xp1_wildcard(attr, string, normalize=True):
         elif pt1 != '' and pt2 != '':
             return ('[' + pt1 + ' and ' + pt2 + ']')
         else:
-            print "ERROR: The string is empty"
+            print("ERROR: The string is empty")
             return '[' + attr + '=' + string + ']'
 
-if __name__=='__main__':
+def main():
     #Output some sample XPaths
-    print "--- Sample XPaths ---"
-    import urllib2
+    print("--- Sample XPaths ---")
+    from six.moves.urllib.request import urlopen
     import re
     from random import choice
-    rsp = urllib2.urlopen('http://www.reddit.com/')
+    rsp = urlopen('http://www.reddit.com/')
     if rsp.getcode() == 200:
         soup = bs(rsp.read(), 'lxml')
         elements = soup.findAll(text = re.compile('[A-Za-z0-9]{10,}'))
         for i in range(0,5):
             element = choice(elements).parent
-            print "HTML"
-            print element
-            print "XPath"
-            print ExtractXPath(element)
-            print "**************"
+            print("HTML")
+            print(element)
+            print("XPath")
+            print(ExtractXPath(element))
+            print("**************")
+
+if __name__=='__main__': main()

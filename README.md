@@ -1,12 +1,11 @@
 OpenWPM [![Build Status](https://travis-ci.org/citp/OpenWPM.svg?branch=master)](https://travis-ci.org/citp/OpenWPM)
 =======
 
-OpenWPM is a web privacy measurement framework which makes it easy to collect
-data for privacy studies on a scale of thousands to millions of site. OpenWPM
-is built on top of Firefox, with automation provided by Selenium. It includes
-several hooks for data collection, including a proxy, a Firefox extension, and
-access to Flash cookies. Check out the instrumentation section below for more
-details.
+OpenWPM is a web privacy measurement framework which makes it easy to
+collect data for privacy studies on a scale of thousands to millions
+of site. OpenWPM is built on top of Firefox, with automation provided
+by Selenium. It includes several hooks for data collection. Check out
+the instrumentation section below for more details.
 
 Installation
 ------------
@@ -128,42 +127,6 @@ for their measurement data (see
     * Automatically saved when the platform closes or crashes by specifying
         `browser_params['profile_archive_dir']`.
     * Save on-demand with the `CommandSequence::dump_profile` command.
-* **DEPRECATED** HTTP Request and Response Headers via mitmproxy
-    * This will be removed in future releases
-    * Set `browser_params['proxy'] = True`
-    * Data is saved to the `http_requests_proxy` and `http_responses_proxy`
-        tables.
-    * Saves both HTTP and HTTPS request and response headers
-    * Several drawbacks:
-        * Cached requests and responses are missed entirely (See #71)
-        * Some HTTPS connections fail with certificate warnings (See #53)
-        * The mitmproxy version used (v0.13) is a few releases behind the
-            current mitmproxy library and will likely continue to have more
-            issues unless updated.
-        * Has significantly less context available around a request/response
-            than is available from within the browser.
-* **DEPRECATED** Javascript Response Bodies via mitmproxy
-    * This will be removed in future releases
-    * Set `browser_params['save_javascript_proxy'] = True`
-    * Saves javascript response bodies to a LevelDB database de-duplicated by
-        the murmurhash3 of the content. `content_hash` in `http_response_proxy`
-        keys into this content database.
-    * NOTE: In addition to the other drawbacks of proxy-based measurements,
-        content must be decoded before saving and not all current encodings are
-        supported. In particular, brotli (`br`) is not supported.
-* **DEPRECATED** HTTP Request and Response Cookies via mitmproxy
-    * This will be removed in future releases
-    * Derived post-crawl from proxy-based HTTP instrumentation
-    * To enable: call
-      `python automation/utilities/build_cookie_table.py <sqlite_database>`.
-    * Data is saved to the `http_request_cookies_proxy` and
-        `http_response_cookies_proxy` tables.
-    * Several drawbacks:
-        * Will not detect cookies set via Javascript, but will still record
-            when those cookies are sent with requests.
-        * Cookie parsing is done using a custom `Cookie.py` module. Although a
-            significant effort went into replicating Firefox's cookie parsing,
-            it may not be a faithful reproduction.
 
 Browser and Platform Configuration
 ----------------------------------
@@ -244,33 +207,23 @@ left out of this section.
       visited as a first party.
 * `donottrack`
   * Set to `True` to enable Do Not Track in the browser.
-* `ghostery`
-  * Set to `True` to enable Ghostery with all blocking enabled
-  * NOTE: The Ghostery version used (including filter lists) may be outdated.
-    It's recommended that you update the xpi and `store.json` file (included in
-    the extension profile directory). These can be placed
-    [here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions/ghostery)
+* `disconnect`
+  * Set to `True` to enable Disconnect with all blocking enabled
+  * NOTE: The extension may be outdated.
+    It's recommended that you update the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
 * `https-everywhere`
   * Set to `True` to enable HTTPS Everywhere in the browser.
   * NOTE: The HTTPS Everywhere version may be outdated. It's recommended you
     update the xpi
     [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
     before crawling.
-* `adblock-plus`
-  * Set to `True` to enable AdBlock Plus in the browser.
+* `ublock-origin`
+  * Set to `True` to enable uBlock Origin in the browser.
   * The filter lists should be automatically downloaded and installed, but the
-    xpi, [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
-    , might be outdated.
-  * NOTE: There is a known issue of AdBlock Plus not blocking all resources
-    on the first page visit. See
-    [Issue #35](https://github.com/citp/OpenWPM/issues/35)
-    for more information.
-* **NOT SUPPORTED** ` tracking-protection`
+    xpi, [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), might be outdated.
+* `tracking-protection`
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
-  * NOTE: This is not currently supported. See
-    [Issue #101](https://github.com/citp/OpenWPM/issues/101) for more
-    information.
 
 Browser Profile Support
 -----------------------
@@ -367,13 +320,13 @@ continuing the crawl). We recommend using
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
-* `python manual_test.py` uses `jpm` to build the current extension directory
+* `python -m test.manual_test` uses `jpm` to build the current extension directory
   and launch a Firefox instance with it.
-* `python manual_test.py --selenium` launches a Firefox Selenium instance
+* `python -m test.manual_test --selenium` launches a Firefox Selenium instance
   after using `jpm` to automatically rebuild `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
-* `python manual_test.py --selenium --no_extension` launches a Firefox Selenium
+* `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
   instance with no instrumentation. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
@@ -390,15 +343,7 @@ Once installed, execute `py.test -vv` in the test directory to run all tests.
 Troubleshooting
 ---------------
 
-1. `IOError: [Errno 2] No such file or directory: '../../firefox-bin/application.ini'`
-
-  This error occurs when the platform can't find a standalone Firefox binary in
-  the root directory of OpenWPM. The `install.sh` script will download and unzip
-  the appropriate version of Firefox for you. If you've run this script but still
-  don't have the binary installed note that the script will exit if any command
-  fails, so re-run the install script checking that no command fails.
-
-2. `WebDriverException: Message: The browser appears to have exited before we could connect...`
+1. `WebDriverException: Message: The browser appears to have exited before we could connect...`
 
   This error indicates that Firefox exited during startup (or was prevented from
   starting). There are many possible causes of this error:

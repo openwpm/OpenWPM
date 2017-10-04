@@ -1,4 +1,5 @@
-from openwpmtest import OpenWPMTest
+from __future__ import absolute_import
+from .openwpmtest import OpenWPMTest
 from ..automation.utilities import db_utils
 
 GETS_AND_SETS = {

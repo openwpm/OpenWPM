@@ -1,10 +1,14 @@
-import Queue
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves.queue import Queue
 import threading
 import traceback
 import socket
 import struct
 import json
 import dill
+import six
+from six.moves import input
 
 #TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/questions/1148062/python-socket-accept-blocks-prevents-app-from-quitting
@@ -19,9 +23,9 @@ class serversocket:
         self.sock.bind(('localhost', 0))
         self.sock.listen(10)  # queue a max of n connect requests
         self.verbose = verbose
-        self.queue = Queue.Queue()
+        self.queue = Queue()
         if self.verbose:
-            print "Server bound to: " + str(self.sock.getsockname())
+            print("Server bound to: " + str(self.sock.getsockname()))
 
     def start_accepting(self):
         """ Start the listener thread """
@@ -45,41 +49,46 @@ class serversocket:
 
         Supported serialization formats:
             'n' : no serialization
+            'u' : Unicode string in UTF-8
             'd' : dill pickle
             'j' : json
         """
         if self.verbose:
-            print "Thread: " + str(threading.current_thread()) + " connected to: " + str(address)
+            print("Thread: " + str(threading.current_thread()) + " connected to: " + str(address))
         try:
             while True:
                 msg = self.receive_msg(client, 5)
                 msglen, serialization = struct.unpack('>Lc', msg)
                 if self.verbose:
-                    print "Msglen: " + str(msglen) + " is_serialized: " + str(serialization != 'n')
+                    print("Received message, length %d, serialization %r"
+                          % (msglen, serialization))
                 msg = self.receive_msg(client, msglen)
-                if serialization != 'n':
+                if serialization != b'n':
                     try:
-                        if serialization == 'd': # dill serialization
+                        if serialization == b'd': # dill serialization
                             msg = dill.loads(msg)
-                        elif serialization == 'j': # json serialization
-                            msg = json.loads(msg)
+                        elif serialization == b'j': # json serialization
+                            msg = json.loads(msg.decode('utf-8'))
+                        elif serialization == b'u': # utf-8 serialization
+                            msg = msg.decode('utf-8')
                         else:
-                            print "Unrecognized serialization type: %s" % serialization
+                            print("Unrecognized serialization type: %r"
+                                  % serialization)
                             continue
                     except (UnicodeDecodeError, ValueError) as e:
-                        print "Error de-serializing message: %s \n %s" % (
-                                msg, traceback.format_exc(e))
+                        print("Error de-serializing message: %s \n %s" % (
+                                msg, traceback.format_exc(e)))
                         continue
                 self.queue.put(msg)
         except RuntimeError:
             if self.verbose:
-                print "Client socket: " + str(address) + " closed"
+                print("Client socket: " + str(address) + " closed")
 
     def receive_msg(self, client, msglen):
-        msg = ''
+        msg = b''
         while len(msg) < msglen:
             chunk = client.recv(msglen-len(msg))
-            if chunk == '':
+            if not chunk:
                 raise RuntimeError("socket connection broken")
             msg = msg + chunk
         return msg
@@ -91,7 +100,7 @@ class clientsocket:
     """A client socket for sending messages"""
     def __init__(self, serialization='json', verbose=False):
         """ `serialization` specifies the type of serialization to use for
-        non-str messages. Supported formats:
+        non-string messages. Supported formats:
             * 'json' uses the json module. Cross-language support. (default)
             * 'dill' uses the dill pickle module. Python only.
         """
@@ -102,29 +111,32 @@ class clientsocket:
         self.verbose = verbose
 
     def connect(self, host, port):
-        if self.verbose: print "Connecting to: %s:%i" % (host, port)
+        if self.verbose: print("Connecting to: %s:%i" % (host, port))
         self.sock.connect((host, port))
 
     def send(self, msg):
         """
         Sends an arbitrary python object to the connected socket. Serializes
-        using dill if not str, and prepends msg len (4-bytes) and
+        using dill if not string, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
-        #if input not string, serialize to string
-        if type(msg) is not str:
-            if self.serialization == 'dill':
-                msg = dill.dumps(msg)
-                serialization = 'd'
-            elif self.serialization == 'json':
-                msg = json.dumps(msg)
-                serialization = 'j'
-            else:
-                raise ValueError("Unsupported serialization type set: %s" % serialization)
+        if isinstance(msg, six.binary_type):
+            serialization = b'n'
+        elif isinstance(msg, six.text_type):
+            serialization = b'u'
+            msg = msg.encode('utf-8')
+        elif self.serialization == 'dill':
+            msg = dill.dumps(msg, dill.HIGHEST_PROTOCOL)
+            serialization = b'd'
+        elif self.serialization == 'json':
+            msg = json.dumps(msg).encode('utf-8')
+            serialization = b'j'
         else:
-            serialization = 'n'
+            raise ValueError("Unsupported serialization type set: %s"
+                             % serialization)
 
-        if self.verbose: print "Sending message with serialization %s" % serialization
+        if self.verbose:
+            print("Sending message with serialization %s" % serialization)
 
         #prepend with message length
         msg = struct.pack('>Lc', len(msg), serialization) + msg
@@ -138,19 +150,19 @@ class clientsocket:
     def close(self):
         self.sock.close()
 
-if __name__ == '__main__':
+def main():
     import sys
 
     #Just for testing
     if sys.argv[1] == 's':
         sock = serversocket(verbose=True)
         sock.start_accepting()
-        raw_input("Press enter to exit...")
+        input("Press enter to exit...")
         sock.close()
     elif sys.argv[1] == 'c':
-        host = raw_input("Enter the host name:\n")
-        port = raw_input("Enter the port:\n")
-        serialization = raw_input("Enter the serialization type (default: 'json'):\n")
+        host = input("Enter the host name:\n")
+        port = input("Enter the port:\n")
+        serialization = input("Enter the serialization type (default: 'json'):\n")
         if serialization == '':
             serialization = 'json'
         sock = clientsocket(serialization=serialization)
@@ -165,7 +177,7 @@ if __name__ == '__main__':
 
         # read user input
         while msg != "quit":
-            msg = raw_input("Enter a message to send:\n")
+            msg = input("Enter a message to send:\n")
             if msg == 'tuple':
                 sock.send(tuple_msg)
             elif msg == 'list':
@@ -177,3 +189,5 @@ if __name__ == '__main__':
             else:
                 sock.send(msg)
         sock.close()
+
+if __name__ == '__main__': main()

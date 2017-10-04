@@ -1,4 +1,5 @@
-from Errors import CommandExecutionError
+from __future__ import absolute_import
+from .Errors import CommandExecutionError
 
 class CommandSequence:
     """A CommandSequence wraps a series of commands to be performed
@@ -25,7 +26,7 @@ class CommandSequence:
 
         Parameters
         ----------
-        url : str
+        url : string
             url of page visit the command sequence should execute on
         reset : bool
             True if browser should clear state and restart after sequence

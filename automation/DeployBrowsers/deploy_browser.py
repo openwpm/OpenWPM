@@ -1,4 +1,5 @@
-import deploy_firefox
+from __future__ import absolute_import
+from . import deploy_firefox
 from ..Errors import BrowserConfigError
 
 def deploy_browser(status_queue, browser_params, manager_params, crash_recovery):

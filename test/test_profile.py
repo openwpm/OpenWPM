@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import pytest
 from os.path import join, isfile
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 
 # TODO update these tests to make use of blocking commands
@@ -50,27 +51,9 @@ class TestProfile(OpenWPMTest):
         with pytest.raises(ProfileLoadError):
             TaskManager.TaskManager(manager_params, browser_params)  # noqa
 
-    def test_profile_saved_when_launch_crashes(self):
-        manager_params, browser_params = self.get_config()
-        browser_params[0]['proxy'] = True
-        browser_params[0]['save_javascript'] = True
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        manager.get('http://example.com')
-
-        # Kill the LevelDBAggregator
-        # This will cause the proxy launch to crash
-        manager.ldb_status_queue.put("DIE")
-        manager.browsers[0]._SPAWN_TIMEOUT = 2 # Have timeout occur quickly
-        manager.browsers[0]._UNSUCCESSFUL_SPAWN_LIMIT = 2 # Have timeout occur quickly
-        manager.get('example.com') # Cause a selenium crash to force browser to restart
-
-        # The browser will fail to launch due to the proxy crashes
-        try:
-            manager.get('http://example.com')
-        except CommandExecutionError:
-            pass
-        manager.close()
-        assert isfile(join(browser_params[0]['profile_archive_dir'],'profile.tar.gz'))
+    # TODO the old test for the profile being saved on a startup crash
+    # relied on yanking mitmproxy out from under the browser, which is
+    # no longer possible - think of a new one
 
     #TODO Check for Flash
     #TODO Check contents of profile (tests should fail anyway if profile doesn't contain everything)

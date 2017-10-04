@@ -1,11 +1,12 @@
+from __future__ import absolute_import
 from PIL import Image
 import os
 
-import utilities
+from . import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'
 url_b = utilities.BASE_TEST_URL + '/simple_b.html'
