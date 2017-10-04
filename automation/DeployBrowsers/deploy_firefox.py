@@ -119,10 +119,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded"
                      % browser_params['crawl_id'])
 
-    if browser_params['proxy']:
-        logger.error("BROWSER %i: MITMProxy support has been removed. "
-                     "Use http_instrument instead. ")
-
     # Disable flash
     if browser_params['disable_flash']:
         fo.set_preference('plugin.state.flash', 0)
