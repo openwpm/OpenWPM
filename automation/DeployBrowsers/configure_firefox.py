@@ -54,16 +54,8 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     # Enable HTTPS Everywhere
     if browser_params['https-everywhere']:
         fp.add_extension(extension=os.path.join(
-            root_dir, 'firefox_extensions', 'https-everywhere@eff.org.xpi'))
-        fo.set_preference(
-            "extensions.https_everywhere.firstrun_context_menu", True)
-        fo.set_preference("extensions.https_everywhere.prefs_version", 1)
-        fo.set_preference(
-            "extensions.https_everywhere.toolbar_hint_shown", True)
-        fo.set_preference(
-            "extensions.https_everywhere._observatory.popup_shown", True)
-        fo.set_preference(
-            "extensions.https_everywhere._observatory.clean_config", True)
+            root_dir, 'firefox_extensions',
+            'https_everywhere-2017.10.4.xpi'))
 
     # AbBlock Plus
     if browser_params['adblock-plus']:
@@ -71,7 +63,7 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
                            "https://github.com/citp/OpenWPM/issues/35")
 
     # uBlock Origin
-    # Version 1.14.10. Updated 2017-10-7.
+    # Version 1.14.10. Uses the default blocklists that ship with the XPI.
     if browser_params['ublock-origin']:
         fp.add_extension(extension=os.path.join(
             root_dir, 'firefox_extensions', 'ublock_origin',
