@@ -26,7 +26,6 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     # Turns on Do Not Track
     if browser_params['donottrack']:
         fo.set_preference("privacy.donottrackheader.enabled", True)
-        fo.set_preference("privacy.donottrackheader.value", 1)
 
     # Sets the third party cookie setting
     if browser_params['tp_cookies'].lower() == 'never':
