@@ -3,8 +3,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import sys
 import os
+import shutil
+
+EXT_STORAGE_DIR = 'browser-extension-data'
 
 
 def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
@@ -15,6 +17,11 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     * Tracking protection
     * Privacy extensions
     """
+
+    # Make extension storage directory
+    storage_dir = os.path.join(browser_profile_path, EXT_STORAGE_DIR)
+    if not os.path.isdir(storage_dir):
+        os.mkdir(storage_dir)
 
     # Turns on Do Not Track
     if browser_params['donottrack']:
@@ -31,24 +38,23 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
 
     # Tracking Protection
     if browser_params['tracking-protection']:
-        fo.set_preference('privacy.trackingprotection.enabled', True)
+        raise RuntimeError("Firefox Tracking Protection is not currently "
+                           "supported. See: "
+                           "https://github.com/citp/OpenWPM/issues/101")
 
-    # Ghostery -> Disconnect
+    # Ghostery -- TODO
     if browser_params['ghostery']:
-        sys.stderr.write(
-            "WARNING: Using Disconnect instead of Ghostery.\n"
-            "WARNING: Update to browser_params['disconnect'].\n")
-        browser_params['disconnect'] = True
+        raise RuntimeError("Not yet supported.")
 
-    # Disconnect: tracking protection
+    # Disconnect
     if browser_params['disconnect']:
         fp.add_extension(extension=os.path.join(
-            root_dir, 'firefox_extensions/2.0@disconnect.me.xpi'))
+            root_dir, 'firefox_extensions', '2.0@disconnect.me.xpi'))
 
     # Enable HTTPS Everywhere
     if browser_params['https-everywhere']:
         fp.add_extension(extension=os.path.join(
-            root_dir, 'firefox_extensions/https-everywhere@eff.org.xpi'))
+            root_dir, 'firefox_extensions', 'https-everywhere@eff.org.xpi'))
         fo.set_preference(
             "extensions.https_everywhere.firstrun_context_menu", True)
         fo.set_preference("extensions.https_everywhere.prefs_version", 1)
@@ -59,17 +65,23 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         fo.set_preference(
             "extensions.https_everywhere._observatory.clean_config", True)
 
-    # ABP -> uBlock Origin
+    # AbBlock Plus
     if browser_params['adblock-plus']:
-        sys.stderr.write(
-            "WARNING: Using uBlock Origin instead of Adblock Plus.\n"
-            "WARNING: Update to browser_params['ublock-origin'].\n")
-        browser_params['ublock-origin'] = True
+        raise RuntimeError("AdBlock Plus is not currently supported. See: "
+                           "https://github.com/citp/OpenWPM/issues/35")
 
-    # uBlock Origin, with default settings
+    # uBlock Origin
+    # Version 1.14.10. Updated 2017-10-7.
     if browser_params['ublock-origin']:
         fp.add_extension(extension=os.path.join(
-            root_dir, 'firefox_extensions/uBlock0@raymondhill.net.xpi'))
+            root_dir, 'firefox_extensions', 'ublock_origin',
+            'ublock_origin-1.14.10.xpi')
+        )
+        ublock_dir = os.path.join(storage_dir, 'uBlock0@raymondhill.net')
+        if not os.path.isdir(ublock_dir):
+            os.mkdir(ublock_dir)
+        shutil.copy(os.path.join(root_dir, 'firefox_extensions',
+                                 'ublock_origin', 'storage.js'), ublock_dir)
 
 
 def optimize_prefs(fo):
