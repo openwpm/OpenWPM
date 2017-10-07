@@ -47,11 +47,13 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         raise RuntimeError("Not yet supported.")
 
     # Disconnect
+    # Version 5.18.21
     if browser_params['disconnect']:
         fp.add_extension(extension=os.path.join(
-            root_dir, 'firefox_extensions', '2.0@disconnect.me.xpi'))
+            root_dir, 'firefox_extensions', 'disconnect-5.18.21.xpi'))
 
     # Enable HTTPS Everywhere
+    # Version 2017.10.4
     if browser_params['https-everywhere']:
         fp.add_extension(extension=os.path.join(
             root_dir, 'firefox_extensions',
