@@ -180,9 +180,6 @@ Note: Instrumentation configuration options are described in the
 described in the *Browser Profile Support* section. As such, these options are
 left out of this section.
 
-* `disable_webdriver_self_id`
-  * Prevents Selenium from identifying itself in the DOM. See
-    [Issue #91](https://github.com/citp/OpenWPM/issues/91).
 * `bot_mitigation`
   * Performs some actions to prevent the platform from being detected as a bot.
   * Note, these aren't comprehensive and automated interaction with the site
@@ -209,19 +206,18 @@ left out of this section.
   * Set to `True` to enable Do Not Track in the browser.
 * `disconnect`
   * Set to `True` to enable Disconnect with all blocking enabled
-  * NOTE: The extension may be outdated.
-    It's recommended that you update the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
+  * The filter list may be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
+* `ghostery`
+  * Set to `True` to enable Ghostery with all blocking enabled
+  * The filter list won't be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
 * `https-everywhere`
   * Set to `True` to enable HTTPS Everywhere in the browser.
-  * NOTE: The HTTPS Everywhere version may be outdated. It's recommended you
-    update the xpi
-    [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions)
-    before crawling.
+  * The filter list won't be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
 * `ublock-origin`
   * Set to `True` to enable uBlock Origin in the browser.
-  * The filter lists should be automatically downloaded and installed, but the
-    xpi, [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), might be outdated.
+  * The filter lists may be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
 * `tracking-protection`
+  * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
 
