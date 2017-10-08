@@ -24,7 +24,6 @@ exports.main = function(options, callbacks) {
       sqlite_address:null,
       leveldb_address:null,
       logger_address:null,
-      disable_webdriver_self_id:true,
       cookie_instrument:true,
       js_instrument:true,
       cp_instrument:true,
@@ -40,15 +39,6 @@ exports.main = function(options, callbacks) {
                  config['logger_address'],
                  config['crawl_id']);
 
-  // Prevent the webdriver from identifying itself in the DOM. See #91
-  if (config['disable_webdriver_self_id']) {
-    loggingDB.logDebug("Disabling webdriver self identification");
-    pageMod.PageMod({
-      include: "*",
-      contentScriptWhen: "start",
-      contentScriptFile: data.url("remove_webdriver_attributes.js")
-    });
-  }
   if (config['cookie_instrument']) {
     loggingDB.logDebug("Cookie instrumentation enabled");
     cookieInstrument.run(config['crawl_id']);

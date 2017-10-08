@@ -1,6 +1,5 @@
 {
     "extension_enabled": true,
-    "disable_webdriver_self_id": true,
     "cookie_instrument": false,
     "js_instrument": false,
     "cp_instrument": false,
