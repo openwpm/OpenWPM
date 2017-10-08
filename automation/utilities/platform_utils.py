@@ -35,10 +35,7 @@ def parse_http_stack_trace_str(trace_str):
 def ensure_firefox_in_path():
     """
     If ../../firefox-bin/ exists, add it to the PATH.
-    If it doesn't exist, do nothing - system firefox and geckodriver will
-    be used.
-    TODO - We shouldn't fall back to system FF/Geckodriver. We need a specific
-           version of FF and this might cause confusing errors for the user.
+    If firefox-bin does not exist, we throw a RuntimeError.
     """
     root_dir = os.path.dirname(__file__)  # directory of this file
     ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
@@ -46,6 +43,11 @@ def ensure_firefox_in_path():
         curpath = os.environ["PATH"]
         if ffbin not in curpath:
             os.environ["PATH"] = ffbin + os.pathsep + curpath
+    else:
+        raise RuntimeError(
+            "The `firefox-bin` directory is not found in the root of the "
+            "OpenWPM directory. Did you run the install script "
+            "(`install.sh`)?")
 
 
 def get_version():
