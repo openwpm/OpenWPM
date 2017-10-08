@@ -92,7 +92,11 @@ def optimize_prefs(fo):
     Disable various features and checks the browser will do on startup.
     Some of these (e.g. disabling the newtab page) are required to prevent
     extraneous data in the proxy.
-    """
+
+    Source of prefs:
+    * https://support.mozilla.org/en-US/kb/how-stop-firefox-making-automatic-connections
+    * https://github.com/pyllyukko/user.js/blob/master/user.js
+    """  # noqa
     # Startup / Speed
     fo.set_preference('browser.shell.checkDefaultBrowser', False)
     fo.set_preference("browser.slowStartup.notificationDisabled", True)
@@ -102,27 +106,33 @@ def optimize_prefs(fo):
     fo.set_preference('browser.rights.3.shown', True)
     fo.set_preference("reader.parse-on-load.enabled", False)
     fo.set_preference('browser.pagethumbnails.capturing_disabled', True)
-    fo.set_preference('devtools.profiler.enabled', False)
+    fo.set_preference("browser.uitour.enabled", False)
+    fo.set_preference("dom.flyweb.enabled", False)
 
     # Disable health reports / telemetry / crash reports
-    # FF41+ Master Switch
     fo.set_preference("datareporting.policy.dataSubmissionEnabled", False)
     fo.set_preference('datareporting.healthreport.uploadEnabled', False)
     fo.set_preference("datareporting.healthreport.service.enabled", False)
+    fo.set_preference('toolkit.telemetry.archive.enabled', False)
     fo.set_preference('toolkit.telemetry.enabled', False)
     fo.set_preference("toolkit.telemetry.unified", False)
     fo.set_preference("breakpad.reportURL", "")
+    fo.set_preference("dom.ipc.plugins.reportCrashURL", False)
+    fo.set_preference("browser.selfsupport.url", "")
+    fo.set_preference("browser.tabs.crashReporting.sendReport", False)
+    fo.set_preference("browser.crashReports.unsubmittedCheck.enabled", False)
     fo.set_preference(
         "dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False)
 
     # Predictive Actions / Prefetch
-    fo.set_preference('network.seer.enabled', False)
-    fo.set_preference('network.dns.disablePrefetch', True)
-    fo.set_preference('network.prefetch-next', False)
+    fo.set_preference("network.predictor.enabled", False)
+    fo.set_preference("network.dns.disablePrefetch", True)
+    fo.set_preference("network.prefetch-next", False)
     fo.set_preference("browser.search.suggest.enabled", False)
     fo.set_preference("network.http.speculative-parallel-limit", 0)
     fo.set_preference("keyword.enabled", False)  # location bar using search
     fo.set_preference("browser.urlbar.userMadeSearchSuggestionsChoice", True)
+    fo.set_preference("browser.casting.enabled", False)
 
     # Disable pinging Mozilla for geoip
     fo.set_preference('browser.search.geoip.url', '')
@@ -136,31 +146,46 @@ def optimize_prefs(fo):
     # Disable auto-updating
     fo.set_preference("app.update.enabled", False)  # browser
     fo.set_preference("app.update.url", "")  # browser
-    fo.set_preference("media.gmp-manager.url", "")  # OpenH264 Codec
     fo.set_preference("browser.search.update", False)  # search
     fo.set_preference("extensions.update.enabled", False)  # extensions
-    fo.set_preference("extensions.update.autoUpdateDefault", False)  # addons
+    fo.set_preference("extensions.update.autoUpdateDefault", False)
     fo.set_preference("extensions.getAddons.cache.enabled", False)
     fo.set_preference("lightweightThemes.update.enabled", False)  # Personas
-    fo.set_preference(
-        "browser.safebrowsing.provider.mozilla.updateURL", "")  # Safebrowsing
-    fo.set_preference(
-        "browser.safebrowsing.provider.mozilla.gethashURL", "")  # Safebrowsing
-    fo.set_preference(
-        "browser.safebrowsing.provider.mozilla.lists", "")  # Tracking Protect
-    fo.set_preference(
-        "browser.safebrowsing.provider.google.updateURL", "")  # Safebrowsing
-    fo.set_preference(
-        "browser.safebrowsing.provider.google.gethashURL", "")  # Safebrowsing
-    fo.set_preference(
-        "browser.safebrowsing.provider.google.lists", "")  # TrackingProtection
 
-    # Disable Safebrowsing
-    fo.set_preference("browser.safebrowsing.enabled", False)
+    # Disable Safebrowsing and other security features
+    # that require on remote content
+    fo.set_preference("browser.safebrowsing.phising.enabled", False)
     fo.set_preference("browser.safebrowsing.malware.enabled", False)
     fo.set_preference("browser.safebrowsing.downloads.enabled", False)
     fo.set_preference("browser.safebrowsing.downloads.remote.enabled", False)
+    fo.set_preference("browser.safebrowsing.blockedURIs.enabled", False)
+    fo.set_preference(
+        "browser.safebrowsing.provider.mozilla.gethashURL", "")
+    fo.set_preference(
+        "browser.safebrowsing.provider.google.gethashURL", "")
+    fo.set_preference(
+        "browser.safebrowsing.provider.google4.gethashURL", "")
+    fo.set_preference(
+        "browser.safebrowsing.provider.mozilla.updateURL", "")
+    fo.set_preference(
+        "browser.safebrowsing.provider.google.updateURL", "")
+    fo.set_preference(
+        "browser.safebrowsing.provider.google4.updateURL", "")
+    fo.set_preference(
+        "browser.safebrowsing.provider.mozilla.lists", "")  # TP
+    fo.set_preference(
+        "browser.safebrowsing.provider.google.lists", "")  # TP
+    fo.set_preference(
+        "browser.safebrowsing.provider.google4.lists", "")  # TP
+    fo.set_preference("extensions.blocklist.enabled", False)  # extensions
     fo.set_preference('security.OCSP.enabled', 0)
+
+    # Disable Content Decryption Module and OpenH264 related downloads
+    fo.set_preference("media.gmp-manager.url", "")
+    fo.set_preference("media.gmp-provider.enabled", False)
+    fo.set_preference("media.gmp-widevinecdm.enabled", False)
+    fo.set_preference("media.gmp-widevinecdm.visible", False)
+    fo.set_preference("media.gmp-gmpopenh264.enabled", False)
 
     # Disable Experiments
     fo.set_preference("experiments.enabled", False)
@@ -175,9 +200,11 @@ def optimize_prefs(fo):
     fo.set_preference("browser.newtabpage.enabled", False)
     fo.set_preference("browser.newtabpage.enhanced", False)
     fo.set_preference("browser.newtabpage.introShown", True)
+    fo.set_preference("browser.aboutHomeSnippets.updateUrl", "")
 
     # Disable Pocket
-    fo.set_preference("browser.pocket.enabled", False)
+    fo.set_preference("extensions.pocket.enabled", False)
 
-    # Disable Hello
-    fo.set_preference("loop.enabled", False)
+    # Disable Shield
+    fo.set_preference("app.shield.optoutstudies.enabled", False)
+    fo.set_preference("extensions.shield-recipe-client.enabled", False)
