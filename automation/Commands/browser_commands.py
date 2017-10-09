@@ -3,12 +3,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 from hashlib import md5
 from glob import glob
 from PIL import Image
+import traceback
 import random
 import time
+import sys
 import os
 
 from ..SocketInterface import clientsocket
@@ -17,7 +20,8 @@ from .utils.lso import get_flash_cookies
 from .utils.firefox_profile import get_cookies
 from .utils.webdriver_extensions import (scroll_down,
                                          wait_until_loaded,
-                                         get_intra_links)
+                                         get_intra_links,
+                                         execute_script_with_retry)
 from six.moves import range
 
 # Constants for bot mitigation
@@ -265,12 +269,13 @@ def save_screenshot(screenshot_name, webdriver,
         ))
 
 
-def _stitch_screenshot_parts(visit_id, manager_params):
+def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
     # Read image parts and compute dimensions of output image
     total_height = 0
     max_scroll = 0
     max_width = 0
     images = dict()
+    parts = list()
     for f in glob(os.path.join(manager_params['screenshot_path'],
                                'parts',
                                '%i*-part-*.png' % visit_id)):
@@ -278,6 +283,7 @@ def _stitch_screenshot_parts(visit_id, manager_params):
         # Load image from disk and parse params out of filename
         img_obj = Image.open(f)
         width, height = img_obj.size
+        parts.append((f, width, height))
         outname, _, index, curr_scroll = os.path.basename(f).rsplit('-', 3)
         curr_scroll = int(curr_scroll.split('.')[0])
         index = int(index)
@@ -306,10 +312,22 @@ def _stitch_screenshot_parts(visit_id, manager_params):
         img = images[i]
         output.paste(im=img['object'], box=(0, img['scroll']))
         img['object'].close()
-    output.save(outname)
+    try:
+        output.save(outname)
+    except SystemError:
+        logger.error(
+            "BROWSER %i: SystemError while trying to save screenshot %s. \n"
+            "Slices of image %s \n Final size %s, %s." %
+            (crawl_id, outname, '\n'.join([str(x) for x in parts]),
+             max_width, total_height)
+        )
+        pass
 
 
-def screenshot_full_page(visit_id, driver, manager_params, suffix=''):
+def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
+                         suffix=''):
+    logger = loggingclient(*manager_params['logger_address'])
+
     outdir = os.path.join(manager_params['screenshot_path'], 'parts')
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
@@ -319,26 +337,43 @@ def screenshot_full_page(visit_id, driver, manager_params, suffix=''):
     outname = os.path.join(outdir, '%i-%s%s-part-%%i-%%i.png' %
                            (visit_id, urlhash, suffix))
 
-    part = 0
-    max_height = driver.execute_script('return document.body.scrollHeight;')
-    inner_height = driver.execute_script('return window.innerHeight;')
-    curr_scrollY = driver.execute_script('return window.scrollY;')
-    prev_scrollY = -1
-    driver.save_screenshot(outname % (part, curr_scrollY))
-    while ((curr_scrollY + inner_height) < max_height
-           and curr_scrollY != prev_scrollY):
-
-        # Scroll down to bottom of previous viewport
-        driver.execute_script('window.scrollBy(0, window.innerHeight)')
-
-        # Update control variables
-        part += 1
-        prev_scrollY = curr_scrollY
-        curr_scrollY = driver.execute_script('return window.scrollY;')
-
-        # Save screenshot
+    try:
+        part = 0
+        max_height = execute_script_with_retry(
+            driver, 'return document.body.scrollHeight;')
+        inner_height = execute_script_with_retry(
+            driver, 'return window.innerHeight;')
+        curr_scrollY = driver.execute_script_with_retry(
+            driver, 'return window.scrollY;')
+        prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
-    _stitch_screenshot_parts(visit_id, manager_params)
+        while ((curr_scrollY + inner_height) < max_height
+               and curr_scrollY != prev_scrollY):
+
+            # Scroll down to bottom of previous viewport
+            try:
+                driver.execute_script('window.scrollBy(0, window.innerHeight)')
+            except WebDriverException:
+                logger.info(
+                    "BROWSER %i: WebDriverException while scrolling, "
+                    "screenshot may be misaligned!" % crawl_id)
+                pass
+
+            # Update control variables
+            part += 1
+            prev_scrollY = curr_scrollY
+            curr_scrollY = execute_script_with_retry('return window.scrollY;')
+
+            # Save screenshot
+            driver.save_screenshot(outname % (part, curr_scrollY))
+    except WebDriverException:
+        excp = traceback.format_exception(*sys.exc_info())
+        logger.error(
+            "BROWSER %i: Exception while taking full page screenshot \n %s" %
+            (crawl_id, ''.join(excp)))
+        return
+
+    _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params)
 
 
 def dump_page_source(dump_name, webdriver, browser_params, manager_params):
