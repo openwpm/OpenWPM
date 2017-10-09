@@ -272,6 +272,7 @@ def _stitch_screenshot_parts(visit_id, manager_params):
     max_width = 0
     images = dict()
     for f in glob(os.path.join(manager_params['screenshot_path'],
+                               'parts',
                                '%i*-part-*.png' % visit_id)):
 
         # Load image from disk and parse params out of filename
@@ -296,7 +297,7 @@ def _stitch_screenshot_parts(visit_id, manager_params):
         images[index] = img
 
     # Output filename same for all parts, so we can just use last filename
-    outname = outname + '-stitched.png'
+    outname = outname + '.png'
     outname = os.path.join(manager_params['screenshot_path'], outname)
     output = Image.new('RGB', (max_width, total_height))
 
@@ -309,11 +310,13 @@ def _stitch_screenshot_parts(visit_id, manager_params):
 
 
 def screenshot_full_page(visit_id, driver, manager_params, suffix=''):
+    outdir = os.path.join(manager_params['screenshot_path'], 'parts')
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
     if suffix != '':
         suffix = '-' + suffix
     urlhash = md5(driver.current_url).hexdigest()
-    outname = os.path.join(manager_params['screenshot_path'],
-                           '%i-%s%s-part-%%i-%%i.png' %
+    outname = os.path.join(outdir, '%i-%s%s-part-%%i-%%i.png' %
                            (visit_id, urlhash, suffix))
 
     part = 0
