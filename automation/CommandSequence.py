@@ -116,7 +116,7 @@ class CommandSequence:
         The screenshot produced will only include the area originally
         loaded at the start of the command. Sites which dynamically expand as
         the page is scrolled (i.e. infinite scroll) will only go as far as the
-        original width.
+        original height.
 
         NOTE: In geckodriver v0.15 doing any scrolling (or having devtools
         open) seems to break element-only screenshots. So using this command

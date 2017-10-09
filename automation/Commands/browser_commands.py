@@ -280,9 +280,6 @@ def _stitch_screenshot_parts(visit_id, manager_params):
         outname, _, index, curr_scroll = os.path.basename(f).rsplit('-', 3)
         curr_scroll = int(curr_scroll.split('.')[0])
         index = int(index)
-        print f
-        print "curr_scroll: %i" % curr_scroll
-        print "image size: %s" % str(img_obj.size)
 
         # Update output image size
         if curr_scroll > max_scroll:
@@ -299,8 +296,6 @@ def _stitch_screenshot_parts(visit_id, manager_params):
         images[index] = img
 
     # Output filename same for all parts, so we can just use last filename
-    print "total_height: %i" % total_height
-    print "max_width: %i" % max_width
     outname = outname + '-stitched.png'
     outname = os.path.join(manager_params['screenshot_path'], outname)
     output = Image.new('RGB', (max_width, total_height))
