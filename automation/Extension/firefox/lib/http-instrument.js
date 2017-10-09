@@ -57,8 +57,9 @@ var httpRequestHandler = function(reqEvent, crawlID) {
 
   update["crawl_id"] = crawlID;
 
-  // Requires FF49+. See Issue #109.
-  //update['channel_id'] = httpChannel.channelId;
+  // ChannelId is a unique identifier that can be used to link requests and
+  // responses. FF 49+
+  update['channel_id'] = httpChannel.channelId;
 
   var stacktrace_str = get_stack_trace_str();
   update["req_call_stack"] = loggingDB.escapeString(stacktrace_str);
@@ -326,8 +327,9 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
 
   update["crawl_id"] = crawlID;
 
-  // Requires FF49+. See Issue #109.
-  //update['channel_id'] = httpChannel.channelId;
+  // ChannelId is a unique identifier that can be used to link requests and
+  // responses. FF 49+
+  update['channel_id'] = httpChannel.channelId;
 
   update["is_cached"] = isCached;
 
