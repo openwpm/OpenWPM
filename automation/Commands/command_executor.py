@@ -57,6 +57,11 @@ def execute_command(command, webdriver, browser_settings, browser_params,
             dump_name=command[1], webdriver=webdriver,
             browser_params=browser_params, manager_params=manager_params)
 
+    if command[0] == 'SCREENSHOT_FULL_PAGE':
+        browser_commands.screenshot_full_page(
+            visit_id=command[2], driver=webdriver,
+            manager_params=manager_params, suffix=command[1])
+
     if command[0] == 'RUN_CUSTOM_FUNCTION':
         arg_dict = {"command": command,
                     "driver": webdriver,

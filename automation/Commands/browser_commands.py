@@ -4,15 +4,19 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
-import os
+from hashlib import md5
+from glob import glob
+from PIL import Image
 import random
 import time
+import os
 
 from ..SocketInterface import clientsocket
 from ..MPLogger import loggingclient
 from .utils.lso import get_flash_cookies
 from .utils.firefox_profile import get_cookies
-from .utils.webdriver_extensions import (scroll_down, wait_until_loaded,
+from .utils.webdriver_extensions import (scroll_down,
+                                         wait_until_loaded,
                                          get_intra_links)
 from six.moves import range
 
@@ -259,6 +263,84 @@ def save_screenshot(screenshot_name, webdriver,
             manager_params['screenshot_path'],
             screenshot_name + '.png'
         ))
+
+
+def _stitch_screenshot_parts(visit_id, manager_params):
+    # Read image parts and compute dimensions of output image
+    total_height = 0
+    max_scroll = 0
+    max_width = 0
+    images = dict()
+    for f in glob(os.path.join(manager_params['screenshot_path'],
+                               '%i*-part-*.png' % visit_id)):
+
+        # Load image from disk and parse params out of filename
+        img_obj = Image.open(f)
+        width, height = img_obj.size
+        outname, _, index, curr_scroll = os.path.basename(f).rsplit('-', 3)
+        curr_scroll = int(curr_scroll.split('.')[0])
+        index = int(index)
+        print f
+        print "curr_scroll: %i" % curr_scroll
+        print "image size: %s" % str(img_obj.size)
+
+        # Update output image size
+        if curr_scroll > max_scroll:
+            max_scroll = curr_scroll
+            total_height = max_scroll + height
+
+        if width > max_width:
+            max_width = width
+
+        # Save image parameters
+        img = {}
+        img['object'] = img_obj
+        img['scroll'] = curr_scroll
+        images[index] = img
+
+    # Output filename same for all parts, so we can just use last filename
+    print "total_height: %i" % total_height
+    print "max_width: %i" % max_width
+    outname = outname + '-stitched.png'
+    outname = os.path.join(manager_params['screenshot_path'], outname)
+    output = Image.new('RGB', (max_width, total_height))
+
+    # Compute dimensions for output image
+    for i in range(max(images.keys())+1):
+        img = images[i]
+        output.paste(im=img['object'], box=(0, img['scroll']))
+        img['object'].close()
+    output.save(outname)
+
+
+def screenshot_full_page(visit_id, driver, manager_params, suffix=''):
+    if suffix != '':
+        suffix = '-' + suffix
+    urlhash = md5(driver.current_url).hexdigest()
+    outname = os.path.join(manager_params['screenshot_path'],
+                           '%i-%s%s-part-%%i-%%i.png' %
+                           (visit_id, urlhash, suffix))
+
+    part = 0
+    max_height = driver.execute_script('return document.body.scrollHeight;')
+    inner_height = driver.execute_script('return window.innerHeight;')
+    curr_scrollY = driver.execute_script('return window.scrollY;')
+    prev_scrollY = -1
+    driver.save_screenshot(outname % (part, curr_scrollY))
+    while ((curr_scrollY + inner_height) < max_height
+           and curr_scrollY != prev_scrollY):
+
+        # Scroll down to bottom of previous viewport
+        driver.execute_script('window.scrollBy(0, window.innerHeight)')
+
+        # Update control variables
+        part += 1
+        prev_scrollY = curr_scrollY
+        curr_scrollY = driver.execute_script('return window.scrollY;')
+
+        # Save screenshot
+        driver.save_screenshot(outname % (part, curr_scrollY))
+    _stitch_screenshot_parts(visit_id, manager_params)
 
 
 def dump_page_source(dump_name, webdriver, browser_params, manager_params):
