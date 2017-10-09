@@ -92,6 +92,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
           " loading URL " + newChannel.URI.spec);
 
       loggingDB.executeSQL(loggingDB.createInsert("http_redirects", {
+        'crawl_id': crawlID,
         'old_channel_id': oldChannel.channelId,
         'new_channel_id': newChannel.channelId,
         'is_temporary': isTemporary,
