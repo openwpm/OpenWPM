@@ -1,14 +1,44 @@
-v0.8.0 - under development
+v0.9.0 - under development
 ======
 
 Changes:
   * The `automation` library can now be used with Python 3.4 or later,
     as well as Python 2.7.
-  * Bump to Firefox 52 and Selenium 3.3.0.
-    * This version of Selenium requires Firefox 48 or later.
-    * This version of Selenium requires a helper executable called
-      "geckodriver".  `install.sh` will download and install it.
+  * Bump to Firefox 52 ESR, Selenium 3.4.0+, and geckodriver 0.15.0.
+    * geckodriver is required for Selenium 3+. `install.sh` will download
+      and install it.
+    * geckodriver 0.16.0+ does not support Firefox 52 or lower, so we are
+      stuck with 0.15.0 (and any bugs it may have) until the next ESR release.
+    * These versions of geckodriver and Selenium require Firefox 48+.
   * MITMProxy support has been removed.  Use `http_instrument` instead.
+  * Bundled Firefox privacy extensions have been updated.
+    * AdBlock Plus support has been removed.
+    * uBlock Origin and Disconnect added.
+    * Ghostery has been updated.
+  * Extensions built using the WebExtensions API are now supported. Our
+    extension still uses the add-on sdk.
+
+v0.8.0 - 2017-10-09
+======
+
+A long overdue version bump to checkpoint the final version to support
+Selenium 2 + FF 45. Note we recommend against using the release as Firefox
+45ESR is no longer receiving security patches.
+
+Changes:
+  * Add extension-based HTTP instrumentation, including POST body processing
+  * Deprecate proxy-based HTTP instrumentation
+  * Save stacktrace of HTTP requests
+  * Prevent Selenium 2 from self identifying in the DOM
+  * Add support for blocking commands
+  * Improve exception handling in child processes
+  * Refactor of socket interface in extension
+  * Improvements to manual testing code
+  * Add a logging module to the extension, logs to central log file
+  * Instrument `document.cookie`
+  * A number of improvements to the `instrumentObject` instrumentation
+    interface in extension
+  * Make `install.sh` scriptable
 
 v0.7.0 - 2016-11-15
 ======
