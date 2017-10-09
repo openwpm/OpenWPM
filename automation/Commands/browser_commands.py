@@ -271,9 +271,9 @@ def save_screenshot(screenshot_name, webdriver,
 
 def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
     # Read image parts and compute dimensions of output image
-    total_height = 0
-    max_scroll = 0
-    max_width = 0
+    total_height = -1
+    max_scroll = -1
+    max_width = -1
     images = dict()
     parts = list()
     for f in glob(os.path.join(manager_params['screenshot_path'],
