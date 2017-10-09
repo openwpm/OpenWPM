@@ -1,8 +1,9 @@
-import utilities
+from __future__ import absolute_import
+from . import utilities
 from ..automation import CommandSequence
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 expected_lso_content_a = [
                1, # visit id
@@ -101,7 +102,7 @@ class TestStorageVectors(OpenWPMTest):
         # Check that some flash cookies are recorded
         qry_res = db_utils.query_db(manager_params['db'],
                                      "SELECT COUNT(*) FROM profile_cookies")
-        prof_cookie_count = qry_res[0]
+        prof_cookie_count = qry_res[0][0]
         assert prof_cookie_count > 0
 
     def test_js_profile_cookies(self):

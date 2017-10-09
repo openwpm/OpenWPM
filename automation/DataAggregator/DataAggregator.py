@@ -1,22 +1,25 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from ..SocketInterface import serversocket
 from ..MPLogger import loggingclient
-from sqlite3 import OperationalError
-from sqlite3 import ProgrammingError
+from sqlite3 import (OperationalError, ProgrammingError, IntegrityError)
 import sqlite3
 import time
-import os
+import six
+from six.moves import range
 
 
 def DataAggregator(manager_params, status_queue, commit_batch_size=1000):
     """
-     Receives SQL queries from other processes and writes them to the central database
-     Executes queries until being told to die (then it will finish work and shut down)
-     This process should never be terminated un-gracefully
-     Currently uses SQLite but may move to different platform
+     Receives SQL queries from other processes and writes them to the central
+     database. Executes queries until being told to die (then it will finish
+     work and shut down). This process should never be terminated un-gracefully
 
      <manager_params> TaskManager configuration parameters
-     <status_queue> is a queue connect to the TaskManager used for communication
-     <commit_batch_size> is the number of execution statements that should be made before a commit (used for speedup)
+     <status_queue> is a queue connect to the TaskManager used for
+        communication
+     <commit_batch_size> is the number of execution statements that should be
+        made before a commit (used for speedup)
     """
 
     # sets up DB connection
@@ -73,26 +76,25 @@ def process_query(query, curr, logger):
     query is of form (template_string, arguments)
     """
     if len(query) != 2:
-        print "ERROR: Query is not the correct length"
+        print("ERROR: Query is not the correct length")
         return
     statement = query[0]
     args = list(query[1])
     for i in range(len(args)):
-        if type(args[i]) == str:
-            args[i] = unicode(args[i], errors='ignore')
+        if isinstance(args[i], six.binary_type):
+            args[i] = six.text_type(args[i], errors='ignore')
         elif callable(args[i]):
-            args[i] = str(args[i])
+            args[i] = six.text_type(args[i])
     try:
         if len(args) == 0:
             curr.execute(statement)
         else:
-            curr.execute(statement,args)
-    except OperationalError as e:
-        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + str(e) + '\n' + statement + '\n' + str(args))
-        pass
-    except ProgrammingError as e:
-        logger.error("Unsupported query" + '\n' + str(type(e)) + '\n' + str(e) + '\n' + statement + '\n' + str(args))
-        pass
+            curr.execute(statement, args)
+
+    except (OperationalError, ProgrammingError, IntegrityError) as e:
+        logger.error(
+            "Unsupported query:\n%s\n%s\n%s\n%s\n"
+            % (type(e), e, statement, repr(args)))
 
 
 def drain_queue(sock_queue, curr, logger):

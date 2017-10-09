@@ -1,4 +1,6 @@
-from Errors import CommandExecutionError
+from __future__ import absolute_import
+from .Errors import CommandExecutionError
+
 
 class CommandSequence:
     """A CommandSequence wraps a series of commands to be performed
@@ -25,7 +27,7 @@ class CommandSequence:
 
         Parameters
         ----------
-        url : str
+        url : string
             url of page visit the command sequence should execute on
         reset : bool
             True if browser should clear state and restart after sequence
@@ -46,7 +48,7 @@ class CommandSequence:
         self.commands_with_timeout.append((command, timeout))
         self.contains_get_or_browse = True
 
-    def browse(self, num_links = 2, sleep=0, timeout=60):
+    def browse(self, num_links=2, sleep=0, timeout=60):
         """ browse a website and visit <num_links> links on the page """
         self.total_timeout += timeout
         command = ('BROWSE', self.url, num_links, sleep)
@@ -58,8 +60,9 @@ class CommandSequence:
         Side effect: closes the current tab."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump storage vectors command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding "
+                "the dump storage vectors command", self)
         command = ('DUMP_FLASH_COOKIES',)
         self.commands_with_timeout.append((command, timeout))
 
@@ -68,12 +71,14 @@ class CommandSequence:
         Side effect: closes the current tab."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump storage vectors command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding "
+                "the dump storage vectors command", self)
         command = ('DUMP_PROFILE_COOKIES',)
         self.commands_with_timeout.append((command, timeout))
 
-    def dump_profile(self, dump_folder, close_webdriver=False, compress=True, timeout=120):
+    def dump_profile(self, dump_folder, close_webdriver=False,
+                     compress=True, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """
         self.total_timeout += timeout
         command = ('DUMP_PROF', dump_folder, close_webdriver, compress)
@@ -83,13 +88,16 @@ class CommandSequence:
         """Extracts links found on web page and dumps them externally"""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump storage vectors command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding "
+                "the dump storage vectors command", self)
         command = ('EXTRACT_LINKS',)
         self.commands_with_timeout.append((command, timeout))
 
     def save_screenshot(self, screenshot_name, timeout=30):
-        """Saves screenshot of page to 'screenshots' directory in data directory."""
+        """Saves screenshot of page to 'screenshots' directory in the
+        data directory.
+        """
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
@@ -98,7 +106,7 @@ class CommandSequence:
         self.commands_with_timeout.append((command, timeout))
 
     def dump_page_source(self, dump_name, timeout=30):
-        """Dumps rendered source of current page visit to 'sources' directory."""
+        """Dumps rendered source of current page to 'sources' directory."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "

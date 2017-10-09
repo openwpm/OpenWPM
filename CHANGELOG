@@ -1,3 +1,23 @@
+v0.9.0 - under development
+======
+
+Changes:
+  * The `automation` library can now be used with Python 3.4 or later,
+    as well as Python 2.7.
+  * Bump to Firefox 52 ESR, Selenium 3.4.0+, and geckodriver 0.15.0.
+    * geckodriver is required for Selenium 3+. `install.sh` will download
+      and install it.
+    * geckodriver 0.16.0+ does not support Firefox 52 or lower, so we are
+      stuck with 0.15.0 (and any bugs it may have) until the next ESR release.
+    * These versions of geckodriver and Selenium require Firefox 48+.
+  * MITMProxy support has been removed.  Use `http_instrument` instead.
+  * Bundled Firefox privacy extensions have been updated.
+    * AdBlock Plus support has been removed.
+    * uBlock Origin and Disconnect added.
+    * Ghostery has been updated.
+  * Extensions built using the WebExtensions API are now supported. Our
+    extension still uses the add-on sdk.
+
 v0.8.0 - 2017-10-09
 ======
 

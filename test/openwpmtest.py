@@ -1,7 +1,10 @@
-from os.path import join
-import utilities
+from __future__ import absolute_import
+
+import os
+from os.path import join, isfile
 import pytest
-import commands
+
+from . import utilities
 from ..automation import TaskManager
 
 
@@ -41,22 +44,25 @@ class OpenWPMTest(object):
                                     manager_params['database_name'])
         return manager_params, browser_params
 
-    def is_installed(self, pkg_name):
-        """Check if a Linux package is installed."""
-        cmd = 'which %s' % pkg_name
-        status, _ = commands.getstatusoutput(cmd)
-        return False if status else True
+    def is_installed(self, cmd):
+        """Check if a program is available via the standard PATH lookup."""
+        path = os.environ["PATH"].split(os.pathsep)
+        for d in path:
+            candidate = join(d, cmd)
+            if isfile(candidate) and os.access(candidate, os.X_OK):
+                return True
+        return False
 
-    def assert_is_installed(self, pkg):
-        assert self.is_installed(pkg), 'Cannot find %s in your system' % pkg
+    def assert_is_installed(self, cmd):
+        assert self.is_installed(cmd), 'Cannot find %s in your system' % cmd
 
     def assert_py_pkg_installed(self, pkg):
         # some modules are imported using a different name than the ones used
         # at the installation.
         pkg_name_mapping = {"pyopenssl": "OpenSSL",
-                            "mitmproxy": "libmproxy",
                             "beautifulsoup4": "bs4",
-                            "python-dateutil": "dateutil"
+                            "python-dateutil": "dateutil",
+                            "mini-amf": "miniamf"
                             }
         # get the mapped name if it exists.
         pkg_importable = pkg_name_mapping.get(pkg.lower(), pkg)

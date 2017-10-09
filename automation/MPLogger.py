@@ -1,7 +1,9 @@
 """ Support for logging with the multiprocessing module """
-from SocketInterface import serversocket
+from __future__ import absolute_import
+from __future__ import print_function
+from .SocketInterface import serversocket
 
-from Queue import Empty as EmptyQueue
+from six.moves.queue import Empty as EmptyQueue
 import logging.handlers
 import logging
 import struct
@@ -27,10 +29,10 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         d = dict(record.__dict__)
         d['msg'] = record.getMessage()
         d['args'] = None
-        s = json.dumps(d)
+        s = json.dumps(d).encode('utf-8')
         if ei:
             record.exc_info = ei  # for next handler
-        return struct.pack('>Ic', len(s), 'j') + s
+        return struct.pack('>Lc', len(s), b'j') + s
 
 def loggingclient(logger_address, logger_port, level=logging.DEBUG):
     """ Establishes a logger that sends log records to loggingserver """
@@ -114,7 +116,7 @@ def _drain_queue(sock_queue):
         obj = sock_queue.get()
         _handleLogRecord(obj)
 
-if __name__ == '__main__':
+def main():
     # Some tests
     import logging, logging.handlers
     import multiprocess as mp
@@ -148,4 +150,6 @@ if __name__ == '__main__':
     # Close the logging server
     status_queue.put('DIE')
     loggingserver.join()
-    print "Server closed, exiting..."
+    print("Server closed, exiting...")
+
+if __name__ == '__main__': main()
