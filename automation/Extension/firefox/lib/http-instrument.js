@@ -13,12 +13,12 @@ var StorageStream = CC('@mozilla.org/storagestream;1',
     'nsIStorageStream', 'init');
 const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
                        Ci.mozIThirdPartyUtil);
-
 var cryptoHash = Cc["@mozilla.org/security/hash;1"]
          .createInstance(Ci.nsICryptoHash);
 var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
          .createInstance(Ci.nsIScriptableUnicodeConverter);
 converter.charset = "UTF-8";
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /*
  * HTTP Request Handler and Helper Functions
@@ -49,6 +49,65 @@ function get_stack_trace_str() {
 
 var httpRequestHandler = function(reqEvent, crawlID) {
   var httpChannel = reqEvent.subject.QueryInterface(Ci.nsIHttpChannel);
+
+  // Save HTTP redirect events. Requires FF 49+
+  // Events are saved to the `http_redirects` table, and map the old
+  // request/response channel id to the new request/response channel id.
+  // Implementation based on: https://stackoverflow.com/a/11240627
+  var oldNotifications = httpChannel.notificationCallbacks;
+  var oldEventSink = null;
+  httpChannel.notificationCallbacks = {
+    QueryInterface: XPCOMUtils.generateQI([
+        Ci.nsIInterfaceRequestor,
+        Ci.nsIChannelEventSink]),
+
+    getInterface: function(iid) {
+      // We are only interested in nsIChannelEventSink,
+      // return the old callbacks for any other interface requests.
+      if (iid.equals(Ci.nsIChannelEventSink)) {
+        try {
+          oldEventSink = oldNotifications.QueryInterface(iid);
+        } catch(e) {}
+        return this;
+      }
+
+      if (oldNotifications) {
+        return oldNotifications.QueryInterface(iid);
+      } else {
+        throw Cr.NS_ERROR_NO_INTERFACE;
+      }
+    },
+
+    asyncOnChannelRedirect: function(oldChannel, newChannel, flags, callback) {
+      var isTemporary = !!(flags & Ci.nsIChannelEventSink.REDIRECT_TEMPORARY);
+      var isPermanent = !!(flags & Ci.nsIChannelEventSink.REDIRECT_PERMANENT);
+      var isInternal = !!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL);
+      var isSTSUpgrade = !!(flags & Ci.nsIChannelEventSink.REDIRECT_STS_UPGRADE);
+
+      newChannel.QueryInterface(Ci.nsIHttpChannel);
+      loggingDB.logDebug(
+          "Redirect from channel " + oldChannel.channelId +
+          " loading URL " + oldChannel.URI.spec +
+          " to channel " + newChannel.channelId +
+          " loading URL " + newChannel.URI.spec);
+
+      loggingDB.executeSQL(loggingDB.createInsert("http_redirects", {
+        'old_channel_id': oldChannel.channelId,
+        'new_channel_id': newChannel.channelId,
+        'is_temporary': isTemporary,
+        'is_permanent': isPermanent,
+        'is_internal': isInternal,
+        'is_sts_upgrade': isSTSUpgrade,
+        'time_stamp': new Date().toISOString()
+      }));
+
+      if (oldEventSink) {
+        oldEventSink.asyncOnChannelRedirect(oldChannel, newChannel, flags, callback);
+      } else {
+        callback.onRedirectVerifyCallback(Cr.NS_OK);
+      }
+    }
+  };
 
   // http_requests table schema:
   // id [auto-filled], crawl_id, url, method, referrer,
@@ -167,6 +226,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
   // contentPolicyType of the requesting node. This is set by the type of
   // node making the request (i.e. an <img src=...> node will set to type 3).
   // For a mapping of integers to types see:
+  // TODO: include the mapping directly
   // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
   update["content_policy_type"] = httpChannel.loadInfo.externalContentPolicyType;
 
@@ -189,6 +249,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
     //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
     //TODO probably a cleaner way to handle this
   }
+
   loggingDB.executeSQL(loggingDB.createInsert("http_requests", update), true);
 };
 
@@ -389,6 +450,9 @@ exports.run = function(crawlID, saveJavascript) {
 
   var createHttpResponseTable = data.load("create_http_responses_table.sql");
   loggingDB.executeSQL(createHttpResponseTable, false);
+
+  var createHttpRedirectsTable = data.load("create_http_redirects_table.sql");
+  loggingDB.executeSQL(createHttpRedirectsTable, false);
 
   // Monitor http events
   events.on("http-on-modify-request", function(event) {
