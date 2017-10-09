@@ -127,13 +127,7 @@ class TaskManager:
         # (if content saving is enabled on any browser)
         self.ldb_enabled = False
         for params in browser_params:
-<<<<<<< HEAD
             if params['save_javascript'] or params['save_all_content']:
-=======
-            if (params['save_javascript']
-                    or params['save_javascript_proxy']
-                    or params['save_all_content']):
->>>>>>> 21d466e... Bugfix for `save_all_content` option
                 self.ldb_enabled = True
                 break
 
