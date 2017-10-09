@@ -1,5 +1,5 @@
 // TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
-const {Cc, Ci, CC, Cu, components} = require("chrome");
+const {Cc, Ci, CC, Cu, Cr, components} = require("chrome");
 const events      = require("sdk/system/events");
 const data        = require("sdk/self").data;
 var loggingDB     = require("./loggingdb.js");
@@ -164,7 +164,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       if ("post_headers" in postObj) {
         // Only store POST headers that we know and need. We may misinterpret POST data as headers
         // as detection is based on "key:value" format (non-header POST data can be in this format as well)
-        contentHeaders = ["Content-Type", "Content-Disposition", "Content-Length"];
+        var contentHeaders = ["Content-Type", "Content-Disposition", "Content-Length"];
         for (var name in postObj["post_headers"]) {
           if (contentHeaders.includes(name)){
             var header_pair = [];
