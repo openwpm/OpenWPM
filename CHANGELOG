@@ -1,3 +1,25 @@
+v0.8.0 - 2017-10-09
+======
+
+A long overdue version bump to checkpoint the final version to support
+Selenium 2 + FF 45. Note we recommend against using the release as Firefox
+45ESR is no longer receiving security patches.
+
+Changes:
+  * Add extension-based HTTP instrumentation, including POST body processing
+  * Deprecate proxy-based HTTP instrumentation
+  * Save stacktrace of HTTP requests
+  * Prevent Selenium 2 from self identifying in the DOM
+  * Add support for blocking commands
+  * Improve exception handling in child processes
+  * Refactor of socket interface in extension
+  * Improvements to manual testing code
+  * Add a logging module to the extension, logs to central log file
+  * Instrument `document.cookie`
+  * A number of improvements to the `instrumentObject` instrumentation
+    interface in extension
+  * Make `install.sh` scriptable
+
 v0.7.0 - 2016-11-15
 ======
 
