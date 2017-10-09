@@ -509,7 +509,7 @@ class TaskManager:
         start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
-            if command[0] in ['GET', 'BROWSE']:
+            if command[0] in ['GET', 'BROWSE', 'RECURSIVE_DUMP_PAGE_SOURCE']:
                 start_time = time.time()
                 command += (browser.curr_visit_id,)
             elif command[0] in ['DUMP_FLASH_COOKIES', 'DUMP_PROFILE_COOKIES']:
