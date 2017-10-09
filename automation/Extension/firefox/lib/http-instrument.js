@@ -315,7 +315,8 @@ function isJS(httpChannel) {
 }
 
 // Instrument HTTP responses
-var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript) {
+var httpResponseHandler = function(respEvent, isCached, crawlID,
+                                   saveJavascript, saveAllContent) {
   var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
 
   // http_responses table schema:
@@ -369,7 +370,9 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
   }});
   update["headers"] = JSON.stringify(headers);
 
-  if (saveJavascript && isJS(httpChannel)) {
+  if (saveAllContent) {
+    logWithResponseBody(respEvent, update);
+  } else if (saveJavascript && isJS(httpChannel)) {
     logWithResponseBody(respEvent, update);
   } else {
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
@@ -380,7 +383,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
  * Attach handlers to event monitor
  */
 
-exports.run = function(crawlID, saveJavascript) {
+exports.run = function(crawlID, saveJavascript, saveAllContent) {
   // Create sql tables
   var createHttpRequestTable = data.load("create_http_requests_table.sql");
   loggingDB.executeSQL(createHttpRequestTable, false);
@@ -394,14 +397,14 @@ exports.run = function(crawlID, saveJavascript) {
   }, true);
 
   events.on("http-on-examine-response", function(event) {
-    httpResponseHandler(event, false, crawlID, saveJavascript);
+    httpResponseHandler(event, false, crawlID, saveJavascript, saveAllContent);
   }, true);
 
   events.on("http-on-examine-cached-response", function(event) {
-    httpResponseHandler(event, true, crawlID, saveJavascript);
+    httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
   }, true);
 
   events.on("http-on-examine-merged-response", function(event) {
-    httpResponseHandler(event, true, crawlID, saveJavascript);
+    httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
   }, true);
 };

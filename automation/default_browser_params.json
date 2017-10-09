@@ -5,6 +5,7 @@
     "cp_instrument": false,
     "http_instrument": false,
     "save_javascript": false,
+    "save_all_content": false,
 
     "random_attributes": false,
     "bot_mitigation": false,
