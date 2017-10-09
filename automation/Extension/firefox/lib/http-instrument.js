@@ -277,7 +277,8 @@ function logWithResponseBody(respEvent, update) {
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }).catch(function(aCatch) {
     loggingDB.logError('Unable to retrieve response body.' +
-        'Likely caused by a programming error. Error Message:' + JSON.stringify(aCatch));
+        'Likely caused by a programming error. Error Message:' +
+        aCatch.name + aCatch.message + '\n' + aCatch.stack);
     update["content_hash"] = "<error>";
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   });
