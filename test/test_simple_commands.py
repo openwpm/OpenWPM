@@ -347,8 +347,8 @@ class TestSimpleCommands(OpenWPMTest):
         # Source filename is of the follow structure:
         # `sources/<visit_id>-<md5_of_url>(-suffix).html`
         # thus for this test we expect `sources/1-<md5_of_test_url>-test.html`.
-        source_file = glob.glob(os.path.join(
-                str(tmpdir), 'sources', '1-*-test.html'))[0]
+        outfile = os.path.join(str(tmpdir), 'sources', '1-*-test.html')
+        source_file = glob.glob(outfile)[0]
         with open(source_file, 'rb') as f:
             actual_source = f.read()
         with open('./test_pages/expected_source.html', 'rb') as f:
@@ -367,10 +367,10 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
-        src_file = glob.glob(
-            os.path.join(str(tmpdir), 'sources', '1-*.json.gz'))[0]
+        outfile = os.path.join(str(tmpdir), 'sources', '1-*.json.gz')
+        src_file = glob.glob(outfile)[0]
         with gzip.GzipFile(src_file, 'rb') as f:
-            visit_source = json.loads(f.read())
+            visit_source = json.loads(f.read().decode('utf-8'))
 
         observed_parents = dict()
 
@@ -381,7 +381,7 @@ class TestSimpleCommands(OpenWPMTest):
             # Verify source
             path = urlparse(frame['doc_url']).path
             expected_source = ''
-            with open('.'+path, 'rb') as f:
+            with open('.'+path, 'r') as f:
                 expected_source = re.sub('\s', '', f.read().lower())
                 if expected_source.startswith('<!doctypehtml>'):
                     expected_source = expected_source[14:]
@@ -392,7 +392,7 @@ class TestSimpleCommands(OpenWPMTest):
 
             # Verify children
             parent_frames.append(frame['doc_url'])
-            for key, child_frame in frame['iframes'].iteritems():
+            for key, child_frame in frame['iframes'].items():
                 verify_frame(child_frame, parent_frames)
             parent_frames.pop()
 

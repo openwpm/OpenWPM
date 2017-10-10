@@ -19,6 +19,7 @@ from .utils.webdriver_extensions import (scroll_down, wait_until_loaded,
                                          get_intra_links,
                                          execute_in_all_frames)
 from six.moves import range
+import six
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -269,7 +270,7 @@ def dump_page_source(visit_id, driver, manager_params, suffix=''):
     if suffix != '':
         suffix = '-' + suffix
 
-    outname = md5(driver.current_url).hexdigest()
+    outname = md5(driver.current_url.encode('utf-8')).hexdigest()
     outfile = os.path.join(manager_params['source_dump_path'],
                            '%i-%s%s.html' % (visit_id, outname, suffix))
 
@@ -283,7 +284,7 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
     if suffix != '':
         suffix = '-' + suffix
 
-    outname = md5(driver.current_url).hexdigest()
+    outname = md5(driver.current_url.encode('utf-8')).hexdigest()
     outfile = os.path.join(manager_params['source_dump_path'],
                            '%i-%s%s.json.gz' % (visit_id, outname, suffix))
 
@@ -297,7 +298,10 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
         else:
             page_source = dict()
         page_source['doc_url'] = doc_url
-        page_source['source'] = driver.page_source.encode('UTF-8')
+        source = driver.page_source
+        if type(source) != six.text_type:
+            source = six.text_type(source, 'utf-8')
+        page_source['source'] = source
         page_source['iframes'] = dict()
 
         # Store frame info in correct area of return value
@@ -312,4 +316,4 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
     execute_in_all_frames(driver, collect_source, {'rv': page_source})
 
     with gzip.GzipFile(outfile, 'wb') as f:
-        f.write(json.dumps(page_source))
+        f.write(json.dumps(page_source).encode('utf-8'))
