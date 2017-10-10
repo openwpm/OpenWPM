@@ -72,7 +72,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       }
 
       if (oldNotifications) {
-        return oldNotifications.QueryInterface(iid);
+        return oldNotifications.getInterface(iid);
       } else {
         throw Cr.NS_ERROR_NO_INTERFACE;
       }
