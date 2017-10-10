@@ -1,7 +1,11 @@
 from __future__ import absolute_import
 from PIL import Image
+from urlparse import urlparse
 import glob
+import gzip
+import json
 import os
+import re
 
 from . import utilities
 from ..automation import CommandSequence
@@ -15,6 +19,48 @@ url_c = utilities.BASE_TEST_URL + '/simple_c.html'
 url_d = utilities.BASE_TEST_URL + '/simple_d.html'
 
 rendered_js_url = utilities.BASE_TEST_URL + '/property_enumeration.html'
+
+# Expected nested page source
+NESTED_TEST_DIR = '/recursive_iframes/'
+NESTED_FRAMES_URL = utilities.BASE_TEST_URL + NESTED_TEST_DIR + 'parent.html'
+D1_BASE = 'http://d1.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D2_BASE = 'http://d2.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D3_BASE = 'http://d3.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D4_BASE = 'http://d4.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D5_BASE = 'http://d5.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+EXPECTED_PARENTS = {
+    NESTED_FRAMES_URL: [],
+    D1_BASE + 'child1a.html': [NESTED_FRAMES_URL],
+    D1_BASE + 'child1b.html': [NESTED_FRAMES_URL],
+    D1_BASE + 'child1c.html': [NESTED_FRAMES_URL],
+    D2_BASE + 'child2a.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1a.html'],
+    D2_BASE + 'child2b.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1a.html'],
+    D2_BASE + 'child2c.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1c.html'],
+    D3_BASE + 'child3a.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1a.html',
+                               D2_BASE + 'child2a.html'],
+    D3_BASE + 'child3b.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1c.html',
+                               D2_BASE + 'child2c.html'],
+    D3_BASE + 'child3c.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1c.html',
+                               D2_BASE + 'child2c.html'],
+    D3_BASE + 'child3d.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1c.html',
+                               D2_BASE + 'child2c.html'],
+    D4_BASE + 'child4a.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1a.html',
+                               D2_BASE + 'child2a.html',
+                               D3_BASE + 'child3a.html'],
+    D5_BASE + 'child5a.html': [NESTED_FRAMES_URL,
+                               D1_BASE + 'child1a.html',
+                               D2_BASE + 'child2a.html',
+                               D3_BASE + 'child3a.html',
+                               D4_BASE + 'child4a.html']
+}
 
 
 class TestSimpleCommands(OpenWPMTest):
@@ -309,3 +355,46 @@ class TestSimpleCommands(OpenWPMTest):
             expected_source = f.read()
 
         assert actual_source == expected_source
+
+    def test_recursive_dump_page_source_valid(self, tmpdir):
+        """Check that 'recursive_dump_page_source' works"""
+        # Run the test crawl
+        manager_params, browser_params = self.get_config(str(tmpdir))
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        cs = CommandSequence.CommandSequence(NESTED_FRAMES_URL)
+        cs.get(sleep=1)
+        cs.recursive_dump_page_source()
+        manager.execute_command_sequence(cs)
+        manager.close()
+
+        src_file = glob.glob(
+            os.path.join(str(tmpdir), 'sources', '1-*.json.gz'))[0]
+        with gzip.GzipFile(src_file, 'rb') as f:
+            visit_source = json.loads(f.read())
+
+        observed_parents = dict()
+
+        def verify_frame(frame, parent_frames=[]):
+            # Verify structure
+            observed_parents[frame['doc_url']] = list(parent_frames)  # copy
+
+            # Verify source
+            path = urlparse(frame['doc_url']).path
+            expected_source = ''
+            with open('.'+path, 'rb') as f:
+                expected_source = re.sub('\s', '', f.read().lower())
+                if expected_source.startswith('<!doctypehtml>'):
+                    expected_source = expected_source[14:]
+            observed_source = re.sub('\s', '', frame['source'].lower())
+            if observed_source.startswith('<!doctypehtml>'):
+                observed_source = observed_source[14:]
+            assert observed_source == expected_source
+
+            # Verify children
+            parent_frames.append(frame['doc_url'])
+            for key, child_frame in frame['iframes'].iteritems():
+                verify_frame(child_frame, parent_frames)
+            parent_frames.pop()
+
+        verify_frame(visit_source)
+        assert EXPECTED_PARENTS == observed_parents
