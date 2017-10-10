@@ -11,10 +11,10 @@ You can test the installation with: ```sudo docker run hello-world```
 _Note,_ in order to run Docker without root privileges, add your user to the ```docker``` group (```sudo usermod -a -G docker $USER```). You will have to logout-login for the change to take effect, and possibly also restart the Docker service.
 
 
-__Step 2:__ for the build, clone this source directory, then from a terminal  within it run the following:
+__Step 2:__ to build the image, run the following command from a terminal within the main OpenWPM source directory:
 
 
-    docker build -t openwpm .
+    docker build -f docker/Dockerfile -t openwpm .
 
 After a few minutes, the container is ready to use.
 
@@ -22,13 +22,13 @@ After a few minutes, the container is ready to use.
 
 You can run demo measurements from inside the container, as follows:
 
-    docker run -v $PWD/volume:/home/user/  -it openwpm python /home/user/demo-docker.py
+    docker run -v $PWD/docker/volume:/home/user/  -it openwpm python /home/user/demo-docker.py
 
-This command uses _bind-mounts_ to share scripts and output between the container and host, as explained below (note the paths in the command assume it's being run from the build directory):
+This command uses _bind-mounts_ to share scripts and output between the container and host, as explained below (note the paths in the command assume it's being run from the main source directory):
 
 - ```run``` starts the ```openwpm``` container and executes the ```python /home/user/demo-docker.py``` command.
 
-- ```-v``` binds a directory on the host (```$PWD/volume```) to a directory in the container (```/home/user```). Binding allows passing the crawl script (```demo-docker.py```) to the container, and makes the script's output to be saved on the host (```volume/Desktop```).
+- ```-v``` binds a directory on the host (```$PWD/docker/volume```) to a directory in the container (```/home/user```). Binding allows passing the crawl script (```demo-docker.py```) to the container, and makes the script's output to be saved on the host (```volume/Desktop```).
 
 - The ```-it``` option states the command is to be run interactively (use ```-d``` for detached mode).
 

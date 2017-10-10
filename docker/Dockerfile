@@ -17,6 +17,19 @@ RUN apt-get -qqy install firefox htop git python-dev  libxml2-dev libxslt-dev li
 
 
 #===================================================
+# Copy OpenWPM source
+#===================================================
+RUN sudo mkdir /opt/OpenWPM/ && sudo mkdir /opt/OpenWPM/automation/
+
+ADD automation /opt/OpenWPM/automation/
+ADD requirements.txt /opt/OpenWPM/
+ADD __init__.py /opt/OpenWPM/
+ADD LICENSE /opt/OpenWPM/
+ADD VERSION /opt/OpenWPM/
+# (add more source directories/files as needed)
+
+
+#===================================================
 # Add normal user with passwordless sudo, and switch
 #===================================================
 RUN useradd user \
@@ -31,15 +44,15 @@ USER user
 #===================
 # Install OpenWPM
 #===================
-RUN cd /opt/ && \
-    sudo git clone https://github.com/citp/OpenWPM.git && \
-    sudo chown -R user:user /opt/OpenWPM/
+RUN sudo chown -R user:user /opt/OpenWPM/
 
 RUN cd /opt/OpenWPM/ && \
     wget --no-verbose https://bootstrap.pypa.io/get-pip.py \
     && sudo -H python get-pip.py \
-    && rm get-pip.py \
-    && sudo pip install -U -r requirements.txt
+    && rm get-pip.py
+
+RUN cd /opt/OpenWPM/ && \
+    sudo pip install -U -r requirements.txt
 
 RUN cd /opt/OpenWPM/ && \
     wget --no-verbose https://ftp.mozilla.org/pub/firefox/releases/45.9.0esr/linux-x86_64/en-US/firefox-45.9.0esr.tar.bz2 \
