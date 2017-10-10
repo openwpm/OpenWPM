@@ -13,10 +13,8 @@ from time import sleep
 import six
 from six.moves import range
 
-# HTTP Requests and Responses Instrumentation
-# NOTE: The [System Principal] favicon request will change in future versions
-#       of FF. See Bug https://bugzilla.mozilla.org/show_bug.cgi?id=1277803.
-# (request_url,
+# Data for test_page_visit
+# format: (request_url,
 #     top_level_url,
 #     is_XHR, is_frame_load, is_full_page, is_tp_content, is_tp_window,
 #     triggering_origin,
@@ -26,11 +24,11 @@ HTTP_REQUESTS = {
         None,
         0, 0, 1, None, None,
         u'[System Principal]',
-        u'chrome://browser/content/browser.xul', 6),
+        u'undefined', 6),
     (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
         None,
         0, None, None, None, None,
-        u'[System Principal]',
+        u'http://localtest.me:8000',
         u'chrome://browser/content/browser.xul', 3),
     (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
         None,
@@ -97,12 +95,13 @@ HTTP_RESPONSES = {
         u'')
 }
 
+# Data for test_cache_hits_recorded
 HTTP_CACHED_REQUESTS = {
     (u'http://localtest.me:8000/test_pages/http_test_page.html',
-        None,
-        0, 0, 1, None, None,
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 0, 1, 0, 0,
         u'[System Principal]',
-        u'chrome://browser/content/browser.xul', 6),
+        u'undefined', 6),
     (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, None, None, 0, 0,
