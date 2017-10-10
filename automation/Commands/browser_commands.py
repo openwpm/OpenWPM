@@ -260,13 +260,16 @@ def dump_profile_cookies(start_time, visit_id, webdriver,
     sock.close()
 
 
-def save_screenshot(screenshot_name, webdriver,
-                    browser_params, manager_params):
-    webdriver.save_screenshot(
-        os.path.join(
-            manager_params['screenshot_path'],
-            screenshot_name + '.png'
-        ))
+def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
+    """ Save a screenshot of the current viewport"""
+    if suffix != '':
+        suffix = '-' + suffix
+
+    urlhash = md5(driver.current_url).hexdigest()
+    outname = os.path.join(manager_params['screenshot_path'],
+                           '%i-%s%s-part-%%i-%%i.png' %
+                           (visit_id, urlhash, suffix))
+    driver.save_screenshot(outname)
 
 
 def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):

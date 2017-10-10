@@ -259,19 +259,19 @@ class TestSimpleCommands(OpenWPMTest):
         assert qry_res[0][0] == 4
 
     def test_save_screenshot_valid(self, tmpdir):
-        """Check that 'save_screenshot' works and screenshot is created properly."""
+        """Check that 'save_screenshot' works"""
         # Run the test crawl
         manager_params, browser_params = self.get_config(str(tmpdir))
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
-        cs.save_screenshot('test_screenshot')
+        cs.save_screenshot('test')
         manager.execute_command_sequence(cs)
         manager.close()
 
-
         # Check that image is not blank
-        im = Image.open(os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'))
+        im = Image.open(
+            os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'))
         bands = im.split()
 
         isBlank = all(band.getextrema() == (255, 255) for band in bands)
