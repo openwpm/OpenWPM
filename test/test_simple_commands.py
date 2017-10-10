@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from PIL import Image
+import glob
 import os
 
 from . import utilities
@@ -293,12 +294,16 @@ class TestSimpleCommands(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
-        cs.dump_page_source('test_source')
+        cs.dump_page_source(suffix='test')
         manager.execute_command_sequence(cs)
         manager.close()
 
-        with open(os.path.join(
-                str(tmpdir), 'sources', 'test_source.html'), 'rb') as f:
+        # Source filename is of the follow structure:
+        # `sources/<visit_id>-<md5_of_url>(-suffix).html`
+        # thus for this test we expect `sources/1-<md5_of_test_url>-test.html`.
+        source_file = glob.glob(os.path.join(
+                str(tmpdir), 'sources', '1-*-test.html'))[0]
+        with open(source_file, 'rb') as f:
             actual_source = f.read()
         with open('./test_pages/expected_source.html', 'rb') as f:
             expected_source = f.read()

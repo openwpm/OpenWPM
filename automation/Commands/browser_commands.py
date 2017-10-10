@@ -265,11 +265,17 @@ def save_screenshot(screenshot_name, webdriver,
         ))
 
 
-def dump_page_source(dump_name, webdriver, browser_params, manager_params):
-    with open(os.path.join(manager_params['source_dump_path'],
-                           dump_name + '.html'), 'wb') as f:
-            f.write(webdriver.page_source.encode('utf8'))
-            f.write(b'\n')
+def dump_page_source(visit_id, driver, manager_params, suffix=''):
+    if suffix != '':
+        suffix = '-' + suffix
+
+    outname = md5(driver.current_url).hexdigest()
+    outfile = os.path.join(manager_params['source_dump_path'],
+                           '%i-%s%s.html' % (visit_id, outname, suffix))
+
+    with open(outfile, 'wb') as f:
+        f.write(driver.page_source.encode('utf8'))
+        f.write(b'\n')
 
 
 def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
