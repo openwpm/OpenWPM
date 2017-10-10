@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from PIL import Image
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 import glob
 import gzip
 import json
