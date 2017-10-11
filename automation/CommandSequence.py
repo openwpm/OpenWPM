@@ -105,13 +105,40 @@ class CommandSequence:
         command = ('SAVE_SCREENSHOT', screenshot_name,)
         self.commands_with_timeout.append((command, timeout))
 
-    def dump_page_source(self, dump_name, timeout=30):
+    def dump_page_source(self, suffix='', timeout=30):
         """Dumps rendered source of current page to 'sources' directory."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError("No get or browse request preceding "
                                         "the dump page source command", self)
-        command = ('DUMP_PAGE_SOURCE', dump_name,)
+        command = ('DUMP_PAGE_SOURCE', suffix)
+        self.commands_with_timeout.append((command, timeout))
+
+    def recursive_dump_page_source(self, suffix='', timeout=30):
+        """Dumps rendered source of current page visit to 'sources' dir.
+        Unlike `dump_page_source`, this includes iframe sources. Archive is
+        stored in `manager_params['source_dump_path']` and is keyed by the
+        current `visit_id` and top-level url. The source dump is a gzipped json
+        file with the following structure:
+        {
+            'document_url': "http://example.com",
+            'source': "<html> ... </html>",
+            'iframes': {
+                'frame_1': {'document_url': ...,
+                            'source': ...,
+                            'iframes: { ... }},
+                'frame_2': {'document_url': ...,
+                            'source': ...,
+                            'iframes: { ... }},
+                'frame_3': { ... }
+            }
+        }
+        """
+        self.total_timeout += timeout
+        if not self.contains_get_or_browse:
+            raise CommandExecutionError("No get or browse request preceding "
+                                        "the dump page source command", self)
+        command = ('RECURSIVE_DUMP_PAGE_SOURCE', suffix)
         self.commands_with_timeout.append((command, timeout))
 
     def run_custom_function(self, function_handle, func_args=(), timeout=30):
