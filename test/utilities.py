@@ -14,6 +14,7 @@ BASE_TEST_URL_DOMAIN = "localtest.me"
 BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
                                          LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
+BASE_TEST_URL_NOSCHEME = BASE_TEST_URL.split('//')[1]
 
 
 def which(program):
