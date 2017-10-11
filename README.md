@@ -148,6 +148,30 @@ for their measurement data (see
             }
         }
         ```
+* Screenshots
+    * Selenium 3 can be used to screenshot an individual element. None of the
+        built-in commands offer this functionality, but you can use it when
+        [writing your own](https://github.com/citp/OpenWPM/wiki/Platform-Demo#adding-a-new-command). See the [Selenium documentation](https://seleniumhq.github.io/selenium/docs/api/py/webdriver_remote/selenium.webdriver.remote.webelement.html?highlight=element#selenium.webdriver.remote.webelement.WebElement.screenshot).
+    * Viewport screenshots (i.e. a screenshot of the portion of the website
+        visible in the browser's window) are available with the
+        `CommandSequence::save_screenshot` command.
+    * Full-page screenshots (i.e. a screenshot of the entire rendered DOM) are
+        available with the `CommandSequence::screenshot_full_page` command.
+        * This functionality is not yet supported by Selenium/geckodriver,
+          though [it is planned](https://github.com/mozilla/geckodriver/issues/570).
+          We produce screenshots by using JS to scroll the page and take a
+          viewport screenshot at each location. This method will save the parts
+          and a stitched version in the `screenshot_path`.
+        * Since the screenshots are stitched they have some limitations:
+            * On the area of the page present when the command is called will
+              be captured. Sites which dynamically expand when scrolled (i.e.,
+              infinite scroll) will only go as far as the original height.
+            * We only scroll vertically, so pages that are wider than the
+              viewport will be clipped.
+            * In geckodriver v0.15 doing any scrolling (or having devtools
+              open) seems to break element-only screenshots. So using this
+              command will cause any future element-only screenshots to be
+              misaligned.
 
 Browser and Platform Configuration
 ----------------------------------
