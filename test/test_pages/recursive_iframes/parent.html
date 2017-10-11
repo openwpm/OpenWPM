@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Parent page with a bunch of nested iframes</title>
+  </head>
+  <body>
+    <h3> This is a test page to test the recursive iframe function.
+    The test function grabs the page source of each frame, so any changes to
+    the file will break the tests.</h3>
+    <iframe src="http://d1.localtest.me:8000/test_pages/recursive_iframes/child1a.html"></iframe>
+    <iframe src="http://d1.localtest.me:8000/test_pages/recursive_iframes/child1b.html"></iframe>
+    <iframe src="http://d1.localtest.me:8000/test_pages/recursive_iframes/child1c.html"></iframe>
+  </body>
+</html>

@@ -127,6 +127,27 @@ for their measurement data (see
     * Automatically saved when the platform closes or crashes by specifying
         `browser_params['profile_archive_dir']`.
     * Save on-demand with the `CommandSequence::dump_profile` command.
+* Rendered Page Source
+    * Save the top-level frame's rendered source with the
+    `CommandSequence::dump_page_source` command.
+    * Save the full rendered source (including all nested iframes) with the
+    `CommandSequence::recursive_dump_page_source` command.
+        * The page source is saved in the following nested json structure:
+        ```
+        {
+            'document_url': "http://example.com",
+            'source': "<html> ... </html>",
+            'iframes': {
+                'frame_1': {'document_url': ...,
+                            'source': ...,
+                            'iframes: { ... }},
+                'frame_2': {'document_url': ...,
+                            'source': ...,
+                            'iframes: { ... }},
+                'frame_3': { ... }
+            }
+        }
+        ```
 
 Browser and Platform Configuration
 ----------------------------------
