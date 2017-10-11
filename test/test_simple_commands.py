@@ -324,14 +324,16 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
+        pattern = os.path.join(str(tmpdir), 'screenshots', '1-*-test.png')
+        screenshot = glob.glob(pattern)[0]
+
         # Check that image is not blank
-        im = Image.open(
-            os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'))
+        im = Image.open(screenshot)
         bands = im.split()
 
-        isBlank = all(band.getextrema() == (255, 255) for band in bands)
+        is_blank = all(band.getextrema() == (255, 255) for band in bands)
 
-        assert not isBlank
+        assert not is_blank
 
     def test_dump_page_source_valid(self, tmpdir):
         """Check that 'dump_page_source' works and source is saved properly."""

@@ -271,7 +271,7 @@ def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
 
     urlhash = md5(driver.current_url).hexdigest()
     outname = os.path.join(manager_params['screenshot_path'],
-                           '%i-%s%s-part-%%i-%%i.png' %
+                           '%i-%s%s.png' %
                            (visit_id, urlhash, suffix))
     driver.save_screenshot(outname)
 
