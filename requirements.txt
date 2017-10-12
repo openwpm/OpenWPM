@@ -24,3 +24,4 @@ mmh3
 IPython>=5.0,<6.0
 # See https://github.com/ActiveState/appdirs/issues/89
 appdirs>=1.4.3
+cssselect

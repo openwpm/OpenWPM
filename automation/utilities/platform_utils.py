@@ -10,6 +10,7 @@ import json
 import time
 import sys
 import os
+from urllib import urlretrieve
 
 
 def parse_http_stack_trace_str(trace_str):
@@ -172,3 +173,17 @@ def fetch_adblockplus_list(output_directory, wait_time=20):
     finally:
         driver.close()
         display.stop()
+
+
+def fetch_banner_list(output_directory):
+    """ Saves an updated "I don't care about cookies" banner list to the specified directory.
+    <output_directory> - The directory to save lists to. Will be created if it
+                         does not already exist.
+    """
+    output_directory = os.path.expanduser(output_directory)
+    if not os.path.isdir(output_directory):
+        print "Output directory %s does not exist, creating." % output_directory
+        os.makedirs(output_directory)
+
+    banner_list_url = "https://www.i-dont-care-about-cookies.eu/abp/"
+    urlretrieve(banner_list_url, os.path.join(output_directory, 'bannerlist.txt'))

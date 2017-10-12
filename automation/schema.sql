@@ -117,3 +117,19 @@ CREATE TABLE IF NOT EXISTS CrawlHistory (
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
+/* Cookie Banners */
+CREATE TABLE IF NOT EXISTS cookie_banners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER,
+    visit_id INTEGER,
+    url VARCHAR(500) NOT NULL,
+    css_selector VARCHAR(100),
+    selected_tag VARCHAR(50),
+    selected_id VARCHAR(100),
+    `text` TEXT,
+    html TEXT,
+    pos_x INTEGER,
+    pos_y INTEGER,
+    size_h INTEGER,
+    size_w INTEGER
+);

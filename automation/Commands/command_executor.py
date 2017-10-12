@@ -49,6 +49,12 @@ def execute_command(command, webdriver, proxy_queue, browser_settings, browser_p
         browser_commands.dump_page_source(dump_name=command[1], webdriver=webdriver,
                                           browser_params=browser_params, manager_params=manager_params)
 
+    if command[0] == 'DETECT_COOKIE_BANNER':
+        browser_commands.detect_cookie_banner(visit_id=command[1],
+                                              webdriver=webdriver,
+                                              browser_params=browser_params,
+                                              manager_params=manager_params)
+
     if command[0] == 'RUN_CUSTOM_FUNCTION':
         arg_dict = {"command": command,
                     "driver": webdriver,
