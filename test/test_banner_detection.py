@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from os import path
 from time import time
 from pprint import pprint
@@ -5,9 +7,8 @@ import pytest
 from collections import Counter
 from lxml.etree import ParserError
 
-import utilities
-import expected
-from openwpmtest import OpenWPMTest
+from .utilities import BASE_TEST_URL
+from .openwpmtest import OpenWPMTest
 from ..automation.TaskManager import TaskManager
 from ..automation.CommandSequence import CommandSequence
 from ..automation.Commands.utils.banner_utils import fetch_banner_list
@@ -50,7 +51,7 @@ class TestBannerDetection(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['banner_list_location'] = self.B_LIST_LOC
         manager = TaskManager(manager_params, browser_params)
-        cs = CommandSequence(utilities.BASE_TEST_URL + '/banners/simple.html')
+        cs = CommandSequence(BASE_TEST_URL + '/banners/simple.html')
         cs.get()
         cs.detect_cookie_banner()
         manager.execute_command_sequence(cs)
@@ -74,7 +75,7 @@ class TestBannerDetection(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['banner_list_location'] = self.B_LIST_LOC
         manager = TaskManager(manager_params, browser_params)
-        cs = CommandSequence(utilities.BASE_TEST_URL + '/banners/tudelft.html')
+        cs = CommandSequence(BASE_TEST_URL + '/banners/tudelft.html')
         cs.get()
         cs.detect_cookie_banner()
         manager.execute_command_sequence(cs)
@@ -117,7 +118,7 @@ class TestBannerDetection(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['banner_list_location'] = self.B_LIST_LOC
         manager = TaskManager(manager_params, browser_params)
-        cs = CommandSequence(utilities.BASE_TEST_URL + '/banners/youtube.html')
+        cs = CommandSequence(BASE_TEST_URL + '/banners/youtube.html')
         cs.get()
         cs.detect_cookie_banner()
         manager.execute_command_sequence(cs)
@@ -150,7 +151,7 @@ class TestBannerDetection(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['banner_list_location'] = self.B_LIST_LOC
         manager = TaskManager(manager_params, browser_params)
-        cs = CommandSequence(utilities.BASE_TEST_URL + '/banners/empty.html')
+        cs = CommandSequence(BASE_TEST_URL + '/banners/empty.html')
         cs.get()
         cs.detect_cookie_banner()  # should/will not raise
         manager.execute_command_sequence(cs)

@@ -1,5 +1,6 @@
 # utility functions for cookie banner notice detection
 from __future__ import print_function
+from __future__ import absolute_import
 import lxml.html
 from time import time
 from os import path, makedirs
