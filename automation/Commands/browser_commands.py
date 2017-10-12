@@ -10,6 +10,10 @@ import json
 import time
 import gzip
 import os
+import tempfile
+from lxml import etree
+from pprint import pprint
+from collections import namedtuple
 
 from ..SocketInterface import clientsocket
 from ..MPLogger import loggingclient
@@ -18,6 +22,7 @@ from .utils.firefox_profile import get_cookies
 from .utils.webdriver_extensions import (scroll_down, wait_until_loaded,
                                          get_intra_links,
                                          execute_in_all_frames)
+from .utils.banner_utils import fetch_banner_list, find_banners_by_selectors
 from six.moves import range
 import six
 
@@ -317,3 +322,85 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
 
     with gzip.GzipFile(outfile, 'wb') as f:
         f.write(json.dumps(page_source).encode('utf-8'))
+
+
+def detect_cookie_banner(visit_id, webdriver, browser_params, manager_params):
+    """Detect if the fetched site contains a cookie-notice/cookie-wall banner.
+
+    We detect banners by searching for HTML elements using a large set of  CSS selectors. The
+    selectors have been collected by the browser extension "I don't care about cookies" using
+    crowdsourceding. They are read from the file of `browser-param['banner_list_location']`.
+    If this parameter is not specified, the latest version is downloaded and cached.
+
+    Once we find one or more cookie banner elements, we record them in the table 'cookie_banners'.
+    """
+    # Locate the banner list
+    if 'banner_list_location' not in browser_params:
+        bl_loc = os.path.join(tempfile.gettempdir(), 'bannerlist.txt')
+        if not os.path.isfile(bl_loc):
+            fetch_banner_list(tempfile.gettempdir())
+        browser_params['banner_list_location'] = tempfile.gettempdir()  # cache for next runs
+    else:
+        bl_loc = os.path.expanduser(browser_params['banner_list_location'])
+
+    time0 = time.time()
+    logger = loggingclient(*manager_params['logger_address'])  # Connect to logger
+
+    try:
+        # The main searching happens in utils.banner_utils.find_banners_by_selectors()
+        # with the lxml-cssselect module, which is much faster (5x) than Selenium's search.
+        # See that function for some known limitations.
+        n_selectors, banners_part = find_banners_by_selectors(webdriver.current_url,
+                                                              webdriver.page_source,
+                                                              bl_loc,
+                                                              logger=logger)
+    except Exception as err:
+        n_selectors, banners_part = None, []
+        logger.warning("DETECT_COOKIE_BANNER: Exception in 'find_banners_by_selectors': %s" % err)
+
+    logger.debug("DETECT_COOKIE_BANNER: find_banners_by_selectors() returned %d results in %.1fs" %
+                 (len(banners_part), time.time()-time0))
+
+    B = namedtuple('Banner', ['selector', 'tag', 'id', 'text', 'html', 'x', 'y', 'h', 'w'])
+    banners = []
+    for b in banners_part:
+            # Selenium's find_elements_by_css gives also the size/pos of the element;
+            # match it only for the selectors of the banner elements already found
+            matched = None
+            try:
+                elements = webdriver.find_elements_by_css_selector(b.selector)
+                for e in elements:
+                    if b.tag == e.tag_name and b.id == e.get_attribute('id'):
+                        matched = e
+                        break
+                if elements and not matched:
+                    logger.warning("DETECT_COOKIE_BANNER: couldn't match %d elements found by "
+                                   "webdriver to cssselector" % len(elements))
+            except Exception as err:
+                logger.warning("DETECT_COOKIE_BANNER: exception in 'webdriver.find_elements': %s"
+                               % err)
+
+            if not matched:
+                banners.append(B(selector=b.selector, tag=b.tag, id=b.id, text=b.text,
+                                 html=None, x=None, y=None, w=None, h=None))
+            else:
+                banners.append(B(selector=b.selector, tag=b.tag, id=b.id, text=b.text,
+                                 html=matched.get_attribute('innerHTML'),
+                                 x=matched.location['x'], y=matched.location['y'],
+                                 w=matched.size['width'], h=matched.size['height']))
+
+    logger.info("DETECT_COOKIE_BANNER: found %d banners in %.1fs (%d selectors) for '%s'" % (
+                len(banners), time.time()-time0, n_selectors, webdriver.current_url))
+
+    # Write result to database.
+    sock = clientsocket()
+    sock.connect(*manager_params['aggregator_address'])
+    for b in banners:
+        query = ("INSERT INTO cookie_banners "
+                 "(crawl_id, visit_id, url, css_selector, selected_tag, selected_id, "
+                 " text, html, pos_x, pos_y, size_w, size_h) "
+                 "VALUES (?,?,?, ?,?,?, ?,?, ?,?,?,?)",
+                 (browser_params["crawl_id"], visit_id, webdriver.current_url,
+                  b.selector, b.tag, b.id, b.text, b.html, b.x, b.y, b.w, b.h))
+        sock.send(query)
+    sock.close()

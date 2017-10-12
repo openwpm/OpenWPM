@@ -62,6 +62,12 @@ def execute_command(command, webdriver, browser_settings, browser_params,
             visit_id=command[2], driver=webdriver,
             manager_params=manager_params, suffix=command[1])
 
+    if command[0] == 'DETECT_COOKIE_BANNER':
+        browser_commands.detect_cookie_banner(visit_id=command[1],
+                                              webdriver=webdriver,
+                                              browser_params=browser_params,
+                                              manager_params=manager_params)
+
     if command[0] == 'RUN_CUSTOM_FUNCTION':
         arg_dict = {"command": command,
                     "driver": webdriver,
