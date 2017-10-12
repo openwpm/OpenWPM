@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import pytest
 from os.path import join, isfile
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
-from openwpmtest import OpenWPMTest
+from .openwpmtest import OpenWPMTest
 
 
 # TODO update these tests to make use of blocking commands
@@ -50,6 +51,7 @@ class TestProfile(OpenWPMTest):
         with pytest.raises(ProfileLoadError):
             TaskManager.TaskManager(manager_params, browser_params)  # noqa
 
+    @pytest.mark.skip(reason="proxy no longer supported, need to update")
     def test_profile_saved_when_launch_crashes(self):
         manager_params, browser_params = self.get_config()
         browser_params[0]['proxy'] = True

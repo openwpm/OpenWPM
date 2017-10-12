@@ -2,9 +2,28 @@
 from __future__ import print_function
 import lxml.html
 from time import time
+from os import path, makedirs
 from collections import namedtuple, Counter
+try:
+    from urllib import urlretrieve  # py2
+except ImportError:
+    from urllib.request import urlretrieve  # py3
 
 from ...utilities.domain_utils import hostname_subparts
+
+
+def fetch_banner_list(output_directory):
+    """ Saves an updated "I don't care about cookies" banner list to the specified directory.
+    <output_directory> - The directory to save lists to. Will be created if it
+                         does not already exist.
+    """
+    output_directory = path.expanduser(output_directory)
+    if not path.isdir(output_directory):
+        print("Output directory %s does not exist, creating." % output_directory)
+        makedirs(output_directory)
+
+    banner_list_url = "https://www.i-dont-care-about-cookies.eu/abp/"
+    urlretrieve(banner_list_url, path.join(output_directory, 'bannerlist.txt'))
 
 
 def parse_banner_list(banner_list_loc):

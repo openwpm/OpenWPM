@@ -1,16 +1,49 @@
-from utilities import BASE_TEST_URL, start_server
-from conftest import create_xpi
+from __future__ import absolute_import
+from __future__ import print_function
+
+import atexit
+import os
 from os.path import dirname, join, realpath
+import subprocess
+
+from .utilities import BASE_TEST_URL, start_server
+from .conftest import create_xpi
+
+from automation.DeployBrowsers import configure_firefox
+
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium import webdriver
-import subprocess
-import atexit
+
+# import commonly used modules and utilities so they can be easily accessed
+# in the interactive session
+from automation.Commands.utils import webdriver_extensions as wd_ext  # noqa
+from automation.utilities import domain_utils as du  # noqa
+from selenium.webdriver.common.keys import Keys  # noqa
+from selenium.common.exceptions import *  # noqa
 
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
-FF_BIN_PATH = join(BASE_DIR, 'firefox-bin', 'firefox')
+FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
+FF_BIN = join(FF_BIN_PATH, 'firefox')
+
+
+class Logger():
+    def __init__(self):
+        return
+
+    def info(self, message):
+        print(message)
+
+    def debug(self, message):
+        print(message)
+
+    def error(self, message):
+        print(message)
+
+    def critical(self, message):
+        print(message)
 
 
 class bcolors:
@@ -56,32 +89,36 @@ def start_webdriver(with_extension=False):
     webdriver
         A selenium webdriver instance.
     """
-    fb = FirefoxBinary(FF_BIN_PATH)
+    path = os.environ['PATH']
+    if FF_BIN_PATH not in path:
+        os.environ['PATH'] = FF_BIN_PATH + os.pathsep + path
+
+    fb = FirefoxBinary()
     server, thread = start_server()
 
     def register_cleanup(driver):
         driver.get(BASE_TEST_URL)
 
         def cleanup_server():
-            print "Cleanup before shutdown..."
+            print("Cleanup before shutdown...")
             server.shutdown()
             thread.join()
-            print "...sever shutdown"
+            print("...sever shutdown")
             driver.quit()
-            print "...webdriver closed"
+            print("...webdriver closed")
 
         atexit.register(cleanup_server)
         return driver
 
-    if not with_extension:
-        return register_cleanup(webdriver.Firefox(firefox_binary=fb))
-
-    # add openwpm extension to profile
-    create_xpi()
     fp = webdriver.FirefoxProfile()
-    ext_xpi = join(EXT_PATH, 'openwpm.xpi')
-    fp.add_extension(extension=ext_xpi)
-    fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
+    if with_extension:
+        # add openwpm extension to profile
+        create_xpi()
+        ext_xpi = join(EXT_PATH, 'openwpm.xpi')
+        fp.add_extension(extension=ext_xpi)
+        fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
+
+        configure_firefox.optimize_prefs(fp)
 
     return register_cleanup(
         webdriver.Firefox(firefox_binary=fb, firefox_profile=fp))
@@ -89,20 +126,20 @@ def start_webdriver(with_extension=False):
 
 def start_jpm():
     cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" % (BASE_TEST_URL,
-                                                            FF_BIN_PATH)
+                                                            FF_BIN)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416
         for line in get_command_output(cmd_jpm_run, cwd=EXT_PATH):
-            print colorize(line), bcolors.ENDC,
+            print(colorize(line), bcolors.ENDC, end=' ')
     except KeyboardInterrupt:
-        print "Keyboard Interrupt detected, shutting down..."
-    print "\nClosing server thread..."
+        print("Keyboard Interrupt detected, shutting down...")
+    print("\nClosing server thread...")
     server.shutdown()
     thread.join()
 
 
-if __name__ == '__main__':
+def main():
     import IPython
     import sys
 
@@ -113,12 +150,17 @@ if __name__ == '__main__':
         if len(sys.argv) == 3 and sys.argv[2] == '--no-extension':
             driver = start_webdriver(False)
         else:
-            driver = start_webdriver(True)
-        print "\nDropping into ipython shell...."
-        print "  * Interact with the webdriver instance using `driver`"
-        print "  * The webdriver and test page server will close automatically"
-        print "  * Use `exit` to quit the ipython shell\n"
+            driver = start_webdriver(True)  # noqa
+        print("\nDropping into ipython shell....\n"
+              "  * Interact with the webdriver instance using `driver`\n"
+              "  * The webdriver and server will close automatically\n"
+              "  * Use `exit` to quit the ipython shell\n")
+        logger = Logger()  # noqa
         IPython.embed()
     else:
         print ("Unrecognized arguments. Usage:\n"
                "python manual_test.py ('--selenium')? ('--no-extension')?")
+
+
+if __name__ == '__main__':
+    main()

@@ -1,15 +1,148 @@
+from __future__ import absolute_import
 import hashlib
 import os
 import json
 
-import utilities
-import expected
-from openwpmtest import OpenWPMTest
+from . import utilities
+from . import expected
+from .openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation.utilities.platform_utils import parse_http_stack_trace_str
 from ..automation.utilities import db_utils
 from ..automation import CommandSequence
 from time import sleep
+import six
+from six.moves import range
+
+# Data for test_page_visit
+# format: (request_url,
+#     top_level_url,
+#     is_XHR, is_frame_load, is_full_page, is_tp_content, is_tp_window,
+#     triggering_origin,
+#     loading_origin, content_policy_type)
+expected_http_requests = {
+    (u'http://localtest.me:8000/test_pages/http_test_page.html',
+        None,
+        0, 0, 1, None, None,
+        u'[System Principal]',
+        u'undefined', 6),
+    (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
+        None,
+        0, None, None, None, None,
+        u'http://localtest.me:8000',
+        u'chrome://browser/content/browser.xul', 3),
+    (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
+        None,
+        0, None, None, None, None,
+        u'http://localtest.me:8000',
+        u'undefined', 3),
+    (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html', 3),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html', 2),
+    (u'http://localtest.me:8000/test_pages/shared/test_script.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 2),
+    (u'http://localtest.me:8000/test_pages/shared/test_image.png',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 3),
+    (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 1, 0, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 7),
+    (u'http://localtest.me:8000/test_pages/shared/test_style.css',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 4)
+}
+
+# format: (request_url, referrer, location)
+expected_http_responses = {
+    (u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u'',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
+        u'',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_style.css',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_script.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_image.png',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u''),
+    (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u''),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'')
+}
+
+# Data for test_cache_hits_recorded
+expected_http_cached_requests = {
+    (u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 0, 1, 0, 0,
+        u'[System Principal]',
+        u'undefined', 6),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html', 2),
+    (u'http://localtest.me:8000/test_pages/shared/test_script.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 2),
+    (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 1, 0, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 7),
+    (u'http://localtest.me:8000/test_pages/shared/test_style.css',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, None, None, 0, 0,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html', 4)
+}
+
+# format: (request_url, referrer, is_cached)
+expected_http_cached_responses = {
+    (u'http://localtest.me:8000/test_pages/http_test_page.html',
+        u'',
+        1),
+    (u'http://localtest.me:8000/test_pages/shared/test_style.css',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        1),
+    (u'http://localtest.me:8000/test_pages/shared/test_script.js',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        1),
+    (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        1),
+    (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
+        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        1)
+}
 
 
 class TestHTTPInstrument(OpenWPMTest):
@@ -32,7 +165,7 @@ class TestHTTPInstrument(OpenWPMTest):
         observed_records = set()
         for row in rows:
             observed_records.add(row)
-        assert expected.http_requests == observed_records
+        assert expected_http_requests == observed_records
 
         # HTTP Responses
         rows = db_utils.query_db(db,
@@ -40,7 +173,7 @@ class TestHTTPInstrument(OpenWPMTest):
         observed_records = set()
         for row in rows:
             observed_records.add(row)
-        assert expected.http_responses == observed_records
+        assert expected_http_responses == observed_records
 
     def test_cache_hits_recorded(self):
         """Verify all http responses are recorded, including cached responses
@@ -67,7 +200,7 @@ class TestHTTPInstrument(OpenWPMTest):
         observed_records = set()
         for row in rows:
             observed_records.add(row)
-        assert expected.http_cached_requests == observed_records
+        assert expected_http_cached_requests == observed_records
 
         # HTTP Responses
         rows = db_utils.query_db(db, (
@@ -76,7 +209,7 @@ class TestHTTPInstrument(OpenWPMTest):
         observed_records = set()
         for row in rows:
             observed_records.add(row)
-        assert expected.http_cached_responses == observed_records
+        assert expected_http_cached_responses == observed_records
 
     def test_http_stacktrace(self):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
@@ -114,6 +247,7 @@ class TestHTTPInstrument(OpenWPMTest):
         expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
                            'a6475af1ad58b55cf781ca5e1218c7b1'}
         for chash, content in db_utils.get_javascript_content(str(tmpdir)):
+            chash = chash.decode('ascii')
             pyhash = hashlib.md5(content).hexdigest()
             assert pyhash == chash  # Verify expected key (md5 of content)
             assert chash in expected_hashes
@@ -200,7 +334,8 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "binary"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert str(bytearray(range(100))) == post_body
+        # Binary strings get put into the database as-if they were latin-1.
+        assert six.binary_type(bytearray(range(100))) == post_body.encode('latin-1')
 
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.
@@ -233,10 +368,9 @@ class TestPOSTInstrument(OpenWPMTest):
         manager.close()
 
         post_body = self.get_post_request_body_from_db(manager_params['db'])
-        img_file_content = open(img_file_path).read().strip()
-        # DB strings are unicode and seems to use latin-1 encoding
-        img_file_content = unicode(img_file_content, 'latin-1')
-        css_file_content = open(css_file_path).read().strip()
+        # Binary strings get put into the database as-if they were latin-1.
+        img_file_content = open(img_file_path, 'rb').read().strip().decode('latin-1')
+        css_file_content = open(css_file_path, 'rt').read().strip()
         # POST data is stored as JSON in the DB
         post_body_decoded = json.loads(post_body)
         expected_body = {u"username": u"name surname+",

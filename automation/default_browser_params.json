@@ -1,6 +1,5 @@
 {
     "extension_enabled": true,
-    "disable_webdriver_self_id": true,
     "cookie_instrument": false,
     "js_instrument": false,
     "cp_instrument": false,
@@ -14,14 +13,14 @@
     "profile_archive_dir": null,
     "headless": false,
     "browser": "firefox",
+    "prefs": {},
 
     "tp_cookies": "always",
     "donottrack": false,
+    "disconnect": false,
     "ghostery": false,
     "https-everywhere": false,
     "adblock-plus": false,
-    "tracking-protection": false,
-
-    "proxy": false,
-    "save_javascript_proxy": false
+    "ublock-origin": false,
+    "tracking-protection": false
 }

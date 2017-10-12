@@ -1,27 +1,26 @@
-setuptools
-pyvirtualdisplay
 beautifulsoup4
+dill
+IPython
+mini-amf
+mmh3
+multiprocess
+plyvel
+psutil
+publicsuffix
 pyasn1
 PyOPenSSL
-python-dateutil
-tld
-multiprocess
-dill
-pyamf
-psutil
-plyvel
-tblib
-tabulate
 pytest
-publicsuffix
-# Install specific mitmproxy version since we rely on some internal structure of
-# netlib and mitmproxy. New releases tend to break things and should be tested
-mitmproxy==0.13
-# Install specific version of selenium known to work well with the Firefox install we use
-selenium==2.53.0
-mmh3
-# IPython 6.0+ does not support python 2.7
-IPython>=5.0,<6.0
-# See https://github.com/ActiveState/appdirs/issues/89
-appdirs>=1.4.3
+python-dateutil
+pyvirtualdisplay
+setuptools
+six
+tabulate
+tblib
+tld
+lxml
 cssselect
+
+# Python 3 is not fully supported prior to Selenium 3.x.
+# Geckodriver requires Selenium 3.4+, see:
+# https://github.com/mozilla/geckodriver#selenium
+selenium>=3.4.0

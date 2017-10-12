@@ -640,9 +640,6 @@ function getPageScript() {
     instrumentObject(window.GainNode.prototype, "GainNode");
     instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
 
-    // Access to Battery API
-    instrumentObject(window.BatteryManager.prototype, "BatteryManager");
-
     console.log("Successfully started all instrumentation.");
 
   } + "());";
