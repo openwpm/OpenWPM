@@ -269,7 +269,7 @@ def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
     if suffix != '':
         suffix = '-' + suffix
 
-    urlhash = md5(driver.current_url).hexdigest()
+    urlhash = md5(driver.current_url.encode('utf-8')).hexdigest()
     outname = os.path.join(manager_params['screenshot_path'],
                            '%i-%s%s.png' %
                            (visit_id, urlhash, suffix))
@@ -340,7 +340,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
         os.mkdir(outdir)
     if suffix != '':
         suffix = '-' + suffix
-    urlhash = md5(driver.current_url).hexdigest()
+    urlhash = md5(driver.current_url.encode('utf-8')).hexdigest()
     outname = os.path.join(outdir, '%i-%s%s-part-%%i-%%i.png' %
                            (visit_id, urlhash, suffix))
 
@@ -350,7 +350,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             driver, 'return document.body.scrollHeight;')
         inner_height = execute_script_with_retry(
             driver, 'return window.innerHeight;')
-        curr_scrollY = driver.execute_script_with_retry(
+        curr_scrollY = execute_script_with_retry(
             driver, 'return window.scrollY;')
         prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
@@ -369,7 +369,8 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             # Update control variables
             part += 1
             prev_scrollY = curr_scrollY
-            curr_scrollY = execute_script_with_retry('return window.scrollY;')
+            curr_scrollY = execute_script_with_retry(
+                driver, 'return window.scrollY;')
 
             # Save screenshot
             driver.save_screenshot(outname % (part, curr_scrollY))

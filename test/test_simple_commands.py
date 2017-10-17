@@ -321,18 +321,24 @@ class TestSimpleCommands(OpenWPMTest):
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
         cs.save_screenshot('test')
+        cs.screenshot_full_page('test_full')
         manager.execute_command_sequence(cs)
         manager.close()
 
+        # Check that viewport image is not blank
         pattern = os.path.join(str(tmpdir), 'screenshots', '1-*-test.png')
         screenshot = glob.glob(pattern)[0]
-
-        # Check that image is not blank
         im = Image.open(screenshot)
         bands = im.split()
-
         is_blank = all(band.getextrema() == (255, 255) for band in bands)
+        assert not is_blank
 
+        # Check that full page screenshot is not blank
+        pattern = os.path.join(str(tmpdir), 'screenshots', '1-*-test_full.png')
+        screenshot = glob.glob(pattern)[0]
+        im = Image.open(screenshot)
+        bands = im.split()
+        is_blank = all(band.getextrema() == (255, 255) for band in bands)
         assert not is_blank
 
     def test_dump_page_source_valid(self, tmpdir):
