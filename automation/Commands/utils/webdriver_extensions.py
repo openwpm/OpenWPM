@@ -76,6 +76,18 @@ def get_intra_links(webdriver, url):
     return links
 
 
+def execute_script_with_retry(driver, script):
+    """Execute script, retrying if a WebDriverException is thrown
+
+    See:
+    https://github.com/seleniumhq/selenium-google-code-issue-archive/issues/7931#issuecomment-192191013
+    """
+    try:
+        return driver.execute_script(script)
+    except WebDriverException:
+        return driver.execute_script(script)
+
+
 # ####### Search Helpers ########
 def wait_and_find(driver, locator_type, locator,
                   timeout=3, check_iframes=True):
