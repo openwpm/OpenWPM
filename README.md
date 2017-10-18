@@ -59,11 +59,21 @@ bodies are saved to `javascript.ldb`. The SQLite schema specified by:
 for their measurement data (see
 [extension tables](https://github.com/citp/OpenWPM/tree/master/automation/Extension/firefox/data)).
 
-* HTTP Request and Response Headers, POST request bodies
+* HTTP Request and Response Headers, redirects, and POST request bodies
     * Set `browser_params['http_instrument'] = True`
-    * Data is saved to the `http_requests` and `http_responses` tables.
+    * Data is saved to the `http_requests`, `http_responses`, and
+        `http_redirects`  tables.
         * `http_requests` schema
             [documentation](https://github.com/citp/OpenWPM/wiki/Instrumentation-Schema-Documentation#http-requests)
+        * `channel_id` can be used to link a request saved in the
+            `http_requests` table to its corresponding response in the
+            `http_responses` table.
+        * `channel_id` can also be used to link a request to the subsequent
+            request that results after an HTTP redirect (3XX response). Use the
+            `http_redirects` table, which includes a mapping between
+            `old_channel_id`, the `channel_id` of the HTTP request that
+            resulted in a 3XX response, and `new_channel_id`, the HTTP request
+            that resulted from that redirect.
     * OCSP POST request bodies are not recorded
     * Note: request and response headers for cached content are also saved,
         with the exception of images.
