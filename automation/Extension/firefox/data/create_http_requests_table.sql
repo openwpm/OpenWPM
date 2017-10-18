@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS http_requests(
   method TEXT NOT NULL,
   referrer TEXT NOT NULL,
   headers TEXT NOT NULL,
+  channel_id TEXT NOT NULL,
   is_XHR BOOLEAN,
   is_frame_load BOOLEAN,
   is_full_page BOOLEAN,
