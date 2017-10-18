@@ -67,7 +67,12 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       if (iid.equals(Ci.nsIChannelEventSink)) {
         try {
           oldEventSink = oldNotifications.QueryInterface(iid);
-        } catch(e) {}
+        } catch(anError) {
+          loggingDB.logError(
+              'Error during call to custom notificationCallbacks::getInterface.' +
+              JSON.stringify(anError)
+          );
+        }
         return this;
       }
 
@@ -246,9 +251,23 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       update["is_third_party_channel"] = isThirdPartyChannel;
       update["top_level_url"] = loggingDB.escapeString(topUrl);
     }
-  } catch (e) {
-    //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
-    //TODO probably a cleaner way to handle this
+  } catch (anError) {
+    // Exceptions expected for channels triggered or loading in a
+    // NullPrincipal or SystemPrincipal. They are also expected for favicon
+    // loads, which we attempt to filter. Depending on the naming, some favicons
+    // may continue to lead to error logs.
+    if (update["triggering_origin"] != '[System Principal]' &&
+        update["triggering_origin"] != undefined &&
+        update["loading_origin"] != '[System Principal]' &&
+        update["loading_origin"] != undefined &&
+        !update['url'].endsWith('ico')) {
+
+      loggingDB.logError(
+          'Error while retrieving additional channel information for URL: ' +
+          '\n' + update['url'] +
+          '\n Error text:' + JSON.stringify(anError)
+      );
+    }
   }
 
   loggingDB.executeSQL(loggingDB.createInsert("http_requests", update), true);
