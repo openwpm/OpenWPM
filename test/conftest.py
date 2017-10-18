@@ -7,14 +7,17 @@ import subprocess
 
 from . import utilities
 
+EXTENSION_DIR = os.path.join(
+    os.path.dirname(__file__), '..', 'automation', 'Extension', 'firefox')
+
 
 def create_xpi():
     """Creates a new xpi using jpm."""
     if utilities.which("jpm"):
         subprocess.check_call(["jpm", "xpi"],
-                              cwd="../automation/Extension/firefox/")
+                              cwd=EXTENSION_DIR)
     else:
-        assert os.path.exists("../automation/Extension/firefox/openwpm.xpi")
+        assert os.path.exists(os.path.join(EXTENSION_DIR, 'openwpm.xpi'))
 
 
 @pytest.fixture(scope="session", autouse=True)

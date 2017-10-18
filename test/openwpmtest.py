@@ -62,7 +62,8 @@ class OpenWPMTest(object):
         pkg_name_mapping = {"pyopenssl": "OpenSSL",
                             "beautifulsoup4": "bs4",
                             "python-dateutil": "dateutil",
-                            "mini-amf": "miniamf"
+                            "mini-amf": "miniamf",
+                            "pillow": "PIL"
                             }
         # get the mapped name if it exists.
         pkg_importable = pkg_name_mapping.get(pkg.lower(), pkg)
