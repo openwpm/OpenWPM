@@ -51,10 +51,10 @@ Instrumentation and Data Access
 -------------------------------
 
 OpenWPM provides several instrumentation modules which can be enabled
-independently of each other for each crawl. With the exception of Javascript
+independently of each other for each crawl. With the exception of
 response body content, all instrumentation saves to a SQLite database specified
-by `manager_params['database_name']` in the main output directory. Javascript
-bodies are saved to `javascript.ldb`. The SQLite schema specified by:
+by `manager_params['database_name']` in the main output directory. Response
+bodies are saved to `content.ldb`. The SQLite schema specified by:
 `automation/schema.sql`, instrumentation may specify additional tables necessary
 for their measurement data (see
 [extension tables](https://github.com/citp/OpenWPM/tree/master/automation/Extension/firefox/data)).
@@ -92,14 +92,18 @@ for their measurement data (see
         * Window properties (via `window.screen`)
     * Set `browser_params['js_instrument'] = True`
     * Data is saved to the `javascript` table.
-* Javascript Files
-    * Saves all Javascript files encountered during the crawl to a `LevelDB`
+* Response body content
+    * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
-    * Set `browser_params['save_javascript'] = True`
+    * Set `browser_params['save_all_content'] = True`
     * The `content_hash` column of the `http_responses` table contains the md5
         hash for each script, and can be used to do content lookups in the
         LevelDB content database.
-    * This instrumentation can be easily expanded to other content types.
+    * NOTE: this instrumentation may lead to performance issues when a large
+        number of browsers are in use.
+    * Set `browser_params['save_javascript'] = True` to save only Javascript
+        files. This will lessen the performance impact of this instrumentation
+        when a large number of browsers are used in parallel.
 * Flash Cookies
     * Recorded by scanning the respective Flash directories after each page visit.
     * To enable: call the `CommandSequence::dump_flash_cookies` command after
