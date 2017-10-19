@@ -3,6 +3,8 @@ import sqlite3
 import os
 import plyvel
 
+CONTENT_DB_NAME = 'content.ldb'
+
 
 def query_db(db, query, params=None, as_tuple=False):
     """Run a query against the given db.
@@ -26,9 +28,9 @@ def get_javascript_content(data_directory):
     Parameters
     ----------
     data_directory : string
-        root directory of the crawl files containing `javascript.ldb`
+        root directory of the crawl files containing the content database
     """
-    db_path = os.path.join(data_directory, 'javascript.ldb')
+    db_path = os.path.join(data_directory, CONTENT_DB_NAME)
     db = plyvel.DB(db_path,
                    create_if_missing=False,
                    compression='snappy')

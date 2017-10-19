@@ -1,7 +1,11 @@
 from __future__ import absolute_import
-import hashlib
-import os
+from six.moves.urllib.parse import urlparse
+from six.moves import range
+from hashlib import md5
+from time import sleep
 import json
+import six
+import os
 
 from . import utilities
 from .openwpmtest import OpenWPMTest
@@ -9,9 +13,6 @@ from ..automation import TaskManager
 from ..automation.utilities.platform_utils import parse_http_stack_trace_str
 from ..automation.utilities import db_utils
 from ..automation import CommandSequence
-from time import sleep
-import six
-from six.moves import range
 
 # Data for test_page_visit
 # format: (
@@ -336,6 +337,8 @@ CALL_STACK_INJECT_IMAGE =\
       "col_no": "1",
       "async_cause": "null"}]
 
+BASE_PATH = os.path.dirname(os.path.realpath(__file__))
+
 
 class TestHTTPInstrument(OpenWPMTest):
 
@@ -482,11 +485,41 @@ class TestHTTPInstrument(OpenWPMTest):
                            'a6475af1ad58b55cf781ca5e1218c7b1'}
         for chash, content in db_utils.get_javascript_content(str(tmpdir)):
             chash = chash.decode('ascii')
-            pyhash = hashlib.md5(content).hexdigest()
+            pyhash = md5(content).hexdigest()
             assert pyhash == chash  # Verify expected key (md5 of content)
             assert chash in expected_hashes
             expected_hashes.remove(chash)
         assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+    def test_content_saving(self, tmpdir):
+        """ check that content is saved and hashed correctly """
+        test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
+        manager_params, browser_params = self.get_test_config(str(tmpdir))
+        browser_params[0]['http_instrument'] = True
+        browser_params[0]['save_all_content'] = True
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get(url=test_url, sleep=1)
+        manager.close()
+        db = manager_params['db']
+        rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
+        disk_content = dict()
+        for row in rows:
+            if 'MAGIC_REDIRECT' in row['url'] or '404' in row['url']:
+                continue
+            path = urlparse(row['url']).path
+            with open(os.path.join(BASE_PATH, path[1:]), 'rb') as f:
+                content = f.read().decode('latin-1')
+            chash = md5(content.encode('utf-8')).hexdigest()
+            assert chash == row['content_hash']
+            disk_content[chash] = content
+
+        ldb_content = dict()
+        for chash, content in db_utils.get_javascript_content(str(tmpdir)):
+            chash = chash.decode('ascii')
+            ldb_content[chash] = content.decode('utf-8')
+
+        for k, v in disk_content.items():
+            assert v == ldb_content[k]
 
 
 class TestPOSTInstrument(OpenWPMTest):
