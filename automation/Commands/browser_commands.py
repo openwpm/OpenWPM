@@ -3,18 +3,30 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
-import os
+from hashlib import md5
+from glob import glob
+from PIL import Image
+import traceback
 import random
+import json
 import time
+import sys
+import gzip
+import os
 
 from ..SocketInterface import clientsocket
 from ..MPLogger import loggingclient
 from .utils.lso import get_flash_cookies
 from .utils.firefox_profile import get_cookies
-from .utils.webdriver_extensions import (scroll_down, wait_until_loaded,
-                                         get_intra_links)
+from .utils.webdriver_extensions import (scroll_down,
+                                         wait_until_loaded,
+                                         get_intra_links,
+                                         execute_in_all_frames,
+                                         execute_script_with_retry)
 from six.moves import range
+import six
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -252,17 +264,174 @@ def dump_profile_cookies(start_time, visit_id, webdriver,
     sock.close()
 
 
-def save_screenshot(screenshot_name, webdriver,
-                    browser_params, manager_params):
-    webdriver.save_screenshot(
-        os.path.join(
-            manager_params['screenshot_path'],
-            screenshot_name + '.png'
-        ))
+def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
+    """ Save a screenshot of the current viewport"""
+    if suffix != '':
+        suffix = '-' + suffix
+
+    urlhash = md5(driver.current_url.encode('utf-8')).hexdigest()
+    outname = os.path.join(manager_params['screenshot_path'],
+                           '%i-%s%s.png' %
+                           (visit_id, urlhash, suffix))
+    driver.save_screenshot(outname)
 
 
-def dump_page_source(dump_name, webdriver, browser_params, manager_params):
-    with open(os.path.join(manager_params['source_dump_path'],
-                           dump_name + '.html'), 'wb') as f:
-        f.write(webdriver.page_source.encode('utf8'))
+def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
+    # Read image parts and compute dimensions of output image
+    total_height = -1
+    max_scroll = -1
+    max_width = -1
+    images = dict()
+    parts = list()
+    for f in glob(os.path.join(manager_params['screenshot_path'],
+                               'parts',
+                               '%i*-part-*.png' % visit_id)):
+
+        # Load image from disk and parse params out of filename
+        img_obj = Image.open(f)
+        width, height = img_obj.size
+        parts.append((f, width, height))
+        outname, _, index, curr_scroll = os.path.basename(f).rsplit('-', 3)
+        curr_scroll = int(curr_scroll.split('.')[0])
+        index = int(index)
+
+        # Update output image size
+        if curr_scroll > max_scroll:
+            max_scroll = curr_scroll
+            total_height = max_scroll + height
+
+        if width > max_width:
+            max_width = width
+
+        # Save image parameters
+        img = {}
+        img['object'] = img_obj
+        img['scroll'] = curr_scroll
+        images[index] = img
+
+    # Output filename same for all parts, so we can just use last filename
+    outname = outname + '.png'
+    outname = os.path.join(manager_params['screenshot_path'], outname)
+    output = Image.new('RGB', (max_width, total_height))
+
+    # Compute dimensions for output image
+    for i in range(max(images.keys())+1):
+        img = images[i]
+        output.paste(im=img['object'], box=(0, img['scroll']))
+        img['object'].close()
+    try:
+        output.save(outname)
+    except SystemError:
+        logger.error(
+            "BROWSER %i: SystemError while trying to save screenshot %s. \n"
+            "Slices of image %s \n Final size %s, %s." %
+            (crawl_id, outname, '\n'.join([str(x) for x in parts]),
+             max_width, total_height)
+        )
+        pass
+
+
+def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
+                         suffix=''):
+    logger = loggingclient(*manager_params['logger_address'])
+
+    outdir = os.path.join(manager_params['screenshot_path'], 'parts')
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+    if suffix != '':
+        suffix = '-' + suffix
+    urlhash = md5(driver.current_url.encode('utf-8')).hexdigest()
+    outname = os.path.join(outdir, '%i-%s%s-part-%%i-%%i.png' %
+                           (visit_id, urlhash, suffix))
+
+    try:
+        part = 0
+        max_height = execute_script_with_retry(
+            driver, 'return document.body.scrollHeight;')
+        inner_height = execute_script_with_retry(
+            driver, 'return window.innerHeight;')
+        curr_scrollY = execute_script_with_retry(
+            driver, 'return window.scrollY;')
+        prev_scrollY = -1
+        driver.save_screenshot(outname % (part, curr_scrollY))
+        while ((curr_scrollY + inner_height) < max_height
+               and curr_scrollY != prev_scrollY):
+
+            # Scroll down to bottom of previous viewport
+            try:
+                driver.execute_script('window.scrollBy(0, window.innerHeight)')
+            except WebDriverException:
+                logger.info(
+                    "BROWSER %i: WebDriverException while scrolling, "
+                    "screenshot may be misaligned!" % crawl_id)
+                pass
+
+            # Update control variables
+            part += 1
+            prev_scrollY = curr_scrollY
+            curr_scrollY = execute_script_with_retry(
+                driver, 'return window.scrollY;')
+
+            # Save screenshot
+            driver.save_screenshot(outname % (part, curr_scrollY))
+    except WebDriverException:
+        excp = traceback.format_exception(*sys.exc_info())
+        logger.error(
+            "BROWSER %i: Exception while taking full page screenshot \n %s" %
+            (crawl_id, ''.join(excp)))
+        return
+
+    _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params)
+
+
+def dump_page_source(visit_id, driver, manager_params, suffix=''):
+    if suffix != '':
+        suffix = '-' + suffix
+
+    outname = md5(driver.current_url.encode('utf-8')).hexdigest()
+    outfile = os.path.join(manager_params['source_dump_path'],
+                           '%i-%s%s.html' % (visit_id, outname, suffix))
+
+    with open(outfile, 'wb') as f:
+        f.write(driver.page_source.encode('utf8'))
         f.write(b'\n')
+
+
+def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
+    """Dump a compressed html tree for the current page visit"""
+    if suffix != '':
+        suffix = '-' + suffix
+
+    outname = md5(driver.current_url.encode('utf-8')).hexdigest()
+    outfile = os.path.join(manager_params['source_dump_path'],
+                           '%i-%s%s.json.gz' % (visit_id, outname, suffix))
+
+    def collect_source(driver, frame_stack, rv={}):
+        is_top_frame = len(frame_stack) == 1
+
+        # Gather frame information
+        doc_url = driver.execute_script("return window.document.URL;")
+        if is_top_frame:
+            page_source = rv
+        else:
+            page_source = dict()
+        page_source['doc_url'] = doc_url
+        source = driver.page_source
+        if type(source) != six.text_type:
+            source = six.text_type(source, 'utf-8')
+        page_source['source'] = source
+        page_source['iframes'] = dict()
+
+        # Store frame info in correct area of return value
+        if is_top_frame:
+            return
+        out_dict = rv['iframes']
+        for frame in frame_stack[1:-1]:
+            out_dict = out_dict[frame.id]['iframes']
+        out_dict[frame_stack[-1].id] = page_source
+
+    page_source = dict()
+    execute_in_all_frames(driver, collect_source, {'rv': page_source})
+
+    with gzip.GzipFile(outfile, 'wb') as f:
+        f.write(json.dumps(page_source).encode('utf-8'))

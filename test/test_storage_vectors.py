@@ -6,7 +6,7 @@ from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 expected_lso_content_a = [
-               1, # visit id
+               1,  # visit id
                u'localtest.me',
                u'FlashCookie.sol',
                u'localtest.me/FlashCookie.sol',
@@ -14,7 +14,7 @@ expected_lso_content_a = [
                u'REPLACEME']
 
 expected_lso_content_b = [
-               2, # visit id
+               2,  # visit id
                u'localtest.me',
                u'FlashCookie.sol',
                u'localtest.me/FlashCookie.sol',
@@ -22,7 +22,7 @@ expected_lso_content_b = [
                u'REPLACEME']
 
 expected_js_cookie = (
-             1, # visit id
+             1,  # visit id
              u'%s' % utilities.BASE_TEST_URL_DOMAIN,
              u'test_cookie',
              u'Test-0123456789',
@@ -51,7 +51,7 @@ class TestStorageVectors(OpenWPMTest):
 
         # Get a site we know sets Flash cookies and visit it twice
         lso_value_a = utilities.rand_str(8)
-        expected_lso_content_a[5] = lso_value_a  # we'll expect this to be present
+        expected_lso_content_a[5] = lso_value_a  # expected to be present
         qry_str = '?lso_test_key=%s&lso_test_value=%s' % ("test_key",
                                                           lso_value_a)
         test_url_a = utilities.BASE_TEST_URL + '/lso/setlso.html' + qry_str
@@ -61,7 +61,7 @@ class TestStorageVectors(OpenWPMTest):
         manager.execute_command_sequence(cs)
 
         lso_value_b = utilities.rand_str(8)
-        expected_lso_content_b[5] = lso_value_b  # we'll expect this to be present
+        expected_lso_content_b[5] = lso_value_b  # expected to be present
         qry_str = '?lso_test_key=%s&lso_test_value=%s' % ("test_key",
                                                           lso_value_b)
         test_url_b = utilities.BASE_TEST_URL + '/lso/setlso.html' + qry_str
@@ -74,15 +74,16 @@ class TestStorageVectors(OpenWPMTest):
 
         #  Check that some flash cookies are recorded
         qry_res = db_utils.query_db(manager_params['db'],
-                                     "SELECT * FROM flash_cookies")
+                                    "SELECT * FROM flash_cookies",
+                                    as_tuple=True)
         lso_count = len(qry_res)
         assert lso_count == 2
         lso_content_a = list(qry_res[0][2:])  # Remove first two items
         lso_content_b = list(qry_res[1][2:])  # Remove first two items
         # remove randomly generated LSO directory name
         # e.g. TY2FOJUG/localtest.me/Flash.sol -> localtest.me/Flash.sol
-        lso_content_a[3] = lso_content_a[3].split("/", 1)[-1]  # remove LSO dirname
-        lso_content_b[3] = lso_content_b[3].split("/", 1)[-1]  # remove LSO dirname
+        lso_content_a[3] = lso_content_a[3].split("/", 1)[-1]  # rm LSO dirname
+        lso_content_b[3] = lso_content_b[3].split("/", 1)[-1]  # rm LSO dirname
         assert lso_content_a == expected_lso_content_a
         assert lso_content_b == expected_lso_content_b
 
@@ -101,7 +102,7 @@ class TestStorageVectors(OpenWPMTest):
 
         # Check that some flash cookies are recorded
         qry_res = db_utils.query_db(manager_params['db'],
-                                     "SELECT COUNT(*) FROM profile_cookies")
+                                    "SELECT COUNT(*) FROM profile_cookies")
         prof_cookie_count = qry_res[0][0]
         assert prof_cookie_count > 0
 
@@ -117,7 +118,11 @@ class TestStorageVectors(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
         # Check that the JS cookie we stored is recorded
-        qry_res = db_utils.query_db(manager_params['db'], "SELECT * FROM profile_cookies")
+        qry_res = db_utils.query_db(
+            manager_params['db'],
+            "SELECT * FROM profile_cookies",
+            as_tuple=True
+        )
         assert len(qry_res) == 1  # we store only one cookie
         cookies = qry_res[0]  # take the first cookie
         # compare URL, domain, name, value, origin, path

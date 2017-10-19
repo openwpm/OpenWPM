@@ -47,15 +47,25 @@ def execute_command(command, webdriver, browser_settings, browser_params,
         browser_commands.extract_links(
             webdriver, browser_params, manager_params)
 
-    if command[0] == 'SAVE_SCREENSHOT':
-        browser_commands.save_screenshot(
-            screenshot_name=command[1], webdriver=webdriver,
-            browser_params=browser_params, manager_params=manager_params)
-
     if command[0] == 'DUMP_PAGE_SOURCE':
         browser_commands.dump_page_source(
-            dump_name=command[1], webdriver=webdriver,
-            browser_params=browser_params, manager_params=manager_params)
+            visit_id=command[2], driver=webdriver,
+            manager_params=manager_params, suffix=command[1])
+
+    if command[0] == 'RECURSIVE_DUMP_PAGE_SOURCE':
+        browser_commands.recursive_dump_page_source(
+            visit_id=command[2], driver=webdriver,
+            manager_params=manager_params, suffix=command[1])
+
+    if command[0] == 'SAVE_SCREENSHOT':
+        browser_commands.save_screenshot(
+            visit_id=command[2], crawl_id=browser_params['crawl_id'],
+            driver=webdriver, manager_params=manager_params, suffix=command[1])
+
+    if command[0] == 'SCREENSHOT_FULL_PAGE':
+        browser_commands.screenshot_full_page(
+            visit_id=command[2], crawl_id=browser_params['crawl_id'],
+            driver=webdriver, manager_params=manager_params, suffix=command[1])
 
     if command[0] == 'RUN_CUSTOM_FUNCTION':
         arg_dict = {"command": command,
