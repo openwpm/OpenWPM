@@ -92,6 +92,7 @@ def find_banners_by_selectors(page_url, page_html, banner_list_loc, logger=None)
     domains, selectors = [], []
     if page_url:
         domains = hostname_subparts(page_url)
+        # debug: log_func("subparts of '%s' => %s" % (page_url, domains))
         for domain in domains:
             selectors += banner_list.get(domain, [])
     selectors += banner_list["__global__"]

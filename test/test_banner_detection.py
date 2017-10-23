@@ -46,14 +46,19 @@ class TestBannerDetection(OpenWPMTest):
         n, banners = find_banners_by_selectors('', page_html, self.B_LIST_LOC)
         assert n == 6179 and len(banners) == 0
 
+    def test_banner_empty_raise(self, tmpdir):
+        page_html = open(path.join(self.B_TEST_HTML_LOC, 'empty.html')).read()
+        with pytest.raises(ParserError):
+            find_banners_by_selectors('', page_html, self.B_LIST_LOC)
+
     @pytest.mark.slow
-    def test_banner_simple_none_via_browser(self, tmpdir):
+    def test_banner_empty_via_browser(self, tmpdir):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['banner_list_location'] = self.B_LIST_LOC
         manager = TaskManager(manager_params, browser_params)
-        cs = CommandSequence(BASE_TEST_URL + '/banners/simple.html')
+        cs = CommandSequence(BASE_TEST_URL + '/banners/empty.html')
         cs.get()
-        cs.detect_cookie_banner()
+        cs.detect_cookie_banner()  # should/will not raise
         manager.execute_command_sequence(cs)
         manager.close()
         rows = db_utils.query_db(manager_params['db'], "SELECT * FROM cookie_banners")
@@ -141,34 +146,10 @@ class TestBannerDetection(OpenWPMTest):
         assert n == 6179 and len(banners) > 10
         assert len(count_by_sel) == 2 and min(count_by_sel.values()) == 1
 
-    def test_banner_empty_file(self, tmpdir):
-        page_html = open(path.join(self.B_TEST_HTML_LOC, 'empty.html')).read()
-        with pytest.raises(ParserError):
-            find_banners_by_selectors('', page_html, self.B_LIST_LOC)
-
-    @pytest.mark.slow
-    def test_banner_empty_file_via_browser(self, tmpdir):
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]['banner_list_location'] = self.B_LIST_LOC
-        manager = TaskManager(manager_params, browser_params)
-        cs = CommandSequence(BASE_TEST_URL + '/banners/empty.html')
-        cs.get()
-        cs.detect_cookie_banner()  # should/will not raise
-        manager.execute_command_sequence(cs)
-        manager.close()
-        rows = db_utils.query_db(manager_params['db'], "SELECT * FROM cookie_banners")
-        assert not rows
-
-    def test_banner_kinox(self, tmpdir):
-        page_html = open(path.join(self.B_TEST_HTML_LOC, 'kinox-to.html')).read()
-        n, banners = find_banners_by_selectors('http://kinox.to', page_html, self.B_LIST_LOC)
-        # an invisble input tag?
-        assert len(banners) == 1
-        assert banners[0].tag == 'input' and banners[0].id == 'cookie'
-
     def test_banner_faznet(self, tmpdir):
         page_html = open(path.join(self.B_TEST_HTML_LOC, 'faznet.html')).read()
-        n, bs = find_banners_by_selectors('http://faz.net', page_html, self.B_LIST_LOC)
+        n, banners = find_banners_by_selectors('http://faz.net', page_html, self.B_LIST_LOC)
         # this seems to be some strange anti-ad-blocker mechanism?
-        assert len(bs) == 1
-        assert bs[0].tag == 'div' and bs[0].id == 'cookieContainer' and bs[0].text.strip() == ''
+        assert len(banners) == 1
+        assert banners[0].tag == 'div' and banners[0].id == 'cookieContainer'
+        assert banners[0].text.strip() == ''
