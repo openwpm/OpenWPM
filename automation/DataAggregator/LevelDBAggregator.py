@@ -5,6 +5,8 @@ import plyvel
 import time
 import os
 
+DB_NAME = 'content.ldb'
+
 
 def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     """
@@ -27,7 +29,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     sock.start_accepting()
 
     # sets up DB connection
-    db_path = os.path.join(manager_params['data_directory'], 'javascript.ldb')
+    db_path = os.path.join(manager_params['data_directory'], DB_NAME)
     db = plyvel.DB(db_path,
                    create_if_missing=True,
                    write_buffer_size=128*10**6,

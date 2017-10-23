@@ -7,9 +7,11 @@
   </head>
   <body>
     <p> This test page sources an image, script, and css and favicon resource.
+    It also includes an image which redirects through several paths.
     It also includes an iframe which contains the same image and a different
     script.</p>
-    <img src='shared/test_image.png' />
+    <img alt='test image' src='shared/test_image.png' />
+    <img alt='test image' src='/MAGIC_REDIRECT/req1.png?dst=req2.png&dst=req3.png&dst=/test_pages/shared/test_image_2.png' />
     <script src='shared/test_script.js'></script>
     <iframe src='http_test_page_2.html'></iframe>
   </body>

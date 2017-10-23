@@ -1,5 +1,5 @@
 // TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
-const {Cc, Ci, CC, Cu, components} = require("chrome");
+const {Cc, Ci, CC, Cu, Cr, components} = require("chrome");
 const events      = require("sdk/system/events");
 const data        = require("sdk/self").data;
 var loggingDB     = require("./loggingdb.js");
@@ -13,12 +13,12 @@ var StorageStream = CC('@mozilla.org/storagestream;1',
     'nsIStorageStream', 'init');
 const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
                        Ci.mozIThirdPartyUtil);
-
 var cryptoHash = Cc["@mozilla.org/security/hash;1"]
          .createInstance(Ci.nsICryptoHash);
 var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
          .createInstance(Ci.nsIScriptableUnicodeConverter);
 converter.charset = "UTF-8";
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /*
  * HTTP Request Handler and Helper Functions
@@ -50,6 +50,71 @@ function get_stack_trace_str() {
 var httpRequestHandler = function(reqEvent, crawlID) {
   var httpChannel = reqEvent.subject.QueryInterface(Ci.nsIHttpChannel);
 
+  // Save HTTP redirect events. Requires FF 49+
+  // Events are saved to the `http_redirects` table, and map the old
+  // request/response channel id to the new request/response channel id.
+  // Implementation based on: https://stackoverflow.com/a/11240627
+  var oldNotifications = httpChannel.notificationCallbacks;
+  var oldEventSink = null;
+  httpChannel.notificationCallbacks = {
+    QueryInterface: XPCOMUtils.generateQI([
+        Ci.nsIInterfaceRequestor,
+        Ci.nsIChannelEventSink]),
+
+    getInterface: function(iid) {
+      // We are only interested in nsIChannelEventSink,
+      // return the old callbacks for any other interface requests.
+      if (iid.equals(Ci.nsIChannelEventSink)) {
+        try {
+          oldEventSink = oldNotifications.QueryInterface(iid);
+        } catch(anError) {
+          loggingDB.logError(
+              'Error during call to custom notificationCallbacks::getInterface.' +
+              JSON.stringify(anError)
+          );
+        }
+        return this;
+      }
+
+      if (oldNotifications) {
+        return oldNotifications.getInterface(iid);
+      } else {
+        throw Cr.NS_ERROR_NO_INTERFACE;
+      }
+    },
+
+    asyncOnChannelRedirect: function(oldChannel, newChannel, flags, callback) {
+      var isTemporary = !!(flags & Ci.nsIChannelEventSink.REDIRECT_TEMPORARY);
+      var isPermanent = !!(flags & Ci.nsIChannelEventSink.REDIRECT_PERMANENT);
+      var isInternal = !!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL);
+      var isSTSUpgrade = !!(flags & Ci.nsIChannelEventSink.REDIRECT_STS_UPGRADE);
+
+      newChannel.QueryInterface(Ci.nsIHttpChannel);
+      loggingDB.logDebug(
+          "Redirect from channel " + oldChannel.channelId +
+          " loading URL " + oldChannel.URI.spec +
+          " to channel " + newChannel.channelId +
+          " loading URL " + newChannel.URI.spec);
+
+      loggingDB.executeSQL(loggingDB.createInsert("http_redirects", {
+        'crawl_id': crawlID,
+        'old_channel_id': oldChannel.channelId,
+        'new_channel_id': newChannel.channelId,
+        'is_temporary': isTemporary,
+        'is_permanent': isPermanent,
+        'is_internal': isInternal,
+        'is_sts_upgrade': isSTSUpgrade,
+        'time_stamp': new Date().toISOString()
+      }));
+
+      if (oldEventSink) {
+        oldEventSink.asyncOnChannelRedirect(oldChannel, newChannel, flags, callback);
+      } else {
+        callback.onRedirectVerifyCallback(Cr.NS_OK);
+      }
+    }
+  };
+
   // http_requests table schema:
   // id [auto-filled], crawl_id, url, method, referrer,
   // headers, visit_id [auto-filled], time_stamp
@@ -57,8 +122,9 @@ var httpRequestHandler = function(reqEvent, crawlID) {
 
   update["crawl_id"] = crawlID;
 
-  // Requires FF49+. See Issue #109.
-  //update['channel_id'] = httpChannel.channelId;
+  // ChannelId is a unique identifier that can be used to link requests and
+  // responses. FF 49+
+  update['channel_id'] = httpChannel.channelId;
 
   var stacktrace_str = get_stack_trace_str();
   update["req_call_stack"] = loggingDB.escapeString(stacktrace_str);
@@ -103,7 +169,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       if ("post_headers" in postObj) {
         // Only store POST headers that we know and need. We may misinterpret POST data as headers
         // as detection is based on "key:value" format (non-header POST data can be in this format as well)
-        contentHeaders = ["Content-Type", "Content-Disposition", "Content-Length"];
+        var contentHeaders = ["Content-Type", "Content-Disposition", "Content-Length"];
         for (var name in postObj["post_headers"]) {
           if (contentHeaders.includes(name)){
             var header_pair = [];
@@ -166,6 +232,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
   // contentPolicyType of the requesting node. This is set by the type of
   // node making the request (i.e. an <img src=...> node will set to type 3).
   // For a mapping of integers to types see:
+  // TODO: include the mapping directly
   // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
   update["content_policy_type"] = httpChannel.loadInfo.externalContentPolicyType;
 
@@ -184,10 +251,25 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       update["is_third_party_channel"] = isThirdPartyChannel;
       update["top_level_url"] = loggingDB.escapeString(topUrl);
     }
-  } catch (e) {
-    //Exceptions expected for channels triggered by a NullPrincipal or SystemPrincipal
-    //TODO probably a cleaner way to handle this
+  } catch (anError) {
+    // Exceptions expected for channels triggered or loading in a
+    // NullPrincipal or SystemPrincipal. They are also expected for favicon
+    // loads, which we attempt to filter. Depending on the naming, some favicons
+    // may continue to lead to error logs.
+    if (update["triggering_origin"] != '[System Principal]' &&
+        update["triggering_origin"] != undefined &&
+        update["loading_origin"] != '[System Principal]' &&
+        update["loading_origin"] != undefined &&
+        !update['url'].endsWith('ico')) {
+
+      loggingDB.logError(
+          'Error while retrieving additional channel information for URL: ' +
+          '\n' + update['url'] +
+          '\n Error text:' + JSON.stringify(anError)
+      );
+    }
   }
+
   loggingDB.executeSQL(loggingDB.createInsert("http_requests", update), true);
 };
 
@@ -277,7 +359,8 @@ function logWithResponseBody(respEvent, update) {
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   }).catch(function(aCatch) {
     loggingDB.logError('Unable to retrieve response body.' +
-        'Likely caused by a programming error. Error Message:' + JSON.stringify(aCatch));
+        'Likely caused by a programming error. Error Message:' +
+        aCatch.name + aCatch.message + '\n' + aCatch.stack);
     update["content_hash"] = "<error>";
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
   });
@@ -315,7 +398,8 @@ function isJS(httpChannel) {
 }
 
 // Instrument HTTP responses
-var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript) {
+var httpResponseHandler = function(respEvent, isCached, crawlID,
+                                   saveJavascript, saveAllContent) {
   var httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
 
   // http_responses table schema:
@@ -326,8 +410,9 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
 
   update["crawl_id"] = crawlID;
 
-  // Requires FF49+. See Issue #109.
-  //update['channel_id'] = httpChannel.channelId;
+  // ChannelId is a unique identifier that can be used to link requests and
+  // responses. FF 49+
+  update['channel_id'] = httpChannel.channelId;
 
   update["is_cached"] = isCached;
 
@@ -369,7 +454,9 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
   }});
   update["headers"] = JSON.stringify(headers);
 
-  if (saveJavascript && isJS(httpChannel)) {
+  if (saveAllContent) {
+    logWithResponseBody(respEvent, update);
+  } else if (saveJavascript && isJS(httpChannel)) {
     logWithResponseBody(respEvent, update);
   } else {
     loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
@@ -380,7 +467,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID, saveJavascript)
  * Attach handlers to event monitor
  */
 
-exports.run = function(crawlID, saveJavascript) {
+exports.run = function(crawlID, saveJavascript, saveAllContent) {
   // Create sql tables
   var createHttpRequestTable = data.load("create_http_requests_table.sql");
   loggingDB.executeSQL(createHttpRequestTable, false);
@@ -388,20 +475,23 @@ exports.run = function(crawlID, saveJavascript) {
   var createHttpResponseTable = data.load("create_http_responses_table.sql");
   loggingDB.executeSQL(createHttpResponseTable, false);
 
+  var createHttpRedirectsTable = data.load("create_http_redirects_table.sql");
+  loggingDB.executeSQL(createHttpRedirectsTable, false);
+
   // Monitor http events
   events.on("http-on-modify-request", function(event) {
     httpRequestHandler(event, crawlID);
   }, true);
 
   events.on("http-on-examine-response", function(event) {
-    httpResponseHandler(event, false, crawlID, saveJavascript);
+    httpResponseHandler(event, false, crawlID, saveJavascript, saveAllContent);
   }, true);
 
   events.on("http-on-examine-cached-response", function(event) {
-    httpResponseHandler(event, true, crawlID, saveJavascript);
+    httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
   }, true);
 
   events.on("http-on-examine-merged-response", function(event) {
-    httpResponseHandler(event, true, crawlID, saveJavascript);
+    httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
   }, true);
 };

@@ -320,18 +320,26 @@ class TestSimpleCommands(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
-        cs.save_screenshot('test_screenshot')
+        cs.save_screenshot('test')
+        cs.screenshot_full_page('test_full')
         manager.execute_command_sequence(cs)
         manager.close()
 
-        # Check that image is not blank
-        im = Image.open(
-            os.path.join(str(tmpdir), 'screenshots', 'test_screenshot.png'))
+        # Check that viewport image is not blank
+        pattern = os.path.join(str(tmpdir), 'screenshots', '1-*-test.png')
+        screenshot = glob.glob(pattern)[0]
+        im = Image.open(screenshot)
         bands = im.split()
+        is_blank = all(band.getextrema() == (255, 255) for band in bands)
+        assert not is_blank
 
-        isBlank = all(band.getextrema() == (255, 255) for band in bands)
-
-        assert not isBlank
+        # Check that full page screenshot is not blank
+        pattern = os.path.join(str(tmpdir), 'screenshots', '1-*-test_full.png')
+        screenshot = glob.glob(pattern)[0]
+        im = Image.open(screenshot)
+        bands = im.split()
+        is_blank = all(band.getextrema() == (255, 255) for band in bands)
+        assert not is_blank
 
     def test_dump_page_source_valid(self, tmpdir):
         """Check that 'dump_page_source' works and source is saved properly."""

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS http_responses(
   response_status_text TEXT NOT NULL,
   is_cached BOOLEAN NOT NULL,
   headers TEXT NOT NULL,
+  channel_id TEXT NOT NULL,
   location TEXT NOT NULL,
   time_stamp TEXT NOT NULL,
   content_hash TEXT

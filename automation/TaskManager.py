@@ -123,10 +123,11 @@ class TaskManager:
         self.logger = MPLogger.loggingclient(
             *self.manager_params['logger_address'])
 
-        # Mark if LDBAggregator is needed (if js is enabled on any browser)
+        # Mark if LDBAggregator is needed
+        # (if content saving is enabled on any browser)
         self.ldb_enabled = False
         for params in browser_params:
-            if params['save_javascript']:
+            if params['save_javascript'] or params['save_all_content']:
                 self.ldb_enabled = True
                 break
 
@@ -510,6 +511,8 @@ class TaskManager:
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
             if command[0] in ['GET', 'BROWSE',
+                              'SAVE_SCREENSHOT',
+                              'SCREENSHOT_FULL_PAGE',
                               'DUMP_PAGE_SOURCE',
                               'RECURSIVE_DUMP_PAGE_SOURCE']:
                 start_time = time.time()

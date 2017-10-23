@@ -51,19 +51,29 @@ Instrumentation and Data Access
 -------------------------------
 
 OpenWPM provides several instrumentation modules which can be enabled
-independently of each other for each crawl. With the exception of Javascript
+independently of each other for each crawl. With the exception of
 response body content, all instrumentation saves to a SQLite database specified
-by `manager_params['database_name']` in the main output directory. Javascript
-bodies are saved to `javascript.ldb`. The SQLite schema specified by:
+by `manager_params['database_name']` in the main output directory. Response
+bodies are saved to `content.ldb`. The SQLite schema specified by:
 `automation/schema.sql`, instrumentation may specify additional tables necessary
 for their measurement data (see
 [extension tables](https://github.com/citp/OpenWPM/tree/master/automation/Extension/firefox/data)).
 
-* HTTP Request and Response Headers, POST request bodies
+* HTTP Request and Response Headers, redirects, and POST request bodies
     * Set `browser_params['http_instrument'] = True`
-    * Data is saved to the `http_requests` and `http_responses` tables.
+    * Data is saved to the `http_requests`, `http_responses`, and
+        `http_redirects`  tables.
         * `http_requests` schema
             [documentation](https://github.com/citp/OpenWPM/wiki/Instrumentation-Schema-Documentation#http-requests)
+        * `channel_id` can be used to link a request saved in the
+            `http_requests` table to its corresponding response in the
+            `http_responses` table.
+        * `channel_id` can also be used to link a request to the subsequent
+            request that results after an HTTP redirect (3XX response). Use the
+            `http_redirects` table, which includes a mapping between
+            `old_channel_id`, the `channel_id` of the HTTP request that
+            resulted in a 3XX response, and `new_channel_id`, the HTTP request
+            that resulted from that redirect.
     * OCSP POST request bodies are not recorded
     * Note: request and response headers for cached content are also saved,
         with the exception of images.
@@ -82,14 +92,18 @@ for their measurement data (see
         * Window properties (via `window.screen`)
     * Set `browser_params['js_instrument'] = True`
     * Data is saved to the `javascript` table.
-* Javascript Files
-    * Saves all Javascript files encountered during the crawl to a `LevelDB`
+* Response body content
+    * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
-    * Set `browser_params['save_javascript'] = True`
+    * Set `browser_params['save_all_content'] = True`
     * The `content_hash` column of the `http_responses` table contains the md5
         hash for each script, and can be used to do content lookups in the
         LevelDB content database.
-    * This instrumentation can be easily expanded to other content types.
+    * NOTE: this instrumentation may lead to performance issues when a large
+        number of browsers are in use.
+    * Set `browser_params['save_javascript'] = True` to save only Javascript
+        files. This will lessen the performance impact of this instrumentation
+        when a large number of browsers are used in parallel.
 * Flash Cookies
     * Recorded by scanning the respective Flash directories after each page visit.
     * To enable: call the `CommandSequence::dump_flash_cookies` command after
@@ -148,6 +162,30 @@ for their measurement data (see
             }
         }
         ```
+* Screenshots
+    * Selenium 3 can be used to screenshot an individual element. None of the
+        built-in commands offer this functionality, but you can use it when
+        [writing your own](https://github.com/citp/OpenWPM/wiki/Platform-Demo#adding-a-new-command). See the [Selenium documentation](https://seleniumhq.github.io/selenium/docs/api/py/webdriver_remote/selenium.webdriver.remote.webelement.html?highlight=element#selenium.webdriver.remote.webelement.WebElement.screenshot).
+    * Viewport screenshots (i.e. a screenshot of the portion of the website
+        visible in the browser's window) are available with the
+        `CommandSequence::save_screenshot` command.
+    * Full-page screenshots (i.e. a screenshot of the entire rendered DOM) are
+        available with the `CommandSequence::screenshot_full_page` command.
+        * This functionality is not yet supported by Selenium/geckodriver,
+          though [it is planned](https://github.com/mozilla/geckodriver/issues/570).
+          We produce screenshots by using JS to scroll the page and take a
+          viewport screenshot at each location. This method will save the parts
+          and a stitched version in the `screenshot_path`.
+        * Since the screenshots are stitched they have some limitations:
+            * On the area of the page present when the command is called will
+              be captured. Sites which dynamically expand when scrolled (i.e.,
+              infinite scroll) will only go as far as the original height.
+            * We only scroll vertically, so pages that are wider than the
+              viewport will be clipped.
+            * In geckodriver v0.15 doing any scrolling (or having devtools
+              open) seems to break element-only screenshots. So using this
+              command will cause any future element-only screenshots to be
+              misaligned.
 
 Browser and Platform Configuration
 ----------------------------------

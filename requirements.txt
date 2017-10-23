@@ -17,6 +17,7 @@ six
 tabulate
 tblib
 tld
+pillow
 lxml
 cssselect
 
