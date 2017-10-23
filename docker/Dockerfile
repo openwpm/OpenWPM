@@ -55,7 +55,7 @@ RUN cd /opt/OpenWPM/ \
 #=============================================================
 
 RUN cd /opt/OpenWPM/ \
-    && wget --no-verbose https://ftp.mozilla.org/pub/firefox/releases/52.4.0esr/linux-x86_64/en-US/firefox-52.4.0esr.tar.bz2 \
+    && wget --no-verbose https://ftp.mozilla.org/pub/firefox/releases/52.4.1esr/linux-x86_64/en-US/firefox-52.4.1esr.tar.bz2 \
     && tar jxf firefox*.tar.bz2 \
     && rm -rf firefox-bin \
     && mv firefox firefox-bin \
