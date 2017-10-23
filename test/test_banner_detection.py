@@ -125,7 +125,7 @@ class TestBannerDetection(OpenWPMTest):
         manager = TaskManager(manager_params, browser_params)
         cs = CommandSequence(BASE_TEST_URL + '/banners/youtube.html')
         cs.get()
-        cs.detect_cookie_banner()
+        cs.detect_cookie_banner(timeout=120)  # banner detect can take quite long on YouTube
         manager.execute_command_sequence(cs)
         manager.close()
         db = manager_params['db']
