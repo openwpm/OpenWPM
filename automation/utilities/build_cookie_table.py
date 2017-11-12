@@ -167,9 +167,16 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http request cookies
     commit = 0
     last_commit = 0
-    cur1.execute("SELECT id, crawl_id, headers, time_stamp FROM http_requests_proxy \
-                    WHERE id NOT IN (SELECT header_id FROM http_request_cookies)")
+
+    cur1.execute("""SELECT id, crawl_id, headers, time_stamp
+                    FROM http_requests
+                    WHERE id NOT IN (SELECT header_id FROM
+                    http_request_cookies)""")
+
     row = cur1.fetchone()
+    if row is None:
+        raise Exception("Database error: No HTTP request to process")
+
     while row is not None:
         req_id, crawl_id, header_str, time_stamp = row
         header = ODictCaseless()
@@ -196,9 +203,15 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http response cookies
     commit = 0
     last_commit = 0
-    cur1.execute("SELECT id, crawl_id, url, headers, time_stamp FROM http_responses_proxy \
-                    WHERE id NOT IN (SELECT header_id FROM http_response_cookies)")
+    cur1.execute("""SELECT id, crawl_id, url, headers, time_stamp
+                    FROM http_responses
+                    WHERE id NOT IN (SELECT header_id
+                    FROM http_response_cookies)""")
+
     row = cur1.fetchone()
+    if row is None:
+        raise Exception("Database error: No HTTP response to process")
+
     while row is not None:
         resp_id, crawl_id, req_url, header_str, time_stamp = row
         header = ODictCaseless()
