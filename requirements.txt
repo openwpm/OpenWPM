@@ -22,6 +22,6 @@ lxml
 cssselect
 
 # Python 3 is not fully supported prior to Selenium 3.x.
-# Geckodriver requires Selenium 3.4+, see:
-# https://github.com/mozilla/geckodriver#selenium
-selenium>=3.4.0
+# Geckodriver 0.15.0 requires Selenium 3.4+, and doesn't
+# work with 3.7+.
+selenium>=3.4.0,<3.7.0
