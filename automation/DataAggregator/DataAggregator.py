@@ -24,7 +24,7 @@ def DataAggregator(manager_params, status_queue, commit_batch_size=1000):
 
     # sets up DB connection
     db_path = manager_params['database_name']
-    db = sqlite3.connect(db_path, check_same_thread=False)
+    db = sqlite3.connect(db_path, check_same_thread=False, timeout=60)
     curr = db.cursor()
 
     # sets up logging connection
