@@ -61,7 +61,7 @@ fi
 # For security reasons it is very important to keep up with patch releases
 # of the ESR, but a major version bump needs to be tested carefully.
 # Older ESRs are not supported by geckodriver.
-FIREFOX_VERSION=52.4.1esr
+FIREFOX_VERSION=52.6.0esr
 
 wget https://ftp.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}/linux-$(uname -m)/en-US/firefox-${FIREFOX_VERSION}.tar.bz2
 tar jxf firefox-${FIREFOX_VERSION}.tar.bz2
