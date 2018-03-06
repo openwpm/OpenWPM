@@ -95,7 +95,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         display = Display(visible=0, size=profile_settings['screen_res'])
         display.start()
         display_pid = display.pid
-        display_port = display.cmd_param[5][1:]
+        display_port = display.cmd_param[-1][1:]
     status_queue.put(('STATUS', 'Display', (display_pid, display_port)))
 
     # Write extension configuration
