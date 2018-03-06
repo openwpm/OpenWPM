@@ -246,11 +246,12 @@ class Browser:
                                   "type %s" % (self.crawl_id,
                                                str(self.display_pid)))
         if self.display_port is not None:  # xvfb diplay lock
+            lockfile = "/tmp/.X%s-lock" % self.display_port
             try:
-                os.remove("/tmp/.X"+str(self.display_port)+"-lock")
+                os.remove(lockfile)
             except OSError:
-                self.logger.debug("BROWSER %i: Screen lockfile already "
-                                  "removed" % self.crawl_id)
+                self.logger.debug("BROWSER %i: Screen lockfile (%s) already "
+                                  "removed" % (self.crawl_id, lockfile))
                 pass
         if self.browser_pid is not None:
             """`browser_pid` is the geckodriver process. We first kill
