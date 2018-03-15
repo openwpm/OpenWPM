@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS http_requests(
   triggering_origin TEXT,
   loading_origin TEXT,
   loading_href TEXT,
+  original_url TEXT,
+  is_replace BOOLEAN,
   req_call_stack TEXT,
   content_policy_type INTEGER NOT NULL,
   post_body TEXT,

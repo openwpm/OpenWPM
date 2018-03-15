@@ -198,6 +198,18 @@ var httpRequestHandler = function(reqEvent, crawlID) {
   }
   update["is_XHR"] = isXHR;
 
+  // Check for the replace flag
+  var isReplace;
+  if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_REPLACE) {
+    isReplace = true;
+  } else {
+    isReplace = false;
+  }
+  update["is_replace"] = isReplace;
+
+  var originalURI = httpChannel.originalURI.spec;
+  update["original_url"] = loggingDB.escapeString(originalURI);
+
   // Check if frame OR full page load
   var isFrameLoad;
   var isFullPageLoad;
