@@ -180,10 +180,25 @@ function getPageScript() {
       return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
     }
 
+    /*
+     * Get the URL of the topmost window. This will throw an exception in an
+     * third party iFrame due to security restrictions. When this happens,
+     * the exception is catched and null is returned.
+     */
+    function getTopUrl() {
+      var result = null;
+      try {
+        result = window.top.document.documentURI;
+      } catch (e) {
+        // Nothing
+      }
+      return result;
+    }
+
     function getOriginatingScriptContext(getCallStack=false) {
       var trace = getStackTrace().trim().split('\n');
       // return a context object even if there is an error
-      var empty_context = {scriptUrl: "",scriptLine: "",
+      var empty_context = {scriptUrl: "", scriptLine: "",
                            scriptCol: "", funcName: "",
                            scriptLocEval: "", callStack: "" };
       if (trace.length < 4) {
@@ -269,6 +284,9 @@ function getPageScript() {
         symbol: instrumentedVariableName,
         value: serializeObject(value, !!logSettings.logFunctionsAsStrings),
         scriptUrl: callContext.scriptUrl,
+        documentUri: document.documentURI,
+        topDocumentUri: getTopUrl(),
+        refUrl: document.referrer,
         scriptLine: callContext.scriptLine,
         scriptCol: callContext.scriptCol,
         funcName: callContext.funcName,
@@ -311,6 +329,9 @@ function getPageScript() {
           args: serialArgs,
           value: "",
           scriptUrl: callContext.scriptUrl,
+          documentUri: document.documentURI,
+          topDocumentUri: getTopUrl(),
+          refUrl: document.referrer,
           scriptLine: callContext.scriptLine,
           scriptCol: callContext.scriptCol,
           funcName: callContext.funcName,
