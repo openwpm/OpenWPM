@@ -39,7 +39,7 @@ if [ "$flash" = true ]; then
 fi
 sudo apt-get update
 
-sudo apt-get install -y firefox htop git python-dev libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb libboost-python-dev libleveldb-dev libjpeg-dev
+sudo apt-get install -y firefox htop git python-dev libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb libboost-python-dev libleveldb-dev libjpeg-dev curl wget
 
 # For some versions of ubuntu, the package libleveldb1v5 isn't available. Use libleveldb1 instead.
 sudo apt-get install -y libleveldb1v5 || sudo apt-get install -y libleveldb1
@@ -57,17 +57,19 @@ if [ "$TRAVIS" != "true" ]; then
 	sudo pip install -U -r requirements.txt
 fi
 
-# This is the latest version of Firefox 52ESR as of October 19th, 2017.
+# Grab the latest version of Firefox ESR.
 # For security reasons it is very important to keep up with patch releases
 # of the ESR, but a major version bump needs to be tested carefully.
 # Older ESRs are not supported by geckodriver.
-FIREFOX_VERSION=52.4.1esr
+firefox_version="$(curl 'https://ftp.mozilla.org/pub/firefox/releases/' |
+grep '/pub/firefox/releases/52.' |
+tail -n 1 | sed -e 's/.*releases\///g' | cut -d '/' -f1)"
 
-wget https://ftp.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}/linux-$(uname -m)/en-US/firefox-${FIREFOX_VERSION}.tar.bz2
-tar jxf firefox-${FIREFOX_VERSION}.tar.bz2
+wget https://ftp.mozilla.org/pub/firefox/releases/${firefox_version}/linux-$(uname -m)/en-US/firefox-${firefox_version}.tar.bz2
+tar jxf firefox-${firefox_version}.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
-rm firefox-${FIREFOX_VERSION}.tar.bz2
+rm firefox-${firefox_version}.tar.bz2
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
 # packaged. `geckodriver` 0.16.0+ is not compatible with Firefox 52. See:

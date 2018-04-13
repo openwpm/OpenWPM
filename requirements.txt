@@ -1,6 +1,7 @@
 beautifulsoup4
 dill
-IPython
+IPython>=5.0,<6.0; python_version < '3.0'
+IPython>=5.0; python_version >= '3.0'
 mini-amf
 mmh3
 multiprocess

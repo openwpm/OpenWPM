@@ -3,7 +3,7 @@ OpenWPM [![Build Status](https://travis-ci.org/citp/OpenWPM.svg?branch=master)](
 
 OpenWPM is a web privacy measurement framework which makes it easy to
 collect data for privacy studies on a scale of thousands to millions
-of site. OpenWPM is built on top of Firefox, with automation provided
+of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
