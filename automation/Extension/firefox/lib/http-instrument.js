@@ -246,7 +246,10 @@ var httpRequestHandler = function(reqEvent, crawlID) {
     if (topURI) {
       var topUrl = topURI.spec;
       var channelURI = httpChannel.URI;
-      var isThirdPartyWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI);
+      // When isFullPageLoad is true, then this http request replaces the
+      // existing window. So by definition, the window here is not a third
+      // party window.
+      var isThirdPartyWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI) && (!isFullPageLoad);
       update["is_third_party_window"] = isThirdPartyWindow;
       update["is_third_party_channel"] = isThirdPartyChannel;
       update["top_level_url"] = loggingDB.escapeString(topUrl);
