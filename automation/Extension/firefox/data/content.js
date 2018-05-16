@@ -566,7 +566,7 @@ function getPageScript() {
                                 "geolocation", "language", "languages",
                                 "onLine", "oscpu", "platform", "product",
                                 "productSub", "userAgent", "vendorSub",
-                                "vendor", "getBattery" ];
+                                "vendor" ];
     navigatorProperties.forEach(function(property) {
       instrumentObjectProperty(window.navigator, "window.navigator", property);
     });
