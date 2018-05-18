@@ -423,16 +423,6 @@ class TaskManager:
                     break
                 time.sleep(SLEEP_CONS)
 
-        elif 0 <= index < len(self.browsers):
-            # send the command to this specific browser
-            while True:
-                if self.browsers[index].ready():
-                    self.browsers[
-                        index].current_timeout = command_seq.total_timeout
-                    thread = self._start_thread(
-                        self.browsers[index], command_seq)
-                    break
-                time.sleep(SLEEP_CONS)
         elif index == '*':
             # send the command to all browsers
             command_executed = [False] * len(self.browsers)
@@ -460,6 +450,16 @@ class TaskManager:
                 time.sleep(SLEEP_CONS)
             with condition:
                 condition.notifyAll()  # All browsers loaded, start
+        elif 0 <= index < len(self.browsers):
+            # send the command to this specific browser
+            while True:
+                if self.browsers[index].ready():
+                    self.browsers[
+                        index].current_timeout = command_seq.total_timeout
+                    thread = self._start_thread(
+                        self.browsers[index], command_seq)
+                    break
+                time.sleep(SLEEP_CONS)
         else:
             self.logger.info(
                 "Command index type is not supported or out of range")
