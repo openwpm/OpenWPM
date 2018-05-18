@@ -90,11 +90,6 @@ var httpRequestHandler = function(reqEvent, crawlID) {
       var isSTSUpgrade = !!(flags & Ci.nsIChannelEventSink.REDIRECT_STS_UPGRADE);
 
       newChannel.QueryInterface(Ci.nsIHttpChannel);
-      loggingDB.logDebug(
-          "Redirect from channel " + oldChannel.channelId +
-          " loading URL " + oldChannel.URI.spec +
-          " to channel " + newChannel.channelId +
-          " loading URL " + newChannel.URI.spec);
 
       loggingDB.executeSQL(loggingDB.createInsert("http_redirects", {
         'crawl_id': crawlID,
