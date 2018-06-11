@@ -1,3 +1,6 @@
+# pytest
+.pytest_cache/
+
 # firefox directories
 firefox-bin/
 
