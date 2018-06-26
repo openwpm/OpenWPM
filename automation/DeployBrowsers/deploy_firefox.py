@@ -126,6 +126,9 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.set_preference('plugin.state.flash', 2)
         fo.set_preference('plugins.click_to_play', False)
 
+    # Prevent e10s
+    fo.set_preference("browser.tabs.remote.autostart.2", False)
+
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fp, fo, root_dir,
                               browser_profile_path)

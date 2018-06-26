@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument's instrumentObject method</title>
+  </head>
+  <body>
+    <h3>Test page frame for JS Instrument's instrumentObject method</h3>
+    <script type="text/javascript">
+      function interactWithTestObjects() {
+
+        /*
+         * Interact with object instrumented non-recursively
+         */
+
+        // get and set prop1 (data property 1)
+        console.log("prop1 before set",window.frame2Test.prop1);
+        window.frame2Test.prop1 = 'blah1';
+        console.log("prop1 after set",window.frame2Test.prop1);
+
+        // get and set prop2 (data property 2)
+        console.log("prop2 before set",window.frame2Test.prop2);
+        window.frame2Test.prop2 = 'blah2';
+        console.log("prop2 after set",window.frame2Test.prop2);
+
+        // get and set objProp (data property)
+        console.log("objProp before set",window.frame2Test.objProp);
+        window.frame2Test.objProp = {'key': 'value'};
+        console.log("objProp after set",window.frame2Test.objProp);
+
+        // get and set prop3 (accessor property)
+        console.log("prop3 before set",window.frame2Test.prop3);
+        window.frame2Test.prop3 = 'blah3';
+        console.log("prop3 after set",window.frame2Test.prop3);
+
+        // call object method
+        window.frame2Test.method1('hello', {'world': true});
+
+        // overwrite a method and call
+        window.frame2Test.method1 = function(arg) {console.log("new method1", arg);};
+        window.frame2Test.method1('new argument');
+
+        // overwrite a property with a function and call
+        window.frame2Test.prop1 = function(arg) {console.log("prop now method", arg);};
+        window.frame2Test.prop1('now accepting arugments');
+
+        // overwrite a function with property
+        window.frame2Test.method1 = 'now static';
+        console.log("method turned static",window.frame2Test.method1);
+
+        // get nested object (should be recorded)
+        console.log("nested object",window.frame2Test.nestedObj);
+
+        // interact with nested object (should not be recorded)
+        console.log("nested prop1",window.frame2Test.nestedObj.prop1);
+        console.log("nested prop2",window.frame2Test.nestedObj.prop2);
+        console.log("nested method call",window.frame2Test.nestedObj.method1());
+      }
+
+      // Build test object
+      window.frame2Test = {};
+
+      // create a method
+      window.frame2Test.method1 = function(arg1, arg2) {
+        console.log('method1', arg1, arg2);
+      };
+
+      // create data property
+      window.frame2Test.prop1 = 'prop1';
+
+      // create an object data property
+      window.frame2Test.objProp = {'hello': 'world'};
+
+      // create data property with defineProperty
+      Object.defineProperty(window.frame2Test, 'prop2', {
+        value: 'prop2',
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+
+      // create accessor property
+      var valueHolder = "default-value";
+      Object.defineProperty(window.frame2Test, 'prop3', {
+        get: function() { return valueHolder; },
+        set: function(newValue) { valueHolder = newValue; },
+        enumerable: true,
+        configurable: true
+      });
+
+      // add a nested object property
+      window.frame2Test.nestedObj = {};
+      window.frame2Test.nestedObj.prop1 = 'default1';
+      window.frame2Test.nestedObj.prop2 = 'default2';
+      window.frame2Test.nestedObj.method1 = function() {
+        console.log("nestedObj call 1");
+      }
+      // Instrument object non-recursively
+      console.log("Instrumenting window.frame2Test!");
+      window.instrumentObject(window.frame2Test, "window.frame2Test");
+      interactWithTestObjects();
+    </script>
+  </body>
+</html>

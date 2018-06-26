@@ -18,7 +18,6 @@ exports.run = function(crawlID, testing) {
       'testing': testing
     },
     onAttach: function onAttach(worker) {
-      var url = worker.url;
       function processCallsAndValues(data) {
         var update = {};
         update["crawl_id"] = crawlID;
@@ -32,6 +31,11 @@ exports.run = function(crawlID, testing) {
         update["operation"] = loggingDB.escapeString(data.operation);
         update["value"] = loggingDB.escapeString(data.value);
         update["time_stamp"] = data.timeStamp;
+
+        // document_url is the current frame's document href
+        // top_level_url is the top-level frame's document href
+        update["document_url"] = loggingDB.escapeString(worker.url);
+        update["top_level_url"] = loggingDB.escapeString(worker.tab.url);
 
         // Create a json object for function arguments
         // We create an object that maps array positon to argument
