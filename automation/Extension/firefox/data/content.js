@@ -273,8 +273,7 @@ function getPageScript() {
         scriptCol: callContext.scriptCol,
         funcName: callContext.funcName,
         scriptLocEval: callContext.scriptLocEval,
-        callStack: callContext.callStack,
-        timeStamp: new Date().toISOString()
+        callStack: callContext.callStack
       };
 
       try {
@@ -315,8 +314,7 @@ function getPageScript() {
           scriptCol: callContext.scriptCol,
           funcName: callContext.funcName,
           scriptLocEval: callContext.scriptLocEval,
-          callStack: callContext.callStack,
-          timeStamp: new Date().toISOString()
+          callStack: callContext.callStack
         }
         send('logCall', msg);
       }
@@ -661,6 +659,7 @@ function insertScript(text, data) {
 }
 
 function emitMsg(type, msg) {
+  msg.timeStamp = new Date().toISOString();
   self.port.emit(type, msg);
 }
 
