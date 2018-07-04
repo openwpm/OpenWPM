@@ -29,4 +29,5 @@ install:
 before_script:
   - cd test
 script:
+  - flake8
   - py.test -s -v --durations=10 $TESTS

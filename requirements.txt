@@ -1,10 +1,12 @@
 beautifulsoup4
 dill
+flake8==3.5.0
 IPython>=5.0,<6.0; python_version < '3.0'
 IPython>=5.0; python_version >= '3.0'
 mini-amf
 mmh3
 multiprocess
+pillow
 plyvel
 psutil
 publicsuffix
@@ -18,7 +20,7 @@ six
 tabulate
 tblib
 tld
-pillow
+
 
 # Python 3 is not fully supported prior to Selenium 3.x.
 # Geckodriver 0.15.0 requires Selenium 3.4+, and doesn't
