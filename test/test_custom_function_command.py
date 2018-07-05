@@ -37,7 +37,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
                     element.get_attribute("href")
                     for element in driver.find_elements_by_tag_name('a')
                 )
-                if x.startswith(scheme+'://')
+                if x.startswith(scheme + '://')
             ]
             current_url = driver.current_url
 
