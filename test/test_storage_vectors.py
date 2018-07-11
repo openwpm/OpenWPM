@@ -6,28 +6,28 @@ from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 expected_lso_content_a = [
-               1,  # visit id
-               u'localtest.me',
-               u'FlashCookie.sol',
-               u'localtest.me/FlashCookie.sol',
-               u'test_key',
-               u'REPLACEME']
+    1,  # visit id
+    u'localtest.me',
+    u'FlashCookie.sol',
+    u'localtest.me/FlashCookie.sol',
+    u'test_key',
+    u'REPLACEME']
 
 expected_lso_content_b = [
-               2,  # visit id
-               u'localtest.me',
-               u'FlashCookie.sol',
-               u'localtest.me/FlashCookie.sol',
-               u'test_key',
-               u'REPLACEME']
+    2,  # visit id
+    u'localtest.me',
+    u'FlashCookie.sol',
+    u'localtest.me/FlashCookie.sol',
+    u'test_key',
+    u'REPLACEME']
 
 expected_js_cookie = (
-             1,  # visit id
-             u'%s' % utilities.BASE_TEST_URL_DOMAIN,
-             u'test_cookie',
-             u'Test-0123456789',
-             u'%s' % utilities.BASE_TEST_URL_DOMAIN,
-             u'/')
+    1,  # visit id
+    u'%s' % utilities.BASE_TEST_URL_DOMAIN,
+    u'test_cookie',
+    u'Test-0123456789',
+    u'%s' % utilities.BASE_TEST_URL_DOMAIN,
+    u'/')
 
 
 class TestStorageVectors(OpenWPMTest):

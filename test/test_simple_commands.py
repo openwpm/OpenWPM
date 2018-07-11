@@ -389,7 +389,7 @@ class TestSimpleCommands(OpenWPMTest):
             # Verify source
             path = urlparse(frame['doc_url']).path
             expected_source = ''
-            with open('.'+path, 'r') as f:
+            with open('.' + path, 'r') as f:
                 expected_source = re.sub('\s', '', f.read().lower())
                 if expected_source.startswith('<!doctypehtml>'):
                     expected_source = expected_source[14:]

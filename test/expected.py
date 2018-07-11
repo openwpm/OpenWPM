@@ -1,6 +1,6 @@
 """ Contains lists of expected data and or rows for tests """
 from __future__ import absolute_import
-from .utilities import BASE_TEST_URL, BASE_TEST_URL_DOMAIN, BASE_TEST_URL_NOPATH
+from .utilities import BASE_TEST_URL, BASE_TEST_URL_DOMAIN
 
 # XXX DO NOT PLACE NEW PROPERTIES HERE. Move anything you need to edit out
 # XXX of this file and into the respective test file. See Issue #73.
