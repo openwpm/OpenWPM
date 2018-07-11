@@ -23,5 +23,6 @@
     "https-everywhere": false,
     "adblock-plus": false,
     "ublock-origin": false,
-    "tracking-protection": false
+    "tracking-protection": false,
+    "no-popups": false
 }

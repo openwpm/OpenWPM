@@ -86,6 +86,11 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         shutil.copy(os.path.join(root_dir, 'firefox_extensions',
                                  'ublock_origin', 'storage.js'), ublock_dir)
 
+    if browser_params['no-popups']:
+        # Disable popups
+        fo.set_preference("browser.link.open_newwindow.restriction", 0)
+        fo.set_preference("browser.link.open_newwindow", 1)
+
 
 def optimize_prefs(fo):
     """

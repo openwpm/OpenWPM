@@ -279,6 +279,8 @@ left out of this section.
   * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
+* `no-popups`
+  * Set to `True` to disable popups (or new windows/tabs) by for example clicking on a link that would open in a new window or tab.
 
 Browser Profile Support
 -----------------------
