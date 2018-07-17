@@ -158,7 +158,7 @@ def main():
         logger = Logger()  # noqa
         IPython.embed()
     else:
-        print ("Unrecognized arguments. Usage:\n"
+        print("Unrecognized arguments. Usage:\n"
               "python manual_test.py ('--selenium')? ('--no-extension')?")
 
 
