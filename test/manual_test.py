@@ -159,7 +159,7 @@ def main():
         IPython.embed()
     else:
         print ("Unrecognized arguments. Usage:\n"
-               "python manual_test.py ('--selenium')? ('--no-extension')?")
+              "python manual_test.py ('--selenium')? ('--no-extension')?")
 
 
 if __name__ == '__main__':
