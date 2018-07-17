@@ -24,7 +24,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     logger = loggingclient(*manager_params['logger_address'])
 
     # sets up the serversocket to start accepting connections
-    sock = serversocket()
+    sock = serversocket(name="LevelDBAggregator")
     status_queue.put(sock.sock.getsockname())  # let TM know location
     sock.start_accepting()
 

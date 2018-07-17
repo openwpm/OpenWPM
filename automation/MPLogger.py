@@ -71,7 +71,7 @@ def loggingserver(log_file, status_queue):
             level=logging.INFO)
 
     # Sets up the serversocket to start accepting connections
-    sock = serversocket()
+    sock = serversocket(name="loggingserver")
     status_queue.put(sock.sock.getsockname())  # let TM know location
     sock.start_accepting()
 

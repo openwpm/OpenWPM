@@ -19,11 +19,12 @@ class serversocket:
     A server socket to recieve and process string messages
     from client sockets to a central queue
     """
-    def __init__(self, verbose=False):
+    def __init__(self, name=None, verbose=False):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', 0))
         self.sock.listen(10)  # queue a max of n connect requests
         self.verbose = verbose
+        self.name = name
         self.queue = Queue()
         if self.verbose:
             print("Server bound to: " + str(self.sock.getsockname()))
@@ -32,6 +33,8 @@ class serversocket:
         """ Start the listener thread """
         thread = threading.Thread(target=self._accept, args=())
         thread.daemon = True  # stops from blocking shutdown
+        if self.name is not None:
+            thread.name = thread.name + "-" + self.name
         thread.start()
 
     def _accept(self):
