@@ -430,7 +430,7 @@ Docker Deployment for OpenWPM
 OpenWPM can be run in a Docker container. This is similar to running OpenWPM in
 a virtual machine, only with less overhead.
 
-## Building the Docker Container
+### Building the Docker Container
 
 __Step 1:__ install Docker on your system. Most Linux distributions have Docker
 in their repositories. It can also be installed from
@@ -451,12 +451,12 @@ within the root OpenWPM directory:
 
 After a few minutes, the container is ready to use.
 
-## Running Measurements from inside the Container
+### Running Measurements from inside the Container
 
 You can run the demo measurement from inside the container, as follows:
 
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/
-    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/ \
+    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
     -it openwpm python /opt/OpenWPM/demo.py
 
 This command uses _bind-mounts_ to share scripts and output between the
