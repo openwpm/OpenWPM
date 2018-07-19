@@ -87,7 +87,7 @@ class TestCrawl(OpenWPMTest):
         hist_ps = set()  # visited domains from CrawlHistory Table
         successes = dict()
         rows = db_utils.query_db(crawl_db, "SELECT arguments, bool_success "
-                                  "FROM CrawlHistory WHERE command='GET'")
+                                 "FROM CrawlHistory WHERE command='GET'")
         for url, success in rows:
             ps = psl.get_public_suffix(urlparse(url).hostname)
             hist_ps.add(ps)
@@ -115,22 +115,22 @@ class TestCrawl(OpenWPMTest):
 
             # Get the visit id for the url
             rows = db_utils.query_db(crawl_db,
-                                      "SELECT visit_id FROM site_visits "
-                                      "WHERE site_url = ?",
-                                      ('http://' + url,))
+                                     "SELECT visit_id FROM site_visits "
+                                     "WHERE site_url = ?",
+                                     ('http://' + url,))
             visit_id = rows[0]
 
             rows = db_utils.query_db(crawl_db,
-                                      "SELECT COUNT(*) FROM http_responses "
-                                      "WHERE visit_id = ?",
-                                      (visit_id,))
+                                     "SELECT COUNT(*) FROM http_responses "
+                                     "WHERE visit_id = ?",
+                                     (visit_id,))
             if rows[0] > 1:
                 continue
 
             rows = db_utils.query_db(crawl_db,
-                                      "SELECT response_status, location FROM "
-                                      "http_responses WHERE visit_id = ?",
-                                      (visit_id,))
+                                     "SELECT response_status, location FROM "
+                                     "http_responses WHERE visit_id = ?",
+                                     (visit_id,))
             response_status, location = rows[0]
             if response_status == 204:
                 continue

@@ -252,8 +252,8 @@ class TestExtension(OpenWPMTest):
         assert WEBRTC_CALLS == observed_rows
 
     @pytest.mark.skipif(
-       "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-       reason='Flaky on Travis CI')
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason='Flaky on Travis CI')
     def test_audio_fingerprinting(self):
         db = self.visit('/audio_fingerprinting.html')
         # Check that all calls and methods are recorded
