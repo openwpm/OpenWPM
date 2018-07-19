@@ -1,6 +1,6 @@
 #=============================================================
 # Dockerfile for OpenWPM
-# See docker/README.md for build & use instructions
+# See README.md for build & use instructions
 #=============================================================
 
 FROM ubuntu:18.04
