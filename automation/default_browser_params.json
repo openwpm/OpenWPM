@@ -2,7 +2,6 @@
     "extension_enabled": true,
     "cookie_instrument": false,
     "js_instrument": false,
-    "cp_instrument": false,
     "http_instrument": false,
     "save_javascript": false,
     "save_all_content": false,
