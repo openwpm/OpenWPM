@@ -117,13 +117,6 @@ for their measurement data (see
     * Set `browser_params['cookie_instrument'] = True`
     * Data is saved to the `javascript_cookies` table.
     * Will record cookies set both by Javascript and via HTTP Responses
-* Content Policy Calls (*Experimental* -- Needs tests)
-    * Set `browser_params['cp_instrument'] = True`
-    * Data is saved to the `content_policy` table.
-    * Provides additional information about what caused a request and what it's for
-    * NOTE: This instrumentation is largely unchanged since it was ported from
-        [FourthParty](https://github.com/fourthparty/fourthparty), and is not
-        linked to any other instrumentation tables.
 * Cookie Access (Alternate)
     * Recorded by scanning the `cookies.sqlite` database in the Firefox profile
         directory.

@@ -1,7 +1,6 @@
 var pageMod = require("sdk/page-mod");
 const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
-var pageManager = require("./page-manager.js");
 
 exports.run = function(crawlID, testing) {
 
