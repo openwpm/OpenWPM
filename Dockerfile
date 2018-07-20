@@ -18,7 +18,7 @@ RUN apt-get -qqy install sudo
 RUN sudo mkdir /opt/OpenWPM/
 
 ADD automation /opt/OpenWPM/automation/
-ADD requirements.txt /opt/OpenWPM/
+ADD pipenv.txt requirements.txt /opt/OpenWPM/
 ADD VERSION /opt/OpenWPM/
 ADD install.sh /opt/OpenWPM/
 ADD demo.py /opt/OpenWPM/
@@ -42,3 +42,5 @@ RUN sudo chown -R user:user /opt/OpenWPM/
 
 RUN cd /opt/OpenWPM/ \
      && ./install.sh --no-flash
+
+COPY . /opt/OpenWPM/
