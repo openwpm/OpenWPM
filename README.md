@@ -424,6 +424,63 @@ Troubleshooting
     an overtaxed system, either memory or CPU usage. Try lowering the number of
     concurrent browsers.
 
+Docker Deployment for OpenWPM
+-----------------------------
+
+OpenWPM can be run in a Docker container. This is similar to running OpenWPM in
+a virtual machine, only with less overhead.
+
+### Building the Docker Container
+
+__Step 1:__ install Docker on your system. Most Linux distributions have Docker
+in their repositories. It can also be installed from
+[docker.com](https://www.docker.com/). For Ubuntu you can use:
+`sudo apt-get install docker.io`
+
+You can test the installation with: `sudo docker run hello-world`
+
+_Note,_ in order to run Docker without root privileges, add your user to the
+`docker` group (`sudo usermod -a -G docker $USER`). You will have to
+logout-login for the change to take effect, and possibly also restart the
+Docker service.
+
+__Step 2:__ to build the image, run the following command from a terminal
+within the root OpenWPM directory:
+
+    docker build -f Dockerfile -t openwpm .
+
+After a few minutes, the container is ready to use.
+
+### Running Measurements from inside the Container
+
+You can run the demo measurement from inside the container, as follows:
+
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/ \
+    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -it openwpm python /opt/OpenWPM/demo.py
+
+This command uses _bind-mounts_ to share scripts and output between the
+container and host, as explained below (note the paths in the command assume
+it's being run from the root OpenWPM directory):
+
+- `run` starts the `openwpm` container and executes the
+    `python /opt/OpenWPM/demo.py` command.
+
+- `-v` binds a directory on the host (`$PWD/docker-volume`) to a
+    directory in the container (`/home/user`). Binding allows the script's
+    output to be saved on the host (`./docker-volume/Desktop`), and also allows
+    you to pass inputs to the docker container (if necessary). We first create
+    the `docker-volume` direction (if it doesn't exist), as docker will
+    otherwise create it with root permissions.
+
+- The `-it` option states the command is to be run interactively (use
+    `-d` for detached mode).
+
+- The demo scripts runs instances of Firefox that are not headless. As such,
+    this command requires a connection to the host display server. If you are
+    running headless crawls you can remove the following options:
+    `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
+
 
 Disclaimer
 -----------

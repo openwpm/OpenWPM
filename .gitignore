@@ -1,3 +1,6 @@
+# Docker volume
+docker-volume/
+
 # pytest
 .pytest_cache/
 
