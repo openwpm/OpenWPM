@@ -1,7 +1,7 @@
 from __future__ import absolute_import
+
 from . import utilities
-from ..automation import CommandSequence
-from ..automation import TaskManager
+from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 

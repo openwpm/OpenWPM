@@ -1,15 +1,16 @@
 from __future__ import absolute_import
-from PIL import Image
 from six.moves.urllib.parse import urlparse
+
 import glob
 import gzip
 import json
 import os
 import re
 
+from PIL import Image
+
 from . import utilities
-from ..automation import CommandSequence
-from ..automation import TaskManager
+from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 

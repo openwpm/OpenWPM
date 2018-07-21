@@ -1,14 +1,14 @@
 from __future__ import absolute_import
-
-import os
-import pytest
-import tarfile
 from six.moves.urllib.parse import urlparse
 
-from ..automation import TaskManager
-from ..automation.utilities import domain_utils, db_utils
-from .openwpmtest import OpenWPMTest
+import os
+import tarfile
 
+import pytest
+
+from ..automation import TaskManager
+from ..automation.utilities import db_utils, domain_utils
+from .openwpmtest import OpenWPMTest
 
 TEST_SITES = [
     'http://google.com',

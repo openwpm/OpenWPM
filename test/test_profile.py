@@ -1,12 +1,16 @@
 from __future__ import absolute_import
+
+from os.path import isfile, join
+
 import pytest
-from os.path import join, isfile
+
 from ..automation import TaskManager
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
 from .openwpmtest import OpenWPMTest
 
-
 # TODO update these tests to make use of blocking commands
+
+
 class TestProfile(OpenWPMTest):
 
     def get_config(self, data_dir=""):
