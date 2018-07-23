@@ -554,7 +554,7 @@ class TaskManager:
                     "browser manager" % (browser.crawl_id, command[0]))
 
             self.sock.send(
-                ("INSERT INTO CrawlHistory "
+                ("INSERT INTO crawl_history "
                  "(crawl_id, command, arguments, bool_success) "
                  "VALUES (?,?,?,?)",
                  (browser.crawl_id, command[0],
