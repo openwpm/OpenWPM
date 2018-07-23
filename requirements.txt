@@ -13,6 +13,7 @@ publicsuffix
 pyasn1
 PyOPenSSL
 pytest
+pytest-xdist
 python-dateutil
 pyvirtualdisplay
 setuptools
