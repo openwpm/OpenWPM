@@ -84,10 +84,10 @@ class TestCrawl(OpenWPMTest):
         for url, in rows:
             req_ps.add(psl.get_public_suffix(urlparse(url).hostname))
 
-        hist_ps = set()  # visited domains from CrawlHistory Table
+        hist_ps = set()  # visited domains from crawl_history Table
         successes = dict()
         rows = db_utils.query_db(crawl_db, "SELECT arguments, bool_success "
-                                 "FROM CrawlHistory WHERE command='GET'")
+                                 "FROM crawl_history WHERE command='GET'")
         for url, success in rows:
             ps = psl.get_public_suffix(urlparse(url).hostname)
             hist_ps.add(ps)

@@ -78,11 +78,10 @@ CREATE TABLE IF NOT EXISTS localStorage (
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
 /* Crawl History table */
-CREATE TABLE IF NOT EXISTS CrawlHistory (
+CREATE TABLE IF NOT EXISTS crawl_history (
     crawl_id INTEGER,
     command TEXT,
     arguments TEXT,
     bool_success INTEGER,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
-
