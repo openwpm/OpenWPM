@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS http_requests(
   is_frame_load BOOLEAN,
   is_full_page BOOLEAN,
   is_third_party_channel BOOLEAN,
-  is_third_party_window BOOLEAN,
+  is_third_party_to_top_window BOOLEAN,
   triggering_origin TEXT,
   loading_origin TEXT,
   loading_href TEXT,
