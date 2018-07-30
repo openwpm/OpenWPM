@@ -4,10 +4,6 @@ var loggingDB = require("./loggingdb.js");
 
 exports.run = function(crawlID, testing) {
 
-  // Set up tables
-  var createJavascriptTable = data.load("create_javascript_table.sql");
-  loggingDB.executeSQL(createJavascriptTable, false);
-
   // Inject content script to instrument JavaScript API
   pageMod.PageMod({
     include: "*",
@@ -49,7 +45,7 @@ exports.run = function(crawlID, testing) {
           update["arguments"] = loggingDB.escapeString(JSON.stringify(args));
         }
 
-        loggingDB.executeSQL(loggingDB.createInsert("javascript", update), true);
+        loggingDB.saveRecord("javascript", update);
       }
       worker.port.on("logCall", function(data){processCallsAndValues(data)});
       worker.port.on("logValue", function(data){processCallsAndValues(data)});

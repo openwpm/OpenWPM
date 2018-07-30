@@ -3,8 +3,6 @@
  * IF NOT EXISTS, otherwise there will be errors
  */
 
-/* Crawler Tables */
-
 CREATE TABLE IF NOT EXISTS task (
     task_id INTEGER PRIMARY KEY AUTOINCREMENT,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -13,12 +11,9 @@ CREATE TABLE IF NOT EXISTS task (
     browser_version TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS crawl (
-    crawl_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER PRIMARY KEY,
     task_id INTEGER NOT NULL,
     browser_params TEXT NOT NULL,
-    screen_res TEXT,
-    ua_string TEXT,
-    finished BOOLEAN NOT NULL DEFAULT 0,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(task_id) REFERENCES task(task_id));
 
@@ -36,8 +31,6 @@ CREATE TABLE IF NOT EXISTS site_visits (
     crawl_id INTEGER NOT NULL,
     site_url VARCHAR(500) NOT NULL,
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
-
-/* Firefox Storage Vector Dumps */
 
 CREATE TABLE IF NOT EXISTS flash_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +54,7 @@ CREATE TABLE IF NOT EXISTS profile_cookies (
     host TEXT,
     path TEXT,
     expiry INTEGER,
-    accessed INTEGER,
+    lastAccessed INTEGER,
     creationTime INTEGER,
     isSecure INTEGER,
     isHttpOnly INTEGER,
@@ -85,3 +78,98 @@ CREATE TABLE IF NOT EXISTS crawl_history (
     bool_success INTEGER,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+
+CREATE TABLE IF NOT EXISTS http_requests(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
+    visit_id INTEGER NOT NULL,
+    url TEXT NOT NULL,
+    top_level_url TEXT,
+    method TEXT NOT NULL,
+    referrer TEXT NOT NULL,
+    headers TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    is_XHR BOOLEAN,
+    is_frame_load BOOLEAN,
+    is_full_page BOOLEAN,
+    is_third_party_channel BOOLEAN,
+    is_third_party_to_top_window BOOLEAN,
+    triggering_origin TEXT,
+    loading_origin TEXT,
+    loading_href TEXT,
+    req_call_stack TEXT,
+    content_policy_type INTEGER NOT NULL,
+    post_body TEXT,
+    time_stamp TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS http_responses(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
+    visit_id INTEGER NOT NULL,
+    url TEXT NOT NULL,
+    method TEXT NOT NULL,
+    referrer TEXT NOT NULL,
+    response_status INTEGER NOT NULL,
+    response_status_text TEXT NOT NULL,
+    is_cached BOOLEAN NOT NULL,
+    headers TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    location TEXT NOT NULL,
+    time_stamp TEXT NOT NULL,
+    content_hash TEXT
+);
+
+CREATE TABLE IF NOT EXISTS http_redirects(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crawl_id INTEGER NOT NULL,
+    visit_id INTEGER NOT NULL,
+    old_channel_id TEXT,
+    new_channel_id TEXT,
+    is_temporary BOOLEAN NOT NULL,
+    is_permanent BOOLEAN NOT NULL,
+    is_internal BOOLEAN NOT NULL,
+    is_sts_upgrade BOOLEAN NOT NULL,
+    time_stamp TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS javascript(
+    id INTEGER PRIMARY KEY,
+    crawl_id INTEGER,
+    visit_id INTEGER,
+    script_url TEXT,
+    script_line TEXT,
+    script_col TEXT,
+    func_name TEXT,
+    script_loc_eval TEXT,
+    document_url TEXT,
+    top_level_url TEXT,
+    call_stack TEXT,
+    symbol TEXT,
+    operation TEXT,
+    value TEXT,
+    arguments TEXT,
+    time_stamp TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS javascript_cookies(
+    id INTEGER PRIMARY KEY ASC,
+    crawl_id INTEGER,
+    visit_id INTEGER,
+    change TEXT,
+    creationTime DATETIME,
+    expiry DATETIME,
+    is_http_only INTEGER,
+    is_session INTEGER,
+    last_accessed DATETIME,
+    raw_host TEXT,
+    expires INTEGER,
+    host TEXT,
+    is_domain INTEGER,
+    is_secure INTEGER,
+    name TEXT,
+    path TEXT,
+    policy INTEGER,
+    status INTEGER,
+    value TEXT
+);

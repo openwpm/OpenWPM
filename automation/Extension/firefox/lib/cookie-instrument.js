@@ -4,11 +4,6 @@ const data = require("sdk/self").data;
 var loggingDB = require("./loggingdb.js");
 
 exports.run = function(crawlID) {
-
-    // Set up logging
-    var createCookiesTable = data.load("create_cookies_table.sql");
-    loggingDB.executeSQL(createCookiesTable, false);
-
     // Instrument cookie changes
     events.on("cookie-changed", function(event) {
         var data = event.data;
@@ -55,7 +50,7 @@ exports.run = function(crawlID) {
             update["status"] = cookie.status;
             update["value"] = loggingDB.escapeString(cookie.value);
 
-            loggingDB.executeSQL(loggingDB.createInsert("javascript_cookies", update), true);
+            loggingDB.saveRecord("javascript_cookies", update);
         }
     }, true);
 

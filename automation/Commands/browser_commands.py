@@ -143,32 +143,6 @@ def get_website(url, sleep, visit_id, webdriver,
         bot_mitigation(webdriver)
 
 
-def extract_links(webdriver, browser_params, manager_params):
-    link_elements = webdriver.find_elements_by_tag_name('a')
-    link_urls = set(element.get_attribute("href") for element in link_elements)
-
-    sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
-    create_table_query = ("""
-    CREATE TABLE IF NOT EXISTS links_found (
-      found_on TEXT,
-      location TEXT
-    )
-    """, ())
-    sock.send(create_table_query)
-
-    if len(link_urls) > 0:
-        current_url = webdriver.current_url
-        insert_query_string = """
-        INSERT INTO links_found (found_on, location)
-        VALUES (?, ?)
-        """
-        for link in link_urls:
-            sock.send((insert_query_string, (current_url, link)))
-
-    sock.close()
-
-
 def browse_website(url, num_links, sleep, visit_id, webdriver,
                    browser_params, manager_params, extension_socket):
     """Calls get_website before visiting <num_links> present on the page.
@@ -221,12 +195,10 @@ def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
     # Flash cookies
     flash_cookies = get_flash_cookies(start_time)
     for cookie in flash_cookies:
-        query = ("INSERT INTO flash_cookies (crawl_id, visit_id, domain, "
-                 "filename, local_path, key, content) VALUES (?,?,?,?,?,?,?)",
-                 (browser_params['crawl_id'], visit_id, cookie.domain,
-                  cookie.filename, cookie.local_path, cookie.key,
-                  cookie.content))
-        sock.send(query)
+        data = cookie._asdict()
+        data["crawl_id"] = browser_params["crawl_id"]
+        data["visit_id"] = visit_id
+        sock.send(("flash_cookies", data))
 
     # Close connection to db
     sock.close()
@@ -253,12 +225,10 @@ def dump_profile_cookies(start_time, visit_id, webdriver,
     rows = get_cookies(browser_params['profile_path'], start_time)
     if rows is not None:
         for row in rows:
-            query = ("INSERT INTO profile_cookies (crawl_id, visit_id, "
-                     "baseDomain, name, value, host, path, expiry, accessed, "
-                     "creationTime, isSecure, isHttpOnly) VALUES "
-                     "(?,?,?,?,?,?,?,?,?,?,?,?)", (browser_params['crawl_id'],
-                                                   visit_id) + row)
-            sock.send(query)
+            data = dict(row)
+            data["crawl_id"] = browser_params['crawl_id']
+            data["visit_id"] = visit_id
+            sock.send(("profile_cookies", data))
 
     # Close connection to db
     sock.close()

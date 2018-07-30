@@ -91,7 +91,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
 
       newChannel.QueryInterface(Ci.nsIHttpChannel);
 
-      loggingDB.executeSQL(loggingDB.createInsert("http_redirects", {
+      loggingDB.saveRecord("http_redirects", {
         'crawl_id': crawlID,
         'old_channel_id': oldChannel.channelId,
         'new_channel_id': newChannel.channelId,
@@ -100,7 +100,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
         'is_internal': isInternal,
         'is_sts_upgrade': isSTSUpgrade,
         'time_stamp': new Date().toISOString()
-      }));
+      });
 
       if (oldEventSink) {
         oldEventSink.asyncOnChannelRedirect(oldChannel, newChannel, flags, callback);
@@ -265,7 +265,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
     }
   }
 
-  loggingDB.executeSQL(loggingDB.createInsert("http_requests", update), true);
+  loggingDB.saveRecord("http_requests", update);
 };
 
 /*
@@ -347,17 +347,17 @@ function logWithResponseBody(respEvent, update) {
     update["content_hash"] = contentHash;
     loggingDB.saveContent(loggingDB.escapeString(respBody),
                           loggingDB.escapeString(contentHash));
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
+    loggingDB.saveRecord("http_responses", update);
   }, function(aReason) {
     loggingDB.logError("Unable to retrieve response body." + JSON.stringify(aReason));
     update["content_hash"] = "<error>";
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
+    loggingDB.saveRecord("http_responses", update);
   }).catch(function(aCatch) {
     loggingDB.logError('Unable to retrieve response body.' +
         'Likely caused by a programming error. Error Message:' +
         aCatch.name + aCatch.message + '\n' + aCatch.stack);
     update["content_hash"] = "<error>";
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
+    loggingDB.saveRecord("http_responses", update);
   });
 }
 
@@ -454,7 +454,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID,
   } else if (saveJavascript && isJS(httpChannel)) {
     logWithResponseBody(respEvent, update);
   } else {
-    loggingDB.executeSQL(loggingDB.createInsert("http_responses", update), true);
+    loggingDB.saveRecord("http_responses", update);
   }
 };
 
@@ -463,16 +463,6 @@ var httpResponseHandler = function(respEvent, isCached, crawlID,
  */
 
 exports.run = function(crawlID, saveJavascript, saveAllContent) {
-  // Create sql tables
-  var createHttpRequestTable = data.load("create_http_requests_table.sql");
-  loggingDB.executeSQL(createHttpRequestTable, false);
-
-  var createHttpResponseTable = data.load("create_http_responses_table.sql");
-  loggingDB.executeSQL(createHttpResponseTable, false);
-
-  var createHttpRedirectsTable = data.load("create_http_redirects_table.sql");
-  loggingDB.executeSQL(createHttpRedirectsTable, false);
-
   // Monitor http events
   events.on("http-on-modify-request", function(event) {
     httpRequestHandler(event, crawlID);

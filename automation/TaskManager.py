@@ -10,7 +10,6 @@ from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
 from six.moves import range
 from six import reraise
-import sqlite3
 import threading
 import time
 
@@ -18,9 +17,9 @@ from tblib import pickling_support
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
-from .DataAggregator import DataAggregator, LevelDBAggregator
-from .Errors import CommandExecutionError
 from .SocketInterface import clientsocket
+from .DataAggregator import SqliteAggregator, LevelDBAggregator
+from .Errors import CommandExecutionError
 from .utilities.platform_utils import get_version, get_configuration_string
 pickling_support.install()
 
@@ -80,6 +79,7 @@ class TaskManager:
         manager_params['source_dump_path'] = os.path.join(
             manager_params['data_directory'], 'sources')
         self.manager_params = manager_params
+        self.browser_params = browser_params
 
         # Create data directories if they do not exist
         if not os.path.exists(manager_params['screenshot_path']):
@@ -105,16 +105,6 @@ class TaskManager:
 
         self.process_watchdog = process_watchdog
 
-        # sets up the crawl data database
-        db_path = manager_params['database_name']
-        if not os.path.exists(manager_params['data_directory']):
-            os.mkdir(manager_params['data_directory'])
-        self.db = sqlite3.connect(db_path)
-        with open(os.path.join(os.path.dirname(__file__),
-                               'schema.sql'), 'r') as f:
-            self.db.executescript(f.read())
-        self.db.commit()
-
         # sets up logging server + connect a client
         self.logging_status_queue = None
         self.loggingserver = self._launch_loggingserver()
@@ -134,20 +124,6 @@ class TaskManager:
         # Initialize the data aggregators
         self._launch_aggregators()
 
-        # open client socket
-        self.sock = clientsocket(serialization='dill')
-        self.sock.connect(*self.manager_params['aggregator_address'])
-
-        self._save_configuration(browser_params)
-
-        # read the last used site visit id
-        cur = self.db.cursor()
-        cur.execute("SELECT MAX(visit_id) from site_visits")
-        last_visit_id = cur.fetchone()[0]
-        if last_visit_id is None:
-            last_visit_id = 0
-        self.next_visit_id = last_visit_id + 1
-
         # sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)
         self._launch_browsers()
@@ -157,38 +133,21 @@ class TaskManager:
         thread.daemon = True
         thread.start()
 
-    def _save_configuration(self, browser_params):
-        """ Saves crawl configuration details to db and logfile"""
-        cur = self.db.cursor()
-
-        # Get git version and commit information
+        # Save crawl config information to database
         openwpm_v, browser_v = get_version()
-
-        # Record task details
-        cur.execute(("INSERT INTO task "
-                     "(manager_params, openwpm_version, browser_version) "
-                     "VALUES (?,?,?)"),
-                    (json.dumps(self.manager_params), openwpm_v, browser_v))
-        self.db.commit()
-        self.task_id = cur.lastrowid
-
-        # Record browser details for each brower
-        for i in range(self.num_browsers):
-            cur.execute("INSERT INTO crawl (task_id, browser_params) "
-                        "VALUES (?,?)",
-                        (self.task_id, json.dumps(browser_params[i])))
-            self.db.commit()
-            browser_params[i]['crawl_id'] = cur.lastrowid
-
-        # Print the configuration details
-        self.logger.info(get_configuration_string(self.manager_params,
-                                                  browser_params,
-                                                  (openwpm_v, browser_v)))
+        self.data_aggregator.save_configuration(openwpm_v, browser_v)
+        self.logger.info(
+            get_configuration_string(
+                self.manager_params, browser_params, (openwpm_v, browser_v)
+            )
+        )
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
+            browser_params[i][
+                'crawl_id'] = self.data_aggregator.get_next_crawl_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -198,7 +157,7 @@ class TaskManager:
         for browser in self.browsers:
             try:
                 success = browser.launch_browser_manager()
-            except:
+            except Exception:
                 self._cleanup_before_fail(during_init=True)
                 raise
 
@@ -207,14 +166,6 @@ class TaskManager:
                                      "TaskManager initialization, exiting...")
                 self.close()
                 break
-
-            # Update our DB with the random browser settings
-            # These are properties of each Browser in the browsers list
-            screen_res = str(browser.browser_settings['screen_res'])
-            ua_string = str(browser.browser_settings['ua_string'])
-            self.sock.send(("UPDATE crawl SET screen_res = ?, ua_string = ? "
-                            "WHERE crawl_id = ?",
-                            (screen_res, ua_string, browser.crawl_id)))
 
     def _manager_watchdog(self):
         """
@@ -271,23 +222,18 @@ class TaskManager:
                         process.kill()
 
     def _launch_aggregators(self):
-        """
-        Launch the data aggregators, which serialize data from all processes.
-        * DataAggregator - sqlite database for crawl data
-        * LevelDBAggregator - leveldb database for javascript files
-        """
-        # DataAggregator
-        self.aggregator_status_queue = Queue()
-        self.data_aggregator = Process(target=DataAggregator.DataAggregator,
-                                       args=(self.manager_params,
-                                             self.aggregator_status_queue))
-        self.data_aggregator.daemon = True
-        self.data_aggregator.start()
-        # socket location: (address, port)
+        """Launch the necessary data aggregators"""
+        self.data_aggregator = SqliteAggregator.SqliteAggregator(
+            self.manager_params, self.browser_params)
+        self.data_aggregator.launch()
         self.manager_params[
-            'aggregator_address'] = self.aggregator_status_queue.get()
+            'aggregator_address'] = self.data_aggregator.listener_address
 
-        # LevelDB Aggregator
+        # open connection to aggregator for saving crawl details
+        self.sock = clientsocket(serialization='dill')
+        self.sock.connect(*self.manager_params['aggregator_address'])
+
+        # TODO refactor ldb aggregator to use new base classes
         if self.ldb_enabled:
             self.ldb_status_queue = Queue()
             self.ldb_aggregator = Process(
@@ -300,16 +246,10 @@ class TaskManager:
             self.manager_params['ldb_address'] = self.ldb_status_queue.get()
 
     def _kill_aggregators(self):
-        """ Terminates the aggregators gracefully """
-        # DataAggregator
-        self.logger.debug("Telling the DataAggregator to shut down...")
-        self.aggregator_status_queue.put("DIE")
-        start_time = time.time()
-        self.data_aggregator.join(300)
-        self.logger.debug("DataAggregator took %s seconds to close." % (
-            str(time.time() - start_time)))
+        """Shutdown any currently running data aggregators"""
+        self.data_aggregator.shutdown()
 
-        # LevelDB Aggregator
+        # TODO refactor ldb aggregator to use new base classes
         if self.ldb_enabled:
             self.logger.debug("Telling the LevelDBAggregator to shut down...")
             self.ldb_status_queue.put("DIE")
@@ -333,12 +273,10 @@ class TaskManager:
         self.logging_status_queue.put("DIE")
         self.loggingserver.join(300)
 
-    def _shutdown_manager(self, failure=False, during_init=False):
+    def _shutdown_manager(self, during_init=False):
         """
         Wait for current commands to finish, close all child processes and
         threads
-        <failure> flag to indicate manager failure (True) or
-                  end of crawl (False)
         <during_init> flag to indicator if this shutdown is occuring during
                       the TaskManager initialization
         """
@@ -346,16 +284,7 @@ class TaskManager:
 
         for browser in self.browsers:
             browser.shutdown_browser(during_init)
-            if failure:
-                self.sock.send(
-                    ("UPDATE crawl SET finished = -1 WHERE crawl_id = ?",
-                     (browser.crawl_id,)))
-            else:
-                self.sock.send(
-                    ("UPDATE crawl SET finished = 1 WHERE crawl_id = ?",
-                     (browser.crawl_id,)))
 
-        self.db.close()  # close db connection
         self.sock.close()  # close socket to data aggregator
         self._kill_aggregators()
         self._kill_loggingserver()
@@ -368,7 +297,7 @@ class TaskManager:
         <during_init> flag to indicator if this shutdown is occuring during
                       the TaskManager initialization
         """
-        self._shutdown_manager(failure=True, during_init=during_init)
+        self._shutdown_manager(during_init=during_init)
 
     def _check_failure_status(self):
         """ Check the status of command failures. Raise exceptions as necessary
@@ -479,13 +408,12 @@ class TaskManager:
             return
         self._check_failure_status()
 
-        browser.set_visit_id(self.next_visit_id)
-        self.sock.send(
-            ("INSERT INTO site_visits (visit_id, crawl_id, site_url) "
-             "VALUES (?,?,?)", (self.next_visit_id, browser.crawl_id,
-                                command_sequence.url))
-        )
-        self.next_visit_id += 1
+        browser.set_visit_id(self.data_aggregator.get_next_visit_id())
+        self.sock.send(("site_visits", {
+            "visit_id": browser.curr_visit_id,
+            "crawl_id": browser.crawl_id,
+            "site_url": command_sequence.url
+        }))
 
         # Start command execution thread
         args = (browser, command_sequence, condition)
@@ -553,13 +481,12 @@ class TaskManager:
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.crawl_id, command[0]))
 
-            self.sock.send(
-                ("INSERT INTO crawl_history "
-                 "(crawl_id, command, arguments, bool_success) "
-                 "VALUES (?,?,?,?)",
-                 (browser.crawl_id, command[0],
-                  command_arguments, command_succeeded))
-            )
+            self.sock.send(("crawl_history", {
+                "crawl_id": browser.crawl_id,
+                "command": command[0],
+                "arguments": command_arguments,
+                "bool_success": command_succeeded
+            }))
 
             if command_succeeded != 1:
                 with self.threadlock:

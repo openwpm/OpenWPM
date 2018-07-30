@@ -83,11 +83,9 @@ class SendingSocket {
     }
   }
 
-  send(query) {
-    // Format: [sql_query, [arg1, arg2, arg3]]
-    // e.g. ["INSERT INTO table (item1, item2) VALUES (?,?)", [val1, val2]]
+  send(record) {
     try {
-      var msg = JSON.stringify(query);
+      var msg = JSON.stringify(record);
       var buff = bufferpack.pack('>Lc',[msg.length,'j']);
       this._bOutputStream.writeByteArray(buff, buff.length);
       this._stream.write(msg, msg.length);
