@@ -63,7 +63,8 @@ class OpenWPMTest(object):
                             "beautifulsoup4": "bs4",
                             "python-dateutil": "dateutil",
                             "mini-amf": "miniamf",
-                            "pillow": "PIL"
+                            "pillow": "PIL",
+                            "pytest-xdist": "pytest"
                             }
         # get the mapped name if it exists.
         pkg_importable = pkg_name_mapping.get(pkg.lower(), pkg)
