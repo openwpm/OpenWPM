@@ -46,12 +46,14 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
             query = ("CREATE TABLE IF NOT EXISTS %s ("
                      "top_url TEXT, link TEXT);" % table_name)
-            sock.send((query, ()))
+            sock.send(("create_table", query))
 
             for link in link_urls:
-                query = ("INSERT INTO %s (top_url, link) "
-                         "VALUES (?, ?)" % table_name)
-                sock.send((query, (current_url, link)))
+                query = (table_name, {
+                    "top_url": current_url,
+                    "link": link
+                })
+                sock.send(query)
             sock.close()
 
         manager_params, browser_params = self.get_config()

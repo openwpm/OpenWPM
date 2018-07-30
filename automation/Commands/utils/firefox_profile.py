@@ -45,6 +45,7 @@ def get_cookies(profile_directory, mod_since):
         print("cannot find cookie.db", cookie_db)
     else:
         conn = sqlite3.connect(cookie_db)
+        conn.row_factory = sqlite3.Row
         with conn:
             c = conn.cursor()
             c.execute('SELECT baseDomain, name, value, host, path, expiry,\

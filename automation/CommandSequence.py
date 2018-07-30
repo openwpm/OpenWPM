@@ -84,16 +84,6 @@ class CommandSequence:
         command = ('DUMP_PROF', dump_folder, close_webdriver, compress)
         self.commands_with_timeout.append((command, timeout))
 
-    def extract_links(self, timeout=30):
-        """Extracts links found on web page and dumps them externally"""
-        self.total_timeout += timeout
-        if not self.contains_get_or_browse:
-            raise CommandExecutionError(
-                "No get or browse request preceding "
-                "the dump storage vectors command", self)
-        command = ('EXTRACT_LINKS',)
-        self.commands_with_timeout.append((command, timeout))
-
     def save_screenshot(self, suffix='', timeout=30):
         """Save a screenshot of the current viewport."""
         self.total_timeout += timeout

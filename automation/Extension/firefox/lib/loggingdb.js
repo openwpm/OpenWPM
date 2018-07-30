@@ -5,13 +5,13 @@ var socket              = require("./socket.js");
 var crawlID = null;
 var visitID = null;
 var debugging = false;
-var sqliteAggregator = null;
+var dataAggregator = null;
 var ldbAggregator = null;
 var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(sqliteAddress, ldbAddress, logAddress, curr_crawlID) {
-    if (sqliteAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
+exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
+    if (aggregatorAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
@@ -28,9 +28,9 @@ exports.open = function(sqliteAddress, ldbAddress, logAddress, curr_crawlID) {
     }
 
     // Connect to databases for saving data
-    if (sqliteAddress != null) {
-        sqliteAggregator = new socket.SendingSocket();
-        var rv = sqliteAggregator.connect(sqliteAddress[0], sqliteAddress[1]);
+    if (aggregatorAddress != null) {
+        dataAggregator = new socket.SendingSocket();
+        var rv = dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
         console.log("sqliteSocket started?",rv);
     }
     if (ldbAddress != null) {
@@ -55,8 +55,8 @@ exports.open = function(sqliteAddress, ldbAddress, logAddress, curr_crawlID) {
 };
 
 exports.close = function() {
-    if (sqliteAggregator != null) {
-        sqliteAggregator.close();
+    if (dataAggregator != null) {
+        dataAggregator.close();
     }
     if (ldbAggregator != null) {
         ldbAggregator.close();
@@ -145,24 +145,28 @@ exports.logCritical = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.executeSQL = function(statement, async) {
+exports.saveRecord = function(instrument, record) {
+    // Add visit id if changed
+    while (!debugging && listeningSocket.queue.length != 0) {
+        visitID = listeningSocket.queue.shift();
+        exports.logDebug("Visit Id: " + visitID);
+    }
+    record["visit_id"] = visitID;
+
+
+    if (!visitID && !debugging) {
+        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
+                    JSON.stringify(record));
+        record["visit_id"] = -1;
+    }
+
     // send to console if debugging
-    // TODO remove async argument
     if (debugging) {
-        if (typeof statement == 'string'){
-            console.log("SQLite",statement);
-        }else{  // log the table name and values to be inserted
-            var table_name = statement[0].replace("INSERT INTO ", "").split(" ")[0];
-            console.log("SQLite", table_name, statement[1]);
-        }
-        return;
+      console.log("EXTENSION", instrument, JSON.stringify(record));
+      return;
     }
-    // catch statements without arguments
-    if (typeof statement == "string") {
-        var statement = [statement, []];
-    }
-    sqliteAggregator.send(statement);
-};
+    dataAggregator.send([instrument, record]);
+}
 
 exports.saveContent = function(content, contentHash) {
   // send content to levelDBAggregator which stores content
@@ -190,32 +194,3 @@ exports.escapeString = escapeString;
 exports.boolToInt = function(bool) {
     return bool ? 1 : 0;
 };
-
-exports.createInsert = function(table, update) {
-    // Add top url visit id if changed
-    while (!debugging && listeningSocket.queue.length != 0) {
-        visitID = listeningSocket.queue.shift();
-        exports.logDebug("Visit Id: " + visitID);
-    }
-
-    update["visit_id"] = visitID;
-
-    if (!visitID && !debugging) {
-        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(update));
-        update["visit_id"] = -1;
-    }
-
-    var statement = "INSERT INTO " + table + " (";
-    var value_str = "VALUES (";
-        var values = [];
-    var first = true;
-    for(var field in update) {
-        statement += (first ? "" : ", ") + field;
-        value_str += (first ? "?" : ",?");
-                values.push(update[field]);
-        first = false;
-    }
-    statement = statement + ") " + value_str + ")";
-    return [statement, values];
-}

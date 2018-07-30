@@ -43,10 +43,6 @@ def execute_command(command, webdriver, browser_settings, browser_params,
             compress=command[3],
             save_flash=browser_params['disable_flash'] is False)
 
-    if command[0] == 'EXTRACT_LINKS':
-        browser_commands.extract_links(
-            webdriver, browser_params, manager_params)
-
     if command[0] == 'DUMP_PAGE_SOURCE':
         browser_commands.dump_page_source(
             visit_id=command[2], driver=webdriver,
