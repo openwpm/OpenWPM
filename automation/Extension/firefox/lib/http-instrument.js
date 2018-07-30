@@ -241,8 +241,8 @@ var httpRequestHandler = function(reqEvent, crawlID) {
     if (topURI) {
       var topUrl = topURI.spec;
       var channelURI = httpChannel.URI;
-      var isThirdPartyWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI);
-      update["is_third_party_window"] = isThirdPartyWindow;
+      var isThirdPartyToTopWindow = ThirdPartyUtil.isThirdPartyURI(channelURI, topURI);
+      update["is_third_party_to_top_window"] = isThirdPartyToTopWindow;
       update["is_third_party_channel"] = isThirdPartyChannel;
       update["top_level_url"] = loggingDB.escapeString(topUrl);
     }
