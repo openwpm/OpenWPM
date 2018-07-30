@@ -64,7 +64,7 @@ class BaseListener(object):
         time.sleep(3)  # TODO: the socket needs a better way of closing
         while not self.sock.queue.empty():
             record = self.sock.queue.get()
-            self._process_record(record)
+            self.process_record(record)
 
 
 class BaseAggregator(object):
