@@ -51,7 +51,7 @@ def get_javascript_entries(db, all_columns=False, as_tuple=False):
 
 def any_command_failed(db):
     """Returns True if any command in a given database failed"""
-    rows = query_db(db, "SELECT * FROM CrawlHistory;")
+    rows = query_db(db, "SELECT * FROM crawl_history;")
     for row in rows:
         if row[3] != 1:
             return True

@@ -481,7 +481,7 @@ class TaskManager:
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.crawl_id, command[0]))
 
-            self.sock.send(("CrawlHistory", {
+            self.sock.send(("crawl_history", {
                 "crawl_id": browser.crawl_id,
                 "command": command[0],
                 "arguments": command_arguments,

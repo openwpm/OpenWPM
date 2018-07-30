@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS localStorage (
     value TEXT,
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
-CREATE TABLE IF NOT EXISTS CrawlHistory (
+/* Crawl History table */
+CREATE TABLE IF NOT EXISTS crawl_history (
     crawl_id INTEGER,
     command TEXT,
     arguments TEXT,
