@@ -1,18 +1,17 @@
 from __future__ import absolute_import
-from six.moves.urllib.parse import urlparse
 from six.moves import range
+from six.moves.urllib.parse import urlparse
+
+import json
+import os
 from hashlib import md5
 from time import sleep
-import json
-import six
-import os
 
 from . import utilities
-from .openwpmtest import OpenWPMTest
-from ..automation import TaskManager
-from ..automation.utilities.platform_utils import parse_http_stack_trace_str
+from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
-from ..automation import CommandSequence
+from ..automation.utilities.platform_utils import parse_http_stack_trace_str
+from .openwpmtest import OpenWPMTest
 
 # Data for test_page_visit
 # format: (
@@ -602,6 +601,7 @@ class TestPOSTInstrument(OpenWPMTest):
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
         # Binary strings get put into the database as-if they were latin-1.
+        import six
         assert six.binary_type(
             bytearray(range(100))) == post_body.encode('latin-1')
 

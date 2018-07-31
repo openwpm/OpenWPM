@@ -1,7 +1,8 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 import re
-from os.path import realpath, dirname, join, isfile, isdir
+from os.path import dirname, isdir, isfile, join, realpath
+
 from .openwpmtest import OpenWPMTest
 
 

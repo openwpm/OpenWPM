@@ -1,14 +1,12 @@
-from __future__ import absolute_import
-from __future__ import print_function
-
-import six.moves.socketserver
-import threading
-import os
-from random import choice
-from os.path import realpath, dirname
+from __future__ import absolute_import, print_function
+from six.moves import range, socketserver
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.urllib.parse import urlparse, parse_qs
-from six.moves import range
+from six.moves.urllib.parse import parse_qs, urlparse
+
+import os
+import threading
+from os.path import dirname, realpath
+from random import choice
 
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"
@@ -36,7 +34,7 @@ def which(program):
     return None
 
 
-class MyTCPServer(six.moves.socketserver.TCPServer):
+class MyTCPServer(socketserver.TCPServer):
     """Subclass TCPServer to be able to reuse the same port (Errno 98)."""
     allow_reuse_address = True
 
