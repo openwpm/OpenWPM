@@ -63,7 +63,7 @@ class OpenWPMTest(object):
         pkg_name_mapping = {"pyopenssl": "OpenSSL",
                             "beautifulsoup4": "bs4",
                             "python-dateutil": "dateutil",
-                            "flake8-isort": "flake8",
+                            "flake8-isort": "flake8_isort",
                             "mini-amf": "miniamf",
                             "pillow": "PIL"
                             }
