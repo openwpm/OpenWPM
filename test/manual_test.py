@@ -6,16 +6,19 @@ import subprocess
 from os.path import dirname, join, realpath
 
 from selenium import webdriver
-from selenium.common.exceptions import *  # noqa
-from selenium.webdriver.common.keys import Keys  # noqa
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
-from automation.Commands.utils import webdriver_extensions as wd_ext  # noqa
 from automation.DeployBrowsers import configure_firefox
-from automation.utilities import domain_utils as du  # noqa
 
 from .conftest import create_xpi
 from .utilities import BASE_TEST_URL, start_server
+
+# import commonly used modules and utilities so they can be easily accessed
+# in the interactive session
+from automation.Commands.utils import webdriver_extensions as wd_ext  # noqa isort:skip
+from automation.utilities import domain_utils as du  # noqa isort:skip
+from selenium.webdriver.common.keys import Keys  # noqa isort:skip
+from selenium.common.exceptions import *  # noqa isort:skip
 
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
