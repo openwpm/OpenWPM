@@ -1,32 +1,32 @@
 from __future__ import absolute_import
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import MoveTargetOutOfBoundsException
-from selenium.common.exceptions import TimeoutException
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.common.action_chains import ActionChains
-from hashlib import md5
-from glob import glob
-from PIL import Image
-import traceback
-import random
-import json
-import time
-import sys
-import gzip
-import os
-
-from ..SocketInterface import clientsocket
-from ..MPLogger import loggingclient
-from .utils.lso import get_flash_cookies
-from .utils.firefox_profile import get_cookies
-from .utils.webdriver_extensions import (scroll_down,
-                                         wait_until_loaded,
-                                         get_intra_links,
-                                         execute_in_all_frames,
-                                         execute_script_with_retry)
 from six.moves import range
-import six
+
+import gzip
+import json
+import os
+import random
+import sys
+import time
+import traceback
+from glob import glob
+from hashlib import md5
+
+from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
+                                        TimeoutException, WebDriverException)
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from PIL import Image
+
+from ..MPLogger import loggingclient
+from ..SocketInterface import clientsocket
+from .utils.firefox_profile import get_cookies
+from .utils.lso import get_flash_cookies
+from .utils.webdriver_extensions import (execute_in_all_frames,
+                                         execute_script_with_retry,
+                                         get_intra_links, scroll_down,
+                                         wait_until_loaded)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -387,6 +387,7 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
             page_source = dict()
         page_source['doc_url'] = doc_url
         source = driver.page_source
+        import six
         if type(source) != six.text_type:
             source = six.text_type(source, 'utf-8')
         page_source['source'] = source

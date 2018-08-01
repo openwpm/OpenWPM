@@ -6,8 +6,6 @@ import os
 import sqlite3
 import time
 
-import six
-
 from netlib.odict import ODictCaseless
 
 # This should be the modified Cookie.py included
@@ -26,6 +24,7 @@ def encode_to_unicode(string):
     Encode from UTF-8/ISO-8859-1 to Unicode.
     Ignore errors if both of these don't work
     """
+    import six
     try:
         encoded = six.text_type(string, 'UTF-8')
     except UnicodeDecodeError:
@@ -122,6 +121,7 @@ def parse_cookies(cookie_string, verbose, url=None, response_cookie=False):
     """
     queries = list()
     attrs = ()
+    import six
     try:
         if type(cookie_string) == six.text_type:
             cookie_string = cookie_string.encode('utf-8')

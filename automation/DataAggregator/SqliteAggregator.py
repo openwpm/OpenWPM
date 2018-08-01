@@ -1,14 +1,13 @@
 from __future__ import absolute_import, print_function
+from six.moves import range
 
 import json
 import os
-import six
 import sqlite3
 import time
 from sqlite3 import IntegrityError, OperationalError, ProgrammingError
 
 from .BaseAggregator import BaseAggregator, BaseListener
-from six.moves import range
 
 COMMIT_BATCH_SIZE = 1000
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
@@ -82,6 +81,7 @@ class SqliteListener(BaseListener):
             return
         statement, args = self._generate_insert(
             table=record[0], data=record[1])
+        import six
         for i in range(len(args)):
             if isinstance(args[i], six.binary_type):
                 args[i] = six.text_type(args[i], errors='ignore')

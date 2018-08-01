@@ -1,7 +1,6 @@
 # This is code adapted from KU Leuven crawler code written by
 # Gunes Acar and Marc Juarez
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import os
 import sqlite3

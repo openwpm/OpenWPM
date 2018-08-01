@@ -1,10 +1,8 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import json
 import os
 import subprocess
-import six
 from collections import OrderedDict
 from copy import deepcopy
 
@@ -61,6 +59,7 @@ def get_version():
             openwpm = f.readline().strip()
 
     ensure_firefox_in_path()
+    import six
     try:
         firefox = subprocess.check_output(["firefox", "--version"])
     except subprocess.CalledProcessError as e:

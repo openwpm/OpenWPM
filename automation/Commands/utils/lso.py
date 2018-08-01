@@ -1,12 +1,10 @@
 # This is code adapted from KU Leuven crawler code written by
 # Gunes Acar and Marc Juarez
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import fnmatch
 import os
-import six
 import sys
 import traceback
 from collections import namedtuple
@@ -16,6 +14,7 @@ from miniamf import sol
 
 def ensure_unicode(val):
     """Coerce VAL to a Unicode string by any means necessary."""
+    import six
     if isinstance(val, six.text_type):
         return val
     if not isinstance(val, six.binary_type):
@@ -53,6 +52,7 @@ class FlashCookie(_BaseFlashCookie):
 
 
 def parse_flash_cookies(lso_file):
+    import six
     lso_dict = sol.load(lso_file)
     return [FlashCookie(lso_file, k, v) for k, v in six.iteritems(lso_dict)]
 

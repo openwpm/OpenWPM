@@ -1,4 +1,3 @@
-import six
 from __future__ import absolute_import, print_function
 from six.moves import input
 from six.moves.queue import Queue
@@ -17,7 +16,7 @@ import dill
 
 class serversocket:
     """
-    A server socket to recieve and process string messages
+    A server socket to receive and process string messages
     from client sockets to a central queue
     """
     def __init__(self, name=None, verbose=False):
@@ -49,7 +48,7 @@ class serversocket:
 
     def _handle_conn(self, client, address):
         """
-        Recieve messages and pass to queue. Messages are prefixed with
+        Receive messages and pass to queue. Messages are prefixed with
         a 4-byte integer to specify the message length and 1-byte character
         to indicate the type of serialization applied to the message.
 
@@ -130,6 +129,7 @@ class clientsocket:
         using dill if not string, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
+        import six
         if isinstance(msg, six.binary_type):
             serialization = b'n'
         elif isinstance(msg, six.text_type):
