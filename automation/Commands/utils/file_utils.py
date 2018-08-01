@@ -1,7 +1,9 @@
 # A collection of file utilities
 from __future__ import absolute_import
-import shutil
+
 import os
+import shutil
+
 
 def rmsubtree(location):
     """Clears all subfolders and files in location"""

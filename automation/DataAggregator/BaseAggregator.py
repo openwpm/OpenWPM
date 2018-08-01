@@ -1,9 +1,10 @@
 import abc
 import time
-from multiprocess import Queue, Process
 
-from ..SocketInterface import serversocket
+from multiprocess import Process, Queue
+
 from ..MPLogger import loggingclient
+from ..SocketInterface import serversocket
 
 
 class BaseListener(object):

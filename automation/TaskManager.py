@@ -1,26 +1,26 @@
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division
+from six import reraise
+from six.moves import cPickle as pickle
+from six.moves import range
+from six.moves.queue import Empty as EmptyQueue
 
 import copy
 import json
-from multiprocess import Process, Queue
 import os
-import psutil
-from six.moves import cPickle as pickle
-from six.moves.queue import Empty as EmptyQueue
-from six.moves import range
-from six import reraise
 import threading
 import time
 
+import psutil
+from multiprocess import Process, Queue
 from tblib import pickling_support
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
-from .SocketInterface import clientsocket
-from .DataAggregator import SqliteAggregator, LevelDBAggregator
+from .DataAggregator import LevelDBAggregator, SqliteAggregator
 from .Errors import CommandExecutionError
-from .utilities.platform_utils import get_version, get_configuration_string
+from .SocketInterface import clientsocket
+from .utilities.platform_utils import get_configuration_string, get_version
+
 pickling_support.install()
 
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)

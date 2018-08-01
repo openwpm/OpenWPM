@@ -1,24 +1,25 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+from six.moves.urllib.parse import urlparse
 
 import json
 import os
-import six
+import sqlite3
 import time
-from six.moves.urllib.parse import urlparse
+
+import six
 
 from netlib.odict import ODictCaseless
-import sqlite3
 
 # This should be the modified Cookie.py included
 # the standard lib Cookie.py has many bugs
 from . import Cookie
 
-#Potential formats for expires timestamps
-DATE_FORMATS = ['%a, %d-%b-%Y %H:%M:%S %Z','%a, %d %b %Y %H:%M:%S %Z',
-                '%a, %d-%b-%y %H:%M:%S %Z','%a, %d %b %y %H:%M:%S %Z',
-                '%a, %d-%m-%Y %H:%M:%S %Z','%a, %d %m %Y %H:%M:%S %Z',
-                '%a, %d-%m-%y %H:%M:%S %Z','%a, %d %m %y %H:%M:%S %Z']
+# Potential formats for expires timestamps
+DATE_FORMATS = ['%a, %d-%b-%Y %H:%M:%S %Z', '%a, %d %b %Y %H:%M:%S %Z',
+                '%a, %d-%b-%y %H:%M:%S %Z', '%a, %d %b %y %H:%M:%S %Z',
+                '%a, %d-%m-%Y %H:%M:%S %Z', '%a, %d %m %Y %H:%M:%S %Z',
+                '%a, %d-%m-%y %H:%M:%S %Z', '%a, %d %m %y %H:%M:%S %Z']
+
 
 def encode_to_unicode(string):
     """
@@ -34,6 +35,7 @@ def encode_to_unicode(string):
             encoded = six.text_type(string, 'UTF-8', errors='ignore')
     return encoded
 
+
 def select_date_format(date_string):
     """ Try different formats for date and output a standard form accepted by sqlite3 """
     if date_string == '' or date_string == '0':
@@ -44,7 +46,7 @@ def select_date_format(date_string):
                 time_obj = time.strptime(date_string, date_format)
                 break
             except ValueError:
-                if date_format == DATE_FORMATS[len(DATE_FORMATS)-1]:
+                if date_format == DATE_FORMATS[len(DATE_FORMATS) - 1]:
                     return None
                 pass
 
@@ -53,6 +55,7 @@ def select_date_format(date_string):
             return time.strftime("%Y-%m-%d %H:%M:%S", time_obj)
         else:
             return None
+
 
 def get_path(path_string, url):
     """ Parse path. Defaults to the path of the request URL that generated the
@@ -65,6 +68,7 @@ def get_path(path_string, url):
         return path
     else:
         return path_string
+
 
 def get_domain(domain_string, url):
     """
@@ -89,6 +93,7 @@ def get_domain(domain_string, url):
         domain_string = '.' + domain_string
     return domain_string
 
+
 def parse_cookie_attributes(cookie, key, url):
     """
     Extract/Format each attribute of cookie
@@ -100,19 +105,20 @@ def parse_cookie_attributes(cookie, key, url):
     path = get_path(cookie[key]['path'], url)
     expires = select_date_format(cookie[key]['expires'])
     max_age = cookie[key]['max-age'] if cookie[key]['max-age'] != '' else None
-    httponly = True if cookie[key]['httponly'] == True else False
-    secure = True if cookie[key]['secure'] == True else False
+    httponly = True if cookie[key]['httponly'] is True else False
+    secure = True if cookie[key]['secure'] is True else False
     comment = cookie[key]['comment'] if cookie[key]['comment'] != '' else None
     version = cookie[key]['version'] if cookie[key]['version'] != '' else None
     return (domain, path, expires, max_age, httponly, secure, comment, version)
 
-def parse_cookies(cookie_string, verbose, url = None, response_cookie = False):
+
+def parse_cookies(cookie_string, verbose, url=None, response_cookie=False):
     """
     Parses the cookie string from an HTTP header into a query
     * Request 'Cookie'
-        query = (name, value)
+        query=(name, value)
     * Response 'Set-Cookie'
-        query = (name, value, domain, path, expires, max-age, httponly, secure, comment, version)
+        query=(name, value, domain, path, expires, max-age, httponly, secure, comment, version)
     """
     queries = list()
     attrs = ()
@@ -125,14 +131,18 @@ def parse_cookies(cookie_string, verbose, url = None, response_cookie = False):
             value = encode_to_unicode(cookie[key].coded_value)
             if response_cookie:
                 attrs = parse_cookie_attributes(cookie, key, url)
-            query = (name, value)+attrs
+            query = (name, value) + attrs
             queries.append(query)
     except Cookie.CookieError as e:
-        if verbose: print("[ERROR] - Malformed cookie string")
-        if verbose: print("--------- " + cookie_string)
-        if verbose: print(e)
+        if verbose:
+            print("[ERROR] - Malformed cookie string")
+        if verbose:
+            print("--------- " + cookie_string)
+        if verbose:
+            print(e)
         pass
     return queries
+
 
 def build_http_cookie_table(database, verbose=False):
     """ Extracts all http-cookie data from HTTP headers and generates a new table """
@@ -182,7 +192,7 @@ def build_http_cookie_table(database, verbose=False):
         header = ODictCaseless()
         try:
             header.load_state(json.loads(header_str))
-        except ValueError: #XXX temporary shim -- should be removed
+        except ValueError:  # XXX temporary shim -- should be removed
             header.load_state(eval(header_str))
         for cookie_str in header['Cookie']:
             queries = parse_cookies(cookie_str, verbose)
@@ -190,12 +200,13 @@ def build_http_cookie_table(database, verbose=False):
                 cur2.execute("INSERT INTO http_request_cookies \
                             (crawl_id, header_id, name, value, accessed) \
                             VALUES (?,?,?,?,?)",
-                            (crawl_id, req_id)+query+(time_stamp,))
+                             (crawl_id, req_id) + query + (time_stamp,))
                 commit += 1
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
             con.commit()
-            if verbose: print("%d Cookies Processed" % commit)
+            if verbose:
+                print("%d Cookies Processed" % commit)
         row = cur1.fetchone()
     con.commit()
     print("Processing HTTP Request Cookies Complete")
@@ -217,7 +228,7 @@ def build_http_cookie_table(database, verbose=False):
         header = ODictCaseless()
         try:
             header.load_state(json.loads(header_str))
-        except ValueError: #XXX temporary shim -- should be removed
+        except ValueError:  # XXX temporary shim -- should be removed
             header.load_state(eval(header_str))
         for cookie_str in header['Set-Cookie']:
             queries = parse_cookies(cookie_str, verbose, url=req_url, response_cookie=True)
@@ -227,19 +238,23 @@ def build_http_cookie_table(database, verbose=False):
                             value, domain, path, expires, max_age, \
                             httponly, secure, comment, version, accessed) \
                             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                            (crawl_id, resp_id)+query+(time_stamp,))
+                             (crawl_id, resp_id) + query + (time_stamp,))
                 commit += 1
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
             con.commit()
-            if verbose: print("%d Cookies Processed" % commit)
+            if verbose:
+                print("%d Cookies Processed" % commit)
         row = cur1.fetchone()
     con.commit()
     print("Processing HTTP Response Cookies Complete")
     con.close()
 
+
 def main():
     import sys
     build_http_cookie_table(sys.argv[1], verbose=True)
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+                    main()

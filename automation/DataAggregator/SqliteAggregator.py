@@ -1,14 +1,14 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from sqlite3 import (OperationalError, ProgrammingError, IntegrityError)
-import sqlite3
+from __future__ import absolute_import, print_function
+
 import json
-import time
-import six
 import os
-from six.moves import range
+import six
+import sqlite3
+import time
+from sqlite3 import IntegrityError, OperationalError, ProgrammingError
 
 from .BaseAggregator import BaseAggregator, BaseListener
+from six.moves import range
 
 COMMIT_BATCH_SIZE = 1000
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')

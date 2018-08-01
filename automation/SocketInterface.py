@@ -1,14 +1,15 @@
-from __future__ import absolute_import
-from __future__ import print_function
+import six
+from __future__ import absolute_import, print_function
+from six.moves import input
 from six.moves.queue import Queue
-import threading
-import traceback
+
+import json
 import socket
 import struct
-import json
+import threading
+import traceback
+
 import dill
-import six
-from six.moves import input
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237
@@ -83,7 +84,7 @@ class serversocket:
                             continue
                     except (UnicodeDecodeError, ValueError) as e:
                         print("Error de-serializing message: %s \n %s" % (
-                                msg, traceback.format_exc(e)))
+                            msg, traceback.format_exc(e)))
                         continue
                 self.queue.put(msg)
         except RuntimeError:
@@ -93,7 +94,7 @@ class serversocket:
     def receive_msg(self, client, msglen):
         msg = b''
         while len(msg) < msglen:
-            chunk = client.recv(msglen-len(msg))
+            chunk = client.recv(msglen - len(msg))
             if not chunk:
                 raise RuntimeError("socket connection broken")
             msg = msg + chunk

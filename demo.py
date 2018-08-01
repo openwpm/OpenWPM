@@ -1,6 +1,7 @@
 from __future__ import absolute_import
-from automation import TaskManager, CommandSequence
 from six.moves import range
+
+from automation import CommandSequence, TaskManager
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 3

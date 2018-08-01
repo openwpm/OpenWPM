@@ -1,18 +1,19 @@
 from __future__ import absolute_import
 
-from selenium import webdriver
 import json
 import os.path
 import random
 
+from selenium import webdriver
+
+from pyvirtualdisplay import Display
+
 from . import configure_firefox
-from .selenium_firefox import (FirefoxProfile, FirefoxBinary,
-                               FirefoxLogInterceptor, Options)
 from ..Commands.profile_commands import load_profile
 from ..MPLogger import loggingclient
 from ..utilities.platform_utils import ensure_firefox_in_path
-
-from pyvirtualdisplay import Display
+from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
+                               FirefoxProfile, Options)
 
 DEFAULT_SCREEN_RES = (1366, 768)
 

@@ -1,16 +1,18 @@
-### This is code adapted from KU Leuven crawler code written by
-### Gunes Acar and Marc Juarez
+# This is code adapted from KU Leuven crawler code written by
+# Gunes Acar and Marc Juarez
 from __future__ import absolute_import
 from __future__ import print_function
-from glob import glob
+
+import os
 import sqlite3
 import time
-import os
+from glob import glob
+
 
 def tmp_sqlite_files_exist(path):
     """Check if temporary sqlite files(wal, shm) exist in a given path."""
     return glob(os.path.join(path, '*-wal')) or \
-           glob(os.path.join(path, '*-shm'))
+        glob(os.path.join(path, '*-shm'))
 
 
 def sleep_until_sqlite_checkpoint(profile_dir, timeout=60):
@@ -25,7 +27,7 @@ def sleep_until_sqlite_checkpoint(profile_dir, timeout=60):
 
 
 def get_localStorage(profile_directory, mod_since):
-    #TODO how to support modified since???
+    # TODO how to support modified since???
     ff_ls_file = os.path.join(profile_directory, 'webappsstore.sqlite')
     if not os.path.isfile(ff_ls_file):
         print("Cannot find localstorage DB %s" % ff_ls_file)
@@ -36,8 +38,9 @@ def get_localStorage(profile_directory, mod_since):
             cur.execute('SELECT scope, KEY, value \
                     FROM webappsstore2 \
                     WHERE last;')
-            rows =  cur.fetchall()
+            rows = cur.fetchall()
         return rows
+
 
 def get_cookies(profile_directory, mod_since):
     cookie_db = os.path.join(profile_directory, 'cookies.sqlite')
@@ -51,6 +54,6 @@ def get_cookies(profile_directory, mod_since):
             c.execute('SELECT baseDomain, name, value, host, path, expiry,\
                 lastAccessed, creationTime, isSecure, isHttpOnly \
                 FROM moz_cookies \
-                WHERE lastAccessed > ?;',(int(mod_since*1000000),))
+                WHERE lastAccessed > ? ; ', (int(mod_since * 1000000),))
             rows = c.fetchall()
         return rows

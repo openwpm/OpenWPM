@@ -2,31 +2,31 @@
 # webdriver. These are primarily for parsing and searching.
 
 from __future__ import absolute_import
-
 from six.moves.urllib.parse import urljoin
+
 import random
 import time
 
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
 
 from . import XPathUtil
 from ...utilities import domain_utils as du
 
-
 # Basic functions
+
 
 def scroll_down(driver):
     at_bottom = False
     while random.random() > .20 and not at_bottom:
         driver.execute_script("window.scrollBy(0,%d)"
-                              % (10 + int(200*random.random())))
+                              % (10 + int(200 * random.random())))
         at_bottom = driver.execute_script(
             "return (((window.scrollY + window.innerHeight ) + 100 "
             "> document.body.clientHeight ))")

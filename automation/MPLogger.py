@@ -1,16 +1,17 @@
 """ Support for logging with the multiprocessing module """
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+from six.moves.queue import Empty as EmptyQueue
+
+import json
+import logging
+import logging.handlers
+import os
+import struct
+import sys
+import time
+
 from .SocketInterface import serversocket
 
-from six.moves.queue import Empty as EmptyQueue
-import logging.handlers
-import logging
-import struct
-import json
-import time
-import sys
-import os
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
     """
@@ -34,6 +35,7 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
             record.exc_info = ei  # for next handler
         return struct.pack('>Lc', len(s), b'j') + s
 
+
 def loggingclient(logger_address, logger_port, level=logging.DEBUG):
     """ Establishes a logger that sends log records to loggingserver """
     logger = logging.getLogger(__name__)
@@ -56,6 +58,7 @@ def loggingclient(logger_address, logger_port, level=logging.DEBUG):
 
     return logger
 
+
 def loggingserver(log_file, status_queue):
     """
     A logging server to serialize writes to the log file from multiple
@@ -66,9 +69,9 @@ def loggingserver(log_file, status_queue):
     """
     # Configure the log file
     logging.basicConfig(filename=os.path.expanduser(log_file),
-            format= '%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
-                    ' - %(module)-20s - %(levelname)-8s: %(message)s',
-            level=logging.INFO)
+                        format='%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
+                        ' - %(module)-20s - %(levelname)-8s: %(message)s',
+                        level=logging.INFO)
 
     # Sets up the serversocket to start accepting connections
     sock = serversocket(name="loggingserver")
@@ -90,6 +93,7 @@ def loggingserver(log_file, status_queue):
         except EmptyQueue:
             pass
 
+
 def _handleLogRecord(obj):
     """ Handle log, logs everything sent. Should filter client-side """
 
@@ -109,6 +113,7 @@ def _handleLogRecord(obj):
     logger = logging.getLogger(record.name)
     logger.handle(record)
 
+
 def _drain_queue(sock_queue):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
@@ -116,9 +121,11 @@ def _drain_queue(sock_queue):
         obj = sock_queue.get()
         _handleLogRecord(obj)
 
+
 def main():
     # Some tests
-    import logging, logging.handlers
+    import logging
+    import logging.handlers
     import multiprocess as mp
 
     # Set up loggingserver
@@ -152,4 +159,6 @@ def main():
     loggingserver.join()
     print("Server closed, exiting...")
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+                main()
