@@ -25,9 +25,10 @@ before_install:
   - "npm install -g jpm"
 install:
   - echo "y" | ./install.sh
-  - pip install -r requirements.txt
+  - pip install -r pipenv.txt
 before_script:
   - cd test
 script:
+  - pipenv install --skip-lock
   - flake8
   - py.test -s -v --durations=10 $TESTS

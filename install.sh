@@ -51,10 +51,11 @@ fi
 # Check if we're running on continuous integration
 # Python requirements are already installed by .travis.yml on Travis
 if [ "$TRAVIS" != "true" ]; then
-	wget https://bootstrap.pypa.io/get-pip.py
-	sudo -H python get-pip.py
-	rm get-pip.py
-	sudo pip install -U -r requirements.txt
+      wget https://bootstrap.pypa.io/get-pip.py
+      sudo -H python get-pip.py
+      rm get-pip.py
+      sudo -H pip install -r pipenv.txt
+      pipenv install -r requirements.txt --skip-lock
 fi
 
 # Grab the latest version of Firefox ESR.
