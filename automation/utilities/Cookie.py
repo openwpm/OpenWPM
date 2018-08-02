@@ -205,9 +205,7 @@ fact, this simply returns a SmartCookie.
 
 
 Finis.
-"""  #"
-#     ^
-#     |----helps out font-lock
+"""
 
 
 # Import our required modules
@@ -518,9 +516,9 @@ class Morsel(dict):
                 continue
             if K not in attrs:
                 continue
-            if K == "expires" and type(V) == type(1):
+            if K == "expires" and type(V) == type(1):  # noqa
                 RA("%s=%s" % (self._reserved[K], _getdate(V)))
-            elif K == "max-age" and type(V) == type(1):
+            elif K == "max-age" and type(V) == type(1):  # noqa
                 RA("%s=%d" % (self._reserved[K], V))
             elif K == "secure":
                 RA(str(self._reserved[K]))
@@ -557,7 +555,7 @@ _CookiePattern = re.compile(
     r")?"                         # End of optional value group
     r"\s*"                        # Any number of spaces.
     r"(;|$)"                      # Ending at semicolon or EOS.
-    )
+)
 
 
 # At long last, here is the cookie class.
@@ -636,7 +634,7 @@ class BaseCookie(dict):
         is equivalent to calling:
             map(Cookie.__setitem__, d.keys(), d.values())
         """
-        if type(rawdata) == type(""):
+        if type(rawdata) == type(""):  # noqa
             self.__ParseString(rawdata)
         else:
             # self.update() wouldn't call our custom __setitem__
@@ -750,11 +748,11 @@ class SmartCookie(BaseCookie):
         strval = _unquote(val)
         try:
             return loads(strval), val
-        except:
+        except Exception:
             return strval, val
 
     def value_encode(self, val):
-        if type(val) == type(""):
+        if type(val) == type(""):  # noqa
             return val, _quote(val)
         else:
             return val, _quote(dumps(val))

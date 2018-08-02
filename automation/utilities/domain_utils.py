@@ -116,7 +116,7 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     if include_ps:
         try:
             subparts.append(ps_plus_1[ps_plus_1.index('.') + 1:])
-        except:
+        except Exception:
             pass
     return subparts
 

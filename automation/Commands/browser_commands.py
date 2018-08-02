@@ -11,13 +11,12 @@ import traceback
 from glob import glob
 from hashlib import md5
 
+from PIL import Image
 from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
                                         TimeoutException, WebDriverException)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from PIL import Image
 
 from ..MPLogger import loggingclient
 from ..SocketInterface import clientsocket

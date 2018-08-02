@@ -131,9 +131,9 @@ def main():
     # Set up loggingserver
     log_file = '~/mplogger.log'
     status_queue = mp.Queue()
-    loggingserver = mp.Process(target=loggingserver, args=(log_file, status_queue))
-    loggingserver.daemon = True
-    loggingserver.start()
+    lserver_process = mp.Process(target=loggingserver, args=(log_file, status_queue))
+    lserver_process.daemon = True
+    lserver_process.start()
     server_address = status_queue.get()
 
     # Connect main process to logging server
@@ -156,7 +156,7 @@ def main():
 
     # Close the logging server
     status_queue.put('DIE')
-    loggingserver.join()
+    lserver_process.join()
     print("Server closed, exiting...")
 
 
