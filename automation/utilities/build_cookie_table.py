@@ -5,9 +5,8 @@ import os
 import sqlite3
 import time
 
-from six.moves.urllib.parse import urlparse
-
 from netlib.odict import ODictCaseless
+from six.moves.urllib.parse import urlparse
 
 # This should be the modified Cookie.py included
 # the standard lib Cookie.py has many bugs

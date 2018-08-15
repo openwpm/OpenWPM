@@ -9,12 +9,11 @@ import tempfile
 import time
 import traceback
 
+import psutil
+from multiprocess import Process, Queue
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
-
-import psutil
-from multiprocess import Process, Queue
 from tblib import pickling_support
 
 from .Commands import command_executor, profile_commands

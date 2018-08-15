@@ -8,10 +8,9 @@ from __future__ import absolute_import, print_function
 
 import re
 
-from six.moves import range
-
 import bs4
 from bs4 import BeautifulSoup as bs
+from six.moves import range
 
 
 def is_clickable(xpath):
