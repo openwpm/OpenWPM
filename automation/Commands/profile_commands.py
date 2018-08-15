@@ -1,13 +1,15 @@
 from __future__ import absolute_import
-import tarfile
-from six.moves import cPickle as pickle
-import shutil
+
 import os
+import shutil
+import tarfile
+
+from six.moves import cPickle as pickle
 
 from ..Errors import ProfileLoadError
 from ..MPLogger import loggingclient
-from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 from .utils.file_utils import rmsubtree
+from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 
 # Flash Plugin Storage Location -- Linux ONLY
 HOME = os.path.expanduser('~')
@@ -163,14 +165,14 @@ def dump_profile(browser_profile_folder, manager_params, browser_params,
     ]
     for item in storage_vector_files:
         full_path = os.path.join(browser_profile_folder, item)
-        if (not os.path.isfile(full_path)
-                and full_path[-3:] != 'shm'
-                and full_path[-3:] != 'wal'):
+        if (not os.path.isfile(full_path) and
+                full_path[-3:] != 'shm' and
+                full_path[-3:] != 'wal'):
             logger.critical(
                 "BROWSER %i: %s NOT FOUND IN profile folder, skipping." %
                 (browser_params['crawl_id'], full_path))
-        elif (not os.path.isfile(full_path)
-              and (full_path[-3:] == 'shm' or full_path[-3:] == 'wal')):
+        elif (not os.path.isfile(full_path) and
+              (full_path[-3:] == 'shm' or full_path[-3:] == 'wal')):
             continue  # These are just checkpoint files
         tar.add(full_path, arcname=item)
     for item in storage_vector_dirs:
@@ -217,7 +219,7 @@ def load_profile(browser_profile_folder, manager_params, browser_params,
         # Copy and untar the loaded profile
         logger.debug(
             "BROWSER %i: Copying profile tar from %s to %s" %
-            (browser_params['crawl_id'], tar_location+tar_name,
+            (browser_params['crawl_id'], tar_location + tar_name,
              browser_profile_folder)
         )
         shutil.copy(tar_location + tar_name, browser_profile_folder)

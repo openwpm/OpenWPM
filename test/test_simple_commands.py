@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from six.moves.urllib.parse import urlparse
 
 import glob
 import gzip
@@ -8,6 +7,7 @@ import os
 import re
 
 from PIL import Image
+from six.moves.urllib.parse import urlparse
 
 from . import utilities
 from ..automation import CommandSequence, TaskManager

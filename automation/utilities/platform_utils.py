@@ -1,12 +1,10 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
-from collections import OrderedDict
-from copy import deepcopy
 import json
 import os
-import six
 import subprocess
+from collections import OrderedDict
+from copy import deepcopy
 
 from tabulate import tabulate
 
@@ -21,12 +19,12 @@ def parse_http_stack_trace_str(trace_str):
             rest, async_cause = rest.rsplit(";", 1)
             filename, line_no, col_no = rest.rsplit(":", 2)
             stack_trace.append({
-                                "func_name": func_name,
-                                "filename": filename,
-                                "line_no": line_no,
-                                "col_no": col_no,
-                                "async_cause": async_cause,
-                                })
+                               "func_name": func_name,
+                               "filename": filename,
+                               "line_no": line_no,
+                               "col_no": col_no,
+                               "async_cause": async_cause,
+                               })
         except Exception as exc:
             print("Exception parsing the stack frame %s %s" % (frame, exc))
     return stack_trace
@@ -61,6 +59,7 @@ def get_version():
             openwpm = f.readline().strip()
 
     ensure_firefox_in_path()
+    import six
     try:
         firefox = subprocess.check_output(["firefox", "--version"])
     except subprocess.CalledProcessError as e:

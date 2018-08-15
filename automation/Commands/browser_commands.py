@@ -1,32 +1,31 @@
 from __future__ import absolute_import
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import MoveTargetOutOfBoundsException
-from selenium.common.exceptions import TimeoutException
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.common.action_chains import ActionChains
-from hashlib import md5
-from glob import glob
-from PIL import Image
-import traceback
-import random
-import json
-import time
-import sys
-import gzip
-import os
 
-from ..SocketInterface import clientsocket
-from ..MPLogger import loggingclient
-from .utils.lso import get_flash_cookies
-from .utils.firefox_profile import get_cookies
-from .utils.webdriver_extensions import (scroll_down,
-                                         wait_until_loaded,
-                                         get_intra_links,
-                                         execute_in_all_frames,
-                                         execute_script_with_retry)
+import gzip
+import json
+import os
+import random
+import sys
+import time
+import traceback
+from glob import glob
+from hashlib import md5
+
+from PIL import Image
+from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
+                                        TimeoutException, WebDriverException)
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from six.moves import range
-import six
+
+from ..MPLogger import loggingclient
+from ..SocketInterface import clientsocket
+from .utils.firefox_profile import get_cookies
+from .utils.lso import get_flash_cookies
+from .utils.webdriver_extensions import (execute_in_all_frames,
+                                         execute_script_with_retry,
+                                         get_intra_links, scroll_down,
+                                         wait_until_loaded)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -45,8 +44,8 @@ def bot_mitigation(webdriver):
     while num_moves < NUM_MOUSE_MOVES + 1 and num_fails < NUM_MOUSE_MOVES:
         try:
             if num_moves == 0:  # move to the center of the screen
-                x = int(round(window_size['height']/2))
-                y = int(round(window_size['width']/2))
+                x = int(round(window_size['height'] / 2))
+                y = int(round(window_size['width'] / 2))
             else:  # move a random amount in some direction
                 move_max = random.randint(0, 500)
                 x = random.randint(-move_max, move_max)
@@ -163,7 +162,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
                  if x.is_displayed() is True]
         if not links:
             break
-        r = int(random.random()*len(links))
+        r = int(random.random() * len(links))
         logger.info("BROWSER %i: visiting internal link %s" % (
             browser_params['crawl_id'], links[r].get_attribute("href")))
 
@@ -285,7 +284,7 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
     output = Image.new('RGB', (max_width, total_height))
 
     # Compute dimensions for output image
-    for i in range(max(images.keys())+1):
+    for i in range(max(images.keys()) + 1):
         img = images[i]
         output.paste(im=img['object'], box=(0, img['scroll']))
         img['object'].close()
@@ -324,8 +323,8 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             driver, 'return window.scrollY;')
         prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
-        while ((curr_scrollY + inner_height) < max_height
-               and curr_scrollY != prev_scrollY):
+        while ((curr_scrollY + inner_height) < max_height and
+                curr_scrollY != prev_scrollY):
 
             # Scroll down to bottom of previous viewport
             try:
@@ -387,6 +386,7 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
             page_source = dict()
         page_source['doc_url'] = doc_url
         source = driver.page_source
+        import six
         if type(source) != six.text_type:
             source = six.text_type(source, 'utf-8')
         page_source['source'] = source

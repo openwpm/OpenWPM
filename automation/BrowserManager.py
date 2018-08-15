@@ -1,25 +1,27 @@
 from __future__ import absolute_import
-from .Commands import command_executor
-from .DeployBrowsers import deploy_browser
-from .Commands import profile_commands
-from .SocketInterface import clientsocket
-from .MPLogger import loggingclient
-from .Errors import ProfileLoadError, BrowserConfigError, BrowserCrashError
 
 import errno
-from multiprocess import Process, Queue
-from six.moves.queue import Empty as EmptyQueue
-from tblib import pickling_support
-from six import reraise
-import traceback
-import tempfile
-from six.moves import cPickle as pickle
+import os
 import shutil
 import signal
-import psutil
-import time
 import sys
-import os
+import tempfile
+import time
+import traceback
+
+import psutil
+from multiprocess import Process, Queue
+from six import reraise
+from six.moves import cPickle as pickle
+from six.moves.queue import Empty as EmptyQueue
+from tblib import pickling_support
+
+from .Commands import command_executor, profile_commands
+from .DeployBrowsers import deploy_browser
+from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
+from .MPLogger import loggingclient
+from .SocketInterface import clientsocket
+
 pickling_support.install()
 
 
@@ -226,8 +228,8 @@ class Browser:
                 self.crawl_id, self.browser_manager.pid, self.display_pid,
                 self.display_port, self.browser_pid)
         )
-        if (self.browser_manager is not None
-                and self.browser_manager.pid is not None):
+        if (self.browser_manager is not None and
+                self.browser_manager.pid is not None):
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:

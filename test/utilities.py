@@ -1,12 +1,13 @@
 from __future__ import absolute_import, print_function
-from six.moves import range, socketserver
-from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.urllib.parse import parse_qs, urlparse
 
 import os
 import threading
 from os.path import dirname, realpath
 from random import choice
+
+from six.moves import range, socketserver
+from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
+from six.moves.urllib.parse import parse_qs, urlparse
 
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"

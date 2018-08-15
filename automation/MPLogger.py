@@ -1,16 +1,18 @@
 """ Support for logging with the multiprocessing module """
-from __future__ import absolute_import
-from __future__ import print_function
-from .SocketInterface import serversocket
+from __future__ import absolute_import, print_function
+
+import json
+import logging
+import logging.handlers
+import os
+import struct
+import sys
+import time
 
 from six.moves.queue import Empty as EmptyQueue
-import logging.handlers
-import logging
-import struct
-import json
-import time
-import sys
-import os
+
+from .SocketInterface import serversocket
+
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
     """
@@ -34,6 +36,7 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
             record.exc_info = ei  # for next handler
         return struct.pack('>Lc', len(s), b'j') + s
 
+
 def loggingclient(logger_address, logger_port, level=logging.DEBUG):
     """ Establishes a logger that sends log records to loggingserver """
     logger = logging.getLogger(__name__)
@@ -50,11 +53,13 @@ def loggingclient(logger_address, logger_port, level=logging.DEBUG):
         # Set up logging to console
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(module)-20s - %(levelname)-8s - %(message)s')
+        formatter = logging.Formatter(
+            '%(module)-20s - %(levelname)-8s - %(message)s')
         consoleHandler.setFormatter(formatter)
         logger.addHandler(consoleHandler)
 
     return logger
+
 
 def loggingserver(log_file, status_queue):
     """
@@ -65,10 +70,11 @@ def loggingserver(log_file, status_queue):
     <status_queue> is a queue connect to the TaskManager used for communication
     """
     # Configure the log file
-    logging.basicConfig(filename=os.path.expanduser(log_file),
-            format= '%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
-                    ' - %(module)-20s - %(levelname)-8s: %(message)s',
-            level=logging.INFO)
+    logging.basicConfig(
+        filename=os.path.expanduser(log_file),
+        format='%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
+        ' - %(module)-20s - %(levelname)-8s: %(message)s',
+        level=logging.INFO)
 
     # Sets up the serversocket to start accepting connections
     sock = serversocket(name="loggingserver")
@@ -90,6 +96,7 @@ def loggingserver(log_file, status_queue):
         except EmptyQueue:
             pass
 
+
 def _handleLogRecord(obj):
     """ Handle log, logs everything sent. Should filter client-side """
 
@@ -109,6 +116,7 @@ def _handleLogRecord(obj):
     logger = logging.getLogger(record.name)
     logger.handle(record)
 
+
 def _drain_queue(sock_queue):
     """ Ensures queue is empty before closing """
     time.sleep(3)  # TODO: the socket needs a better way of closing
@@ -116,17 +124,20 @@ def _drain_queue(sock_queue):
         obj = sock_queue.get()
         _handleLogRecord(obj)
 
+
 def main():
     # Some tests
-    import logging, logging.handlers
+    import logging
+    import logging.handlers
     import multiprocess as mp
 
     # Set up loggingserver
     log_file = '~/mplogger.log'
     status_queue = mp.Queue()
-    loggingserver = mp.Process(target=loggingserver, args=(log_file, status_queue))
-    loggingserver.daemon = True
-    loggingserver.start()
+    lserver_process = mp.Process(target=loggingserver,
+                                 args=(log_file, status_queue))
+    lserver_process.daemon = True
+    lserver_process.start()
     server_address = status_queue.get()
 
     # Connect main process to logging server
@@ -149,7 +160,9 @@ def main():
 
     # Close the logging server
     status_queue.put('DIE')
-    loggingserver.join()
+    lserver_process.join()
     print("Server closed, exiting...")
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+                main()

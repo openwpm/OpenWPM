@@ -1,14 +1,14 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from six.moves.queue import Queue
-import threading
-import traceback
+from __future__ import absolute_import, print_function
+
+import json
 import socket
 import struct
-import json
+import threading
+import traceback
+
 import dill
-import six
 from six.moves import input
+from six.moves.queue import Queue
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237
@@ -16,7 +16,7 @@ from six.moves import input
 
 class serversocket:
     """
-    A server socket to recieve and process string messages
+    A server socket to receive and process string messages
     from client sockets to a central queue
     """
     def __init__(self, name=None, verbose=False):
@@ -48,7 +48,7 @@ class serversocket:
 
     def _handle_conn(self, client, address):
         """
-        Recieve messages and pass to queue. Messages are prefixed with
+        Receive messages and pass to queue. Messages are prefixed with
         a 4-byte integer to specify the message length and 1-byte character
         to indicate the type of serialization applied to the message.
 
@@ -83,7 +83,7 @@ class serversocket:
                             continue
                     except (UnicodeDecodeError, ValueError) as e:
                         print("Error de-serializing message: %s \n %s" % (
-                                msg, traceback.format_exc(e)))
+                            msg, traceback.format_exc(e)))
                         continue
                 self.queue.put(msg)
         except RuntimeError:
@@ -93,7 +93,7 @@ class serversocket:
     def receive_msg(self, client, msglen):
         msg = b''
         while len(msg) < msglen:
-            chunk = client.recv(msglen-len(msg))
+            chunk = client.recv(msglen - len(msg))
             if not chunk:
                 raise RuntimeError("socket connection broken")
             msg = msg + chunk
@@ -129,6 +129,7 @@ class clientsocket:
         using dill if not string, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
+        import six
         if isinstance(msg, six.binary_type):
             serialization = b'n'
         elif isinstance(msg, six.text_type):

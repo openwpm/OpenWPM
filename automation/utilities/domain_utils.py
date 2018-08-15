@@ -1,17 +1,18 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from publicsuffix import PublicSuffixList, fetch
-from ipaddress import ip_address
-from six.moves.urllib.parse import urlparse
-from functools import wraps
-import tempfile
+from __future__ import absolute_import, print_function
+
 import codecs
 import os
-import six
+import tempfile
+from functools import wraps
+from ipaddress import ip_address
+
+from publicsuffix import PublicSuffixList, fetch
 from six.moves import range
+from six.moves.urllib.parse import urlparse
 
 # We cache the Public Suffix List in temp directory
-PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(),'public_suffix_list.dat')
+PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(), 'public_suffix_list.dat')
+
 
 def get_psl():
     """
@@ -26,6 +27,7 @@ def get_psl():
     psl_cache = codecs.open(PSL_CACHE_LOC, encoding='utf8')
     return PublicSuffixList(psl_cache)
 
+
 def load_psl(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -38,15 +40,18 @@ def load_psl(function):
     wrapper.psl = None
     return wrapper
 
+
 def is_ip_address(hostname):
     """
     Check if the given string is a valid IP address
     """
+    import six
     try:
         ip_address(six.text_type(hostname))
         return True
     except ValueError:
         return False
+
 
 @load_psl
 def get_ps_plus_1(url, **kwargs):
@@ -59,7 +64,8 @@ def get_ps_plus_1(url, **kwargs):
     otherwise a version cached in the system temp directory is used.
     """
     if 'psl' not in kwargs:
-        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
+        raise ValueError(
+            "A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
     if is_ip_address(hostname):
         return hostname
@@ -73,10 +79,12 @@ def get_ps_plus_1(url, **kwargs):
     else:
         return kwargs['psl'].get_public_suffix(hostname)
 
+
 @load_psl
 def hostname_subparts(url, include_ps=False, **kwargs):
     """
-    Returns a list of slices of a url's hostname down to the PS+1 (or PS if include_ps)
+    Returns a list of slices of a url's hostname down to the PS+1
+    (or PS if include_ps)
 
     For example: http://a.b.c.d.com/path?query#frag would yield:
         [a.b.c.d.com, b.c.d.com, c.d.com, d.com] if include_ps == False
@@ -86,7 +94,8 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     otherwise a version cached in the system temp directory is used.
     """
     if 'psl' not in kwargs:
-        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
+        raise ValueError(
+            "A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
 
     # If an IP address, just return a single item list with the IP
@@ -101,18 +110,19 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     # empty list
     if '.' not in ps_plus_1:
         return []
-    subdomains = hostname[:-(len(ps_plus_1)+1)].split('.')
+    subdomains = hostname[:-(len(ps_plus_1) + 1)].split('.')
     if subdomains == ['']:
         subdomains = []
     for i in range(len(subdomains)):
-        subparts.append('.'.join(subdomains[i:])+'.'+ps_plus_1)
+        subparts.append('.'.join(subdomains[i:]) + '.' + ps_plus_1)
     subparts.append(ps_plus_1)
     if include_ps:
         try:
-            subparts.append(ps_plus_1[ps_plus_1.index('.')+1:])
-        except:
+            subparts.append(ps_plus_1[ps_plus_1.index('.') + 1:])
+        except Exception:
             pass
     return subparts
+
 
 def get_stripped_url(url, scheme=False):
     """Returns a url stripped to (scheme)?+hostname+path"""
@@ -125,6 +135,7 @@ def get_stripped_url(url, scheme=False):
     except TypeError:
         surl += purl.hostname
     return surl
+
 
 def get_stripped_urls(urls, scheme=False):
     """ Returns a set (or list) of urls stripped to (scheme)?+hostname+path """

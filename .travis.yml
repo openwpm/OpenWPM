@@ -27,7 +27,7 @@ install:
   - echo "y" | ./install.sh
   - pip install -r requirements.txt
 before_script:
-  - cd test
-script:
   - flake8
+script:
+  - cd test
   - py.test -s -v --durations=10 $TESTS

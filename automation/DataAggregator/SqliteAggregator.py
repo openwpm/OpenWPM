@@ -1,11 +1,11 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from sqlite3 import (OperationalError, ProgrammingError, IntegrityError)
-import sqlite3
+from __future__ import absolute_import, print_function
+
 import json
-import time
-import six
 import os
+import sqlite3
+import time
+from sqlite3 import IntegrityError, OperationalError, ProgrammingError
+
 from six.moves import range
 
 from .BaseAggregator import BaseAggregator, BaseListener
@@ -82,6 +82,7 @@ class SqliteListener(BaseListener):
             return
         statement, args = self._generate_insert(
             table=record[0], data=record[1])
+        import six
         for i in range(len(args)):
             if isinstance(args[i], six.binary_type):
                 args[i] = six.text_type(args[i], errors='ignore')

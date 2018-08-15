@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-from six.moves.urllib.parse import urlparse
 
 import os
 import tarfile
 
 import pytest
+from six.moves.urllib.parse import urlparse
 
 from ..automation import TaskManager
 from ..automation.utilities import db_utils, domain_utils
@@ -106,7 +106,8 @@ class TestCrawl(OpenWPMTest):
         # 1. We've made requests to it
         # 2. The url is a top_url we entered into the address bar
         # 3. The url successfully loaded (see: Issue #40)
-        # 4. The site does not respond to the initial request with a 204 (won't show in FF DB)
+        # 4. The site does not respond to the initial request with a 204
+        #    (won't show in FF DB)
         missing_urls = req_ps.intersection(hist_ps).difference(profile_ps)
         unexpected_missing_urls = set()
         for url in missing_urls:

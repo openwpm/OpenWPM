@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-from six.moves import range
-from six.moves.urllib.parse import urlparse
 
 import json
 import os
 from hashlib import md5
 from time import sleep
+
+from six.moves import range
+from six.moves.urllib.parse import urlparse
 
 from . import utilities
 from ..automation import CommandSequence, TaskManager
@@ -362,7 +363,8 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
                 row['is_frame_load'], row['is_full_page'],
-                row['is_third_party_channel'], row['is_third_party_to_top_window'],
+                row['is_third_party_channel'],
+                row['is_third_party_to_top_window'],
                 row['content_policy_type'])
             )
             channel_to_url[row['channel_id']] = row['url']
@@ -420,7 +422,8 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
                 row['is_frame_load'], row['is_full_page'],
-                row['is_third_party_channel'], row['is_third_party_to_top_window'],
+                row['is_third_party_channel'],
+                row['is_third_party_to_top_window'],
                 row['content_policy_type'])
             )
             channel_to_url[row['channel_id']] = row['url']

@@ -1,9 +1,12 @@
 from __future__ import absolute_import
-from ..SocketInterface import serversocket
-from ..MPLogger import loggingclient
-import plyvel
-import time
+
 import os
+import time
+
+import plyvel
+
+from ..MPLogger import loggingclient
+from ..SocketInterface import serversocket
 
 DB_NAME = 'content.ldb'
 
@@ -32,7 +35,7 @@ def LevelDBAggregator(manager_params, status_queue, batch_size=100):
     db_path = os.path.join(manager_params['data_directory'], DB_NAME)
     db = plyvel.DB(db_path,
                    create_if_missing=True,
-                   write_buffer_size=128*10**6,
+                   write_buffer_size=128 * 10 ** 6,
                    compression='snappy')
     batch = db.write_batch()
 

@@ -5,22 +5,21 @@ Workarounds for Selenium headaches.
 from __future__ import absolute_import
 
 import errno
-import os
-from six.moves import range
-import threading
-import tempfile
-import zipfile
 import json
+import os
 import sys
+import tempfile
+import threading
+import zipfile
 
 from selenium.webdriver.common.service import Service as BaseService
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.firefox.firefox_profile import (
-    FirefoxProfile as BaseFirefoxProfile,
-    AddonFormatError
-)
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from selenium.webdriver.firefox.firefox_profile import AddonFormatError
+from selenium.webdriver.firefox.firefox_profile import \
+    FirefoxProfile as BaseFirefoxProfile
+from selenium.webdriver.firefox.options import Options
+from six.moves import range
 
 __all__ = ['FirefoxBinary', 'FirefoxProfile', 'FirefoxLogInterceptor',
            'Options']
