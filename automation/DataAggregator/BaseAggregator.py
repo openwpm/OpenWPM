@@ -95,11 +95,11 @@ class BaseAggregator(object):
 
     @abc.abstractmethod
     def get_next_visit_id(self):
-        """Return a unique visit ID to be used as a key for a single page visit"""
+        """Return a unique visit ID to be used as a key for a single visit"""
 
     @abc.abstractmethod
     def get_next_crawl_id(self):
-        """Return a unique crawl ID to be used as a key for a browser instance"""
+        """Return a unique crawl ID used as a key for a browser instance"""
 
     def launch(self, listener_process_runner):
         """Launch the aggregator listener process"""

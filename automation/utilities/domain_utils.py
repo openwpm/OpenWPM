@@ -64,7 +64,8 @@ def get_ps_plus_1(url, **kwargs):
     otherwise a version cached in the system temp directory is used.
     """
     if 'psl' not in kwargs:
-        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
+        raise ValueError(
+            "A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
     if is_ip_address(hostname):
         return hostname
@@ -82,7 +83,8 @@ def get_ps_plus_1(url, **kwargs):
 @load_psl
 def hostname_subparts(url, include_ps=False, **kwargs):
     """
-    Returns a list of slices of a url's hostname down to the PS+1 (or PS if include_ps)
+    Returns a list of slices of a url's hostname down to the PS+1
+    (or PS if include_ps)
 
     For example: http://a.b.c.d.com/path?query#frag would yield:
         [a.b.c.d.com, b.c.d.com, c.d.com, d.com] if include_ps == False
@@ -92,7 +94,8 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     otherwise a version cached in the system temp directory is used.
     """
     if 'psl' not in kwargs:
-        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
+        raise ValueError(
+            "A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
 
     # If an IP address, just return a single item list with the IP

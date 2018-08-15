@@ -165,7 +165,7 @@ values, however.)
    >>> C["string"].value
    'seven'
    >>> C.output()
-   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="S\'seven\'\\012p1\\012."'
+   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="S\'seven\'\\012p1\\012."'  # noqa
 
 Be warned, however, if SerialCookie cannot de-serialize a value (because
 it isn't a valid pickle'd object), IT WILL RAISE AN EXCEPTION.
@@ -249,7 +249,7 @@ class CookieError(Exception):
 #
 # The legal chars have been expanded a bit to match modern browsers
 
-_LegalChars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~[]:/@{}(),?<>"
+_LegalChars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~[]:/@{}(),?<>"  # noqa
 _Translator = {
     '\000': '\\000', '\001': '\\001', '\002': '\\002',
     '\003': '\\003', '\004': '\\004', '\005': '\\005',

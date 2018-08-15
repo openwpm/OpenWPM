@@ -91,7 +91,7 @@ def ExtractXPath(element, use_id=True):
 
         # Check id first
         if use_id and parent.get('id') is not None:
-            return '//*/' + parent.name + '[@id=\"' + parent.get('id') + '\"]/' + xpath
+            return '//*/' + parent.name + '[@id=\"' + parent.get('id') + '\"]/' + xpath  # noqa
 
         xpath = check_previous_tags(parent) + '/' + xpath
 
@@ -108,7 +108,7 @@ def ExtractXPath(element, use_id=True):
 
 
 def xp1_lowercase(string):
-    return 'translate(' + string + ", 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+    return 'translate(' + string + ", 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"  # noqa
 
 # Converts a string with a wildcard in it to an XPath 1.0
 # compatible string *** ONLY SUPPORTS 1 WILDCARD ***

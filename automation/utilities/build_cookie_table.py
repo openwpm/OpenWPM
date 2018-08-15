@@ -36,7 +36,7 @@ def encode_to_unicode(string):
 
 
 def select_date_format(date_string):
-    """ Try different formats for date and output a standard form accepted by sqlite3 """
+    """ Try different formats for date and output sqlite format """
     if date_string == '' or date_string == '0':
         return None
     else:
@@ -72,9 +72,9 @@ def get_path(path_string, url):
 def get_domain(domain_string, url):
     """
     Domains are parsed in the same style as Firefox parses them. This is NOT
-    consistent across browsers. See: http://erik.io/blog/2014/03/04/definitive-guide-to-cookie-domains/
+    consistent across browsers.
+    See: http://erik.io/blog/2014/03/04/definitive-guide-to-cookie-domains/
     The Firefox implementation is given in nsCookieService::CheckDomain.
-    See: https://dxr.mozilla.org/mozilla-central/search?q=nsCookieService%3A%3ACheckDomain
 
     It can be summarized as:
       1. If a domain is given  -->  prepend a '.' if one does not exist
@@ -117,7 +117,8 @@ def parse_cookies(cookie_string, verbose, url=None, response_cookie=False):
     * Request 'Cookie'
         query=(name, value)
     * Response 'Set-Cookie'
-        query=(name, value, domain, path, expires, max-age, httponly, secure, comment, version)
+        query=(name, value, domain, path, expires, max-age, httponly,
+               secure, comment, version)
     """
     queries = list()
     attrs = ()
@@ -145,7 +146,7 @@ def parse_cookies(cookie_string, verbose, url=None, response_cookie=False):
 
 
 def build_http_cookie_table(database, verbose=False):
-    """ Extracts all http-cookie data from HTTP headers and generates a new table """
+    """ Extracts all http-cookie data from headers and builds a new table """
     con = sqlite3.connect(database)
     cur1 = con.cursor()
     cur2 = con.cursor()
@@ -231,7 +232,8 @@ def build_http_cookie_table(database, verbose=False):
         except ValueError:  # XXX temporary shim -- should be removed
             header.load_state(eval(header_str))
         for cookie_str in header['Set-Cookie']:
-            queries = parse_cookies(cookie_str, verbose, url=req_url, response_cookie=True)
+            queries = parse_cookies(cookie_str, verbose, url=req_url,
+                                    response_cookie=True)
             for query in queries:
                 cur2.execute("INSERT INTO http_response_cookies \
                             (crawl_id, header_id, name, \

@@ -53,7 +53,8 @@ def loggingclient(logger_address, logger_port, level=logging.DEBUG):
         # Set up logging to console
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(module)-20s - %(levelname)-8s - %(message)s')
+        formatter = logging.Formatter(
+            '%(module)-20s - %(levelname)-8s - %(message)s')
         consoleHandler.setFormatter(formatter)
         logger.addHandler(consoleHandler)
 
@@ -69,10 +70,11 @@ def loggingserver(log_file, status_queue):
     <status_queue> is a queue connect to the TaskManager used for communication
     """
     # Configure the log file
-    logging.basicConfig(filename=os.path.expanduser(log_file),
-                        format='%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
-                        ' - %(module)-20s - %(levelname)-8s: %(message)s',
-                        level=logging.INFO)
+    logging.basicConfig(
+        filename=os.path.expanduser(log_file),
+        format='%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
+        ' - %(module)-20s - %(levelname)-8s: %(message)s',
+        level=logging.INFO)
 
     # Sets up the serversocket to start accepting connections
     sock = serversocket(name="loggingserver")
@@ -132,7 +134,8 @@ def main():
     # Set up loggingserver
     log_file = '~/mplogger.log'
     status_queue = mp.Queue()
-    lserver_process = mp.Process(target=loggingserver, args=(log_file, status_queue))
+    lserver_process = mp.Process(target=loggingserver,
+                                 args=(log_file, status_queue))
     lserver_process.daemon = True
     lserver_process.start()
     server_address = status_queue.get()

@@ -9,6 +9,7 @@ from ..automation.Errors import CommandExecutionError, ProfileLoadError
 from .openwpmtest import OpenWPMTest
 
 # TODO update these tests to make use of blocking commands
+# TODO Check flash cookies
 
 
 class TestProfile(OpenWPMTest):
@@ -24,7 +25,8 @@ class TestProfile(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://example.com')
         manager.close()
-        assert isfile(join(browser_params[0]['profile_archive_dir'], 'profile.tar.gz'))
+        assert isfile(join(browser_params[0]['profile_archive_dir'],
+                           'profile.tar.gz'))
 
     def test_crash(self):
         manager_params, browser_params = self.get_config()
@@ -47,7 +49,8 @@ class TestProfile(OpenWPMTest):
             manager.get('example.com')  # Requires two commands to shut down
         except CommandExecutionError:
             pass
-        assert isfile(join(browser_params[0]['profile_archive_dir'], 'profile.tar.gz'))
+        assert isfile(join(browser_params[0]['profile_archive_dir'],
+                           'profile.tar.gz'))
 
     def test_profile_error(self):
         manager_params, browser_params = self.get_config()
@@ -67,8 +70,8 @@ class TestProfile(OpenWPMTest):
         # This will cause the proxy launch to crash
         manager.ldb_status_queue.put("DIE")
         manager.browsers[0]._SPAWN_TIMEOUT = 2  # Have timeout occur quickly
-        manager.browsers[0]._UNSUCCESSFUL_SPAWN_LIMIT = 2  # Have timeout occur quickly
-        manager.get('example.com')  # Cause a selenium crash to force browser to restart
+        manager.browsers[0]._UNSUCCESSFUL_SPAWN_LIMIT = 2  # Quick timeout
+        manager.get('example.com')  # Cause a selenium crasht
 
         # The browser will fail to launch due to the proxy crashes
         try:
@@ -76,8 +79,5 @@ class TestProfile(OpenWPMTest):
         except CommandExecutionError:
             pass
         manager.close()
-        assert isfile(join(browser_params[0]['profile_archive_dir'], 'profile.tar.gz'))
-
-    """ TODO Check for Flash
-    TODO Check contents of profile (tests should fail anyway if profile doesn't contain everything)
-    """
+        assert isfile(join(browser_params[0]['profile_archive_dir'],
+                           'profile.tar.gz'))
