@@ -1,6 +1,7 @@
 {
     "data_directory": "~/openwpm/",
     "log_directory": "~/openwpm/",
+    "output_format": "local",
     "database_name": "crawl-data.sqlite",
     "log_file": "openwpm.log",
     "failure_limit": null,
