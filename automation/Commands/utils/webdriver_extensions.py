@@ -2,7 +2,6 @@
 # webdriver. These are primarily for parsing and searching.
 
 from __future__ import absolute_import
-from six.moves.urllib.parse import urljoin
 
 import random
 import time
@@ -14,6 +13,7 @@ from selenium.common.exceptions import (ElementNotVisibleException,
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from six.moves.urllib.parse import urljoin
 
 from . import XPathUtil
 from ...utilities import domain_utils as du

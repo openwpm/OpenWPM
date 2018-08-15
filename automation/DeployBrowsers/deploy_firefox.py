@@ -4,9 +4,8 @@ import json
 import os.path
 import random
 
-from selenium import webdriver
-
 from pyvirtualdisplay import Display
+from selenium import webdriver
 
 from . import configure_firefox
 from ..Commands.profile_commands import load_profile

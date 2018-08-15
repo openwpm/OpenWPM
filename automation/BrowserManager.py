@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves.queue import Empty as EmptyQueue
 
 import errno
 import os
@@ -11,6 +8,10 @@ import sys
 import tempfile
 import time
 import traceback
+
+from six import reraise
+from six.moves import cPickle as pickle
+from six.moves.queue import Empty as EmptyQueue
 
 import psutil
 from multiprocess import Process, Queue

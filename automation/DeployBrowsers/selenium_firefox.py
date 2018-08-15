@@ -3,7 +3,6 @@ Workarounds for Selenium headaches.
 """
 
 from __future__ import absolute_import
-from six.moves import range
 
 import errno
 import json
@@ -20,6 +19,7 @@ from selenium.webdriver.firefox.firefox_profile import AddonFormatError
 from selenium.webdriver.firefox.firefox_profile import \
     FirefoxProfile as BaseFirefoxProfile
 from selenium.webdriver.firefox.options import Options
+from six.moves import range
 
 __all__ = ['FirefoxBinary', 'FirefoxProfile', 'FirefoxLogInterceptor',
            'Options']

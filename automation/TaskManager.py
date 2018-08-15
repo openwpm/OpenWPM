@@ -1,14 +1,15 @@
 from __future__ import absolute_import, division
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves import range
-from six.moves.queue import Empty as EmptyQueue
 
 import copy
 import json
 import os
 import threading
 import time
+
+from six import reraise
+from six.moves import cPickle as pickle
+from six.moves import range
+from six.moves.queue import Empty as EmptyQueue
 
 import psutil
 from multiprocess import Process, Queue

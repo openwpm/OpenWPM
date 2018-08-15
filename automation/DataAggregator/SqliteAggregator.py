@@ -1,11 +1,12 @@
 from __future__ import absolute_import, print_function
-from six.moves import range
 
 import json
 import os
 import sqlite3
 import time
 from sqlite3 import IntegrityError, OperationalError, ProgrammingError
+
+from six.moves import range
 
 from .BaseAggregator import BaseAggregator, BaseListener
 

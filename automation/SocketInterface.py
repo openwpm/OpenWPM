@@ -1,6 +1,4 @@
 from __future__ import absolute_import, print_function
-from six.moves import input
-from six.moves.queue import Queue
 
 import json
 import socket
@@ -9,6 +7,8 @@ import threading
 import traceback
 
 import dill
+from six.moves import input
+from six.moves.queue import Queue
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237

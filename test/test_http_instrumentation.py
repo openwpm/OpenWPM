@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-from six.moves import range
-from six.moves.urllib.parse import urlparse
 
 import json
 import os
 from hashlib import md5
 from time import sleep
+
+from six.moves import range
+from six.moves.urllib.parse import urlparse
 
 from . import utilities
 from ..automation import CommandSequence, TaskManager

@@ -1,9 +1,10 @@
 from __future__ import absolute_import
-from six.moves import cPickle as pickle
 
 import os
 import shutil
 import tarfile
+
+from six.moves import cPickle as pickle
 
 from ..Errors import ProfileLoadError
 from ..MPLogger import loggingclient

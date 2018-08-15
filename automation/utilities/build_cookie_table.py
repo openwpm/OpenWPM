@@ -1,10 +1,11 @@
 from __future__ import absolute_import, print_function
-from six.moves.urllib.parse import urlparse
 
 import json
 import os
 import sqlite3
 import time
+
+from six.moves.urllib.parse import urlparse
 
 from netlib.odict import ODictCaseless
 

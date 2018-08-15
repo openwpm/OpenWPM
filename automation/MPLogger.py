@@ -1,6 +1,5 @@
 """ Support for logging with the multiprocessing module """
 from __future__ import absolute_import, print_function
-from six.moves.queue import Empty as EmptyQueue
 
 import json
 import logging
@@ -9,6 +8,8 @@ import os
 import struct
 import sys
 import time
+
+from six.moves.queue import Empty as EmptyQueue
 
 from .SocketInterface import serversocket
 

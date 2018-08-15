@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from six.moves import range
 
 import gzip
 import json
@@ -17,6 +16,7 @@ from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from six.moves import range
 
 from ..MPLogger import loggingclient
 from ..SocketInterface import clientsocket

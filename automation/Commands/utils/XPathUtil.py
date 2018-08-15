@@ -5,9 +5,10 @@
 # Steven Englehardt (github.com/englehardt)
 
 from __future__ import absolute_import, print_function
-from six.moves import range
 
 import re
+
+from six.moves import range
 
 import bs4
 from bs4 import BeautifulSoup as bs

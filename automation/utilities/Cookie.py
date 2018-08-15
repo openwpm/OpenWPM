@@ -211,13 +211,14 @@ Finis.
 # Import our required modules
 #
 from __future__ import absolute_import
-from six.moves import map, range
-from six.moves.cPickle import dumps, loads
 
 import re
 #
 import string
 import warnings
+
+from six.moves import map, range
+from six.moves.cPickle import dumps, loads
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie", "SerialCookie",
            "SmartCookie", "Cookie"]

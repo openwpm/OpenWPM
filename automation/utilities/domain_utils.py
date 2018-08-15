@@ -1,6 +1,4 @@
 from __future__ import absolute_import, print_function
-from six.moves import range
-from six.moves.urllib.parse import urlparse
 
 import codecs
 import os
@@ -9,6 +7,8 @@ from functools import wraps
 from ipaddress import ip_address
 
 from publicsuffix import PublicSuffixList, fetch
+from six.moves import range
+from six.moves.urllib.parse import urlparse
 
 # We cache the Public Suffix List in temp directory
 PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(), 'public_suffix_list.dat')
