@@ -50,17 +50,29 @@ class S3Listener(BaseListener):
         """Get file handle corresponding to the given `visit_id`"""
         fname = "%s-%s-%s.json" % (self._task_id, visit_id, table)
         outfile = os.path.join(self.dir, fname)
+
+        # Add opening bracket for valid json
+        if not os.path.isfile(outfile):
+            with open(outfile, 'w') as f:
+                f.write('[')
         return outfile
 
     def _write_record(self, table, data, visit_id):
         """Write data to local file on disk"""
         with open(self._get_file_path(visit_id, table), 'a') as f:
-            f.write(json.dumps(data) + '\n')
+            if f.tell() == 1:
+                f.write(json.dumps(data))
+            else:
+                f.write(',\n' + json.dumps(data))
 
     def _send_to_s3(self, visit_id):
         """Copy local file to s3 and remove from disk"""
         pattern = "%s-%s-*.json" % (self._task_id, visit_id)
         for fname in glob.glob(os.path.join(self.dir, pattern)):
+            # Add closing bracket for valid json
+            with open(fname, 'a') as f:
+                f.write(']')
+            # Send to S3
             try:
                 key = os.path.basename(fname)
                 self.s3.upload_file(fname, self.bucket, key)
@@ -90,6 +102,7 @@ class S3Listener(BaseListener):
             crawl_id = data['crawl_id']
         except KeyError:
             self.logger.error("Record for table %s has no crawl id" % table)
+            self.logger.error(json.dumps(data))
             return
 
         # Check if the browser for this record has moved on to a new visit
@@ -127,7 +140,11 @@ class S3Aggregator(BaseAggregator):
         2_823342345_http_requests.json
 
     The visit and task ids are randomly generated to allow multiple writers
-    to write to the same S3 bucket.
+    to write to the same S3 bucket. Every record should have a `visit_id`
+    (which identifies the site visit) and a `crawl_id` (which identifies the
+    browser instance) so we can associate records with the appropriate meta
+    data. Any records which lack this information will be dropped by the
+    writer.
     """
     def __init__(self, manager_params, browser_params):
         super(S3Aggregator, self).__init__(manager_params, browser_params)

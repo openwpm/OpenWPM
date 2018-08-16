@@ -490,6 +490,7 @@ class TaskManager:
 
             self.sock.send(("crawl_history", {
                 "crawl_id": browser.crawl_id,
+                "visit_id": browser.curr_visit_id,
                 "command": command[0],
                 "arguments": command_arguments,
                 "bool_success": command_succeeded
