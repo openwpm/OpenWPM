@@ -3,12 +3,12 @@ from __future__ import absolute_import, print_function
 import glob
 import json
 import os
-import Queue
 import uuid
 
 import boto3
 import six
 from botocore.exceptions import ClientError
+from six.moves import queue
 
 from .BaseAggregator import BaseAggregator, BaseListener
 
@@ -24,7 +24,7 @@ def listener_process_runner(manager_params, status_queue, task_id):
         try:
             record = listener.record_queue.get(block=True, timeout=5)
             listener.process_record(record)
-        except Queue.Empty:
+        except queue.Empty:
             pass
 
     listener.drain_queue()
@@ -161,8 +161,8 @@ class S3Aggregator(BaseAggregator):
         # Write config parameters to disk
         out = dict()
         out['manager_params'] = self.manager_params
-        out['openwpm_version'] = openwpm_version
-        out['browser_version'] = browser_version
+        out['openwpm_version'] = six.text_type(openwpm_version)
+        out['browser_version'] = six.text_type(browser_version)
         out['browser_params'] = self.browser_params
         with open(os.path.join(self.dir, fname), 'w') as f:
             json.dump(out, f)
