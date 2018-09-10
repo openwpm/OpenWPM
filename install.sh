@@ -51,7 +51,7 @@ fi
 # Check if we're running on continuous integration
 # Python requirements are already installed by .travis.yml on Travis
 if [ "$TRAVIS" != "true" ]; then
-	sudo pip install --user -U -r requirements.txt
+	pip install --user -U -r requirements.txt
 fi
 
 # Grab the latest version of Firefox ESR.

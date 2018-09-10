@@ -10,6 +10,7 @@ mini-amf
 mmh3
 multiprocess
 pandas
+pandas-compat
 pillow
 plyvel
 psutil
