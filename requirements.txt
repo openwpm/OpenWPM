@@ -8,6 +8,7 @@ IPython>=5.0; python_version >= '3.0'
 mini-amf
 mmh3
 multiprocess
+pandas
 pillow
 plyvel
 psutil
