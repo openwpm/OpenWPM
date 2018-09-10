@@ -9,6 +9,7 @@ IPython>=5.0; python_version >= '3.0'
 mini-amf
 mmh3
 multiprocess
+numpy>=1.14
 pandas
 pandas-compat
 pillow
