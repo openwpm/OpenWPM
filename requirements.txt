@@ -1,4 +1,6 @@
 beautifulsoup4
+boto3
+Cython
 dill
 flake8
 flake8-isort
@@ -7,15 +9,19 @@ IPython>=5.0; python_version >= '3.0'
 mini-amf
 mmh3
 multiprocess
+numpy>=1.14
+pandas
 pillow
 plyvel
 psutil
 publicsuffix
+pyarrow
 pyasn1
 PyOPenSSL
 pytest
 python-dateutil
 pyvirtualdisplay
+s3fs
 setuptools
 six
 tabulate

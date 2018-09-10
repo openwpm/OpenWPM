@@ -16,7 +16,7 @@ from tblib import pickling_support
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
-from .DataAggregator import LevelDBAggregator, SqliteAggregator
+from .DataAggregator import LevelDBAggregator, S3Aggregator, SqliteAggregator
 from .Errors import CommandExecutionError
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
@@ -223,8 +223,15 @@ class TaskManager:
 
     def _launch_aggregators(self):
         """Launch the necessary data aggregators"""
-        self.data_aggregator = SqliteAggregator.SqliteAggregator(
-            self.manager_params, self.browser_params)
+        if self.manager_params["output_format"] == "local":
+            self.data_aggregator = SqliteAggregator.SqliteAggregator(
+                self.manager_params, self.browser_params)
+        elif self.manager_params["output_format"] == "s3":
+            self.data_aggregator = S3Aggregator.S3Aggregator(
+                self.manager_params, self.browser_params)
+        else:
+            raise Exception("Unrecognized output format: %s" %
+                            self.manager_params["output_format"])
         self.data_aggregator.launch()
         self.manager_params[
             'aggregator_address'] = self.data_aggregator.listener_address
@@ -483,6 +490,7 @@ class TaskManager:
 
             self.sock.send(("crawl_history", {
                 "crawl_id": browser.crawl_id,
+                "visit_id": browser.curr_visit_id,
                 "command": command[0],
                 "arguments": command_arguments,
                 "bool_success": command_succeeded

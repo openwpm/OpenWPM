@@ -101,12 +101,12 @@ class BaseAggregator(object):
     def get_next_crawl_id(self):
         """Return a unique crawl ID used as a key for a browser instance"""
 
-    def launch(self, listener_process_runner):
+    def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
         self.status_queue = Queue()
         self.listener_process = Process(
             target=listener_process_runner,
-            args=(self.manager_params, self.status_queue))
+            args=(self.manager_params, self.status_queue) + args)
         self.listener_process.daemon = True
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
