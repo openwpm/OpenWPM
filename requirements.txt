@@ -1,5 +1,6 @@
 beautifulsoup4
 boto3
+Cython
 dill
 flake8
 flake8-isort
