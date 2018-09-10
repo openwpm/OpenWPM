@@ -12,11 +12,13 @@ pillow
 plyvel
 psutil
 publicsuffix
+pyarrow
 pyasn1
 PyOPenSSL
 pytest
 python-dateutil
 pyvirtualdisplay
+s3fs
 setuptools
 six
 tabulate

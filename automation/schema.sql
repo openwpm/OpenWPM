@@ -17,15 +17,6 @@ CREATE TABLE IF NOT EXISTS crawl (
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(task_id) REFERENCES task(task_id));
 
-CREATE TABLE IF NOT EXISTS xpath (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(100) NOT NULL,
-    url VARCHAR(500) NOT NULL,
-    xpath VARCHAR(500) NOT NULL,
-    absolute_xpath VARCHAR(500),
-    ctime DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(name, url));
-
 CREATE TABLE IF NOT EXISTS site_visits (
     visit_id INTEGER PRIMARY KEY,
     crawl_id INTEGER NOT NULL,
@@ -60,15 +51,6 @@ CREATE TABLE IF NOT EXISTS profile_cookies (
     isHttpOnly INTEGER,
     FOREIGN KEY(crawl_id) REFERENCES crawl(id),
     FOREIGN KEY(visit_id) REFERENCES site_visits(id));
-
-CREATE TABLE IF NOT EXISTS localStorage (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crawl_id INTEGER NOT NULL,
-    page_url VARCHAR(500) NOT NULL,
-    scope TEXT,
-    KEY TEXT,
-    value TEXT,
-    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
 CREATE TABLE IF NOT EXISTS crawl_history (
     crawl_id INTEGER,

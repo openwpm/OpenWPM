@@ -1,16 +1,21 @@
 from __future__ import absolute_import, print_function
 
-import glob
 import json
-import os
 import uuid
+from collections import defaultdict
 
 import boto3
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+import s3fs
 import six
 from botocore.exceptions import ClientError
+from pyarrow.filesystem import S3FSWrapper  # noqa
 from six.moves import queue
 
 from .BaseAggregator import BaseAggregator, BaseListener
+from .parquet_schema import PQ_SCHEMAS
 
 
 def listener_process_runner(manager_params, status_queue, task_id):
@@ -34,52 +39,52 @@ def listener_process_runner(manager_params, status_queue, task_id):
 class S3Listener(BaseListener):
     """Listener that pushes aggregated records to S3.
 
-    Records for each page visit are saved locally in a json file while the page
-    visit is still running. Once the browser moves to another page, the local
-    file is reflected to S3 and removed from disk.
+    Records for each page visit are stored in memory during a page visit. Once
+    the browser moves to another page, the data is written to S3 as part of
+    a parquet dataset. The schema for this dataset is given in
+    ./parquet_schema.py
     """
     def __init__(self, status_queue, manager_params, task_id):
-        self.dir = manager_params['data_directory']
-        self.bucket = manager_params['s3_bucket']
+        self.dir = manager_params['s3_directory']
         self.browser_map = dict()  # maps crawl_id to visit_id
-        self.s3 = boto3.client('s3')
+        self._records = dict()  # maps visit_id and table to records
         self._task_id = task_id
+        self._bucket = manager_params['s3_bucket']
+        self._fs = s3fs.S3FileSystem()
+        self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
+            self._bucket, self.dir)
         super(S3Listener, self).__init__(status_queue, manager_params)
 
-    def _get_file_path(self, visit_id, table):
-        """Get file handle corresponding to the given `visit_id`"""
-        fname = "%s-%s-%s.json" % (self._task_id, visit_id, table)
-        outfile = os.path.join(self.dir, fname)
-
-        # Add opening bracket for valid json
-        if not os.path.isfile(outfile):
-            with open(outfile, 'w') as f:
-                f.write('[')
-        return outfile
+    def _get_records(self, visit_id):
+        """Get the RecordBatch corresponding to `visit_id`"""
+        if visit_id not in self._records:
+            self._records[visit_id] = defaultdict(list)
+        return self._records[visit_id]
 
     def _write_record(self, table, data, visit_id):
-        """Write data to local file on disk"""
-        with open(self._get_file_path(visit_id, table), 'a') as f:
-            if f.tell() == 1:
-                f.write(json.dumps(data))
-            else:
-                f.write(',\n' + json.dumps(data))
+        """Insert data into a RecordBatch"""
+        records = self._get_records(visit_id)
+        # Add nulls
+        for item in PQ_SCHEMAS[table].names:
+            if item not in data:
+                data[item] = None
+        records[table].append(data)
 
     def _send_to_s3(self, visit_id):
         """Copy local file to s3 and remove from disk"""
-        pattern = "%s-%s-*.json" % (self._task_id, visit_id)
-        for fname in glob.glob(os.path.join(self.dir, pattern)):
-            # Add closing bracket for valid json
-            with open(fname, 'a') as f:
-                f.write(']')
-            # Send to S3
-            try:
-                key = os.path.basename(fname)
-                self.s3.upload_file(fname, self.bucket, key)
-            except Exception:
-                self.logger.error("Exception while uploading %s" % fname)
-                return
-            os.remove(fname)
+        for table_name, data in self._records[visit_id].items():
+            df = pd.DataFrame(data)
+            table = pa.Table.from_pandas(
+                df, schema=PQ_SCHEMAS[table_name], preserve_index=False
+            )
+            pq.write_to_dataset(
+                table, self._s3_bucket_uri % table_name,
+                filesystem=self._fs,
+                partition_cols=['crawl_id', 'visit_id'],
+                preserve_index=False,
+                compression='snappy'
+            )
+        del self._records[visit_id]
 
     def process_record(self, record):
         """Add `record` to database"""
@@ -132,12 +137,9 @@ class S3Listener(BaseListener):
 class S3Aggregator(BaseAggregator):
     """
     Receives data records from other processes and aggregates them locally
-    per-site before pushing them to a remote S3 bucket. The local files are
-    deleted following a successful upload. Files are keyed by the
-    run, visit, and data type. The output format is:
-        `<task_id>_<visit_id>_<data_type>.json`
-    for example:
-        2_823342345_http_requests.json
+    per-site before pushing them to a remote S3 bucket. The remote files are
+    saved in a Paquet Dataset partitioned by the crawl_id and visit_id of
+    each record.
 
     The visit and task ids are randomly generated to allow multiple writers
     to write to the same S3 bucket. Every record should have a `visit_id`
@@ -145,12 +147,15 @@ class S3Aggregator(BaseAggregator):
     browser instance) so we can associate records with the appropriate meta
     data. Any records which lack this information will be dropped by the
     writer.
+
+    Note: Parquet's partitioned dataset reader only supports integer partition
+    columns up to 32 bits. Thus, the visit_id is capped at 32 bits and might
+    have collisions over the top million sites. As such, tables should be
+    joined on the `crawl_id` and `visit_id`.
     """
     def __init__(self, manager_params, browser_params):
         super(S3Aggregator, self).__init__(manager_params, browser_params)
-        if not os.path.exists(manager_params['data_directory']):
-            os.mkdir(manager_params['data_directory'])
-        self.dir = manager_params['data_directory']
+        self.dir = manager_params['s3_directory']
         self.bucket = manager_params['s3_bucket']
         self.s3 = boto3.client('s3')
         self._task_id = uuid.uuid4().int & (1 << 32) - 1
@@ -172,32 +177,37 @@ class S3Aggregator(BaseAggregator):
         """Save configuration details for this crawl to the database"""
 
         # Save config keyed by task id
-        fname = "%s-crawl_configuration.json" % self._task_id
-        fpath = os.path.join(self.dir, fname)
+        fname = "%s/instance-%s_configuration.json" % (self.dir, self._task_id)
 
-        # Write config parameters to disk
+        # Config parameters for update
         out = dict()
         out['manager_params'] = self.manager_params
         out['openwpm_version'] = six.text_type(openwpm_version)
         out['browser_version'] = six.text_type(browser_version)
         out['browser_params'] = self.browser_params
-        with open(os.path.join(self.dir, fname), 'w') as f:
-            json.dump(out, f)
+        out_str = json.dumps(out)
+        if type(out_str) != six.binary_type:
+            out_str = six.binary_type(out_str, 'utf-8')
+        out_f = six.BytesIO(out_str)
 
         # Upload to S3 and delete local copy
         try:
-            self.s3.upload_file(fpath, self.bucket, fname)
+            self.s3.upload_fileobj(out_f, self.bucket, fname)
         except Exception:
-            self.logger.error("Exception while uploading %s" % fpath)
+            self.logger.error("Exception while uploading %s" % fname)
             raise
-        os.remove(fpath)
 
     def get_next_visit_id(self):
-        """Generate visit id as randomly generated 64bit UUIDs"""
-        return uuid.uuid4().int & (1 << 64) - 1
+        """Generate visit id as randomly generated 32bit UUIDs
+        """
+        return uuid.uuid4().int & (1 << 32) - 1
 
     def get_next_crawl_id(self):
-        """Generate crawl id as randomly generated 32bit UUIDs"""
+        """Generate crawl id as randomly generated 32bit UUIDs
+
+        Note: Parquet's partitioned dataset reader only supports integer
+        partition columns up to 32 bits.
+        """
         return uuid.uuid4().int & (1 << 32) - 1
 
     def launch(self):
