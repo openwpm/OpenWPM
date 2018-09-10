@@ -73,17 +73,25 @@ class S3Listener(BaseListener):
     def _send_to_s3(self, visit_id):
         """Copy local file to s3 and remove from disk"""
         for table_name, data in self._records[visit_id].items():
-            df = pd.DataFrame(data)
-            table = pa.Table.from_pandas(
-                df, schema=PQ_SCHEMAS[table_name], preserve_index=False
-            )
-            pq.write_to_dataset(
-                table, self._s3_bucket_uri % table_name,
-                filesystem=self._fs,
-                partition_cols=['crawl_id', 'visit_id'],
-                preserve_index=False,
-                compression='snappy'
-            )
+            try:
+                df = pd.DataFrame(data)
+                table = pa.Table.from_pandas(
+                    df, schema=PQ_SCHEMAS[table_name], preserve_index=False
+                )
+                pq.write_to_dataset(
+                    table, self._s3_bucket_uri % table_name,
+                    filesystem=self._fs,
+                    partition_cols=['crawl_id', 'visit_id'],
+                    preserve_index=False,
+                    compression='snappy'
+                )
+            except pa.lib.ArrowInvalid as e:
+                self.logger.error(
+                    "Error while sending record:\n%s\n%s\n%s\n"
+                    % (table_name, type(e), e)
+                )
+                pass
+
         del self._records[visit_id]
 
     def process_record(self, record):
