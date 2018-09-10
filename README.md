@@ -51,13 +51,8 @@ Instrumentation and Data Access
 -------------------------------
 
 OpenWPM provides several instrumentation modules which can be enabled
-independently of each other for each crawl. With the exception of
-response body content, all instrumentation saves to a SQLite database specified
-by `manager_params['database_name']` in the main output directory. Response
-bodies are saved to `content.ldb`. The SQLite schema specified by:
-`automation/schema.sql`, instrumentation may specify additional tables necessary
-for their measurement data (see
-[extension tables](https://github.com/citp/OpenWPM/tree/master/automation/Extension/firefox/data)).
+independently of each other for each crawl. More detail on the output is
+available [below](#output-format).
 
 * HTTP Request and Response Headers, redirects, and POST request bodies
     * Set `browser_params['http_instrument'] = True`
@@ -179,6 +174,35 @@ for their measurement data (see
               open) seems to break element-only screenshots. So using this
               command will cause any future element-only screenshots to be
               misaligned.
+
+Output Format
+-------------
+
+#### Local Databases
+By default OpenWPM saves all data locally on disk in a variety of formats.
+Most of the instrumentation saves to a SQLite database specified
+by `manager_params['database_name']` in the main output directory. Response
+bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
+the hash of the content. In addition, the browser commands that dump page
+source and save screenshots save them in the `sources` and `screenshots`
+subdirectories of the main output directory. The SQLite schema
+specified by: `automation/schema.sql`. You can specify additional tables
+inline by sending a `create_table` message to the data aggregator.
+
+#### Parquet on Amazon S3 **Experimental**
+As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
+Parquet Dataset. This is currently experimental and hasn't been thoroughly
+tested. Response body content (both `save_javascript` and `save_all_content`),
+screenshots, and page source saving is not currently supported and will still
+be stored in local databases and directories. To enable S3 saving specify the
+following configuration parameters in `manager_params`:
+* Output format: `manager_params['output_format'] = 's3'`
+* S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
+* Directory within S3 bucket: `manager_params['s3_directory'] = '2018-09-09_test-crawl-new'`
+
+In order to save to S3 you must have valid access credentials stored in
+`~/.aws`. We do not currently allow you to specify an alternate storage
+location.
 
 Browser and Platform Configuration
 ----------------------------------
