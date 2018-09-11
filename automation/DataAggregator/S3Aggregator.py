@@ -17,6 +17,8 @@ from six.moves import queue
 from .BaseAggregator import BaseAggregator, BaseListener
 from .parquet_schema import PQ_SCHEMAS
 
+CACHE_SIZE = 500
+
 
 def listener_process_runner(manager_params, status_queue, task_id):
     """SqliteListener runner. Pass to new process"""
@@ -48,6 +50,7 @@ class S3Listener(BaseListener):
         self.dir = manager_params['s3_directory']
         self.browser_map = dict()  # maps crawl_id to visit_id
         self._records = dict()  # maps visit_id and table to records
+        self._batches = dict()  # maps table_name to a list of batches
         self._task_id = task_id
         self._bucket = manager_params['s3_bucket']
         self._fs = s3fs.S3FileSystem()
@@ -70,18 +73,35 @@ class S3Listener(BaseListener):
                 data[item] = None
         records[table].append(data)
 
-    def _send_to_s3(self, visit_id):
-        """Copy local file to s3 and remove from disk"""
+    def _create_batch(self, visit_id):
+        """Create record batches for all records from `visit_id`"""
         for table_name, data in self._records[visit_id].items():
+            if table_name not in self._batches:
+                self._batches[table_name] = list()
             try:
                 df = pd.DataFrame(data)
-                table = pa.Table.from_pandas(
+                batch = pa.RecordBatch.from_pandas(
                     df, schema=PQ_SCHEMAS[table_name], preserve_index=False
                 )
+                self._batches[table_name].append(batch)
+            except pa.lib.ArrowInvalid as e:
+                self.logger.error(
+                    "Error while sending record:\n%s\n%s\n%s\n"
+                    % (table_name, type(e), e)
+                )
+                pass
+        del self._records[visit_id]
+
+    def _send_to_s3(self, force=False):
+        """Copy in-memory batches to s3"""
+        for table_name, batches in self._batches.items():
+            if not force and len(batches) <= CACHE_SIZE:
+                continue
+            try:
+                table = pa.Table.from_batches(batches)
                 pq.write_to_dataset(
                     table, self._s3_bucket_uri % table_name,
                     filesystem=self._fs,
-                    partition_cols=['crawl_id'],
                     preserve_index=False,
                     compression='snappy'
                 )
@@ -91,8 +111,7 @@ class S3Listener(BaseListener):
                     % (table_name, type(e), e)
                 )
                 pass
-
-        del self._records[visit_id]
+            del self._batches[table_name]
 
     def process_record(self, record):
         """Add `record` to database"""
@@ -122,7 +141,8 @@ class S3Listener(BaseListener):
         if crawl_id not in self.browser_map:
             self.browser_map[crawl_id] = visit_id
         elif self.browser_map[crawl_id] != visit_id:
-            self._send_to_s3(self.browser_map[crawl_id])
+            self._create_batch(self.browser_map[crawl_id])
+            self._send_to_s3()
             self.browser_map[crawl_id] = visit_id
 
         # Convert data to text type
@@ -138,8 +158,7 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
-        for visit_id in self.browser_map.values():
-            self._send_to_s3(visit_id)
+        self._send_to_s3(force=True)
 
 
 class S3Aggregator(BaseAggregator):
