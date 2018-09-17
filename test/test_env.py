@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import re
 from os.path import dirname, isdir, isfile, join, realpath
+from os import environ
 
 from .openwpmtest import OpenWPMTest
 
@@ -14,7 +15,10 @@ class TestDependencies(OpenWPMTest):
         self.assert_is_installed("npm")
         self.assert_is_installed("jpm")
         self.assert_is_installed('firefox')
-        ff_bin_dir = join(self.BASE_DIR, "firefox-bin")
+        if "FF_BIN_PATH" in environ:
+            ff_bin_dir = environ["FF_BIN_PATH"]
+        else:
+            ff_bin_dir = join(self.BASE_DIR, "firefox-bin")
         assert isdir(ff_bin_dir)
         ff_binary = join(ff_bin_dir, "firefox")
         assert isfile(ff_binary)

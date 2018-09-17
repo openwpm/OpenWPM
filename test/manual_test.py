@@ -24,7 +24,10 @@ OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
-FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
+if "FF_BIN_PATH" in os.environ:
+    FF_BIN_PATH = os.environ["FF_BIN_PATH"]
+else:
+    FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
 FF_BIN = join(FF_BIN_PATH, 'firefox')
 
 

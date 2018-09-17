@@ -32,11 +32,15 @@ def parse_http_stack_trace_str(trace_str):
 
 def ensure_firefox_in_path():
     """
-    If ../../firefox-bin/ exists, add it to the PATH.
+    If ../../firefox-bin/ or os.environ["FF_BIN_PATH"] exists,
+    add it to the PATH.
     If firefox-bin does not exist, we throw a RuntimeError.
     """
-    root_dir = os.path.dirname(__file__)  # directory of this file
-    ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
+    if "FF_BIN_PATH" in os.environ:
+        ffbin = os.environ["FF_BIN_PATH"]
+    else:
+        root_dir = os.path.dirname(__file__)  # directory of this file
+        ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
     if os.path.isdir(ffbin):
         curpath = os.environ["PATH"]
         if ffbin not in curpath:
@@ -44,8 +48,9 @@ def ensure_firefox_in_path():
     else:
         raise RuntimeError(
             "The `firefox-bin` directory is not found in the root of the "
-            "OpenWPM directory. Did you run the install script "
-            "(`install.sh`)?")
+            "OpenWPM directory (did you run the install script "
+            "(`install.sh`)?), and no valid alternative directory "
+            "was specified by the environment variable FF_BIN_PATH.")
 
 
 def get_version():
