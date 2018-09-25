@@ -34,6 +34,7 @@ RUN useradd user \
   && echo 'user:secret' | chpasswd
 
 USER user
+ENV PATH="/home/user/.local/bin:${PATH}"
 
 #=============================================================
 # Install requirements for OpenWPM

@@ -472,7 +472,7 @@ After a few minutes, the container is ready to use.
 
 You can run the demo measurement from inside the container, as follows:
 
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/ \
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/Desktop \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
     -it openwpm python /opt/OpenWPM/demo.py
 
