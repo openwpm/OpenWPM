@@ -137,7 +137,7 @@ fields = [
     pa.field('is_session', pa.bool_()),
     pa.field('last_accessed', pa.string()),
     pa.field('raw_host', pa.string()),
-    pa.field('expires', pa.int32()),
+    pa.field('expires', pa.uint64()),
     pa.field('host', pa.string()),
     pa.field('is_domain', pa.bool_()),
     pa.field('is_secure', pa.bool_()),
