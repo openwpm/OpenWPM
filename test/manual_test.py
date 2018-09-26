@@ -9,6 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from automation.DeployBrowsers import configure_firefox
+from automation.utilities.platform_utils import get_firefox_binary_path, get_geckodriver_executable_path
 
 from .conftest import create_xpi
 from .utilities import BASE_TEST_URL, start_server
@@ -24,11 +25,6 @@ OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
 EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
-if "FF_BIN_PATH" in os.environ:
-    FF_BIN_PATH = os.environ["FF_BIN_PATH"]
-else:
-    FF_BIN_PATH = join(BASE_DIR, 'firefox-bin')
-FF_BIN = join(FF_BIN_PATH, 'firefox')
 
 
 class Logger():
@@ -91,11 +87,10 @@ def start_webdriver(with_extension=False):
     webdriver
         A selenium webdriver instance.
     """
-    path = os.environ['PATH']
-    if FF_BIN_PATH not in path:
-        os.environ['PATH'] = FF_BIN_PATH + os.pathsep + path
+    firefox_binary_path = get_firefox_binary_path()
+    geckodriver_executable_path = get_geckodriver_executable_path()
 
-    fb = FirefoxBinary()
+    fb = FirefoxBinary(firefox_path=firefox_binary_path)
     server, thread = start_server()
 
     def register_cleanup(driver):
@@ -123,12 +118,13 @@ def start_webdriver(with_extension=False):
         configure_firefox.optimize_prefs(fp)
 
     return register_cleanup(
-        webdriver.Firefox(firefox_binary=fb, firefox_profile=fp))
+        webdriver.Firefox(firefox_binary=fb, firefox_profile=fp, executable_path=geckodriver_executable_path))
 
 
 def start_jpm():
+    firefox_binary_path = get_firefox_binary_path()
     cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" % (BASE_TEST_URL,
-                                                            FF_BIN)
+                                                            firefox_binary_path)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416

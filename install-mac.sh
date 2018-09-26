@@ -14,7 +14,7 @@ brew install leveldb
 pip install -U -r requirements.txt
 
 # Make npm packages available
-sudo apt-get -yq install npm
+brew install node
 
 # Grab the latest version of Firefox ESR.
 # For security reasons it is very important to keep up with patch releases
@@ -41,3 +41,11 @@ rm firefox.dmg
 # npm geckodriver 1.5.x = geckodriver 0.15.0
 npm install geckodriver@1.5.0
 cp node_modules/geckodriver/geckodriver Firefox.app/Contents/MacOS/
+
+# Dependencies for OpenWPM development -- NOT needed to run the platform.
+# * Required for compiling Firefox extension
+npm install jpm -g
+
+cd test
+pip install -U -r requirements.txt
+cd -

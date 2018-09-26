@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 
 import re
 from os.path import dirname, isdir, isfile, join, realpath
-from os import environ
+from automation.utilities.platform_utils import get_firefox_binary_path, get_geckodriver_executable_path
 
 from .openwpmtest import OpenWPMTest
 
@@ -15,13 +15,10 @@ class TestDependencies(OpenWPMTest):
         self.assert_is_installed("npm")
         self.assert_is_installed("jpm")
         self.assert_is_installed('firefox')
-        if "FF_BIN_PATH" in environ:
-            ff_bin_dir = environ["FF_BIN_PATH"]
-        else:
-            ff_bin_dir = join(self.BASE_DIR, "firefox-bin")
-        assert isdir(ff_bin_dir)
-        ff_binary = join(ff_bin_dir, "firefox")
-        assert isfile(ff_binary)
+        firefox_binary_path = get_firefox_binary_path()
+        geckodriver_executable_path = get_geckodriver_executable_path()
+        assert isfile(firefox_binary_path)
+        assert isfile(geckodriver_executable_path)
 
     def test_py_pkgs(self):
         PY_REQUIREMENTS_TXT = join(self.BASE_DIR, "requirements.txt")

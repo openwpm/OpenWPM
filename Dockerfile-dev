@@ -28,7 +28,7 @@ RUN cd /opt/OpenWPM/ \
 
 RUN sudo mkdir /opt/firefox/ && \
     sudo mv /opt/OpenWPM/firefox-bin /opt/firefox/firefox-bin
-ENV FF_BIN_PATH=/opt/firefox/firefox-bin
+ENV FIREFOX_BINARY=/opt/firefox/firefox-bin/firefox-bin
 
 #=============================================================
 # Make the shell within the Docker environment more useful

@@ -412,6 +412,21 @@ additional dependencies, which can be installed by running `install-dev.sh`.
 Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 
+### Mac OSX
+
+To install the dependencies on Mac OSX, run `install-mac.sh` instead of 
+`install.sh` and `install-dev.sh`.
+This will download Firefox ESR into the current folder, move geckodriver
+next to the Firefox binary and install development dependencies. 
+For the OpenWPM to be aware of which Firefox installation to run, set the 
+FIREFOX_BINARY environment variable before running any commands. 
+
+Example, running the OpenWPM tests on Mac OSX:
+
+    export FIREFOX_BINARY="$(PWD)/Firefox.app/Contents/MacOS/firefox-bin"
+    python -m pytest -vv
+
+
 Troubleshooting
 ---------------
 
