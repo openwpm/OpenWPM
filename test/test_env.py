@@ -1,9 +1,10 @@
 from __future__ import absolute_import, print_function
 
 import re
-from os.path import dirname, isdir, isfile, join, realpath
-from automation.utilities.platform_utils import get_firefox_binary_path, get_geckodriver_executable_path
+from os.path import dirname, isfile, join, realpath
 
+from ..automation.utilities.platform_utils import (get_firefox_binary_path,
+                                                   get_geckodriver_exec_path)
 from .openwpmtest import OpenWPMTest
 
 
@@ -14,9 +15,8 @@ class TestDependencies(OpenWPMTest):
     def test_dependencies(self):
         self.assert_is_installed("npm")
         self.assert_is_installed("jpm")
-        self.assert_is_installed('firefox')
         firefox_binary_path = get_firefox_binary_path()
-        geckodriver_executable_path = get_geckodriver_executable_path()
+        geckodriver_executable_path = get_geckodriver_exec_path()
         assert isfile(firefox_binary_path)
         assert isfile(geckodriver_executable_path)
 

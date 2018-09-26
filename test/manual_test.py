@@ -1,7 +1,6 @@
 from __future__ import absolute_import, print_function
 
 import atexit
-import os
 import subprocess
 from os.path import dirname, join, realpath
 
@@ -9,7 +8,8 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from automation.DeployBrowsers import configure_firefox
-from automation.utilities.platform_utils import get_firefox_binary_path, get_geckodriver_executable_path
+from automation.utilities.platform_utils import (get_firefox_binary_path,
+                                                 get_geckodriver_exec_path)
 
 from .conftest import create_xpi
 from .utilities import BASE_TEST_URL, start_server
@@ -88,7 +88,7 @@ def start_webdriver(with_extension=False):
         A selenium webdriver instance.
     """
     firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = get_geckodriver_executable_path()
+    geckodriver_executable_path = get_geckodriver_exec_path()
 
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
     server, thread = start_server()
@@ -118,13 +118,14 @@ def start_webdriver(with_extension=False):
         configure_firefox.optimize_prefs(fp)
 
     return register_cleanup(
-        webdriver.Firefox(firefox_binary=fb, firefox_profile=fp, executable_path=geckodriver_executable_path))
+        webdriver.Firefox(firefox_binary=fb, firefox_profile=fp,
+                          executable_path=geckodriver_executable_path))
 
 
 def start_jpm():
     firefox_binary_path = get_firefox_binary_path()
-    cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" % (BASE_TEST_URL,
-                                                            firefox_binary_path)
+    cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" \
+                  % (BASE_TEST_URL, firefox_binary_path)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416
