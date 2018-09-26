@@ -528,7 +528,7 @@ on the infrastructure. You can use the following BibTeX.
         year      = "2016",
     }
 
-As of June 2018 OpenWPM has been used in [24 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
+As of June 2018 OpenWPM has been used in [25 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
 
 License
 -------
