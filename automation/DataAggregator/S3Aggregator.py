@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import gzip
+import hashlib
 import json
 import uuid
 from collections import defaultdict
@@ -18,11 +20,12 @@ from .BaseAggregator import BaseAggregator, BaseListener
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
+SITE_VISITS_INDEX = '_site_visits_index'
 
 
-def listener_process_runner(manager_params, status_queue, task_id):
+def listener_process_runner(manager_params, status_queue, instance_id):
     """SqliteListener runner. Pass to new process"""
-    listener = S3Listener(status_queue, manager_params, task_id)
+    listener = S3Listener(status_queue, manager_params, instance_id)
     listener.startup()
 
     while True:
@@ -46,13 +49,14 @@ class S3Listener(BaseListener):
     a parquet dataset. The schema for this dataset is given in
     ./parquet_schema.py
     """
-    def __init__(self, status_queue, manager_params, task_id):
+    def __init__(self, status_queue, manager_params, instance_id):
         self.dir = manager_params['s3_directory']
         self.browser_map = dict()  # maps crawl_id to visit_id
         self._records = dict()  # maps visit_id and table to records
         self._batches = dict()  # maps table_name to a list of batches
-        self._task_id = task_id
+        self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
+        self._s3 = boto3.client('s3')
         self._fs = s3fs.S3FileSystem()
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
@@ -71,6 +75,8 @@ class S3Listener(BaseListener):
         for item in PQ_SCHEMAS[table].names:
             if item not in data:
                 data[item] = None
+        # Add instance_id (for partitioning)
+        data['instance_id'] = self._instance_id
         records[table].append(data)
 
     def _create_batch(self, visit_id):
@@ -90,28 +96,70 @@ class S3Listener(BaseListener):
                     % (table_name, type(e), e)
                 )
                 pass
+
+            # We construct a special index file from the site_visits data
+            # to make it easier to query the dataset
+            if table_name == 'site_visits':
+                if SITE_VISITS_INDEX not in self._batches:
+                    self._batches[SITE_VISITS_INDEX] = list()
+                for item in data:
+                    self._batches[SITE_VISITS_INDEX].append(item)
+
         del self._records[visit_id]
+
+    def _write_str_to_s3(self, string, filename, compressed=True):
+        """Write `string` data to S3 with name `filename`"""
+        if type(string) != six.binary_type:
+            string = six.binary_type(string, 'utf-8')
+        if compressed:
+            out_f = six.BytesIO()
+            with gzip.GzipFile(fileobj=out_f, mode='w') as writer:
+                writer.write(string)
+            out_f.seek(0)
+        else:
+            out_f = six.BytesIO(string)
+
+        # Upload to S3
+        try:
+            self._s3.upload_fileobj(out_f, self._bucket, filename)
+        except Exception as e:
+            self.logger.error(
+                "Exception while uploading %s\n%s\n%s" % (
+                    filename, type(e), e)
+            )
+            pass
 
     def _send_to_s3(self, force=False):
         """Copy in-memory batches to s3"""
         for table_name, batches in self._batches.items():
             if not force and len(batches) <= CACHE_SIZE:
                 continue
-            try:
-                table = pa.Table.from_batches(batches)
-                pq.write_to_dataset(
-                    table, self._s3_bucket_uri % table_name,
-                    filesystem=self._fs,
-                    preserve_index=False,
-                    compression='snappy'
+            if table_name == SITE_VISITS_INDEX:
+                out_str = '\n'.join([json.dumps(x) for x in batches])
+                if type(out_str) != six.binary_type:
+                    out_str = six.binary_type(out_str, 'utf-8')
+                fname = '%s/site_index/instance-%s-%s.json.gz' % (
+                    self.dir, self._instance_id,
+                    hashlib.md5(out_str).hexdigest()
                 )
-            except pa.lib.ArrowInvalid as e:
-                self.logger.error(
-                    "Error while sending record:\n%s\n%s\n%s\n"
-                    % (table_name, type(e), e)
-                )
-                pass
-            del self._batches[table_name]
+                self._write_str_to_s3(out_str, fname)
+            else:
+                try:
+                    table = pa.Table.from_batches(batches)
+                    pq.write_to_dataset(
+                        table, self._s3_bucket_uri % table_name,
+                        filesystem=self._fs,
+                        preserve_index=False,
+                        partition_cols=['instance_id'],
+                        compression='snappy'
+                    )
+                except pa.lib.ArrowInvalid as e:
+                    self.logger.error(
+                        "Error while sending record:\n%s\n%s\n%s\n"
+                        % (table_name, type(e), e)
+                    )
+                    pass
+            self._batches[table_name] = list()
 
     def process_record(self, record):
         """Add `record` to database"""
@@ -176,16 +224,15 @@ class S3Aggregator(BaseAggregator):
     writer.
 
     Note: Parquet's partitioned dataset reader only supports integer partition
-    columns up to 32 bits. Thus, the visit_id is capped at 32 bits and might
-    have collisions over the top million sites. As such, tables should be
-    joined on the `crawl_id` and `visit_id`.
+    columns up to 32 bits. Currently, `instance_id` is the only partition
+    column, and thus can be no larger than 32 bits.
     """
     def __init__(self, manager_params, browser_params):
         super(S3Aggregator, self).__init__(manager_params, browser_params)
         self.dir = manager_params['s3_directory']
         self.bucket = manager_params['s3_bucket']
         self.s3 = boto3.client('s3')
-        self._task_id = uuid.uuid4().int & (1 << 32) - 1
+        self._instance_id = uuid.uuid4().int & (1 << 32) - 1
         self._create_bucket()
 
     def _create_bucket(self):
@@ -204,7 +251,8 @@ class S3Aggregator(BaseAggregator):
         """Save configuration details for this crawl to the database"""
 
         # Save config keyed by task id
-        fname = "%s/instance-%s_configuration.json" % (self.dir, self._task_id)
+        fname = "%s/instance-%s_configuration.json" % (
+            self.dir, self._instance_id)
 
         # Config parameters for update
         out = dict()
@@ -225,9 +273,9 @@ class S3Aggregator(BaseAggregator):
             raise
 
     def get_next_visit_id(self):
-        """Generate visit id as randomly generated 32bit UUIDs
+        """Generate visit id as randomly generated 64bit UUIDs
         """
-        return uuid.uuid4().int & (1 << 32) - 1
+        return uuid.uuid4().int & (1 << 64) - 1
 
     def get_next_crawl_id(self):
         """Generate crawl id as randomly generated 32bit UUIDs
@@ -240,4 +288,4 @@ class S3Aggregator(BaseAggregator):
     def launch(self):
         """Launch the aggregator listener process"""
         super(S3Aggregator, self).launch(
-            listener_process_runner, self._task_id)
+            listener_process_runner, self._instance_id)
