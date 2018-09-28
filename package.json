@@ -1,6 +1,6 @@
 {
   "name": "data-leak-instrumentation",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Allows WebExtensions to track and monitor privacy-related browsing behavior",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
