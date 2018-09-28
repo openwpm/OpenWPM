@@ -33,6 +33,7 @@
     "reset": "git clean -dfx && git reset --hard && npm i",
     "clean": "trash build test",
     "all": "run-s reset test cov:check doc:html",
+    "prepare": "run-s build",
     "prepare-release": "run-s all version doc:publish"
   },
   "scripts-info": {
