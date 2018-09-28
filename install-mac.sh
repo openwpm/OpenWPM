@@ -14,7 +14,7 @@ brew install leveldb
 pip install -U -r requirements.txt
 
 # Make npm packages available
-brew install node
+brew install node || brew upgrade node
 
 # Grab the latest version of Firefox ESR.
 # For security reasons it is very important to keep up with patch releases
