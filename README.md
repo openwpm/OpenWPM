@@ -519,9 +519,20 @@ it's being run from the root OpenWPM directory):
 
 Instruction on how to run Docker GUI applications in Mac OSX are available
 [here](https://stackoverflow.com/questions/37523980/running-gui-apps-on-docker-container-with-a-macbookpro-host).
-Given properly installed prerequisites (included a reboot), the helper script
+Given properly installed prerequisites (including a reboot), the helper script
 `run-on-osx-via-docker.sh` in the project root folder can be used to facilitate
 working with Docker in Mac OSX.
+
+To open a bash session within the environment:
+
+    ./run-on-osx-via-docker.sh # 
+
+Or, run commands directly:
+
+    ./run-on-osx-via-docker.sh python demo.py
+    ./run-on-osx-via-docker.sh python -m test.manual_test
+    ./run-on-osx-via-docker.sh python -m pytest
+    ./run-on-osx-via-docker.sh python -m pytest -vv -s
 
 Disclaimer
 -----------
