@@ -8,7 +8,9 @@ def startSocketServer(
     browser_params={
         'js_instrument': True,
         'cookie_instrument': True,
-        'cp_instrument': True}):
+        'cp_instrument': True},
+        log_output=False,
+        daemon=True):
     sio = socketio.Server(async_mode='eventlet')
 
     @sio.on('connect', namespace='/openwpm')
@@ -29,22 +31,22 @@ def startSocketServer(
     def disconnect(sid):
         print('disconnect ', sid)
 
-    args = (sio,)
+    args = (sio, log_output)
     socket_server_process = Process(target=serve, args=args)
-    socket_server_process.daemon = True
+    socket_server_process.daemon = daemon
     socket_server_process.start()
 
 
-def serve(_sio):
+def serve(_sio, log_output):
     try:
         # Silence repeated socket attempts
         app = socketio.Middleware(_sio)
         eventlet.wsgi.server(
             eventlet.listen(
-                ('', 7331)), app, log_output=False)
+                ('', 7331)), app, log_output=log_output)
     except BaseException:
         pass
 
 
 if __name__ == '__main__':
-    startSocketServer()
+    startSocketServer(log_output=True, daemon=False)
