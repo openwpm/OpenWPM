@@ -1,9 +1,9 @@
-const {Cc, Ci} = require("chrome");
-var events = require("sdk/system/events");
-const data = require("sdk/self").data;
-var loggingDB = require("./loggingdb.js");
+import { Cc, Ci } from 'chrome';
+import events from 'sdk/system/events';
+import { data } from 'sdk/self';
+import * as loggingDB from './loggingdb.js';
 
-exports.run = function(crawlID) {
+export const run = function(crawlID) {
     // Instrument cookie changes
     events.on("cookie-changed", function(event) {
         var data = event.data;

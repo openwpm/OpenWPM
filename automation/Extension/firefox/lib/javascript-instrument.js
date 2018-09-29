@@ -1,8 +1,8 @@
-var pageMod = require("sdk/page-mod");
-const data = require("sdk/self").data;
-var loggingDB = require("./loggingdb.js");
+import pageMod from 'sdk/page-mod';
+import { data } from 'sdk/self';
+import * as loggingDB from './loggingdb.js';
 
-exports.run = function(crawlID, testing) {
+export const run = function(crawlID, testing) {
 
   // Inject content script to instrument JavaScript API
   pageMod.PageMod({

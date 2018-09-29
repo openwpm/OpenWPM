@@ -1,6 +1,5 @@
-const {Cc, Ci}  = require("chrome");
-
-var bufferpack  = require("bufferpack/bufferpack");
+import { Cc, Ci } from 'chrome';
+import * as bufferpack from 'bufferpack/bufferpack';
 
 var tm = Cc["@mozilla.org/thread-manager;1"].getService();
 var socketService = Cc["@mozilla.org/network/socket-transport-service;1"]
@@ -60,7 +59,6 @@ class ListeningSocket {
     }, 0, 0, tm.mainThread);
   }
 }
-exports.ListeningSocket = ListeningSocket;
 
 class SendingSocket {
   // Socket which encodes messages and sets to specified (host, port)
@@ -100,4 +98,4 @@ class SendingSocket {
     this._stream.close();
   }
 }
-exports.SendingSocket = SendingSocket;
+export { ListeningSocket, SendingSocket };

@@ -1,14 +1,14 @@
-const fileIO            = require("sdk/io/file");
-const system            = require("sdk/system");
-const pageMod           = require("sdk/page-mod");
-const data              = require("sdk/self").data;
-var loggingDB           = require("./lib/loggingdb.js");
-var cookieInstrument    = require("./lib/cookie-instrument.js");
-var jsInstrument        = require("./lib/javascript-instrument.js");
-var httpInstrument      = require("./lib/http-instrument.js");
+import fileIO from 'sdk/io/file';
+import system from 'sdk/system';
+import pageMod from 'sdk/page-mod';
+import { data } from 'sdk/self';
+import * as loggingDB from './lib/loggingdb.js';
+import * as cookieInstrument from './lib/cookie-instrument.js';
+import * as jsInstrument from './lib/javascript-instrument.js';
+import * as httpInstrument from './lib/http-instrument.js';
 
 
-exports.main = function(options, callbacks) {
+export const main = function(options, callbacks) {
 
   // Read the browser configuration from file
   var path = system.pathFor("ProfD") + '/browser_params.json';

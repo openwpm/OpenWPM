@@ -1,6 +1,6 @@
-const fileIO            = require("sdk/io/file");
-const system            = require("sdk/system");
-var socket              = require("./socket.js");
+import fileIO from 'sdk/io/file';
+import system from 'sdk/system';
+import * as socket from './socket.js';
 
 var crawlID = null;
 var visitID = null;
@@ -10,7 +10,7 @@ var ldbAggregator = null;
 var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
+export const open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
@@ -54,7 +54,7 @@ exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID)
     listeningSocket.startListening();
 };
 
-exports.close = function() {
+export const close = function() {
     if (dataAggregator != null) {
         dataAggregator.close();
     }
@@ -80,7 +80,7 @@ var makeLogJSON = function(lvl, msg) {
     return log_json;
 }
 
-exports.logInfo = function(msg) {
+export const logInfo = function(msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -93,7 +93,7 @@ exports.logInfo = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logDebug = function(msg) {
+export const logDebug = function(msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -106,7 +106,7 @@ exports.logDebug = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logWarn = function(msg) {
+export const logWarn = function(msg) {
     // Always log to browser console
     console.warn(msg);
 
@@ -119,7 +119,7 @@ exports.logWarn = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logError = function(msg) {
+export const logError = function(msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -132,7 +132,7 @@ exports.logError = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logCritical = function(msg) {
+export const logCritical = function(msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -145,18 +145,20 @@ exports.logCritical = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.saveRecord = function(instrument, record) {
+export const saveRecord = function(instrument, record) {
     // Add visit id if changed
     while (!debugging && listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
-        exports.logDebug("Visit Id: " + visitID);
+        logDebug("Visit Id: " + visitID);
     }
     record["visit_id"] = visitID;
 
 
     if (!visitID && !debugging) {
-        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(record));
+        logCritical(
+            'Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
+                        JSON.stringify(record)
+        );
         record["visit_id"] = -1;
     }
 
@@ -166,9 +168,9 @@ exports.saveRecord = function(instrument, record) {
       return;
     }
     dataAggregator.send([instrument, record]);
-}
+};
 
-exports.saveContent = function(content, contentHash) {
+export const saveContent = function(content, contentHash) {
   // send content to levelDBAggregator which stores content
   // deduplicated by contentHash in a levelDB database
   if (debugging) {
@@ -176,7 +178,7 @@ exports.saveContent = function(content, contentHash) {
     return;
   }
   ldbAggregator.send([content, contentHash]);
-}
+};
 
 function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
@@ -189,8 +191,8 @@ var escapeString = function(string) {
 
     return encode_utf8(string);
 };
-exports.escapeString = escapeString;
+export { escapeString };
 
-exports.boolToInt = function(bool) {
+export const boolToInt = function(bool) {
     return bool ? 1 : 0;
 };

@@ -1,9 +1,10 @@
 // TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
-const {Cc, Ci, CC, Cu, Cr, components} = require("chrome");
-const events      = require("sdk/system/events");
-const data        = require("sdk/self").data;
-var loggingDB     = require("./loggingdb.js");
-var httpPostParser    = require("./http-post-parser.js");
+import { Cc, Ci, CC, Cu, Cr, components } from 'chrome';
+
+import events from 'sdk/system/events';
+import { data } from 'sdk/self';
+import * as loggingDB from './loggingdb.js';
+import * as httpPostParser from './http-post-parser.js';
 
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
     'nsIBinaryInputStream', 'setInputStream');
@@ -462,7 +463,7 @@ var httpResponseHandler = function(respEvent, isCached, crawlID,
  * Attach handlers to event monitor
  */
 
-exports.run = function(crawlID, saveJavascript, saveAllContent) {
+export const run = function(crawlID, saveJavascript, saveAllContent) {
   // Monitor http events
   events.on("http-on-modify-request", function(event) {
     httpRequestHandler(event, crawlID);
