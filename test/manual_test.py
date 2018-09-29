@@ -122,14 +122,14 @@ def start_webdriver(with_extension=False):
                           executable_path=geckodriver_executable_path))
 
 
-def start_jpm():
+def start_webext():
     firefox_binary_path = get_firefox_binary_path()
-    cmd_jpm_run = "jpm run --binary-args 'url %s' -b %s" \
+    cmd_webext_run = "npm start -- --start-url '%s' --firefox '%s'" \
                   % (BASE_TEST_URL, firefox_binary_path)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416
-        for line in get_command_output(cmd_jpm_run, cwd=EXT_PATH):
+        for line in get_command_output(cmd_webext_run, cwd=EXT_PATH):
             print(colorize(line), bcolors.ENDC, end=' ')
     except KeyboardInterrupt:
         print("Keyboard Interrupt detected, shutting down...")
@@ -144,7 +144,7 @@ def main():
 
     # TODO use some real parameter handling library
     if len(sys.argv) == 1:
-        start_jpm()
+        start_webext()
     elif len(sys.argv) >= 2 and sys.argv[1] == '--selenium':
         if len(sys.argv) == 3 and sys.argv[2] == '--no-extension':
             driver = start_webdriver(False)

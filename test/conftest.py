@@ -12,9 +12,9 @@ EXTENSION_DIR = os.path.join(
 
 
 def create_xpi():
-    """Creates a new xpi using jpm."""
-    if utilities.which("jpm"):
-        subprocess.check_call(["jpm", "xpi"],
+    """Creates a new xpi using npm run build."""
+    if utilities.which("npm"):
+        subprocess.check_call(["npm run build"],
                               cwd=EXTENSION_DIR)
     else:
         assert os.path.exists(os.path.join(EXTENSION_DIR, 'openwpm.xpi'))

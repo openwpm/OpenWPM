@@ -377,10 +377,10 @@ dependencies, which can be installed with `install-dev.sh`.
 
 The extension instrumentation is included in `/automation/Extension/firefox/`.
 Any edits within this directory will require the extension to be re-built with
-`jpm` to produce a new `openwpm.xpi` with your updates. For more information on
+`npm run build` to produce a new `openwpm.xpi` with your updates. For more information on
 developing a Firefox extension, we recommend reading this
-[MDN introductory tutorial](https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Getting_Started_(jpm)),
- as well as the [jpm reference page](https://developer.mozilla.org/en-US/Add-ons/SDK/Tools/jpm).
+[MDN introductory tutorial](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions),
+ as well as the [web-ext reference page](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Getting_started_with_web-ext).
 
 ### Debugging the platform
 
@@ -392,10 +392,10 @@ continuing the crawl). We recommend using
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
-* `python -m test.manual_test` uses `jpm` to build the current extension directory
+* `python -m test.manual_test` rebuilds the current extension directory
   and launch a Firefox instance with it.
 * `python -m test.manual_test --selenium` launches a Firefox Selenium instance
-  after using `jpm` to automatically rebuild `openwpm.xpi`. The script then
+  after automatically rebuilding `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
 * `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium

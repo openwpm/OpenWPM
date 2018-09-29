@@ -42,7 +42,9 @@ npm install geckodriver@^1.12.2
 cp node_modules/geckodriver/geckodriver Firefox.app/Contents/MacOS/
 
 # Dependencies for OpenWPM development -- NOT needed to run the platform.
-# * Required for compiling Firefox extension
-npm install jpm -g
+
+cd automation/Extension/firefox/
+npm install
+cd -
 
 pip install -U -r requirements-dev.txt
