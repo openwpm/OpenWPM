@@ -12,6 +12,4 @@ fi
 
 sudo npm install jpm -g
 
-cd test
-pip install --user -U -r requirements.txt
-cd -
+pip install --user -U -r requirements-dev.txt

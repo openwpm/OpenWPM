@@ -46,6 +46,4 @@ cp node_modules/geckodriver/geckodriver Firefox.app/Contents/MacOS/
 # * Required for compiling Firefox extension
 npm install jpm -g
 
-cd test
-pip install -U -r requirements.txt
-cd -
+pip install -U -r requirements-dev.txt
