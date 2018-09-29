@@ -3,12 +3,22 @@ import eventlet
 import eventlet.wsgi
 import threading
 
-def startSocketServer(browser_params={'js_instrument':True, 'cookie_instrument': True, 'cp_instrument': True}):
+
+def startSocketServer(
+    browser_params={
+        'js_instrument': True,
+        'cookie_instrument': True,
+        'cp_instrument': True}):
     sio = socketio.Server(async_mode='eventlet')
+
     @sio.on('connect', namespace='/openwpm')
     def connect(sid, environ):
         print("connect ", sid)
-        sio.emit('config',{'js':browser_params['js_instrument'], 'cookie': browser_params['cookie_instrument'], 'cp': browser_params['cp_instrument']},namespace='/openwpm')
+        sio.emit('config',
+                 {'js': browser_params['js_instrument'],
+                  'cookie': browser_params['cookie_instrument'],
+                  'cp': browser_params['cp_instrument']},
+                 namespace='/openwpm')
 
     @sio.on('sql', namespace='/openwpm')
     def message(sid, data):
@@ -28,8 +38,10 @@ def serve(_sio):
     try:
         # Silence repeated socket attempts
         app = socketio.Middleware(_sio)
-        eventlet.wsgi.server(eventlet.listen(('', 7331)), app, log_output=False)
-    except:
+        eventlet.wsgi.server(
+            eventlet.listen(
+                ('', 7331)), app, log_output=False)
+    except BaseException:
         pass
 
 
