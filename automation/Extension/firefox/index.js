@@ -8,7 +8,7 @@ import * as jsInstrument from './lib/javascript-instrument.js';
 import * as httpInstrument from './lib/http-instrument.js';
 
 
-export const main = function(options, callbacks) {
+const main = function(options, callbacks) {
 
   // Read the browser configuration from file
   var path = system.pathFor("ProfD") + '/browser_params.json';
@@ -51,3 +51,5 @@ export const main = function(options, callbacks) {
                        config['save_all_content']);
   }
 };
+
+main();

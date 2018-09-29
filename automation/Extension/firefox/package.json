@@ -12,6 +12,7 @@
   "devDependencies": {
     "concurrently": "^3.6.1",
     "rollup": "^0.66.2",
+    "rollup-plugin-commonjs": "^9.1.8",
     "rollup-plugin-node-resolve": "^3.4.0",
     "web-ext": "^2.9.1"
   },
@@ -20,7 +21,8 @@
   },
   "private": true,
   "scripts": {
-    "build": "rollup -c && web-ext build && mv openwpm-*.zip openwpm.xpi",
+    "build": "rollup -c && web-ext build",
+    "postbuild": "mv openwpm-*.zip openwpm.xpi",
     "start": "rollup -c && web-ext run --no-reload",
     "watch": "concurrently 'rollup -c --watch' 'web-ext run'"
   }

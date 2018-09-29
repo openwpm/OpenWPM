@@ -1,5 +1,5 @@
 import { Cc, Ci } from 'chrome';
-import * as bufferpack from 'bufferpack/bufferpack';
+import * as bufferpack from 'bufferpack';
 
 var tm = Cc["@mozilla.org/thread-manager;1"].getService();
 var socketService = Cc["@mozilla.org/network/socket-transport-service;1"]
