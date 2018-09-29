@@ -660,7 +660,11 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
-  msg.inFrame = window.self !== window.top;
+  try {
+    msg.inFrame = window.self !== window.top;
+  } catch (err) {
+    msg.inFrame = true; // we land here if the document into which it's embedded has a different origin
+  }
   self.port.emit(type, msg);
 }
 
