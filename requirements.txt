@@ -21,11 +21,11 @@ pyasn1
 PyOPenSSL
 pytest
 python-dateutil
+python-socketio
 pyvirtualdisplay
 s3fs
 setuptools
 six
-socketio
 tabulate
 tblib
 tld

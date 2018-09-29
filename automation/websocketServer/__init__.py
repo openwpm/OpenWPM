@@ -1,7 +1,7 @@
 import socketio
 import eventlet
 import eventlet.wsgi
-import threading
+from multiprocess import Process
 
 
 def startSocketServer(
@@ -29,9 +29,10 @@ def startSocketServer(
     def disconnect(sid):
         print('disconnect ', sid)
 
-    wst = threading.Thread(target=serve, args=(sio,))
-    wst.daemon = True
-    wst.start()
+    args = (sio,)
+    socket_server_process = Process(target=serve, args=args)
+    socket_server_process.daemon = True
+    socket_server_process.start()
 
 
 def serve(_sio):
@@ -46,5 +47,4 @@ def serve(_sio):
 
 
 if __name__ == '__main__':
-    startSocketServer()
     startSocketServer()
