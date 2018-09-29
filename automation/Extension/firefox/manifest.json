@@ -1,0 +1,27 @@
+{
+  "name": "OpenWPM",
+  "description": "OpenWPM WebExension",
+  "version": "0.1",
+  "manifest_version": 2,
+  "background": {
+    "scripts": ["node_modules/socket.io-client/socket.io.js","background.js"]
+  },
+  "icons": { "16": "calculator-16.png", "128": "calculator-128.png" },
+  "content_scripts": [
+        {
+        "matches": [
+            "http://*/*",
+            "https://*/*"
+            ],
+        "js": ["data/content.js"]
+        }
+    ],
+  "permissions": [
+      "cookies",
+      "webRequest",
+      "tabs",
+      "http://*/*",
+      "https://*/*"
+  ]
+
+}

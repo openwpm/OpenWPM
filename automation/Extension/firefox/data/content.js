@@ -660,7 +660,8 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
-  self.port.emit(type, msg);
+  var port = chrome.runtime.connect({name: "javascriptMsg"});
+  port.postMessage({type: msg});
 }
 
 var event_id = Math.random();

@@ -21,6 +21,7 @@ from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .MPLogger import loggingclient
 from .SocketInterface import clientsocket
+from .websocketServer import startSocketServer
 
 pickling_support.install()
 
@@ -378,6 +379,9 @@ def BrowserManager(command_queue, status_queue, browser_params,
             extension_socket.connect('127.0.0.1', int(port))
         else:
             extension_socket = None
+
+        if browser_params['browser'] == 'chrome' and browser_params['extension_enabled']:
+            startSocketServer(browser_params)
 
         logger.debug(
             "BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])
