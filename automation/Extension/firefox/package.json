@@ -8,8 +8,5 @@
   "dependencies": {
     "bufferpack": "0.0.6",
     "socket.io-client": "^1.5.1"
-  },
-  "permissions": {
-    "unsafe-content-script": true
   }
 }
