@@ -1,4 +1,4 @@
-var DEBUG = true;
+var DEBUG = false;
 
 /**
  * Kill the current tab and create a new one to stop traffic.

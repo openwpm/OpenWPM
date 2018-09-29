@@ -1,7 +1,7 @@
 {
   "name": "openwpm",
   "title": "openwpm",
-  "description": "Extension with socket interface into OpenWPM",
+  "description": "Extension with websocket interface into OpenWPM",
   "author": "Steven Englehardt",
   "license": "GPL v3",
   "version": "0.0.1",
