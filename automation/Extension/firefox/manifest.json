@@ -1,27 +1,34 @@
 {
   "name": "OpenWPM",
-  "description": "OpenWPM WebExension",
-  "version": "0.1",
+  "description": "OpenWPM WebExtension",
+  "version": "0.1.0",
   "manifest_version": 2,
   "background": {
-    "scripts": ["node_modules/socket.io-client/socket.io.js","background.js"]
+    "scripts": [
+      "node_modules/socket.io-client/socket.io.js",
+      "background.js"
+    ]
   },
-  "icons": { "16": "calculator-16.png", "128": "calculator-128.png" },
+  "icons": {
+    "48": "cctv.png",
+    "96": "cctv.png"
+  },
   "content_scripts": [
-        {
-        "matches": [
-            "http://*/*",
-            "https://*/*"
-            ],
-        "js": ["data/content.js"]
-        }
-    ],
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "data/content.js"
+      ]
+    }
+  ],
   "permissions": [
-      "cookies",
-      "webRequest",
-      "tabs",
-      "http://*/*",
-      "https://*/*"
+    "cookies",
+    "tabs",
+    "webRequest",
+    "http://*/*",
+    "https://*/*"
   ]
-
 }
