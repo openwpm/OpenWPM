@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS javascript(
     script_col TEXT,
     func_name TEXT,
     script_loc_eval TEXT,
+    in_frame BOOLEAN,
     document_url TEXT,
     top_level_url TEXT,
     call_stack TEXT,

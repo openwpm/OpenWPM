@@ -660,6 +660,7 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
+  msg.inFrame = window.self !== window.top;
   self.port.emit(type, msg);
 }
 

@@ -21,6 +21,7 @@ exports.run = function(crawlID, testing) {
         update["script_col"] = loggingDB.escapeString(data.scriptCol);
         update["func_name"] = loggingDB.escapeString(data.funcName);
         update["script_loc_eval"] = loggingDB.escapeString(data.scriptLocEval);
+        update["in_frame"] = data.inFrame;
         update["call_stack"] = loggingDB.escapeString(data.callStack);
         update["symbol"] = loggingDB.escapeString(data.symbol);
         update["operation"] = loggingDB.escapeString(data.operation);
