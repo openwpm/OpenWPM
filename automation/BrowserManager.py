@@ -349,39 +349,13 @@ def BrowserManager(command_queue, status_queue, browser_params,
         if prof_folder[-1] != '/':
             prof_folder += '/'
 
-        # Read the extension port -- if extension is enabled
-        # TODO: Initial communication from extension to TM should use sockets
-        if (browser_params['browser'] == 'firefox' and
-                browser_params['extension_enabled']):
-            logger.debug("BROWSER %i: Looking for extension port information "
-                         "in %s" % (browser_params['crawl_id'], prof_folder))
-            elapsed = 0
-            port = None
-            ep_filename = os.path.join(prof_folder, 'extension_port.txt')
-            while elapsed < 5:
-                try:
-                    with open(ep_filename, 'rt') as f:
-                        port = int(f.read().strip())
-                        break
-                except OSError as e:
-                    if e.errno != errno.ENOENT:
-                        raise
-                time.sleep(0.1)
-                elapsed += 0.1
-            if port is None:
-                # try one last time, allowing all exceptions to propagate
-                with open(ep_filename, 'rt') as f:
-                    port = int(f.read().strip())
-
-            logger.debug("BROWSER %i: Connecting to extension on port %i" % (
-                browser_params['crawl_id'], port))
-            extension_socket = clientsocket(serialization='json')
-            extension_socket.connect('127.0.0.1', int(port))
+        # Allow socket based communication with extension -- if extension is enabled
+        if browser_params['extension_enabled']:
+            logger.debug("BROWSER %i: Starting socket.io server for communication with extension"
+                         % (browser_params['crawl_id']))
+            extension_socket = startSocketServer(browser_params, manager_params, log_output=True, daemon=False)
         else:
             extension_socket = None
-
-        if browser_params['browser'] == 'chrome' and browser_params['extension_enabled']:
-            startSocketServer(browser_params)
 
         logger.debug(
             "BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])

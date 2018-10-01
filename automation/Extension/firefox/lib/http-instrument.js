@@ -1,11 +1,12 @@
 // TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
-import { Cc, Ci, CC, Cu, Cr, components } from 'chrome';
+// import { Cc, Ci, CC, Cu, Cr, components } from 'chrome';
 
-import events from 'sdk/system/events';
-import { data } from 'sdk/self';
+// import events from 'sdk/system/events';
+// import { data } from 'sdk/self';
 import * as loggingDB from './loggingdb.js';
 import * as httpPostParser from './http-post-parser.js';
 
+/*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
     'nsIBinaryInputStream', 'setInputStream');
 var BinaryOutputStream = CC('@mozilla.org/binaryoutputstream;1',
@@ -20,6 +21,7 @@ var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
          .createInstance(Ci.nsIScriptableUnicodeConverter);
 converter.charset = "UTF-8";
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+*/
 
 /*
  * HTTP Request Handler and Helper Functions
@@ -464,6 +466,82 @@ var httpResponseHandler = function(respEvent, isCached, crawlID,
  */
 
 export const run = function(crawlID, saveJavascript, saveAllContent) {
+
+  const allTypes = [
+    "beacon",
+    "csp_report",
+    "font",
+    "image",
+    "imageset",
+    "main_frame",
+    "media",
+    "object",
+    "object_subrequest",
+    "ping",
+    "script",
+    // "speculative",
+    "stylesheet",
+    "sub_frame",
+    "web_manifest",
+    "websocket",
+    "xbl",
+    "xml_dtd",
+    "xmlhttprequest",
+    "xslt",
+    "other",
+  ];
+
+  // request listener
+
+  browser.webRequest.onBeforeRequest.addListener(
+    function(details) {
+      // Ignore requests made by extensions
+      if (details.originUrl && details.originUrl.indexOf("moz-extension://") > -1) {
+        return;
+      }
+      console.log("webRequest.onBeforeRequest listener", details);
+    },
+    { urls: ["http://*/*", "https://*/*"], types: allTypes },
+    ["requestBody"],
+  );
+
+  browser.webRequest.onBeforeRequest.addListener(
+    function(details) {
+      // Ignore requests made by extensions
+      if (details.originUrl && details.originUrl.indexOf("moz-extension://") > -1) {
+        return;
+      }
+      console.log("webRequest.onBeforeRequest listener", details);
+    },
+    { urls: ["http://*/*", "https://*/*"], types: allTypes },
+    ["requestBody"],
+  );
+
+  browser.webRequest.onBeforeSendHeaders.addListener(
+    function(details) {
+      // Ignore requests made by extensions
+      if (details.originUrl && details.originUrl.indexOf("moz-extension://") > -1) {
+        return;
+      }
+      console.log("webRequest.onBeforeSendHeaders listener", details);
+    },
+    { urls: ["http://*/*", "https://*/*"], types: allTypes },
+    ["requestHeaders"],
+  );
+
+  browser.webRequest.onCompleted.addListener(
+    function(details) {
+      // Ignore requests made by extensions
+      if (details.originUrl && details.originUrl.indexOf("moz-extension://") > -1) {
+        return;
+      }
+      console.log("webRequest.onCompleted listener", details);
+    },
+    { urls: ["http://*/*", "https://*/*"], types: allTypes },
+    ["responseHeaders"],
+  );
+
+  /*
   // Monitor http events
   events.on("http-on-modify-request", function(event) {
     httpRequestHandler(event, crawlID);
@@ -480,4 +558,5 @@ export const run = function(crawlID, saveJavascript, saveAllContent) {
   events.on("http-on-examine-merged-response", function(event) {
     httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
   }, true);
+  */
 };

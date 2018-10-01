@@ -1,6 +1,6 @@
 // Incorporates code from: https://github.com/redline13/selenium-jmeter/blob/6966d4b326cd78261e31e6e317076569051cac37/content/library/recorder/HttpPostParser.js
 
-import { Cc, Ci, CC, Cu, components } from 'chrome';
+// import { Cc, Ci, CC, Cu, components } from 'chrome';
 
 import * as loggingDB from './loggingdb.js';
 

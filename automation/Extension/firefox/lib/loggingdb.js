@@ -1,5 +1,3 @@
-import fileIO from 'sdk/io/file';
-import system from 'sdk/system';
 import * as socket from './socket.js';
 
 var crawlID = null;
@@ -22,36 +20,28 @@ export const open = function(aggregatorAddress, ldbAddress, logAddress, curr_cra
 
     // Connect to MPLogger for extension info/debug/error logging
     if (logAddress != null) {
-        logAggregator = new socket.SendingSocket();
-        var rv = logAggregator.connect(logAddress[0], logAddress[1]);
+        logAggregator = new socket.SendingSocket("log");
+        var rv = logAggregator.connect();
         console.log("logSocket started?", rv)
     }
 
     // Connect to databases for saving data
     if (aggregatorAddress != null) {
-        dataAggregator = new socket.SendingSocket();
-        var rv = dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
+        dataAggregator = new socket.SendingSocket("data");
+        var rv = dataAggregator.connect();
         console.log("sqliteSocket started?",rv);
     }
     if (ldbAddress != null) {
-        ldbAggregator = new socket.SendingSocket();
-        var rv = ldbAggregator.connect(ldbAddress[0], ldbAddress[1]);
+        ldbAggregator = new socket.SendingSocket("ldb");
+        var rv = ldbAggregator.connect();
         console.log("ldbSocket started?",rv);
     }
 
-
-    // Listen for incomming urls as visit ids
-    listeningSocket = new socket.ListeningSocket();
-    var path = system.pathFor("ProfD") + '/extension_port.txt';
-    console.log("Writing listening socket port to disk at:", path);
-    var file = fileIO.open(path, 'w');
-    if (!file.closed) {
-        file.write(listeningSocket.port);
-        file.close();
-        console.log("Port",listeningSocket.port,"written to disk.");
-    }
-    console.log("Starting socket listening for incomming connections.");
+    // Listen for incoming urls as visit ids
+    listeningSocket = new socket.ListeningSocket("visits");
+    console.log("Starting socket listening for incoming connections.");
     listeningSocket.startListening();
+
 };
 
 export const close = function() {

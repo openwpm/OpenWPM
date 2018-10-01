@@ -113,8 +113,8 @@ def start_webdriver(with_extension=False):
         create_xpi()
         ext_xpi = join(EXT_PATH, 'openwpm.xpi')
         fp.add_extension(extension=ext_xpi)
-        fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-
+        # TODO: Restore preference for log level in a way that works in Fx 57+
+        # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         configure_firefox.optimize_prefs(fp)
 
     return register_cleanup(

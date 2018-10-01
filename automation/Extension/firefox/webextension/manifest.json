@@ -3,6 +3,12 @@
   "description": "OpenWPM WebExtension",
   "version": "0.1.0",
   "manifest_version": 2,
+  "applications": {
+    "gecko": {
+      "id": "openwpm-webextension@mozilla.org",
+      "strict_min_version": "60.0a1"
+    }
+  },
   "background": {
     "scripts": [
       "background.js"
@@ -15,19 +21,20 @@
   "content_scripts": [
     {
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "<all_urls>"
       ],
       "js": [
         "content.js"
-      ]
+      ],
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "permissions": [
     "cookies",
     "tabs",
     "webRequest",
-    "http://*/*",
-    "https://*/*"
+    "webRequestBlocking",
+    "<all_urls>"
   ]
 }

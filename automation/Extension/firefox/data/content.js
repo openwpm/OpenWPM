@@ -638,7 +638,7 @@ function getPageScript() {
     instrumentObject(window.GainNode.prototype, "GainNode");
     instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
 
-    console.log("Successfully started all instrumentation.");
+    console.log("Content-side javascript instrumentation started");
 
   } + "());";
 }
@@ -660,8 +660,11 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
-  var port = chrome.runtime.connect({name: "javascriptMsg"});
-  port.postMessage({type: msg});
+  browser.runtime.sendMessage({namespace: 'javascript-instrumentation', type, data: msg})
+    .catch(function(err) {
+      console.log("OpenWPM content to background script 'emitMsg' sendMessage failed");
+      console.error(err);
+    });
 }
 
 var event_id = Math.random();
@@ -679,7 +682,26 @@ document.addEventListener(event_id, function (e) {
   }
 });
 
-insertScript(getPageScript(), {
-  event_id: event_id,
-  testing: self.options.testing
+console.log("OpenWPM content script start");
+
+// request current configuration from background script
+// before injecting the instrumentation so that we can
+// set the testing flag properly
+const configListener = function(message) {
+  if (message.type === 'config') {
+    console.log("Content script received config from background script", JSON.stringify(message.config));
+    insertScript(getPageScript(), {
+      event_id: event_id,
+      testing: message.config.testing,
+    });
+    browser.runtime.onMessage.removeListener(configListener);
+  }
+};
+browser.runtime.onMessage.addListener(configListener);
+
+browser.runtime.sendMessage(
+  'requestingConfig',
+).catch(function(err) {
+  console.log("OpenWPM content to background script 'requestingConfig' sendMessage failed");
+  // console.error(err);
 });
