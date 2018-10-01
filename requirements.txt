@@ -33,4 +33,7 @@ tld
 
 # Python 3 is not fully supported prior to Selenium 3.x.
 # Note: Geckodriver 0.21.0+ requires Selenium 3.11+
-selenium>=3.14.0
+# Note: Ability to add WebExtensions to Firefox profiles via Selenium
+# is yet not available as of 3.14.1, pending https://github.com/SeleniumHQ/selenium/pull/6463
+# selenium>=3.14.2
+-e git://github.com/motin/selenium.git@add-python-client-support-for-webextensions-in-firefox#egg=selenium&subdirectory=py
