@@ -94,10 +94,29 @@
       window.frame2Test.nestedObj.method1 = function() {
         console.log("nestedObj call 1");
       }
-      // Instrument object non-recursively
-      console.log("Instrumenting window.frame2Test!");
-      window.instrumentObject(window.frame2Test, "window.frame2Test");
-      interactWithTestObjects();
+
+      // Wait for window.instrumentObject to be set by
+      // the injected page script before continuing
+      const instrumentObjectAvailable = new Promise(function(resolve) {
+        function check() {
+          if (typeof window.instrumentObject !== "undefined") {
+            resolve();
+          } else {
+            setTimeout(check, 250);
+          }
+        }
+        check();
+      });
+
+      instrumentObjectAvailable.then(function () {
+
+        // Instrument object non-recursively
+        console.log("Instrumenting window.frame2Test!");
+        window.instrumentObject(window.frame2Test, "window.frame2Test");
+        interactWithTestObjects();
+
+      });
+
     </script>
   </body>
 </html>

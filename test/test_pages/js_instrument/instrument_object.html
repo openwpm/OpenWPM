@@ -202,22 +202,40 @@
         'obj2': {'testobj':'nested'}
       };
 
-      // Instrument object non-recursively
-      console.log("Instrumenting window.test!");
-      window.instrumentObject(window.test, "window.test");
-
-      // Instrument object recursively
-      console.log("Instrumenting window.test2!");
-      window.instrumentObject(window.test2, "window.test2", {'recursive': true});
-
-      // Instrument object with setting prevented
-      console.log("Instrumenting window.test3!");
-      window.instrumentObject(window.test3, "window.test3", {
-        'recursive': true,
-        'depth': 1,
-        'preventSets': true
+      // Wait for window.instrumentObject to be set by
+      // the injected page script before continuing
+      const instrumentObjectAvailable = new Promise(function(resolve) {
+        function check() {
+          if (typeof window.instrumentObject !== "undefined") {
+            resolve();
+          } else {
+            setTimeout(check, 250);
+          }
+        }
+        check();
       });
-      interactWithTestObjects();
+
+      instrumentObjectAvailable.then(function () {
+
+        // Instrument object non-recursively
+        console.log("Instrumenting window.test!");
+        window.instrumentObject(window.test, "window.test");
+
+        // Instrument object recursively
+        console.log("Instrumenting window.test2!");
+        window.instrumentObject(window.test2, "window.test2", {'recursive': true});
+
+        // Instrument object with setting prevented
+        console.log("Instrumenting window.test3!");
+        window.instrumentObject(window.test3, "window.test3", {
+          'recursive': true,
+          'depth': 1,
+          'preventSets': true
+        });
+        interactWithTestObjects();
+
+      });
+
     </script>
     <iframe src="framed1.html"></iframe>
   </body>
