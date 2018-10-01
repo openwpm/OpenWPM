@@ -394,6 +394,9 @@ without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
 * `python -m test.manual_test` rebuilds the current extension directory
   and launch a Firefox instance with it.
+* `python automation/SocketIOServer.py` starts the socket.io server in
+  standalone mode (start before manual_test above to debug
+  the communication between the extension and the backend).
 * `python -m test.manual_test --selenium` launches a Firefox Selenium instance
   after automatically rebuilding `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available

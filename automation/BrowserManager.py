@@ -21,7 +21,7 @@ from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .MPLogger import loggingclient
 from .SocketInterface import clientsocket
-from .websocketServer import startSocketServer
+from .SocketIOServer import start
 
 pickling_support.install()
 
@@ -353,7 +353,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
         if browser_params['extension_enabled']:
             logger.debug("BROWSER %i: Starting socket.io server for communication with extension"
                          % (browser_params['crawl_id']))
-            extension_socket = startSocketServer(browser_params, manager_params, log_output=True, daemon=False)
+            extension_socket = start(browser_params, manager_params, log_output=True, daemon=False)
         else:
             extension_socket = None
 

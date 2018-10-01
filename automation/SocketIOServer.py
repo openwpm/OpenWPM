@@ -4,7 +4,7 @@ import eventlet.wsgi
 from multiprocess import Process
 
 
-def startSocketServer(
+def start(
         browser_params={
             'cookie_instrument': True,
             'js_instrument': True,
@@ -92,4 +92,4 @@ def serve(_sio, log_output):
 
 if __name__ == '__main__':
     print("Starting socket server standalone")
-    startSocketServer(log_output=True, verbose=False, daemon=False)
+    start(log_output=True, verbose=False, daemon=False)
