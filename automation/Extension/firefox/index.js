@@ -61,14 +61,17 @@ const start = function(config) {
 
   if (config['cookie_instrument']) {
     loggingDB.logDebug("Cookie instrumentation enabled");
+    cookieInstrument.setLoggingDB(loggingDB);
     cookieInstrument.run(config['crawl_id']);
   }
   if (config['js_instrument']) {
     loggingDB.logDebug("Javascript instrumentation enabled");
+    jsInstrument.setLoggingDB(loggingDB);
     jsInstrument.run(config['crawl_id'], config['testing']);
   }
   if (config['http_instrument']) {
     loggingDB.logDebug("HTTP Instrumentation enabled");
+    httpInstrument.setLoggingDB(loggingDB);
     httpInstrument.run(config['crawl_id'], config['save_javascript'],
                        config['save_all_content']);
   }

@@ -3,7 +3,6 @@
 
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
-import * as loggingDB from './loggingdb.js';
 import * as httpPostParser from './http-post-parser.js';
 
 /*
@@ -22,6 +21,11 @@ var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
 converter.charset = "UTF-8";
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 */
+
+let loggingDB;
+export const setLoggingDB = function($loggingDB) {
+  loggingDB = $loggingDB;
+};
 
 /*
  * HTTP Request Handler and Helper Functions

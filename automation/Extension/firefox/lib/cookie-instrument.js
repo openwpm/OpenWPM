@@ -1,7 +1,11 @@
 // import { Cc, Ci } from 'chrome';
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
-import * as loggingDB from './loggingdb.js';
+
+let loggingDB;
+export const setLoggingDB = function($loggingDB) {
+  loggingDB = $loggingDB;
+};
 
 export const run = function(crawlID) {
     // Instrument cookie changes

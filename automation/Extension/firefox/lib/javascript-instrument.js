@@ -1,4 +1,8 @@
-import * as loggingDB from './loggingdb.js';
+
+let loggingDB;
+export const setLoggingDB = function($loggingDB) {
+  loggingDB = $loggingDB;
+};
 
 export const run = function(crawlID, testing) {
 
