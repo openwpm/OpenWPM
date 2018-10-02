@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import errno
 import os
 import shutil
 import signal
@@ -20,8 +19,7 @@ from .Commands import command_executor, profile_commands
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .MPLogger import loggingclient
-from .SocketInterface import clientsocket
-from .SocketIOServer import start
+from .SocketIOServer import start as startSocketIOServer
 
 pickling_support.install()
 
@@ -349,11 +347,16 @@ def BrowserManager(command_queue, status_queue, browser_params,
         if prof_folder[-1] != '/':
             prof_folder += '/'
 
-        # Allow socket based communication with extension -- if extension is enabled
+        # Allow socket based communication with
+        # extension -- if extension is enabled
         if browser_params['extension_enabled']:
-            logger.debug("BROWSER %i: Starting socket.io server for communication with extension"
+            logger.debug("BROWSER %i: Starting socket.io server for "
+                         + "communication with extension"
                          % (browser_params['crawl_id']))
-            extension_socket = start(browser_params, manager_params, log_output=True, daemon=False)
+            extension_socket = startSocketIOServer(browser_params,
+                                                   manager_params,
+                                                   log_output=True,
+                                                   daemon=False)
         else:
             extension_socket = None
 

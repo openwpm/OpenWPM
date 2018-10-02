@@ -1,6 +1,6 @@
-import socketio
 import eventlet
 import eventlet.wsgi
+import socketio
 from multiprocess import Process
 
 
@@ -21,27 +21,35 @@ def start(
         log_output=False,
         verbose=False,
         daemon=True):
-    sio = socketio.Server(async_mode='eventlet', logger=log_output, engineio_logger=verbose)
+    sio = socketio.Server(
+        async_mode='eventlet',
+        logger=log_output,
+        engineio_logger=verbose)
 
     class OpenWpmExtensionListenConfigurationNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + sid + ", " + environ['HTTP_USER_AGENT']
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+                sid + ", " + environ['HTTP_USER_AGENT']
             pass
 
         def on_request(self, sid):
             print "Sending config over socket"
-            self.emit('config', {'browser_params': browser_params, 'manager_params': manager_params})
+            self.emit('config',
+                      {'browser_params': browser_params,
+                       'manager_params': manager_params})
 
         def on_disconnect(self, sid):
             pass
 
-    sio.register_namespace(OpenWpmExtensionListenConfigurationNamespace('/openwpm-extension-listen-configuration'))
+    sio.register_namespace(OpenWpmExtensionListenConfigurationNamespace(
+        '/openwpm-extension-listen-configuration'))
 
     # TODO: Re-route received records to the data aggregators
 
     class OpenWpmExtensionSendLogNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + sid + ", " + environ['HTTP_USER_AGENT']
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+                sid + ", " + environ['HTTP_USER_AGENT']
 
         def on_disconnect(self, sid):
             pass
@@ -51,7 +59,8 @@ def start(
 
     class OpenWpmExtensionSendDataNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + sid + ", " + environ['HTTP_USER_AGENT']
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+                sid + ", " + environ['HTTP_USER_AGENT']
 
         def on_disconnect(self, sid):
             pass
@@ -61,7 +70,8 @@ def start(
 
     class OpenWpmExtensionSendLdbNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + sid + ", " + environ['HTTP_USER_AGENT']
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+                sid + ", " + environ['HTTP_USER_AGENT']
 
         def on_disconnect(self, sid):
             pass
@@ -69,9 +79,12 @@ def start(
         def on_record(self, sid, record):
             print "record received over socket", record
 
-    sio.register_namespace(OpenWpmExtensionSendLogNamespace('/openwpm-extension-send-log'))
-    sio.register_namespace(OpenWpmExtensionSendDataNamespace('/openwpm-extension-send-data'))
-    sio.register_namespace(OpenWpmExtensionSendLdbNamespace('/openwpm-extension-send-ldb'))
+    sio.register_namespace(
+        OpenWpmExtensionSendLogNamespace('/openwpm-extension-send-log'))
+    sio.register_namespace(OpenWpmExtensionSendDataNamespace(
+        '/openwpm-extension-send-data'))
+    sio.register_namespace(
+        OpenWpmExtensionSendLdbNamespace('/openwpm-extension-send-ldb'))
 
     args = (sio, log_output)
     socket_server_process = Process(target=serve, args=args)

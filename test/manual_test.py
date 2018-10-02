@@ -125,7 +125,7 @@ def start_webdriver(with_extension=False):
 def start_webext():
     firefox_binary_path = get_firefox_binary_path()
     cmd_webext_run = "npm start -- --start-url '%s' --firefox '%s'" \
-                  % (BASE_TEST_URL, firefox_binary_path)
+        % (BASE_TEST_URL, firefox_binary_path)
     server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416
