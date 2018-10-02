@@ -1,3 +1,3 @@
-import * as jsInstrumentContentScope from './javascript-instrument-content-scope.js';
+import * as jsInstrumentContentScope from './javascript-instrument-content-scope';
 
 export const content = { jsInstrumentContentScope };

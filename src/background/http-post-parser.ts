@@ -2,7 +2,7 @@
 
 // import { Cc, Ci, CC, Cu, components } from 'chrome';
 
-import * as loggingDB from './loggingdb.js';
+import * as loggingDB from './loggingdb';
 
 var HttpPostParser = function(stream) {
   // Scriptable Stream Constants
