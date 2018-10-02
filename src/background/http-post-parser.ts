@@ -2,9 +2,10 @@
 
 // import { Cc, Ci, CC, Cu, components } from 'chrome';
 
-import * as loggingDB from './loggingdb';
+let loggingDB;
 
-var HttpPostParser = function(stream) {
+var HttpPostParser = function(stream, $loggingDB) {
+  loggingDB = $loggingDB;
   // Scriptable Stream Constants
   this.seekablestream = stream;
   this.stream = components.classes["@mozilla.org/scriptableinputstream;1"].createInstance(components.interfaces.nsIScriptableInputStream);

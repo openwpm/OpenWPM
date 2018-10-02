@@ -164,7 +164,7 @@ var httpRequestHandler = function(reqEvent, crawlID) {
     reqEvent.subject.QueryInterface(components.interfaces.nsIUploadChannel);
     if (reqEvent.subject.uploadStream) {
       reqEvent.subject.uploadStream.QueryInterface(components.interfaces.nsISeekableStream);
-      var postParser = new httpPostParser.HttpPostParser(reqEvent.subject.uploadStream);
+      var postParser = new httpPostParser.HttpPostParser(reqEvent.subject.uploadStream, loggingDB);
       var postObj = postParser.parsePostRequest(encodingType);
 
       // Add (POST) request headers from upload stream
