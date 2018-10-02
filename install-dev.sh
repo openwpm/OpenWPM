@@ -11,3 +11,5 @@ if [ ! -f /usr/bin/node ]; then
 fi
 
 sudo npm install jpm -g
+
+pip install --user -U -r requirements-dev.txt

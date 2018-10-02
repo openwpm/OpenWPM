@@ -412,6 +412,21 @@ additional dependencies, which can be installed by running `install-dev.sh`.
 Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 
+### Mac OSX
+
+To install the dependencies on Mac OSX, run `install-mac.sh` instead of 
+`install.sh` and `install-dev.sh`.
+This will download Firefox ESR into the current folder, move geckodriver
+next to the Firefox binary and install development dependencies. 
+For the OpenWPM to be aware of which Firefox installation to run, set the 
+FIREFOX_BINARY environment variable before running any commands. 
+
+Example, running the OpenWPM tests on Mac OSX:
+
+    export FIREFOX_BINARY="$(PWD)/Firefox.app/Contents/MacOS/firefox-bin"
+    python -m pytest -vv
+
+
 Troubleshooting
 ---------------
 
@@ -466,6 +481,10 @@ within the root OpenWPM directory:
 
     docker build -f Dockerfile -t openwpm .
 
+After building the above, you may optionally build a docker image for OpenWPM development:
+
+    docker build -f Dockerfile-dev -t openwpm-dev .
+
 After a few minutes, the container is ready to use.
 
 ### Running Measurements from inside the Container
@@ -498,6 +517,22 @@ it's being run from the root OpenWPM directory):
     running headless crawls you can remove the following options:
     `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
+Instruction on how to run Docker GUI applications in Mac OSX are available
+[here](https://stackoverflow.com/questions/37523980/running-gui-apps-on-docker-container-with-a-macbookpro-host).
+Given properly installed prerequisites (including a reboot), the helper script
+`run-on-osx-via-docker.sh` in the project root folder can be used to facilitate
+working with Docker in Mac OSX.
+
+To open a bash session within the environment:
+
+    ./run-on-osx-via-docker.sh # 
+
+Or, run commands directly:
+
+    ./run-on-osx-via-docker.sh python demo.py
+    ./run-on-osx-via-docker.sh python -m test.manual_test
+    ./run-on-osx-via-docker.sh python -m pytest
+    ./run-on-osx-via-docker.sh python -m pytest -vv -s
 
 Disclaimer
 -----------

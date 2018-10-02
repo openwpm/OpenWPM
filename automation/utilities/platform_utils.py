@@ -30,22 +30,46 @@ def parse_http_stack_trace_str(trace_str):
     return stack_trace
 
 
-def ensure_firefox_in_path():
+def get_firefox_binary_path():
     """
-    If ../../firefox-bin/ exists, add it to the PATH.
-    If firefox-bin does not exist, we throw a RuntimeError.
+    If ../../firefox-bin/firefox-bin or os.environ["FIREFOX_BINARY"] exists,
+    return it. Else, throw a RuntimeError.
     """
+    if "FIREFOX_BINARY" in os.environ:
+        firefox_binary_path = os.environ["FIREFOX_BINARY"]
+        if not os.path.isfile(firefox_binary_path):
+            raise RuntimeError(
+                "No file found at the path specified in "
+                "environment variable `FIREFOX_BINARY`."
+                "Current `FIREFOX_BINARY`: %s" % firefox_binary_path)
+        return firefox_binary_path
+
     root_dir = os.path.dirname(__file__)  # directory of this file
-    ffbin = os.path.abspath(root_dir + "/../../firefox-bin")
-    if os.path.isdir(ffbin):
-        curpath = os.environ["PATH"]
-        if ffbin not in curpath:
-            os.environ["PATH"] = ffbin + os.pathsep + curpath
-    else:
+    firefox_binary_path = os.path.abspath(root_dir +
+                                          "/../../firefox-bin/firefox-bin")
+    if not os.path.isfile(firefox_binary_path):
         raise RuntimeError(
-            "The `firefox-bin` directory is not found in the root of the "
-            "OpenWPM directory. Did you run the install script "
-            "(`install.sh`)?")
+            "The `firefox-bin/firefox-bin` binary is not found in the root "
+            "of the  OpenWPM directory (did you run the install script "
+            "(`install.sh`)?). Alternatively, you can specify a binary "
+            "location using the OS environment variable FIREFOX_BINARY.")
+    return firefox_binary_path
+
+
+def get_geckodriver_exec_path():
+    """
+    If the geckodriver executable does not exist next to the Firefox binary,
+    we throw a RuntimeError.
+    """
+    firefox_binary_path = get_firefox_binary_path()
+    geckodriver_executable_path = (os.path.dirname(firefox_binary_path)
+                                   + "/geckodriver")
+
+    if not os.path.isfile(geckodriver_executable_path):
+        raise RuntimeError(
+            "The `geckodriver` executable is not found next to the "
+            "Firefox binary. Did you run the install script (`install.sh`)?")
+    return geckodriver_executable_path
 
 
 def get_version():
@@ -58,10 +82,10 @@ def get_version():
         with open(ver, 'r') as f:
             openwpm = f.readline().strip()
 
-    ensure_firefox_in_path()
+    firefox_binary_path = get_firefox_binary_path()
     import six
     try:
-        firefox = subprocess.check_output(["firefox", "--version"])
+        firefox = subprocess.check_output([firefox_binary_path, "--version"])
     except subprocess.CalledProcessError as e:
         six.raise_from(
             RuntimeError("Firefox not found.  Did you run `./install.sh`?"),
