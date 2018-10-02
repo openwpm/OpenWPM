@@ -37,10 +37,16 @@ def get_firefox_binary_path():
     """
     if "FIREFOX_BINARY" in os.environ:
         firefox_binary_path = os.environ["FIREFOX_BINARY"]
-    else:
-        root_dir = os.path.dirname(__file__)  # directory of this file
-        firefox_binary_path = os.path.abspath(root_dir +
-                                              "/../../firefox-bin/firefox-bin")
+        if not os.path.isfile(firefox_binary_path):
+            raise RuntimeError(
+                "No file found at the path specified in "
+                "environment variable `FIREFOX_BINARY`."
+                "Current `FIREFOX_BINARY`: %s" % firefox_binary_path)
+        return firefox_binary_path
+
+    root_dir = os.path.dirname(__file__)  # directory of this file
+    firefox_binary_path = os.path.abspath(root_dir +
+                                          "/../../firefox-bin/firefox-bin")
     if not os.path.isfile(firefox_binary_path):
         raise RuntimeError(
             "The `firefox-bin/firefox-bin` binary is not found in the root "
