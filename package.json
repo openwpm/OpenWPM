@@ -2,11 +2,12 @@
   "name": "openwpm-webext-instrumentation",
   "version": "0.1.0",
   "description": "Allows WebExtensions to track and monitor privacy-related browsing behavior",
+  "author": "OpenWPM Contributors",
+  "license": "GPL v3",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
   "repository": "https://github.com/motin/openwpm-webext-instrumentation",
-  "license": "MIT",
   "keywords": [],
   "scripts": {
     "info": "npm-scripts-info",

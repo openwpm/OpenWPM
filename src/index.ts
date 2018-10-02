@@ -1,1 +1,4 @@
-export * from "./lib/number";
+import { background } from './background';
+import { content } from './content';
+
+export { background, content };
