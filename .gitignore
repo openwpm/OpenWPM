@@ -6,7 +6,7 @@ docker-volume/
 
 # firefox directories
 firefox-bin/
-Firefox.app/
+Firefox*.app/
 
 # VIM tmp files
 *~
