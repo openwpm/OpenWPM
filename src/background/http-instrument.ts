@@ -3,7 +3,7 @@
 
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
-import * as httpPostParser from './http-post-parser';
+import * as httpPostParser from '../lib/http-post-parser';
 
 /*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
