@@ -78,7 +78,7 @@ const start = function(config) {
 };
 
 configPromise
-  .catch(function(err) {
+  .then(start, function(err) {
     console.log("Error encountered when listening for OpenWPM configuration");
     console.error(err);
     // Assume test run if the socket server is not launched / available
@@ -97,5 +97,4 @@ configPromise
       crawl_id: ''
     };
     start(config);
-  })
-  .then(start)
+  });
