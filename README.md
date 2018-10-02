@@ -412,20 +412,32 @@ additional dependencies, which can be installed by running `install-dev.sh`.
 Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 
-### Mac OSX
+### Mac OSX (Limited support for developers)
 
-To install the dependencies on Mac OSX, run `install-mac.sh` instead of 
-`install.sh` and `install-dev.sh`.
+We've added an installation file to make it easier to run tests and develop on
+Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
+instead of `install.sh` and `install-dev.sh`.
 This will download Firefox ESR into the current folder, move geckodriver
-next to the Firefox binary and install development dependencies. 
-For the OpenWPM to be aware of which Firefox installation to run, set the 
-FIREFOX_BINARY environment variable before running any commands. 
+next to the Firefox binary and install development dependencies.
+For the OpenWPM to be aware of which Firefox installation to run, set the
+FIREFOX_BINARY environment variable before running any commands.
 
 Example, running the OpenWPM tests on Mac OSX:
 
     export FIREFOX_BINARY="$(PWD)/Firefox.app/Contents/MacOS/firefox-bin"
     python -m pytest -vv
 
+There are known limitations on Mac:
+1. Flash cookies are not parsed correctly since we
+   [hardcode](https://github.com/citp/OpenWPM/blob/de84f0595dd512649e46c87b47d5ab18c8374d7e/automation/Commands/utils/lso.py#L34)
+   the Flash storage path to that used on Linux.
+2. Headless mode does not work since we currently use XVFB and the Firefox
+   GUI on Mac doesn't make use of X. The X virtual frame buffer is created, but
+   is not used by the Firefox GUI. Thus Firefox windows will always be visible
+   regardless of the `headless` configuration parameter set.
+
+We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
+these issues and add full support and CI testing for Mac.
 
 Troubleshooting
 ---------------
