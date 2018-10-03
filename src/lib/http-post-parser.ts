@@ -4,11 +4,13 @@
 
 let loggingDB;
 
-var HttpPostParser = function(stream, $loggingDB) {
+const HttpPostParser = function(stream, $loggingDB) {
   loggingDB = $loggingDB;
   // Scriptable Stream Constants
   this.seekablestream = stream;
-  this.stream = components.classes["@mozilla.org/scriptableinputstream;1"].createInstance(components.interfaces.nsIScriptableInputStream);
+  this.stream = components.classes[
+    "@mozilla.org/scriptableinputstream;1"
+  ].createInstance(components.interfaces.nsIScriptableInputStream);
   this.stream.init(this.seekablestream);
 
   this.postBody = "";
@@ -27,24 +29,35 @@ var HttpPostParser = function(stream, $loggingDB) {
   this.body = 0;
   if (this.seekablestream instanceof components.interfaces.nsIMIMEInputStream) {
     // form submissions use nsIMIMEInputStream
-    this.seekablestream.QueryInterface(components.interfaces.nsIMIMEInputStream);
+    this.seekablestream.QueryInterface(
+      components.interfaces.nsIMIMEInputStream,
+    );
     this.hasheaders = true;
     this.body = -1;
-  } else if (this.seekablestream instanceof components.interfaces.nsIStringInputStream) {
+  } else if (
+    this.seekablestream instanceof components.interfaces.nsIStringInputStream
+  ) {
     // AJAX requests use nsIStringInputStream, except when the payload is "FormData"
-    this.seekablestream.QueryInterface(components.interfaces.nsIStringInputStream);
+    this.seekablestream.QueryInterface(
+      components.interfaces.nsIStringInputStream,
+    );
     this.hasheaders = true;
     this.body = -1;
-  } else if (0 && this.seekablestream instanceof components.interfaces.nsIMultiplexInputStream) {
+  } else if (
+    0 &&
+    this.seekablestream instanceof components.interfaces.nsIMultiplexInputStream
+  ) {
     // AJAX requests with "FormData" payload use nsIMultiplexInputStream
-    this.seekablestream.QueryInterface(components.interfaces.nsIMultiplexInputStream);
+    this.seekablestream.QueryInterface(
+      components.interfaces.nsIMultiplexInputStream,
+    );
     this.hasheaders = true;
     this.body = -1;
   } else {
     // Let's keep an eye on unknown stream types, though we haven't seen any other stream types in our tests.
     loggingDB.logDebug("POST request parser: unknown stream type");
   }
-}
+};
 
 HttpPostParser.prototype.rewind = function() {
   this.seekablestream.seek(0, 0);
@@ -55,13 +68,13 @@ HttpPostParser.prototype.tell = function() {
 };
 
 HttpPostParser.prototype.readLine = function() {
-  var line = "";
-  var size = this.stream.available();
-  for (var i = 0; i < size; i++) {
-    var c = this.stream.read(1);
-    if (c == '\r') {
+  let line = "";
+  const size = this.stream.available();
+  for (let i = 0; i < size; i++) {
+    const c = this.stream.read(1);
+    if (c == "\r") {
       continue;
-    } else if (c == '\n') {
+    } else if (c == "\n") {
       break;
     } else {
       line += c;
@@ -88,9 +101,9 @@ HttpPostParser.prototype.extractUploadStreamHeaders = function() {
    */
   if (this.hasheaders) {
     this.rewind();
-    var line = this.readLine();
+    let line = this.readLine();
     while (line) {
-      var keyValue = line.match(/^([^:]+):\s?(.*)/);
+      const keyValue = line.match(/^([^:]+):\s?(.*)/);
       if (keyValue) {
         this.postHeaders[keyValue[1]] = keyValue[2];
       } else {
@@ -102,7 +115,7 @@ HttpPostParser.prototype.extractUploadStreamHeaders = function() {
   }
 };
 
-HttpPostParser.prototype.convertTextPlainToUrlEncoded = function(postBody){
+HttpPostParser.prototype.convertTextPlainToUrlEncoded = function(postBody) {
   /* Convert from text/plain to application/x-www-form-urlencoded
    * This is to unify the encoding so that we can parse different encodings at one place
     See, https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Using_nothing_but_XMLHttpRequest
@@ -114,39 +127,46 @@ HttpPostParser.prototype.convertTextPlainToUrlEncoded = function(postBody){
     to (application/x-www-form-urlencoded):
       foo=bar&baz=The+first+line.%0D%0AThe+second+line.%0D%0A
    */
-  var lines = postBody.split("\n");
-  var post_vars = [];
-  for (var line of lines){
+  const lines = postBody.split("\n");
+  const post_vars = [];
+  for (const line of lines) {
     if (line.indexOf("=") != -1) {
       post_vars.push(encodeURIComponent(line.trim()));
     } else {
-      var x = encodeURIComponent("\r\n" + line.trim());
+      const x = encodeURIComponent("\r\n" + line.trim());
       post_vars.push(post_vars.pop() + x);
     }
   }
   return post_vars.join("&");
-}
+};
 
-HttpPostParser.prototype.parseEncodedFormData = function(formData, encodingType){
-  var obj = {};
+HttpPostParser.prototype.parseEncodedFormData = function(
+  formData,
+  encodingType,
+) {
+  const obj = {};
 
-  if (formData.indexOf("=") == -1)  // not key=value form
+  if (formData.indexOf("=") == -1) {
+    // not key=value form
     return formData;
+  }
 
-  var origFormData = formData;  // keep the original form data
+  const origFormData = formData; // keep the original form data
 
-  try{
-    if (encodingType.indexOf("text/plain") != -1)
+  try {
+    if (encodingType.indexOf("text/plain") != -1) {
       formData = this.convertTextPlainToUrlEncoded(formData);
+    }
 
     // URL encoded formData in key=value form should only have one equal sign,
     // other equal signs should have been encoded away at this point.
     // If we've ==, this means this is unstructured data (e.g. base64 string),
     // and we won't be able to parse it into key-value pairs.
-    if (formData.indexOf("==") != -1)
+    if (formData.indexOf("==") != -1) {
       return origFormData;
+    }
 
-    formData = decodeURIComponent(formData.replace(/\+/g,  " "));
+    formData = decodeURIComponent(formData.replace(/\+/g, " "));
     // read key=value pairs, based on http://stackoverflow.com/a/8648962
     // If we have non key-value data that contains "=", we treat it as
     // key=value data (unless if it contains two equal signs, see above)
@@ -160,21 +180,28 @@ HttpPostParser.prototype.parseEncodedFormData = function(formData, encodingType)
       obj[key] = value;
     });
     return JSON.stringify(obj);
-  }catch (e) {
+  } catch (e) {
     // We expect to have parsing failures due to unstructured POST data
     // e.g. In test_record_binary_post_data, decodeURIComponent throws a URIError
     // for binary data posted via AJAX.
-    loggingDB.logDebug("POST data is not parseable:" + e +
-        " EncodingType:" + encodingType +
-        " PostDataLength:" + origFormData.length +
-        " PostDataType:" + (typeof origFormData) +
-        " PostData:" + loggingDB.escapeString(origFormData) + "\n");
-    return origFormData;  // return the original body
+    loggingDB.logDebug(
+      "POST data is not parseable:" +
+        e +
+        " EncodingType:" +
+        encodingType +
+        " PostDataLength:" +
+        origFormData.length +
+        " PostDataType:" +
+        typeof origFormData +
+        " PostData:" +
+        loggingDB.escapeString(origFormData) +
+        "\n",
+    );
+    return origFormData; // return the original body
   }
-}
+};
 
-
-HttpPostParser.prototype.parsePostRequest = function(encodingType){
+HttpPostParser.prototype.parsePostRequest = function(encodingType) {
   // encodingType comes from the HTTP Request headers (not the upload stream headers)
   try {
     this.parseStream();
@@ -183,24 +210,28 @@ HttpPostParser.prototype.parsePostRequest = function(encodingType){
     return {};
   }
 
-  var postBody = this.postBody;
+  const postBody = this.postBody;
 
-  if (!postBody)  // some scripts strangely sends empty post bodies (confirmed with the developer tools)
+  if (!postBody) {
+    // some scripts strangely sends empty post bodies (confirmed with the developer tools)
     return {};
+  }
 
-  var isMultiPart = false;  // encType: multipart/form-data
-  var postHeaders = this.postHeaders;  // request headers from upload stream
+  let isMultiPart = false; // encType: multipart/form-data
+  const postHeaders = this.postHeaders; // request headers from upload stream
   // See, http://stackoverflow.com/questions/16548517/what-is-request-headers-from-upload-stream
 
   // add encodingType from postHeaders if it's missing
-  if (!encodingType && postHeaders && ("Content-Type" in postHeaders))
+  if (!encodingType && postHeaders && "Content-Type" in postHeaders) {
     encodingType = postHeaders["Content-Type"];
+  }
 
-  if (encodingType.indexOf("multipart/form-data") != -1)
+  if (encodingType.indexOf("multipart/form-data") != -1) {
     isMultiPart = true;
+  }
 
-  var jsonPostData = "";
-  var escapedJsonPostData = "";
+  let jsonPostData = "";
+  let escapedJsonPostData = "";
   if (isMultiPart) {
     jsonPostData = this.parseMultiPartData(postBody, encodingType);
     escapedJsonPostData = loggingDB.escapeString(jsonPostData);
@@ -208,10 +239,8 @@ HttpPostParser.prototype.parsePostRequest = function(encodingType){
     jsonPostData = this.parseEncodedFormData(postBody, encodingType);
     escapedJsonPostData = loggingDB.escapeString(jsonPostData);
   }
-  return {post_headers: postHeaders, post_body: escapedJsonPostData};
+  return { post_headers: postHeaders, post_body: escapedJsonPostData };
 };
-
-
 
 HttpPostParser.prototype.parseMultiPartData = function(formData, encodingType) {
   /*
@@ -230,27 +259,29 @@ HttpPostParser.prototype.parseMultiPartData = function(formData, encodingType) {
     name surname+
     -----------------------------12972102761018453617355621459--
     */
-  var boundary = "";
-  var firstLine = formData.split("\r\n", 1)[0];
-  if (firstLine.startsWith("-----------------------------"))
+  let boundary = "";
+  const firstLine = formData.split("\r\n", 1)[0];
+  if (firstLine.startsWith("-----------------------------")) {
     boundary = firstLine;
-  else
-    return formData;  // return unparsed data, if we fail to find the boundary string
+  } else {
+    return formData;
+  } // return unparsed data, if we fail to find the boundary string
 
-  var formVars = {};
-  for (var part of formData.split(boundary)){
+  const formVars = {};
+  for (const part of formData.split(boundary)) {
     partData = this.parseSinglePart(part);
-    if ("key" in partData && "value" in partData)
-      formVars[partData["key"]] = partData["value"];
+    if ("key" in partData && "value" in partData) {
+      formVars[partData.key] = partData.value;
+    }
   }
   return JSON.stringify(formVars);
-}
+};
 
 HttpPostParser.prototype.notContentHeader = function(partLine) {
   // Filter function to discard content headers present in the multipart form data
   // See, http://stackoverflow.com/a/16548608
   return !partLine.match(/^Content-.*: .*/);
-}
+};
 
 HttpPostParser.prototype.parseSinglePart = function(part) {
   /*
@@ -263,20 +294,30 @@ HttpPostParser.prototype.parseSinglePart = function(part) {
      name surname+
   */
   part = part.trim();
-  if (!part || part === "--")  // ignore empty parts or extra characters after the last boundary
+  if (!part || part === "--") {
+    // ignore empty parts or extra characters after the last boundary
     return {};
+  }
 
-  var partLines = part.split("\r\n");
+  const partLines = part.split("\r\n");
 
-  var matchVarName = partLines[0].match(/Content-Disposition:.*;.name="([^"]*)"/);
+  const matchVarName = partLines[0].match(
+    /Content-Disposition:.*;.name="([^"]*)"/,
+  );
   if (matchVarName) {
-    return {key: matchVarName[1],
-            value: partLines.slice(1).filter(this.notContentHeader).join("\r\n").trim()};
+    return {
+      key: matchVarName[1],
+      value: partLines
+        .slice(1)
+        .filter(this.notContentHeader)
+        .join("\r\n")
+        .trim(),
+    };
   } else {
     loggingDB.logError("Can't find the POST variable name in " + part);
     return {};
   }
-}
+};
 
 HttpPostParser.prototype.parseStream = function() {
   // Position the stream to the start of the body
@@ -284,20 +325,20 @@ HttpPostParser.prototype.parseStream = function() {
     this.extractUploadStreamHeaders();
   }
 
-  var size = this.stream.available();
+  let size = this.stream.available();
   if (size == 0 && this.body != 0) {
     // whoops, there weren't really headers..
     this.rewind();
     this.hasheaders = false;
     size = this.stream.available();
   }
-  var postString = "";
+  let postString = "";
   try {
     // This is to avoid 'NS_BASE_STREAM_CLOSED' exception that may occurs
     // See bug #188328.
-    for (var i = 0; i < size; i++) {
-      var c = this.stream.read(1);
-      c ? postString += c : postString += '\0';
+    for (let i = 0; i < size; i++) {
+      const c = this.stream.read(1);
+      c ? (postString += c) : (postString += "\0");
     }
   } catch (ex) {
     loggingDB.logError("Error parsing the POST request: " + ex);
@@ -307,7 +348,7 @@ HttpPostParser.prototype.parseStream = function() {
   }
 
   // strip off trailing \r\n's
-  while (postString.indexOf("\r\n") == (postString.length - 2)) {
+  while (postString.indexOf("\r\n") == postString.length - 2) {
     postString = postString.substring(0, postString.length - 2);
   }
   this.postBody = postString.trim();
