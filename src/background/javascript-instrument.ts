@@ -23,26 +23,27 @@ export class JavascriptInstrument {
   }
 
   public run(crawlID) {
-    console.log("JavascriptInstrument", crawlID, this.loggingDB);
+    const self = this;
+    console.log("JavascriptInstrument", crawlID, self.loggingDB);
 
     function processCallsAndValues(data, sender) {
       const update: Update = {};
       update.crawl_id = crawlID;
-      update.script_url = this.loggingDB.escapeString(data.scriptUrl);
-      update.script_line = this.loggingDB.escapeString(data.scriptLine);
-      update.script_col = this.loggingDB.escapeString(data.scriptCol);
-      update.func_name = this.loggingDB.escapeString(data.funcName);
-      update.script_loc_eval = this.loggingDB.escapeString(data.scriptLocEval);
-      update.call_stack = this.loggingDB.escapeString(data.callStack);
-      update.symbol = this.loggingDB.escapeString(data.symbol);
-      update.operation = this.loggingDB.escapeString(data.operation);
-      update.value = this.loggingDB.escapeString(data.value);
+      update.script_url = self.loggingDB.escapeString(data.scriptUrl);
+      update.script_line = self.loggingDB.escapeString(data.scriptLine);
+      update.script_col = self.loggingDB.escapeString(data.scriptCol);
+      update.func_name = self.loggingDB.escapeString(data.funcName);
+      update.script_loc_eval = self.loggingDB.escapeString(data.scriptLocEval);
+      update.call_stack = self.loggingDB.escapeString(data.callStack);
+      update.symbol = self.loggingDB.escapeString(data.symbol);
+      update.operation = self.loggingDB.escapeString(data.operation);
+      update.value = self.loggingDB.escapeString(data.value);
       update.time_stamp = data.timeStamp;
 
       // document_url is the current frame's document href
       // top_level_url is the top-level frame's document href
-      update.document_url = this.loggingDB.escapeString(sender.url);
-      update.top_level_url = this.loggingDB.escapeString(sender.tab.url);
+      update.document_url = self.loggingDB.escapeString(sender.url);
+      update.top_level_url = self.loggingDB.escapeString(sender.tab.url);
 
       // Create a json object for function arguments
       // We create an object that maps array positon to argument
@@ -54,10 +55,10 @@ export class JavascriptInstrument {
         for (let i = 0; i < data.args.length; i++) {
           args[i] = data.args[i];
         }
-        update.arguments = this.loggingDB.escapeString(JSON.stringify(args));
+        update.arguments = self.loggingDB.escapeString(JSON.stringify(args));
       }
 
-      this.loggingDB.saveRecord("javascript", update);
+      self.loggingDB.saveRecord("javascript", update);
     }
 
     // Listen for messages from content script injected to instrument JavaScript API

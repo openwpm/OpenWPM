@@ -21,7 +21,11 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
-  browser.runtime.sendMessage({namespace: "javascript-instrumentation", type, data: msg});
+  browser.runtime.sendMessage({
+    namespace: "javascript-instrumentation",
+    type,
+    data: msg,
+  });
 }
 
 const event_id = Math.random();
@@ -39,11 +43,9 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   }
 });
 
-export class JavascriptInstrumentContentScope {
-  public static run(testing) {
-    insertScript(getPageScriptAsString(), {
-      event_id,
-      testing,
-    });
-  }
+export function injectJavascriptInstrumentPageScript(testing) {
+  insertScript(getPageScriptAsString(), {
+    event_id,
+    testing,
+  });
 }
