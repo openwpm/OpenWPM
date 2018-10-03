@@ -21,14 +21,7 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
-  browser.runtime
-    .sendMessage({ namespace: "javascript-instrumentation", type, data: msg })
-    .catch(function(err) {
-      console.log(
-        "OpenWPM content to background script 'emitMsg' sendMessage failed",
-      );
-      console.error(err);
-    });
+  browser.runtime.sendMessage({namespace: "javascript-instrumentation", type, data: msg});
 }
 
 const event_id = Math.random();
