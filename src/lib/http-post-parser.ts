@@ -3,9 +3,10 @@
 // import { Cc, Ci, CC, Cu, components } from 'chrome';
 
 export class HttpPostParser {
-  private loggingDB;
+  private readonly loggingDB;
 
-  constructor(stream) {
+  constructor(stream, loggingDB) {
+    this.loggingDB = loggingDB;
     console.log("HttpPostParser", stream, this.loggingDB);
 
     /*
@@ -62,10 +63,6 @@ export class HttpPostParser {
     loggingDB.logDebug("POST request parser: unknown stream type");
   }
   */
-  }
-
-  public setLoggingDB($loggingDB) {
-    this.loggingDB = $loggingDB;
   }
 }
 

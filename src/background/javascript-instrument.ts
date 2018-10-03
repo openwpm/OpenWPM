@@ -16,10 +16,10 @@ interface Update {
 }
 
 export class JavascriptInstrument {
-  private loggingDB;
+  private readonly loggingDB;
 
-  public setLoggingDB($loggingDB) {
-    this.loggingDB = $loggingDB;
+  constructor(loggingDB) {
+    this.loggingDB = loggingDB;
   }
 
   public run(crawlID) {

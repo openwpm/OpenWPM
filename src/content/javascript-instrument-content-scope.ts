@@ -47,7 +47,7 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
 });
 
 export class JavascriptInstrumentContentScope {
-  public run(testing) {
+  public static run(testing) {
     insertScript(getPageScriptAsString(), {
       event_id,
       testing,
