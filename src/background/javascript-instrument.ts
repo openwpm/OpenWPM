@@ -29,7 +29,7 @@ export const run = function(crawlID, testing) {
     // to make it easier to query the data, using something like the
     // sqlite3 json1 extension.
     const args = {};
-    if (data.operation == "call" && data.args.length > 0) {
+    if (data.operation === "call" && data.args.length > 0) {
       for (let i = 0; i < data.args.length; i++) {
         args[i] = data.args[i];
       }

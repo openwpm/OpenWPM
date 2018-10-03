@@ -73,10 +73,10 @@ export const pageScript = function() {
 
   // Recursively generates a path for an element
   function getPathToDomElement(element, visibilityAttr = false) {
-    if (element == document.body) {
+    if (element === document.body) {
       return element.tagName;
     }
-    if (element.parentNode == null) {
+    if (element.parentNode === null) {
       return "NULL/" + element.tagName;
     }
 
@@ -84,7 +84,7 @@ export const pageScript = function() {
     const siblings = element.parentNode.childNodes;
     for (let i = 0; i < siblings.length; i++) {
       const sibling = siblings[i];
-      if (sibling == element) {
+      if (sibling === element) {
         let path = getPathToDomElement(element.parentNode, visibilityAttr);
         path += "/" + element.tagName + "[" + siblingIndex;
         path += "," + element.id;
@@ -94,13 +94,13 @@ export const pageScript = function() {
           path += "," + element.style.display;
           path += "," + element.style.visibility;
         }
-        if (element.tagName == "A") {
+        if (element.tagName === "A") {
           path += "," + element.href;
         }
         path += "]";
         return path;
       }
-      if (sibling.nodeType == 1 && sibling.tagName == element.tagName) {
+      if (sibling.nodeType === 1 && sibling.tagName === element.tagName) {
         siblingIndex++;
       }
     }
@@ -110,32 +110,32 @@ export const pageScript = function() {
   function serializeObject(object, stringifyFunctions = false) {
     // Handle permissions errors
     try {
-      if (object == null) {
+      if (object === null) {
         return "null";
       }
-      if (typeof object == "function") {
+      if (typeof object === "function") {
         if (stringifyFunctions) {
           return object.toString();
         } else {
           return "FUNCTION";
         }
       }
-      if (typeof object != "object") {
+      if (typeof object !== "object") {
         return object;
       }
       const seenObjects = [];
       return JSON.stringify(object, function(key, value) {
-        if (value == null) {
+        if (value === null) {
           return "null";
         }
-        if (typeof value == "function") {
+        if (typeof value === "function") {
           if (stringifyFunctions) {
             return value.toString();
           } else {
             return "FUNCTION";
           }
         }
-        if (typeof value == "object") {
+        if (typeof value === "object") {
           // Remove wrapping on content objects
           if ("wrappedJSObject" in value) {
             value = value.wrappedJSObject;
@@ -147,7 +147,7 @@ export const pageScript = function() {
           }
 
           // Prevent serialization cycles
-          if (key == "" || seenObjects.indexOf(value) < 0) {
+          if (key === "" || seenObjects.indexOf(value) < 0) {
             seenObjects.push(value);
             return value;
           } else {
@@ -231,7 +231,7 @@ export const pageScript = function() {
       const lineNo = items[items.length - 2];
       const scriptFileName = items[items.length - 3] || "";
       const lineNoIdx = scriptFileName.indexOf(" line "); // line in the URL means eval or Function
-      if (lineNoIdx == -1) {
+      if (lineNoIdx === -1) {
         scriptUrl = scriptFileName; // TODO: sometimes we have filename only, e.g. XX.js
       } else {
         scriptUrl = scriptFileName.slice(0, lineNoIdx);
@@ -465,7 +465,7 @@ export const pageScript = function() {
       // depth not set (at which point its set to default) or not at limit.
       if (
         !!logSettings.recursive &&
-        properties[i] != "__proto__" &&
+        properties[i] !== "__proto__" &&
         isObject(object, properties[i]) &&
         (!("depth" in logSettings) || logSettings.depth > 0)
       ) {
@@ -583,7 +583,7 @@ export const pageScript = function() {
           // * All returned functions are instrumented with a wrapper
           // * Returned objects may be instrumented if recursive
           //   instrumentation is enabled and this isn't at the depth limit.
-          if (typeof origProperty == "function") {
+          if (typeof origProperty === "function") {
             return instrumentFunction(
               objectName,
               propertyName,
@@ -591,7 +591,7 @@ export const pageScript = function() {
               logSettings,
             );
           } else if (
-            typeof origProperty == "object" &&
+            typeof origProperty === "object" &&
             !!logSettings.recursive &&
             (!("depth" in logSettings) || logSettings.depth > 0)
           ) {

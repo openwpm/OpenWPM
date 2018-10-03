@@ -72,9 +72,9 @@ HttpPostParser.prototype.readLine = function() {
   const size = this.stream.available();
   for (let i = 0; i < size; i++) {
     const c = this.stream.read(1);
-    if (c == "\r") {
+    if (c === "\r") {
       continue;
-    } else if (c == "\n") {
+    } else if (c === "\n") {
       break;
     } else {
       line += c;
@@ -130,7 +130,7 @@ HttpPostParser.prototype.convertTextPlainToUrlEncoded = function(postBody) {
   const lines = postBody.split("\n");
   const post_vars = [];
   for (const line of lines) {
-    if (line.indexOf("=") != -1) {
+    if (line.indexOf("=") !== -1) {
       post_vars.push(encodeURIComponent(line.trim()));
     } else {
       const x = encodeURIComponent("\r\n" + line.trim());
@@ -146,7 +146,7 @@ HttpPostParser.prototype.parseEncodedFormData = function(
 ) {
   const obj = {};
 
-  if (formData.indexOf("=") == -1) {
+  if (formData.indexOf("=") === -1) {
     // not key=value form
     return formData;
   }
@@ -154,7 +154,7 @@ HttpPostParser.prototype.parseEncodedFormData = function(
   const origFormData = formData; // keep the original form data
 
   try {
-    if (encodingType.indexOf("text/plain") != -1) {
+    if (encodingType.indexOf("text/plain") !== -1) {
       formData = this.convertTextPlainToUrlEncoded(formData);
     }
 
@@ -162,7 +162,7 @@ HttpPostParser.prototype.parseEncodedFormData = function(
     // other equal signs should have been encoded away at this point.
     // If we've ==, this means this is unstructured data (e.g. base64 string),
     // and we won't be able to parse it into key-value pairs.
-    if (formData.indexOf("==") != -1) {
+    if (formData.indexOf("==") !== -1) {
       return origFormData;
     }
 
@@ -226,7 +226,7 @@ HttpPostParser.prototype.parsePostRequest = function(encodingType) {
     encodingType = postHeaders["Content-Type"];
   }
 
-  if (encodingType.indexOf("multipart/form-data") != -1) {
+  if (encodingType.indexOf("multipart/form-data") !== -1) {
     isMultiPart = true;
   }
 
@@ -321,12 +321,12 @@ HttpPostParser.prototype.parseSinglePart = function(part) {
 
 HttpPostParser.prototype.parseStream = function() {
   // Position the stream to the start of the body
-  if (this.body < 0 || this.seekablestream.tell() != this.body) {
+  if (this.body < 0 || this.seekablestream.tell() !== this.body) {
     this.extractUploadStreamHeaders();
   }
 
   let size = this.stream.available();
-  if (size == 0 && this.body != 0) {
+  if (size === 0 && this.body !== 0) {
     // whoops, there weren't really headers..
     this.rewind();
     this.hasheaders = false;
@@ -348,7 +348,7 @@ HttpPostParser.prototype.parseStream = function() {
   }
 
   // strip off trailing \r\n's
-  while (postString.indexOf("\r\n") == postString.length - 2) {
+  while (postString.indexOf("\r\n") === postString.length - 2) {
     postString = postString.substring(0, postString.length - 2);
   }
   this.postBody = postString.trim();

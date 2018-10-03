@@ -173,16 +173,16 @@ const httpRequestHandler = function(reqEvent, crawlID) {
       header_pair.push(loggingDB.escapeString(name));
       header_pair.push(loggingDB.escapeString(value));
       headers.push(header_pair);
-      if (name == "Content-Type") {
+      if (name === "Content-Type") {
         encodingType = value;
-        if (encodingType.indexOf("application/ocsp-request") != -1) {
+        if (encodingType.indexOf("application/ocsp-request") !== -1) {
           isOcsp = true;
         }
       }
     },
   });
 
-  if (requestMethod == "POST" && !isOcsp) {
+  if (requestMethod === "POST" && !isOcsp) {
     // don't process OCSP requests
     reqEvent.subject.QueryInterface(components.interfaces.nsIUploadChannel);
     if (reqEvent.subject.uploadStream) {
@@ -303,10 +303,10 @@ const httpRequestHandler = function(reqEvent, crawlID) {
     // loads, which we attempt to filter. Depending on the naming, some favicons
     // may continue to lead to error logs.
     if (
-      update.triggering_origin != "[System Principal]" &&
-      update.triggering_origin != undefined &&
-      update.loading_origin != "[System Principal]" &&
-      update.loading_origin != undefined &&
+      update.triggering_origin !== "[System Principal]" &&
+      update.triggering_origin !== undefined &&
+      update.loading_origin !== "[System Principal]" &&
+      update.loading_origin !== undefined &&
       !update.url.endsWith("ico")
     ) {
       loggingDB.logError(
@@ -443,16 +443,16 @@ function isJS(httpChannel) {
   // load various resource types.
   // See: http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl
   const contentPolicyType = httpChannel.loadInfo.externalContentPolicyType;
-  if (contentPolicyType == 2) {
+  if (contentPolicyType === 2) {
     // script
     return true;
   }
   if (
-    contentPolicyType != 5 && // object
-    contentPolicyType != 7 && // subdocument (iframe)
-    contentPolicyType != 11 && // XMLHTTPRequest
-    contentPolicyType != 16 && // websocket
-    contentPolicyType != 19
+    contentPolicyType !== 5 && // object
+    contentPolicyType !== 7 && // subdocument (iframe)
+    contentPolicyType !== 11 && // XMLHTTPRequest
+    contentPolicyType !== 16 && // websocket
+    contentPolicyType !== 19
   ) {
     // beacon response
     return false;

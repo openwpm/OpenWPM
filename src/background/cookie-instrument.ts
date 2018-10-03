@@ -33,7 +33,7 @@ export const run = function(crawlID) {
     function(event) {
       const data = event.data;
       // TODO: Support other cookie operations
-      if (data == "deleted" || data == "added" || data == "changed") {
+      if (data === "deleted" || data === "added" || data === "changed") {
         const update = {};
         update.change = loggingDB.escapeString(data);
         update.crawl_id = crawlID;
@@ -49,7 +49,7 @@ export const run = function(crawlID) {
         // cookie which doesn't expire. Sessions cookies with
         // non-max expiry time expire after session or at expiry.
         const expiryTime = cookie.expiry; // returns seconds
-        if (expiryTime == 9223372036854776000) {
+        if (expiryTime === 9223372036854776000) {
           const expiryTimeString = "9999-12-31 23:59:59";
         } else {
           const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds
