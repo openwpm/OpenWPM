@@ -1,4 +1,15 @@
-import { background } from './background';
-import { content } from './content';
+import * as cookieInstrument from './background/cookie-instrument';
+import * as jsInstrument from './background/javascript-instrument';
+import * as httpInstrument from './background/http-instrument';
 
-export { background, content };
+const background = { cookieInstrument, jsInstrument, httpInstrument };
+
+import * as jsInstrumentContentScope from './content/javascript-instrument-content-scope';
+
+const content = { jsInstrumentContentScope };
+
+import * as HttpPostParser from './lib/http-post-parser';
+
+const lib = { HttpPostParser };
+
+export { background, content, lib };
