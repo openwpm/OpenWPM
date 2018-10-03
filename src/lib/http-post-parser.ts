@@ -2,9 +2,13 @@
 
 // import { Cc, Ci, CC, Cu, components } from 'chrome';
 
-let loggingDB;
+export class HttpPostParser {
+  private loggingDB;
 
-const HttpPostParser = function(stream, $loggingDB) {
+  constructor(stream) {
+    console.log("HttpPostParser", stream, this.loggingDB);
+
+    /*
   loggingDB = $loggingDB;
   // Scriptable Stream Constants
   this.seekablestream = stream;
@@ -57,8 +61,15 @@ const HttpPostParser = function(stream, $loggingDB) {
     // Let's keep an eye on unknown stream types, though we haven't seen any other stream types in our tests.
     loggingDB.logDebug("POST request parser: unknown stream type");
   }
-};
+  */
+  }
 
+  public setLoggingDB($loggingDB) {
+    this.loggingDB = $loggingDB;
+  }
+}
+
+/*
 HttpPostParser.prototype.rewind = function() {
   this.seekablestream.seek(0, 0);
 };
@@ -98,7 +109,7 @@ HttpPostParser.prototype.extractUploadStreamHeaders = function() {
     -----------------------------1809321333852408290275809649
     Content-Disposition: form-data; name="email"
     [snipped]
-   */
+   * /
   if (this.hasheaders) {
     this.rewind();
     let line = this.readLine();
@@ -126,7 +137,7 @@ HttpPostParser.prototype.convertTextPlainToUrlEncoded = function(postBody) {
       The second line.
     to (application/x-www-form-urlencoded):
       foo=bar&baz=The+first+line.%0D%0AThe+second+line.%0D%0A
-   */
+   * /
   const lines = postBody.split("\n");
   const post_vars = [];
   for (const line of lines) {
@@ -258,7 +269,7 @@ HttpPostParser.prototype.parseMultiPartData = function(formData, encodingType) {
 
     name surname+
     -----------------------------12972102761018453617355621459--
-    */
+    * /
   let boundary = "";
   const firstLine = formData.split("\r\n", 1)[0];
   if (firstLine.startsWith("-----------------------------")) {
@@ -280,7 +291,7 @@ HttpPostParser.prototype.parseMultiPartData = function(formData, encodingType) {
 HttpPostParser.prototype.notContentHeader = function(partLine) {
   // Filter function to discard content headers present in the multipart form data
   // See, http://stackoverflow.com/a/16548608
-  return !partLine.match(/^Content-.*: .*/);
+  return !partLine.match(/^Content-.*: .* /);
 };
 
 HttpPostParser.prototype.parseSinglePart = function(part) {
@@ -292,7 +303,7 @@ HttpPostParser.prototype.parseSinglePart = function(part) {
      Content-Disposition: form-data; name="username"
 
      name surname+
-  */
+  * /
   part = part.trim();
   if (!part || part === "--") {
     // ignore empty parts or extra characters after the last boundary
@@ -353,5 +364,4 @@ HttpPostParser.prototype.parseStream = function() {
   }
   this.postBody = postString.trim();
 };
-
-export { HttpPostParser };
+*/

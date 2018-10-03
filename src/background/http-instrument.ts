@@ -3,7 +3,8 @@
 
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
-import * as httpPostParser from "../lib/http-post-parser";
+import { HttpPostParser } from "../lib/http-post-parser";
+import ResourceType = browser.webRequest.ResourceType;
 
 /*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
@@ -22,15 +23,11 @@ converter.charset = "UTF-8";
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 */
 
-let loggingDB;
-export const setLoggingDB = function($loggingDB) {
-  loggingDB = $loggingDB;
-};
-
 /*
  * HTTP Request Handler and Helper Functions
  */
 
+/*
 function get_stack_trace_str() {
   // return the stack trace as a string
   // TODO: check if http-on-modify-request is a good place to capture the stack
@@ -189,7 +186,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
       reqEvent.subject.uploadStream.QueryInterface(
         components.interfaces.nsISeekableStream,
       );
-      const postParser = new httpPostParser.HttpPostParser(
+      const postParser = new HttpPostParser(
         reqEvent.subject.uploadStream,
         loggingDB,
       );
@@ -321,11 +318,13 @@ const httpRequestHandler = function(reqEvent, crawlID) {
 
   loggingDB.saveRecord("http_requests", update);
 };
+*/
 
 /*
  * HTTP Response Handler and Helper Functions
  */
 
+/*
 // Used to parse Response stream to log content
 function TracingListener() {
   // array for incoming data.
@@ -554,134 +553,147 @@ const httpResponseHandler = function(
     loggingDB.saveRecord("http_responses", update);
   }
 };
+*/
 
 /*
  * Attach handlers to event monitor
  */
 
-export const run = function(crawlID, saveJavascript, saveAllContent) {
-  const allTypes = [
-    "beacon",
-    "csp_report",
-    "font",
-    "image",
-    "imageset",
-    "main_frame",
-    "media",
-    "object",
-    "object_subrequest",
-    "ping",
-    "script",
-    // "speculative",
-    "stylesheet",
-    "sub_frame",
-    "web_manifest",
-    "websocket",
-    "xbl",
-    "xml_dtd",
-    "xmlhttprequest",
-    "xslt",
-    "other",
-  ];
+export class HttpInstrument {
+  public run(crawlID, saveJavascript, saveAllContent) {
+    console.log(
+      "HttpInstrument",
+      HttpPostParser,
+      crawlID,
+      saveJavascript,
+      saveAllContent,
+    );
 
-  // request listener
+    const allTypes: ResourceType[] = [
+      "beacon",
+      "csp_report",
+      "font",
+      "image",
+      "imageset",
+      "main_frame",
+      "media",
+      "object",
+      "object_subrequest",
+      "ping",
+      "script",
+      // "speculative",
+      "stylesheet",
+      "sub_frame",
+      "web_manifest",
+      "websocket",
+      "xbl",
+      "xml_dtd",
+      "xmlhttprequest",
+      "xslt",
+      "other",
+    ];
 
-  browser.webRequest.onBeforeRequest.addListener(
-    function(details) {
-      // Ignore requests made by extensions
-      if (
-        details.originUrl &&
-        details.originUrl.indexOf("moz-extension://") > -1
-      ) {
-        return;
-      }
-      console.log("webRequest.onBeforeRequest listener", details);
-    },
-    { urls: ["http://*/*", "https://*/*"], types: allTypes },
-    ["requestBody"],
-  );
+    // request listener
 
-  browser.webRequest.onBeforeRequest.addListener(
-    function(details) {
-      // Ignore requests made by extensions
-      if (
-        details.originUrl &&
-        details.originUrl.indexOf("moz-extension://") > -1
-      ) {
-        return;
-      }
-      console.log("webRequest.onBeforeRequest listener", details);
-    },
-    { urls: ["http://*/*", "https://*/*"], types: allTypes },
-    ["requestBody"],
-  );
+    browser.webRequest.onBeforeRequest.addListener(
+      function(details) {
+        // Ignore requests made by extensions
+        if (
+          details.originUrl &&
+          details.originUrl.indexOf("moz-extension://") > -1
+        ) {
+          return;
+        }
+        console.log("webRequest.onBeforeRequest listener", details);
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["requestBody"],
+    );
 
-  browser.webRequest.onBeforeSendHeaders.addListener(
-    function(details) {
-      // Ignore requests made by extensions
-      if (
-        details.originUrl &&
-        details.originUrl.indexOf("moz-extension://") > -1
-      ) {
-        return;
-      }
-      console.log("webRequest.onBeforeSendHeaders listener", details);
-    },
-    { urls: ["http://*/*", "https://*/*"], types: allTypes },
-    ["requestHeaders"],
-  );
+    browser.webRequest.onBeforeRequest.addListener(
+      function(details) {
+        // Ignore requests made by extensions
+        if (
+          details.originUrl &&
+          details.originUrl.indexOf("moz-extension://") > -1
+        ) {
+          return;
+        }
+        console.log("webRequest.onBeforeRequest listener", details);
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["requestBody"],
+    );
 
-  browser.webRequest.onCompleted.addListener(
-    function(details) {
-      // Ignore requests made by extensions
-      if (
-        details.originUrl &&
-        details.originUrl.indexOf("moz-extension://") > -1
-      ) {
-        return;
-      }
-      console.log("webRequest.onCompleted listener", details);
-    },
-    { urls: ["http://*/*", "https://*/*"], types: allTypes },
-    ["responseHeaders"],
-  );
+    browser.webRequest.onBeforeSendHeaders.addListener(
+      function(details) {
+        // Ignore requests made by extensions
+        if (
+          details.originUrl &&
+          details.originUrl.indexOf("moz-extension://") > -1
+        ) {
+          return;
+        }
+        console.log("webRequest.onBeforeSendHeaders listener", details);
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["requestHeaders"],
+    );
 
-  // Monitor http events
-  events.on(
-    "http-on-modify-request",
-    function(event) {
-      httpRequestHandler(event, crawlID);
-    },
-    true,
-  );
+    browser.webRequest.onCompleted.addListener(
+      function(details) {
+        // Ignore requests made by extensions
+        if (
+          details.originUrl &&
+          details.originUrl.indexOf("moz-extension://") > -1
+        ) {
+          return;
+        }
+        console.log("webRequest.onCompleted listener", details);
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["responseHeaders"],
+    );
 
-  events.on(
-    "http-on-examine-response",
-    function(event) {
-      httpResponseHandler(
-        event,
-        false,
-        crawlID,
-        saveJavascript,
-        saveAllContent,
-      );
-    },
-    true,
-  );
+    // Monitor http events
+    /*
+    events.on(
+      "http-on-modify-request",
+      function(event) {
+        httpRequestHandler(event, crawlID);
+      },
+      true,
+    );
 
-  events.on(
-    "http-on-examine-cached-response",
-    function(event) {
-      httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
-    },
-    true,
-  );
+    events.on(
+      "http-on-examine-response",
+      function(event) {
+        httpResponseHandler(
+          event,
+          false,
+          crawlID,
+          saveJavascript,
+          saveAllContent,
+        );
+      },
+      true,
+    );
 
-  events.on(
-    "http-on-examine-merged-response",
-    function(event) {
-      httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
-    },
-    true,
-  );
-};
+    events.on(
+      "http-on-examine-cached-response",
+      function(event) {
+        httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
+      },
+      true,
+    );
+
+    events.on(
+      "http-on-examine-merged-response",
+      function(event) {
+        httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
+      },
+      true,
+    );
+    */
+  }
+}

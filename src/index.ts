@@ -1,12 +1,12 @@
-import * as cookieInstrument from "./background/cookie-instrument";
-import * as httpInstrument from "./background/http-instrument";
-import * as jsInstrument from "./background/javascript-instrument";
+import { CookieInstrument } from "./background/cookie-instrument";
+import { HttpInstrument } from "./background/http-instrument";
+import { JavascriptInstrument } from "./background/javascript-instrument";
 
-const background = { cookieInstrument, jsInstrument, httpInstrument };
+const background = { CookieInstrument, JavascriptInstrument, HttpInstrument };
 
-import * as jsInstrumentContentScope from "./content/javascript-instrument-content-scope";
+import { JavascriptInstrumentContentScope } from "./content/javascript-instrument-content-scope";
 
-const content = { jsInstrumentContentScope };
+const content = { JavascriptInstrumentContentScope };
 
 import * as HttpPostParser from "./lib/http-post-parser";
 

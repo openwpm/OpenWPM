@@ -2,40 +2,43 @@
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
 
-let loggingDB;
-export const setLoggingDB = function($loggingDB) {
-  loggingDB = $loggingDB;
-};
+export class CookieInstrument {
+  private loggingDB;
 
-export const run = function(crawlID) {
-  // Instrument cookie changes
-  browser.cookies.onChanged.addListener(function(changeInfo) {
-    // Ignore requests made by extensions
-    /*
-      if (details.originUrl.indexOf("moz-extension://") > -1) {
-        return;
-      }
-      */
-    console.log(
-      "Cookie changed: " +
-        "\n * Cookie: " +
-        JSON.stringify(changeInfo.cookie) +
-        "\n * Cause: " +
-        changeInfo.cause +
-        "\n * Removed: " +
-        changeInfo.removed,
-      changeInfo,
-    );
-  });
+  public setLoggingDB($loggingDB) {
+    this.loggingDB = $loggingDB;
+  }
 
-  events.on(
-    "cookie-changed",
-    function(event) {
+  public run(crawlID) {
+    console.log("CookieInstrument", crawlID, this.loggingDB);
+
+    // Instrument cookie changes
+    browser.cookies.onChanged.addListener(function(changeInfo) {
+      // Ignore requests made by extensions
+      /*
+        if (details.originUrl.indexOf("moz-extension://") > -1) {
+          return;
+        }
+        */
+      console.log(
+        "Cookie changed: " +
+          "\n * Cookie: " +
+          JSON.stringify(changeInfo.cookie) +
+          "\n * Cause: " +
+          changeInfo.cause +
+          "\n * Removed: " +
+          changeInfo.removed,
+        changeInfo,
+      );
+
+      /*
+      const event = changeInfo;
+
       const data = event.data;
       // TODO: Support other cookie operations
       if (data === "deleted" || data === "added" || data === "changed") {
-        const update = {};
-        update.change = loggingDB.escapeString(data);
+        const update: any = {};
+        update.change = this.loggingDB.escapeString(data);
         update.crawl_id = crawlID;
 
         let cookie = event.subject.QueryInterface(Ci.nsICookie2);
@@ -58,30 +61,30 @@ export const run = function(crawlID) {
           );
         }
         update.expiry = expiryTimeString;
-        update.is_http_only = loggingDB.boolToInt(cookie.isHttpOnly);
-        update.is_session = loggingDB.boolToInt(cookie.isSession);
+        update.is_http_only = this.loggingDB.boolToInt(cookie.isHttpOnly);
+        update.is_session = this.loggingDB.boolToInt(cookie.isSession);
 
         // Accessed time (in microseconds)
         const lastAccessedTime = new Date(cookie.lastAccessed / 1000); // requires milliseconds
         update.last_accessed = lastAccessedTime.toLocaleFormat(
           "%Y-%m-%d %H:%M:%S",
         );
-        update.raw_host = loggingDB.escapeString(cookie.rawHost);
+        update.raw_host = this.loggingDB.escapeString(cookie.rawHost);
 
         cookie = cookie.QueryInterface(Ci.nsICookie);
         update.expires = cookie.expires;
-        update.host = loggingDB.escapeString(cookie.host);
-        update.is_domain = loggingDB.boolToInt(cookie.isDomain);
-        update.is_secure = loggingDB.boolToInt(cookie.isSecure);
-        update.name = loggingDB.escapeString(cookie.name);
-        update.path = loggingDB.escapeString(cookie.path);
+        update.host = this.loggingDB.escapeString(cookie.host);
+        update.is_domain = this.loggingDB.boolToInt(cookie.isDomain);
+        update.is_secure = this.loggingDB.boolToInt(cookie.isSecure);
+        update.name = this.loggingDB.escapeString(cookie.name);
+        update.path = this.loggingDB.escapeString(cookie.path);
         update.policy = cookie.policy;
         update.status = cookie.status;
-        update.value = loggingDB.escapeString(cookie.value);
+        update.value = this.loggingDB.escapeString(cookie.value);
 
-        loggingDB.saveRecord("javascript_cookies", update);
+        this.loggingDB.saveRecord("javascript_cookies", update);
       }
-    },
-    true,
-  );
-};
+      */
+    });
+  }
+}

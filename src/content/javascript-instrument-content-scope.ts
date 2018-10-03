@@ -34,7 +34,7 @@ function emitMsg(type, msg) {
 const event_id = Math.random();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(event_id, function(e) {
+document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
@@ -46,9 +46,11 @@ document.addEventListener(event_id, function(e) {
   }
 });
 
-export function run(testing) {
-  insertScript(getPageScriptAsString(), {
-    event_id,
-    testing,
-  });
+export class JavascriptInstrumentContentScope {
+  public run(testing) {
+    insertScript(getPageScriptAsString(), {
+      event_id,
+      testing,
+    });
+  }
 }
