@@ -43,7 +43,7 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   }
 });
 
-export function injectJavascriptInstrumentPageScript(testing) {
+export function injectJavascriptInstrumentPageScript(testing = false) {
   insertScript(getPageScriptAsString(), {
     event_id,
     testing,
