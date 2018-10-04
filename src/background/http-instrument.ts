@@ -83,7 +83,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
         try {
           oldEventSink = oldNotifications.QueryInterface(iid);
         } catch (anError) {
-          self.loggingDB.logError(
+          this.loggingDB.logError(
             "Error during call to custom notificationCallbacks::getInterface." +
               JSON.stringify(anError),
           );
@@ -108,7 +108,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
 
       newChannel.QueryInterface(Ci.nsIHttpChannel);
 
-      self.loggingDB.saveRecord("http_redirects", {
+      this.loggingDB.saveRecord("http_redirects", {
         crawl_id: crawlID,
         old_channel_id: oldChannel.channelId,
         new_channel_id: newChannel.channelId,
@@ -144,19 +144,19 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   update.channel_id = httpChannel.channelId;
 
   const stacktrace_str = get_stack_trace_str();
-  update.req_call_stack = self.loggingDB.escapeString(stacktrace_str);
+  update.req_call_stack = this.loggingDB.escapeString(stacktrace_str);
 
   const url = httpChannel.URI.spec;
-  update.url = self.loggingDB.escapeString(url);
+  update.url = this.loggingDB.escapeString(url);
 
   const requestMethod = httpChannel.requestMethod;
-  update.method = self.loggingDB.escapeString(requestMethod);
+  update.method = this.loggingDB.escapeString(requestMethod);
 
   let referrer = "";
   if (httpChannel.referrer) {
     referrer = httpChannel.referrer.spec;
   }
-  update.referrer = self.loggingDB.escapeString(referrer);
+  update.referrer = this.loggingDB.escapeString(referrer);
 
   const current_time = new Date();
   update.time_stamp = current_time.toISOString();
@@ -167,8 +167,8 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   httpChannel.visitRequestHeaders({
     visitHeader(name, value) {
       const header_pair = [];
-      header_pair.push(self.loggingDB.escapeString(name));
-      header_pair.push(self.loggingDB.escapeString(value));
+      header_pair.push(this.loggingDB.escapeString(name));
+      header_pair.push(this.loggingDB.escapeString(value));
       headers.push(header_pair);
       if (name === "Content-Type") {
         encodingType = value;
@@ -188,7 +188,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
       );
       const postParser = new HttpPostParser(
         reqEvent.subject.uploadStream,
-        self.loggingDB,
+        this.loggingDB,
       );
       const postObj = postParser.parsePostRequest(encodingType);
 
@@ -204,9 +204,9 @@ const httpRequestHandler = function(reqEvent, crawlID) {
         for (const name in postObj.post_headers) {
           if (contentHeaders.includes(name)) {
             const header_pair = [];
-            header_pair.push(self.loggingDB.escapeString(name));
+            header_pair.push(this.loggingDB.escapeString(name));
             header_pair.push(
-              self.loggingDB.escapeString(postObj.post_headers[name]),
+              this.loggingDB.escapeString(postObj.post_headers[name]),
             );
             headers.push(header_pair);
           }
@@ -254,8 +254,8 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   if (httpChannel.loadInfo.loadingPrincipal) {
     loadingOrigin = httpChannel.loadInfo.loadingPrincipal.origin;
   }
-  update.triggering_origin = self.loggingDB.escapeString(triggeringOrigin);
-  update.loading_origin = self.loggingDB.escapeString(loadingOrigin);
+  update.triggering_origin = this.loggingDB.escapeString(triggeringOrigin);
+  update.loading_origin = this.loggingDB.escapeString(loadingOrigin);
 
   // loadingDocument's href
   // The loadingDocument is the document the element resides, regardless of
@@ -267,7 +267,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   ) {
     loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
   }
-  update.loading_href = self.loggingDB.escapeString(loadingHref);
+  update.loading_href = this.loggingDB.escapeString(loadingHref);
 
   // contentPolicyType of the requesting node. This is set by the type of
   // node making the request (i.e. an <img src=...> node will set to type 3).
@@ -292,7 +292,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
       );
       update.is_third_party_to_top_window = isThirdPartyToTopWindow;
       update.is_third_party_channel = isThirdPartyChannel;
-      update.top_level_url = self.loggingDB.escapeString(topUrl);
+      update.top_level_url = this.loggingDB.escapeString(topUrl);
     }
   } catch (anError) {
     // Exceptions expected for channels triggered or loading in a
@@ -306,7 +306,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
       update.loading_origin !== undefined &&
       !update.url.endsWith("ico")
     ) {
-      self.loggingDB.logError(
+      this.loggingDB.logError(
         "Error while retrieving additional channel information for URL: " +
           "\n" +
           update.url +
@@ -316,7 +316,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
     }
   }
 
-  self.loggingDB.saveRecord("http_requests", update);
+  this.loggingDB.saveRecord("http_requests", update);
 };
 */
 
@@ -407,22 +407,22 @@ function logWithResponseBody(respEvent, update) {
         cryptoHash.update(bodyBytes, bodyBytes.length);
         const contentHash = binaryHashtoHex(cryptoHash.finish(false));
         update.content_hash = contentHash;
-        self.loggingDB.saveContent(
-          self.loggingDB.escapeString(respBody),
-          self.loggingDB.escapeString(contentHash),
+        this.loggingDB.saveContent(
+          this.loggingDB.escapeString(respBody),
+          this.loggingDB.escapeString(contentHash),
         );
-        self.loggingDB.saveRecord("http_responses", update);
+        this.loggingDB.saveRecord("http_responses", update);
       },
       function(aReason) {
-        self.loggingDB.logError(
+        this.loggingDB.logError(
           "Unable to retrieve response body." + JSON.stringify(aReason),
         );
         update.content_hash = "<error>";
-        self.loggingDB.saveRecord("http_responses", update);
+        this.loggingDB.saveRecord("http_responses", update);
       },
     )
     .catch(function(aCatch) {
-      self.loggingDB.logError(
+      this.loggingDB.logError(
         "Unable to retrieve response body." +
           "Likely caused by a programming error. Error Message:" +
           aCatch.name +
@@ -431,7 +431,7 @@ function logWithResponseBody(respEvent, update) {
           aCatch.stack,
       );
       update.content_hash = "<error>";
-      self.loggingDB.saveRecord("http_responses", update);
+      this.loggingDB.saveRecord("http_responses", update);
     });
 }
 
@@ -506,22 +506,22 @@ const httpResponseHandler = function(
   update.is_cached = isCached;
 
   const url = httpChannel.URI.spec;
-  update.url = self.loggingDB.escapeString(url);
+  update.url = this.loggingDB.escapeString(url);
 
   const requestMethod = httpChannel.requestMethod;
-  update.method = self.loggingDB.escapeString(requestMethod);
+  update.method = this.loggingDB.escapeString(requestMethod);
 
   let referrer = "";
   if (httpChannel.referrer) {
     referrer = httpChannel.referrer.spec;
   }
-  update.referrer = self.loggingDB.escapeString(referrer);
+  update.referrer = this.loggingDB.escapeString(referrer);
 
   const responseStatus = httpChannel.responseStatus;
   update.response_status = responseStatus;
 
   const responseStatusText = httpChannel.responseStatusText;
-  update.response_status_text = self.loggingDB.escapeString(responseStatusText);
+  update.response_status_text = this.loggingDB.escapeString(responseStatusText);
 
   const current_time = new Date();
   update.time_stamp = current_time.toISOString();
@@ -532,14 +532,14 @@ const httpResponseHandler = function(
   } catch (e) {
     location = "";
   }
-  update.location = self.loggingDB.escapeString(location);
+  update.location = this.loggingDB.escapeString(location);
 
   const headers = [];
   httpChannel.visitResponseHeaders({
     visitHeader(name, value) {
       const header_pair = [];
-      header_pair.push(self.loggingDB.escapeString(name));
-      header_pair.push(self.loggingDB.escapeString(value));
+      header_pair.push(this.loggingDB.escapeString(name));
+      header_pair.push(this.loggingDB.escapeString(value));
       headers.push(header_pair);
     },
   });
@@ -550,7 +550,7 @@ const httpResponseHandler = function(
   } else if (saveJavascript && isJS(httpChannel)) {
     logWithResponseBody(respEvent, update);
   } else {
-    self.loggingDB.saveRecord("http_responses", update);
+    this.loggingDB.saveRecord("http_responses", update);
   }
 };
 */
@@ -567,14 +567,13 @@ export class HttpInstrument {
   }
 
   public run(crawlID, saveJavascript, saveAllContent) {
-    const self = this;
     console.log(
       "HttpInstrument",
       HttpPostParser,
       crawlID,
       saveJavascript,
       saveAllContent,
-      self.loggingDB,
+      this.loggingDB,
     );
 
     const allTypes: ResourceType[] = [
