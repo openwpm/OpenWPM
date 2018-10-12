@@ -18,14 +18,14 @@ interface Update {
 }
 
 export class JavascriptInstrument {
-  private readonly loggingDB;
+  private readonly dataReceiver;
 
-  constructor(loggingDB) {
-    this.loggingDB = loggingDB;
+  constructor(dataReceiver) {
+    this.dataReceiver = dataReceiver;
   }
 
   public run(crawlID) {
-    console.log("JavascriptInstrument", crawlID, this.loggingDB);
+    console.log("JavascriptInstrument", crawlID, this.dataReceiver);
 
     const processCallsAndValues = (data, sender) => {
       const update: Update = {};
@@ -59,7 +59,7 @@ export class JavascriptInstrument {
         update.arguments = escapeString(JSON.stringify(args));
       }
 
-      this.loggingDB.saveRecord("javascript", update);
+      this.dataReceiver.saveRecord("javascript", update);
     };
 
     // Listen for messages from content script injected to instrument JavaScript API

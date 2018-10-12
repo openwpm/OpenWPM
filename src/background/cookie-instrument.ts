@@ -3,14 +3,14 @@
 // import { data } from 'sdk/self';
 
 export class CookieInstrument {
-  private readonly loggingDB;
+  private readonly dataReceiver;
 
-  constructor(loggingDB) {
-    this.loggingDB = loggingDB;
+  constructor(dataReceiver) {
+    this.dataReceiver = dataReceiver;
   }
 
   public run(crawlID) {
-    console.log("CookieInstrument", crawlID, this.loggingDB);
+    console.log("CookieInstrument", crawlID, this.dataReceiver);
 
     // Instrument cookie changes
     browser.cookies.onChanged.addListener(function(changeInfo) {
@@ -38,7 +38,7 @@ export class CookieInstrument {
       // TODO: Support other cookie operations
       if (data === "deleted" || data === "added" || data === "changed") {
         const update: any = {};
-        update.change = this.loggingDB.escapeString(data);
+        update.change = this.dataReceiver.escapeString(data);
         update.crawl_id = crawlID;
 
         let cookie = event.subject.QueryInterface(Ci.nsICookie2);
@@ -61,28 +61,28 @@ export class CookieInstrument {
           );
         }
         update.expiry = expiryTimeString;
-        update.is_http_only = this.loggingDB.boolToInt(cookie.isHttpOnly);
-        update.is_session = this.loggingDB.boolToInt(cookie.isSession);
+        update.is_http_only = this.dataReceiver.boolToInt(cookie.isHttpOnly);
+        update.is_session = this.dataReceiver.boolToInt(cookie.isSession);
 
         // Accessed time (in microseconds)
         const lastAccessedTime = new Date(cookie.lastAccessed / 1000); // requires milliseconds
         update.last_accessed = lastAccessedTime.toLocaleFormat(
           "%Y-%m-%d %H:%M:%S",
         );
-        update.raw_host = this.loggingDB.escapeString(cookie.rawHost);
+        update.raw_host = this.dataReceiver.escapeString(cookie.rawHost);
 
         cookie = cookie.QueryInterface(Ci.nsICookie);
         update.expires = cookie.expires;
-        update.host = this.loggingDB.escapeString(cookie.host);
-        update.is_domain = this.loggingDB.boolToInt(cookie.isDomain);
-        update.is_secure = this.loggingDB.boolToInt(cookie.isSecure);
-        update.name = this.loggingDB.escapeString(cookie.name);
-        update.path = this.loggingDB.escapeString(cookie.path);
+        update.host = this.dataReceiver.escapeString(cookie.host);
+        update.is_domain = this.dataReceiver.boolToInt(cookie.isDomain);
+        update.is_secure = this.dataReceiver.boolToInt(cookie.isSecure);
+        update.name = this.dataReceiver.escapeString(cookie.name);
+        update.path = this.dataReceiver.escapeString(cookie.path);
         update.policy = cookie.policy;
         update.status = cookie.status;
-        update.value = this.loggingDB.escapeString(cookie.value);
+        update.value = this.dataReceiver.escapeString(cookie.value);
 
-        this.loggingDB.saveRecord("javascript_cookies", update);
+        this.dataReceiver.saveRecord("javascript_cookies", update);
       }
       */
     });

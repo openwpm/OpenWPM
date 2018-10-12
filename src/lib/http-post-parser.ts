@@ -3,14 +3,14 @@
 // import { Cc, Ci, CC, Cu, components } from 'chrome';
 
 export class HttpPostParser {
-  private readonly loggingDB;
+  private readonly dataReceiver;
 
-  constructor(stream, loggingDB) {
-    this.loggingDB = loggingDB;
-    console.log("HttpPostParser", stream, this.loggingDB);
+  constructor(stream, dataReceiver) {
+    this.dataReceiver = dataReceiver;
+    console.log("HttpPostParser", stream, this.dataReceiver);
 
     /*
-  loggingDB = $loggingDB;
+  dataReceiver = $dataReceiver;
   // Scriptable Stream Constants
   this.seekablestream = stream;
   this.stream = components.classes[
@@ -60,7 +60,7 @@ export class HttpPostParser {
     this.body = -1;
   } else {
     // Let's keep an eye on unknown stream types, though we haven't seen any other stream types in our tests.
-    loggingDB.logDebug("POST request parser: unknown stream type");
+    dataReceiver.logDebug("POST request parser: unknown stream type");
   }
   */
   }
@@ -192,7 +192,7 @@ HttpPostParser.prototype.parseEncodedFormData = function(
     // We expect to have parsing failures due to unstructured POST data
     // e.g. In test_record_binary_post_data, decodeURIComponent throws a URIError
     // for binary data posted via AJAX.
-    loggingDB.logDebug(
+    dataReceiver.logDebug(
       "POST data is not parseable:" +
         e +
         " EncodingType:" +
@@ -202,7 +202,7 @@ HttpPostParser.prototype.parseEncodedFormData = function(
         " PostDataType:" +
         typeof origFormData +
         " PostData:" +
-        loggingDB.escapeString(origFormData) +
+        dataReceiver.escapeString(origFormData) +
         "\n",
     );
     return origFormData; // return the original body
@@ -214,7 +214,7 @@ HttpPostParser.prototype.parsePostRequest = function(encodingType) {
   try {
     this.parseStream();
   } catch (e) {
-    loggingDB.logError("Exception: Failed to parse POST: " + e);
+    dataReceiver.logError("Exception: Failed to parse POST: " + e);
     return {};
   }
 
@@ -242,10 +242,10 @@ HttpPostParser.prototype.parsePostRequest = function(encodingType) {
   let escapedJsonPostData = "";
   if (isMultiPart) {
     jsonPostData = this.parseMultiPartData(postBody, encodingType);
-    escapedJsonPostData = loggingDB.escapeString(jsonPostData);
+    escapedJsonPostData = dataReceiver.escapeString(jsonPostData);
   } else {
     jsonPostData = this.parseEncodedFormData(postBody, encodingType);
-    escapedJsonPostData = loggingDB.escapeString(jsonPostData);
+    escapedJsonPostData = dataReceiver.escapeString(jsonPostData);
   }
   return { post_headers: postHeaders, post_body: escapedJsonPostData };
 };
@@ -322,7 +322,7 @@ HttpPostParser.prototype.parseSinglePart = function(part) {
         .trim(),
     };
   } else {
-    loggingDB.logError("Can't find the POST variable name in " + part);
+    dataReceiver.logError("Can't find the POST variable name in " + part);
     return {};
   }
 };
@@ -349,7 +349,7 @@ HttpPostParser.prototype.parseStream = function() {
       c ? (postString += c) : (postString += "\0");
     }
   } catch (ex) {
-    loggingDB.logError("Error parsing the POST request: " + ex);
+    dataReceiver.logError("Error parsing the POST request: " + ex);
     return "";
   } finally {
     this.rewind();
