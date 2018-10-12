@@ -1,6 +1,7 @@
 // import { Cc, Ci } from 'chrome';
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
+// import { boolToInt, escapeString } from "../lib/string-utils";
 
 export class CookieInstrument {
   private readonly dataReceiver;
@@ -38,7 +39,7 @@ export class CookieInstrument {
       // TODO: Support other cookie operations
       if (data === "deleted" || data === "added" || data === "changed") {
         const update: any = {};
-        update.change = this.dataReceiver.escapeString(data);
+        update.change = escapeString(data);
         update.crawl_id = crawlID;
 
         let cookie = event.subject.QueryInterface(Ci.nsICookie2);
@@ -61,26 +62,26 @@ export class CookieInstrument {
           );
         }
         update.expiry = expiryTimeString;
-        update.is_http_only = this.dataReceiver.boolToInt(cookie.isHttpOnly);
-        update.is_session = this.dataReceiver.boolToInt(cookie.isSession);
+        update.is_http_only = boolToInt(cookie.isHttpOnly);
+        update.is_session = boolToInt(cookie.isSession);
 
         // Accessed time (in microseconds)
         const lastAccessedTime = new Date(cookie.lastAccessed / 1000); // requires milliseconds
         update.last_accessed = lastAccessedTime.toLocaleFormat(
           "%Y-%m-%d %H:%M:%S",
         );
-        update.raw_host = this.dataReceiver.escapeString(cookie.rawHost);
+        update.raw_host = escapeString(cookie.rawHost);
 
         cookie = cookie.QueryInterface(Ci.nsICookie);
         update.expires = cookie.expires;
-        update.host = this.dataReceiver.escapeString(cookie.host);
-        update.is_domain = this.dataReceiver.boolToInt(cookie.isDomain);
-        update.is_secure = this.dataReceiver.boolToInt(cookie.isSecure);
-        update.name = this.dataReceiver.escapeString(cookie.name);
-        update.path = this.dataReceiver.escapeString(cookie.path);
+        update.host = escapeString(cookie.host);
+        update.is_domain = boolToInt(cookie.isDomain);
+        update.is_secure = boolToInt(cookie.isSecure);
+        update.name = escapeString(cookie.name);
+        update.path = escapeString(cookie.path);
         update.policy = cookie.policy;
         update.status = cookie.status;
-        update.value = this.dataReceiver.escapeString(cookie.value);
+        update.value = escapeString(cookie.value);
 
         this.dataReceiver.saveRecord("javascript_cookies", update);
       }

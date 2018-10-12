@@ -5,6 +5,7 @@
 // import { data } from 'sdk/self';
 import { HttpPostParser } from "../lib/http-post-parser";
 import ResourceType = browser.webRequest.ResourceType;
+// import { escapeString } from "../lib/string-utils";
 
 /*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
@@ -144,19 +145,19 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   update.channel_id = httpChannel.channelId;
 
   const stacktrace_str = get_stack_trace_str();
-  update.req_call_stack = this.dataReceiver.escapeString(stacktrace_str);
+  update.req_call_stack = escapeString(stacktrace_str);
 
   const url = httpChannel.URI.spec;
-  update.url = this.dataReceiver.escapeString(url);
+  update.url = escapeString(url);
 
   const requestMethod = httpChannel.requestMethod;
-  update.method = this.dataReceiver.escapeString(requestMethod);
+  update.method = escapeString(requestMethod);
 
   let referrer = "";
   if (httpChannel.referrer) {
     referrer = httpChannel.referrer.spec;
   }
-  update.referrer = this.dataReceiver.escapeString(referrer);
+  update.referrer = escapeString(referrer);
 
   const current_time = new Date();
   update.time_stamp = current_time.toISOString();
@@ -167,8 +168,8 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   httpChannel.visitRequestHeaders({
     visitHeader(name, value) {
       const header_pair = [];
-      header_pair.push(this.dataReceiver.escapeString(name));
-      header_pair.push(this.dataReceiver.escapeString(value));
+      header_pair.push(escapeString(name));
+      header_pair.push(escapeString(value));
       headers.push(header_pair);
       if (name === "Content-Type") {
         encodingType = value;
@@ -204,9 +205,9 @@ const httpRequestHandler = function(reqEvent, crawlID) {
         for (const name in postObj.post_headers) {
           if (contentHeaders.includes(name)) {
             const header_pair = [];
-            header_pair.push(this.dataReceiver.escapeString(name));
+            header_pair.push(escapeString(name));
             header_pair.push(
-              this.dataReceiver.escapeString(postObj.post_headers[name]),
+              escapeString(postObj.post_headers[name]),
             );
             headers.push(header_pair);
           }
@@ -254,8 +255,8 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   if (httpChannel.loadInfo.loadingPrincipal) {
     loadingOrigin = httpChannel.loadInfo.loadingPrincipal.origin;
   }
-  update.triggering_origin = this.dataReceiver.escapeString(triggeringOrigin);
-  update.loading_origin = this.dataReceiver.escapeString(loadingOrigin);
+  update.triggering_origin = escapeString(triggeringOrigin);
+  update.loading_origin = escapeString(loadingOrigin);
 
   // loadingDocument's href
   // The loadingDocument is the document the element resides, regardless of
@@ -267,7 +268,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
   ) {
     loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
   }
-  update.loading_href = this.dataReceiver.escapeString(loadingHref);
+  update.loading_href = escapeString(loadingHref);
 
   // contentPolicyType of the requesting node. This is set by the type of
   // node making the request (i.e. an <img src=...> node will set to type 3).
@@ -292,7 +293,7 @@ const httpRequestHandler = function(reqEvent, crawlID) {
       );
       update.is_third_party_to_top_window = isThirdPartyToTopWindow;
       update.is_third_party_channel = isThirdPartyChannel;
-      update.top_level_url = this.dataReceiver.escapeString(topUrl);
+      update.top_level_url = escapeString(topUrl);
     }
   } catch (anError) {
     // Exceptions expected for channels triggered or loading in a
@@ -408,8 +409,8 @@ function logWithResponseBody(respEvent, update) {
         const contentHash = binaryHashtoHex(cryptoHash.finish(false));
         update.content_hash = contentHash;
         this.dataReceiver.saveContent(
-          this.dataReceiver.escapeString(respBody),
-          this.dataReceiver.escapeString(contentHash),
+          escapeString(respBody),
+          escapeString(contentHash),
         );
         this.dataReceiver.saveRecord("http_responses", update);
       },
@@ -506,22 +507,22 @@ const httpResponseHandler = function(
   update.is_cached = isCached;
 
   const url = httpChannel.URI.spec;
-  update.url = this.dataReceiver.escapeString(url);
+  update.url = escapeString(url);
 
   const requestMethod = httpChannel.requestMethod;
-  update.method = this.dataReceiver.escapeString(requestMethod);
+  update.method = escapeString(requestMethod);
 
   let referrer = "";
   if (httpChannel.referrer) {
     referrer = httpChannel.referrer.spec;
   }
-  update.referrer = this.dataReceiver.escapeString(referrer);
+  update.referrer = escapeString(referrer);
 
   const responseStatus = httpChannel.responseStatus;
   update.response_status = responseStatus;
 
   const responseStatusText = httpChannel.responseStatusText;
-  update.response_status_text = this.dataReceiver.escapeString(responseStatusText);
+  update.response_status_text = escapeString(responseStatusText);
 
   const current_time = new Date();
   update.time_stamp = current_time.toISOString();
@@ -532,14 +533,14 @@ const httpResponseHandler = function(
   } catch (e) {
     location = "";
   }
-  update.location = this.dataReceiver.escapeString(location);
+  update.location = escapeString(location);
 
   const headers = [];
   httpChannel.visitResponseHeaders({
     visitHeader(name, value) {
       const header_pair = [];
-      header_pair.push(this.dataReceiver.escapeString(name));
-      header_pair.push(this.dataReceiver.escapeString(value));
+      header_pair.push(escapeString(name));
+      header_pair.push(escapeString(value));
       headers.push(header_pair);
     },
   });
