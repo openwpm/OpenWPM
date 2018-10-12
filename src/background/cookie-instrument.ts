@@ -1,7 +1,28 @@
 // import { Cc, Ci } from 'chrome';
 // import events from 'sdk/system/events';
 // import { data } from 'sdk/self';
-// import { boolToInt, escapeString } from "../lib/string-utils";
+import { boolToInt, escapeString } from "../lib/string-utils";
+import Cookie = browser.cookies.Cookie;
+
+interface CookieRecord {
+  crawl_id: string;
+  change: "deleted" | "added" | "changed";
+  creationTime: string;
+  expiry: string;
+  is_http_only: number;
+  is_session: number;
+  last_accessed: string;
+  raw_host: string;
+  expires: string;
+  host: string;
+  is_domain: number;
+  is_secure: number;
+  name: string;
+  path: string;
+  policy: string;
+  status: string;
+  value: string;
+}
 
 export class CookieInstrument {
   private readonly dataReceiver;
@@ -21,6 +42,7 @@ export class CookieInstrument {
           return;
         }
         */
+
       console.log(
         "Cookie changed: " +
           "\n * Cookie: " +
@@ -33,16 +55,23 @@ export class CookieInstrument {
       );
 
       /*
-      const event = changeInfo;
+      "evicted"
+      | "expired"
+      | "explicit"
+      | "expired_overwrite"
+      | "overwrite";
+      */
 
-      const data = event.data;
+      const change = changeInfo.removed ? "deleted" : "added";
+
       // TODO: Support other cookie operations
-      if (data === "deleted" || data === "added" || data === "changed") {
-        const update: any = {};
-        update.change = escapeString(data);
+      if (change === "deleted" || change === "added" || change === "changed") {
+        const update = {} as CookieRecord;
+        update.change = change;
+        // TODO: Add changeInfo.cause
         update.crawl_id = crawlID;
 
-        let cookie = event.subject.QueryInterface(Ci.nsICookie2);
+        const cookie: Cookie = changeInfo.cookie;
 
         // Creation time (in microseconds)
         const creationTime = new Date(cookie.creationTime / 1000); // requires milliseconds
@@ -53,13 +82,12 @@ export class CookieInstrument {
         // cookie which doesn't expire. Sessions cookies with
         // non-max expiry time expire after session or at expiry.
         const expiryTime = cookie.expiry; // returns seconds
+        let expiryTimeString;
         if (expiryTime === 9223372036854776000) {
-          const expiryTimeString = "9999-12-31 23:59:59";
+          expiryTimeString = "9999-12-31 23:59:59";
         } else {
           const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds
-          const expiryTimeString = expiryTimeDate.toLocaleFormat(
-            "%Y-%m-%d %H:%M:%S",
-          );
+          expiryTimeString = expiryTimeDate.toLocaleFormat("%Y-%m-%d %H:%M:%S");
         }
         update.expiry = expiryTimeString;
         update.is_http_only = boolToInt(cookie.isHttpOnly);
@@ -72,7 +100,6 @@ export class CookieInstrument {
         );
         update.raw_host = escapeString(cookie.rawHost);
 
-        cookie = cookie.QueryInterface(Ci.nsICookie);
         update.expires = cookie.expires;
         update.host = escapeString(cookie.host);
         update.is_domain = boolToInt(cookie.isDomain);
@@ -85,7 +112,6 @@ export class CookieInstrument {
 
         this.dataReceiver.saveRecord("javascript_cookies", update);
       }
-      */
     });
   }
 }

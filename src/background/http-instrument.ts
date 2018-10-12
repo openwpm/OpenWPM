@@ -5,7 +5,22 @@
 // import { data } from 'sdk/self';
 import { HttpPostParser } from "../lib/http-post-parser";
 import ResourceType = browser.webRequest.ResourceType;
-// import { escapeString } from "../lib/string-utils";
+import { escapeString } from "../lib/string-utils";
+
+interface HttpRecord {
+  crawl_id: string;
+  channel_id: string;
+  is_cached: string;
+  url: string;
+  method: string;
+  referrer: string;
+  response_status: string;
+  response_status_text: string;
+  time_stamp: string;
+  location: string;
+  headers: string; // request headers
+  content_hash: string;
+}
 
 /*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
@@ -393,6 +408,7 @@ function toHexString(charCode) {
 function binaryHashtoHex(hash) {
   return Array.from(hash, (c, i) => toHexString(hash.charCodeAt(i))).join("");
 }
+*/
 
 function logWithResponseBody(respEvent, update) {
   // log with response body from an 'http-on-examine(-cached)?-response' event
@@ -436,6 +452,7 @@ function logWithResponseBody(respEvent, update) {
     });
 }
 
+/*
 function isJS(httpChannel) {
   // Return true if this channel is loading javascript
   // We rely mostly on the content policy type to filter responses
@@ -481,6 +498,7 @@ function isJS(httpChannel) {
   }
   return false;
 }
+*/
 
 // Instrument HTTP responses
 const httpResponseHandler = function(
@@ -496,7 +514,7 @@ const httpResponseHandler = function(
   // id [auto-filled], crawl_id, url, method, referrer, response_status,
   // response_status_text, headers, location, visit_id [auto-filled],
   // time_stamp, content_hash
-  const update = {};
+  const update = {} as HttpRecord;
 
   update.crawl_id = crawlID;
 
@@ -554,7 +572,6 @@ const httpResponseHandler = function(
     this.dataReceiver.saveRecord("http_responses", update);
   }
 };
-*/
 
 /*
  * Attach handlers to event monitor

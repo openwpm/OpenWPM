@@ -1,20 +1,20 @@
 import { escapeString } from "../lib/string-utils";
 
-interface Update {
-  crawl_id?: string;
-  script_url?: string;
-  script_line?: string;
-  script_col?: string;
-  func_name?: string;
-  script_loc_eval?: string;
-  call_stack?: string;
-  symbol?: string;
-  operation?: string;
-  value?: string;
-  time_stamp?: string;
-  document_url?: string;
-  top_level_url?: string;
-  arguments?: string;
+interface JavascriptRecord {
+  crawl_id: string;
+  script_url: string;
+  script_line: string;
+  script_col: string;
+  func_name: string;
+  script_loc_eval: string;
+  call_stack: string;
+  symbol: string;
+  operation: string;
+  value: string;
+  time_stamp: string;
+  document_url: string;
+  top_level_url: string;
+  arguments: string;
 }
 
 export class JavascriptInstrument {
@@ -28,7 +28,7 @@ export class JavascriptInstrument {
     console.log("JavascriptInstrument", crawlID, this.dataReceiver);
 
     const processCallsAndValues = (data, sender) => {
-      const update: Update = {};
+      const update = {} as JavascriptRecord;
       update.crawl_id = crawlID;
       update.script_url = escapeString(data.scriptUrl);
       update.script_line = escapeString(data.scriptLine);
