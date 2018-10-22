@@ -1,7 +1,5 @@
+import { CookieInstrument, JavascriptInstrument, HttpInstrument } from "openwpm-webext-instrumentation";
 import * as loggingDB from './lib/loggingdb.js';
-import * as cookieInstrument from './lib/cookie-instrument.js';
-import * as jsInstrument from './lib/javascript-instrument.js';
-import * as httpInstrument from './lib/http-instrument.js';
 import { ListeningSocket } from './lib/socket.js';
 
 console.log("OpenWPM background script start");
@@ -43,8 +41,8 @@ const exposeConfig = function(config) {
       tabId,
       { type: 'config', config }
     ).catch(function(err) {
-      console.log("OpenWPM background to content script sendMessage failed");
-      // console.error(err);
+      console.log(`OpenWPM background to content script sendMessage to tab ${tabId} failed`);
+      console.error(err);
     });
   };
 };
@@ -61,17 +59,17 @@ const start = function(config) {
 
   if (config['cookie_instrument']) {
     loggingDB.logDebug("Cookie instrumentation enabled");
-    cookieInstrument.setLoggingDB(loggingDB);
+    const cookieInstrument = new CookieInstrument(loggingDB);
     cookieInstrument.run(config['crawl_id']);
   }
   if (config['js_instrument']) {
     loggingDB.logDebug("Javascript instrumentation enabled");
-    jsInstrument.setLoggingDB(loggingDB);
-    jsInstrument.run(config['crawl_id'], config['testing']);
+    const jsInstrument = new JavascriptInstrument(loggingDB);
+    jsInstrument.run(config['crawl_id']);
   }
   if (config['http_instrument']) {
     loggingDB.logDebug("HTTP Instrumentation enabled");
-    httpInstrument.setLoggingDB(loggingDB);
+    const httpInstrument = new HttpInstrument(loggingDB);
     httpInstrument.run(config['crawl_id'], config['save_javascript'],
                        config['save_all_content']);
   }

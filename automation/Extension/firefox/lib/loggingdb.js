@@ -1,4 +1,5 @@
 import * as socket from './socket.js';
+import { escapeString } from 'openwpm-webext-instrumentation';
 
 var crawlID = null;
 var visitID = null;
@@ -168,21 +169,4 @@ export const saveContent = function(content, contentHash) {
     return;
   }
   ldbAggregator.send([content, contentHash]);
-};
-
-function encode_utf8(s) {
-  return unescape(encodeURIComponent(s));
-}
-
-var escapeString = function(string) {
-    // Convert to string if necessary
-    if(typeof string != "string")
-        string = "" + string;
-
-    return encode_utf8(string);
-};
-export { escapeString };
-
-export const boolToInt = function(bool) {
-    return bool ? 1 : 0;
 };

@@ -6,6 +6,7 @@
   "license": "GPL v3",
   "version": "0.1.0",
   "dependencies": {
+    "openwpm-webext-instrumentation": "github:mozilla/openwpm-webext-instrumentation#master",
     "socket.io-client": "^1.5.1"
   },
   "devDependencies": {

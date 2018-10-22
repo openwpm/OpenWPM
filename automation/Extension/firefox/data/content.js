@@ -1,4 +1,4 @@
-import * as jsInstrumentContentScope from './javascript-instrument-content-scope.js';
+import { injectJavascriptInstrumentPageScript } from "openwpm-webext-instrumentation";
 
 console.log("OpenWPM content script start");
 
@@ -8,7 +8,7 @@ console.log("OpenWPM content script start");
 const configListener = function(message) {
   if (message.type === 'config') {
     console.log("Content script received config from background script", JSON.stringify(message.config));
-    jsInstrumentContentScope.run(message.config.testing);
+    injectJavascriptInstrumentPageScript(message.config.testing);
     browser.runtime.onMessage.removeListener(configListener);
   }
 };
