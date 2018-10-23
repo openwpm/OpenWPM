@@ -1,0 +1,41 @@
+{
+  "name": "OpenWPM",
+  "description": "OpenWPM WebExtension",
+  "version": "0.1.0",
+  "manifest_version": 2,
+  "applications": {
+    "gecko": {
+      "id": "openwpm-webextension@mozilla.org",
+      "strict_min_version": "60.0a1"
+    }
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "icons": {
+    "48": "cctv.png",
+    "96": "cctv.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "permissions": [
+    "cookies",
+    "tabs",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ]
+}

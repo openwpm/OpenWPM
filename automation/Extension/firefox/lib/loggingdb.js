@@ -1,6 +1,4 @@
-const fileIO            = require("sdk/io/file");
-const system            = require("sdk/system");
-var socket              = require("./socket.js");
+import * as socket from './socket.js';
 
 var crawlID = null;
 var visitID = null;
@@ -10,7 +8,7 @@ var ldbAggregator = null;
 var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
+export const open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
@@ -22,39 +20,31 @@ exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID)
 
     // Connect to MPLogger for extension info/debug/error logging
     if (logAddress != null) {
-        logAggregator = new socket.SendingSocket();
-        var rv = logAggregator.connect(logAddress[0], logAddress[1]);
+        logAggregator = new socket.SendingSocket("log");
+        var rv = logAggregator.connect();
         console.log("logSocket started?", rv)
     }
 
     // Connect to databases for saving data
     if (aggregatorAddress != null) {
-        dataAggregator = new socket.SendingSocket();
-        var rv = dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
+        dataAggregator = new socket.SendingSocket("data");
+        var rv = dataAggregator.connect();
         console.log("sqliteSocket started?",rv);
     }
     if (ldbAddress != null) {
-        ldbAggregator = new socket.SendingSocket();
-        var rv = ldbAggregator.connect(ldbAddress[0], ldbAddress[1]);
+        ldbAggregator = new socket.SendingSocket("ldb");
+        var rv = ldbAggregator.connect();
         console.log("ldbSocket started?",rv);
     }
 
-
-    // Listen for incomming urls as visit ids
-    listeningSocket = new socket.ListeningSocket();
-    var path = system.pathFor("ProfD") + '/extension_port.txt';
-    console.log("Writing listening socket port to disk at:", path);
-    var file = fileIO.open(path, 'w');
-    if (!file.closed) {
-        file.write(listeningSocket.port);
-        file.close();
-        console.log("Port",listeningSocket.port,"written to disk.");
-    }
-    console.log("Starting socket listening for incomming connections.");
+    // Listen for incoming urls as visit ids
+    listeningSocket = new socket.ListeningSocket("visits");
+    console.log("Starting socket listening for incoming connections.");
     listeningSocket.startListening();
+
 };
 
-exports.close = function() {
+export const close = function() {
     if (dataAggregator != null) {
         dataAggregator.close();
     }
@@ -80,7 +70,7 @@ var makeLogJSON = function(lvl, msg) {
     return log_json;
 }
 
-exports.logInfo = function(msg) {
+export const logInfo = function(msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -93,7 +83,7 @@ exports.logInfo = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logDebug = function(msg) {
+export const logDebug = function(msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -106,7 +96,7 @@ exports.logDebug = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logWarn = function(msg) {
+export const logWarn = function(msg) {
     // Always log to browser console
     console.warn(msg);
 
@@ -119,7 +109,7 @@ exports.logWarn = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logError = function(msg) {
+export const logError = function(msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -132,7 +122,7 @@ exports.logError = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.logCritical = function(msg) {
+export const logCritical = function(msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -145,18 +135,20 @@ exports.logCritical = function(msg) {
     logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
-exports.saveRecord = function(instrument, record) {
+export const saveRecord = function(instrument, record) {
     // Add visit id if changed
     while (!debugging && listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
-        exports.logDebug("Visit Id: " + visitID);
+        logDebug("Visit Id: " + visitID);
     }
     record["visit_id"] = visitID;
 
 
     if (!visitID && !debugging) {
-        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(record));
+        logCritical(
+            'Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
+                        JSON.stringify(record)
+        );
         record["visit_id"] = -1;
     }
 
@@ -166,9 +158,9 @@ exports.saveRecord = function(instrument, record) {
       return;
     }
     dataAggregator.send([instrument, record]);
-}
+};
 
-exports.saveContent = function(content, contentHash) {
+export const saveContent = function(content, contentHash) {
   // send content to levelDBAggregator which stores content
   // deduplicated by contentHash in a levelDB database
   if (debugging) {
@@ -176,7 +168,7 @@ exports.saveContent = function(content, contentHash) {
     return;
   }
   ldbAggregator.send([content, contentHash]);
-}
+};
 
 function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
@@ -189,8 +181,8 @@ var escapeString = function(string) {
 
     return encode_utf8(string);
 };
-exports.escapeString = escapeString;
+export { escapeString };
 
-exports.boolToInt = function(bool) {
+export const boolToInt = function(bool) {
     return bool ? 1 : 0;
 };

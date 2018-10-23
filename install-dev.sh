@@ -10,6 +10,8 @@ if [ ! -f /usr/bin/node ]; then
     sudo ln -s /usr/bin/nodejs /usr/bin/node
 fi
 
-sudo npm install jpm -g
+cd automation/Extension/firefox/
+npm install
+cd -
 
 pip install --user -U -r requirements-dev.txt

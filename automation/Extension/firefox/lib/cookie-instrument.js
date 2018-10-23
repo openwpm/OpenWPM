@@ -1,10 +1,33 @@
-const {Cc, Ci} = require("chrome");
-var events = require("sdk/system/events");
-const data = require("sdk/self").data;
-var loggingDB = require("./loggingdb.js");
+// import { Cc, Ci } from 'chrome';
+// import events from 'sdk/system/events';
+// import { data } from 'sdk/self';
 
-exports.run = function(crawlID) {
+let loggingDB;
+export const setLoggingDB = function($loggingDB) {
+  loggingDB = $loggingDB;
+};
+
+export const run = function(crawlID) {
     // Instrument cookie changes
+    browser.cookies.onChanged.addListener(function(changeInfo) {
+      // Ignore requests made by extensions
+      /*
+      if (details.originUrl.indexOf("moz-extension://") > -1) {
+        return;
+      }
+      */
+      console.log(
+          "Cookie changed: " +
+          "\n * Cookie: " +
+          JSON.stringify(changeInfo.cookie) +
+          "\n * Cause: " +
+          changeInfo.cause +
+          "\n * Removed: " +
+          changeInfo.removed,
+        changeInfo
+        );
+    });
+    /*
     events.on("cookie-changed", function(event) {
         var data = event.data;
         // TODO: Support other cookie operations
@@ -53,5 +76,5 @@ exports.run = function(crawlID) {
             loggingDB.saveRecord("javascript_cookies", update);
         }
     }, true);
-
+    */
 };

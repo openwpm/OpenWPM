@@ -1,7 +1,8 @@
 // Incorporates code from: https://github.com/redline13/selenium-jmeter/blob/6966d4b326cd78261e31e6e317076569051cac37/content/library/recorder/HttpPostParser.js
 
-const {Cc, Ci, CC, Cu, components} = require("chrome");
-var loggingDB = require("./loggingdb.js");
+// import { Cc, Ci, CC, Cu, components } from 'chrome';
+
+import * as loggingDB from './loggingdb.js';
 
 var HttpPostParser = function(stream) {
   // Scriptable Stream Constants
@@ -311,4 +312,4 @@ HttpPostParser.prototype.parseStream = function() {
   this.postBody = postString.trim();
 };
 
-exports.HttpPostParser = HttpPostParser;
+export { HttpPostParser };

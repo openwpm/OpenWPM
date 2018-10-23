@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import json
 import os.path
 import random
 
@@ -105,19 +104,8 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         ext_loc = os.path.join(root_dir, '../Extension/firefox/openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         fp.add_extension(extension=ext_loc)
-        fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-        extension_config = dict()
-        extension_config.update(browser_params)
-        extension_config['logger_address'] = manager_params['logger_address']
-        extension_config['sqlite_address'] = manager_params[
-            'aggregator_address']
-        if 'ldb_address' in manager_params:
-            extension_config['leveldb_address'] = manager_params['ldb_address']
-        else:
-            extension_config['leveldb_address'] = None
-        extension_config['testing'] = manager_params['testing']
-        with open(browser_profile_path + 'browser_params.json', 'w') as f:
-            json.dump(extension_config, f)
+        # TODO: Restore preference for log level in a way that works in Fx 57+
+        # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded"
                      % browser_params['crawl_id'])
 

@@ -8,13 +8,18 @@ import pytest
 from . import utilities
 
 EXTENSION_DIR = os.path.join(
-    os.path.dirname(__file__), '..', 'automation', 'Extension', 'firefox')
+    os.path.dirname(
+        os.path.realpath(__file__)),
+    '..',
+    'automation',
+    'Extension',
+    'firefox')
 
 
 def create_xpi():
-    """Creates a new xpi using jpm."""
-    if utilities.which("jpm"):
-        subprocess.check_call(["jpm", "xpi"],
+    """Creates a new xpi using npm run build."""
+    if utilities.which("npm"):
+        subprocess.check_call(["npm", "run", "build"],
                               cwd=EXTENSION_DIR)
     else:
         assert os.path.exists(os.path.join(EXTENSION_DIR, 'openwpm.xpi'))

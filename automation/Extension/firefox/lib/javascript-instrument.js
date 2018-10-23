@@ -1,19 +1,12 @@
-var pageMod = require("sdk/page-mod");
-const data = require("sdk/self").data;
-var loggingDB = require("./loggingdb.js");
 
-exports.run = function(crawlID, testing) {
+let loggingDB;
+export const setLoggingDB = function($loggingDB) {
+  loggingDB = $loggingDB;
+};
 
-  // Inject content script to instrument JavaScript API
-  pageMod.PageMod({
-    include: "*",
-    contentScriptWhen: "start",
-    contentScriptFile: data.url("./content.js"),
-    contentScriptOptions: {
-      'testing': testing
-    },
-    onAttach: function onAttach(worker) {
-      function processCallsAndValues(data) {
+export const run = function(crawlID, testing) {
+
+      function processCallsAndValues(data, sender) {
         var update = {};
         update["crawl_id"] = crawlID;
         update["script_url"] = loggingDB.escapeString(data.scriptUrl);
@@ -29,8 +22,8 @@ exports.run = function(crawlID, testing) {
 
         // document_url is the current frame's document href
         // top_level_url is the top-level frame's document href
-        update["document_url"] = loggingDB.escapeString(worker.url);
-        update["top_level_url"] = loggingDB.escapeString(worker.tab.url);
+        update["document_url"] = loggingDB.escapeString(sender.url);
+        update["top_level_url"] = loggingDB.escapeString(sender.tab.url);
 
         // Create a json object for function arguments
         // We create an object that maps array positon to argument
@@ -47,8 +40,20 @@ exports.run = function(crawlID, testing) {
 
         loggingDB.saveRecord("javascript", update);
       }
-      worker.port.on("logCall", function(data){processCallsAndValues(data)});
-      worker.port.on("logValue", function(data){processCallsAndValues(data)});
+
+  // Listen for messages from content script injected to instrument JavaScript API
+  browser.runtime.onMessage.addListener(function(msg, sender, sendReply) {
+
+    // console.debug("javascript-instrumentation background listener - msg, sender, sendReply", msg, sender, sendReply);
+    if (msg.namespace && msg.namespace === "javascript-instrumentation") {
+      switch (msg.type) {
+        case "logCall":
+        case "logValue":
+          processCallsAndValues(msg.data, sender);
+          break;
+      }
     }
+
   });
+
 };

@@ -1,14 +1,30 @@
 {
   "name": "openwpm",
   "title": "openwpm",
-  "description": "Extension with socket interface into OpenWPM",
-  "author": "Steven Englehardt",
+  "description": "Extension with websocket interface into OpenWPM",
+  "author": "OpenWPM Contributors",
   "license": "GPL v3",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "dependencies": {
-    "bufferpack": "0.0.6"
+    "socket.io-client": "^1.5.1"
   },
-  "permissions": {
-    "unsafe-content-script": true
+  "devDependencies": {
+    "concurrently": "^3.6.1",
+    "rollup": "^0.66.2",
+    "rollup-plugin-commonjs": "^9.1.8",
+    "rollup-plugin-node-builtins": "^2.1.2",
+    "rollup-plugin-node-globals": "^1.4.0",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "web-ext": "^2.9.1"
+  },
+  "engines": {
+    "node": ">=10.11.0"
+  },
+  "private": true,
+  "scripts": {
+    "build": "rollup -c && web-ext build",
+    "postbuild": "mv openwpm-*.zip openwpm.xpi",
+    "start": "rollup -c && web-ext run --no-reload",
+    "watch": "concurrently 'rollup -c --watch' 'web-ext run'"
   }
 }
