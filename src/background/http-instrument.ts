@@ -6,7 +6,7 @@
 import { HttpPostParser } from "../lib/http-post-parser";
 import ResourceType = browser.webRequest.ResourceType;
 import { escapeString } from "../lib/string-utils";
-import { HttpRequest, HttpResponse, HttpRedirect } from "../types/schema";
+import { HttpRedirect, HttpRequest, HttpResponse } from "../types/schema";
 
 /*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',

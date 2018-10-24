@@ -3,26 +3,7 @@
 // import { data } from 'sdk/self';
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
-
-interface CookieRecord {
-  crawl_id: string;
-  change: "deleted" | "added" | "changed";
-  creationTime: string;
-  expiry: string;
-  is_http_only: number;
-  is_session: number;
-  last_accessed: string;
-  raw_host: string;
-  expires: string;
-  host: string;
-  is_domain: number;
-  is_secure: number;
-  name: string;
-  path: string;
-  policy: string;
-  status: string;
-  value: string;
-}
+import { JavascriptCookieChange } from "../types/schema";
 
 export class CookieInstrument {
   private readonly dataReceiver;
@@ -66,7 +47,8 @@ export class CookieInstrument {
 
       // TODO: Support other cookie operations
       if (change === "deleted" || change === "added" || change === "changed") {
-        const update = {} as CookieRecord;
+        const update = {} as JavascriptCookieChange;
+
         update.change = change;
         // TODO: Add changeInfo.cause
         update.crawl_id = crawlID;

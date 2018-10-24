@@ -26,9 +26,9 @@ export interface SiteVisit {
 }
 
 export interface FlashCookie {
-  id: number;
-  crawl_id: number;
-  visit_id: number;
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
   domain?: Varchar500;
   filename?: Varchar500;
   local_path?: Varchar1000;
@@ -39,9 +39,9 @@ export interface FlashCookie {
 }
 
 export interface ProfileCookie {
-  id: number;
-  crawl_id: number;
-  visit_id: number;
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
   baseDomain?: string;
   name?: string;
   value?: string;
@@ -67,9 +67,9 @@ export interface CrawlHistoryEntry {
 }
 
 export interface HttpRequest {
-  id: number;
-  crawl_id: number;
-  visit_id: number;
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
   url: string;
   top_level_url?: string;
   method: string;
@@ -91,9 +91,9 @@ export interface HttpRequest {
 }
 
 export interface HttpResponse {
-  id: number;
-  crawl_id: number;
-  visit_id: number;
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
   url: string;
   method: string;
   referrer: string;
@@ -108,9 +108,9 @@ export interface HttpResponse {
 }
 
 export interface HttpRedirect {
-  id: number;
-  crawl_id: number;
-  visit_id: number;
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
   old_channel_id?: string;
   new_channel_id?: string;
   is_temporary: boolean;
@@ -120,8 +120,8 @@ export interface HttpRedirect {
   time_stamp: string;
 }
 
-export interface JavascriptEntry {
-  id: number;
+export interface JavascriptOperation {
+  id?: number;
   crawl_id?: number;
   visit_id?: number;
   script_url?: string;
@@ -139,11 +139,11 @@ export interface JavascriptEntry {
   time_stamp: string;
 }
 
-export interface JavascriptCookie {
-  id: number;
+export interface JavascriptCookieChange {
+  id?: number;
   crawl_id?: number;
   visit_id?: number;
-  change?: string;
+  change?: "deleted" | "added" | "changed";
   creationTime?: DateTime;
   expiry?: DateTime;
   is_http_only?: number;
