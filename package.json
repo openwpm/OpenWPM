@@ -54,7 +54,9 @@
   "engines": {
     "node": ">=8.9"
   },
-  "dependencies": {},
+  "dependencies": {
+    "moment": "^2.22.2"
+  },
   "devDependencies": {
     "@types/firefox-webext-browser": "^63.0.0",
     "ava": "1.0.0-beta.7",

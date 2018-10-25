@@ -1,10 +1,7 @@
-// TODO: doesn't work with e10s -- be sure to launch nightly disabling remote tabs
-// import { Cc, Ci, CC, Cu, Cr, components } from 'chrome';
-
-// import events from 'sdk/system/events';
-// import { data } from 'sdk/self';
 import { HttpPostParser } from "../lib/http-post-parser";
 import ResourceType = browser.webRequest.ResourceType;
+import UploadData = browser.webRequest.UploadData;
+import HttpHeaders = browser.webRequest.HttpHeaders;
 import { escapeString } from "../lib/string-utils";
 import { HttpRedirect, HttpRequest, HttpResponse } from "../types/schema";
 
@@ -26,306 +23,606 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 */
 
 /*
- * HTTP Request Handler and Helper Functions
+ * Attach handlers to event monitor
  */
 
-function get_stack_trace_str() {
-  // return the stack trace as a string
-  // TODO: check if http-on-modify-request is a good place to capture the stack
-  // In the manual tests we could capture exactly the same trace as the
-  // "Cause" column of the devtools network panel.
-  const stacktrace = [];
-  let frame = components.stack;
-  if (frame && frame.caller) {
-    // internal/chrome callers occupy the first three frames, pop them!
-    frame = frame.caller.caller.caller;
-    while (frame) {
-      // chrome scripts appear as callers in some cases, filter them out
-      const scheme = frame.filename.split("://")[0];
-      if (["resource", "chrome", "file"].indexOf(scheme) === -1) {
-        // ignore chrome scripts
-        stacktrace.push(
-          frame.name +
-            "@" +
-            frame.filename +
-            ":" +
-            frame.lineNumber +
-            ":" +
-            frame.columnNumber +
-            ";" +
-            frame.asyncCause,
-        );
-      }
-      frame = frame.caller || frame.asyncCaller;
-    }
+export class HttpInstrument {
+  private readonly dataReceiver;
+
+  constructor(dataReceiver) {
+    this.dataReceiver = dataReceiver;
   }
-  return stacktrace.join("\n");
-}
 
-const httpRequestHandler = function(reqEvent, crawlID) {
-  const httpChannel = reqEvent.subject.QueryInterface(Ci.nsIHttpChannel);
+  public run(crawlID, saveJavascript, saveAllContent) {
+    console.log(
+      "HttpInstrument",
+      HttpPostParser,
+      crawlID,
+      escapeString,
+      saveJavascript,
+      saveAllContent,
+      escapeString,
+      this.dataReceiver,
+    );
 
-  // Save HTTP redirect events. Requires FF 49+
-  // Events are saved to the `http_redirects` table, and map the old
-  // request/response channel id to the new request/response channel id.
-  // Implementation based on: https://stackoverflow.com/a/11240627
-  const oldNotifications = httpChannel.notificationCallbacks;
-  let oldEventSink = null;
-  httpChannel.notificationCallbacks = {
-    QueryInterface: XPCOMUtils.generateQI([
-      Ci.nsIInterfaceRequestor,
-      Ci.nsIChannelEventSink,
-    ]),
+    const allTypes: ResourceType[] = [
+      "beacon",
+      "csp_report",
+      "font",
+      "image",
+      "imageset",
+      "main_frame",
+      "media",
+      "object",
+      "object_subrequest",
+      "ping",
+      "script",
+      // "speculative",
+      "stylesheet",
+      "sub_frame",
+      "web_manifest",
+      "websocket",
+      "xbl",
+      "xml_dtd",
+      "xmlhttprequest",
+      "xslt",
+      "other",
+    ];
 
-    getInterface(iid) {
-      // We are only interested in nsIChannelEventSink,
-      // return the old callbacks for any other interface requests.
-      if (iid.equals(Ci.nsIChannelEventSink)) {
-        try {
-          oldEventSink = oldNotifications.QueryInterface(iid);
-        } catch (anError) {
-          this.dataReceiver.logError(
-            "Error during call to custom notificationCallbacks::getInterface." +
-              JSON.stringify(anError),
+    const requestStemsFromExtension = details => {
+      return (
+        details.originUrl && details.originUrl.indexOf("moz-extension://") > -1
+      );
+    };
+
+    /*
+     * Attach handlers to event listeners
+     */
+
+    browser.webRequest.onBeforeRequest.addListener(
+      details => {
+        // Ignore requests made by extensions
+        if (requestStemsFromExtension(details)) {
+          return;
+        }
+        return this.onBeforeRequestHandler(
+          details,
+          crawlID,
+          saveJavascript,
+          saveAllContent,
+        );
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      saveJavascript || saveAllContent
+        ? ["requestBody", "blocking"]
+        : ["requestBody"],
+    );
+
+    browser.webRequest.onBeforeSendHeaders.addListener(
+      details => {
+        // Ignore requests made by extensions
+        if (requestStemsFromExtension(details)) {
+          return;
+        }
+        return this.onBeforeSendHeadersHandler(details, crawlID);
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["requestHeaders"],
+    );
+
+    browser.webRequest.onBeforeRedirect.addListener(
+      details => {
+        // Ignore requests made by extensions
+        if (requestStemsFromExtension(details)) {
+          return;
+        }
+        return this.onBeforeRedirectHandler(details, crawlID);
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["responseHeaders"],
+    );
+
+    browser.webRequest.onCompleted.addListener(
+      details => {
+        // Ignore requests made by extensions
+        if (requestStemsFromExtension(details)) {
+          return;
+        }
+        return this.onCompletedHandler(
+          details,
+          crawlID,
+          saveJavascript,
+          saveAllContent,
+        );
+      },
+      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      ["responseHeaders"],
+    );
+  }
+
+  /*
+   * HTTP Request Handler and Helper Functions
+   */
+
+  private get_stack_trace_str() {
+    /*
+    // return the stack trace as a string
+    // TODO: check if http-on-modify-request is a good place to capture the stack
+    // In the manual tests we could capture exactly the same trace as the
+    // "Cause" column of the devtools network panel.
+    const stacktrace = [];
+    let frame = components.stack;
+    if (frame && frame.caller) {
+      // internal/chrome callers occupy the first three frames, pop them!
+      frame = frame.caller.caller.caller;
+      while (frame) {
+        // chrome scripts appear as callers in some cases, filter them out
+        const scheme = frame.filename.split("://")[0];
+        if (["resource", "chrome", "file"].indexOf(scheme) === -1) {
+          // ignore chrome scripts
+          stacktrace.push(
+            frame.name +
+              "@" +
+              frame.filename +
+              ":" +
+              frame.lineNumber +
+              ":" +
+              frame.columnNumber +
+              ";" +
+              frame.asyncCause,
           );
         }
-        return this;
+        frame = frame.caller || frame.asyncCaller;
       }
-
-      if (oldNotifications) {
-        return oldNotifications.getInterface(iid);
-      } else {
-        throw Cr.NS_ERROR_NO_INTERFACE;
-      }
-    },
-
-    asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
-      const isTemporary = !!(flags & Ci.nsIChannelEventSink.REDIRECT_TEMPORARY);
-      const isPermanent = !!(flags & Ci.nsIChannelEventSink.REDIRECT_PERMANENT);
-      const isInternal = !!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL);
-      const isSTSUpgrade = !!(
-        flags & Ci.nsIChannelEventSink.REDIRECT_STS_UPGRADE
-      );
-
-      newChannel.QueryInterface(Ci.nsIHttpChannel);
-
-      const httpRedirect: HttpRedirect = {
-        crawl_id: crawlID,
-        old_channel_id: oldChannel.channelId,
-        new_channel_id: newChannel.channelId,
-        is_temporary: isTemporary,
-        is_permanent: isPermanent,
-        is_internal: isInternal,
-        is_sts_upgrade: isSTSUpgrade,
-        time_stamp: new Date().toISOString(),
-      };
-      this.dataReceiver.saveRecord("http_redirects", httpRedirect);
-
-      if (oldEventSink) {
-        oldEventSink.asyncOnChannelRedirect(
-          oldChannel,
-          newChannel,
-          flags,
-          callback,
-        );
-      } else {
-        callback.onRedirectVerifyCallback(Cr.NS_OK);
-      }
-    },
-  };
-
-  // http_requests table schema:
-  // id [auto-filled], crawl_id, url, method, referrer,
-  // headers, visit_id [auto-filled], time_stamp
-  const update = {} as HttpRequest;
-
-  update.crawl_id = crawlID;
-
-  // ChannelId is a unique identifier that can be used to link requests and
-  // responses. FF 49+
-  update.channel_id = httpChannel.channelId;
-
-  const stacktrace_str = get_stack_trace_str();
-  update.req_call_stack = escapeString(stacktrace_str);
-
-  const url = httpChannel.URI.spec;
-  update.url = escapeString(url);
-
-  const requestMethod = httpChannel.requestMethod;
-  update.method = escapeString(requestMethod);
-
-  let referrer = "";
-  if (httpChannel.referrer) {
-    referrer = httpChannel.referrer.spec;
+    }
+    return stacktrace.join("\n");
+    */
   }
-  update.referrer = escapeString(referrer);
 
-  const current_time = new Date();
-  update.time_stamp = current_time.toISOString();
-
-  let encodingType = "";
-  const headers = [];
-  let isOcsp = false;
-  httpChannel.visitRequestHeaders({
-    visitHeader(name, value) {
-      const header_pair = [];
-      header_pair.push(escapeString(name));
-      header_pair.push(escapeString(value));
-      headers.push(header_pair);
-      if (name === "Content-Type") {
-        encodingType = value;
-        if (encodingType.indexOf("application/ocsp-request") !== -1) {
-          isOcsp = true;
-        }
-      }
+  private onBeforeSendHeadersHandler(
+    details: {
+      /**
+       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
+       * relate different events of the same request.
+       */
+      requestId: string;
+      url: string;
+      /** Standard HTTP method. */
+      method: string;
+      /**
+       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
+       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
+       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
+       * within a tab.
+       */
+      frameId: number;
+      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
+      parentFrameId: number;
+      /** URL of the resource that triggered this request. */
+      originUrl?: string;
+      /** URL of the page into which the requested resource will be loaded. */
+      documentUrl?: string;
+      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
+      tabId: number;
+      /** How the requested resource will be used. */
+      type: ResourceType;
+      /** The time when this signal is triggered, in milliseconds since the epoch. */
+      timeStamp: number;
+      /** The HTTP request headers that are going to be sent out with this request. */
+      requestHeaders?: HttpHeaders;
     },
-  });
+    crawlID,
+  ) {
+    console.log(
+      "onBeforeSendHeadersHandler (previously httpRequestHandler)",
+      details,
+      crawlID,
+      this.get_stack_trace_str,
+    );
 
-  if (requestMethod === "POST" && !isOcsp) {
-    // don't process OCSP requests
-    reqEvent.subject.QueryInterface(components.interfaces.nsIUploadChannel);
-    if (reqEvent.subject.uploadStream) {
-      reqEvent.subject.uploadStream.QueryInterface(
-        components.interfaces.nsISeekableStream,
-      );
-      const postParser = new HttpPostParser(
-        reqEvent.subject.uploadStream,
-        this.dataReceiver,
-      );
-      const postObj = postParser.parsePostRequest(encodingType);
+    // http_requests table schema:
+    // id [auto-filled], crawl_id, url, method, referrer,
+    // headers, visit_id [auto-filled], time_stamp
+    const update = {} as HttpRequest;
 
-      // Add (POST) request headers from upload stream
-      if ("post_headers" in postObj) {
-        // Only store POST headers that we know and need. We may misinterpret POST data as headers
-        // as detection is based on "key:value" format (non-header POST data can be in this format as well)
-        const contentHeaders = [
-          "Content-Type",
-          "Content-Disposition",
-          "Content-Length",
-        ];
-        for (const name in postObj.post_headers) {
-          if (contentHeaders.includes(name)) {
-            const header_pair = [];
-            header_pair.push(escapeString(name));
-            header_pair.push(
-              escapeString(postObj.post_headers[name]),
-            );
-            headers.push(header_pair);
+    update.crawl_id = crawlID;
+
+    // requestId is a unique identifier that can be used to link requests and responses
+    update.channel_id = details.requestId;
+
+    // const stacktrace_str = get_stack_trace_str();
+    // update.req_call_stack = escapeString(stacktrace_str);
+
+    const url = details.documentUrl;
+    update.url = escapeString(url);
+
+    const requestMethod = details.method;
+    update.method = escapeString(requestMethod);
+
+    // let referrer = "";
+    // if (details.referrer) {
+    //   referrer = details.referrer.spec;
+    // }
+    // update.referrer = escapeString(referrer);
+
+    const current_time = new Date();
+    update.time_stamp = current_time.toISOString();
+
+    // let encodingType = "";
+    const headers = [];
+    const isOcsp = false;
+    details.requestHeaders.map(requestHeader => {
+      console.log("requestHeader", requestHeader);
+    });
+    /*
+    details.visitRequestHeaders({
+      visitHeader(name, value) {
+        const header_pair = [];
+        header_pair.push(escapeString(name));
+        header_pair.push(escapeString(value));
+        headers.push(header_pair);
+        if (name === "Content-Type") {
+          encodingType = value;
+          if (encodingType.indexOf("application/ocsp-request") !== -1) {
+            isOcsp = true;
           }
         }
+      },
+    });
+    */
+
+    if (requestMethod === "POST" && !isOcsp) {
+      // TODO: set up await requestBody info from the onBeforeRequestHandler
+      // (with timeout after ~10s if no such event was received)
+      /*
+      // don't process OCSP requests
+      reqEvent.subject.QueryInterface(components.interfaces.nsIUploadChannel);
+      if (reqEvent.subject.uploadStream) {
+        reqEvent.subject.uploadStream.QueryInterface(
+          components.interfaces.nsISeekableStream,
+        );
+        const postParser = new HttpPostParser(
+          reqEvent.subject.uploadStream,
+          this.dataReceiver,
+        );
+        const postObj = postParser.parsePostRequest(encodingType);
+
+        // Add (POST) request headers from upload stream
+        if ("post_headers" in postObj) {
+          // Only store POST headers that we know and need. We may misinterpret POST data as headers
+          // as detection is based on "key:value" format (non-header POST data can be in this format as well)
+          const contentHeaders = [
+            "Content-Type",
+            "Content-Disposition",
+            "Content-Length",
+          ];
+          for (const name in postObj.post_headers) {
+            if (contentHeaders.includes(name)) {
+              const header_pair = [];
+              header_pair.push(escapeString(name));
+              header_pair.push(
+                escapeString(postObj.post_headers[name]),
+              );
+              headers.push(header_pair);
+            }
+          }
+        }
+        // we store POST body in JSON format, except when it's a string without a (key-value) structure
+        if ("post_body" in postObj) {
+          update.post_body = postObj.post_body;
+        }
       }
-      // we store POST body in JSON format, except when it's a string without a (key-value) structure
-      if ("post_body" in postObj) {
-        update.post_body = postObj.post_body;
-      }
+      */
     }
-  }
 
-  update.headers = JSON.stringify(headers);
+    update.headers = JSON.stringify(headers);
 
-  // Check if xhr
-  let isXHR;
-  try {
-    const callbacks = httpChannel.notificationCallbacks;
-    const xhr = callbacks ? callbacks.getInterface(Ci.nsIXMLHttpRequest) : null;
-    isXHR = !!xhr;
-  } catch (e) {
-    isXHR = false;
-  }
-  update.is_XHR = isXHR;
-
-  // Check if frame OR full page load
-  let isFrameLoad;
-  let isFullPageLoad;
-  if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_INITIAL_DOCUMENT_URI) {
-    isFullPageLoad = true;
-    isFrameLoad = false;
-  } else if (httpChannel.loadFlags & Ci.nsIHttpChannel.LOAD_DOCUMENT_URI) {
-    isFrameLoad = true;
-    isFullPageLoad = false;
-  }
-  update.is_full_page = isFullPageLoad;
-  update.is_frame_load = isFrameLoad;
-
-  // Grab the triggering and loading Principals
-  let triggeringOrigin;
-  let loadingOrigin;
-  if (httpChannel.loadInfo.triggeringPrincipal) {
-    triggeringOrigin = httpChannel.loadInfo.triggeringPrincipal.origin;
-  }
-  if (httpChannel.loadInfo.loadingPrincipal) {
-    loadingOrigin = httpChannel.loadInfo.loadingPrincipal.origin;
-  }
-  update.triggering_origin = escapeString(triggeringOrigin);
-  update.loading_origin = escapeString(loadingOrigin);
-
-  // loadingDocument's href
-  // The loadingDocument is the document the element resides, regardless of
-  // how the load was triggered.
-  let loadingHref;
-  if (
-    httpChannel.loadInfo.loadingDocument &&
-    httpChannel.loadInfo.loadingDocument.location
-  ) {
-    loadingHref = httpChannel.loadInfo.loadingDocument.location.href;
-  }
-  update.loading_href = escapeString(loadingHref);
-
-  // contentPolicyType of the requesting node. This is set by the type of
-  // node making the request (i.e. an <img src=...> node will set to type 3).
-  // For a mapping of integers to types see:
-  // TODO: include the mapping directly
-  // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
-  update.content_policy_type = httpChannel.loadInfo.externalContentPolicyType;
-
-  // Do third-party checks
-  // These specific checks are done because it's what's used in Tracking Protection
-  // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
-  try {
-    const isThirdPartyChannel = ThirdPartyUtil.isThirdPartyChannel(httpChannel);
-    const topWindow = ThirdPartyUtil.getTopWindowForChannel(httpChannel);
-    const topURI = ThirdPartyUtil.getURIFromWindow(topWindow);
-    if (topURI) {
-      const topUrl = topURI.spec;
-      const channelURI = httpChannel.URI;
-      const isThirdPartyToTopWindow = ThirdPartyUtil.isThirdPartyURI(
-        channelURI,
-        topURI,
-      );
-      update.is_third_party_to_top_window = isThirdPartyToTopWindow;
-      update.is_third_party_channel = isThirdPartyChannel;
-      update.top_level_url = escapeString(topUrl);
+    /*
+    // Check if xhr
+    let isXHR;
+    try {
+      const callbacks = details.notificationCallbacks;
+      const xhr = callbacks ? callbacks.getInterface(Ci.nsIXMLHttpRequest) : null;
+      isXHR = !!xhr;
+    } catch (e) {
+      isXHR = false;
     }
-  } catch (anError) {
-    // Exceptions expected for channels triggered or loading in a
-    // NullPrincipal or SystemPrincipal. They are also expected for favicon
-    // loads, which we attempt to filter. Depending on the naming, some favicons
-    // may continue to lead to error logs.
+    update.is_XHR = isXHR;
+
+    // Check if frame OR full page load
+    let isFrameLoad;
+    let isFullPageLoad;
+    if (details.loadFlags & Ci.nsIHttpChannel.LOAD_INITIAL_DOCUMENT_URI) {
+      isFullPageLoad = true;
+      isFrameLoad = false;
+    } else if (details.loadFlags & Ci.nsIHttpChannel.LOAD_DOCUMENT_URI) {
+      isFrameLoad = true;
+      isFullPageLoad = false;
+    }
+    update.is_full_page = isFullPageLoad;
+    update.is_frame_load = isFrameLoad;
+
+    // Grab the triggering and loading Principals
+    let triggeringOrigin;
+    let loadingOrigin;
+    if (details.loadInfo.triggeringPrincipal) {
+      triggeringOrigin = details.loadInfo.triggeringPrincipal.origin;
+    }
+    if (details.loadInfo.loadingPrincipal) {
+      loadingOrigin = details.loadInfo.loadingPrincipal.origin;
+    }
+    update.triggering_origin = escapeString(triggeringOrigin);
+    update.loading_origin = escapeString(loadingOrigin);
+
+    // loadingDocument's href
+    // The loadingDocument is the document the element resides, regardless of
+    // how the load was triggered.
+    let loadingHref;
     if (
-      update.triggering_origin !== "[System Principal]" &&
-      update.triggering_origin !== undefined &&
-      update.loading_origin !== "[System Principal]" &&
-      update.loading_origin !== undefined &&
-      !update.url.endsWith("ico")
+      details.loadInfo.loadingDocument &&
+      details.loadInfo.loadingDocument.location
     ) {
-      this.dataReceiver.logError(
-        "Error while retrieving additional channel information for URL: " +
+      loadingHref = details.loadInfo.loadingDocument.location.href;
+    }
+    update.loading_href = escapeString(loadingHref);
+
+    // contentPolicyType of the requesting node. This is set by the type of
+    // node making the request (i.e. an <img src=...> node will set to type 3).
+    // For a mapping of integers to types see:
+    // TODO: include the mapping directly
+    // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
+    update.content_policy_type = details.loadInfo.externalContentPolicyType;
+
+    // Do third-party checks
+    // These specific checks are done because it's what's used in Tracking Protection
+    // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
+    try {
+      const isThirdPartyChannel = ThirdPartyUtil.isThirdPartyChannel(details);
+      const topWindow = ThirdPartyUtil.getTopWindowForChannel(details);
+      const topURI = ThirdPartyUtil.getURIFromWindow(topWindow);
+      if (topURI) {
+        const topUrl = topURI.spec;
+        const channelURI = details.URI;
+        const isThirdPartyToTopWindow = ThirdPartyUtil.isThirdPartyURI(
+          channelURI,
+          topURI,
+        );
+        update.is_third_party_to_top_window = isThirdPartyToTopWindow;
+        update.is_third_party_channel = isThirdPartyChannel;
+        update.top_level_url = escapeString(topUrl);
+      }
+    } catch (anError) {
+      // Exceptions expected for channels triggered or loading in a
+      // NullPrincipal or SystemPrincipal. They are also expected for favicon
+      // loads, which we attempt to filter. Depending on the naming, some favicons
+      // may continue to lead to error logs.
+      if (
+        update.triggering_origin !== "[System Principal]" &&
+        update.triggering_origin !== undefined &&
+        update.loading_origin !== "[System Principal]" &&
+        update.loading_origin !== undefined &&
+        !update.url.endsWith("ico")
+      ) {
+        this.dataReceiver.logError(
+          "Error while retrieving additional channel information for URL: " +
           "\n" +
           update.url +
           "\n Error text:" +
           JSON.stringify(anError),
-      );
+        );
+      }
     }
+    */
+
+    this.dataReceiver.saveRecord("http_requests", update);
   }
 
-  this.dataReceiver.saveRecord("http_requests", update);
-};
+  private onBeforeRequestHandler(
+    details: {
+      /**
+       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
+       * relate different events of the same request.
+       */
+      requestId: string;
+      url: string;
+      /** Standard HTTP method. */
+      method: string;
+      /**
+       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
+       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
+       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
+       * within a tab.
+       */
+      frameId: number;
+      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
+      parentFrameId: number;
+      /** URL of the resource that triggered this request. */
+      originUrl?: string;
+      /** URL of the page into which the requested resource will be loaded. */
+      documentUrl?: string;
+      /** Contains the HTTP request body data. Only provided if extraInfoSpec contains 'requestBody'. */
+      requestBody?: {
+        /** Errors when obtaining request body data. */
+        error?: string;
+        /**
+         * If the request method is POST and the body is a sequence of key-value pairs encoded in UTF8, encoded as
+         * either multipart/form-data, or application/x-www-form-urlencoded, this dictionary is present and for
+         * each key contains the list of all values for that key. If the data is of another media type, or if it is
+         * malformed, the dictionary is not present. An example value of this dictionary is {'key': ['value1',
+         * 'value2']}.
+         */
+        formData?: object;
+        /**
+         * If the request method is PUT or POST, and the body is not already parsed in formData, then the unparsed
+         * request body elements are contained in this array.
+         */
+        raw?: UploadData[];
+      };
+      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
+      tabId: number;
+      /** How the requested resource will be used. */
+      type: ResourceType;
+      /** The time when this signal is triggered, in milliseconds since the epoch. */
+      timeStamp: number;
+    },
+    crawlID,
+    saveJavascript,
+    saveAllContent,
+  ) {
+    console.log(
+      "onBeforeRequestHandler (previously httpRequestHandler)",
+      details,
+      crawlID,
+      saveJavascript,
+      saveAllContent,
+    );
+  }
 
-/*
- * HTTP Response Handler and Helper Functions
- */
+  private onBeforeRedirectHandler(
+    details: {
+      /**
+       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
+       * relate different events of the same request.
+       */
+      requestId: string;
+      url: string;
+      /** Standard HTTP method. */
+      method: string;
+      /**
+       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
+       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
+       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
+       * within a tab.
+       */
+      frameId: number;
+      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
+      parentFrameId: number;
+      /** URL of the resource that triggered this request. */
+      originUrl?: string;
+      /** URL of the page into which the requested resource will be loaded. */
+      documentUrl?: string;
+      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
+      tabId: number;
+      /** How the requested resource will be used. */
+      type: ResourceType;
+      /** The time when this signal is triggered, in milliseconds since the epoch. */
+      timeStamp: number;
+      /**
+       * The server IP address that the request was actually sent to. Note that it may be a literal IPv6 address.
+       */
+      ip?: string;
+      /** Indicates if this response was fetched from disk cache. */
+      fromCache: boolean;
+      /** Standard HTTP status code returned by the server. */
+      statusCode: number;
+      /** The new URL. */
+      redirectUrl: string;
+      /** The HTTP response headers that were received along with this redirect. */
+      responseHeaders?: HttpHeaders;
+      /**
+       * HTTP status line of the response or the 'HTTP/0.9 200 OK' string for HTTP/0.9 responses (i.e., responses
+       * that lack a status line) or an empty string if there are no headers.
+       */
+      statusLine: string;
+    },
+    crawlID,
+  ) {
+    console.log(
+      "onBeforeRedirectHandler (previously httpRequestHandler)",
+      details,
+      crawlID,
+    );
 
-/*
+    // Save HTTP redirect events
+
+    /*
+    // Events are saved to the `http_redirects` table, and map the old
+    // request/response channel id to the new request/response channel id.
+    // Implementation based on: https://stackoverflow.com/a/11240627
+    const oldNotifications = details.notificationCallbacks;
+    let oldEventSink = null;
+    details.notificationCallbacks = {
+      QueryInterface: XPCOMUtils.generateQI([
+        Ci.nsIInterfaceRequestor,
+        Ci.nsIChannelEventSink,
+      ]),
+
+      getInterface(iid) {
+        // We are only interested in nsIChannelEventSink,
+        // return the old callbacks for any other interface requests.
+        if (iid.equals(Ci.nsIChannelEventSink)) {
+          try {
+            oldEventSink = oldNotifications.QueryInterface(iid);
+          } catch (anError) {
+            this.dataReceiver.logError(
+              "Error during call to custom notificationCallbacks::getInterface." +
+                JSON.stringify(anError),
+            );
+          }
+          return this;
+        }
+
+        if (oldNotifications) {
+          return oldNotifications.getInterface(iid);
+        } else {
+          throw Cr.NS_ERROR_NO_INTERFACE;
+        }
+      },
+
+      asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
+        const isTemporary = !!(flags & Ci.nsIChannelEventSink.REDIRECT_TEMPORARY);
+        const isPermanent = !!(flags & Ci.nsIChannelEventSink.REDIRECT_PERMANENT);
+        const isInternal = !!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL);
+        const isSTSUpgrade = !!(
+          flags & Ci.nsIChannelEventSink.REDIRECT_STS_UPGRADE
+        );
+
+        newChannel.QueryInterface(Ci.nsIHttpChannel);
+
+        const httpRedirect: HttpRedirect = {
+          crawl_id: crawlID,
+          old_channel_id: oldChannel.channelId,
+          new_channel_id: newChannel.channelId,
+          is_temporary: isTemporary,
+          is_permanent: isPermanent,
+          is_internal: isInternal,
+          is_sts_upgrade: isSTSUpgrade,
+          time_stamp: new Date().toISOString(),
+        };
+        this.dataReceiver.saveRecord("http_redirects", httpRedirect);
+
+        if (oldEventSink) {
+          oldEventSink.asyncOnChannelRedirect(
+            oldChannel,
+            newChannel,
+            flags,
+            callback,
+          );
+        } else {
+          callback.onRedirectVerifyCallback(Cr.NS_OK);
+        }
+      },
+    };
+    */
+
+    const httpRedirect: HttpRedirect = {
+      crawl_id: crawlID,
+      old_channel_id: null, // previously: oldChannel.channelId,
+      new_channel_id: details.requestId, // previously: newChannel.channelId,
+      is_temporary: null, // TODO: Check status code
+      is_permanent: null, // TODO: Check status code
+      is_internal: null, // TODO: Check status code
+      is_sts_upgrade: null, // TODO
+      time_stamp: new Date().toISOString(),
+    };
+    this.dataReceiver.saveRecord("http_redirects", httpRedirect);
+  }
+
+  /*
+  * HTTP Response Handler and Helper Functions
+  */
+
+  /*
 // Used to parse Response stream to log content
 function TracingListener() {
   // array for incoming data.
@@ -347,6 +644,29 @@ function TracingListener() {
   );
   Object.freeze(this.deferredDone);
   this.promiseDone = this.deferredDone.promise;
+
+
+
+
+  console.log("blocking request listener", details);
+
+  // Used to parse Response stream to log content
+  const filter: any = browser.webRequest.filterResponseData(
+    details.requestId,
+  ) as any;
+
+  const decoder = new TextDecoder("utf-8");
+  // const encoder = new TextEncoder();
+
+  filter.ondata = event => {
+    let str = decoder.decode(event.data, { stream: true });
+    console.log("blocking request listener ondata: event, str", event, str);
+    filter.disconnect();
+  };
+
+
+
+
 }
 TracingListener.prototype = {
   onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
@@ -387,6 +707,7 @@ TracingListener.prototype = {
 };
 */
 
+  /*
 // Helper functions to convert hash data to hex
 function toHexString(charCode) {
   return ("0" + charCode.toString(16)).slice(-2);
@@ -437,13 +758,13 @@ function logWithResponseBody(respEvent, update) {
     });
 }
 
-function isJS(httpChannel) {
+function isJS(details) {
   // Return true if this channel is loading javascript
   // We rely mostly on the content policy type to filter responses
   // and fall back to the URI and content type string for types that can
   // load various resource types.
   // See: http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl
-  const contentPolicyType = httpChannel.loadInfo.externalContentPolicyType;
+  const contentPolicyType = details.loadInfo.externalContentPolicyType;
   if (contentPolicyType === 2) {
     // script
     return true;
@@ -461,7 +782,7 @@ function isJS(httpChannel) {
 
   let contentType;
   try {
-    contentType = httpChannel.getResponseHeader("Content-Type");
+    contentType = details.getResponseHeader("Content-Type");
   } catch (e) {
     // Content-Type may not be present
     contentType = "";
@@ -470,7 +791,7 @@ function isJS(httpChannel) {
   if (contentType && contentType.toLowerCase().includes("javascript")) {
     return true;
   }
-  const path = httpChannel.URI.path;
+  const path = details.URI.path;
   if (
     path &&
     path
@@ -482,226 +803,132 @@ function isJS(httpChannel) {
   }
   return false;
 }
+*/
 
-// Instrument HTTP responses
-const httpResponseHandler = function(
-  respEvent,
-  isCached,
-  crawlID,
-  saveJavascript,
-  saveAllContent,
-) {
-  const httpChannel = respEvent.subject.QueryInterface(Ci.nsIHttpChannel);
-
-  // http_responses table schema:
-  // id [auto-filled], crawl_id, url, method, referrer, response_status,
-  // response_status_text, headers, location, visit_id [auto-filled],
-  // time_stamp, content_hash
-  const update = {} as HttpResponse;
-
-  update.crawl_id = crawlID;
-
-  // ChannelId is a unique identifier that can be used to link requests and
-  // responses. FF 49+
-  update.channel_id = httpChannel.channelId;
-
-  update.is_cached = isCached;
-
-  const url = httpChannel.URI.spec;
-  update.url = escapeString(url);
-
-  const requestMethod = httpChannel.requestMethod;
-  update.method = escapeString(requestMethod);
-
-  let referrer = "";
-  if (httpChannel.referrer) {
-    referrer = httpChannel.referrer.spec;
-  }
-  update.referrer = escapeString(referrer);
-
-  const responseStatus = httpChannel.responseStatus;
-  update.response_status = responseStatus;
-
-  const responseStatusText = httpChannel.responseStatusText;
-  update.response_status_text = escapeString(responseStatusText);
-
-  const current_time = new Date();
-  update.time_stamp = current_time.toISOString();
-
-  let location = "";
-  try {
-    location = httpChannel.getResponseHeader("location");
-  } catch (e) {
-    location = "";
-  }
-  update.location = escapeString(location);
-
-  const headers = [];
-  httpChannel.visitResponseHeaders({
-    visitHeader(name, value) {
-      const header_pair = [];
-      header_pair.push(escapeString(name));
-      header_pair.push(escapeString(value));
-      headers.push(header_pair);
+  // Instrument HTTP responses
+  private onCompletedHandler(
+    details: {
+      /**
+       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
+       * relate different events of the same request.
+       */
+      requestId: string;
+      url: string;
+      /** Standard HTTP method. */
+      method: string;
+      /**
+       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
+       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
+       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
+       * within a tab.
+       */
+      frameId: number;
+      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
+      parentFrameId: number;
+      /** URL of the resource that triggered this request. */
+      originUrl?: string;
+      /** URL of the page into which the requested resource will be loaded. */
+      documentUrl?: string;
+      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
+      tabId: number;
+      /** How the requested resource will be used. */
+      type: ResourceType;
+      /** The time when this signal is triggered, in milliseconds since the epoch. */
+      timeStamp: number;
+      /**
+       * The server IP address that the request was actually sent to. Note that it may be a literal IPv6 address.
+       */
+      ip?: string;
+      /** Indicates if this response was fetched from disk cache. */
+      fromCache: boolean;
+      /** Standard HTTP status code returned by the server. */
+      statusCode: number;
+      /** The HTTP response headers that were received along with this response. */
+      responseHeaders?: HttpHeaders;
+      /**
+       * HTTP status line of the response or the 'HTTP/0.9 200 OK' string for HTTP/0.9 responses (i.e., responses
+       * that lack a status line) or an empty string if there are no headers.
+       */
+      statusLine: string;
     },
-  });
-  update.headers = JSON.stringify(headers);
-
-  if (saveAllContent) {
-    logWithResponseBody(respEvent, update);
-  } else if (saveJavascript && isJS(httpChannel)) {
-    logWithResponseBody(respEvent, update);
-  } else {
-    this.dataReceiver.saveRecord("http_responses", update);
-  }
-};
-
-/*
- * Attach handlers to event monitor
- */
-
-export class HttpInstrument {
-  private readonly dataReceiver;
-
-  constructor(dataReceiver) {
-    this.dataReceiver = dataReceiver;
-  }
-
-  public run(crawlID, saveJavascript, saveAllContent) {
+    crawlID,
+    saveJavascript,
+    saveAllContent,
+  ) {
     console.log(
-      "HttpInstrument",
-      HttpPostParser,
+      "onCompletedHandler (previously httpRequestHandler)",
+      details,
       crawlID,
       saveJavascript,
       saveAllContent,
-      this.dataReceiver,
     );
 
-    const allTypes: ResourceType[] = [
-      "beacon",
-      "csp_report",
-      "font",
-      "image",
-      "imageset",
-      "main_frame",
-      "media",
-      "object",
-      "object_subrequest",
-      "ping",
-      "script",
-      // "speculative",
-      "stylesheet",
-      "sub_frame",
-      "web_manifest",
-      "websocket",
-      "xbl",
-      "xml_dtd",
-      "xmlhttprequest",
-      "xslt",
-      "other",
-    ];
+    // http_responses table schema:
+    // id [auto-filled], crawl_id, url, method, referrer, response_status,
+    // response_status_text, headers, location, visit_id [auto-filled],
+    // time_stamp, content_hash
+    const update = {} as HttpResponse;
 
-    // request listener
+    update.crawl_id = crawlID;
 
-    browser.webRequest.onBeforeRequest.addListener(
-      function(details) {
-        // Ignore requests made by extensions
-        if (
-          details.originUrl &&
-          details.originUrl.indexOf("moz-extension://") > -1
-        ) {
-          return;
-        }
-        console.log("webRequest.onBeforeRequest listener", details);
-      },
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
-      ["requestBody"],
-    );
+    // requestId is a unique identifier that can be used to link requests and responses
+    update.channel_id = details.requestId;
 
-    browser.webRequest.onBeforeRequest.addListener(
-      function(details) {
-        // Ignore requests made by extensions
-        if (
-          details.originUrl &&
-          details.originUrl.indexOf("moz-extension://") > -1
-        ) {
-          return;
-        }
-        console.log("webRequest.onBeforeRequest listener", details);
-      },
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
-      ["requestBody"],
-    );
+    const isCached = details.fromCache;
+    update.is_cached = isCached;
 
-    browser.webRequest.onBeforeSendHeaders.addListener(
-      function(details) {
-        // Ignore requests made by extensions
-        if (
-          details.originUrl &&
-          details.originUrl.indexOf("moz-extension://") > -1
-        ) {
-          return;
-        }
-        console.log("webRequest.onBeforeSendHeaders listener", details);
-      },
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
-      ["requestHeaders"],
-    );
+    const url = details.documentUrl;
+    update.url = escapeString(url);
 
-    browser.webRequest.onCompleted.addListener(
-      function(details) {
-        // Ignore requests made by extensions
-        if (
-          details.originUrl &&
-          details.originUrl.indexOf("moz-extension://") > -1
-        ) {
-          return;
-        }
-        console.log("webRequest.onCompleted listener", details);
-      },
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
-      ["responseHeaders"],
-    );
+    const requestMethod = details.method;
+    update.method = escapeString(requestMethod);
 
-    // Monitor http events
+    // let referrer = "";
+    // if (details.referrer) {
+    //   referrer = details.referrer.spec;
+    // }
+    // update.referrer = escapeString(referrer);
+
+    const responseStatus = details.statusCode;
+    update.response_status = responseStatus;
+
+    const responseStatusText = details.statusLine;
+    update.response_status_text = escapeString(responseStatusText);
+
+    const current_time = new Date();
+    update.time_stamp = current_time.toISOString();
+
     /*
-    events.on(
-      "http-on-modify-request",
-      function(event) {
-        httpRequestHandler(event, crawlID);
-      },
-      true,
-    );
+    let location = "";
+    try {
+      location = details.getResponseHeader("location");
+    } catch (e) {
+      location = "";
+    }
+    update.location = escapeString(location);
 
-    events.on(
-      "http-on-examine-response",
-      function(event) {
-        httpResponseHandler(
-          event,
-          false,
-          crawlID,
-          saveJavascript,
-          saveAllContent,
-        );
+    const headers = [];
+    details.visitResponseHeaders({
+      visitHeader(name, value) {
+        const header_pair = [];
+        header_pair.push(escapeString(name));
+        header_pair.push(escapeString(value));
+        headers.push(header_pair);
       },
-      true,
-    );
+    });
+    update.headers = JSON.stringify(headers);
+    */
 
-    events.on(
-      "http-on-examine-cached-response",
-      function(event) {
-        httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
-      },
-      true,
-    );
-
-    events.on(
-      "http-on-examine-merged-response",
-      function(event) {
-        httpResponseHandler(event, true, crawlID, saveJavascript, saveAllContent);
-      },
-      true,
-    );
+    /*
+    if (saveAllContent) {
+      logWithResponseBody(respEvent, update);
+    } else if (saveJavascript && isJS(details)) {
+      logWithResponseBody(respEvent, update);
+    } else {
+      */
+    this.dataReceiver.saveRecord("http_responses", update);
+    /*
+    }
     */
   }
 }
