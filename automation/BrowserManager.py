@@ -127,7 +127,7 @@ class Browser:
                     'Browser spawn returned failure status')
 
         while (not success and
-               unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT):
+                unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT):
             self.logger.debug("BROWSER %i: Spawn attempt %i " % (
                 self.crawl_id, unsuccessful_spawns))
             # Resets the command/status queues
@@ -413,7 +413,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
-    except Exception as e:
+    except Exception:
         excp = traceback.format_exception(*sys.exc_info())
         logger.info("BROWSER %i: Crash in driver, restarting browser manager "
                     "\n %s" % (browser_params['crawl_id'], ''.join(excp)))
