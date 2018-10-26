@@ -1,0 +1,39 @@
+#=============================================================
+# Dockerfile for OpenWPM
+# See README.md for build & use instructions
+#=============================================================
+
+FROM openwpm
+
+#=============================================================
+# Copy OpenWPM tests
+#=============================================================
+
+ADD test /opt/OpenWPM/test/
+ADD install-dev.sh /opt/OpenWPM/
+ADD requirements-dev.txt /opt/OpenWPM/
+
+#=============================================================
+# Install requirements for OpenWPM development
+#=============================================================
+
+RUN cd /opt/OpenWPM/ \
+     && ./install-dev.sh
+
+#=============================================================
+# Move away Firefox from the root of the source code dir
+# (so that we can mount our local source code dir without
+# overshadowing the firefox installation)
+#=============================================================
+
+RUN sudo mkdir /opt/firefox/ && \
+    sudo mv /opt/OpenWPM/firefox-bin /opt/firefox/firefox-bin
+ENV FIREFOX_BINARY=/opt/firefox/firefox-bin/firefox-bin
+
+#=============================================================
+# Make the shell within the Docker environment more useful
+#=============================================================
+
+RUN sudo apt-get -yq install nano
+
+WORKDIR /opt/OpenWPM

@@ -412,6 +412,33 @@ additional dependencies, which can be installed by running `install-dev.sh`.
 Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 
+### Mac OSX (Limited support for developers)
+
+We've added an installation file to make it easier to run tests and develop on
+Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
+instead of `install.sh` and `install-dev.sh`.
+This will download Firefox ESR into the current folder, move geckodriver
+next to the Firefox binary and install development dependencies.
+For the OpenWPM to be aware of which Firefox installation to run, set the
+FIREFOX_BINARY environment variable before running any commands.
+
+Example, running the OpenWPM tests on Mac OSX:
+
+    export FIREFOX_BINARY="$(PWD)/Firefox.app/Contents/MacOS/firefox-bin"
+    python -m pytest -vv
+
+There are known limitations on Mac:
+1. Flash cookies are not parsed correctly since we
+   [hardcode](https://github.com/citp/OpenWPM/blob/de84f0595dd512649e46c87b47d5ab18c8374d7e/automation/Commands/utils/lso.py#L34)
+   the Flash storage path to that used on Linux.
+2. Headless mode does not work since we currently use XVFB and the Firefox
+   GUI on Mac doesn't make use of X. The X virtual frame buffer is created, but
+   is not used by the Firefox GUI. Thus Firefox windows will always be visible
+   regardless of the `headless` configuration parameter set.
+
+We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
+these issues and add full support and CI testing for Mac.
+
 Troubleshooting
 ---------------
 
@@ -466,13 +493,17 @@ within the root OpenWPM directory:
 
     docker build -f Dockerfile -t openwpm .
 
+After building the above, you may optionally build a docker image for OpenWPM development:
+
+    docker build -f Dockerfile-dev -t openwpm-dev .
+
 After a few minutes, the container is ready to use.
 
 ### Running Measurements from inside the Container
 
 You can run the demo measurement from inside the container, as follows:
 
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/ \
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/Desktop \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
     -it openwpm python /opt/OpenWPM/demo.py
 
@@ -498,6 +529,22 @@ it's being run from the root OpenWPM directory):
     running headless crawls you can remove the following options:
     `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
+Instruction on how to run Docker GUI applications in Mac OSX are available
+[here](https://stackoverflow.com/questions/37523980/running-gui-apps-on-docker-container-with-a-macbookpro-host).
+Given properly installed prerequisites (including a reboot), the helper script
+`run-on-osx-via-docker.sh` in the project root folder can be used to facilitate
+working with Docker in Mac OSX.
+
+To open a bash session within the environment:
+
+    ./run-on-osx-via-docker.sh # 
+
+Or, run commands directly:
+
+    ./run-on-osx-via-docker.sh python demo.py
+    ./run-on-osx-via-docker.sh python -m test.manual_test
+    ./run-on-osx-via-docker.sh python -m pytest
+    ./run-on-osx-via-docker.sh python -m pytest -vv -s
 
 Disclaimer
 -----------
@@ -528,7 +575,7 @@ on the infrastructure. You can use the following BibTeX.
         year      = "2016",
     }
 
-As of June 2018 OpenWPM has been used in [24 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
+OpenWPM has been used in over [25 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
 
 License
 -------
