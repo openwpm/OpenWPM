@@ -16,11 +16,12 @@ from botocore.exceptions import ClientError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 from six.moves import queue
 
-from .BaseAggregator import BaseAggregator, BaseListener
+from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
 SITE_VISITS_INDEX = '_site_visits_index'
+CONTENT_DIRECTORY = 'content'
 
 
 def listener_process_runner(manager_params, status_queue, instance_id):
@@ -57,6 +58,7 @@ class S3Listener(BaseListener):
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
         self._s3 = boto3.client('s3')
+        self._s3_resource = boto3.resource('s3')
         self._fs = s3fs.S3FileSystem()
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
@@ -107,10 +109,26 @@ class S3Listener(BaseListener):
 
         del self._records[visit_id]
 
-    def _write_str_to_s3(self, string, filename, compressed=True):
+    def _exists_on_s3(self, filename):
+        """Check if `filename` already exists on S3"""
+        try:
+            self._s3_resource.Object(self._bucket, filename).load()
+        except ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                return False
+            else:
+                raise
+        return True
+
+    def _write_str_to_s3(self, string, filename,
+                         compressed=True, skip_if_exists=True):
         """Write `string` data to S3 with name `filename`"""
-        if type(string) != six.binary_type:
-            string = six.binary_type(string, 'utf-8')
+        if skip_if_exists and self._exists_on_s3(filename):
+            self.logger.debug(
+                "File `%s` already exists on s3, skipping..." % filename)
+            return
+        if not isinstance(string, six.binary_type):
+            string = string.encode('utf-8')
         if compressed:
             out_f = six.BytesIO()
             with gzip.GzipFile(fileobj=out_f, mode='w') as writer:
@@ -122,6 +140,8 @@ class S3Listener(BaseListener):
         # Upload to S3
         try:
             self._s3.upload_fileobj(out_f, self._bucket, filename)
+            self.logger.debug(
+                "Successfully uploaded file `%s` to S3." % filename)
         except Exception as e:
             self.logger.error(
                 "Exception while uploading %s\n%s\n%s" % (
@@ -136,8 +156,8 @@ class S3Listener(BaseListener):
                 continue
             if table_name == SITE_VISITS_INDEX:
                 out_str = '\n'.join([json.dumps(x) for x in batches])
-                if type(out_str) != six.binary_type:
-                    out_str = six.binary_type(out_str, 'utf-8')
+                if not isinstance(out_str, six.binary_type):
+                    out_str = out_str.encode('utf-8')
                 fname = '%s/site_index/instance-%s-%s.json.gz' % (
                     self.dir, self._instance_id,
                     hashlib.md5(out_str).hexdigest()
@@ -169,6 +189,9 @@ class S3Listener(BaseListener):
 
         table, data = record
         if table == "create_table":  # drop these statements
+            return
+        elif table == RECORD_TYPE_CONTENT:
+            self.process_content(record)
             return
 
         # All data records should be keyed by the crawler and site visit
@@ -202,6 +225,18 @@ class S3Listener(BaseListener):
 
         # Save record to disk
         self._write_record(table, data, visit_id)
+
+    def process_content(self, record):
+        """Upload page content `record` to S3"""
+        if record[0] != RECORD_TYPE_CONTENT:
+            raise ValueError(
+                "Incorrect record type passed to `process_content`. Expected "
+                "record of type `%s`, received `%s`." % (
+                    RECORD_TYPE_CONTENT, record[0])
+            )
+        content, content_hash = record[1]
+        fname = "%s/%s/%s.gz" % (self.dir, CONTENT_DIRECTORY, content_hash)
+        self._write_str_to_s3(content, fname)
 
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
@@ -261,8 +296,8 @@ class S3Aggregator(BaseAggregator):
         out['browser_version'] = six.text_type(browser_version)
         out['browser_params'] = self.browser_params
         out_str = json.dumps(out)
-        if type(out_str) != six.binary_type:
-            out_str = six.binary_type(out_str, 'utf-8')
+        if not isinstance(out_str, six.binary_type):
+            out_str = out_str.encode('utf-8')
         out_f = six.BytesIO(out_str)
 
         # Upload to S3 and delete local copy
