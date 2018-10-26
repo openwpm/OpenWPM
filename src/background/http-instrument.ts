@@ -612,54 +612,46 @@ export class HttpInstrument {
       });
   }
 
-  private isJS(details): boolean {
-    console.log("isJS", details);
-    return false;
-    /*
-  // Return true if this channel is loading javascript
-  // We rely mostly on the content policy type to filter responses
-  // and fall back to the URI and content type string for types that can
-  // load various resource types.
-  // See: http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl
-  const contentPolicyType = details.loadInfo.externalContentPolicyType;
-  if (contentPolicyType === 2) {
-    // script
-    return true;
-  }
-  if (
-    contentPolicyType !== 5 && // object
-    contentPolicyType !== 7 && // subdocument (iframe)
-    contentPolicyType !== 11 && // XMLHTTPRequest
-    contentPolicyType !== 16 && // websocket
-    contentPolicyType !== 19
-  ) {
-    // beacon response
-    return false;
-  }
+  private isJS(
+    details: WebRequestOnCompletedEventDetails,
+    contentType,
+  ): boolean {
+    // Return true if this request is loading javascript
+    // We rely mostly on the content policy type to filter responses
+    // and fall back to the URI and content type string for types that can
+    // load various resource types.
+    // See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
 
-  let contentType;
-  try {
-    contentType = details.getResponseHeader("Content-Type");
-  } catch (e) {
-    // Content-Type may not be present
-    contentType = "";
-  }
+    const resourceType = details.type;
+    if (resourceType === "script") {
+      return true;
+    }
+    if (
+      resourceType !== "object" && // object
+      resourceType !== "sub_frame" && // subdocument (iframe)
+      resourceType !== "xmlhttprequest" && // XMLHTTPRequest
+      resourceType !== "websocket" && // websocket
+      resourceType !== "beacon" // beacon response
+    ) {
+      return false;
+    }
 
-  if (contentType && contentType.toLowerCase().includes("javascript")) {
-    return true;
-  }
-  const path = details.URI.path;
-  if (
-    path &&
-    path
-      .split("?")[0]
-      .split("#")[0]
-      .endsWith(".js")
-  ) {
-    return true;
-  }
-  return false;
-  */
+    if (contentType && contentType.toLowerCase().includes("javascript")) {
+      return true;
+    }
+
+    const parsedUrl = new URL(details.url);
+    const path = parsedUrl.pathname;
+    if (
+      path &&
+      path
+        .split("?")[0]
+        .split("#")[0]
+        .endsWith(".js")
+    ) {
+      return true;
+    }
+    return false;
   }
 
   // Instrument HTTP responses
@@ -712,29 +704,28 @@ export class HttpInstrument {
     const current_time = new Date(details.timeStamp);
     update.time_stamp = current_time.toISOString();
 
-    /*
-    let location = "";
-    try {
-      location = details.getResponseHeader("location");
-    } catch (e) {
-      location = "";
-    }
-    update.location = escapeString(location);
-    */
-
     const headers = [];
+    let location = "";
+    let contentType = "";
     details.responseHeaders.map(responseHeader => {
       const { name, value } = responseHeader;
       const header_pair = [];
       header_pair.push(escapeString(name));
       header_pair.push(escapeString(value));
       headers.push(header_pair);
+      if (name.toLowerCase() === "location") {
+        location = value;
+      }
+      if (name.toLowerCase() === "content-type") {
+        contentType = value;
+      }
     });
     update.headers = JSON.stringify(headers);
+    update.location = escapeString(location);
 
     if (saveAllContent) {
       this.logWithResponseBody(details, update);
-    } else if (saveJavascript && this.isJS(details)) {
+    } else if (saveJavascript && this.isJS(details, contentType)) {
       this.logWithResponseBody(details, update);
     } else {
       this.dataReceiver.saveRecord("http_responses", update);
