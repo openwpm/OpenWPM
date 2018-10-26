@@ -555,61 +555,47 @@ export class HttpInstrument {
     ).join("");
   }
 
-  /*
-  private makeResponseBodyAvailableForRequest(
-    details: WebRequestOnBeforeRequestEventDetails,
-  ) {}
-  */
-
-  private logWithResponseBody(
+  private async logWithResponseBody(
     details: WebRequestOnBeforeRequestEventDetails,
     update,
   ) {
     console.log("logWithResponseBody", details, update, this.binaryHashtoHex);
-
-    const dataReceiver = this.dataReceiver;
-
     // const pendingResponse = this.getPendingResponse(details.requestId);
-
-    // log with response body from an 'http-on-examine(-cached)?-response' event
-    const newListener = new ResponseBodyListener(details);
-    newListener.promiseDone
-      .then(
-        function() {
-          /*
-        const respBody = newListener.responseBody; // get response body as a string
-        const bodyBytes = converter.convertToByteArray(respBody); // convert to bytes
-        cryptoHash.init(cryptoHash.MD5);
-        cryptoHash.update(bodyBytes, bodyBytes.length);
-        const contentHash = binaryHashtoHex(cryptoHash.finish(false));
-        update.content_hash = contentHash;
-        dataReceiver.saveContent(
-          escapeString(respBody),
-          escapeString(contentHash),
-        );
-        */
-          dataReceiver.saveRecord("http_responses", update);
-        },
-        function(aReason) {
-          dataReceiver.logError(
-            "Unable to retrieve response body." + JSON.stringify(aReason),
-          );
-          update.content_hash = "<error>";
-          dataReceiver.saveRecord("http_responses", update);
-        },
-      )
-      .catch(function(aCatch) {
-        dataReceiver.logError(
-          "Unable to retrieve response body." +
-            "Likely caused by a programming error. Error Message:" +
-            aCatch.name +
-            aCatch.message +
-            "\n" +
-            aCatch.stack,
-        );
-        update.content_hash = "<error>";
-        dataReceiver.saveRecord("http_responses", update);
-      });
+    try {
+      const newListener = new ResponseBodyListener(details);
+      const respBody = await newListener.getResponseBody();
+      /*
+    const bodyBytes = converter.convertToByteArray(respBody); // convert to bytes
+    cryptoHash.init(cryptoHash.MD5);
+    cryptoHash.update(bodyBytes, bodyBytes.length);
+    const contentHash = binaryHashtoHex(cryptoHash.finish(false));
+    update.content_hash = contentHash;
+    */
+      const contentHash = "foo";
+      this.dataReceiver.saveContent(
+        escapeString(respBody),
+        escapeString(contentHash),
+      );
+      this.dataReceiver.saveRecord("http_responses", update);
+    } catch (err) {
+      /*
+      dataReceiver.logError(
+        "Unable to retrieve response body." + JSON.stringify(aReason),
+      );
+      update.content_hash = "<error>";
+      dataReceiver.saveRecord("http_responses", update);
+      */
+      this.dataReceiver.logError(
+        "Unable to retrieve response body." +
+          "Likely caused by a programming error. Error Message:" +
+          err.name +
+          err.message +
+          "\n" +
+          err.stack,
+      );
+      update.content_hash = "<error>";
+      this.dataReceiver.saveRecord("http_responses", update);
+    }
   }
 
   private isJS(
