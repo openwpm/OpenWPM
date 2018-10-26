@@ -1,9 +1,24 @@
 import { HttpPostParser } from "../lib/http-post-parser";
+import { PendingRequest } from "../lib/pending-request";
+import { PendingResponse } from "../lib/pending-response";
+import { ResponseBodyListener } from "../lib/response-body-listener";
 import ResourceType = browser.webRequest.ResourceType;
-import UploadData = browser.webRequest.UploadData;
-import HttpHeaders = browser.webRequest.HttpHeaders;
 import { escapeString } from "../lib/string-utils";
+import {
+  WebRequestOnBeforeRedirectEventDetails,
+  WebRequestOnBeforeRequestEventDetails,
+  WebRequestOnBeforeSendHeadersEventDetails,
+  WebRequestOnCompletedEventDetails,
+} from "../types/browser-web-reqest-event-details";
 import { HttpRedirect, HttpRequest, HttpResponse } from "../types/schema";
+
+/**
+ * Note: Different parts of the desired information arrives in different events as per below:
+ * request = headers in onBeforeSendHeaders + body in onBeforeRequest
+ * response = headers in onCompleted + body via a onBeforeRequest filter
+ * redirect = original request headers+body, followed by a onBeforeRedirect and then a new set of request headers+body and response headers+body
+ * Docs: https://developer.mozilla.org/en-US/docs/User:wbamberg/webRequest.RequestDetails
+ */
 
 /*
 var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
@@ -22,12 +37,14 @@ converter.charset = "UTF-8";
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 */
 
-/*
- * Attach handlers to event monitor
- */
-
 export class HttpInstrument {
   private readonly dataReceiver;
+  private pendingRequests: {
+    [requestId: number]: PendingRequest;
+  } = {};
+  private pendingResponses: {
+    [requestId: number]: PendingResponse;
+  } = {};
 
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
@@ -85,7 +102,11 @@ export class HttpInstrument {
         if (requestStemsFromExtension(details)) {
           return;
         }
-        return this.onBeforeRequestHandler(
+        const pendingRequest = this.getPendingRequest(details.requestId);
+        pendingRequest.resolveBeforeRequestEventDetails(details);
+        const pendingResponse = this.getPendingResponse(details.requestId);
+        pendingResponse.resolveBeforeRequestEventDetails(details);
+        this.onBeforeRequestHandler(
           details,
           crawlID,
           saveJavascript,
@@ -104,7 +125,9 @@ export class HttpInstrument {
         if (requestStemsFromExtension(details)) {
           return;
         }
-        return this.onBeforeSendHeadersHandler(details, crawlID);
+        const pendingRequest = this.getPendingRequest(details.requestId);
+        pendingRequest.resolveOnBeforeSendHeadersEventDetails(details);
+        this.onBeforeSendHeadersHandler(details, crawlID);
       },
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       ["requestHeaders"],
@@ -116,7 +139,7 @@ export class HttpInstrument {
         if (requestStemsFromExtension(details)) {
           return;
         }
-        return this.onBeforeRedirectHandler(details, crawlID);
+        this.onBeforeRedirectHandler(details, crawlID);
       },
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       ["responseHeaders"],
@@ -128,7 +151,9 @@ export class HttpInstrument {
         if (requestStemsFromExtension(details)) {
           return;
         }
-        return this.onCompletedHandler(
+        const pendingResponse = this.getPendingResponse(details.requestId);
+        pendingResponse.resolveOnCompletedEventDetails(details);
+        this.onCompletedHandler(
           details,
           crawlID,
           saveJavascript,
@@ -138,6 +163,20 @@ export class HttpInstrument {
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       ["responseHeaders"],
     );
+  }
+
+  private getPendingRequest(requestId) {
+    if (!this.pendingRequests[requestId]) {
+      this.pendingRequests[requestId] = new PendingRequest();
+    }
+    return this.pendingRequests[requestId];
+  }
+
+  private getPendingResponse(requestId) {
+    if (!this.pendingResponses[requestId]) {
+      this.pendingResponses[requestId] = new PendingResponse();
+    }
+    return this.pendingResponses[requestId];
   }
 
   /*
@@ -179,38 +218,8 @@ export class HttpInstrument {
     */
   }
 
-  private onBeforeSendHeadersHandler(
-    details: {
-      /**
-       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
-       * relate different events of the same request.
-       */
-      requestId: string;
-      url: string;
-      /** Standard HTTP method. */
-      method: string;
-      /**
-       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
-       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
-       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
-       * within a tab.
-       */
-      frameId: number;
-      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
-      parentFrameId: number;
-      /** URL of the resource that triggered this request. */
-      originUrl?: string;
-      /** URL of the page into which the requested resource will be loaded. */
-      documentUrl?: string;
-      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
-      tabId: number;
-      /** How the requested resource will be used. */
-      type: ResourceType;
-      /** The time when this signal is triggered, in milliseconds since the epoch. */
-      timeStamp: number;
-      /** The HTTP request headers that are going to be sent out with this request. */
-      requestHeaders?: HttpHeaders;
-    },
+  private async onBeforeSendHeadersHandler(
+    details: WebRequestOnBeforeSendHeadersEventDetails,
     crawlID,
   ) {
     console.log(
@@ -245,74 +254,77 @@ export class HttpInstrument {
     // }
     // update.referrer = escapeString(referrer);
 
-    const current_time = new Date();
+    const current_time = new Date(details.timeStamp);
     update.time_stamp = current_time.toISOString();
 
-    // let encodingType = "";
+    let encodingType = "";
     const headers = [];
-    const isOcsp = false;
+    let isOcsp = false;
     details.requestHeaders.map(requestHeader => {
-      console.log("requestHeader", requestHeader);
-    });
-    /*
-    details.visitRequestHeaders({
-      visitHeader(name, value) {
-        const header_pair = [];
-        header_pair.push(escapeString(name));
-        header_pair.push(escapeString(value));
-        headers.push(header_pair);
-        if (name === "Content-Type") {
-          encodingType = value;
-          if (encodingType.indexOf("application/ocsp-request") !== -1) {
-            isOcsp = true;
-          }
+      const { name, value } = requestHeader;
+      const header_pair = [];
+      header_pair.push(escapeString(name));
+      header_pair.push(escapeString(value));
+      headers.push(header_pair);
+      if (name === "Content-Type") {
+        encodingType = value;
+        if (encodingType.indexOf("application/ocsp-request") !== -1) {
+          isOcsp = true;
         }
-      },
+      }
     });
-    */
 
     if (requestMethod === "POST" && !isOcsp) {
-      // TODO: set up await requestBody info from the onBeforeRequestHandler
-      // (with timeout after ~10s if no such event was received)
-      /*
-      // don't process OCSP requests
-      reqEvent.subject.QueryInterface(components.interfaces.nsIUploadChannel);
-      if (reqEvent.subject.uploadStream) {
-        reqEvent.subject.uploadStream.QueryInterface(
-          components.interfaces.nsISeekableStream,
-        );
-        const postParser = new HttpPostParser(
-          reqEvent.subject.uploadStream,
-          this.dataReceiver,
-        );
-        const postObj = postParser.parsePostRequest(encodingType);
+      const pendingRequest = this.getPendingRequest(details.requestId);
+      await pendingRequest.resolvedWithinTimeout(1000);
+      // TODO: with timeout after ~10s if no such event was received)
 
-        // Add (POST) request headers from upload stream
-        if ("post_headers" in postObj) {
-          // Only store POST headers that we know and need. We may misinterpret POST data as headers
-          // as detection is based on "key:value" format (non-header POST data can be in this format as well)
-          const contentHeaders = [
-            "Content-Type",
-            "Content-Disposition",
-            "Content-Length",
-          ];
-          for (const name in postObj.post_headers) {
-            if (contentHeaders.includes(name)) {
-              const header_pair = [];
-              header_pair.push(escapeString(name));
-              header_pair.push(
-                escapeString(postObj.post_headers[name]),
-              );
-              headers.push(header_pair);
+      const onBeforeSendHeadersEventDetails = await pendingRequest.onBeforeRequestEventDetails;
+      const requestBody = onBeforeSendHeadersEventDetails.requestBody;
+
+      console.log("requestBody", requestBody);
+
+      // don't process OCSP requests
+      if (true /*reqEvent.subject.uploadStream*/) {
+        /*
+          reqEvent.subject.uploadStream.QueryInterface(
+            components.interfaces.nsISeekableStream,
+          );
+          const postParser = new HttpPostParser(
+            reqEvent.subject.uploadStream,
+            this.dataReceiver,
+          );
+          const postObj = postParser.parsePostRequest(encodingType);
+
+          // Add (POST) request headers from upload stream
+          if ("post_headers" in postObj) {
+            // Only store POST headers that we know and need. We may misinterpret POST data as headers
+            // as detection is based on "key:value" format (non-header POST data can be in this format as well)
+            const contentHeaders = [
+              "Content-Type",
+              "Content-Disposition",
+              "Content-Length",
+            ];
+            for (const name in postObj.post_headers) {
+              if (contentHeaders.includes(name)) {
+                const header_pair = [];
+                header_pair.push(escapeString(name));
+                header_pair.push(
+                  escapeString(postObj.post_headers[name]),
+                );
+                headers.push(header_pair);
+              }
             }
           }
-        }
+        */
         // we store POST body in JSON format, except when it's a string without a (key-value) structure
+        const postObj = {
+          post_body: "sdfsdf",
+        };
         if ("post_body" in postObj) {
           update.post_body = postObj.post_body;
         }
       }
-      */
     }
 
     update.headers = JSON.stringify(headers);
@@ -418,53 +430,7 @@ export class HttpInstrument {
   }
 
   private onBeforeRequestHandler(
-    details: {
-      /**
-       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
-       * relate different events of the same request.
-       */
-      requestId: string;
-      url: string;
-      /** Standard HTTP method. */
-      method: string;
-      /**
-       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
-       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
-       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
-       * within a tab.
-       */
-      frameId: number;
-      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
-      parentFrameId: number;
-      /** URL of the resource that triggered this request. */
-      originUrl?: string;
-      /** URL of the page into which the requested resource will be loaded. */
-      documentUrl?: string;
-      /** Contains the HTTP request body data. Only provided if extraInfoSpec contains 'requestBody'. */
-      requestBody?: {
-        /** Errors when obtaining request body data. */
-        error?: string;
-        /**
-         * If the request method is POST and the body is a sequence of key-value pairs encoded in UTF8, encoded as
-         * either multipart/form-data, or application/x-www-form-urlencoded, this dictionary is present and for
-         * each key contains the list of all values for that key. If the data is of another media type, or if it is
-         * malformed, the dictionary is not present. An example value of this dictionary is {'key': ['value1',
-         * 'value2']}.
-         */
-        formData?: object;
-        /**
-         * If the request method is PUT or POST, and the body is not already parsed in formData, then the unparsed
-         * request body elements are contained in this array.
-         */
-        raw?: UploadData[];
-      };
-      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
-      tabId: number;
-      /** How the requested resource will be used. */
-      type: ResourceType;
-      /** The time when this signal is triggered, in milliseconds since the epoch. */
-      timeStamp: number;
-    },
+    details: WebRequestOnBeforeRequestEventDetails,
     crawlID,
     saveJavascript,
     saveAllContent,
@@ -479,52 +445,7 @@ export class HttpInstrument {
   }
 
   private onBeforeRedirectHandler(
-    details: {
-      /**
-       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
-       * relate different events of the same request.
-       */
-      requestId: string;
-      url: string;
-      /** Standard HTTP method. */
-      method: string;
-      /**
-       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
-       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
-       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
-       * within a tab.
-       */
-      frameId: number;
-      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
-      parentFrameId: number;
-      /** URL of the resource that triggered this request. */
-      originUrl?: string;
-      /** URL of the page into which the requested resource will be loaded. */
-      documentUrl?: string;
-      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
-      tabId: number;
-      /** How the requested resource will be used. */
-      type: ResourceType;
-      /** The time when this signal is triggered, in milliseconds since the epoch. */
-      timeStamp: number;
-      /**
-       * The server IP address that the request was actually sent to. Note that it may be a literal IPv6 address.
-       */
-      ip?: string;
-      /** Indicates if this response was fetched from disk cache. */
-      fromCache: boolean;
-      /** Standard HTTP status code returned by the server. */
-      statusCode: number;
-      /** The new URL. */
-      redirectUrl: string;
-      /** The HTTP response headers that were received along with this redirect. */
-      responseHeaders?: HttpHeaders;
-      /**
-       * HTTP status line of the response or the 'HTTP/0.9 200 OK' string for HTTP/0.9 responses (i.e., responses
-       * that lack a status line) or an empty string if there are no headers.
-       */
-      statusLine: string;
-    },
+    details: WebRequestOnBeforeRedirectEventDetails,
     crawlID,
   ) {
     console.log(
@@ -534,6 +455,7 @@ export class HttpInstrument {
     );
 
     // Save HTTP redirect events
+    // Events are saved to the `http_redirects` table
 
     /*
     // Events are saved to the `http_redirects` table, and map the old
@@ -613,8 +535,9 @@ export class HttpInstrument {
       is_permanent: null, // TODO: Check status code
       is_internal: null, // TODO: Check status code
       is_sts_upgrade: null, // TODO
-      time_stamp: new Date().toISOString(),
+      time_stamp: new Date(details.timeStamp).toISOString(),
     };
+
     this.dataReceiver.saveRecord("http_redirects", httpRedirect);
   }
 
@@ -622,143 +545,77 @@ export class HttpInstrument {
   * HTTP Response Handler and Helper Functions
   */
 
-  /*
-// Used to parse Response stream to log content
-function TracingListener() {
-  // array for incoming data.
-  // onStopRequest we combine these to get the full source
-  this.receivedChunks = [];
-  this.responseBody;
-  this.responseStatusCode;
-
-  this.deferredDone = {
-    promise: null,
-    resolve: null,
-    reject: null,
-  };
-  this.deferredDone.promise = new Promise(
-    function(resolve, reject) {
-      this.resolve = resolve;
-      this.reject = reject;
-    }.bind(this.deferredDone),
-  );
-  Object.freeze(this.deferredDone);
-  this.promiseDone = this.deferredDone.promise;
-
-
-
-
-  console.log("blocking request listener", details);
-
-  // Used to parse Response stream to log content
-  const filter: any = browser.webRequest.filterResponseData(
-    details.requestId,
-  ) as any;
-
-  const decoder = new TextDecoder("utf-8");
-  // const encoder = new TextEncoder();
-
-  filter.ondata = event => {
-    let str = decoder.decode(event.data, { stream: true });
-    console.log("blocking request listener ondata: event, str", event, str);
-    filter.disconnect();
-  };
-
-
-
-
-}
-TracingListener.prototype = {
-  onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
-    const iStream = new BinaryInputStream(aInputStream);
-    const sStream = new StorageStream(8192, aCount, null);
-    const oStream = new BinaryOutputStream(sStream.getOutputStream(0));
-
-    // Copy received data as they come.
-    const data = iStream.readBytes(aCount);
-    this.receivedChunks.push(data);
-    oStream.writeBytes(data, aCount);
-
-    this.originalListener.onDataAvailable(
-      aRequest,
-      aContext,
-      sStream.newInputStream(0),
-      aOffset,
-      aCount,
-    );
-  },
-  onStartRequest(aRequest, aContext) {
-    this.originalListener.onStartRequest(aRequest, aContext);
-  },
-  onStopRequest(aRequest, aContext, aStatusCode) {
-    this.responseBody = this.receivedChunks.join("");
-    delete this.receivedChunks;
-    this.responseStatus = aStatusCode;
-
-    this.originalListener.onStopRequest(aRequest, aContext, aStatusCode);
-    this.deferredDone.resolve();
-  },
-  QueryInterface(aIID) {
-    if (aIID.equals(Ci.nsIStreamListener) || aIID.equals(Ci.nsISupports)) {
-      return this;
-    }
-    throw Cr.NS_NOINTERFACE;
-  },
-};
-*/
+  // Helper functions to convert hash data to hex
+  private toHexString(charCode) {
+    return ("0" + charCode.toString(16)).slice(-2);
+  }
+  private binaryHashtoHex(hash) {
+    return Array.from(hash, (_c, i) =>
+      this.toHexString(hash.charCodeAt(i)),
+    ).join("");
+  }
 
   /*
-// Helper functions to convert hash data to hex
-function toHexString(charCode) {
-  return ("0" + charCode.toString(16)).slice(-2);
-}
-function binaryHashtoHex(hash) {
-  return Array.from(hash, (c, i) => toHexString(hash.charCodeAt(i))).join("");
-}
+  private makeResponseBodyAvailableForRequest(
+    details: WebRequestOnBeforeRequestEventDetails,
+  ) {}
+  */
 
-function logWithResponseBody(respEvent, update) {
-  // log with response body from an 'http-on-examine(-cached)?-response' event
-  const newListener = new TracingListener();
-  respEvent.subject.QueryInterface(Ci.nsITraceableChannel);
-  newListener.originalListener = respEvent.subject.setNewListener(newListener);
-  newListener.promiseDone
-    .then(
-      function() {
+  private logWithResponseBody(
+    details: WebRequestOnBeforeRequestEventDetails,
+    update,
+  ) {
+    console.log("logWithResponseBody", details, update, this.binaryHashtoHex);
+
+    const dataReceiver = this.dataReceiver;
+
+    // const pendingResponse = this.getPendingResponse(details.requestId);
+
+    // log with response body from an 'http-on-examine(-cached)?-response' event
+    const newListener = new ResponseBodyListener(details);
+    newListener.promiseDone
+      .then(
+        function() {
+          /*
         const respBody = newListener.responseBody; // get response body as a string
         const bodyBytes = converter.convertToByteArray(respBody); // convert to bytes
         cryptoHash.init(cryptoHash.MD5);
         cryptoHash.update(bodyBytes, bodyBytes.length);
         const contentHash = binaryHashtoHex(cryptoHash.finish(false));
         update.content_hash = contentHash;
-        this.dataReceiver.saveContent(
+        dataReceiver.saveContent(
           escapeString(respBody),
           escapeString(contentHash),
         );
-        this.dataReceiver.saveRecord("http_responses", update);
-      },
-      function(aReason) {
-        this.dataReceiver.logError(
-          "Unable to retrieve response body." + JSON.stringify(aReason),
+        */
+          dataReceiver.saveRecord("http_responses", update);
+        },
+        function(aReason) {
+          dataReceiver.logError(
+            "Unable to retrieve response body." + JSON.stringify(aReason),
+          );
+          update.content_hash = "<error>";
+          dataReceiver.saveRecord("http_responses", update);
+        },
+      )
+      .catch(function(aCatch) {
+        dataReceiver.logError(
+          "Unable to retrieve response body." +
+            "Likely caused by a programming error. Error Message:" +
+            aCatch.name +
+            aCatch.message +
+            "\n" +
+            aCatch.stack,
         );
         update.content_hash = "<error>";
-        this.dataReceiver.saveRecord("http_responses", update);
-      },
-    )
-    .catch(function(aCatch) {
-      this.dataReceiver.logError(
-        "Unable to retrieve response body." +
-          "Likely caused by a programming error. Error Message:" +
-          aCatch.name +
-          aCatch.message +
-          "\n" +
-          aCatch.stack,
-      );
-      update.content_hash = "<error>";
-      this.dataReceiver.saveRecord("http_responses", update);
-    });
-}
+        dataReceiver.saveRecord("http_responses", update);
+      });
+  }
 
-function isJS(details) {
+  private isJS(details): boolean {
+    console.log("isJS", details);
+    return false;
+    /*
   // Return true if this channel is loading javascript
   // We rely mostly on the content policy type to filter responses
   // and fall back to the URI and content type string for types that can
@@ -802,55 +659,12 @@ function isJS(details) {
     return true;
   }
   return false;
-}
-*/
+  */
+  }
 
   // Instrument HTTP responses
   private onCompletedHandler(
-    details: {
-      /**
-       * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
-       * relate different events of the same request.
-       */
-      requestId: string;
-      url: string;
-      /** Standard HTTP method. */
-      method: string;
-      /**
-       * The value 0 indicates that the request happens in the main frame; a positive value indicates the ID of a
-       * subframe in which the request happens. If the document of a (sub-)frame is loaded (`type` is `main_frame` or
-       * `sub_frame`), `frameId` indicates the ID of this frame, not the ID of the outer frame. Frame IDs are unique
-       * within a tab.
-       */
-      frameId: number;
-      /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
-      parentFrameId: number;
-      /** URL of the resource that triggered this request. */
-      originUrl?: string;
-      /** URL of the page into which the requested resource will be loaded. */
-      documentUrl?: string;
-      /** The ID of the tab in which the request takes place. Set to -1 if the request isn't related to a tab. */
-      tabId: number;
-      /** How the requested resource will be used. */
-      type: ResourceType;
-      /** The time when this signal is triggered, in milliseconds since the epoch. */
-      timeStamp: number;
-      /**
-       * The server IP address that the request was actually sent to. Note that it may be a literal IPv6 address.
-       */
-      ip?: string;
-      /** Indicates if this response was fetched from disk cache. */
-      fromCache: boolean;
-      /** Standard HTTP status code returned by the server. */
-      statusCode: number;
-      /** The HTTP response headers that were received along with this response. */
-      responseHeaders?: HttpHeaders;
-      /**
-       * HTTP status line of the response or the 'HTTP/0.9 200 OK' string for HTTP/0.9 responses (i.e., responses
-       * that lack a status line) or an empty string if there are no headers.
-       */
-      statusLine: string;
-    },
+    details: WebRequestOnCompletedEventDetails,
     crawlID,
     saveJavascript,
     saveAllContent,
@@ -895,7 +709,7 @@ function isJS(details) {
     const responseStatusText = details.statusLine;
     update.response_status_text = escapeString(responseStatusText);
 
-    const current_time = new Date();
+    const current_time = new Date(details.timeStamp);
     update.time_stamp = current_time.toISOString();
 
     /*
@@ -906,29 +720,24 @@ function isJS(details) {
       location = "";
     }
     update.location = escapeString(location);
+    */
 
     const headers = [];
-    details.visitResponseHeaders({
-      visitHeader(name, value) {
-        const header_pair = [];
-        header_pair.push(escapeString(name));
-        header_pair.push(escapeString(value));
-        headers.push(header_pair);
-      },
+    details.responseHeaders.map(responseHeader => {
+      const { name, value } = responseHeader;
+      const header_pair = [];
+      header_pair.push(escapeString(name));
+      header_pair.push(escapeString(value));
+      headers.push(header_pair);
     });
     update.headers = JSON.stringify(headers);
-    */
 
-    /*
     if (saveAllContent) {
-      logWithResponseBody(respEvent, update);
-    } else if (saveJavascript && isJS(details)) {
-      logWithResponseBody(respEvent, update);
+      this.logWithResponseBody(details, update);
+    } else if (saveJavascript && this.isJS(details)) {
+      this.logWithResponseBody(details, update);
     } else {
-      */
-    this.dataReceiver.saveRecord("http_responses", update);
-    /*
+      this.dataReceiver.saveRecord("http_responses", update);
     }
-    */
   }
 }
