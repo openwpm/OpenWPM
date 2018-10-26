@@ -24,7 +24,7 @@ SITE_VISITS_INDEX = '_site_visits_index'
 
 
 def listener_process_runner(manager_params, status_queue, instance_id):
-    """SqliteListener runner. Pass to new process"""
+    """S3Listener runner. Pass to new process"""
     listener = S3Listener(status_queue, manager_params, instance_id)
     listener.startup()
 

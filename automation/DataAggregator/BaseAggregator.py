@@ -6,6 +6,8 @@ from multiprocess import Process, Queue
 from ..MPLogger import loggingclient
 from ..SocketInterface import serversocket
 
+RECORD_TYPE_CONTENT = 'page_content'
+
 
 class BaseListener(object):
     """Base class for the data aggregator listener process. This class is used
@@ -36,6 +38,16 @@ class BaseListener(object):
         record : tuple
             2-tuple in format (table_name, data). `data` is a dict which maps
             column name to the record for that column"""
+
+    @abc.abstractmethod
+    def process_content(self, record):
+        """Parse and save page content `record` to persistent storage.
+
+        Parameters
+        ----------
+        record : tuple
+            2-tuple in format (table_name, data). `data` is a 2-tuple of the
+            for (content, content_hash)"""
 
     def startup(self):
         """Run listener startup tasks
