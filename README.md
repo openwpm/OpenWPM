@@ -137,13 +137,13 @@ available [below](#output-format).
         * The page source is saved in the following nested json structure:
         ```
         {
-            'document_url': "http://example.com",
+            'doc_url': "http://example.com",
             'source': "<html> ... </html>",
             'iframes': {
-                'frame_1': {'document_url': ...,
+                'frame_1': {'doc_url': ...,
                             'source': ...,
                             'iframes: { ... }},
-                'frame_2': {'document_url': ...,
+                'frame_2': {'doc_url': ...,
                             'source': ...,
                             'iframes: { ... }},
                 'frame_3': { ... }
