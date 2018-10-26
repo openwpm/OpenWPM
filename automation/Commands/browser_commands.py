@@ -24,8 +24,8 @@ from .utils.firefox_profile import get_cookies
 from .utils.lso import get_flash_cookies
 from .utils.webdriver_extensions import (execute_in_all_frames,
                                          execute_script_with_retry,
-                                         get_intra_links, scroll_down,
-                                         wait_until_loaded)
+                                         get_intra_links, is_displayed,
+                                         scroll_down, wait_until_loaded)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -157,9 +157,9 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
     logger = loggingclient(*manager_params['logger_address'])
 
     # Then visit a few subpages
-    for i in range(num_links):
+    for _ in range(num_links):
         links = [x for x in get_intra_links(webdriver, url)
-                 if x.is_displayed() is True]
+                 if is_displayed(x) is True]
         if not links:
             break
         r = int(random.random() * len(links))
