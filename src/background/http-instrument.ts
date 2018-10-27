@@ -217,7 +217,7 @@ export class HttpInstrument {
     // const stacktrace_str = get_stack_trace_str();
     // update.req_call_stack = escapeString(stacktrace_str);
 
-    const url = details.documentUrl;
+    const url = details.url;
     update.url = escapeString(url);
 
     const requestMethod = details.method;
@@ -331,20 +331,11 @@ export class HttpInstrument {
     update.loading_origin = escapeString(loadingOrigin);
     */
 
-    /*
-    // TODO: Refactor to corresponding webext logic or discard
     // loadingDocument's href
     // The loadingDocument is the document the element resides, regardless of
     // how the load was triggered.
-    let loadingHref;
-    if (
-      details.loadInfo.loadingDocument &&
-      details.loadInfo.loadingDocument.location
-    ) {
-      loadingHref = details.loadInfo.loadingDocument.location.href;
-    }
+    const loadingHref = details.documentUrl;
     update.loading_href = escapeString(loadingHref);
-    */
 
     // resourceType of the requesting node. This is set by the type of
     // node making the request (i.e. an <img src=...> node will set to type "image").
@@ -628,7 +619,7 @@ export class HttpInstrument {
     const isCached = details.fromCache;
     update.is_cached = isCached;
 
-    const url = details.documentUrl;
+    const url = details.url;
     update.url = escapeString(url);
 
     const requestMethod = details.method;
