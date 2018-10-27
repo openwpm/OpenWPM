@@ -1,4 +1,4 @@
-import { HttpPostParser } from "../lib/http-post-parser";
+import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
@@ -250,54 +250,50 @@ export class HttpInstrument {
       }
     });
 
-    console.log("POST checks - details", details, HttpPostParser);
-    if (requestMethod === "POST" && !isOcsp) {
+    if (requestMethod === "POST" && !isOcsp /* don't process OCSP requests */) {
       const pendingRequest = this.getPendingRequest(details.requestId);
-      await pendingRequest.resolvedWithinTimeout(1000);
+      const resolved = await pendingRequest.resolvedWithinTimeout(1000);
       // TODO: with timeout after ~1s if no such event was received)
+      if (!resolved) {
+        console.log("Timeout occurred");
+        // TODO: data receiver log timeout error
+      }
 
-      const onBeforeSendHeadersEventDetails = await pendingRequest.onBeforeRequestEventDetails;
-      const requestBody = onBeforeSendHeadersEventDetails.requestBody;
+      const onBeforeRequestEventDetails = await pendingRequest.onBeforeRequestEventDetails;
+      const requestBody = onBeforeRequestEventDetails.requestBody;
 
+      console.log("POST checks - details", details, HttpPostParser);
       console.log("requestBody", requestBody);
 
-      // don't process OCSP requests
-      if (true /*reqEvent.subject.uploadStream*/) {
-        /*
-          reqEvent.subject.uploadStream.QueryInterface(
-            components.interfaces.nsISeekableStream,
-          );
-          const postParser = new HttpPostParser(
-            reqEvent.subject.uploadStream,
-            this.dataReceiver,
-          );
-          const postObj = postParser.parsePostRequest(encodingType);
+      if (requestBody) {
+        const postParser = new HttpPostParser(
+          details,
+          onBeforeRequestEventDetails,
+          this.dataReceiver,
+        );
+        const postObj: ParsedPostRequest = postParser.parsePostRequest(
+          encodingType,
+        );
 
-          // Add (POST) request headers from upload stream
-          if ("post_headers" in postObj) {
-            // Only store POST headers that we know and need. We may misinterpret POST data as headers
-            // as detection is based on "key:value" format (non-header POST data can be in this format as well)
-            const contentHeaders = [
-              "Content-Type",
-              "Content-Disposition",
-              "Content-Length",
-            ];
-            for (const name in postObj.post_headers) {
-              if (contentHeaders.includes(name)) {
-                const header_pair = [];
-                header_pair.push(escapeString(name));
-                header_pair.push(
-                  escapeString(postObj.post_headers[name]),
-                );
-                headers.push(header_pair);
-              }
+        // Add (POST) request headers from upload stream
+        if ("post_headers" in postObj) {
+          // Only store POST headers that we know and need. We may misinterpret POST data as headers
+          // as detection is based on "key:value" format (non-header POST data can be in this format as well)
+          const contentHeaders = [
+            "Content-Type",
+            "Content-Disposition",
+            "Content-Length",
+          ];
+          for (const name in postObj.post_headers) {
+            if (contentHeaders.includes(name)) {
+              const header_pair = [];
+              header_pair.push(escapeString(name));
+              header_pair.push(escapeString(postObj.post_headers[name]));
+              headers.push(header_pair);
             }
           }
-        */
+        }
         // we store POST body in JSON format, except when it's a string without a (key-value) structure
-        const postObj = {
-          post_body: "sdfsdf",
-        };
         if ("post_body" in postObj) {
           update.post_body = postObj.post_body;
         }
