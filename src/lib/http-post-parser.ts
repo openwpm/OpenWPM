@@ -2,7 +2,7 @@
 
 import {
   WebRequestOnBeforeRequestEventDetails,
-  WebRequestOnBeforeSendHeadersEventDetails,
+  // WebRequestOnBeforeSendHeadersEventDetails,
 } from "../types/browser-web-reqest-event-details";
 import { escapeString } from "./string-utils";
 
@@ -14,6 +14,8 @@ export interface ParsedPostRequest {
 }
 
 export class HttpPostParser {
+  // private readonly onBeforeSendHeadersEventDetails: WebRequestOnBeforeSendHeadersEventDetails;
+  private readonly onBeforeRequestEventDetails: WebRequestOnBeforeRequestEventDetails;
   private readonly dataReceiver;
   private hasheaders: boolean;
   private seekablestream;
@@ -24,17 +26,83 @@ export class HttpPostParser {
   private body;
 
   constructor(
-    details: WebRequestOnBeforeSendHeadersEventDetails,
+    // onBeforeSendHeadersEventDetails: WebRequestOnBeforeSendHeadersEventDetails,
     onBeforeRequestEventDetails: WebRequestOnBeforeRequestEventDetails,
     dataReceiver,
   ) {
+    // this.onBeforeSendHeadersEventDetails = onBeforeSendHeadersEventDetails;
+    this.onBeforeRequestEventDetails = onBeforeRequestEventDetails;
     this.dataReceiver = dataReceiver;
+    /*
     console.log(
       "HttpPostParser",
-      details,
+      // onBeforeSendHeadersEventDetails,
       onBeforeRequestEventDetails,
-      this.dataReceiver,
     );
+    */
+  }
+
+  /**
+   * @param encodingType from the HTTP Request headers
+   */
+  public parsePostRequest(encodingType) {
+    // const requestHeaders = this.onBeforeSendHeadersEventDetails.requestHeaders;
+    const requestBody = this.onBeforeRequestEventDetails.requestBody;
+    if (requestBody.error) {
+      this.dataReceiver.logError(
+        "Exception: Upstream failed to parse POST: " + requestBody.error,
+      );
+    }
+    if (requestBody.formData) {
+      return {
+        // TODO: requestBody.formData should probably be transformed into another format
+        post_body: requestBody.formData,
+      };
+    }
+
+    // TODO: Refactor to corresponding webext logic or discard
+    try {
+      this.setupStream();
+      this.parseStream();
+    } catch (e) {
+      this.dataReceiver.logError("Exception: Failed to parse POST: " + e);
+      return {};
+    }
+
+    const postBody = this.postBody;
+
+    if (!postBody) {
+      // some scripts strangely sends empty post bodies (confirmed with the developer tools)
+      return {};
+    }
+
+    let isMultiPart = false; // encType: multipart/form-data
+    const postHeaders = this.postHeaders; // request headers from upload stream
+    // See, http://stackoverflow.com/questions/16548517/what-is-request-headers-from-upload-stream
+
+    // add encodingType from postHeaders if it's missing
+    if (!encodingType && postHeaders && "Content-Type" in postHeaders) {
+      encodingType = postHeaders["Content-Type"];
+    }
+
+    if (encodingType.indexOf("multipart/form-data") !== -1) {
+      isMultiPart = true;
+    }
+
+    let jsonPostData = "";
+    let escapedJsonPostData = "";
+    if (isMultiPart) {
+      jsonPostData = this.parseMultiPartData(postBody /*, encodingType*/);
+      escapedJsonPostData = escapeString(jsonPostData);
+    } else {
+      jsonPostData = this.parseEncodedFormData(postBody, encodingType);
+      escapedJsonPostData = escapeString(jsonPostData);
+    }
+    return { post_headers: postHeaders, post_body: escapedJsonPostData };
+  }
+  private setupStream() {
+    // TODO: Refactor to corresponding webext logic or discard (it may be relevant
+    // to parse the this.onBeforeRequestEventDetails.requestBody.raw.bytes property)
     const stream = null;
     // Scriptable Stream Constants
     this.seekablestream = stream;
@@ -88,49 +156,8 @@ export class HttpPostParser {
       this.body = -1;
     } else {
       // Let's keep an eye on unknown stream types, though we haven't seen any other stream types in our tests.
-      dataReceiver.logDebug("POST request parser: unknown stream type");
+      this.dataReceiver.logDebug("POST request parser: unknown stream type");
     }
-  }
-
-  public parsePostRequest(encodingType) {
-    // encodingType comes from the HTTP Request headers (not the upload stream headers)
-    try {
-      this.parseStream();
-    } catch (e) {
-      this.dataReceiver.logError("Exception: Failed to parse POST: " + e);
-      return {};
-    }
-
-    const postBody = this.postBody;
-
-    if (!postBody) {
-      // some scripts strangely sends empty post bodies (confirmed with the developer tools)
-      return {};
-    }
-
-    let isMultiPart = false; // encType: multipart/form-data
-    const postHeaders = this.postHeaders; // request headers from upload stream
-    // See, http://stackoverflow.com/questions/16548517/what-is-request-headers-from-upload-stream
-
-    // add encodingType from postHeaders if it's missing
-    if (!encodingType && postHeaders && "Content-Type" in postHeaders) {
-      encodingType = postHeaders["Content-Type"];
-    }
-
-    if (encodingType.indexOf("multipart/form-data") !== -1) {
-      isMultiPart = true;
-    }
-
-    let jsonPostData = "";
-    let escapedJsonPostData = "";
-    if (isMultiPart) {
-      jsonPostData = this.parseMultiPartData(postBody /*, encodingType*/);
-      escapedJsonPostData = escapeString(jsonPostData);
-    } else {
-      jsonPostData = this.parseEncodedFormData(postBody, encodingType);
-      escapedJsonPostData = escapeString(jsonPostData);
-    }
-    return { post_headers: postHeaders, post_body: escapedJsonPostData };
   }
 
   private rewind() {

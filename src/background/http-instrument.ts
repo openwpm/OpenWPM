@@ -262,12 +262,9 @@ export class HttpInstrument {
       const onBeforeRequestEventDetails = await pendingRequest.onBeforeRequestEventDetails;
       const requestBody = onBeforeRequestEventDetails.requestBody;
 
-      console.log("POST checks - details", details, HttpPostParser);
-      console.log("requestBody", requestBody);
-
       if (requestBody) {
         const postParser = new HttpPostParser(
-          details,
+          // details,
           onBeforeRequestEventDetails,
           this.dataReceiver,
         );
