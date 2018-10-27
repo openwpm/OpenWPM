@@ -2,6 +2,7 @@ import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
+import BlockingResponse = browser.webRequest.BlockingResponse;
 import { escapeString } from "../lib/string-utils";
 import {
   WebRequestOnBeforeRedirectEventDetails,
@@ -69,9 +70,10 @@ export class HttpInstrument {
 
     browser.webRequest.onBeforeRequest.addListener(
       details => {
+        const blockingResponseThatDoesNothing: BlockingResponse = {};
         // Ignore requests made by extensions
         if (requestStemsFromExtension(details)) {
-          return;
+          return blockingResponseThatDoesNothing;
         }
         const pendingRequest = this.getPendingRequest(details.requestId);
         pendingRequest.resolveBeforeRequestEventDetails(details);
@@ -85,6 +87,7 @@ export class HttpInstrument {
         ) {
           pendingResponse.addResponseResponseBodyListener(details);
         }
+        return blockingResponseThatDoesNothing;
       },
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       saveJavascript || saveAllContent

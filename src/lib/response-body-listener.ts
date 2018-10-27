@@ -23,12 +23,19 @@ export class ResponseBodyListener {
     const decoder = new TextDecoder("utf-8");
     // const encoder = new TextEncoder();
 
+    let responseBody = "";
     filter.ondata = event => {
       sha256Buffer(event.data).then(digest => {
         this.resolveContentHash(digest);
       });
       const str = decoder.decode(event.data, { stream: true });
-      this.resolveResponseBody(str);
+      responseBody = responseBody + str;
+      // pass through all the response data
+      filter.write(event.data);
+    };
+
+    filter.onstop = _event => {
+      this.resolveResponseBody(responseBody);
       filter.disconnect();
     };
   }
