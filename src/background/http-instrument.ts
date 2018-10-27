@@ -317,19 +317,12 @@ export class HttpInstrument {
 
     update.headers = JSON.stringify(headers);
 
-    /*
     // Check if xhr
-    let isXHR;
-    try {
-      const callbacks = details.notificationCallbacks;
-      const xhr = callbacks ? callbacks.getInterface(Ci.nsIXMLHttpRequest) : null;
-      isXHR = !!xhr;
-    } catch (e) {
-      isXHR = false;
-    }
+    const isXHR = details.type === "xmlhttprequest";
     update.is_XHR = isXHR;
 
     // Check if frame OR full page load
+    /*
     let isFrameLoad;
     let isFullPageLoad;
     if (details.loadFlags & Ci.nsIHttpChannel.LOAD_INITIAL_DOCUMENT_URI) {
