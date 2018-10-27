@@ -9,8 +9,6 @@ export class JavascriptInstrument {
   }
 
   public run(crawlID) {
-    console.log("JavascriptInstrument", crawlID, this.dataReceiver);
-
     const processCallsAndValues = (data, sender) => {
       const update = {} as JavascriptOperation;
       update.crawl_id = crawlID;

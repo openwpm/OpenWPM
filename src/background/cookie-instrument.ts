@@ -26,8 +26,6 @@ export class CookieInstrument {
   }
 
   public run(crawlID) {
-    console.log("CookieInstrument", crawlID, this.dataReceiver);
-
     // Instrument cookie changes
     browser.cookies.onChanged.addListener(
       async (changeInfo: {

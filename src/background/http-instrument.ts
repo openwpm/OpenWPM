@@ -19,11 +19,6 @@ import { HttpRedirect, HttpRequest, HttpResponse } from "../types/schema";
  * Docs: https://developer.mozilla.org/en-US/docs/User:wbamberg/webRequest.RequestDetails
  */
 
-/*
-const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
-                       Ci.mozIThirdPartyUtil);
-*/
-
 export class HttpInstrument {
   private readonly dataReceiver;
   private pendingRequests: {
@@ -38,17 +33,6 @@ export class HttpInstrument {
   }
 
   public run(crawlID, saveJavascript, saveAllContent) {
-    console.log(
-      "HttpInstrument",
-      HttpPostParser,
-      crawlID,
-      escapeString,
-      saveJavascript,
-      saveAllContent,
-      escapeString,
-      this.dataReceiver,
-    );
-
     const allTypes: ResourceType[] = [
       "beacon",
       "csp_report",
@@ -172,8 +156,9 @@ export class HttpInstrument {
    * HTTP Request Handler and Helper Functions
    */
 
+  /*
+  // TODO: Refactor to corresponding webext logic or discard
   private get_stack_trace_str() {
-    /*
     // return the stack trace as a string
     // TODO: check if http-on-modify-request is a good place to capture the stack
     // In the manual tests we could capture exactly the same trace as the
@@ -204,19 +189,20 @@ export class HttpInstrument {
       }
     }
     return stacktrace.join("\n");
-    */
   }
+  */
 
   private async onBeforeSendHeadersHandler(
     details: WebRequestOnBeforeSendHeadersEventDetails,
     crawlID,
   ) {
+    /*
     console.log(
       "onBeforeSendHeadersHandler (previously httpRequestHandler)",
       details,
       crawlID,
-      this.get_stack_trace_str,
     );
+    */
 
     // http_requests table schema:
     // id [auto-filled], crawl_id, url, method, referrer,
@@ -237,6 +223,7 @@ export class HttpInstrument {
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
 
+    // TODO: Refactor to corresponding webext logic or discard
     // let referrer = "";
     // if (details.referrer) {
     //   referrer = details.referrer.spec;
@@ -263,10 +250,11 @@ export class HttpInstrument {
       }
     });
 
+    console.log("POST checks - details", details, HttpPostParser);
     if (requestMethod === "POST" && !isOcsp) {
       const pendingRequest = this.getPendingRequest(details.requestId);
       await pendingRequest.resolvedWithinTimeout(1000);
-      // TODO: with timeout after ~10s if no such event was received)
+      // TODO: with timeout after ~1s if no such event was received)
 
       const onBeforeSendHeadersEventDetails = await pendingRequest.onBeforeRequestEventDetails;
       const requestBody = onBeforeSendHeadersEventDetails.requestBody;
@@ -330,6 +318,7 @@ export class HttpInstrument {
 
     /*
     // Grab the triggering and loading Principals
+    // TODO: Refactor to corresponding webext logic or discard
     let triggeringOrigin;
     let loadingOrigin;
     if (details.loadInfo.triggeringPrincipal) {
@@ -340,7 +329,10 @@ export class HttpInstrument {
     }
     update.triggering_origin = escapeString(triggeringOrigin);
     update.loading_origin = escapeString(loadingOrigin);
+    */
 
+    /*
+    // TODO: Refactor to corresponding webext logic or discard
     // loadingDocument's href
     // The loadingDocument is the document the element resides, regardless of
     // how the load was triggered.
@@ -361,6 +353,9 @@ export class HttpInstrument {
     update.resource_type = details.type;
 
     /*
+    // TODO: Refactor to corresponding webext logic or discard
+    const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
+                           Ci.mozIThirdPartyUtil);
     // Do third-party checks
     // These specific checks are done because it's what's used in Tracking Protection
     // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
@@ -409,16 +404,19 @@ export class HttpInstrument {
     details: WebRequestOnBeforeRedirectEventDetails,
     crawlID,
   ) {
+    /*
     console.log(
       "onBeforeRedirectHandler (previously httpRequestHandler)",
       details,
       crawlID,
     );
+    */
 
     // Save HTTP redirect events
     // Events are saved to the `http_redirects` table
 
     /*
+    // TODO: Refactor to corresponding webext logic or discard
     // Events are saved to the `http_redirects` table, and map the old
     // request/response channel id to the new request/response channel id.
     // Implementation based on: https://stackoverflow.com/a/11240627
@@ -490,12 +488,12 @@ export class HttpInstrument {
 
     const httpRedirect: HttpRedirect = {
       crawl_id: crawlID,
-      old_channel_id: null, // previously: oldChannel.channelId,
-      new_channel_id: details.requestId, // previously: newChannel.channelId,
-      is_temporary: null, // TODO: Check status code
-      is_permanent: null, // TODO: Check status code
-      is_internal: null, // TODO: Check status code
-      is_sts_upgrade: null, // TODO
+      old_channel_id: null, // previously: oldChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      new_channel_id: details.requestId, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      is_temporary: null, // TODO: Refactor to corresponding webext logic or discard
+      is_permanent: null, // TODO: Refactor to corresponding webext logic or discard
+      is_internal: null, // TODO: Refactor to corresponding webext logic or discard
+      is_sts_upgrade: null, // TODO: Refactor to corresponding webext logic or discard
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
@@ -522,6 +520,7 @@ export class HttpInstrument {
       this.dataReceiver.saveRecord("http_responses", update);
     } catch (err) {
       /*
+      // TODO: Refactor to corresponding webext logic or discard
       dataReceiver.logError(
         "Unable to retrieve response body." + JSON.stringify(aReason),
       );
@@ -605,6 +604,7 @@ export class HttpInstrument {
     saveJavascript,
     saveAllContent,
   ) {
+    /*
     console.log(
       "onCompletedHandler (previously httpRequestHandler)",
       details,
@@ -612,6 +612,7 @@ export class HttpInstrument {
       saveJavascript,
       saveAllContent,
     );
+    */
 
     // http_responses table schema:
     // id [auto-filled], crawl_id, url, method, referrer, response_status,
@@ -633,6 +634,7 @@ export class HttpInstrument {
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
 
+    // TODO: Refactor to corresponding webext logic or discard
     // let referrer = "";
     // if (details.referrer) {
     //   referrer = details.referrer.spec;

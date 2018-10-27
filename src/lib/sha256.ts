@@ -39,7 +39,3 @@ function hex(buffer) {
   // Join all the hex strings into one
   return hexCodes.join("");
 }
-
-sha256("foobar").then(function(digest) {
-  console.log(digest);
-});
