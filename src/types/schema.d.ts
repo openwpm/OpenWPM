@@ -85,7 +85,7 @@ export interface HttpRequest {
   loading_origin?: string;
   loading_href?: string;
   req_call_stack?: string;
-  content_policy_type: number;
+  resource_type: string;
   post_body?: string;
   time_stamp: string;
 }

@@ -365,14 +365,15 @@ export class HttpInstrument {
       loadingHref = details.loadInfo.loadingDocument.location.href;
     }
     update.loading_href = escapeString(loadingHref);
+    */
 
-    // contentPolicyType of the requesting node. This is set by the type of
-    // node making the request (i.e. an <img src=...> node will set to type 3).
-    // For a mapping of integers to types see:
-    // TODO: include the mapping directly
-    // http://searchfox.org/mozilla-central/source/dom/base/nsIContentPolicyBase.idl)
-    update.content_policy_type = details.loadInfo.externalContentPolicyType;
+    // resourceType of the requesting node. This is set by the type of
+    // node making the request (i.e. an <img src=...> node will set to type "image").
+    // Documentation:
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
+    update.resource_type = details.type;
 
+    /*
     // Do third-party checks
     // These specific checks are done because it's what's used in Tracking Protection
     // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
