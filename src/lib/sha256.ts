@@ -10,9 +10,13 @@
  * has been broken and should be avoided for cryptographic applications.
  */
 
-function sha256(str) {
+export function sha256(str) {
   // We transform the string into an arraybuffer.
-  const buffer = new TextEncoder("utf-8").encode(str);
+  const buffer = new TextEncoder().encode(str);
+  return sha256Buffer(buffer);
+}
+
+export function sha256Buffer(buffer) {
   return crypto.subtle.digest("SHA-256", buffer).then(function(hash) {
     return hex(hash);
   });

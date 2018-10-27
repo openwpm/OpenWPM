@@ -21,20 +21,8 @@ import { HttpRedirect, HttpRequest, HttpResponse } from "../types/schema";
  */
 
 /*
-var BinaryInputStream = CC('@mozilla.org/binaryinputstream;1',
-    'nsIBinaryInputStream', 'setInputStream');
-var BinaryOutputStream = CC('@mozilla.org/binaryoutputstream;1',
-    'nsIBinaryOutputStream', 'setOutputStream');
-var StorageStream = CC('@mozilla.org/storagestream;1',
-    'nsIStorageStream', 'init');
 const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
                        Ci.mozIThirdPartyUtil);
-var cryptoHash = Cc["@mozilla.org/security/hash;1"]
-         .createInstance(Ci.nsICryptoHash);
-var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-         .createInstance(Ci.nsIScriptableUnicodeConverter);
-converter.charset = "UTF-8";
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 */
 
 export class HttpInstrument {
@@ -542,36 +530,19 @@ export class HttpInstrument {
   }
 
   /*
-  * HTTP Response Handler and Helper Functions
+  * HTTP Response Handlers and Helper Functions
   */
-
-  // Helper functions to convert hash data to hex
-  private toHexString(charCode) {
-    return ("0" + charCode.toString(16)).slice(-2);
-  }
-  private binaryHashtoHex(hash) {
-    return Array.from(hash, (_c, i) =>
-      this.toHexString(hash.charCodeAt(i)),
-    ).join("");
-  }
 
   private async logWithResponseBody(
     details: WebRequestOnBeforeRequestEventDetails,
     update,
   ) {
-    console.log("logWithResponseBody", details, update, this.binaryHashtoHex);
+    console.log("logWithResponseBody", details, update);
     // const pendingResponse = this.getPendingResponse(details.requestId);
     try {
       const newListener = new ResponseBodyListener(details);
       const respBody = await newListener.getResponseBody();
-      /*
-    const bodyBytes = converter.convertToByteArray(respBody); // convert to bytes
-    cryptoHash.init(cryptoHash.MD5);
-    cryptoHash.update(bodyBytes, bodyBytes.length);
-    const contentHash = binaryHashtoHex(cryptoHash.finish(false));
-    update.content_hash = contentHash;
-    */
-      const contentHash = "foo";
+      const contentHash = await newListener.getContentHash();
       this.dataReceiver.saveContent(
         escapeString(respBody),
         escapeString(contentHash),
