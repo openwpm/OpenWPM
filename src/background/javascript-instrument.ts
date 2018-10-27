@@ -29,10 +29,9 @@ export class JavascriptInstrument {
       update.top_level_url = escapeString(sender.tab.url);
 
       // Create a json object for function arguments
-      // We create an object that maps array positon to argument
+      // We create an object that maps array position to argument
       // e.g. someFunc('a',123,'b') --> {0: a, 1: 123, 2: 'b'}
-      // to make it easier to query the data, using something like the
-      // sqlite3 json1 extension.
+      // so that the argument position is maintained
       const args = {};
       if (data.operation === "call" && data.args.length > 0) {
         for (let i = 0; i < data.args.length; i++) {
