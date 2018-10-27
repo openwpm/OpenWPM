@@ -253,46 +253,46 @@ export class HttpInstrument {
     if (requestMethod === "POST" && !isOcsp /* don't process OCSP requests */) {
       const pendingRequest = this.getPendingRequest(details.requestId);
       const resolved = await pendingRequest.resolvedWithinTimeout(1000);
-      // TODO: with timeout after ~1s if no such event was received)
       if (!resolved) {
-        console.log("Timeout occurred");
-        // TODO: data receiver log timeout error
-      }
-
-      const onBeforeRequestEventDetails = await pendingRequest.onBeforeRequestEventDetails;
-      const requestBody = onBeforeRequestEventDetails.requestBody;
-
-      if (requestBody) {
-        const postParser = new HttpPostParser(
-          // details,
-          onBeforeRequestEventDetails,
-          this.dataReceiver,
+        this.dataReceiver.logError(
+          "Pending request timed out waiting for data from both onBeforeRequest and onBeforeSendHeaders events",
         );
-        const postObj: ParsedPostRequest = postParser.parsePostRequest(
-          encodingType,
-        );
+      } else {
+        const onBeforeRequestEventDetails = await pendingRequest.onBeforeRequestEventDetails;
+        const requestBody = onBeforeRequestEventDetails.requestBody;
 
-        // Add (POST) request headers from upload stream
-        if ("post_headers" in postObj) {
-          // Only store POST headers that we know and need. We may misinterpret POST data as headers
-          // as detection is based on "key:value" format (non-header POST data can be in this format as well)
-          const contentHeaders = [
-            "Content-Type",
-            "Content-Disposition",
-            "Content-Length",
-          ];
-          for (const name in postObj.post_headers) {
-            if (contentHeaders.includes(name)) {
-              const header_pair = [];
-              header_pair.push(escapeString(name));
-              header_pair.push(escapeString(postObj.post_headers[name]));
-              headers.push(header_pair);
+        if (requestBody) {
+          const postParser = new HttpPostParser(
+            // details,
+            onBeforeRequestEventDetails,
+            this.dataReceiver,
+          );
+          const postObj: ParsedPostRequest = postParser.parsePostRequest(
+            encodingType,
+          );
+
+          // Add (POST) request headers from upload stream
+          if ("post_headers" in postObj) {
+            // Only store POST headers that we know and need. We may misinterpret POST data as headers
+            // as detection is based on "key:value" format (non-header POST data can be in this format as well)
+            const contentHeaders = [
+              "Content-Type",
+              "Content-Disposition",
+              "Content-Length",
+            ];
+            for (const name in postObj.post_headers) {
+              if (contentHeaders.includes(name)) {
+                const header_pair = [];
+                header_pair.push(escapeString(name));
+                header_pair.push(escapeString(postObj.post_headers[name]));
+                headers.push(header_pair);
+              }
             }
           }
-        }
-        // we store POST body in JSON format, except when it's a string without a (key-value) structure
-        if ("post_body" in postObj) {
-          update.post_body = postObj.post_body;
+          // we store POST body in JSON format, except when it's a string without a (key-value) structure
+          if ("post_body" in postObj) {
+            update.post_body = postObj.post_body;
+          }
         }
       }
     }

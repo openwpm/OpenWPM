@@ -41,12 +41,17 @@ export class PendingResponse {
       this.onCompletedEventDetails,
     ]);
   }
+
+  /**
+   * Either returns or times out and returns undefined or
+   * returns the results from resolved() above
+   * @param ms
+   */
   public async resolvedWithinTimeout(ms) {
     const resolved = await Promise.race([
       this.resolved(),
       new Promise(resolve => setTimeout(resolve, ms)),
     ]);
-    console.log("PendingResponse resolvedWithinTimeout", resolved);
     return resolved;
   }
 }
