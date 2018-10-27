@@ -323,19 +323,12 @@ export class HttpInstrument {
     update.is_XHR = isXHR;
 
     // Check if frame OR full page load
-    /*
-    let isFrameLoad;
-    let isFullPageLoad;
-    if (details.loadFlags & Ci.nsIHttpChannel.LOAD_INITIAL_DOCUMENT_URI) {
-      isFullPageLoad = true;
-      isFrameLoad = false;
-    } else if (details.loadFlags & Ci.nsIHttpChannel.LOAD_DOCUMENT_URI) {
-      isFrameLoad = true;
-      isFullPageLoad = false;
-    }
+    const isFullPageLoad = details.frameId === 0;
+    const isFrameLoad = details.type === "sub_frame";
     update.is_full_page = isFullPageLoad;
     update.is_frame_load = isFrameLoad;
 
+    /*
     // Grab the triggering and loading Principals
     let triggeringOrigin;
     let loadingOrigin;
