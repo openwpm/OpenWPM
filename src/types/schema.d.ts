@@ -1,6 +1,4 @@
 type DateTime = string;
-type Varchar500 = string;
-type Varchar1000 = string;
 
 export interface Task {
   task_id: number;
@@ -21,7 +19,7 @@ export interface Crawl {
 export interface SiteVisit {
   visit_id: number;
   crawl_id: number;
-  site_url: Varchar500;
+  site_url: string;
   // FOREIGN KEY(crawl_id) REFERENCES crawl(id)
 }
 
@@ -29,9 +27,9 @@ export interface FlashCookie {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
-  domain?: Varchar500;
-  filename?: Varchar500;
-  local_path?: Varchar1000;
+  domain?: string;
+  filename?: string;
+  local_path?: string;
   key?: string;
   content?: string;
   // FOREIGN KEY(crawl_id) REFERENCES crawl(id);
