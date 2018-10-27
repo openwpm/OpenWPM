@@ -59,6 +59,7 @@ export class CookieInstrument {
           }
           update.expiry = expiryTimeString;
           update.is_http_only = boolToInt(cookie.httpOnly);
+          update.is_host_only = boolToInt(cookie.hostOnly);
           update.is_session = boolToInt(cookie.session);
 
           // Accessed time (in microseconds)
@@ -75,6 +76,8 @@ export class CookieInstrument {
           // update.policy = cookie.policy;
           // update.status = cookie.status;
           update.value = escapeString(cookie.value);
+          update.same_site = escapeString(cookie.sameSite);
+          update.first_party_domain = escapeString(cookie.firstPartyDomain);
 
           this.dataReceiver.saveRecord("javascript_cookies", update);
         }

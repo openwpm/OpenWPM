@@ -145,6 +145,7 @@ export interface JavascriptCookieChange {
   creationTime?: DateTime;
   expiry?: DateTime;
   is_http_only?: number;
+  is_host_only?: number;
   is_session?: number;
   last_accessed?: DateTime;
   raw_host?: string;
@@ -157,4 +158,6 @@ export interface JavascriptCookieChange {
   policy?: number;
   status?: number;
   value?: string;
+  same_site?: string;
+  first_party_domain?: string;
 }
