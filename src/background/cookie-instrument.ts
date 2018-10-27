@@ -1,22 +1,8 @@
 import moment from "moment";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
+import OnChangedCause = browser.cookies.OnChangedCause;
 import { JavascriptCookieChange } from "../types/schema";
-
-/**
- * The underlying reason behind the cookie's change. If a cookie was inserted, or removed via an explicit call to
- * `cookies.remove`, "cause" will be "explicit". If a cookie was automatically removed due to expiry, "cause" will
- * be "expired". If a cookie was removed due to being overwritten with an already-expired expiration date, "cause"
- * will be set to "expired_overwrite". If a cookie was automatically removed due to garbage collection, "cause"
- * will be "evicted". If a cookie was automatically removed due to a "set" call that overwrote it, "cause" will be
- * "overwrite". Plan your response accordingly.
- */
-type OnChangedCause =
-  | "evicted"
-  | "expired"
-  | "explicit"
-  | "expired_overwrite"
-  | "overwrite";
 
 export class CookieInstrument {
   private readonly dataReceiver;
