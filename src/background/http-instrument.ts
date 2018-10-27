@@ -1,7 +1,6 @@
 import { HttpPostParser } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
-import { ResponseBodyListener } from "../lib/response-body-listener";
 import ResourceType = browser.webRequest.ResourceType;
 import { escapeString } from "../lib/string-utils";
 import {
@@ -94,12 +93,14 @@ export class HttpInstrument {
         pendingRequest.resolveBeforeRequestEventDetails(details);
         const pendingResponse = this.getPendingResponse(details.requestId);
         pendingResponse.resolveBeforeRequestEventDetails(details);
-        this.onBeforeRequestHandler(
-          details,
-          crawlID,
-          saveJavascript,
-          saveAllContent,
-        );
+        if (saveAllContent) {
+          pendingResponse.addResponseResponseBodyListener(details);
+        } else if (
+          saveJavascript &&
+          this.mayYieldAJSResponse(details.type, details.url)
+        ) {
+          pendingResponse.addResponseResponseBodyListener(details);
+        }
       },
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       saveJavascript || saveAllContent
@@ -411,21 +412,6 @@ export class HttpInstrument {
     this.dataReceiver.saveRecord("http_requests", update);
   }
 
-  private onBeforeRequestHandler(
-    details: WebRequestOnBeforeRequestEventDetails,
-    crawlID,
-    saveJavascript,
-    saveAllContent,
-  ) {
-    console.log(
-      "onBeforeRequestHandler (previously httpRequestHandler)",
-      details,
-      crawlID,
-      saveJavascript,
-      saveAllContent,
-    );
-  }
-
   private onBeforeRedirectHandler(
     details: WebRequestOnBeforeRedirectEventDetails,
     crawlID,
@@ -531,12 +517,11 @@ export class HttpInstrument {
     details: WebRequestOnBeforeRequestEventDetails,
     update,
   ) {
-    console.log("logWithResponseBody", details, update);
-    // const pendingResponse = this.getPendingResponse(details.requestId);
+    const pendingResponse = this.getPendingResponse(details.requestId);
     try {
-      const newListener = new ResponseBodyListener(details);
-      const respBody = await newListener.getResponseBody();
-      const contentHash = await newListener.getContentHash();
+      const responseBodyListener = pendingResponse.responseBodyListener;
+      const respBody = await responseBodyListener.getResponseBody();
+      const contentHash = await responseBodyListener.getContentHash();
       this.dataReceiver.saveContent(
         escapeString(respBody),
         escapeString(contentHash),
@@ -563,17 +548,17 @@ export class HttpInstrument {
     }
   }
 
-  private isJS(
-    details: WebRequestOnCompletedEventDetails,
-    contentType,
-  ): boolean {
-    // Return true if this request is loading javascript
-    // We rely mostly on the content policy type to filter responses
-    // and fall back to the URI and content type string for types that can
-    // load various resource types.
-    // See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
-
-    const resourceType = details.type;
+  /**
+   * Return true if this request is loading javascript
+   * We rely mostly on the content policy type to filter responses
+   * and fall back to the URI and content type string for types that can
+   * load various resource types.
+   * See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
+   *
+   * @param details
+   * @param contentType
+   */
+  private isJS(resourceType: ResourceType, url: string, contentType): boolean {
     if (resourceType === "script") {
       return true;
     }
@@ -591,7 +576,7 @@ export class HttpInstrument {
       return true;
     }
 
-    const parsedUrl = new URL(details.url);
+    const parsedUrl = new URL(url);
     const path = parsedUrl.pathname;
     if (
       path &&
@@ -603,6 +588,21 @@ export class HttpInstrument {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Return true if this request is likely to load javascript
+   * @param details
+   * @param contentType
+   */
+  private mayYieldAJSResponse(
+    resourceType: ResourceType,
+    url: string,
+  ): boolean {
+    // We do not know the content type of the response yet, so
+    // we can not use it to know if the response is JS or not
+    const contentType = false;
+    return this.isJS(resourceType, url, contentType);
   }
 
   // Instrument HTTP responses
@@ -676,7 +676,10 @@ export class HttpInstrument {
 
     if (saveAllContent) {
       this.logWithResponseBody(details, update);
-    } else if (saveJavascript && this.isJS(details, contentType)) {
+    } else if (
+      saveJavascript &&
+      this.isJS(details.type, details.url, contentType)
+    ) {
       this.logWithResponseBody(details, update);
     } else {
       this.dataReceiver.saveRecord("http_responses", update);

@@ -2,6 +2,7 @@ import {
   WebRequestOnBeforeRequestEventDetails,
   WebRequestOnCompletedEventDetails,
 } from "../types/browser-web-reqest-event-details";
+import { ResponseBodyListener } from "./response-body-listener";
 
 /**
  * Ties together the two separate events that together holds information about both response headers and body
@@ -13,6 +14,7 @@ export class PendingResponse {
   public readonly onCompletedEventDetails: Promise<
     WebRequestOnCompletedEventDetails
   >;
+  public responseBodyListener: ResponseBodyListener;
   public resolveBeforeRequestEventDetails: (
     details: WebRequestOnBeforeRequestEventDetails,
   ) => void;
@@ -27,6 +29,11 @@ export class PendingResponse {
     this.onCompletedEventDetails = new Promise(resolve => {
       this.resolveOnCompletedEventDetails = resolve;
     });
+  }
+  public addResponseResponseBodyListener(
+    details: WebRequestOnBeforeRequestEventDetails,
+  ) {
+    this.responseBodyListener = new ResponseBodyListener(details);
   }
   public resolved() {
     return Promise.all([

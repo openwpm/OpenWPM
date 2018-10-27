@@ -2,8 +2,8 @@ import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-reqe
 import { sha256Buffer } from "./sha256";
 
 export class ResponseBodyListener {
-  private responseBody: Promise<string>;
-  private contentHash: Promise<string>;
+  private readonly responseBody: Promise<string>;
+  private readonly contentHash: Promise<string>;
   private resolveResponseBody: (responseBody: string) => void;
   private resolveContentHash: (contentHash: string) => void;
 
@@ -14,7 +14,6 @@ export class ResponseBodyListener {
     this.contentHash = new Promise(resolve => {
       this.resolveContentHash = resolve;
     });
-    console.log("response body request listener", details);
 
     // Used to parse Response stream
     const filter: any = browser.webRequest.filterResponseData(
@@ -29,9 +28,8 @@ export class ResponseBodyListener {
         this.resolveContentHash(digest);
       });
       const str = decoder.decode(event.data, { stream: true });
-      console.log("blocking request listener ondata: event, str", event, str);
-      filter.disconnect();
       this.resolveResponseBody(str);
+      filter.disconnect();
     };
   }
 
