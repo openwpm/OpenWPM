@@ -312,20 +312,19 @@ export class HttpInstrument {
     update.is_full_page = boolToInt(isFullPageLoad);
     update.is_frame_load = boolToInt(isFrameLoad);
 
-    /*
     // Grab the triggering and loading Principals
-    // TODO: Refactor to corresponding webext logic or discard
     let triggeringOrigin;
     let loadingOrigin;
-    if (details.loadInfo.triggeringPrincipal) {
-      triggeringOrigin = details.loadInfo.triggeringPrincipal.origin;
+    if (details.originUrl) {
+      const parsedOriginUrl = new URL(details.originUrl);
+      triggeringOrigin = parsedOriginUrl.origin;
     }
-    if (details.loadInfo.loadingPrincipal) {
-      loadingOrigin = details.loadInfo.loadingPrincipal.origin;
+    if (details.documentUrl) {
+      const parsedDocumentUrl = new URL(details.documentUrl);
+      loadingOrigin = parsedDocumentUrl.origin;
     }
     update.triggering_origin = escapeString(triggeringOrigin);
     update.loading_origin = escapeString(loadingOrigin);
-    */
 
     // loadingDocument's href
     // The loadingDocument is the document the element resides, regardless of
