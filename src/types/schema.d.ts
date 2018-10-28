@@ -74,11 +74,11 @@ export interface HttpRequest {
   referrer: string;
   headers: string;
   channel_id: string;
-  is_XHR?: boolean;
-  is_frame_load?: boolean;
-  is_full_page?: boolean;
-  is_third_party_channel?: boolean;
-  is_third_party_to_top_window?: boolean;
+  is_XHR?: number;
+  is_frame_load?: number;
+  is_full_page?: number;
+  is_third_party_channel?: number;
+  is_third_party_to_top_window?: number;
   triggering_origin?: string;
   loading_origin?: string;
   loading_href?: string;
@@ -97,7 +97,7 @@ export interface HttpResponse {
   referrer: string;
   response_status: number;
   response_status_text: string;
-  is_cached: boolean;
+  is_cached: number;
   headers: string;
   channel_id: string;
   location: string;
@@ -111,10 +111,10 @@ export interface HttpRedirect {
   visit_id?: number;
   old_channel_id?: string;
   new_channel_id?: string;
-  is_temporary: boolean;
-  is_permanent: boolean;
-  is_internal: boolean;
-  is_sts_upgrade: boolean;
+  is_temporary: number;
+  is_permanent: number;
+  is_internal: number;
+  is_sts_upgrade: number;
   time_stamp: string;
 }
 

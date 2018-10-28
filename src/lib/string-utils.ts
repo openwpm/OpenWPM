@@ -11,6 +11,6 @@ export const escapeString = function(string) {
   return encode_utf8(string);
 };
 
-export const boolToInt = function(bool) {
+export const boolToInt = function(bool: boolean) {
   return bool ? 1 : 0;
 };

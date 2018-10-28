@@ -3,7 +3,7 @@ import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
 import BlockingResponse = browser.webRequest.BlockingResponse;
-import { escapeString } from "../lib/string-utils";
+import { boolToInt, escapeString } from "../lib/string-utils";
 import {
   WebRequestOnBeforeRedirectEventDetails,
   WebRequestOnBeforeRequestEventDetails,
@@ -304,13 +304,13 @@ export class HttpInstrument {
 
     // Check if xhr
     const isXHR = details.type === "xmlhttprequest";
-    update.is_XHR = isXHR;
+    update.is_XHR = boolToInt(isXHR);
 
     // Check if frame OR full page load
     const isFullPageLoad = details.frameId === 0;
     const isFrameLoad = details.type === "sub_frame";
-    update.is_full_page = isFullPageLoad;
-    update.is_frame_load = isFrameLoad;
+    update.is_full_page = boolToInt(isFullPageLoad);
+    update.is_frame_load = boolToInt(isFrameLoad);
 
     /*
     // Grab the triggering and loading Principals
@@ -613,7 +613,7 @@ export class HttpInstrument {
     update.channel_id = details.requestId;
 
     const isCached = details.fromCache;
-    update.is_cached = isCached;
+    update.is_cached = boolToInt(isCached);
 
     const url = details.url;
     update.url = escapeString(url);
