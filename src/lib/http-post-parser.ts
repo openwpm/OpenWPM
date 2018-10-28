@@ -60,6 +60,12 @@ export class HttpPostParser {
       };
     }
 
+    // Return empty response and emit a debug message until we have all instrumentation converted
+    this.dataReceiver.logDebug(
+      "Exception: Instrumentation to parse POST requests without formData is not yet restored",
+    );
+    return {};
+
     // TODO: Refactor to corresponding webext logic or discard
     try {
       this.setupStream();
