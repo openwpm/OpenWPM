@@ -4,3 +4,4 @@ export * from "./background/javascript-instrument";
 export * from "./content/javascript-instrument-content-scope";
 export * from "./lib/http-post-parser";
 export * from "./lib/string-utils";
+export * from "./types/schema";
