@@ -28,16 +28,8 @@ export class JavascriptInstrument {
       update.document_url = escapeString(sender.url);
       update.top_level_url = escapeString(sender.tab.url);
 
-      // Create a json object for function arguments
-      // We create an object that maps array position to argument
-      // e.g. someFunc('a',123,'b') --> {0: a, 1: 123, 2: 'b'}
-      // so that the argument position is maintained
-      const args = {};
       if (data.operation === "call" && data.args.length > 0) {
-        for (let i = 0; i < data.args.length; i++) {
-          args[i] = data.args[i];
-        }
-        update.arguments = escapeString(JSON.stringify(args));
+        update.arguments = escapeString(JSON.stringify(data.args));
       }
 
       this.dataReceiver.saveRecord("javascript", update);
