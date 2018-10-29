@@ -18,7 +18,7 @@ The instrumentation leverages the available [JavaScript APIs for WebExtensions](
  - Response body content
  - Cookie Access (Experimental)
 
-More specifically, all packets sent by the instrumentation conform to [these interfaces](https://github.com/mozilla/openwpm-webext-instrumentation/blob/refactor-legacy-sdk-code-to-webext-equivalent/src/types/schema.d.ts).
+More specifically, all packets sent by the instrumentation conform to [these interfaces](https://github.com/mozilla/openwpm-webext-instrumentation/blob/refactor-legacy-sdk-code-to-webext-equivalent/src/schema.ts).
 
 ## Usage
 

@@ -1,5 +1,5 @@
 import { escapeString } from "../lib/string-utils";
-import { JavascriptOperation } from "../types/schema";
+import { JavascriptOperation } from "../schema";
 
 export class JavascriptInstrument {
   private readonly dataReceiver;

@@ -2,7 +2,7 @@ import moment from "moment";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
 import OnChangedCause = browser.cookies.OnChangedCause;
-import { JavascriptCookieChange } from "../types/schema";
+import { JavascriptCookieChange } from "../schema";
 
 export class CookieInstrument {
   private readonly dataReceiver;

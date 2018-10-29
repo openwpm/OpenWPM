@@ -4,13 +4,13 @@ import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
 import BlockingResponse = browser.webRequest.BlockingResponse;
 import { boolToInt, escapeString } from "../lib/string-utils";
+import { HttpRedirect, HttpRequest, HttpResponse } from "../schema";
 import {
   WebRequestOnBeforeRedirectEventDetails,
   WebRequestOnBeforeRequestEventDetails,
   WebRequestOnBeforeSendHeadersEventDetails,
   WebRequestOnCompletedEventDetails,
 } from "../types/browser-web-reqest-event-details";
-import { HttpRedirect, HttpRequest, HttpResponse } from "../types/schema";
 
 /**
  * Note: Different parts of the desired information arrives in different events as per below:
