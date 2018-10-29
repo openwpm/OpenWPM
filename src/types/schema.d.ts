@@ -91,8 +91,6 @@ export interface JavascriptCookieChange {
   is_secure?: number;
   name?: string;
   path?: string;
-  policy?: number;
-  status?: number;
   value?: string;
   same_site?: string;
   first_party_domain?: string;

@@ -73,8 +73,6 @@ export class CookieInstrument {
           update.is_secure = boolToInt(cookie.secure);
           update.name = escapeString(cookie.name);
           update.path = escapeString(cookie.path);
-          // update.policy = cookie.policy;
-          // update.status = cookie.status;
           update.value = escapeString(cookie.value);
           update.same_site = escapeString(cookie.sameSite);
           update.first_party_domain = escapeString(cookie.firstPartyDomain);
