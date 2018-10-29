@@ -3,6 +3,7 @@ import { JavascriptOperation } from "../types/schema";
 
 export class JavascriptInstrument {
   private readonly dataReceiver;
+  private onMessageListener;
 
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
@@ -36,7 +37,7 @@ export class JavascriptInstrument {
     };
 
     // Listen for messages from content script injected to instrument JavaScript API
-    browser.runtime.onMessage.addListener((msg, sender) => {
+    this.onMessageListener = (msg, sender) => {
       // console.debug("javascript-instrumentation background listener - msg, sender, sendReply", msg, sender, sendReply);
       if (msg.namespace && msg.namespace === "javascript-instrumentation") {
         switch (msg.type) {
@@ -46,6 +47,13 @@ export class JavascriptInstrument {
             break;
         }
       }
-    });
+    };
+    browser.runtime.onMessage.addListener(this.onMessageListener);
+  }
+
+  public cleanup() {
+    if (this.onMessageListener) {
+      browser.runtime.onMessage.removeListener(this.onMessageListener);
+    }
   }
 }
