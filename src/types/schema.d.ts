@@ -21,7 +21,7 @@ export interface HttpRequest {
   req_call_stack?: string;
   resource_type: string;
   post_body?: string;
-  time_stamp: string;
+  time_stamp: DateTime;
 }
 
 export interface HttpResponse {
@@ -37,7 +37,7 @@ export interface HttpResponse {
   headers: string;
   channel_id: string;
   location: string;
-  time_stamp: string;
+  time_stamp: DateTime;
   content_hash?: string;
 }
 
@@ -51,7 +51,7 @@ export interface HttpRedirect {
   is_permanent: number;
   is_internal: number;
   is_sts_upgrade: number;
-  time_stamp: string;
+  time_stamp: DateTime;
 }
 
 export interface JavascriptOperation {
@@ -70,7 +70,7 @@ export interface JavascriptOperation {
   operation?: string;
   value?: string;
   arguments?: string;
-  time_stamp: string;
+  time_stamp: DateTime;
 }
 
 export interface JavascriptCookieChange {
