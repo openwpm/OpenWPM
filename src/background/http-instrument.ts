@@ -28,6 +28,10 @@ export class HttpInstrument {
   private pendingResponses: {
     [requestId: number]: PendingResponse;
   } = {};
+  private onBeforeRequestListener;
+  private onBeforeSendHeadersListener;
+  private onBeforeRedirectListener;
+  private onCompletedListener;
 
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
@@ -68,77 +72,97 @@ export class HttpInstrument {
      * Attach handlers to event listeners
      */
 
-    browser.webRequest.onBeforeRequest.addListener(
-      details => {
-        const blockingResponseThatDoesNothing: BlockingResponse = {};
-        // Ignore requests made by extensions
-        if (requestStemsFromExtension(details)) {
-          return blockingResponseThatDoesNothing;
-        }
-        const pendingRequest = this.getPendingRequest(details.requestId);
-        pendingRequest.resolveBeforeRequestEventDetails(details);
-        const pendingResponse = this.getPendingResponse(details.requestId);
-        pendingResponse.resolveBeforeRequestEventDetails(details);
-        if (saveAllContent) {
-          pendingResponse.addResponseResponseBodyListener(details);
-        } else if (
-          saveJavascript &&
-          this.mayYieldAJSResponse(details.type, details.url)
-        ) {
-          pendingResponse.addResponseResponseBodyListener(details);
-        }
+    this.onBeforeRequestListener = details => {
+      const blockingResponseThatDoesNothing: BlockingResponse = {};
+      // Ignore requests made by extensions
+      if (requestStemsFromExtension(details)) {
         return blockingResponseThatDoesNothing;
-      },
+      }
+      const pendingRequest = this.getPendingRequest(details.requestId);
+      pendingRequest.resolveBeforeRequestEventDetails(details);
+      const pendingResponse = this.getPendingResponse(details.requestId);
+      pendingResponse.resolveBeforeRequestEventDetails(details);
+      if (saveAllContent) {
+        pendingResponse.addResponseResponseBodyListener(details);
+      } else if (
+        saveJavascript &&
+        this.mayYieldAJSResponse(details.type, details.url)
+      ) {
+        pendingResponse.addResponseResponseBodyListener(details);
+      }
+      return blockingResponseThatDoesNothing;
+    };
+    browser.webRequest.onBeforeRequest.addListener(
+      this.onBeforeRequestListener,
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       saveJavascript || saveAllContent
         ? ["requestBody", "blocking"]
         : ["requestBody"],
     );
 
+    this.onBeforeSendHeadersListener = details => {
+      // Ignore requests made by extensions
+      if (requestStemsFromExtension(details)) {
+        return;
+      }
+      const pendingRequest = this.getPendingRequest(details.requestId);
+      pendingRequest.resolveOnBeforeSendHeadersEventDetails(details);
+      this.onBeforeSendHeadersHandler(details, crawlID);
+    };
     browser.webRequest.onBeforeSendHeaders.addListener(
-      details => {
-        // Ignore requests made by extensions
-        if (requestStemsFromExtension(details)) {
-          return;
-        }
-        const pendingRequest = this.getPendingRequest(details.requestId);
-        pendingRequest.resolveOnBeforeSendHeadersEventDetails(details);
-        this.onBeforeSendHeadersHandler(details, crawlID);
-      },
+      this.onBeforeSendHeadersListener,
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       ["requestHeaders"],
     );
 
+    this.onBeforeRedirectListener = details => {
+      // Ignore requests made by extensions
+      if (requestStemsFromExtension(details)) {
+        return;
+      }
+      this.onBeforeRedirectHandler(details, crawlID);
+    };
     browser.webRequest.onBeforeRedirect.addListener(
-      details => {
-        // Ignore requests made by extensions
-        if (requestStemsFromExtension(details)) {
-          return;
-        }
-        this.onBeforeRedirectHandler(details, crawlID);
-      },
+      this.onBeforeRedirectListener,
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       ["responseHeaders"],
     );
 
+    this.onCompletedListener = details => {
+      // Ignore requests made by extensions
+      if (requestStemsFromExtension(details)) {
+        return;
+      }
+      const pendingResponse = this.getPendingResponse(details.requestId);
+      pendingResponse.resolveOnCompletedEventDetails(details);
+      this.onCompletedHandler(details, crawlID, saveJavascript, saveAllContent);
+    };
     browser.webRequest.onCompleted.addListener(
-      details => {
-        // Ignore requests made by extensions
-        if (requestStemsFromExtension(details)) {
-          return;
-        }
-        const pendingResponse = this.getPendingResponse(details.requestId);
-        pendingResponse.resolveOnCompletedEventDetails(details);
-        this.onCompletedHandler(
-          details,
-          crawlID,
-          saveJavascript,
-          saveAllContent,
-        );
-      },
+      this.onCompletedListener,
       { urls: ["http://*/*", "https://*/*"], types: allTypes },
       ["responseHeaders"],
     );
+  }
+
+  public cleanup() {
+    if (this.onBeforeRequestListener) {
+      browser.webRequest.onBeforeRequest.removeListener(
+        this.onBeforeRequestListener,
+      );
+    }
+    if (this.onBeforeSendHeadersListener) {
+      browser.webRequest.onBeforeSendHeaders.removeListener(
+        this.onBeforeSendHeadersListener,
+      );
+    }
+    if (this.onBeforeRedirectListener) {
+      browser.webRequest.onBeforeRedirect.removeListener(
+        this.onBeforeRedirectListener,
+      );
+    }
+    if (this.onCompletedListener) {
+      browser.webRequest.onCompleted.removeListener(this.onCompletedListener);
+    }
   }
 
   private getPendingRequest(requestId) {
