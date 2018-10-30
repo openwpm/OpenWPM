@@ -2,6 +2,7 @@ import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
+import RequestFilter = browser.webRequest.RequestFilter;
 import BlockingResponse = browser.webRequest.BlockingResponse;
 import { boolToInt, escapeString } from "../lib/string-utils";
 import { HttpRedirect, HttpRequest, HttpResponse } from "../schema";
@@ -62,6 +63,8 @@ export class HttpInstrument {
       "other",
     ];
 
+    const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
+
     const requestStemsFromExtension = details => {
       return (
         details.originUrl && details.originUrl.indexOf("moz-extension://") > -1
@@ -94,7 +97,7 @@ export class HttpInstrument {
     };
     browser.webRequest.onBeforeRequest.addListener(
       this.onBeforeRequestListener,
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      filter,
       saveJavascript || saveAllContent
         ? ["requestBody", "blocking"]
         : ["requestBody"],
@@ -111,7 +114,7 @@ export class HttpInstrument {
     };
     browser.webRequest.onBeforeSendHeaders.addListener(
       this.onBeforeSendHeadersListener,
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      filter,
       ["requestHeaders"],
     );
 
@@ -124,7 +127,7 @@ export class HttpInstrument {
     };
     browser.webRequest.onBeforeRedirect.addListener(
       this.onBeforeRedirectListener,
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      filter,
       ["responseHeaders"],
     );
 
@@ -139,7 +142,7 @@ export class HttpInstrument {
     };
     browser.webRequest.onCompleted.addListener(
       this.onCompletedListener,
-      { urls: ["http://*/*", "https://*/*"], types: allTypes },
+      filter,
       ["responseHeaders"],
     );
   }
