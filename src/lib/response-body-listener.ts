@@ -1,4 +1,4 @@
-import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-reqest-event-details";
+import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-request-event-details";
 import { sha256Buffer } from "./sha256";
 
 export class ResponseBodyListener {

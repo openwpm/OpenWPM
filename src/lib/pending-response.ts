@@ -1,7 +1,7 @@
 import {
   WebRequestOnBeforeRequestEventDetails,
   WebRequestOnCompletedEventDetails,
-} from "../types/browser-web-reqest-event-details";
+} from "../types/browser-web-request-event-details";
 import { ResponseBodyListener } from "./response-body-listener";
 
 /**

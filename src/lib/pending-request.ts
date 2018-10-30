@@ -1,7 +1,7 @@
 import {
   WebRequestOnBeforeRequestEventDetails,
   WebRequestOnBeforeSendHeadersEventDetails,
-} from "../types/browser-web-reqest-event-details";
+} from "../types/browser-web-request-event-details";
 
 /**
  * Ties together the two separate events that together holds information about both request headers and body

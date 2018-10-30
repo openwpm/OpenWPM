@@ -3,7 +3,7 @@
 import {
   WebRequestOnBeforeRequestEventDetails,
   // WebRequestOnBeforeSendHeadersEventDetails,
-} from "../types/browser-web-reqest-event-details";
+} from "../types/browser-web-request-event-details";
 import { escapeString } from "./string-utils";
 
 const components: any = {};

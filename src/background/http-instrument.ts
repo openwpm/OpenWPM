@@ -11,7 +11,7 @@ import {
   WebRequestOnBeforeRequestEventDetails,
   WebRequestOnBeforeSendHeadersEventDetails,
   WebRequestOnCompletedEventDetails,
-} from "../types/browser-web-reqest-event-details";
+} from "../types/browser-web-request-event-details";
 
 /**
  * Note: Different parts of the desired information arrives in different events as per below:
