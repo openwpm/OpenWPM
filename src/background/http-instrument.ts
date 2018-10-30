@@ -266,19 +266,21 @@ export class HttpInstrument {
     let encodingType = "";
     const headers = [];
     let isOcsp = false;
-    details.requestHeaders.map(requestHeader => {
-      const { name, value } = requestHeader;
-      const header_pair = [];
-      header_pair.push(escapeString(name));
-      header_pair.push(escapeString(value));
-      headers.push(header_pair);
-      if (name === "Content-Type") {
-        encodingType = value;
-        if (encodingType.indexOf("application/ocsp-request") !== -1) {
-          isOcsp = true;
+    if (details.requestHeaders) {
+      details.requestHeaders.map(requestHeader => {
+        const { name, value } = requestHeader;
+        const header_pair = [];
+        header_pair.push(escapeString(name));
+        header_pair.push(escapeString(value));
+        headers.push(header_pair);
+        if (name === "Content-Type") {
+          encodingType = value;
+          if (encodingType.indexOf("application/ocsp-request") !== -1) {
+            isOcsp = true;
+          }
         }
-      }
-    });
+      });
+    }
 
     if (requestMethod === "POST" && !isOcsp /* don't process OCSP requests */) {
       const pendingRequest = this.getPendingRequest(details.requestId);
