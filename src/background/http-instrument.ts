@@ -666,19 +666,21 @@ export class HttpInstrument {
     const headers = [];
     let location = "";
     let contentType = "";
-    details.responseHeaders.map(responseHeader => {
-      const { name, value } = responseHeader;
-      const header_pair = [];
-      header_pair.push(escapeString(name));
-      header_pair.push(escapeString(value));
-      headers.push(header_pair);
-      if (name.toLowerCase() === "location") {
-        location = value;
-      }
-      if (name.toLowerCase() === "content-type") {
-        contentType = value;
-      }
-    });
+    if (details.responseHeaders) {
+      details.responseHeaders.map(responseHeader => {
+        const { name, value } = responseHeader;
+        const header_pair = [];
+        header_pair.push(escapeString(name));
+        header_pair.push(escapeString(value));
+        headers.push(header_pair);
+        if (name.toLowerCase() === "location") {
+          location = value;
+        }
+        if (name.toLowerCase() === "content-type") {
+          contentType = value;
+        }
+      });
+    }
     update.headers = JSON.stringify(headers);
     update.location = escapeString(location);
 
