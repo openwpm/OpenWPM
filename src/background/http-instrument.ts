@@ -466,12 +466,6 @@ export class HttpInstrument {
       },
 
       asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
-        const isTemporary = !!(flags & Ci.nsIChannelEventSink.REDIRECT_TEMPORARY);
-        const isPermanent = !!(flags & Ci.nsIChannelEventSink.REDIRECT_PERMANENT);
-        const isInternal = !!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL);
-        const isSTSUpgrade = !!(
-          flags & Ci.nsIChannelEventSink.REDIRECT_STS_UPGRADE
-        );
 
         newChannel.QueryInterface(Ci.nsIHttpChannel);
 
@@ -479,10 +473,6 @@ export class HttpInstrument {
           crawl_id: crawlID,
           old_channel_id: oldChannel.channelId,
           new_channel_id: newChannel.channelId,
-          is_temporary: isTemporary,
-          is_permanent: isPermanent,
-          is_internal: isInternal,
-          is_sts_upgrade: isSTSUpgrade,
           time_stamp: new Date().toISOString(),
         };
         this.dataReceiver.saveRecord("http_redirects", httpRedirect);
@@ -505,10 +495,6 @@ export class HttpInstrument {
       crawl_id: crawlID,
       old_channel_id: null, // previously: oldChannel.channelId, TODO: Refactor to corresponding webext logic or discard
       new_channel_id: details.requestId, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
-      is_temporary: null, // TODO: Refactor to corresponding webext logic or discard
-      is_permanent: null, // TODO: Refactor to corresponding webext logic or discard
-      is_internal: null, // TODO: Refactor to corresponding webext logic or discard
-      is_sts_upgrade: null, // TODO: Refactor to corresponding webext logic or discard
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 

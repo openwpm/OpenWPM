@@ -34,10 +34,6 @@ export class CookieInstrument {
 
         const cookie: Cookie = changeInfo.cookie;
 
-        // Creation time (in microseconds)
-        // const creationTime = new Date(cookie.creationTime / 1000); // requires milliseconds
-        // update.creationTime = creationTime.toLocaleFormat("%Y-%m-%d %H:%M:%S");
-
         // Expiry time (in seconds)
         // A comment from pre-webextension code, which may still be valid:
         // May return ~Max(int64). I believe this is a session
@@ -58,14 +54,7 @@ export class CookieInstrument {
         update.is_host_only = boolToInt(cookie.hostOnly);
         update.is_session = boolToInt(cookie.session);
 
-        // Accessed time (in microseconds)
-        // const lastAccessedTime = new Date(cookie.lastAccessed / 1000); // requires milliseconds
-        // update.last_accessed = lastAccessedTime.toLocaleFormat("%Y-%m-%d %H:%M:%S");
-        // update.raw_host = escapeString(cookie.rawHost);
-
-        // update.expires = cookie.expires;
         update.host = escapeString(cookie.domain);
-        // update.is_domain = boolToInt(cookie.isDomain);
         update.is_secure = boolToInt(cookie.secure);
         update.name = escapeString(cookie.name);
         update.path = escapeString(cookie.path);

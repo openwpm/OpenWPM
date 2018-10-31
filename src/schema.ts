@@ -47,10 +47,6 @@ export interface HttpRedirect {
   visit_id?: number;
   old_channel_id?: string;
   new_channel_id?: string;
-  is_temporary: number;
-  is_permanent: number;
-  is_internal: number;
-  is_sts_upgrade: number;
   time_stamp: DateTime;
 }
 
@@ -78,16 +74,11 @@ export interface JavascriptCookieChange {
   crawl_id?: number;
   visit_id?: number;
   change?: "deleted" | "added" | "changed";
-  creationTime?: DateTime;
   expiry?: DateTime;
   is_http_only?: number;
   is_host_only?: number;
   is_session?: number;
-  last_accessed?: DateTime;
-  raw_host?: string;
-  expires?: number;
   host?: string;
-  is_domain?: number;
   is_secure?: number;
   name?: string;
   path?: string;
