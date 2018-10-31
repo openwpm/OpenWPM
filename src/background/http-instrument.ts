@@ -87,10 +87,7 @@ export class HttpInstrument {
       pendingResponse.resolveBeforeRequestEventDetails(details);
       if (saveAllContent) {
         pendingResponse.addResponseResponseBodyListener(details);
-      } else if (
-        saveJavascript &&
-        this.mayYieldAJSResponse(details.type, details.url)
-      ) {
+      } else if (saveJavascript && this.isJS(details.type)) {
         pendingResponse.addResponseResponseBodyListener(details);
       }
       return blockingResponseThatDoesNothing;
@@ -548,54 +545,10 @@ export class HttpInstrument {
    * load various resource types.
    * See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
    *
-   * @param details
-   * @param contentType
+   * @param resourceType
    */
-  private isJS(resourceType: ResourceType, url: string, contentType): boolean {
-    if (resourceType === "script") {
-      return true;
-    }
-    if (
-      resourceType !== "object" && // object
-      resourceType !== "sub_frame" && // subdocument (iframe)
-      resourceType !== "xmlhttprequest" && // XMLHTTPRequest
-      resourceType !== "websocket" && // websocket
-      resourceType !== "beacon" // beacon response
-    ) {
-      return false;
-    }
-
-    if (contentType && contentType.toLowerCase().includes("javascript")) {
-      return true;
-    }
-
-    const parsedUrl = new URL(url);
-    const path = parsedUrl.pathname;
-    if (
-      path &&
-      path
-        .split("?")[0]
-        .split("#")[0]
-        .endsWith(".js")
-    ) {
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Return true if this request is likely to load javascript
-   * @param details
-   * @param contentType
-   */
-  private mayYieldAJSResponse(
-    resourceType: ResourceType,
-    url: string,
-  ): boolean {
-    // We do not know the content type of the response yet, so
-    // we can not use it to know if the response is JS or not
-    const contentType = false;
-    return this.isJS(resourceType, url, contentType);
+  private isJS(resourceType: ResourceType): boolean {
+    return resourceType === "script";
   }
 
   // Instrument HTTP responses
@@ -653,7 +606,6 @@ export class HttpInstrument {
 
     const headers = [];
     let location = "";
-    let contentType = "";
     if (details.responseHeaders) {
       details.responseHeaders.map(responseHeader => {
         const { name, value } = responseHeader;
@@ -664,9 +616,6 @@ export class HttpInstrument {
         if (name.toLowerCase() === "location") {
           location = value;
         }
-        if (name.toLowerCase() === "content-type") {
-          contentType = value;
-        }
       });
     }
     update.headers = JSON.stringify(headers);
@@ -674,10 +623,7 @@ export class HttpInstrument {
 
     if (saveAllContent) {
       this.logWithResponseBody(details, update);
-    } else if (
-      saveJavascript &&
-      this.isJS(details.type, details.url, contentType)
-    ) {
+    } else if (saveJavascript && this.isJS(details.type)) {
       this.logWithResponseBody(details, update);
     } else {
       this.dataReceiver.saveRecord("http_responses", update);
