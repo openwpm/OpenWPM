@@ -384,7 +384,6 @@ export class HttpInstrument {
         );
         update.is_third_party_to_top_window = isThirdPartyToTopWindow;
         update.is_third_party_channel = isThirdPartyChannel;
-        update.top_level_url = escapeString(topUrl);
       }
     } catch (anError) {
       // Exceptions expected for channels triggered or loading in a
@@ -408,6 +407,8 @@ export class HttpInstrument {
       }
     }
     */
+    const tab = await browser.tabs.get(details.tabId);
+    update.top_level_url = escapeString(tab.url);
 
     this.dataReceiver.saveRecord("http_requests", update);
   }
