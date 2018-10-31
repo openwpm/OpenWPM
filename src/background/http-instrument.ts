@@ -493,8 +493,8 @@ export class HttpInstrument {
 
     const httpRedirect: HttpRedirect = {
       crawl_id: crawlID,
-      old_channel_id: null, // previously: oldChannel.channelId, TODO: Refactor to corresponding webext logic or discard
-      new_channel_id: details.requestId, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      old_channel_id: details.requestId, // previously: oldChannel.channelId,
+      new_channel_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
