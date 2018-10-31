@@ -90,4 +90,5 @@ export interface JavascriptCookieChange {
   value?: string;
   same_site?: string;
   first_party_domain?: string;
+  time_stamp: DateTime;
 }

@@ -62,6 +62,8 @@ export class CookieInstrument {
         update.same_site = escapeString(cookie.sameSite);
         update.first_party_domain = escapeString(cookie.firstPartyDomain);
 
+        update.time_stamp = new Date().toISOString();
+
         this.dataReceiver.saveRecord("javascript_cookies", update);
       }
     };
