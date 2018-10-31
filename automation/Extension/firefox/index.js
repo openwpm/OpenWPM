@@ -75,14 +75,19 @@ const start = function(config) {
   }
 };
 
-configPromise
-  .then(start, function(err) {
-    console.log("Error encountered when listening for OpenWPM configuration");
+(async() => {
+
+  let config;
+  try {
+    config = await configPromise;
+  } catch (err) {
+    console.log("Error encountered when listening for OpenWPM configuration (sent to console.error here below)");
     console.error(err);
+
     // Assume test run if the socket server is not launched / available
     console.log("WARNING: config not read. Assuming this is a test run of",
       "the extension. Outputting all queries to console.");
-    const config = {
+    config = {
       sqlite_address: null,
       leveldb_address: null,
       logger_address: null,
@@ -94,5 +99,8 @@ configPromise
       testing: true,
       crawl_id: ''
     };
-    start(config);
-  });
+
+  }
+  start(config);
+
+})();
