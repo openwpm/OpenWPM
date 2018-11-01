@@ -1,4 +1,5 @@
 import { escapeString } from "../lib/string-utils";
+import { makeUUID } from "../lib/uuid";
 import { Navigation } from "../schema";
 import { WebNavigationOnCommittedEventDetails } from "../types/browser-web-navigation-event-details";
 export class NavigationInstrument {
@@ -22,6 +23,7 @@ export class NavigationInstrument {
         tab_id: details.tabId,
         frame_id: details.frameId,
         parent_frame_id: (details as any).parent_frame_id, // An undocumented property
+        uuid: makeUUID(),
         url: escapeString(details.url),
         transition_qualifiers: escapeString(
           JSON.stringify(details.transitionQualifiers),

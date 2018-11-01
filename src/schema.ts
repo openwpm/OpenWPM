@@ -11,6 +11,7 @@ export interface Navigation {
   tab_id?: number;
   frame_id?: number;
   parent_frame_id?: number;
+  uuid?: string;
   url?: string;
   transition_qualifiers?: string;
   transition_type?: string;
