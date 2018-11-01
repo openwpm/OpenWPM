@@ -2,6 +2,21 @@ import OnChangedCause = browser.cookies.OnChangedCause;
 
 type DateTime = string;
 
+export interface Navigation {
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
+  process_id?: number;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
+  parent_frame_id?: number;
+  url?: string;
+  transition_qualifiers?: string;
+  transition_type?: string;
+  committed_time_stamp?: DateTime;
+}
+
 export interface HttpRequest {
   id?: number;
   crawl_id?: number;
