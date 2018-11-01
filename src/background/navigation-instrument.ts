@@ -23,6 +23,7 @@ export class NavigationInstrument {
         process_id: details.processId,
         window_id: tab.windowId,
         tab_id: details.tabId,
+        tab_opener_tab_id: tab.openerTabId,
         frame_id: details.frameId,
         parent_frame_id: (details as any).parent_frame_id, // An undocumented property
         uuid: makeUUID(),

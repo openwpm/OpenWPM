@@ -10,6 +10,7 @@ export interface Navigation {
   process_id?: number;
   window_id?: number;
   tab_id?: number;
+  tab_opener_tab_id?: number;
   frame_id?: number;
   parent_frame_id?: number;
   uuid?: string;
