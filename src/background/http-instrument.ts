@@ -239,6 +239,10 @@ export class HttpInstrument {
 
     update.crawl_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
+    const tab = await browser.tabs.get(details.tabId);
+    update.window_id = tab.windowId;
+    update.tab_id = details.tabId;
+    update.frame_id = details.frameId;
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;
@@ -409,7 +413,6 @@ export class HttpInstrument {
       }
     }
     */
-    const tab = await browser.tabs.get(details.tabId);
     update.top_level_url = escapeString(tab.url);
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
@@ -419,7 +422,7 @@ export class HttpInstrument {
     this.dataReceiver.saveRecord("http_requests", update);
   }
 
-  private onBeforeRedirectHandler(
+  private async onBeforeRedirectHandler(
     details: WebRequestOnBeforeRedirectEventDetails,
     crawlID,
   ) {
@@ -495,11 +498,15 @@ export class HttpInstrument {
     };
     */
 
+    const tab = await browser.tabs.get(details.tabId);
     const httpRedirect: HttpRedirect = {
       crawl_id: crawlID,
       old_request_id: details.requestId, // previously: oldChannel.channelId,
       new_request_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
       extension_session_uuid: extensionSessionUuid,
+      window_id: tab.windowId,
+      tab_id: details.tabId,
+      frame_id: details.frameId,
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
@@ -560,7 +567,7 @@ export class HttpInstrument {
   }
 
   // Instrument HTTP responses
-  private onCompletedHandler(
+  private async onCompletedHandler(
     details: WebRequestOnCompletedEventDetails,
     crawlID,
     saveJavascript,
@@ -584,6 +591,10 @@ export class HttpInstrument {
 
     update.crawl_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
+    const tab = await browser.tabs.get(details.tabId);
+    update.window_id = tab.windowId;
+    update.tab_id = details.tabId;
+    update.frame_id = details.frameId;
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;

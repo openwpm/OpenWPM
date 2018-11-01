@@ -24,6 +24,9 @@ export interface HttpRequest {
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   url: string;
   top_level_url?: string;
   parent_frame_id?: number;
@@ -51,6 +54,9 @@ export interface HttpResponse {
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   url: string;
   method: string;
   referrer: string;
@@ -71,6 +77,9 @@ export interface HttpRedirect {
   old_request_id?: string;
   new_request_id?: string;
   extension_session_uuid?: string;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   time_stamp: DateTime;
 }
 
@@ -79,6 +88,9 @@ export interface JavascriptOperation {
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   script_url?: string;
   script_line?: string;
   script_col?: string;
