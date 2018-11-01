@@ -1,3 +1,4 @@
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
 import OnChangedCause = browser.cookies.OnChangedCause;
@@ -30,6 +31,7 @@ export class CookieInstrument {
         update.change = change;
         update.change_cause = changeInfo.cause;
         update.crawl_id = crawlID;
+        update.extension_session_uuid = extensionSessionUuid;
 
         const cookie: Cookie = changeInfo.cookie;
 

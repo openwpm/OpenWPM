@@ -1,3 +1,4 @@
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { escapeString } from "../lib/string-utils";
 import { JavascriptOperation } from "../schema";
 
@@ -13,6 +14,7 @@ export class JavascriptInstrument {
     const processCallsAndValues = (data, sender) => {
       const update = {} as JavascriptOperation;
       update.crawl_id = crawlID;
+      update.extension_session_uuid = extensionSessionUuid;
       update.script_url = escapeString(data.scriptUrl);
       update.script_line = escapeString(data.scriptLine);
       update.script_col = escapeString(data.scriptCol);

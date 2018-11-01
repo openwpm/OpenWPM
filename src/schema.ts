@@ -6,6 +6,7 @@ export interface Navigation {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
   process_id?: number;
   window_id?: number;
   tab_id?: number;
@@ -22,6 +23,7 @@ export interface HttpRequest {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
   url: string;
   top_level_url?: string;
   parent_frame_id?: number;
@@ -48,6 +50,7 @@ export interface HttpResponse {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
   url: string;
   method: string;
   referrer: string;
@@ -67,6 +70,7 @@ export interface HttpRedirect {
   visit_id?: number;
   old_request_id?: string;
   new_request_id?: string;
+  extension_session_uuid?: string;
   time_stamp: DateTime;
 }
 
@@ -74,6 +78,7 @@ export interface JavascriptOperation {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
   script_url?: string;
   script_line?: string;
   script_col?: string;
@@ -93,6 +98,7 @@ export interface JavascriptCookieChange {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
   change?: "deleted" | "added" | "changed";
   change_cause?: OnChangedCause;
   expiry?: DateTime;

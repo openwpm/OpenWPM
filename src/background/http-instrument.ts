@@ -1,3 +1,4 @@
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
@@ -237,6 +238,7 @@ export class HttpInstrument {
     const update = {} as HttpRequest;
 
     update.crawl_id = crawlID;
+    update.extension_session_uuid = extensionSessionUuid;
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;
@@ -497,6 +499,7 @@ export class HttpInstrument {
       crawl_id: crawlID,
       old_request_id: details.requestId, // previously: oldChannel.channelId,
       new_request_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      extension_session_uuid: extensionSessionUuid,
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
@@ -580,6 +583,7 @@ export class HttpInstrument {
     const update = {} as HttpResponse;
 
     update.crawl_id = crawlID;
+    update.extension_session_uuid = extensionSessionUuid;
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;
