@@ -409,6 +409,10 @@ export class HttpInstrument {
     */
     const tab = await browser.tabs.get(details.tabId);
     update.top_level_url = escapeString(tab.url);
+    update.parent_frame_id = details.parentFrameId;
+    update.frame_ancestors = escapeString(
+      JSON.stringify(details.frameAncestors),
+    );
 
     this.dataReceiver.saveRecord("http_requests", update);
   }

@@ -8,6 +8,14 @@ import ResourceType = browser.webRequest.ResourceType;
 import UploadData = browser.webRequest.UploadData;
 import HttpHeaders = browser.webRequest.HttpHeaders;
 
+export interface FrameAncestor {
+  /** The URL that the document was loaded from. */
+  url: string;
+  /** The frameId of the document. details.frameAncestors[0].frameId is the same as details.parentFrameId. */
+  frameId: number;
+  0;
+}
+
 export interface WebRequestOnBeforeSendHeadersEventDetails {
   /**
    * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
@@ -26,6 +34,8 @@ export interface WebRequestOnBeforeSendHeadersEventDetails {
   frameId: number;
   /** ID of frame that wraps the frame which sent the request. Set to -1 if no parent frame exists. */
   parentFrameId: number;
+  /** Contains information for each document in the frame hierarchy up to the top-level document. The first element in the array contains information about the immediate parent of the document being requested, and the last element contains information about the top-level document. If the load is actually for the top-level document, then this array is empty. */
+  frameAncestors: FrameAncestor[];
   /** URL of the resource that triggered this request. */
   originUrl?: string;
   /** URL of the page into which the requested resource will be loaded. */

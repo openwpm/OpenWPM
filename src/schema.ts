@@ -6,6 +6,8 @@ export interface HttpRequest {
   visit_id?: number;
   url: string;
   top_level_url?: string;
+  parent_frame_id?: number;
+  frame_ancestors?: string;
   method: string;
   referrer: string;
   headers: string;
