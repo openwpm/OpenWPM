@@ -26,6 +26,8 @@ pickling_support.install()
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
+AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
+
 
 def load_default_params(num_browsers=1):
     """
@@ -316,6 +318,19 @@ class TaskManager:
         = *     -> sends command to all browsers
         = **    -> sends command to all browsers (synchronized)
         """
+
+        # Block if the aggregator queue is too large
+        agg_queue_size = self.data_aggregator.get_most_recent_status()
+        if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+            while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+                self.logger.info(
+                    "Blocking command submission until the DataAggregator "
+                    "is below the max queue size of %d. Current queue "
+                    "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
+                )
+                agg_queue_size = self.data_aggregator.get_status()
+
+        # Distribute command
         if index is None:
             # send to first browser available
             command_executed = False

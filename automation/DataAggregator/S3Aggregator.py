@@ -24,12 +24,15 @@ SITE_VISITS_INDEX = '_site_visits_index'
 CONTENT_DIRECTORY = 'content'
 
 
-def listener_process_runner(manager_params, status_queue, instance_id):
+def listener_process_runner(
+        manager_params, status_queue, shutdown_queue, instance_id):
     """S3Listener runner. Pass to new process"""
-    listener = S3Listener(status_queue, manager_params, instance_id)
+    listener = S3Listener(
+        status_queue, shutdown_queue, manager_params, instance_id)
     listener.startup()
 
     while True:
+        listener.update_status_queue()
         if listener.should_shutdown():
             break
         try:
@@ -50,7 +53,8 @@ class S3Listener(BaseListener):
     a parquet dataset. The schema for this dataset is given in
     ./parquet_schema.py
     """
-    def __init__(self, status_queue, manager_params, instance_id):
+    def __init__(
+            self, status_queue, shutdown_queue, manager_params, instance_id):
         self.dir = manager_params['s3_directory']
         self.browser_map = dict()  # maps crawl_id to visit_id
         self._records = dict()  # maps visit_id and table to records
@@ -62,7 +66,8 @@ class S3Listener(BaseListener):
         self._fs = s3fs.S3FileSystem()
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
-        super(S3Listener, self).__init__(status_queue, manager_params)
+        super(S3Listener, self).__init__(
+            status_queue, shutdown_queue, manager_params)
 
     def _get_records(self, visit_id):
         """Get the RecordBatch corresponding to `visit_id`"""
@@ -92,9 +97,13 @@ class S3Listener(BaseListener):
                     df, schema=PQ_SCHEMAS[table_name], preserve_index=False
                 )
                 self._batches[table_name].append(batch)
+                self.logger.debug(
+                    "Successfully created batch for table %s and "
+                    "visit_id %s" % (table_name, visit_id)
+                )
             except pa.lib.ArrowInvalid as e:
                 self.logger.error(
-                    "Error while sending record:\n%s\n%s\n%s\n"
+                    "Error while creating record batch:\n%s\n%s\n%s\n"
                     % (table_name, type(e), e)
                 )
                 pass

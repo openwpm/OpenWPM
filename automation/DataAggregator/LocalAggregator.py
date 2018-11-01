@@ -19,12 +19,15 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
 LDB_NAME = 'content.ldb'
 
 
-def listener_process_runner(manager_params, status_queue, ldb_enabled):
+def listener_process_runner(
+        manager_params, status_queue, shutdown_queue, ldb_enabled):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(status_queue, manager_params, ldb_enabled)
+    listener = LocalListener(
+        status_queue, shutdown_queue, manager_params, ldb_enabled)
     listener.startup()
 
     while True:
+        listener.update_status_queue()
         if listener.should_shutdown():
             break
 
@@ -46,7 +49,8 @@ def listener_process_runner(manager_params, status_queue, ldb_enabled):
 
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
-    def __init__(self, status_queue, manager_params, ldb_enabled):
+    def __init__(
+            self, status_queue, shutdown_queue, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -62,7 +66,8 @@ class LocalListener(BaseListener):
         self._ldb_commit_time = 0
         self._sql_counter = 0
         self._sql_commit_time = 0
-        super(LocalListener, self).__init__(status_queue, manager_params)
+        super(LocalListener, self).__init__(
+            status_queue, shutdown_queue, manager_params)
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
