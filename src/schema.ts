@@ -1,3 +1,5 @@
+import OnChangedCause = browser.cookies.OnChangedCause;
+
 type DateTime = string;
 
 export interface HttpRequest {
@@ -76,6 +78,7 @@ export interface JavascriptCookieChange {
   crawl_id?: number;
   visit_id?: number;
   change?: "deleted" | "added" | "changed";
+  change_cause?: OnChangedCause;
   expiry?: DateTime;
   is_http_only?: number;
   is_host_only?: number;

@@ -29,7 +29,7 @@ export class CookieInstrument {
         const update = {} as JavascriptCookieChange;
 
         update.change = change;
-        // TODO: Add changeInfo.cause
+        update.change_cause = changeInfo.cause;
         update.crawl_id = crawlID;
 
         const cookie: Cookie = changeInfo.cookie;
