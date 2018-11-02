@@ -1,6 +1,6 @@
 import MessageSender = browser.runtime.MessageSender;
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
-import { escapeString } from "../lib/string-utils";
+import { boolToInt, escapeString } from "../lib/string-utils";
 import { JavascriptOperation } from "../schema";
 
 export class JavascriptInstrument {
@@ -29,6 +29,7 @@ export class JavascriptInstrument {
       update.operation = escapeString(data.operation);
       update.value = escapeString(data.value);
       update.time_stamp = data.timeStamp;
+      update.incognito = boolToInt(sender.tab.incognito);
 
       // document_url is the current frame's document href
       // top_level_url is the top-level frame's document href

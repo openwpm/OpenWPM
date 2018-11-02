@@ -232,14 +232,16 @@ export class HttpInstrument {
     );
     */
 
+    const tab = await browser.tabs.get(details.tabId);
+
     // http_requests table schema:
     // id [auto-filled], crawl_id, url, method, referrer,
     // headers, visit_id [auto-filled], time_stamp
     const update = {} as HttpRequest;
 
+    update.incognito = boolToInt(tab.incognito);
     update.crawl_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
-    const tab = await browser.tabs.get(details.tabId);
     update.window_id = tab.windowId;
     update.tab_id = details.tabId;
     update.frame_id = details.frameId;
@@ -500,6 +502,7 @@ export class HttpInstrument {
 
     const tab = await browser.tabs.get(details.tabId);
     const httpRedirect: HttpRedirect = {
+      incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
       old_request_id: details.requestId, // previously: oldChannel.channelId,
       new_request_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
@@ -583,15 +586,17 @@ export class HttpInstrument {
     );
     */
 
+    const tab = await browser.tabs.get(details.tabId);
+
     // http_responses table schema:
     // id [auto-filled], crawl_id, url, method, referrer, response_status,
     // response_status_text, headers, location, visit_id [auto-filled],
     // time_stamp, content_hash
     const update = {} as HttpResponse;
 
+    update.incognito = boolToInt(tab.incognito);
     update.crawl_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
-    const tab = await browser.tabs.get(details.tabId);
     update.window_id = tab.windowId;
     update.tab_id = details.tabId;
     update.frame_id = details.frameId;

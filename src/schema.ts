@@ -4,6 +4,7 @@ type DateTime = string;
 
 export interface Navigation {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
@@ -23,6 +24,7 @@ export interface Navigation {
 
 export interface HttpRequest {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
@@ -53,6 +55,7 @@ export interface HttpRequest {
 
 export interface HttpResponse {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
@@ -74,6 +77,7 @@ export interface HttpResponse {
 
 export interface HttpRedirect {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   old_request_id?: string;
@@ -87,6 +91,7 @@ export interface HttpRedirect {
 
 export interface JavascriptOperation {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
