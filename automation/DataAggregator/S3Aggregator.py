@@ -180,7 +180,8 @@ class S3Listener(BaseListener):
                         filesystem=self._fs,
                         preserve_index=False,
                         partition_cols=['instance_id'],
-                        compression='snappy'
+                        compression='snappy',
+                        flavor='spark'
                     )
                 except pa.lib.ArrowInvalid as e:
                     self.logger.error(
@@ -276,7 +277,7 @@ class S3Aggregator(BaseAggregator):
         self.dir = manager_params['s3_directory']
         self.bucket = manager_params['s3_bucket']
         self.s3 = boto3.client('s3')
-        self._instance_id = uuid.uuid4().int & (1 << 32) - 1
+        self._instance_id = (uuid.uuid4().int & (1 << 32) - 1) - 2**31
         self._create_bucket()
 
     def _create_bucket(self):
@@ -319,7 +320,7 @@ class S3Aggregator(BaseAggregator):
     def get_next_visit_id(self):
         """Generate visit id as randomly generated 64bit UUIDs
         """
-        return uuid.uuid4().int & (1 << 64) - 1
+        return (uuid.uuid4().int & (1 << 64) - 1) - 2**63
 
     def get_next_crawl_id(self):
         """Generate crawl id as randomly generated 32bit UUIDs
@@ -327,7 +328,7 @@ class S3Aggregator(BaseAggregator):
         Note: Parquet's partitioned dataset reader only supports integer
         partition columns up to 32 bits.
         """
-        return uuid.uuid4().int & (1 << 32) - 1
+        return (uuid.uuid4().int & (1 << 32) - 1) - 2**31
 
     def launch(self):
         """Launch the aggregator listener process"""
