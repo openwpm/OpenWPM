@@ -1,4 +1,3 @@
-import moment from "moment";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
 import OnChangedCause = browser.cookies.OnChangedCause;
@@ -42,12 +41,10 @@ export class CookieInstrument {
         const expiryTime = cookie.expirationDate; // returns seconds
         let expiryTimeString;
         if (!cookie.expirationDate || expiryTime === 9223372036854776000) {
-          expiryTimeString = "9999-12-31 23:59:59";
+          expiryTimeString = "9999-12-31T21:59:59.000Z";
         } else {
           const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds
-          expiryTimeString = moment(expiryTimeDate).format(
-            "YYYY-MM-DD HH:mm:ss",
-          );
+          expiryTimeString = expiryTimeDate.toISOString();
         }
         update.expiry = expiryTimeString;
         update.is_http_only = boolToInt(cookie.httpOnly);
