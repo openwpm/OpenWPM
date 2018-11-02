@@ -239,7 +239,7 @@ export class HttpInstrument {
     update.crawl_id = crawlID;
 
     // requestId is a unique identifier that can be used to link requests and responses
-    update.channel_id = details.requestId;
+    update.request_id = details.requestId;
 
     // const stacktrace_str = get_stack_trace_str();
     // update.req_call_stack = escapeString(stacktrace_str);
@@ -473,8 +473,8 @@ export class HttpInstrument {
 
         const httpRedirect: HttpRedirect = {
           crawl_id: crawlID,
-          old_channel_id: oldChannel.channelId,
-          new_channel_id: newChannel.channelId,
+          old_request_id: oldChannel.channelId,
+          new_request_id: newChannel.channelId,
           time_stamp: new Date().toISOString(),
         };
         this.dataReceiver.saveRecord("http_redirects", httpRedirect);
@@ -495,8 +495,8 @@ export class HttpInstrument {
 
     const httpRedirect: HttpRedirect = {
       crawl_id: crawlID,
-      old_channel_id: details.requestId, // previously: oldChannel.channelId,
-      new_channel_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      old_request_id: details.requestId, // previously: oldChannel.channelId,
+      new_request_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
@@ -582,7 +582,7 @@ export class HttpInstrument {
     update.crawl_id = crawlID;
 
     // requestId is a unique identifier that can be used to link requests and responses
-    update.channel_id = details.requestId;
+    update.request_id = details.requestId;
 
     const isCached = details.fromCache;
     update.is_cached = boolToInt(isCached);

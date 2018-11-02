@@ -13,7 +13,7 @@ export interface HttpRequest {
   method: string;
   referrer: string;
   headers: string;
-  channel_id: string;
+  request_id: string;
   is_XHR?: number;
   is_frame_load?: number;
   is_full_page?: number;
@@ -39,7 +39,7 @@ export interface HttpResponse {
   response_status_text: string;
   is_cached: number;
   headers: string;
-  channel_id: string;
+  request_id: string;
   location: string;
   time_stamp: DateTime;
   content_hash?: string;
@@ -49,8 +49,8 @@ export interface HttpRedirect {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
-  old_channel_id?: string;
-  new_channel_id?: string;
+  old_request_id?: string;
+  new_request_id?: string;
   time_stamp: DateTime;
 }
 
