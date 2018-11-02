@@ -26,6 +26,7 @@ export class NavigationInstrument {
         tab_opener_tab_id: tab.openerTabId,
         frame_id: details.frameId,
         parent_frame_id: (details as any).parent_frame_id, // An undocumented property
+        tab_cookie_store_id: escapeString(tab.cookieStoreId),
         uuid: makeUUID(),
         url: escapeString(details.url),
         transition_qualifiers: escapeString(

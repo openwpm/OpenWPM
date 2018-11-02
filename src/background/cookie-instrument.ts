@@ -60,6 +60,7 @@ export class CookieInstrument {
         update.value = escapeString(cookie.value);
         update.same_site = escapeString(cookie.sameSite);
         update.first_party_domain = escapeString(cookie.firstPartyDomain);
+        update.store_id = escapeString(cookie.storeId);
 
         update.time_stamp = new Date().toISOString();
 

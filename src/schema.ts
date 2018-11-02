@@ -13,6 +13,7 @@ export interface Navigation {
   tab_opener_tab_id?: number;
   frame_id?: number;
   parent_frame_id?: number;
+  tab_cookie_store_id?: string;
   uuid?: string;
   url?: string;
   transition_qualifiers?: string;
@@ -125,5 +126,6 @@ export interface JavascriptCookieChange {
   value?: string;
   same_site?: string;
   first_party_domain?: string;
+  store_id?: string;
   time_stamp: DateTime;
 }
