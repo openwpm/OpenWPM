@@ -14,6 +14,11 @@ export interface Navigation {
   tab_opener_tab_id?: number;
   frame_id?: number;
   parent_frame_id?: number;
+  window_width?: number;
+  window_height?: number;
+  window_type?: string;
+  tab_width?: number;
+  tab_height?: number;
   tab_cookie_store_id?: string;
   uuid?: string;
   url?: string;

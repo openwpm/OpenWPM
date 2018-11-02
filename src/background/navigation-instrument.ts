@@ -23,8 +23,12 @@ export class NavigationInstrument {
               incognito: undefined,
               cookieStoreId: undefined,
               openerTabId: undefined,
+              width: undefined,
+              height: undefined,
             };
-      // const window = browser.windows.get(tab.windowId);
+      const window = tab.windowId
+        ? await browser.windows.get(tab.windowId)
+        : { width: undefined, height: undefined, type: undefined };
       const navigation: Navigation = {
         crawl_id: crawlID,
         incognito: boolToInt(tab.incognito),
@@ -35,6 +39,11 @@ export class NavigationInstrument {
         tab_opener_tab_id: tab.openerTabId,
         frame_id: details.frameId,
         parent_frame_id: (details as any).parent_frame_id, // An undocumented property
+        window_width: window.width,
+        window_height: window.height,
+        window_type: window.type,
+        tab_width: tab.width,
+        tab_height: tab.height,
         tab_cookie_store_id: escapeString(tab.cookieStoreId),
         uuid: makeUUID(),
         url: escapeString(details.url),
