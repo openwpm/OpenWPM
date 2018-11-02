@@ -232,7 +232,10 @@ export class HttpInstrument {
     );
     */
 
-    const tab = await browser.tabs.get(details.tabId);
+    const tab =
+      details.tabId > -1
+        ? await browser.tabs.get(details.tabId)
+        : { windowId: undefined, incognito: undefined, url: undefined };
 
     // http_requests table schema:
     // id [auto-filled], crawl_id, url, method, referrer,
@@ -503,7 +506,10 @@ export class HttpInstrument {
     const responseStatus = details.statusCode;
     const responseStatusText = details.statusLine;
 
-    const tab = await browser.tabs.get(details.tabId);
+    const tab =
+      details.tabId > -1
+        ? await browser.tabs.get(details.tabId)
+        : { windowId: undefined, incognito: undefined };
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
@@ -591,7 +597,10 @@ export class HttpInstrument {
     );
     */
 
-    const tab = await browser.tabs.get(details.tabId);
+    const tab =
+      details.tabId > -1
+        ? await browser.tabs.get(details.tabId)
+        : { windowId: undefined, incognito: undefined };
 
     // http_responses table schema:
     // id [auto-filled], crawl_id, url, method, referrer, response_status,

@@ -15,7 +15,15 @@ export class NavigationInstrument {
     this.onCommittedListener = async (
       details: WebNavigationOnCommittedEventDetails,
     ) => {
-      const tab = await browser.tabs.get(details.tabId);
+      const tab =
+        details.tabId > -1
+          ? await browser.tabs.get(details.tabId)
+          : {
+              windowId: undefined,
+              incognito: undefined,
+              cookieStoreId: undefined,
+              openerTabId: undefined,
+            };
       // const window = browser.windows.get(tab.windowId);
       const navigation: Navigation = {
         crawl_id: crawlID,
