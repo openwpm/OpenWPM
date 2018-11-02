@@ -1,4 +1,4 @@
-import { CookieInstrument, JavascriptInstrument, HttpInstrument } from "openwpm-webext-instrumentation";
+import { CookieInstrument, JavascriptInstrument, HttpInstrument, NavigationInstrument } from "openwpm-webext-instrumentation";
 import * as loggingDB from './lib/loggingdb.js';
 import { ListeningSocket } from './lib/socket.js';
 
@@ -57,6 +57,11 @@ const start = function(config) {
                  config['logger_address'],
                  config['crawl_id']);
 
+  if (config["navigation_instrument"]) {
+    loggingDB.logDebug("Navigation instrumentation enabled");
+    const navigationInstrument = new NavigationInstrument(loggingDB);
+    navigationInstrument.run(config["crawl_id"]);
+  }
   if (config['cookie_instrument']) {
     loggingDB.logDebug("Cookie instrumentation enabled");
     const cookieInstrument = new CookieInstrument(loggingDB);
@@ -91,6 +96,7 @@ const start = function(config) {
       sqlite_address: null,
       leveldb_address: null,
       logger_address: null,
+      navigation_instrument: true,
       cookie_instrument: true,
       js_instrument: true,
       http_instrument: true,

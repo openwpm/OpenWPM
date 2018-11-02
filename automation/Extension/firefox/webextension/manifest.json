@@ -36,6 +36,7 @@
     "tabs",
     "webRequest",
     "webRequestBlocking",
+    "webNavigation",
     "<all_urls>"
   ]
 }
