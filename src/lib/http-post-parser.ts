@@ -4,9 +4,9 @@ import {
   WebRequestOnBeforeRequestEventDetails,
   // WebRequestOnBeforeSendHeadersEventDetails,
 } from "../types/browser-web-request-event-details";
-import { escapeString } from "./string-utils";
+// import { escapeString } from "./string-utils";
 
-const components: any = {};
+// const components: any = {};
 
 export interface ParsedPostRequest {
   post_headers?: any;
@@ -17,6 +17,7 @@ export class HttpPostParser {
   // private readonly onBeforeSendHeadersEventDetails: WebRequestOnBeforeSendHeadersEventDetails;
   private readonly onBeforeRequestEventDetails: WebRequestOnBeforeRequestEventDetails;
   private readonly dataReceiver;
+  /*
   private hasheaders: boolean;
   private seekablestream;
   private stream;
@@ -24,6 +25,7 @@ export class HttpPostParser {
   private postLines;
   private postHeaders;
   private body;
+  */
 
   constructor(
     // onBeforeSendHeadersEventDetails: WebRequestOnBeforeSendHeadersEventDetails,
@@ -45,7 +47,7 @@ export class HttpPostParser {
   /**
    * @param encodingType from the HTTP Request headers
    */
-  public parsePostRequest(encodingType) {
+  public parsePostRequest(/*encodingType*/) {
     // const requestHeaders = this.onBeforeSendHeadersEventDetails.requestHeaders;
     const requestBody = this.onBeforeRequestEventDetails.requestBody;
     if (requestBody.error) {
@@ -60,11 +62,12 @@ export class HttpPostParser {
       };
     }
 
-    // Return empty response and emit a debug message until we have all instrumentation converted
+    // Return empty response until we have all instrumentation converted
+    return {};
+    /*
     this.dataReceiver.logDebug(
       "Exception: Instrumentation to parse POST requests without formData is not yet restored",
     );
-    return {};
 
     // TODO: Refactor to corresponding webext logic or discard
     try {
@@ -98,14 +101,16 @@ export class HttpPostParser {
     let jsonPostData = "";
     let escapedJsonPostData = "";
     if (isMultiPart) {
-      jsonPostData = this.parseMultiPartData(postBody /*, encodingType*/);
+      jsonPostData = this.parseMultiPartData(postBody /*, encodingType* /);
       escapedJsonPostData = escapeString(jsonPostData);
     } else {
       jsonPostData = this.parseEncodedFormData(postBody, encodingType);
       escapedJsonPostData = escapeString(jsonPostData);
     }
     return { post_headers: postHeaders, post_body: escapedJsonPostData };
+    */
   }
+  /*
   private setupStream() {
     // TODO: Refactor to corresponding webext logic or discard (it may be relevant
     // to parse the this.onBeforeRequestEventDetails.requestBody.raw.bytes property)
@@ -205,7 +210,7 @@ export class HttpPostParser {
       -----------------------------1809321333852408290275809649
       Content-Disposition: form-data; name="email"
       [snipped]
-     */
+     * /
     if (this.hasheaders) {
       this.rewind();
       let line = this.readLine();
@@ -233,7 +238,7 @@ export class HttpPostParser {
         The second line.
       to (application/x-www-form-urlencoded):
         foo=bar&baz=The+first+line.%0D%0AThe+second+line.%0D%0A
-     */
+     * /
     const lines = postBody.split("\n");
     const post_vars = [];
     for (const line of lines) {
@@ -305,7 +310,7 @@ export class HttpPostParser {
     }
   }
 
-  private parseMultiPartData(formData /*, encodingType*/) {
+  private parseMultiPartData(formData /*, encodingType* /) {
     /*
      * Parse POST bodies with encType "multipart/form-data encoded"
      * https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types#multipartform-data
@@ -321,7 +326,7 @@ export class HttpPostParser {
 
       name surname+
       -----------------------------12972102761018453617355621459--
-      */
+      * /
     let boundary = "";
     const firstLine = formData.split("\r\n", 1)[0];
     if (firstLine.startsWith("-----------------------------")) {
@@ -355,7 +360,7 @@ export class HttpPostParser {
        Content-Disposition: form-data; name="username"
 
        name surname+
-    */
+    * /
     part = part.trim();
     if (!part || part === "--") {
       // ignore empty parts or extra characters after the last boundary
@@ -418,4 +423,5 @@ export class HttpPostParser {
     }
     this.postBody = postString.trim();
   }
+  */
 }

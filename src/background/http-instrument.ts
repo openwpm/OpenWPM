@@ -307,9 +307,10 @@ export class HttpInstrument {
             onBeforeRequestEventDetails,
             this.dataReceiver,
           );
-          const postObj: ParsedPostRequest = postParser.parsePostRequest(
-            encodingType,
-          );
+          const postObj: ParsedPostRequest = postParser
+            .parsePostRequest
+            /*encodingType,*/
+            ();
 
           // Add (POST) request headers from upload stream
           if ("post_headers" in postObj) {
