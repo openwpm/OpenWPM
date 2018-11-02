@@ -86,6 +86,8 @@ export interface HttpRedirect {
   window_id?: number;
   tab_id?: number;
   frame_id?: number;
+  response_status?: number;
+  response_status_text?: string;
   time_stamp: DateTime;
 }
 

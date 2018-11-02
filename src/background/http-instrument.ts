@@ -500,6 +500,9 @@ export class HttpInstrument {
     };
     */
 
+    const responseStatus = details.statusCode;
+    const responseStatusText = details.statusLine;
+
     const tab = await browser.tabs.get(details.tabId);
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
@@ -510,6 +513,8 @@ export class HttpInstrument {
       window_id: tab.windowId,
       tab_id: details.tabId,
       frame_id: details.frameId,
+      response_status: responseStatus,
+      response_status_text: escapeString(responseStatusText),
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
