@@ -1,5 +1,5 @@
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
-import {boolToInt, escapeString} from "../lib/string-utils";
+import { boolToInt, escapeString } from "../lib/string-utils";
 import { makeUUID } from "../lib/uuid";
 import { Navigation } from "../schema";
 import { WebNavigationOnCommittedEventDetails } from "../types/browser-web-navigation-event-details";
