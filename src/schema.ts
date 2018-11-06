@@ -1,6 +1,6 @@
 import OnChangedCause = browser.cookies.OnChangedCause;
 
-type DateTime = string;
+export type DateTime = string;
 
 export interface Navigation {
   id?: number;
@@ -120,13 +120,7 @@ export interface JavascriptOperation {
   time_stamp: DateTime;
 }
 
-export interface JavascriptCookieChange {
-  id?: number;
-  crawl_id?: number;
-  visit_id?: number;
-  extension_session_uuid?: string;
-  change?: "deleted" | "added" | "changed";
-  change_cause?: OnChangedCause;
+export interface JavascriptCookie {
   expiry?: DateTime;
   is_http_only?: number;
   is_host_only?: number;
@@ -140,4 +134,13 @@ export interface JavascriptCookieChange {
   first_party_domain?: string;
   store_id?: string;
   time_stamp: DateTime;
+}
+
+export interface JavascriptCookieRecord extends JavascriptCookie {
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
+  extension_session_uuid?: string;
+  record_type?: "deleted" | "added-or-changed" | "manual-export";
+  change_cause?: OnChangedCause;
 }
