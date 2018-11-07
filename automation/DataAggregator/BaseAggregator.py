@@ -153,7 +153,7 @@ class BaseAggregator(object):
         if (time.time() - self._last_status_received) > STATUS_TIMEOUT:
             raise RuntimeError(
                 "No status update from DataAggregator listener process "
-                "for %d seconds."
+                "for %d seconds." % (time.time() - self._last_status_received)
             )
 
         return self._last_status
@@ -167,7 +167,7 @@ class BaseAggregator(object):
         except queue.Empty:
             raise RuntimeError(
                 "No status update from DataAggregator listener process "
-                "for %d seconds."
+                "for %d seconds." % (time.time() - self._last_status_received)
             )
         return self._last_status
 
