@@ -1,15 +1,7 @@
-import * as cookieInstrument from "./background/cookie-instrument";
-import * as httpInstrument from "./background/http-instrument";
-import * as jsInstrument from "./background/javascript-instrument";
-
-const background = { cookieInstrument, jsInstrument, httpInstrument };
-
-import * as jsInstrumentContentScope from "./content/javascript-instrument-content-scope";
-
-const content = { jsInstrumentContentScope };
-
-import * as HttpPostParser from "./lib/http-post-parser";
-
-const lib = { HttpPostParser };
-
-export { background, content, lib };
+export * from "./background/cookie-instrument";
+export * from "./background/http-instrument";
+export * from "./background/javascript-instrument";
+export * from "./content/javascript-instrument-content-scope";
+export * from "./lib/http-post-parser";
+export * from "./lib/string-utils";
+export * from "./schema";

@@ -1,87 +1,75 @@
-// import { Cc, Ci } from 'chrome';
-// import events from 'sdk/system/events';
-// import { data } from 'sdk/self';
+import { boolToInt, escapeString } from "../lib/string-utils";
+import Cookie = browser.cookies.Cookie;
+import OnChangedCause = browser.cookies.OnChangedCause;
+import { JavascriptCookieChange } from "../schema";
 
-let loggingDB;
-export const setLoggingDB = function($loggingDB) {
-  loggingDB = $loggingDB;
-};
+export class CookieInstrument {
+  private readonly dataReceiver;
+  private onChangedListener;
 
-export const run = function(crawlID) {
-  // Instrument cookie changes
-  browser.cookies.onChanged.addListener(function(changeInfo) {
-    // Ignore requests made by extensions
-    /*
-      if (details.originUrl.indexOf("moz-extension://") > -1) {
-        return;
-      }
-      */
-    console.log(
-      "Cookie changed: " +
-        "\n * Cookie: " +
-        JSON.stringify(changeInfo.cookie) +
-        "\n * Cause: " +
-        changeInfo.cause +
-        "\n * Removed: " +
-        changeInfo.removed,
-      changeInfo,
-    );
-  });
+  constructor(dataReceiver) {
+    this.dataReceiver = dataReceiver;
+  }
 
-  events.on(
-    "cookie-changed",
-    function(event) {
-      const data = event.data;
+  public run(crawlID) {
+    // Instrument cookie changes
+    this.onChangedListener = async (changeInfo: {
+      /** True if a cookie was removed. */
+      removed: boolean;
+      /** Information about the cookie that was set or removed. */
+      cookie: Cookie;
+      /** The underlying reason behind the cookie's change. */
+      cause: OnChangedCause;
+    }) => {
+      const change = changeInfo.removed ? "deleted" : "added";
+
       // TODO: Support other cookie operations
-      if (data === "deleted" || data === "added" || data === "changed") {
-        const update = {};
-        update.change = loggingDB.escapeString(data);
+      if (change === "deleted" || change === "added" || change === "changed") {
+        const update = {} as JavascriptCookieChange;
+
+        update.change = change;
+        update.change_cause = changeInfo.cause;
         update.crawl_id = crawlID;
 
-        let cookie = event.subject.QueryInterface(Ci.nsICookie2);
-
-        // Creation time (in microseconds)
-        const creationTime = new Date(cookie.creationTime / 1000); // requires milliseconds
-        update.creationTime = creationTime.toLocaleFormat("%Y-%m-%d %H:%M:%S");
+        const cookie: Cookie = changeInfo.cookie;
 
         // Expiry time (in seconds)
+        // A comment from pre-webextension code, which may still be valid:
         // May return ~Max(int64). I believe this is a session
         // cookie which doesn't expire. Sessions cookies with
         // non-max expiry time expire after session or at expiry.
-        const expiryTime = cookie.expiry; // returns seconds
-        if (expiryTime === 9223372036854776000) {
-          const expiryTimeString = "9999-12-31 23:59:59";
+        const expiryTime = cookie.expirationDate; // returns seconds
+        let expiryTimeString;
+        if (!cookie.expirationDate || expiryTime === 9223372036854776000) {
+          expiryTimeString = "9999-12-31T21:59:59.000Z";
         } else {
           const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds
-          const expiryTimeString = expiryTimeDate.toLocaleFormat(
-            "%Y-%m-%d %H:%M:%S",
-          );
+          expiryTimeString = expiryTimeDate.toISOString();
         }
         update.expiry = expiryTimeString;
-        update.is_http_only = loggingDB.boolToInt(cookie.isHttpOnly);
-        update.is_session = loggingDB.boolToInt(cookie.isSession);
+        update.is_http_only = boolToInt(cookie.httpOnly);
+        update.is_host_only = boolToInt(cookie.hostOnly);
+        update.is_session = boolToInt(cookie.session);
 
-        // Accessed time (in microseconds)
-        const lastAccessedTime = new Date(cookie.lastAccessed / 1000); // requires milliseconds
-        update.last_accessed = lastAccessedTime.toLocaleFormat(
-          "%Y-%m-%d %H:%M:%S",
-        );
-        update.raw_host = loggingDB.escapeString(cookie.rawHost);
+        update.host = escapeString(cookie.domain);
+        update.is_secure = boolToInt(cookie.secure);
+        update.name = escapeString(cookie.name);
+        update.path = escapeString(cookie.path);
+        update.value = escapeString(cookie.value);
+        update.same_site = escapeString(cookie.sameSite);
+        update.first_party_domain = escapeString(cookie.firstPartyDomain);
 
-        cookie = cookie.QueryInterface(Ci.nsICookie);
-        update.expires = cookie.expires;
-        update.host = loggingDB.escapeString(cookie.host);
-        update.is_domain = loggingDB.boolToInt(cookie.isDomain);
-        update.is_secure = loggingDB.boolToInt(cookie.isSecure);
-        update.name = loggingDB.escapeString(cookie.name);
-        update.path = loggingDB.escapeString(cookie.path);
-        update.policy = cookie.policy;
-        update.status = cookie.status;
-        update.value = loggingDB.escapeString(cookie.value);
+        update.time_stamp = new Date().toISOString();
 
-        loggingDB.saveRecord("javascript_cookies", update);
+        this.dataReceiver.saveRecord("javascript_cookies", update);
       }
-    },
-    true,
-  );
-};
+    };
+    browser.cookies.onChanged.addListener(this.onChangedListener);
+  }
+
+  public cleanup() {
+    if (this.onChangedListener) {
+      browser.cookies.onChanged.removeListener(this.onChangedListener);
+    }
+  }
+}

@@ -21,20 +21,17 @@ function insertScript(text, data) {
 
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
-  browser.runtime
-    .sendMessage({ namespace: "javascript-instrumentation", type, data: msg })
-    .catch(function(err) {
-      console.log(
-        "OpenWPM content to background script 'emitMsg' sendMessage failed",
-      );
-      console.error(err);
-    });
+  browser.runtime.sendMessage({
+    namespace: "javascript-instrumentation",
+    type,
+    data: msg,
+  });
 }
 
 const event_id = Math.random();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(event_id, function(e) {
+document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
@@ -46,7 +43,7 @@ document.addEventListener(event_id, function(e) {
   }
 });
 
-export function run(testing) {
+export function injectJavascriptInstrumentPageScript(testing = false) {
   insertScript(getPageScriptAsString(), {
     event_id,
     testing,

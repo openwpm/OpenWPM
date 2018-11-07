@@ -5,6 +5,7 @@
     "tslint-immutable"
   ],
   "rules": {
+    "no-object-literal-type-assertion": false,
     "interface-name": [
       true,
       "never-prefix"

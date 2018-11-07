@@ -3,9 +3,21 @@
 
 // code below is not a content script: no Firefox APIs should be used
 
+declare global {
+  interface Object {
+    getPropertyDescriptor(subject: any, name: any): PropertyDescriptor;
+  }
+  interface Object {
+    getPropertyNames(subject: any): string[];
+  }
+  interface String {
+    rsplit(sep: any, maxsplit: any): string;
+  }
+}
+
 export const pageScript = function() {
   // from Underscore v1.6.0
-  function debounce(func, wait, immediate) {
+  function debounce(func, wait, immediate = false) {
     let timeout, args, context, timestamp, result;
 
     const later = function() {
@@ -69,7 +81,9 @@ export const pageScript = function() {
 
   const testing =
     document.currentScript.getAttribute("data-testing") === "true";
-  console.log("Currently testing?", testing);
+  if (testing) {
+    console.log("OpenWPM: Currently testing?", testing);
+  }
 
   // Recursively generates a path for an element
   function getPathToDomElement(element, visibilityAttr = false) {
@@ -157,17 +171,17 @@ export const pageScript = function() {
         return value;
       });
     } catch (error) {
-      console.log("SERIALIZATION ERROR: " + error);
+      console.log("OpenWPM: SERIALIZATION ERROR: " + error);
       return "SERIALIZATION ERROR: " + error;
     }
   }
 
   function logErrorToConsole(error) {
-    console.log("Error name: " + error.name);
-    console.log("Error message: " + error.message);
-    console.log("Error filename: " + error.fileName);
-    console.log("Error line number: " + error.lineNumber);
-    console.log("Error stack: " + error.stack);
+    console.log("OpenWPM: Error name: " + error.name);
+    console.log("OpenWPM: Error message: " + error.message);
+    console.log("OpenWPM: Error filename: " + error.fileName);
+    console.log("OpenWPM: Error line number: " + error.lineNumber);
+    console.log("OpenWPM: Error stack: " + error.stack);
   }
 
   // Helper to get originating script urls
@@ -255,7 +269,7 @@ export const pageScript = function() {
       };
       return callContext;
     } catch (e) {
-      console.log("Error parsing the script context", e, callSite);
+      console.log("OpenWPM: Error parsing the script context", e, callSite);
       return empty_context;
     }
   }
@@ -315,7 +329,7 @@ export const pageScript = function() {
     try {
       send("logValue", msg);
     } catch (error) {
-      console.log("Unsuccessful value log!");
+      console.log("OpenWPM: Unsuccessful value log!");
       logErrorToConsole(error);
     }
 
@@ -360,7 +374,9 @@ export const pageScript = function() {
       };
       send("logCall", msg);
     } catch (error) {
-      console.log("Unsuccessful call log: " + instrumentedFunctionName);
+      console.log(
+        "OpenWPM: Unsuccessful call log: " + instrumentedFunctionName,
+      );
       logErrorToConsole(error);
     }
     inLog = false;
@@ -378,7 +394,7 @@ export const pageScript = function() {
     return pd;
   };
 
-  Object.getPropertyNames = function(subject, name) {
+  Object.getPropertyNames = function(subject) {
     let props = Object.getOwnPropertyNames(subject);
     let proto = Object.getPrototypeOf(subject);
     while (proto !== null) {
@@ -394,8 +410,9 @@ export const pageScript = function() {
      */
 
   function isObject(object, propertyName) {
+    let property;
     try {
-      const property = object[propertyName];
+      property = object[propertyName];
     } catch (error) {
       return false;
     }
@@ -406,7 +423,17 @@ export const pageScript = function() {
     return typeof property === "object";
   }
 
-  function instrumentObject(object, objectName, logSettings = {}) {
+  interface LogSettings {
+    propertiesToInstrument?: string[];
+    excludedProperties?: string[];
+    logCallStack?: boolean;
+    logFunctionsAsStrings?: boolean;
+    preventSets?: boolean;
+    recursive?: boolean;
+    depth?: number;
+  }
+
+  function instrumentObject(object, objectName, logSettings: LogSettings = {}) {
     // Use for objects or object prototypes
     //
     // Parameters
@@ -499,7 +526,7 @@ export const pageScript = function() {
     }
   }
   if (testing) {
-    window.instrumentObject = instrumentObject;
+    (window as any).instrumentObject = instrumentObject;
   }
 
   // Log calls to a given function
@@ -526,7 +553,7 @@ export const pageScript = function() {
     object,
     objectName,
     propertyName,
-    logSettings = {},
+    logSettings: LogSettings = {},
   ) {
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
@@ -730,7 +757,9 @@ export const pageScript = function() {
   // Access to MIMETypes
   const mimeTypeProperties = ["description", "suffixes", "type"];
   for (let i = 0; i < window.navigator.mimeTypes.length; i++) {
-    const mimeTypeName = window.navigator.mimeTypes[i].type;
+    const mimeTypeName = ((window.navigator.mimeTypes[
+      i
+    ] as unknown) as MimeType).type; // note: upstream typings seems to be incorrect
     mimeTypeProperties.forEach(function(property) {
       instrumentObjectProperty(
         window.navigator.mimeTypes[mimeTypeName],
@@ -789,5 +818,7 @@ export const pageScript = function() {
   instrumentObject(window.GainNode.prototype, "GainNode");
   instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
 
-  console.log("Content-side javascript instrumentation started");
+  if (testing) {
+    console.log("OpenWPM: Content-side javascript instrumentation started");
+  }
 };
