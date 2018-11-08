@@ -16,7 +16,7 @@ from tblib import pickling_support
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
-from .DataAggregator import LevelDBAggregator, S3Aggregator, SqliteAggregator
+from .DataAggregator import LocalAggregator, S3Aggregator
 from .Errors import CommandExecutionError
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
@@ -25,6 +25,8 @@ pickling_support.install()
 
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
+
+AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
 
 
 def load_default_params(num_browsers=1):
@@ -112,14 +114,6 @@ class TaskManager:
         self.manager_params['logger_address'] = self.logging_status_queue.get()
         self.logger = MPLogger.loggingclient(
             *self.manager_params['logger_address'])
-
-        # Mark if LDBAggregator is needed
-        # (if content saving is enabled on any browser)
-        self.ldb_enabled = False
-        for params in browser_params:
-            if params['save_javascript'] or params['save_all_content']:
-                self.ldb_enabled = True
-                break
 
         # Initialize the data aggregators
         self._launch_aggregators()
@@ -224,7 +218,7 @@ class TaskManager:
     def _launch_aggregators(self):
         """Launch the necessary data aggregators"""
         if self.manager_params["output_format"] == "local":
-            self.data_aggregator = SqliteAggregator.SqliteAggregator(
+            self.data_aggregator = LocalAggregator.LocalAggregator(
                 self.manager_params, self.browser_params)
         elif self.manager_params["output_format"] == "s3":
             self.data_aggregator = S3Aggregator.S3Aggregator(
@@ -240,30 +234,9 @@ class TaskManager:
         self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-        # TODO refactor ldb aggregator to use new base classes
-        if self.ldb_enabled:
-            self.ldb_status_queue = Queue()
-            self.ldb_aggregator = Process(
-                target=LevelDBAggregator.LevelDBAggregator,
-                args=(self.manager_params, self.ldb_status_queue)
-            )
-            self.ldb_aggregator.daemon = True
-            self.ldb_aggregator.start()
-            # socket location: (address, port)
-            self.manager_params['ldb_address'] = self.ldb_status_queue.get()
-
     def _kill_aggregators(self):
         """Shutdown any currently running data aggregators"""
         self.data_aggregator.shutdown()
-
-        # TODO refactor ldb aggregator to use new base classes
-        if self.ldb_enabled:
-            self.logger.debug("Telling the LevelDBAggregator to shut down...")
-            self.ldb_status_queue.put("DIE")
-            start_time = time.time()
-            self.ldb_aggregator.join(300)
-            self.logger.debug("LevelDBAggregator took %s seconds to close." % (
-                str(time.time() - start_time)))
 
     def _launch_loggingserver(self):
         """ sets up logging server """
@@ -345,6 +318,19 @@ class TaskManager:
         = *     -> sends command to all browsers
         = **    -> sends command to all browsers (synchronized)
         """
+
+        # Block if the aggregator queue is too large
+        agg_queue_size = self.data_aggregator.get_most_recent_status()
+        if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+            while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+                self.logger.info(
+                    "Blocking command submission until the DataAggregator "
+                    "is below the max queue size of %d. Current queue "
+                    "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
+                )
+                agg_queue_size = self.data_aggregator.get_status()
+
+        # Distribute command
         if index is None:
             # send to first browser available
             command_executed = False

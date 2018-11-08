@@ -6,12 +6,11 @@ var crawlID = null;
 var visitID = null;
 var debugging = false;
 var dataAggregator = null;
-var ldbAggregator = null;
 var logAggregator = null;
 var listeningSocket = null;
 
-exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
-    if (aggregatorAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
+exports.open = function(aggregatorAddress, logAddress, curr_crawlID) {
+    if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
@@ -33,12 +32,6 @@ exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID)
         var rv = dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
         console.log("sqliteSocket started?",rv);
     }
-    if (ldbAddress != null) {
-        ldbAggregator = new socket.SendingSocket();
-        var rv = ldbAggregator.connect(ldbAddress[0], ldbAddress[1]);
-        console.log("ldbSocket started?",rv);
-    }
-
 
     // Listen for incomming urls as visit ids
     listeningSocket = new socket.ListeningSocket();
@@ -57,9 +50,6 @@ exports.open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID)
 exports.close = function() {
     if (dataAggregator != null) {
         dataAggregator.close();
-    }
-    if (ldbAggregator != null) {
-        ldbAggregator.close();
     }
     if (logAggregator != null) {
         logAggregator.close();
@@ -169,13 +159,13 @@ exports.saveRecord = function(instrument, record) {
 }
 
 exports.saveContent = function(content, contentHash) {
-  // send content to levelDBAggregator which stores content
+  // Send page content to the data aggregator
   // deduplicated by contentHash in a levelDB database
   if (debugging) {
     console.log("LDB contentHash:",contentHash,"with length",content.length);
     return;
   }
-  ldbAggregator.send([content, contentHash]);
+  dataAggregator.send(['page_content', [content, contentHash]]);
 }
 
 function encode_utf8(s) {

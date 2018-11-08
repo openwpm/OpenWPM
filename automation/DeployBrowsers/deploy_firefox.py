@@ -109,7 +109,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         extension_config = dict()
         extension_config.update(browser_params)
         extension_config['logger_address'] = manager_params['logger_address']
-        extension_config['sqlite_address'] = manager_params[
+        extension_config['aggregator_address'] = manager_params[
             'aggregator_address']
         if 'ldb_address' in manager_params:
             extension_config['leveldb_address'] = manager_params['ldb_address']

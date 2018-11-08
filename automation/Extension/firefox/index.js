@@ -19,8 +19,7 @@ exports.main = function(options, callbacks) {
     console.log("WARNING: config not found. Assuming this is a test run of",
                 "the extension. Outputting all queries to console.");
     var config = {
-      sqlite_address:null,
-      leveldb_address:null,
+      aggregator_address:null,
       logger_address:null,
       cookie_instrument:true,
       js_instrument:true,
@@ -32,8 +31,7 @@ exports.main = function(options, callbacks) {
     };
   }
 
-  loggingDB.open(config['sqlite_address'],
-                 config['leveldb_address'],
+  loggingDB.open(config['aggregator_address'],
                  config['logger_address'],
                  config['crawl_id']);
 
