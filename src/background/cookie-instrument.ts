@@ -8,13 +8,13 @@ export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
   const javascriptCookie = {} as JavascriptCookie;
 
   // Expiry time (in seconds)
-  // A comment from pre-webextension code, which may still be valid:
   // May return ~Max(int64). I believe this is a session
   // cookie which doesn't expire. Sessions cookies with
   // non-max expiry time expire after session or at expiry.
   const expiryTime = cookie.expirationDate; // returns seconds
   let expiryTimeString;
-  if (!cookie.expirationDate || expiryTime === 9223372036854776000) {
+  const maxInt64 = 9223372036854776000;
+  if (!cookie.expirationDate || expiryTime === maxInt64) {
     expiryTimeString = "9999-12-31T21:59:59.000Z";
   } else {
     const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds

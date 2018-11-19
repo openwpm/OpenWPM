@@ -666,7 +666,7 @@ export const pageScript = function() {
             inLog = true;
             if (object.isPrototypeOf(this)) {
               Object.defineProperty(this, propertyName, {
-                value: value
+                value,
               });
             } else {
               originalValue = value;
