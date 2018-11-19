@@ -62,22 +62,26 @@ const start = function(config) {
     const navigationInstrument = new NavigationInstrument(loggingDB);
     navigationInstrument.run(config["crawl_id"]);
   }
+
   if (config['cookie_instrument']) {
     loggingDB.logDebug("Cookie instrumentation enabled");
     const cookieInstrument = new CookieInstrument(loggingDB);
     cookieInstrument.run(config['crawl_id']);
   }
+
   if (config['js_instrument']) {
     loggingDB.logDebug("Javascript instrumentation enabled");
     const jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
   }
+
   if (config['http_instrument']) {
     loggingDB.logDebug("HTTP Instrumentation enabled");
     const httpInstrument = new HttpInstrument(loggingDB);
     httpInstrument.run(config['crawl_id'], config['save_javascript'],
                        config['save_all_content']);
   }
+
 };
 
 (async() => {
