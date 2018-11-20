@@ -511,8 +511,10 @@ export class HttpInstrument {
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
-      old_request_id: details.requestId, // previously: oldChannel.channelId,
-      new_request_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      old_request_url: escapeString(details.url),
+      old_request_id: details.requestId,
+      new_request_url: escapeString(details.redirectUrl),
+      new_request_id: null, // TODO: File a bug to make redirectRequestId available
       extension_session_uuid: extensionSessionUuid,
       window_id: tab.windowId,
       tab_id: details.tabId,
