@@ -1,3 +1,5 @@
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
@@ -107,7 +109,11 @@ export class HttpInstrument {
       }
       const pendingRequest = this.getPendingRequest(details.requestId);
       pendingRequest.resolveOnBeforeSendHeadersEventDetails(details);
-      this.onBeforeSendHeadersHandler(details, crawlID);
+      this.onBeforeSendHeadersHandler(
+        details,
+        crawlID,
+        incrementedEventOrdinal(),
+      );
     };
     browser.webRequest.onBeforeSendHeaders.addListener(
       this.onBeforeSendHeadersListener,
@@ -120,7 +126,7 @@ export class HttpInstrument {
       if (requestStemsFromExtension(details)) {
         return;
       }
-      this.onBeforeRedirectHandler(details, crawlID);
+      this.onBeforeRedirectHandler(details, crawlID, incrementedEventOrdinal());
     };
     browser.webRequest.onBeforeRedirect.addListener(
       this.onBeforeRedirectListener,
@@ -135,7 +141,13 @@ export class HttpInstrument {
       }
       const pendingResponse = this.getPendingResponse(details.requestId);
       pendingResponse.resolveOnCompletedEventDetails(details);
-      this.onCompletedHandler(details, crawlID, saveJavascript, saveAllContent);
+      this.onCompletedHandler(
+        details,
+        crawlID,
+        incrementedEventOrdinal(),
+        saveJavascript,
+        saveAllContent,
+      );
     };
     browser.webRequest.onCompleted.addListener(
       this.onCompletedListener,
@@ -222,6 +234,7 @@ export class HttpInstrument {
   private async onBeforeSendHeadersHandler(
     details: WebRequestOnBeforeSendHeadersEventDetails,
     crawlID,
+    eventOrdinal: number,
   ) {
     /*
     console.log(
@@ -231,12 +244,20 @@ export class HttpInstrument {
     );
     */
 
-    // http_requests table schema:
-    // id [auto-filled], crawl_id, url, method, referrer,
-    // headers, visit_id [auto-filled], time_stamp
+    const tab =
+      details.tabId > -1
+        ? await browser.tabs.get(details.tabId)
+        : { windowId: undefined, incognito: undefined, url: undefined };
+
     const update = {} as HttpRequest;
 
+    update.incognito = boolToInt(tab.incognito);
     update.crawl_id = crawlID;
+    update.extension_session_uuid = extensionSessionUuid;
+    update.event_ordinal = eventOrdinal;
+    update.window_id = tab.windowId;
+    update.tab_id = details.tabId;
+    update.frame_id = details.frameId;
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;
@@ -250,17 +271,11 @@ export class HttpInstrument {
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
 
-    // TODO: Refactor to corresponding webext logic or discard
-    // let referrer = "";
-    // if (details.referrer) {
-    //   referrer = details.referrer.spec;
-    // }
-    // update.referrer = escapeString(referrer);
-
     const current_time = new Date(details.timeStamp);
     update.time_stamp = current_time.toISOString();
 
     let encodingType = "";
+    let referrer = "";
     const headers = [];
     let isOcsp = false;
     if (details.requestHeaders) {
@@ -276,8 +291,13 @@ export class HttpInstrument {
             isOcsp = true;
           }
         }
+        if (name === "Referer") {
+          referrer = value;
+        }
       });
     }
+
+    update.referrer = escapeString(referrer);
 
     if (requestMethod === "POST" && !isOcsp /* don't process OCSP requests */) {
       const pendingRequest = this.getPendingRequest(details.requestId);
@@ -296,9 +316,10 @@ export class HttpInstrument {
             onBeforeRequestEventDetails,
             this.dataReceiver,
           );
-          const postObj: ParsedPostRequest = postParser.parsePostRequest(
-            encodingType,
-          );
+          const postObj: ParsedPostRequest = postParser
+            .parsePostRequest
+            /*encodingType,*/
+            ();
 
           // Add (POST) request headers from upload stream
           if ("post_headers" in postObj) {
@@ -407,7 +428,6 @@ export class HttpInstrument {
       }
     }
     */
-    const tab = await browser.tabs.get(details.tabId);
     update.top_level_url = escapeString(tab.url);
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
@@ -417,9 +437,10 @@ export class HttpInstrument {
     this.dataReceiver.saveRecord("http_requests", update);
   }
 
-  private onBeforeRedirectHandler(
+  private async onBeforeRedirectHandler(
     details: WebRequestOnBeforeRedirectEventDetails,
     crawlID,
+    eventOrdinal: number,
   ) {
     /*
     console.log(
@@ -493,10 +514,27 @@ export class HttpInstrument {
     };
     */
 
+    const responseStatus = details.statusCode;
+    const responseStatusText = details.statusLine;
+
+    const tab =
+      details.tabId > -1
+        ? await browser.tabs.get(details.tabId)
+        : { windowId: undefined, incognito: undefined };
     const httpRedirect: HttpRedirect = {
+      incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
-      old_request_id: details.requestId, // previously: oldChannel.channelId,
-      new_request_id: null, // previously: newChannel.channelId, TODO: Refactor to corresponding webext logic or discard
+      old_request_url: escapeString(details.url),
+      old_request_id: details.requestId,
+      new_request_url: escapeString(details.redirectUrl),
+      new_request_id: null, // TODO: File a bug to make redirectRequestId available
+      extension_session_uuid: extensionSessionUuid,
+      event_ordinal: eventOrdinal,
+      window_id: tab.windowId,
+      tab_id: details.tabId,
+      frame_id: details.frameId,
+      response_status: responseStatus,
+      response_status_text: escapeString(responseStatusText),
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
@@ -557,9 +595,10 @@ export class HttpInstrument {
   }
 
   // Instrument HTTP responses
-  private onCompletedHandler(
+  private async onCompletedHandler(
     details: WebRequestOnCompletedEventDetails,
     crawlID,
+    eventOrdinal,
     saveJavascript,
     saveAllContent,
   ) {
@@ -573,13 +612,20 @@ export class HttpInstrument {
     );
     */
 
-    // http_responses table schema:
-    // id [auto-filled], crawl_id, url, method, referrer, response_status,
-    // response_status_text, headers, location, visit_id [auto-filled],
-    // time_stamp, content_hash
+    const tab =
+      details.tabId > -1
+        ? await browser.tabs.get(details.tabId)
+        : { windowId: undefined, incognito: undefined };
+
     const update = {} as HttpResponse;
 
+    update.incognito = boolToInt(tab.incognito);
     update.crawl_id = crawlID;
+    update.extension_session_uuid = extensionSessionUuid;
+    update.event_ordinal = eventOrdinal;
+    update.window_id = tab.windowId;
+    update.tab_id = details.tabId;
+    update.frame_id = details.frameId;
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;
@@ -594,6 +640,9 @@ export class HttpInstrument {
     update.method = escapeString(requestMethod);
 
     // TODO: Refactor to corresponding webext logic or discard
+    // (request headers are not available in http response event listener object,
+    // but the referrer property of the corresponding request could be queried)
+    //
     // let referrer = "";
     // if (details.referrer) {
     //   referrer = details.referrer.spec;

@@ -292,6 +292,9 @@ export const pageScript = function() {
   // Prevent logging of gets arising from logging
   let inLog = false;
 
+  // To keep track of the original order of events
+  let ordinal = 0;
+
   // For gets, sets, etc. on a single value
   function logValue(
     instrumentedVariableName,
@@ -324,6 +327,7 @@ export const pageScript = function() {
       funcName: callContext.funcName,
       scriptLocEval: callContext.scriptLocEval,
       callStack: callContext.callStack,
+      ordinal: ordinal++,
     };
 
     try {
@@ -371,6 +375,7 @@ export const pageScript = function() {
         funcName: callContext.funcName,
         scriptLocEval: callContext.scriptLocEval,
         callStack: callContext.callStack,
+        ordinal: ordinal++,
       };
       send("logCall", msg);
     } catch (error) {
@@ -666,7 +671,7 @@ export const pageScript = function() {
             inLog = true;
             if (object.isPrototypeOf(this)) {
               Object.defineProperty(this, propertyName, {
-                value: value
+                value,
               });
             } else {
               originalValue = value;
@@ -788,6 +793,11 @@ export const pageScript = function() {
 
   // Access to document.cookie
   instrumentObjectProperty(window.document, "window.document", "cookie", {
+    logCallStack: true,
+  });
+
+  // Access to document.referrer
+  instrumentObjectProperty(window.document, "window.document", "referrer", {
     logCallStack: true,
   });
 

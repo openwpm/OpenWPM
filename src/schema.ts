@@ -1,11 +1,51 @@
 import OnChangedCause = browser.cookies.OnChangedCause;
 
-type DateTime = string;
+export type DateTime = string;
 
-export interface HttpRequest {
+/**
+ * Corresponds to webNavigation.onBeforeNavigate and webNavigation.onCommitted
+ */
+export interface Navigation {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
+  process_id?: number;
+  window_id?: number;
+  tab_id?: number;
+  tab_opener_tab_id?: number;
+  frame_id?: number;
+  parent_frame_id?: number;
+  window_width?: number;
+  window_height?: number;
+  window_type?: string;
+  tab_width?: number;
+  tab_height?: number;
+  tab_cookie_store_id?: string;
+  uuid?: string;
+  url?: string;
+  transition_qualifiers?: string;
+  transition_type?: string;
+  before_navigate_event_ordinal?: number;
+  before_navigate_time_stamp?: DateTime;
+  committed_event_ordinal?: number;
+  committed_time_stamp?: DateTime;
+}
+
+/**
+ * Corresponds to webRequest.onBeforeSendHeaders
+ */
+export interface HttpRequest {
+  id?: number;
+  incognito?: number;
+  crawl_id?: number;
+  visit_id?: number;
+  extension_session_uuid?: string;
+  event_ordinal?: number;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   url: string;
   top_level_url?: string;
   parent_frame_id?: number;
@@ -28,10 +68,19 @@ export interface HttpRequest {
   time_stamp: DateTime;
 }
 
+/**
+ * Corresponds to webRequest.onCompleted
+ */
 export interface HttpResponse {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
+  event_ordinal?: number;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   url: string;
   method: string;
   referrer: string;
@@ -45,19 +94,39 @@ export interface HttpResponse {
   content_hash?: string;
 }
 
+/**
+ * Corresponds to webRequest.onBeforeRedirect
+ */
 export interface HttpRedirect {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
+  old_request_url?: string;
   old_request_id?: string;
+  new_request_url?: string;
   new_request_id?: string;
+  extension_session_uuid?: string;
+  event_ordinal?: number;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
+  response_status?: number;
+  response_status_text?: string;
   time_stamp: DateTime;
 }
 
 export interface JavascriptOperation {
   id?: number;
+  incognito?: number;
   crawl_id?: number;
   visit_id?: number;
+  extension_session_uuid?: string;
+  event_ordinal?: number;
+  page_scoped_event_ordinal?: number;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
   script_url?: string;
   script_line?: string;
   script_col?: string;
@@ -73,12 +142,7 @@ export interface JavascriptOperation {
   time_stamp: DateTime;
 }
 
-export interface JavascriptCookieChange {
-  id?: number;
-  crawl_id?: number;
-  visit_id?: number;
-  change?: "deleted" | "added" | "changed";
-  change_cause?: OnChangedCause;
+export interface JavascriptCookie {
   expiry?: DateTime;
   is_http_only?: number;
   is_host_only?: number;
@@ -90,5 +154,19 @@ export interface JavascriptCookieChange {
   value?: string;
   same_site?: string;
   first_party_domain?: string;
+  store_id?: string;
   time_stamp: DateTime;
+}
+
+/**
+ * Corresponds to cookies.onChanged
+ */
+export interface JavascriptCookieRecord extends JavascriptCookie {
+  id?: number;
+  crawl_id?: number;
+  visit_id?: number;
+  extension_session_uuid?: string;
+  event_ordinal?: number;
+  record_type?: "deleted" | "added-or-changed" | "manual-export";
+  change_cause?: OnChangedCause;
 }
