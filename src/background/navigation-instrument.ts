@@ -1,3 +1,4 @@
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import { makeUUID } from "../lib/uuid";
@@ -53,6 +54,7 @@ export class NavigationInstrument {
         transition_type: escapeString(details.transitionType),
         committed_time_stamp: new Date(details.timeStamp).toISOString(),
       };
+      navigation.committed_event_ordinal = incrementedEventOrdinal();
       this.dataReceiver.saveRecord("navigations", navigation);
     };
     browser.webNavigation.onCommitted.addListener(this.onCommittedListener);

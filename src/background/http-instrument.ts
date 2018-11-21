@@ -1,3 +1,4 @@
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
 import { PendingRequest } from "../lib/pending-request";
@@ -108,7 +109,11 @@ export class HttpInstrument {
       }
       const pendingRequest = this.getPendingRequest(details.requestId);
       pendingRequest.resolveOnBeforeSendHeadersEventDetails(details);
-      this.onBeforeSendHeadersHandler(details, crawlID);
+      this.onBeforeSendHeadersHandler(
+        details,
+        crawlID,
+        incrementedEventOrdinal(),
+      );
     };
     browser.webRequest.onBeforeSendHeaders.addListener(
       this.onBeforeSendHeadersListener,
@@ -121,7 +126,7 @@ export class HttpInstrument {
       if (requestStemsFromExtension(details)) {
         return;
       }
-      this.onBeforeRedirectHandler(details, crawlID);
+      this.onBeforeRedirectHandler(details, crawlID, incrementedEventOrdinal());
     };
     browser.webRequest.onBeforeRedirect.addListener(
       this.onBeforeRedirectListener,
@@ -136,7 +141,13 @@ export class HttpInstrument {
       }
       const pendingResponse = this.getPendingResponse(details.requestId);
       pendingResponse.resolveOnCompletedEventDetails(details);
-      this.onCompletedHandler(details, crawlID, saveJavascript, saveAllContent);
+      this.onCompletedHandler(
+        details,
+        crawlID,
+        incrementedEventOrdinal(),
+        saveJavascript,
+        saveAllContent,
+      );
     };
     browser.webRequest.onCompleted.addListener(
       this.onCompletedListener,
@@ -223,6 +234,7 @@ export class HttpInstrument {
   private async onBeforeSendHeadersHandler(
     details: WebRequestOnBeforeSendHeadersEventDetails,
     crawlID,
+    eventOrdinal: number,
   ) {
     /*
     console.log(
@@ -242,6 +254,7 @@ export class HttpInstrument {
     update.incognito = boolToInt(tab.incognito);
     update.crawl_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
+    update.event_ordinal = eventOrdinal;
     update.window_id = tab.windowId;
     update.tab_id = details.tabId;
     update.frame_id = details.frameId;
@@ -427,6 +440,7 @@ export class HttpInstrument {
   private async onBeforeRedirectHandler(
     details: WebRequestOnBeforeRedirectEventDetails,
     crawlID,
+    eventOrdinal: number,
   ) {
     /*
     console.log(
@@ -515,6 +529,7 @@ export class HttpInstrument {
       new_request_url: escapeString(details.redirectUrl),
       new_request_id: null, // TODO: File a bug to make redirectRequestId available
       extension_session_uuid: extensionSessionUuid,
+      event_ordinal: eventOrdinal,
       window_id: tab.windowId,
       tab_id: details.tabId,
       frame_id: details.frameId,
@@ -583,6 +598,7 @@ export class HttpInstrument {
   private async onCompletedHandler(
     details: WebRequestOnCompletedEventDetails,
     crawlID,
+    eventOrdinal,
     saveJavascript,
     saveAllContent,
   ) {
@@ -606,6 +622,7 @@ export class HttpInstrument {
     update.incognito = boolToInt(tab.incognito);
     update.crawl_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
+    update.event_ordinal = eventOrdinal;
     update.window_id = tab.windowId;
     update.tab_id = details.tabId;
     update.frame_id = details.frameId;

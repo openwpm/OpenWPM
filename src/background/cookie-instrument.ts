@@ -1,3 +1,4 @@
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
@@ -63,6 +64,7 @@ export class CookieInstrument {
         change_cause: changeInfo.cause,
         crawl_id: crawlID,
         extension_session_uuid: extensionSessionUuid,
+        event_ordinal: incrementedEventOrdinal(),
         ...transformCookieObjectToMatchOpenWPMSchema(changeInfo.cookie),
       };
       this.dataReceiver.saveRecord("javascript_cookies", update);

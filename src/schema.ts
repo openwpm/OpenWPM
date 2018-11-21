@@ -2,6 +2,9 @@ import OnChangedCause = browser.cookies.OnChangedCause;
 
 export type DateTime = string;
 
+/**
+ * Corresponds to webNavigation.onBeforeNavigate and webNavigation.onCommitted
+ */
 export interface Navigation {
   id?: number;
   incognito?: number;
@@ -24,15 +27,22 @@ export interface Navigation {
   url?: string;
   transition_qualifiers?: string;
   transition_type?: string;
+  before_navigate_event_ordinal?: number;
+  before_navigate_time_stamp?: DateTime;
+  committed_event_ordinal?: number;
   committed_time_stamp?: DateTime;
 }
 
+/**
+ * Corresponds to webRequest.onBeforeSendHeaders
+ */
 export interface HttpRequest {
   id?: number;
   incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  event_ordinal?: number;
   window_id?: number;
   tab_id?: number;
   frame_id?: number;
@@ -58,12 +68,16 @@ export interface HttpRequest {
   time_stamp: DateTime;
 }
 
+/**
+ * Corresponds to webRequest.onCompleted
+ */
 export interface HttpResponse {
   id?: number;
   incognito?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  event_ordinal?: number;
   window_id?: number;
   tab_id?: number;
   frame_id?: number;
@@ -80,6 +94,9 @@ export interface HttpResponse {
   content_hash?: string;
 }
 
+/**
+ * Corresponds to webRequest.onBeforeRedirect
+ */
 export interface HttpRedirect {
   id?: number;
   incognito?: number;
@@ -90,6 +107,7 @@ export interface HttpRedirect {
   new_request_url?: string;
   new_request_id?: string;
   extension_session_uuid?: string;
+  event_ordinal?: number;
   window_id?: number;
   tab_id?: number;
   frame_id?: number;
@@ -104,6 +122,8 @@ export interface JavascriptOperation {
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  event_ordinal?: number;
+  page_scoped_event_ordinal?: number;
   window_id?: number;
   tab_id?: number;
   frame_id?: number;
@@ -138,11 +158,15 @@ export interface JavascriptCookie {
   time_stamp: DateTime;
 }
 
+/**
+ * Corresponds to cookies.onChanged
+ */
 export interface JavascriptCookieRecord extends JavascriptCookie {
   id?: number;
   crawl_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
+  event_ordinal?: number;
   record_type?: "deleted" | "added-or-changed" | "manual-export";
   change_cause?: OnChangedCause;
 }

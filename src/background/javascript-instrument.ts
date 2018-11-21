@@ -1,4 +1,5 @@
 import MessageSender = browser.runtime.MessageSender;
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import { JavascriptOperation } from "../schema";
@@ -16,6 +17,8 @@ export class JavascriptInstrument {
       const update = {} as JavascriptOperation;
       update.crawl_id = crawlID;
       update.extension_session_uuid = extensionSessionUuid;
+      update.event_ordinal = incrementedEventOrdinal();
+      update.page_scoped_event_ordinal = data.ordinal;
       update.window_id = sender.tab.windowId;
       update.tab_id = sender.tab.id;
       update.frame_id = sender.frameId;
