@@ -258,17 +258,11 @@ export class HttpInstrument {
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
 
-    // TODO: Refactor to corresponding webext logic or discard
-    // let referrer = "";
-    // if (details.referrer) {
-    //   referrer = details.referrer.spec;
-    // }
-    // update.referrer = escapeString(referrer);
-
     const current_time = new Date(details.timeStamp);
     update.time_stamp = current_time.toISOString();
 
     let encodingType = "";
+    let referrer = "";
     const headers = [];
     let isOcsp = false;
     if (details.requestHeaders) {
@@ -284,8 +278,13 @@ export class HttpInstrument {
             isOcsp = true;
           }
         }
+        if (name === "Referer") {
+          referrer = value;
+        }
       });
     }
+
+    update.referrer = escapeString(referrer);
 
     if (requestMethod === "POST" && !isOcsp /* don't process OCSP requests */) {
       const pendingRequest = this.getPendingRequest(details.requestId);
@@ -624,6 +623,9 @@ export class HttpInstrument {
     update.method = escapeString(requestMethod);
 
     // TODO: Refactor to corresponding webext logic or discard
+    // (request headers are not available in http response event listener object,
+    // but the referrer property of the corresponding request could be queried)
+    //
     // let referrer = "";
     // if (details.referrer) {
     //   referrer = details.referrer.spec;
