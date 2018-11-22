@@ -7,8 +7,8 @@
 import TransitionType = browser.webNavigation.TransitionType;
 import TransitionQualifier = browser.webNavigation.TransitionQualifier;
 
-export interface WebNavigationOnCommittedEventDetails {
-  /** The ID of the tab in which the navigation occurs. */
+export interface WebNavigationBaseEventDetails {
+  /** The ID of the tab in which the navigation is about to occur. */
   tabId: number;
   url: string;
   /**
@@ -18,9 +18,21 @@ export interface WebNavigationOnCommittedEventDetails {
   processId?: number;
   /**
    * 0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a
-   * subframe. Frame IDs are unique within a tab.
+   * subframe. Frame IDs are unique for a given tab and process.
    */
   frameId: number;
+  /** The time when the page's DOM was fully constructed, in milliseconds since the epoch. */
+  timeStamp: number;
+}
+
+export interface WebNavigationOnBeforeNavigateEventDetails
+  extends WebNavigationBaseEventDetails {
+  /** ID of frame that wraps the frame. Set to -1 of no parent frame exists. */
+  parentFrameId: number;
+}
+
+export interface WebNavigationOnCommittedEventDetails
+  extends WebNavigationBaseEventDetails {
   /**
    * Cause of the navigation.
    * @deprecated Unsupported on Firefox at this time.
@@ -31,65 +43,19 @@ export interface WebNavigationOnCommittedEventDetails {
    * @deprecated Unsupported on Firefox at this time.
    */
   transitionQualifiers?: TransitionQualifier[];
-  /** The time when the navigation was committed, in milliseconds since the epoch. */
-  timeStamp: number;
 }
 
-export interface WebNavigationOnDOMContentLoadedEventDetails {
-  /** The ID of the tab in which the navigation occurs. */
-  tabId: number;
-  url: string;
-  /**
-   * The ID of the process runs the renderer for this tab.
-   * @deprecated Unsupported on Firefox at this time.
-   */
-  processId?: number;
-  /**
-   * 0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a
-   * subframe. Frame IDs are unique within a tab.
-   */
-  frameId: number;
-  /** The time when the page's DOM was fully constructed, in milliseconds since the epoch. */
-  timeStamp: number;
-}
+export interface WebNavigationOnDOMContentLoadedEventDetails
+  extends WebNavigationBaseEventDetails {}
 
-export interface WebNavigationOnCompletedEventDetails {
-  /** The ID of the tab in which the navigation occurs. */
-  tabId: number;
-  url: string;
-  /**
-   * The ID of the process runs the renderer for this tab.
-   * @deprecated Unsupported on Firefox at this time.
-   */
-  processId?: number;
-  /**
-   * 0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a
-   * subframe. Frame IDs are unique within a tab.
-   */
-  frameId: number;
-  /** The time when the document finished loading, in milliseconds since the epoch. */
-  timeStamp: number;
-}
+export interface WebNavigationOnCompletedEventDetails
+  extends WebNavigationBaseEventDetails {}
 
-export interface WebNavigationOnErrorOccurredEventDetails {
-  /** The ID of the tab in which the navigation occurs. */
-  tabId: number;
-  url: string;
-  /**
-   * The ID of the process runs the renderer for this tab.
-   * @deprecated Unsupported on Firefox at this time.
-   */
-  processId?: number;
-  /**
-   * 0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a
-   * subframe. Frame IDs are unique within a tab.
-   */
-  frameId: number;
+export interface WebNavigationOnErrorOccurredEventDetails
+  extends WebNavigationBaseEventDetails {
   /**
    * The error description.
    * @deprecated Unsupported on Firefox at this time.
    */
   error?: string;
-  /** The time when the error occurred, in milliseconds since the epoch. */
-  timeStamp: number;
 }
