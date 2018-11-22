@@ -84,9 +84,9 @@ export class HttpInstrument {
         return blockingResponseThatDoesNothing;
       }
       const pendingRequest = this.getPendingRequest(details.requestId);
-      pendingRequest.resolveBeforeRequestEventDetails(details);
+      pendingRequest.resolveOnBeforeRequestEventDetails(details);
       const pendingResponse = this.getPendingResponse(details.requestId);
-      pendingResponse.resolveBeforeRequestEventDetails(details);
+      pendingResponse.resolveOnBeforeRequestEventDetails(details);
       if (saveAllContent) {
         pendingResponse.addResponseResponseBodyListener(details);
       } else if (saveJavascript && this.isJS(details.type)) {
@@ -177,14 +177,14 @@ export class HttpInstrument {
     }
   }
 
-  private getPendingRequest(requestId) {
+  private getPendingRequest(requestId): PendingRequest {
     if (!this.pendingRequests[requestId]) {
       this.pendingRequests[requestId] = new PendingRequest();
     }
     return this.pendingRequests[requestId];
   }
 
-  private getPendingResponse(requestId) {
+  private getPendingResponse(requestId): PendingResponse {
     if (!this.pendingResponses[requestId]) {
       this.pendingResponses[requestId] = new PendingResponse();
     }

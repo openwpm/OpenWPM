@@ -13,7 +13,7 @@ export class PendingRequest {
   public readonly onBeforeSendHeadersEventDetails: Promise<
     WebRequestOnBeforeSendHeadersEventDetails
   >;
-  public resolveBeforeRequestEventDetails: (
+  public resolveOnBeforeRequestEventDetails: (
     details: WebRequestOnBeforeRequestEventDetails,
   ) => void;
   public resolveOnBeforeSendHeadersEventDetails: (
@@ -21,7 +21,7 @@ export class PendingRequest {
   ) => void;
   constructor() {
     this.onBeforeRequestEventDetails = new Promise(resolve => {
-      this.resolveBeforeRequestEventDetails = resolve;
+      this.resolveOnBeforeRequestEventDetails = resolve;
     });
     this.onBeforeSendHeadersEventDetails = new Promise(resolve => {
       this.resolveOnBeforeSendHeadersEventDetails = resolve;

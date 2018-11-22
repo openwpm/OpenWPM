@@ -15,16 +15,15 @@ export class PendingResponse {
     WebRequestOnCompletedEventDetails
   >;
   public responseBodyListener: ResponseBodyListener;
-  public resolveBeforeRequestEventDetails: (
+  public resolveOnBeforeRequestEventDetails: (
     details: WebRequestOnBeforeRequestEventDetails,
   ) => void;
   public resolveOnCompletedEventDetails: (
     details: WebRequestOnCompletedEventDetails,
   ) => void;
-  // private requestBody: Promise<string>;
   constructor() {
     this.onBeforeRequestEventDetails = new Promise(resolve => {
-      this.resolveBeforeRequestEventDetails = resolve;
+      this.resolveOnBeforeRequestEventDetails = resolve;
     });
     this.onCompletedEventDetails = new Promise(resolve => {
       this.resolveOnCompletedEventDetails = resolve;
