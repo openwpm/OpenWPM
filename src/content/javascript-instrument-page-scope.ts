@@ -76,8 +76,8 @@ export const pageScript = function() {
   const event_id = document.currentScript.getAttribute("data-event-id");
 
   /*
-     * Instrumentation helpers
-     */
+   * Instrumentation helpers
+   */
 
   const testing =
     document.currentScript.getAttribute("data-testing") === "true";
@@ -227,14 +227,14 @@ export const pageScript = function() {
       return empty_context;
     }
     /*
-         * Stack frame format is simply: FUNC_NAME@FILENAME:LINE_NO:COLUMN_NO
-         *
-         * If eval or Function is involved we have an additional part after the FILENAME, e.g.:
-         * FUNC_NAME@FILENAME line 123 > eval line 1 > eval:LINE_NO:COLUMN_NO
-         * or FUNC_NAME@FILENAME line 234 > Function:LINE_NO:COLUMN_NO
-         *
-         * We store the part between the FILENAME and the LINE_NO in scriptLocEval
-         */
+     * Stack frame format is simply: FUNC_NAME@FILENAME:LINE_NO:COLUMN_NO
+     *
+     * If eval or Function is involved we have an additional part after the FILENAME, e.g.:
+     * FUNC_NAME@FILENAME line 123 > eval line 1 > eval:LINE_NO:COLUMN_NO
+     * or FUNC_NAME@FILENAME line 234 > Function:LINE_NO:COLUMN_NO
+     *
+     * We store the part between the FILENAME and the LINE_NO in scriptLocEval
+     */
     try {
       let scriptUrl = "";
       let scriptLocEval = ""; // for eval or Function calls
@@ -411,9 +411,8 @@ export const pageScript = function() {
   };
 
   /*
-     *  Direct instrumentation of javascript objects
-     */
-
+   *  Direct instrumentation of javascript objects
+   */
   function isObject(object, propertyName) {
     let property;
     try {
@@ -711,8 +710,8 @@ export const pageScript = function() {
   }
 
   /*
-     * Start Instrumentation
-     */
+   * Start Instrumentation
+   */
   // TODO: user should be able to choose what to instrument
 
   // Access to navigator properties
