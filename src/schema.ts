@@ -83,7 +83,7 @@ export interface HttpResponse {
   frame_id?: number;
   url: string;
   method: string;
-  referrer: string;
+  // referrer: string;
   response_status: number;
   response_status_text: string;
   is_cached: number;
