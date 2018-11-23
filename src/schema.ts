@@ -2,6 +2,9 @@ import OnChangedCause = browser.cookies.OnChangedCause;
 
 export type DateTime = string;
 
+// https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table
+export const dateTimeUnicodeFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
+
 /**
  * Corresponds to webNavigation.onBeforeNavigate and webNavigation.onCommitted
  */
