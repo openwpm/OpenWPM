@@ -1,7 +1,7 @@
 import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { PendingNavigation } from "../lib/pending-navigation";
-import { boolToInt, escapeString } from "../lib/string-utils";
+import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { makeUUID } from "../lib/uuid";
 import { Navigation } from "../schema";
 import {
@@ -44,7 +44,7 @@ export const transformWebNavigationBaseEventDetailsToOpenWPMSchema = async (
     tab_height: tab.height,
     tab_cookie_store_id: escapeString(tab.cookieStoreId),
     uuid: makeUUID(),
-    url: escapeString(details.url),
+    url: escapeUrl(details.url),
   };
   return navigation;
 };
