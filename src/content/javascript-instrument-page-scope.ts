@@ -835,6 +835,9 @@ export const pageScript = function() {
   instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
 
   if (testing) {
-    console.log("OpenWPM: Content-side javascript instrumentation started");
+    console.log(
+      "OpenWPM: Content-side javascript instrumentation started",
+      new Date().toISOString(),
+    );
   }
 };
