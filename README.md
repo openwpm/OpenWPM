@@ -1,4 +1,4 @@
-OpenWPM [![Build Status](https://travis-ci.org/citp/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
+OpenWPM [![Build Status](https://travis-ci.org/mozilla/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
 =======
 
 OpenWPM is a web privacy measurement framework which makes it easy to
