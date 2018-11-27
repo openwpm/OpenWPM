@@ -1,7 +1,7 @@
 import MessageSender = browser.runtime.MessageSender;
 import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
-import { boolToInt, escapeString } from "../lib/string-utils";
+import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { JavascriptOperation } from "../schema";
 
 export class JavascriptInstrument {
@@ -22,7 +22,7 @@ export class JavascriptInstrument {
       update.window_id = sender.tab.windowId;
       update.tab_id = sender.tab.id;
       update.frame_id = sender.frameId;
-      update.script_url = escapeString(data.scriptUrl);
+      update.script_url = escapeUrl(data.scriptUrl);
       update.script_line = escapeString(data.scriptLine);
       update.script_col = escapeString(data.scriptCol);
       update.func_name = escapeString(data.funcName);
@@ -36,8 +36,8 @@ export class JavascriptInstrument {
 
       // document_url is the current frame's document href
       // top_level_url is the top-level frame's document href
-      update.document_url = escapeString(sender.url);
-      update.top_level_url = escapeString(sender.tab.url);
+      update.document_url = escapeUrl(sender.url);
+      update.top_level_url = escapeUrl(sender.tab.url);
 
       if (data.operation === "call" && data.args.length > 0) {
         update.arguments = escapeString(JSON.stringify(data.args));

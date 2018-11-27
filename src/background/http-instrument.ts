@@ -6,7 +6,7 @@ import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
 import RequestFilter = browser.webRequest.RequestFilter;
 import BlockingResponse = browser.webRequest.BlockingResponse;
-import { boolToInt, escapeString } from "../lib/string-utils";
+import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { HttpRedirect, HttpRequest, HttpResponse } from "../schema";
 import {
   WebRequestOnBeforeRedirectEventDetails,
@@ -84,9 +84,9 @@ export class HttpInstrument {
         return blockingResponseThatDoesNothing;
       }
       const pendingRequest = this.getPendingRequest(details.requestId);
-      pendingRequest.resolveBeforeRequestEventDetails(details);
+      pendingRequest.resolveOnBeforeRequestEventDetails(details);
       const pendingResponse = this.getPendingResponse(details.requestId);
-      pendingResponse.resolveBeforeRequestEventDetails(details);
+      pendingResponse.resolveOnBeforeRequestEventDetails(details);
       if (saveAllContent) {
         pendingResponse.addResponseResponseBodyListener(details);
       } else if (saveJavascript && this.isJS(details.type)) {
@@ -177,14 +177,14 @@ export class HttpInstrument {
     }
   }
 
-  private getPendingRequest(requestId) {
+  private getPendingRequest(requestId): PendingRequest {
     if (!this.pendingRequests[requestId]) {
       this.pendingRequests[requestId] = new PendingRequest();
     }
     return this.pendingRequests[requestId];
   }
 
-  private getPendingResponse(requestId) {
+  private getPendingResponse(requestId): PendingResponse {
     if (!this.pendingResponses[requestId]) {
       this.pendingResponses[requestId] = new PendingResponse();
     }
@@ -266,7 +266,7 @@ export class HttpInstrument {
     // update.req_call_stack = escapeString(stacktrace_str);
 
     const url = details.url;
-    update.url = escapeString(url);
+    update.url = escapeUrl(url);
 
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
@@ -428,7 +428,7 @@ export class HttpInstrument {
       }
     }
     */
-    update.top_level_url = escapeString(tab.url);
+    update.top_level_url = escapeUrl(tab.url);
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
       JSON.stringify(details.frameAncestors),
@@ -524,9 +524,9 @@ export class HttpInstrument {
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
-      old_request_url: escapeString(details.url),
+      old_request_url: escapeUrl(details.url),
       old_request_id: details.requestId,
-      new_request_url: escapeString(details.redirectUrl),
+      new_request_url: escapeUrl(details.redirectUrl),
       new_request_id: null, // TODO: File a bug to make redirectRequestId available
       extension_session_uuid: extensionSessionUuid,
       event_ordinal: eventOrdinal,
@@ -634,7 +634,7 @@ export class HttpInstrument {
     update.is_cached = boolToInt(isCached);
 
     const url = details.url;
-    update.url = escapeString(url);
+    update.url = escapeUrl(url);
 
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
