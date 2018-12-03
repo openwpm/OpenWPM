@@ -531,8 +531,16 @@ function getPageScript() {
             if (originalSetter) { // if accessor property
               returnValue = originalSetter.call(this, value);
             } else if ('value' in propDesc) { // if data property
-              originalValue = value;
+              inLog = true;
+              if (object.isPrototypeOf(this)) {
+                Object.defineProperty(this, propertyName, {
+                  value: value
+                });
+              } else {
+                originalValue = value;
+              }
               returnValue = value;
+              inLog = false;
             } else {
               console.error("Property descriptor for",
                             objectName + '.' + propertyName,
