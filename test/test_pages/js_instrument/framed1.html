@@ -95,27 +95,10 @@
         console.log("nestedObj call 1");
       }
 
-      // Wait for window.instrumentObject to be set by
-      // the injected page script before continuing
-      const instrumentObjectAvailable = new Promise(function(resolve) {
-        function check() {
-          if (typeof window.instrumentObject !== "undefined") {
-            resolve();
-          } else {
-            setTimeout(check, 250);
-          }
-        }
-        check();
-      });
-
-      instrumentObjectAvailable.then(function () {
-
-        // Instrument object non-recursively
-        console.log("Instrumenting window.frame1Test!");
-        window.instrumentObject(window.frame1Test, "window.frame1Test");
-        interactWithTestObjects();
-
-      });
+      // Instrument object non-recursively
+      console.log("Instrumenting window.frame1Test!");
+      window.instrumentObject(window.frame1Test, "window.frame1Test");
+      interactWithTestObjects();
 
     </script>
     <iframe src="framed2.html"></iframe>

@@ -2,6 +2,12 @@ import { injectJavascriptInstrumentPageScript } from "openwpm-webext-instrumenta
 
 console.log("OpenWPM content script start");
 
+// Waiting for the configuration
+// TODO: Find a faster way to supply the configuration
+const testing = true;
+injectJavascriptInstrumentPageScript(testing);
+
+/*
 // request current configuration from background script
 // before injecting the instrumentation so that we can
 // set the testing flag properly
@@ -20,3 +26,4 @@ browser.runtime.sendMessage(
   console.log("OpenWPM content to background script 'requestingConfig' sendMessage failed");
   // console.error(err);
 });
+*/
