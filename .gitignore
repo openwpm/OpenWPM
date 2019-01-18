@@ -77,3 +77,6 @@ docs/_build/
 
 # npm packages
 node_modules
+
+# Client Extension
+automation/Extension/firefox
