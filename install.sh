@@ -62,7 +62,7 @@ fi
 # of the ESR, but a major version bump needs to be tested carefully.
 # Older ESRs are not supported by geckodriver.
 firefox_version="$(curl 'https://ftp.mozilla.org/pub/firefox/releases/' |
-grep '/pub/firefox/releases/52.' |
+grep '/pub/firefox/releases/60.' |
 tail -n 1 | sed -e 's/.*releases\///g' | cut -d '/' -f1)"
 
 wget https://ftp.mozilla.org/pub/firefox/releases/${firefox_version}/linux-$(uname -m)/en-US/firefox-${firefox_version}.tar.bz2
@@ -72,9 +72,8 @@ mv firefox firefox-bin
 rm firefox-${firefox_version}.tar.bz2
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
-# packaged. `geckodriver` 0.16.0+ is not compatible with Firefox 52. See:
-# https://github.com/mozilla/geckodriver/issues/743
-GECKODRIVER_VERSION=0.15.0
+# packaged.
+GECKODRIVER_VERSION=0.23.0
 case $(uname -m) in
     (x86_64)
         GECKODRIVER_ARCH=linux64
