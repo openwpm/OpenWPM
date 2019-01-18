@@ -129,7 +129,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.set_preference('plugins.click_to_play', False)
 
     # Prevent e10s
-    fo.set_preference("browser.tabs.remote.autostart.2", False)
+    #fo.set_preference("browser.tabs.remote.autostart.2", False)
 
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fp, fo, root_dir,
@@ -174,4 +174,4 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     status_queue.put(('STATUS', 'Browser Launched',
                       (int(pid), profile_settings)))
 
-    return driver, interceptor.profile_path, profile_settings
+    return driver, driver.capabilities["moz:profile"], profile_settings
