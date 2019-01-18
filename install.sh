@@ -87,3 +87,5 @@ wget https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VER
 tar zxf geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
 rm geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
 mv geckodriver firefox-bin
+
+git clone https://github.com/nhnt11/openwpm-firefox-webext automation/Extension/firefox
