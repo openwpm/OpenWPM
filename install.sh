@@ -53,6 +53,7 @@ fi
 if [ "$TRAVIS" != "true" ]; then
   wget https://bootstrap.pypa.io/get-pip.py
   python get-pip.py --user
+  export PATH=~/.local/bin:$PATH
   rm get-pip.py
 	pip install --user --upgrade -r requirements.txt
 fi
