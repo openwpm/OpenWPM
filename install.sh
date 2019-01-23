@@ -92,7 +92,7 @@ mv geckodriver firefox-bin
 # Install node; download and build client extension
 
 curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
-sudo apt install nodejs
+sudo apt install -y nodejs
 
 git clone https://github.com/nhnt11/openwpm-firefox-webext automation/Extension/firefox
 cd automation/Extension/firefox
