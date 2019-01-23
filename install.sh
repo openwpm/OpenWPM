@@ -39,7 +39,7 @@ if [ "$flash" = true ]; then
 fi
 sudo apt-get update
 
-sudo apt-get install -y firefox htop git python-dev libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb libboost-python-dev libleveldb-dev libjpeg-dev curl wget nodejs npm git
+sudo apt-get install -y firefox htop git python-dev libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential xvfb libboost-python-dev libleveldb-dev libjpeg-dev curl wget git
 
 # For some versions of ubuntu, the package libleveldb1v5 isn't available. Use libleveldb1 instead.
 sudo apt-get install -y libleveldb1v5 || sudo apt-get install -y libleveldb1
@@ -88,6 +88,11 @@ wget https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VER
 tar zxf geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
 rm geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz
 mv geckodriver firefox-bin
+
+# Install node; download and build client extension
+
+curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
+sudo apt install nodejs
 
 git clone https://github.com/nhnt11/openwpm-firefox-webext automation/Extension/firefox
 cd automation/Extension/firefox
