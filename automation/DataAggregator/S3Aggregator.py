@@ -241,6 +241,9 @@ class S3Listener(BaseListener):
                 data[k] = six.text_type(v, errors='ignore')
             elif callable(v):
                 data[k] = six.text_type(v)
+            # TODO: Can we fix this in the extension?
+            elif type(v) == dict:
+                data[k] = json.dumps(v)
 
         # Save record to disk
         self._write_record(table, data, visit_id)
