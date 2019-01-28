@@ -17,12 +17,18 @@ CREATE TABLE IF NOT EXISTS crawl (
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(task_id) REFERENCES task(task_id));
 
+/*
+# site_visits
+ */
 CREATE TABLE IF NOT EXISTS site_visits (
     visit_id INTEGER PRIMARY KEY,
     crawl_id INTEGER NOT NULL,
     site_url VARCHAR(500) NOT NULL,
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
+/*
+# flash_cookies
+ */
 CREATE TABLE IF NOT EXISTS flash_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
@@ -35,6 +41,9 @@ CREATE TABLE IF NOT EXISTS flash_cookies (
     FOREIGN KEY(crawl_id) REFERENCES crawl(id),
     FOREIGN KEY(visit_id) REFERENCES site_visits(id));
 
+/*
+# profile_cookies
+ */
 CREATE TABLE IF NOT EXISTS profile_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
@@ -52,6 +61,9 @@ CREATE TABLE IF NOT EXISTS profile_cookies (
     FOREIGN KEY(crawl_id) REFERENCES crawl(id),
     FOREIGN KEY(visit_id) REFERENCES site_visits(id));
 
+/*
+# crawl_history
+ */
 CREATE TABLE IF NOT EXISTS crawl_history (
     crawl_id INTEGER,
     visit_id INTEGER,
@@ -61,6 +73,9 @@ CREATE TABLE IF NOT EXISTS crawl_history (
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
+/*
+# http_requests
+ */
 CREATE TABLE IF NOT EXISTS http_requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
@@ -85,6 +100,9 @@ CREATE TABLE IF NOT EXISTS http_requests(
     time_stamp TEXT NOT NULL
 );
 
+/*
+# http_responses
+ */
 CREATE TABLE IF NOT EXISTS http_responses(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
@@ -102,6 +120,9 @@ CREATE TABLE IF NOT EXISTS http_responses(
     content_hash TEXT
 );
 
+/*
+# http_redirects
+ */
 CREATE TABLE IF NOT EXISTS http_redirects(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
@@ -115,6 +136,9 @@ CREATE TABLE IF NOT EXISTS http_redirects(
     time_stamp TEXT NOT NULL
 );
 
+/*
+# javascript
+ */
 CREATE TABLE IF NOT EXISTS javascript(
     id INTEGER PRIMARY KEY,
     crawl_id INTEGER,
@@ -134,6 +158,9 @@ CREATE TABLE IF NOT EXISTS javascript(
     time_stamp TEXT NOT NULL
 );
 
+/*
+# javascript_cookies
+ */
 CREATE TABLE IF NOT EXISTS javascript_cookies(
     id INTEGER PRIMARY KEY ASC,
     crawl_id INTEGER,

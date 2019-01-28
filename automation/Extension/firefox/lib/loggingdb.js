@@ -5,12 +5,11 @@ var crawlID = null;
 var visitID = null;
 var debugging = false;
 var dataAggregator = null;
-var ldbAggregator = null;
 var logAggregator = null;
 var listeningSocket = null;
 
-export const open = function(aggregatorAddress, ldbAddress, logAddress, curr_crawlID) {
-    if (aggregatorAddress == null && ldbAddress == null && logAddress == null && curr_crawlID == '') {
+export const open = function(aggregatorAddress, logAddress, curr_crawlID) {
+    if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
@@ -32,11 +31,6 @@ export const open = function(aggregatorAddress, ldbAddress, logAddress, curr_cra
         var rv = dataAggregator.connect();
         console.log("sqliteSocket started?",rv);
     }
-    if (ldbAddress != null) {
-        ldbAggregator = new socket.SendingSocket("ldb");
-        var rv = ldbAggregator.connect();
-        console.log("ldbSocket started?",rv);
-    }
 
     // Listen for incoming urls as visit ids
     listeningSocket = new socket.ListeningSocket("visits");
@@ -48,9 +42,6 @@ export const open = function(aggregatorAddress, ldbAddress, logAddress, curr_cra
 export const close = function() {
     if (dataAggregator != null) {
         dataAggregator.close();
-    }
-    if (ldbAggregator != null) {
-        ldbAggregator.close();
     }
     if (logAggregator != null) {
         logAggregator.close();
@@ -162,11 +153,6 @@ export const saveRecord = function(instrument, record) {
 };
 
 export const saveContent = function(content, contentHash) {
-  // send content to levelDBAggregator which stores content
-  // deduplicated by contentHash in a levelDB database
-  if (debugging) {
-    console.log("LDB contentHash:",contentHash,"with length",content.length);
-    return;
-  }
-  ldbAggregator.send([content, contentHash]);
+  // Send page content to the data aggregator
+  dataAggregator.send(['page_content', [content, contentHash]]);
 };

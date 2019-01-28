@@ -17,7 +17,6 @@ const configPromise = new Promise(function(resolve, reject) {
     };
     config['logger_address'] = manager_params['logger_address'];
     config['sqlite_address'] = manager_params['aggregator_address'];
-    config['leveldb_address'] = manager_params['ldb_address'] || null;
     config['testing'] = manager_params['testing'];
     console.log("Browser Config:", config);
     resolve(config);
@@ -52,8 +51,7 @@ const start = function(config) {
   // Allow content-scripts to request the current config via messaging
   exposeConfig(config);
 
-  loggingDB.open(config['sqlite_address'],
-                 config['leveldb_address'],
+  loggingDB.open(config['aggregator_address'],
                  config['logger_address'],
                  config['crawl_id']);
 

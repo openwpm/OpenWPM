@@ -6,55 +6,68 @@ import sqlite3
 import time
 from sqlite3 import IntegrityError, OperationalError, ProgrammingError
 
+import plyvel
+import six
 from six.moves import range
 
-from .BaseAggregator import BaseAggregator, BaseListener
+from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
 
-COMMIT_BATCH_SIZE = 1000
+SQL_BATCH_SIZE = 1000
+LDB_BATCH_SIZE = 100
+MIN_TIME = 5  # seconds
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
+LDB_NAME = 'content.ldb'
 
 
-def listener_process_runner(manager_params, status_queue):
-    """SqliteListener runner. Pass to new process"""
-    listener = SqliteListener(status_queue, manager_params)
+def listener_process_runner(
+        manager_params, status_queue, shutdown_queue, ldb_enabled):
+    """LocalListener runner. Pass to new process"""
+    listener = LocalListener(
+        status_queue, shutdown_queue, manager_params, ldb_enabled)
     listener.startup()
 
-    counter = 0  # number of executions made since last commit
-    commit_time = 0  # keep track of time since last commit
     while True:
+        listener.update_status_queue()
         if listener.should_shutdown():
             break
 
         if listener.record_queue.empty():
-            time.sleep(0.001)
-
-            # commit every five seconds to avoid blocking the db for too long
-            if counter > 0 and time.time() - commit_time > 5:
-                listener.db.commit()
+            time.sleep(1)
+            listener.maybe_commit_records()
             continue
 
-        # process record
+        # Process record
         record = listener.record_queue.get()
         listener.process_record(record)
 
         # batch commit if necessary
-        counter += 1
-        if counter >= COMMIT_BATCH_SIZE:
-            counter = 0
-            commit_time = time.time()
-            listener.db.commit()
+        listener.maybe_commit_records()
 
     listener.drain_queue()
     listener.shutdown()
 
 
-class SqliteListener(BaseListener):
+class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
-    def __init__(self, status_queue, manager_params):
+    def __init__(
+            self, status_queue, shutdown_queue, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
-        super(SqliteListener, self).__init__(status_queue, manager_params)
+        self.ldb_enabled = ldb_enabled
+        if self.ldb_enabled:
+            self.ldb = plyvel.DB(
+                os.path.join(manager_params['data_directory'], LDB_NAME),
+                create_if_missing=True, write_buffer_size=128 * 10 ** 6,
+                compression='snappy'
+            )
+            self.content_batch = self.ldb.write_batch()
+        self._ldb_counter = 0
+        self._ldb_commit_time = 0
+        self._sql_counter = 0
+        self._sql_commit_time = 0
+        super(LocalListener, self).__init__(
+            status_queue, shutdown_queue, manager_params)
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
@@ -80,9 +93,11 @@ class SqliteListener(BaseListener):
             self.cur.execute(record[1])
             self.db.commit()
             return
+        elif record[0] == RECORD_TYPE_CONTENT:
+            self.process_content(record)
+            return
         statement, args = self._generate_insert(
             table=record[0], data=record[1])
-        import six
         for i in range(len(args)):
             if isinstance(args[i], six.binary_type):
                 args[i] = six.text_type(args[i], errors='ignore')
@@ -90,25 +105,77 @@ class SqliteListener(BaseListener):
                 args[i] = six.text_type(args[i])
         try:
             self.cur.execute(statement, args)
+            self._sql_counter += 1
         except (OperationalError, ProgrammingError, IntegrityError) as e:
             self.logger.error(
                 "Unsupported record:\n%s\n%s\n%s\n%s\n"
                 % (type(e), e, statement, repr(args)))
 
+    def process_content(self, record):
+        """Add page content to the LevelDB database"""
+        if record[0] != RECORD_TYPE_CONTENT:
+            raise ValueError(
+                "Incorrect record type passed to `process_content`. Expected "
+                "record of type `%s`, received `%s`." % (
+                    RECORD_TYPE_CONTENT, record[0])
+            )
+        if not self.ldb_enabled:
+            raise RuntimeError(
+                "Attempted to save page content but the LevelDB content "
+                "database is not enabled.")
+        content, content_hash = record[1]
+        content = content.encode('utf-8')
+        content_hash = str(content_hash).encode('ascii')
+        if self.ldb.get(content_hash) is not None:
+            return
+        self.content_batch.put(content_hash, content)
+        self._ldb_counter += 1
+
+    def _write_content_batch(self):
+        """Write out content batch to LevelDB database"""
+        self.content_batch.write()
+        self.content_batch = self.ldb.write_batch()
+
+    def maybe_commit_records(self):
+        """Commit records to database if record count or timer is over limit"""
+
+        # Commit SQLite Database inserts
+        sql_over_time = (time.time() - self._sql_commit_time) > MIN_TIME
+        if self._sql_counter >= SQL_BATCH_SIZE or (
+                self._sql_counter > 0 and sql_over_time):
+            self.db.commit()
+            self._sql_counter = 0
+            self._sql_commit_time = time.time()
+
+        # Write LevelDB batch to DB
+        if not self.ldb_enabled:
+            return
+        ldb_over_time = (time.time() - self._ldb_commit_time) > MIN_TIME
+        if self._ldb_counter >= LDB_BATCH_SIZE or (
+                self._ldb_counter > 0 and ldb_over_time):
+            self._write_content_batch()
+            self._ldb_counter = 0
+            self._ldb_commit_time = time.time()
+
     def shutdown(self):
         self.db.commit()
         self.db.close()
-        super(SqliteListener, self).shutdown()
+        if self.ldb_enabled:
+            self._write_content_batch()
+            self.ldb.close()
+        super(LocalListener, self).shutdown()
 
 
-class SqliteAggregator(BaseAggregator):
+class LocalAggregator(BaseAggregator):
     """
     Receives SQL queries from other processes and writes them to the central
     database. Executes queries until being told to die (then it will finish
     work and shut down). Killing this process will result in data loss.
+
+    If content saving is enabled, we write page content to a LevelDB database.
     """
     def __init__(self, manager_params, browser_params):
-        super(SqliteAggregator, self).__init__(manager_params, browser_params)
+        super(LocalAggregator, self).__init__(manager_params, browser_params)
         db_path = self.manager_params['database_name']
         if not os.path.exists(manager_params['data_directory']):
             os.mkdir(manager_params['data_directory'])
@@ -116,6 +183,14 @@ class SqliteAggregator(BaseAggregator):
         self.cur = self.db.cursor()
         self._create_tables()
         self._get_last_used_ids()
+
+        # Mark if LDBAggregator is needed
+        # (if content saving is enabled on any browser)
+        self.ldb_enabled = False
+        for params in browser_params:
+            if params['save_javascript'] or params['save_all_content']:
+                self.ldb_enabled = True
+                break
 
     def _create_tables(self):
         """Create tables (if this is a new database)"""
@@ -173,9 +248,10 @@ class SqliteAggregator(BaseAggregator):
 
     def launch(self):
         """Launch the aggregator listener process"""
-        super(SqliteAggregator, self).launch(listener_process_runner)
+        super(LocalAggregator, self).launch(
+            listener_process_runner, self.ldb_enabled)
 
     def shutdown(self):
         """ Terminates the aggregator"""
         self.db.close()
-        super(SqliteAggregator, self).shutdown()
+        super(LocalAggregator, self).shutdown()
