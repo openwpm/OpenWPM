@@ -226,15 +226,6 @@ class S3Listener(BaseListener):
             self._send_to_s3()
             self.browser_map[crawl_id] = visit_id
 
-        # Set default values on missing fields, because pandas uses np.nan
-        # to represent nulls which fails to be converted for storage
-        for afield, atype in zip(PQ_SCHEMAS[table].names, PQ_SCHEMAS[table].types):
-            if afield not in data.keys():
-                if str(atype) == 'int32' or str(atype) == 'int64':
-                    data[afield] = -1
-                elif str(atype) == 'string':
-                    data[afield] = str('')
-
         # Convert data to text type
         for k, v in data.items():
             if isinstance(v, six.binary_type):

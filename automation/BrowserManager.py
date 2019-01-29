@@ -362,7 +362,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
                     with open(ep_filename, 'rt') as f:
                         port = int(f.read().strip())
                         break
-                except OSError as e:
+                except IOError as e:
                     if e.errno != errno.ENOENT:
                         raise
                 time.sleep(0.1)
