@@ -229,7 +229,7 @@ class S3Listener(BaseListener):
         # Set default values on missing fields, because pandas uses np.nan
         # to represent nulls which fails to be converted for storage
         for afield, atype in zip(PQ_SCHEMAS[table].names, PQ_SCHEMAS[table].types):
-            if afield not in data.items():
+            if afield not in data.keys():
                 if str(atype) == 'int32' or str(atype) == 'int64':
                     data[afield] = -1
                 elif str(atype) == 'string':
