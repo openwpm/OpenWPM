@@ -3,8 +3,10 @@ from __future__ import absolute_import, print_function
 import re
 from os.path import dirname, isfile, join, realpath
 
-from ..automation.utilities.platform_utils import (get_firefox_binary_path,
-                                                   get_geckodriver_exec_path)
+from ..automation.utilities.platform_utils import (
+    get_firefox_binary_path,
+    get_geckodriver_exec_path,
+)
 from .openwpmtest import OpenWPMTest
 
 
@@ -27,6 +29,6 @@ class TestDependencies(OpenWPMTest):
             line = line.strip()
             if line == "" or line[0] == "#":
                 continue
-            pkg = re.split(r'[>=<]', line)[0]
+            pkg = re.split(r"[>=<]", line)[0]
             print("Checking Python package", pkg)
             self.assert_py_pkg_installed(pkg)

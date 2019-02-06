@@ -11,10 +11,9 @@ from six.moves.urllib.parse import parse_qs, urlparse
 
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"
-BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
-                                         LOCAL_WEBSERVER_PORT)
+BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN, LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
-BASE_TEST_URL_NOSCHEME = BASE_TEST_URL.split('//')[1]
+BASE_TEST_URL_NOSCHEME = BASE_TEST_URL.split("//")[1]
 
 
 def which(program):
@@ -37,6 +36,7 @@ def which(program):
 
 class MyTCPServer(socketserver.TCPServer):
     """Subclass TCPServer to be able to reuse the same port (Errno 98)."""
+
     allow_reuse_address = True
 
 
@@ -71,33 +71,34 @@ class MyHandler(SimpleHTTPRequestHandler):
     If a request is made the to `/MAGIC_REDIRECT/` path without a
     `dst` parameter defined, a `404` response is returned.
     """
+
     def __init__(self, *args, **kwargs):
         SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def do_GET(self, *args, **kwargs):
 
         # 1. Redirect all requests to `/MAGIC_REDIRECT/`.
-        if self.path.startswith('/MAGIC_REDIRECT/'):
+        if self.path.startswith("/MAGIC_REDIRECT/"):
             parsed_path = urlparse(self.path)
             qs = parse_qs(parsed_path.query)
-            if 'dst' not in qs:
+            if "dst" not in qs:
                 self.send_error(
                     404,
                     "Requests to the path `/MAGIC_REDIRECT/` must specify "
-                    "a destination to redirect to via a `dst` query parameter."
+                    "a destination to redirect to via a `dst` query parameter.",
                 )
                 return
-            dst = qs['dst'][0]
+            dst = qs["dst"][0]
             new_qs = list()
-            if len(qs['dst']) > 1:
-                new_qs.append('dst=' + '&dst='.join(qs['dst'][1:]))
+            if len(qs["dst"]) > 1:
+                new_qs.append("dst=" + "&dst=".join(qs["dst"][1:]))
             for key in qs.keys():
-                if key == 'dst':
+                if key == "dst":
                     continue
-                temp = '%s=' + '&%s='.join(qs[key])
+                temp = "%s=" + "&%s=".join(qs[key])
                 new_qs.append(temp % key)
             if len(new_qs) > 0:
-                new_url = "%s?%s" % (dst, '&'.join(new_qs))
+                new_url = "%s?%s" % (dst, "&".join(new_qs))
             else:
                 new_url = dst
             self.send_response(301)
@@ -130,4 +131,4 @@ def start_server():
 def rand_str(size=8):
     """Return random string with the given size."""
     RAND_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
-    return ''.join(choice(RAND_CHARS) for _ in range(size))
+    return "".join(choice(RAND_CHARS) for _ in range(size))

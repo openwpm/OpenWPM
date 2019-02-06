@@ -34,18 +34,15 @@ def load_default_params(num_browsers=1):
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
     """
-    fp = open(os.path.join(os.path.dirname(__file__),
-                           'default_browser_params.json'))
+    fp = open(os.path.join(os.path.dirname(__file__), "default_browser_params.json"))
     preferences = json.load(fp)
     fp.close()
-    browser_params = [copy.deepcopy(preferences) for i in range(
-        0, num_browsers)]
+    browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
 
-    fp = open(os.path.join(os.path.dirname(__file__),
-                           'default_manager_params.json'))
+    fp = open(os.path.join(os.path.dirname(__file__), "default_manager_params.json"))
     manager_params = json.load(fp)
     fp.close()
-    manager_params['num_browsers'] = num_browsers
+    manager_params["num_browsers"] = num_browsers
 
     return manager_params, browser_params
 
@@ -69,39 +66,45 @@ class TaskManager:
     def __init__(self, manager_params, browser_params, process_watchdog=False):
 
         # Make paths absolute in manager_params
-        for path in ['data_directory', 'log_directory']:
+        for path in ["data_directory", "log_directory"]:
             if manager_params[path] is not None:
                 manager_params[path] = os.path.expanduser(manager_params[path])
-        manager_params['database_name'] = os.path.join(
-            manager_params['data_directory'], manager_params['database_name'])
-        manager_params['log_file'] = os.path.join(
-            manager_params['log_directory'], manager_params['log_file'])
-        manager_params['screenshot_path'] = os.path.join(
-            manager_params['data_directory'], 'screenshots')
-        manager_params['source_dump_path'] = os.path.join(
-            manager_params['data_directory'], 'sources')
+        manager_params["database_name"] = os.path.join(
+            manager_params["data_directory"], manager_params["database_name"]
+        )
+        manager_params["log_file"] = os.path.join(
+            manager_params["log_directory"], manager_params["log_file"]
+        )
+        manager_params["screenshot_path"] = os.path.join(
+            manager_params["data_directory"], "screenshots"
+        )
+        manager_params["source_dump_path"] = os.path.join(
+            manager_params["data_directory"], "sources"
+        )
         self.manager_params = manager_params
         self.browser_params = browser_params
 
         # Create data directories if they do not exist
-        if not os.path.exists(manager_params['screenshot_path']):
-            os.makedirs(manager_params['screenshot_path'])
-        if not os.path.exists(manager_params['source_dump_path']):
-            os.makedirs(manager_params['source_dump_path'])
+        if not os.path.exists(manager_params["screenshot_path"]):
+            os.makedirs(manager_params["screenshot_path"])
+        if not os.path.exists(manager_params["source_dump_path"]):
+            os.makedirs(manager_params["source_dump_path"])
 
         # check size of parameter dictionary
-        self.num_browsers = manager_params['num_browsers']
+        self.num_browsers = manager_params["num_browsers"]
         if len(browser_params) != self.num_browsers:
-            raise Exception("Number of <browser_params> dicts is not the same "
-                            "as manager_params['num_browsers']")
+            raise Exception(
+                "Number of <browser_params> dicts is not the same "
+                "as manager_params['num_browsers']"
+            )
 
         # Flow control
         self.closing = False
         self.failure_status = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
-        if manager_params['failure_limit'] is not None:
-            self.failure_limit = manager_params['failure_limit']
+        if manager_params["failure_limit"] is not None:
+            self.failure_limit = manager_params["failure_limit"]
         else:
             self.failure_limit = self.num_browsers * 2 + 10
 
@@ -111,9 +114,8 @@ class TaskManager:
         self.logging_status_queue = None
         self.loggingserver = self._launch_loggingserver()
         # socket location: (address, port)
-        self.manager_params['logger_address'] = self.logging_status_queue.get()
-        self.logger = MPLogger.loggingclient(
-            *self.manager_params['logger_address'])
+        self.manager_params["logger_address"] = self.logging_status_queue.get()
+        self.logger = MPLogger.loggingclient(*self.manager_params["logger_address"])
 
         # Initialize the data aggregators
         self._launch_aggregators()
@@ -140,8 +142,7 @@ class TaskManager:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
-            browser_params[i][
-                'crawl_id'] = self.data_aggregator.get_next_crawl_id()
+            browser_params[i]["crawl_id"] = self.data_aggregator.get_next_crawl_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -156,8 +157,10 @@ class TaskManager:
                 raise
 
             if not success:
-                self.logger.critical("Browser spawn failure during "
-                                     "TaskManager initialization, exiting...")
+                self.logger.critical(
+                    "Browser spawn failure during "
+                    "TaskManager initialization, exiting..."
+                )
                 self.close()
                 break
 
@@ -171,8 +174,10 @@ class TaskManager:
               kill browser processes started by Selenium 3 (with `subprocess`)
         """
         if self.process_watchdog:
-            self.logger.error("BROWSER %i: Process watchdog is not currently "
-                              "supported." % self.crawl_id)
+            self.logger.error(
+                "BROWSER %i: Process watchdog is not currently "
+                "supported." % self.crawl_id
+            )
         while not self.closing:
             time.sleep(10)
 
@@ -182,10 +187,11 @@ class TaskManager:
                     process = psutil.Process(browser.browser_pid)
                     mem = process.memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
-                        self.logger.info("BROWSER %i: Memory usage: %iMB"
-                                         ", exceeding limit of %iMB" % (
-                                             browser.crawl_id, int(mem),
-                                             BROWSER_MEMORY_LIMIT))
+                        self.logger.info(
+                            "BROWSER %i: Memory usage: %iMB"
+                            ", exceeding limit of %iMB"
+                            % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT)
+                        )
                         browser.restart_required = True
                 except psutil.NoSuchProcess:
                     pass
@@ -203,36 +209,45 @@ class TaskManager:
                     if browser.display_pid is not None:
                         display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
-                    if (process.create_time() + 300 < check_time and (
-                            (process.name() == 'firefox' and
-                             process.pid not in browser_pids) or
-                            (process.name() == 'Xvfb' and
-                             process.pid not in display_pids))):
-                        self.logger.debug("Process: %s (pid: %i) with start "
-                                          "time %s found running but not in "
-                                          "browser process list. Killing." % (
-                                              process.name(), process.pid,
-                                              process.create_time()))
+                    if process.create_time() + 300 < check_time and (
+                        (
+                            process.name() == "firefox"
+                            and process.pid not in browser_pids
+                        )
+                        or (
+                            process.name() == "Xvfb" and process.pid not in display_pids
+                        )
+                    ):
+                        self.logger.debug(
+                            "Process: %s (pid: %i) with start "
+                            "time %s found running but not in "
+                            "browser process list. Killing."
+                            % (process.name(), process.pid, process.create_time())
+                        )
                         process.kill()
 
     def _launch_aggregators(self):
         """Launch the necessary data aggregators"""
         if self.manager_params["output_format"] == "local":
             self.data_aggregator = LocalAggregator.LocalAggregator(
-                self.manager_params, self.browser_params)
+                self.manager_params, self.browser_params
+            )
         elif self.manager_params["output_format"] == "s3":
             self.data_aggregator = S3Aggregator.S3Aggregator(
-                self.manager_params, self.browser_params)
+                self.manager_params, self.browser_params
+            )
         else:
-            raise Exception("Unrecognized output format: %s" %
-                            self.manager_params["output_format"])
+            raise Exception(
+                "Unrecognized output format: %s" % self.manager_params["output_format"]
+            )
         self.data_aggregator.launch()
         self.manager_params[
-            'aggregator_address'] = self.data_aggregator.listener_address
+            "aggregator_address"
+        ] = self.data_aggregator.listener_address
 
         # open connection to aggregator for saving crawl details
-        self.sock = clientsocket(serialization='dill')
-        self.sock.connect(*self.manager_params['aggregator_address'])
+        self.sock = clientsocket(serialization="dill")
+        self.sock.connect(*self.manager_params["aggregator_address"])
 
     def _kill_aggregators(self):
         """Shutdown any currently running data aggregators"""
@@ -241,9 +256,10 @@ class TaskManager:
     def _launch_loggingserver(self):
         """ sets up logging server """
         self.logging_status_queue = Queue()
-        loggingserver = Process(target=MPLogger.loggingserver,
-                                args=(self.manager_params['log_file'],
-                                      self.logging_status_queue, ))
+        loggingserver = Process(
+            target=MPLogger.loggingserver,
+            args=(self.manager_params["log_file"], self.logging_status_queue),
+        )
         loggingserver.daemon = True
         loggingserver.start()
         return loggingserver
@@ -290,22 +306,23 @@ class TaskManager:
         self.logger.debug("Checking command failure status indicator...")
         if self.failure_status:
             self.logger.debug(
-                "TaskManager failure status set, halting command execution.")
+                "TaskManager failure status set, halting command execution."
+            )
             self._cleanup_before_fail()
-            if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
+            if self.failure_status["ErrorType"] == "ExceedCommandFailureLimit":
                 raise CommandExecutionError(
                     "TaskManager exceeded maximum consecutive command "
                     "execution failures.",
-                    self.failure_status['CommandSequence']
+                    self.failure_status["CommandSequence"],
                 )
-            elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
-                                                       "FailureLimit")):
+            elif self.failure_status["ErrorType"] == ("ExceedLaunch" "FailureLimit"):
                 raise CommandExecutionError(
                     "TaskManager failed to launch browser within allowable "
-                    "failure limit.", self.failure_status['CommandSequence']
+                    "failure limit.",
+                    self.failure_status["CommandSequence"],
                 )
-            if self.failure_status['ErrorType'] == 'CriticalChildException':
-                reraise(*pickle.loads(self.failure_status['Exception']))
+            if self.failure_status["ErrorType"] == "CriticalChildException":
+                reraise(*pickle.loads(self.failure_status["Exception"]))
 
     # CRAWLER COMMAND CODE
 
@@ -345,29 +362,27 @@ class TaskManager:
                     break
                 time.sleep(SLEEP_CONS)
 
-        elif index == '*':
+        elif index == "*":
             # send the command to all browsers
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
                 for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[
-                            i].current_timeout = command_seq.total_timeout
-                        thread = self._start_thread(
-                            self.browsers[i], command_seq)
+                        self.browsers[i].current_timeout = command_seq.total_timeout
+                        thread = self._start_thread(self.browsers[i], command_seq)
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
-        elif index == '**':
+        elif index == "**":
             # send the command to all browsers and sync it
             condition = threading.Condition()  # block threads until ready
             command_executed = [False] * len(self.browsers)
             while False in command_executed:
                 for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[
-                            i].current_timeout = command_seq.total_timeout
+                        self.browsers[i].current_timeout = command_seq.total_timeout
                         thread = self._start_thread(
-                            self.browsers[i], command_seq, condition)
+                            self.browsers[i], command_seq, condition
+                        )
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
             with condition:
@@ -376,15 +391,12 @@ class TaskManager:
             # send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self.browsers[
-                        index].current_timeout = command_seq.total_timeout
-                    thread = self._start_thread(
-                        self.browsers[index], command_seq)
+                    self.browsers[index].current_timeout = command_seq.total_timeout
+                    thread = self._start_thread(self.browsers[index], command_seq)
                     break
                 time.sleep(SLEEP_CONS)
         else:
-            self.logger.info(
-                "Command index type is not supported or out of range")
+            self.logger.info("Command index type is not supported or out of range")
             return
 
         if command_seq.blocking:
@@ -396,17 +408,21 @@ class TaskManager:
 
         # Check status flags before starting thread
         if self.closing:
-            self.logger.error(
-                "Attempted to execute command on a closed TaskManager")
+            self.logger.error("Attempted to execute command on a closed TaskManager")
             return
         self._check_failure_status()
 
         browser.set_visit_id(self.data_aggregator.get_next_visit_id())
-        self.sock.send(("site_visits", {
-            "visit_id": browser.curr_visit_id,
-            "crawl_id": browser.crawl_id,
-            "site_url": command_sequence.url
-        }))
+        self.sock.send(
+            (
+                "site_visits",
+                {
+                    "visit_id": browser.curr_visit_id,
+                    "crawl_id": browser.crawl_id,
+                    "site_url": command_sequence.url,
+                },
+            )
+        )
 
         # Start command execution thread
         args = (browser, command_sequence, condition)
@@ -431,15 +447,18 @@ class TaskManager:
         start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
-            if command[0] in ['GET', 'BROWSE',
-                              'SAVE_SCREENSHOT',
-                              'SCREENSHOT_FULL_PAGE',
-                              'DUMP_PAGE_SOURCE',
-                              'RECURSIVE_DUMP_PAGE_SOURCE']:
+            if command[0] in [
+                "GET",
+                "BROWSE",
+                "SAVE_SCREENSHOT",
+                "SCREENSHOT_FULL_PAGE",
+                "DUMP_PAGE_SOURCE",
+                "RECURSIVE_DUMP_PAGE_SOURCE",
+            ]:
                 start_time = time.time()
                 command += (browser.curr_visit_id,)
-            elif command[0] in ['DUMP_FLASH_COOKIES', 'DUMP_PROFILE_COOKIES']:
-                command += (start_time, browser.curr_visit_id,)
+            elif command[0] in ["DUMP_FLASH_COOKIES", "DUMP_PROFILE_COOKIES"]:
+                command += (start_time, browser.curr_visit_id)
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
@@ -448,39 +467,46 @@ class TaskManager:
 
             # received reply from BrowserManager, either success or failure
             try:
-                status = browser.status_queue.get(
-                    True, browser.current_timeout)
+                status = browser.status_queue.get(True, browser.current_timeout)
                 if status == "OK":
                     command_succeeded = 1
                 elif status[0] == "CRITICAL":
                     self.logger.critical(
                         "BROWSER %i: Received critical error from browser "
                         "process while executing command %s. Setting failure "
-                        "status." % (browser.crawl_id, str(command)))
+                        "status." % (browser.crawl_id, str(command))
+                    )
                     self.failure_status = {
-                        'ErrorType': 'CriticalChildException',
-                        'CommandSequence': command_sequence,
-                        'Exception': status[1]
+                        "ErrorType": "CriticalChildException",
+                        "CommandSequence": command_sequence,
+                        "Exception": status[1],
                     }
                     return
                 else:
                     command_succeeded = 0
                     self.logger.info(
                         "BROWSER %i: Received failure status while executing "
-                        "command: %s" % (browser.crawl_id, command[0]))
+                        "command: %s" % (browser.crawl_id, command[0])
+                    )
             except EmptyQueue:
                 command_succeeded = -1
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
-                    "browser manager" % (browser.crawl_id, command[0]))
+                    "browser manager" % (browser.crawl_id, command[0])
+                )
 
-            self.sock.send(("crawl_history", {
-                "crawl_id": browser.crawl_id,
-                "visit_id": browser.curr_visit_id,
-                "command": command[0],
-                "arguments": command_arguments,
-                "bool_success": command_succeeded
-            }))
+            self.sock.send(
+                (
+                    "crawl_history",
+                    {
+                        "crawl_id": browser.crawl_id,
+                        "visit_id": browser.curr_visit_id,
+                        "command": command[0],
+                        "arguments": command_arguments,
+                        "bool_success": command_succeeded,
+                    },
+                )
+            )
 
             if command_succeeded != 1:
                 with self.threadlock:
@@ -489,15 +515,17 @@ class TaskManager:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
-                        "failure_status." % browser.crawl_id)
+                        "failure_status." % browser.crawl_id
+                    )
                     self.failure_status = {
-                        'ErrorType': 'ExceedCommandFailureLimit',
-                        'CommandSequence': command_sequence
+                        "ErrorType": "ExceedCommandFailureLimit",
+                        "CommandSequence": command_sequence,
                     }
                     return
                 browser.restart_required = True
-                self.logger.debug("BROWSER %i: Browser restart required" % (
-                    browser.crawl_id))
+                self.logger.debug(
+                    "BROWSER %i: Browser restart required" % (browser.crawl_id)
+                )
             else:
                 with self.threadlock:
                     self.failurecount = 0
@@ -517,11 +545,12 @@ class TaskManager:
             if not success:
                 self.logger.critical(
                     "BROWSER %i: Exceeded the maximum allowable consecutive "
-                    "browser launch failures. Setting failure_status." % (
-                        browser.crawl_id))
+                    "browser launch failures. Setting failure_status."
+                    % (browser.crawl_id)
+                )
                 self.failure_status = {
-                    'ErrorType': 'ExceedLaunchFailureLimit',
-                    'CommandSequence': command_sequence
+                    "ErrorType": "ExceedLaunchFailureLimit",
+                    "CommandSequence": command_sequence,
                 }
                 return
             browser.restart_required = False
@@ -541,12 +570,10 @@ class TaskManager:
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def browse(self, url, num_links=2, sleep=0, index=None,
-               timeout=60, reset=False):
+    def browse(self, url, num_links=2, sleep=0, index=None, timeout=60, reset=False):
         """ browse a website and visit <num_links> links on the page """
         command_sequence = CommandSequence.CommandSequence(url)
-        command_sequence.browse(
-            num_links=num_links, sleep=sleep, timeout=timeout)
+        command_sequence.browse(num_links=num_links, sleep=sleep, timeout=timeout)
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 

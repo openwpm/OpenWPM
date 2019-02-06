@@ -15,6 +15,7 @@ from miniamf import sol
 def ensure_unicode(val):
     """Coerce VAL to a Unicode string by any means necessary."""
     import six
+
     if isinstance(val, six.text_type):
         return val
     if not isinstance(val, six.binary_type):
@@ -24,19 +25,18 @@ def ensure_unicode(val):
     except (UnicodeDecodeError, TypeError):
         # Backslash escaping on decode doesn't work in Python 2.
         # This does approximately the same thing.
-        return (val.decode("latin1")
-                .encode("ascii", "backslashreplace")
-                .decode("ascii"))
+        return val.decode("latin1").encode("ascii", "backslashreplace").decode("ascii")
+
 
 # TODO: Linux only
 
 
-FLASH_DIRS = ['~/.macromedia/Flash_Player/#SharedObjects/']
+FLASH_DIRS = ["~/.macromedia/Flash_Player/#SharedObjects/"]
 
 
 _BaseFlashCookie = namedtuple(
-    '_BaseFlashCookie',
-    ('filename', 'domain', 'local_path', 'key', 'content'))
+    "_BaseFlashCookie", ("filename", "domain", "local_path", "key", "content")
+)
 
 
 class FlashCookie(_BaseFlashCookie):
@@ -48,11 +48,13 @@ class FlashCookie(_BaseFlashCookie):
         content = ensure_unicode(content)
 
         return _BaseFlashCookie.__new__(
-            self, filename, domain, local_path, key, content)
+            self, filename, domain, local_path, key, content
+        )
 
 
 def parse_flash_cookies(lso_file):
     import six
+
     lso_dict = sol.load(lso_file)
     return [FlashCookie(lso_file, k, v) for k, v in six.iteritems(lso_dict)]
 
@@ -78,8 +80,7 @@ def get_flash_cookies(mod_since=0):
                 try:
                     flash_cookies.extend(parse_flash_cookies(lso_file))
                 except Exception:
-                    sys.stderr.write("Exception reading {!r}:\n"
-                                     .format(lso_file))
+                    sys.stderr.write("Exception reading {!r}:\n".format(lso_file))
                     traceback.print_exc()
 
     return flash_cookies

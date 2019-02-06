@@ -5,7 +5,7 @@ import sqlite3
 
 import plyvel
 
-CONTENT_DB_NAME = 'content.ldb'
+CONTENT_DB_NAME = "content.ldb"
 
 
 def query_db(db, query, params=None, as_tuple=False):
@@ -33,9 +33,7 @@ def get_javascript_content(data_directory):
         root directory of the crawl files containing the content database
     """
     db_path = os.path.join(data_directory, CONTENT_DB_NAME)
-    db = plyvel.DB(db_path,
-                   create_if_missing=False,
-                   compression='snappy')
+    db = plyvel.DB(db_path, create_if_missing=False, compression="snappy")
     for content_hash, content in db.iterator():
         yield content_hash, content
     db.close()
@@ -47,14 +45,13 @@ def get_javascript_entries(db, all_columns=False, as_tuple=False):
     else:
         select_columns = "script_url, symbol, operation, value, arguments"
 
-    return query_db(db, "SELECT %s FROM javascript" % select_columns,
-                    as_tuple=as_tuple)
+    return query_db(db, "SELECT %s FROM javascript" % select_columns, as_tuple=as_tuple)
 
 
 def any_command_failed(db):
     """Returns True if any command in a given database failed"""
     rows = query_db(db, "SELECT * FROM crawl_history;")
     for row in rows:
-        if row['bool_success'] != 1:
+        if row["bool_success"] != 1:
             return True
     return False

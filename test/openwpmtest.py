@@ -29,20 +29,19 @@ class OpenWPMTest(object):
             page_url = utilities.BASE_TEST_URL + page_url
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
-        return manager_params['db']
+        return manager_params["db"]
 
-    def get_test_config(self, data_dir="",
-                        num_browsers=NUM_BROWSERS):
+    def get_test_config(self, data_dir="", num_browsers=NUM_BROWSERS):
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
-        manager_params, browser_params = TaskManager.\
-            load_default_params(num_browsers)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
-        browser_params[0]['headless'] = True
-        manager_params['db'] = join(manager_params['data_directory'],
-                                    manager_params['database_name'])
+        manager_params, browser_params = TaskManager.load_default_params(num_browsers)
+        manager_params["data_directory"] = data_dir
+        manager_params["log_directory"] = data_dir
+        browser_params[0]["headless"] = True
+        manager_params["db"] = join(
+            manager_params["data_directory"], manager_params["database_name"]
+        )
         return manager_params, browser_params
 
     def is_installed(self, cmd):
@@ -55,18 +54,19 @@ class OpenWPMTest(object):
         return False
 
     def assert_is_installed(self, cmd):
-        assert self.is_installed(cmd), 'Cannot find %s in your system' % cmd
+        assert self.is_installed(cmd), "Cannot find %s in your system" % cmd
 
     def assert_py_pkg_installed(self, pkg):
         # some modules are imported using a different name than the ones used
         # at the installation.
-        pkg_name_mapping = {"pyopenssl": "OpenSSL",
-                            "beautifulsoup4": "bs4",
-                            "python-dateutil": "dateutil",
-                            "flake8-isort": "flake8_isort",
-                            "mini-amf": "miniamf",
-                            "pillow": "PIL"
-                            }
+        pkg_name_mapping = {
+            "pyopenssl": "OpenSSL",
+            "beautifulsoup4": "bs4",
+            "python-dateutil": "dateutil",
+            "flake8-isort": "flake8_isort",
+            "mini-amf": "miniamf",
+            "pillow": "PIL",
+        }
         # get the mapped name if it exists.
         pkg_importable = pkg_name_mapping.get(pkg.lower(), pkg)
         try:

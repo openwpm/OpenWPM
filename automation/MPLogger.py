@@ -18,6 +18,7 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
     """
     Make SocketHandler compatible with SocketInterface.py
     """
+
     def makePickle(self, record):
         """
         Serializes the record via json and prepends a length/serialization
@@ -26,15 +27,15 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         ei = record.exc_info
         if ei:
             # just to get traceback text into record.exc_text ...
-            dummy = self.format(record) # noqa
+            dummy = self.format(record)  # noqa
             record.exc_info = None  # to avoid Unpickleable error
         d = dict(record.__dict__)
-        d['msg'] = record.getMessage()
-        d['args'] = None
-        s = json.dumps(d).encode('utf-8')
+        d["msg"] = record.getMessage()
+        d["args"] = None
+        s = json.dumps(d).encode("utf-8")
         if ei:
             record.exc_info = ei  # for next handler
-        return struct.pack('>Lc', len(s), b'j') + s
+        return struct.pack(">Lc", len(s), b"j") + s
 
 
 def loggingclient(logger_address, logger_port, level=logging.DEBUG):
@@ -53,8 +54,7 @@ def loggingclient(logger_address, logger_port, level=logging.DEBUG):
         # Set up logging to console
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(logging.INFO)
-        formatter = logging.Formatter(
-            '%(module)-20s - %(levelname)-8s - %(message)s')
+        formatter = logging.Formatter("%(module)-20s - %(levelname)-8s - %(message)s")
         consoleHandler.setFormatter(formatter)
         logger.addHandler(consoleHandler)
 
@@ -72,9 +72,10 @@ def loggingserver(log_file, status_queue):
     # Configure the log file
     logging.basicConfig(
         filename=os.path.expanduser(log_file),
-        format='%(asctime)s - %(processName)-11s[%(threadName)-10s]' +
-        ' - %(module)-20s - %(levelname)-8s: %(message)s',
-        level=logging.INFO)
+        format="%(asctime)s - %(processName)-11s[%(threadName)-10s]"
+        + " - %(module)-20s - %(levelname)-8s: %(message)s",
+        level=logging.INFO,
+    )
 
     # Sets up the serversocket to start accepting connections
     sock = serversocket(name="loggingserver")
@@ -101,16 +102,18 @@ def _handleLogRecord(obj):
     """ Handle log, logs everything sent. Should filter client-side """
 
     # Log message came from browser extension: requires special handling
-    if len(obj) == 2 and obj[0] == 'EXT':
+    if len(obj) == 2 and obj[0] == "EXT":
         obj = json.loads(obj[1])
-        record = logging.LogRecord(name=__name__,
-                                   level=obj['level'],
-                                   pathname=obj['pathname'],
-                                   lineno=obj['lineno'],
-                                   msg=obj['msg'],
-                                   args=obj['args'],
-                                   exc_info=obj['exc_info'],
-                                   func=obj['func'])
+        record = logging.LogRecord(
+            name=__name__,
+            level=obj["level"],
+            pathname=obj["pathname"],
+            lineno=obj["lineno"],
+            msg=obj["msg"],
+            args=obj["args"],
+            exc_info=obj["exc_info"],
+            func=obj["func"],
+        )
     else:
         record = logging.makeLogRecord(obj)
     logger = logging.getLogger(record.name)
@@ -132,37 +135,36 @@ def main():
     import multiprocess as mp
 
     # Set up loggingserver
-    log_file = '~/mplogger.log'
+    log_file = "~/mplogger.log"
     status_queue = mp.Queue()
-    lserver_process = mp.Process(target=loggingserver,
-                                 args=(log_file, status_queue))
+    lserver_process = mp.Process(target=loggingserver, args=(log_file, status_queue))
     lserver_process.daemon = True
     lserver_process.start()
     server_address = status_queue.get()
 
     # Connect main process to logging server
-    rootLogger = logging.getLogger('')
+    rootLogger = logging.getLogger("")
     rootLogger.setLevel(logging.DEBUG)
     socketHandler = ClientSocketHandler(*server_address)
     rootLogger.addHandler(socketHandler)
 
     # Send some sample logs
-    logging.info('Test1')
-    logging.error('Test2')
-    logging.critical('Test3')
-    logging.debug('Test4')
-    logging.warning('Test5')
+    logging.info("Test1")
+    logging.error("Test2")
+    logging.critical("Test3")
+    logging.debug("Test4")
+    logging.warning("Test5")
 
-    logger1 = logging.getLogger('test1')
-    logger2 = logging.getLogger('test2')
-    logger1.info('asdfasdfsa')
-    logger2.info('1234567890')
+    logger1 = logging.getLogger("test1")
+    logger2 = logging.getLogger("test2")
+    logger1.info("asdfasdfsa")
+    logger2.info("1234567890")
 
     # Close the logging server
-    status_queue.put('DIE')
+    status_queue.put("DIE")
     lserver_process.join()
     print("Server closed, exiting...")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

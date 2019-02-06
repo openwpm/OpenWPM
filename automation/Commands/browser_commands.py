@@ -11,8 +11,11 @@ from glob import glob
 from hashlib import md5
 
 from PIL import Image
-from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import (
+    MoveTargetOutOfBoundsException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -22,10 +25,14 @@ from ..MPLogger import loggingclient
 from ..SocketInterface import clientsocket
 from .utils.firefox_profile import get_cookies
 from .utils.lso import get_flash_cookies
-from .utils.webdriver_extensions import (execute_in_all_frames,
-                                         execute_script_with_retry,
-                                         get_intra_links, is_displayed,
-                                         scroll_down, wait_until_loaded)
+from .utils.webdriver_extensions import (
+    execute_in_all_frames,
+    execute_script_with_retry,
+    get_intra_links,
+    is_displayed,
+    scroll_down,
+    wait_until_loaded,
+)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -44,8 +51,8 @@ def bot_mitigation(webdriver):
     while num_moves < NUM_MOUSE_MOVES + 1 and num_fails < NUM_MOUSE_MOVES:
         try:
             if num_moves == 0:  # move to the center of the screen
-                x = int(round(window_size['height'] / 2))
-                y = int(round(window_size['width'] / 2))
+                x = int(round(window_size["height"] / 2))
+                y = int(round(window_size["width"] / 2))
             else:  # move a random amount in some direction
                 move_max = random.randint(0, 500)
                 x = random.randint(-move_max, move_max)
@@ -89,7 +96,7 @@ def tab_restart_browser(webdriver):
     # created, although we do have to detour into JS to do it.
     close_other_windows(webdriver)
 
-    if webdriver.current_url.lower() == 'about:blank':
+    if webdriver.current_url.lower() == "about:blank":
         return
 
     # Create a new window.  Note that it is not practical to use
@@ -107,8 +114,7 @@ def tab_restart_browser(webdriver):
     webdriver.switch_to_window(webdriver.window_handles[0])
 
 
-def get_website(url, sleep, visit_id, webdriver,
-                browser_params, extension_socket):
+def get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket):
     """
     goes to <url> using the given <webdriver> instance
     """
@@ -129,7 +135,7 @@ def get_website(url, sleep, visit_id, webdriver,
 
     # Close modal dialog if exists
     try:
-        WebDriverWait(webdriver, .5).until(EC.alert_is_present())
+        WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
         alert = webdriver.switch_to_alert()
         alert.dismiss()
         time.sleep(1)
@@ -138,39 +144,47 @@ def get_website(url, sleep, visit_id, webdriver,
 
     close_other_windows(webdriver)
 
-    if browser_params['bot_mitigation']:
+    if browser_params["bot_mitigation"]:
         bot_mitigation(webdriver)
 
 
-def browse_website(url, num_links, sleep, visit_id, webdriver,
-                   browser_params, manager_params, extension_socket):
+def browse_website(
+    url,
+    num_links,
+    sleep,
+    visit_id,
+    webdriver,
+    browser_params,
+    manager_params,
+    extension_socket,
+):
     """Calls get_website before visiting <num_links> present on the page.
 
     Note: the site_url in the site_visits table for the links visited will
     be the site_url of the original page and NOT the url of the links visited.
     """
     # First get the site
-    get_website(url, sleep, visit_id, webdriver,
-                browser_params, extension_socket)
+    get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket)
 
     # Connect to logger
-    logger = loggingclient(*manager_params['logger_address'])
+    logger = loggingclient(*manager_params["logger_address"])
 
     # Then visit a few subpages
     for _ in range(num_links):
-        links = [x for x in get_intra_links(webdriver, url)
-                 if is_displayed(x) is True]
+        links = [x for x in get_intra_links(webdriver, url) if is_displayed(x) is True]
         if not links:
             break
         r = int(random.random() * len(links))
-        logger.info("BROWSER %i: visiting internal link %s" % (
-            browser_params['crawl_id'], links[r].get_attribute("href")))
+        logger.info(
+            "BROWSER %i: visiting internal link %s"
+            % (browser_params["crawl_id"], links[r].get_attribute("href"))
+        )
 
         try:
             links[r].click()
             wait_until_loaded(webdriver, 300)
             time.sleep(max(1, sleep))
-            if browser_params['bot_mitigation']:
+            if browser_params["bot_mitigation"]:
                 bot_mitigation(webdriver)
             webdriver.back()
             wait_until_loaded(webdriver, 300)
@@ -178,8 +192,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
             pass
 
 
-def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
-                       manager_params):
+def dump_flash_cookies(start_time, visit_id, webdriver, browser_params, manager_params):
     """ Save newly changed Flash LSOs to database
 
     We determine which LSOs to save by the `start_time` timestamp.
@@ -189,7 +202,7 @@ def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
     # Set up a connection to DataAggregator
     tab_restart_browser(webdriver)  # kills window to avoid stray requests
     sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
+    sock.connect(*manager_params["aggregator_address"])
 
     # Flash cookies
     flash_cookies = get_flash_cookies(start_time)
@@ -203,8 +216,9 @@ def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
     sock.close()
 
 
-def dump_profile_cookies(start_time, visit_id, webdriver,
-                         browser_params, manager_params):
+def dump_profile_cookies(
+    start_time, visit_id, webdriver, browser_params, manager_params
+):
     """ Save changes to Firefox's cookies.sqlite to database
 
     We determine which cookies to save by the `start_time` timestamp.
@@ -218,14 +232,14 @@ def dump_profile_cookies(start_time, visit_id, webdriver,
     # Set up a connection to DataAggregator
     tab_restart_browser(webdriver)  # kills window to avoid stray requests
     sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
+    sock.connect(*manager_params["aggregator_address"])
 
     # Cookies
-    rows = get_cookies(browser_params['profile_path'], start_time)
+    rows = get_cookies(browser_params["profile_path"], start_time)
     if rows is not None:
         for row in rows:
             data = dict(row)
-            data["crawl_id"] = browser_params['crawl_id']
+            data["crawl_id"] = browser_params["crawl_id"]
             data["visit_id"] = visit_id
             sock.send(("profile_cookies", data))
 
@@ -233,15 +247,15 @@ def dump_profile_cookies(start_time, visit_id, webdriver,
     sock.close()
 
 
-def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
+def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=""):
     """ Save a screenshot of the current viewport"""
-    if suffix != '':
-        suffix = '-' + suffix
+    if suffix != "":
+        suffix = "-" + suffix
 
-    urlhash = md5(driver.current_url.encode('utf-8')).hexdigest()
-    outname = os.path.join(manager_params['screenshot_path'],
-                           '%i-%s%s.png' %
-                           (visit_id, urlhash, suffix))
+    urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
+    outname = os.path.join(
+        manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
+    )
     driver.save_screenshot(outname)
 
 
@@ -252,16 +266,18 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
     max_width = -1
     images = dict()
     parts = list()
-    for f in glob(os.path.join(manager_params['screenshot_path'],
-                               'parts',
-                               '%i*-part-*.png' % visit_id)):
+    for f in glob(
+        os.path.join(
+            manager_params["screenshot_path"], "parts", "%i*-part-*.png" % visit_id
+        )
+    ):
 
         # Load image from disk and parse params out of filename
         img_obj = Image.open(f)
         width, height = img_obj.size
         parts.append((f, width, height))
-        outname, _, index, curr_scroll = os.path.basename(f).rsplit('-', 3)
-        curr_scroll = int(curr_scroll.split('.')[0])
+        outname, _, index, curr_scroll = os.path.basename(f).rsplit("-", 3)
+        curr_scroll = int(curr_scroll.split(".")[0])
         index = int(index)
 
         # Update output image size
@@ -274,106 +290,115 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
 
         # Save image parameters
         img = {}
-        img['object'] = img_obj
-        img['scroll'] = curr_scroll
+        img["object"] = img_obj
+        img["scroll"] = curr_scroll
         images[index] = img
 
     # Output filename same for all parts, so we can just use last filename
-    outname = outname + '.png'
-    outname = os.path.join(manager_params['screenshot_path'], outname)
-    output = Image.new('RGB', (max_width, total_height))
+    outname = outname + ".png"
+    outname = os.path.join(manager_params["screenshot_path"], outname)
+    output = Image.new("RGB", (max_width, total_height))
 
     # Compute dimensions for output image
     for i in range(max(images.keys()) + 1):
         img = images[i]
-        output.paste(im=img['object'], box=(0, img['scroll']))
-        img['object'].close()
+        output.paste(im=img["object"], box=(0, img["scroll"]))
+        img["object"].close()
     try:
         output.save(outname)
     except SystemError:
         logger.error(
             "BROWSER %i: SystemError while trying to save screenshot %s. \n"
-            "Slices of image %s \n Final size %s, %s." %
-            (crawl_id, outname, '\n'.join([str(x) for x in parts]),
-             max_width, total_height)
+            "Slices of image %s \n Final size %s, %s."
+            % (
+                crawl_id,
+                outname,
+                "\n".join([str(x) for x in parts]),
+                max_width,
+                total_height,
+            )
         )
         pass
 
 
-def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
-                         suffix=''):
-    logger = loggingclient(*manager_params['logger_address'])
+def screenshot_full_page(visit_id, crawl_id, driver, manager_params, suffix=""):
+    logger = loggingclient(*manager_params["logger_address"])
 
-    outdir = os.path.join(manager_params['screenshot_path'], 'parts')
+    outdir = os.path.join(manager_params["screenshot_path"], "parts")
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
-    if suffix != '':
-        suffix = '-' + suffix
-    urlhash = md5(driver.current_url.encode('utf-8')).hexdigest()
-    outname = os.path.join(outdir, '%i-%s%s-part-%%i-%%i.png' %
-                           (visit_id, urlhash, suffix))
+    if suffix != "":
+        suffix = "-" + suffix
+    urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
+    outname = os.path.join(
+        outdir, "%i-%s%s-part-%%i-%%i.png" % (visit_id, urlhash, suffix)
+    )
 
     try:
         part = 0
         max_height = execute_script_with_retry(
-            driver, 'return document.body.scrollHeight;')
-        inner_height = execute_script_with_retry(
-            driver, 'return window.innerHeight;')
-        curr_scrollY = execute_script_with_retry(
-            driver, 'return window.scrollY;')
+            driver, "return document.body.scrollHeight;"
+        )
+        inner_height = execute_script_with_retry(driver, "return window.innerHeight;")
+        curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
         prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
-        while ((curr_scrollY + inner_height) < max_height and
-                curr_scrollY != prev_scrollY):
+        while (
+            curr_scrollY + inner_height
+        ) < max_height and curr_scrollY != prev_scrollY:
 
             # Scroll down to bottom of previous viewport
             try:
-                driver.execute_script('window.scrollBy(0, window.innerHeight)')
+                driver.execute_script("window.scrollBy(0, window.innerHeight)")
             except WebDriverException:
                 logger.info(
                     "BROWSER %i: WebDriverException while scrolling, "
-                    "screenshot may be misaligned!" % crawl_id)
+                    "screenshot may be misaligned!" % crawl_id
+                )
                 pass
 
             # Update control variables
             part += 1
             prev_scrollY = curr_scrollY
-            curr_scrollY = execute_script_with_retry(
-                driver, 'return window.scrollY;')
+            curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
 
             # Save screenshot
             driver.save_screenshot(outname % (part, curr_scrollY))
     except WebDriverException:
         excp = traceback.format_exception(*sys.exc_info())
         logger.error(
-            "BROWSER %i: Exception while taking full page screenshot \n %s" %
-            (crawl_id, ''.join(excp)))
+            "BROWSER %i: Exception while taking full page screenshot \n %s"
+            % (crawl_id, "".join(excp))
+        )
         return
 
     _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params)
 
 
-def dump_page_source(visit_id, driver, manager_params, suffix=''):
-    if suffix != '':
-        suffix = '-' + suffix
+def dump_page_source(visit_id, driver, manager_params, suffix=""):
+    if suffix != "":
+        suffix = "-" + suffix
 
-    outname = md5(driver.current_url.encode('utf-8')).hexdigest()
-    outfile = os.path.join(manager_params['source_dump_path'],
-                           '%i-%s%s.html' % (visit_id, outname, suffix))
+    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
+    outfile = os.path.join(
+        manager_params["source_dump_path"], "%i-%s%s.html" % (visit_id, outname, suffix)
+    )
 
-    with open(outfile, 'wb') as f:
-        f.write(driver.page_source.encode('utf8'))
-        f.write(b'\n')
+    with open(outfile, "wb") as f:
+        f.write(driver.page_source.encode("utf8"))
+        f.write(b"\n")
 
 
-def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
+def recursive_dump_page_source(visit_id, driver, manager_params, suffix=""):
     """Dump a compressed html tree for the current page visit"""
-    if suffix != '':
-        suffix = '-' + suffix
+    if suffix != "":
+        suffix = "-" + suffix
 
-    outname = md5(driver.current_url.encode('utf-8')).hexdigest()
-    outfile = os.path.join(manager_params['source_dump_path'],
-                           '%i-%s%s.json.gz' % (visit_id, outname, suffix))
+    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
+    outfile = os.path.join(
+        manager_params["source_dump_path"],
+        "%i-%s%s.json.gz" % (visit_id, outname, suffix),
+    )
 
     def collect_source(driver, frame_stack, rv={}):
         is_top_frame = len(frame_stack) == 1
@@ -384,24 +409,25 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
             page_source = rv
         else:
             page_source = dict()
-        page_source['doc_url'] = doc_url
+        page_source["doc_url"] = doc_url
         source = driver.page_source
         import six
+
         if type(source) != six.text_type:
-            source = six.text_type(source, 'utf-8')
-        page_source['source'] = source
-        page_source['iframes'] = dict()
+            source = six.text_type(source, "utf-8")
+        page_source["source"] = source
+        page_source["iframes"] = dict()
 
         # Store frame info in correct area of return value
         if is_top_frame:
             return
-        out_dict = rv['iframes']
+        out_dict = rv["iframes"]
         for frame in frame_stack[1:-1]:
-            out_dict = out_dict[frame.id]['iframes']
+            out_dict = out_dict[frame.id]["iframes"]
         out_dict[frame_stack[-1].id] = page_source
 
     page_source = dict()
-    execute_in_all_frames(driver, collect_source, {'rv': page_source})
+    execute_in_all_frames(driver, collect_source, {"rv": page_source})
 
-    with gzip.GzipFile(outfile, 'wb') as f:
-        f.write(json.dumps(page_source).encode('utf-8'))
+    with gzip.GzipFile(outfile, "wb") as f:
+        f.write(json.dumps(page_source).encode("utf-8"))

@@ -7,9 +7,9 @@ from six.moves import queue
 from ..MPLogger import loggingclient
 from ..SocketInterface import serversocket
 
-RECORD_TYPE_CONTENT = 'page_content'
+RECORD_TYPE_CONTENT = "page_content"
 STATUS_TIMEOUT = 120  # seconds
-SHUTDOWN_SIGNAL = 'SHUTDOWN'
+SHUTDOWN_SIGNAL = "SHUTDOWN"
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 
@@ -28,12 +28,13 @@ class BaseListener(object):
         TaskManager configuration parameters
     browser_params : list of dict
         List of browser configuration dictionaries"""
+
     __metaclass = abc.ABCMeta
 
     def __init__(self, status_queue, shutdown_queue, manager_params):
         self.status_queue = status_queue
         self.shutdown_queue = shutdown_queue
-        self.logger = loggingclient(*manager_params['logger_address'])
+        self.logger = loggingclient(*manager_params["logger_address"])
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
@@ -81,8 +82,7 @@ class BaseListener(object):
             return
         qsize = self.record_queue.qsize()
         self.status_queue.put(qsize)
-        self.logger.debug(
-            "Status update; current record queue size: %d" % qsize)
+        self.logger.debug("Status update; current record queue size: %d" % qsize)
         self._last_update = time.time()
 
     def shutdown(self):
@@ -112,12 +112,13 @@ class BaseAggregator(object):
         TaskManager configuration parameters
     browser_params : list of dict
         List of browser configuration dictionaries"""
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, manager_params, browser_params):
         self.manager_params = manager_params
         self.browser_params = browser_params
-        self.logger = loggingclient(*manager_params['logger_address'])
+        self.logger = loggingclient(*manager_params["logger_address"])
         self.listener_address = None
         self.listener_process = None
         self.status_queue = Queue()
@@ -162,7 +163,8 @@ class BaseAggregator(object):
         """Get listener process status. If the status queue is empty, block."""
         try:
             self._last_status = self.status_queue.get(
-                block=True, timeout=STATUS_TIMEOUT)
+                block=True, timeout=STATUS_TIMEOUT
+            )
             self._last_status_received = time.time()
         except queue.Empty:
             raise RuntimeError(
@@ -173,12 +175,8 @@ class BaseAggregator(object):
 
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
-        args = (self.manager_params, self.status_queue,
-                self.shutdown_queue) + args
-        self.listener_process = Process(
-            target=listener_process_runner,
-            args=args
-        )
+        args = (self.manager_params, self.status_queue, self.shutdown_queue) + args
+        self.listener_process = Process(target=listener_process_runner, args=args)
         self.listener_process.daemon = True
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
@@ -186,17 +184,15 @@ class BaseAggregator(object):
     def shutdown(self):
         """ Terminate the aggregator listener process"""
         self.logger.debug(
-            "Sending the shutdown signal to the %s listener process..." %
-            type(self).__name__
+            "Sending the shutdown signal to the %s listener process..."
+            % type(self).__name__
         )
         self.shutdown_queue.put(SHUTDOWN_SIGNAL)
         start_time = time.time()
         self.listener_process.join(300)
         self.logger.debug(
-            "%s took %s seconds to close." % (
-                type(self).__name__,
-                str(time.time() - start_time)
-            )
+            "%s took %s seconds to close."
+            % (type(self).__name__, str(time.time() - start_time))
         )
         self.listener_address = None
         self.listener_process = None

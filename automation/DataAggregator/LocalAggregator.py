@@ -15,15 +15,13 @@ from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100
 MIN_TIME = 5  # seconds
-SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
-LDB_NAME = 'content.ldb'
+SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "..", "schema.sql")
+LDB_NAME = "content.ldb"
 
 
-def listener_process_runner(
-        manager_params, status_queue, shutdown_queue, ldb_enabled):
+def listener_process_runner(manager_params, status_queue, shutdown_queue, ldb_enabled):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(
-        status_queue, shutdown_queue, manager_params, ldb_enabled)
+    listener = LocalListener(status_queue, shutdown_queue, manager_params, ldb_enabled)
     listener.startup()
 
     while True:
@@ -49,17 +47,18 @@ def listener_process_runner(
 
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
-    def __init__(
-            self, status_queue, shutdown_queue, manager_params, ldb_enabled):
-        db_path = manager_params['database_name']
+
+    def __init__(self, status_queue, shutdown_queue, manager_params, ldb_enabled):
+        db_path = manager_params["database_name"]
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
         self.ldb_enabled = ldb_enabled
         if self.ldb_enabled:
             self.ldb = plyvel.DB(
-                os.path.join(manager_params['data_directory'], LDB_NAME),
-                create_if_missing=True, write_buffer_size=128 * 10 ** 6,
-                compression='snappy'
+                os.path.join(manager_params["data_directory"], LDB_NAME),
+                create_if_missing=True,
+                write_buffer_size=128 * 10 ** 6,
+                compression="snappy",
             )
             self.content_batch = self.ldb.write_batch()
         self._ldb_counter = 0
@@ -67,7 +66,8 @@ class LocalListener(BaseListener):
         self._sql_counter = 0
         self._sql_commit_time = 0
         super(LocalListener, self).__init__(
-            status_queue, shutdown_queue, manager_params)
+            status_queue, shutdown_queue, manager_params
+        )
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
@@ -96,11 +96,10 @@ class LocalListener(BaseListener):
         elif record[0] == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
-        statement, args = self._generate_insert(
-            table=record[0], data=record[1])
+        statement, args = self._generate_insert(table=record[0], data=record[1])
         for i in range(len(args)):
             if isinstance(args[i], six.binary_type):
-                args[i] = six.text_type(args[i], errors='ignore')
+                args[i] = six.text_type(args[i], errors="ignore")
             elif callable(args[i]):
                 args[i] = six.text_type(args[i])
         try:
@@ -109,23 +108,24 @@ class LocalListener(BaseListener):
         except (OperationalError, ProgrammingError, IntegrityError) as e:
             self.logger.error(
                 "Unsupported record:\n%s\n%s\n%s\n%s\n"
-                % (type(e), e, statement, repr(args)))
+                % (type(e), e, statement, repr(args))
+            )
 
     def process_content(self, record):
         """Add page content to the LevelDB database"""
         if record[0] != RECORD_TYPE_CONTENT:
             raise ValueError(
                 "Incorrect record type passed to `process_content`. Expected "
-                "record of type `%s`, received `%s`." % (
-                    RECORD_TYPE_CONTENT, record[0])
+                "record of type `%s`, received `%s`." % (RECORD_TYPE_CONTENT, record[0])
             )
         if not self.ldb_enabled:
             raise RuntimeError(
                 "Attempted to save page content but the LevelDB content "
-                "database is not enabled.")
+                "database is not enabled."
+            )
         content, content_hash = record[1]
-        content = content.encode('utf-8')
-        content_hash = str(content_hash).encode('ascii')
+        content = content.encode("utf-8")
+        content_hash = str(content_hash).encode("ascii")
         if self.ldb.get(content_hash) is not None:
             return
         self.content_batch.put(content_hash, content)
@@ -142,7 +142,8 @@ class LocalListener(BaseListener):
         # Commit SQLite Database inserts
         sql_over_time = (time.time() - self._sql_commit_time) > MIN_TIME
         if self._sql_counter >= SQL_BATCH_SIZE or (
-                self._sql_counter > 0 and sql_over_time):
+            self._sql_counter > 0 and sql_over_time
+        ):
             self.db.commit()
             self._sql_counter = 0
             self._sql_commit_time = time.time()
@@ -152,7 +153,8 @@ class LocalListener(BaseListener):
             return
         ldb_over_time = (time.time() - self._ldb_commit_time) > MIN_TIME
         if self._ldb_counter >= LDB_BATCH_SIZE or (
-                self._ldb_counter > 0 and ldb_over_time):
+            self._ldb_counter > 0 and ldb_over_time
+        ):
             self._write_content_batch()
             self._ldb_counter = 0
             self._ldb_commit_time = time.time()
@@ -174,11 +176,12 @@ class LocalAggregator(BaseAggregator):
 
     If content saving is enabled, we write page content to a LevelDB database.
     """
+
     def __init__(self, manager_params, browser_params):
         super(LocalAggregator, self).__init__(manager_params, browser_params)
-        db_path = self.manager_params['database_name']
-        if not os.path.exists(manager_params['data_directory']):
-            os.mkdir(manager_params['data_directory'])
+        db_path = self.manager_params["database_name"]
+        if not os.path.exists(manager_params["data_directory"]):
+            os.mkdir(manager_params["data_directory"])
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
         self._create_tables()
@@ -188,13 +191,13 @@ class LocalAggregator(BaseAggregator):
         # (if content saving is enabled on any browser)
         self.ldb_enabled = False
         for params in browser_params:
-            if params['save_javascript'] or params['save_all_content']:
+            if params["save_javascript"] or params["save_all_content"]:
                 self.ldb_enabled = True
                 break
 
     def _create_tables(self):
         """Create tables (if this is a new database)"""
-        with open(SCHEMA_FILE, 'r') as f:
+        with open(SCHEMA_FILE, "r") as f:
             self.db.executescript(f.read())
         self.db.commit()
 
@@ -220,19 +223,21 @@ class LocalAggregator(BaseAggregator):
             "INSERT INTO task "
             "(manager_params, openwpm_version, browser_version) "
             "VALUES (?,?,?)",
-            (json.dumps(self.manager_params),
-             openwpm_version, browser_version)
+            (json.dumps(self.manager_params), openwpm_version, browser_version),
         )
         self.db.commit()
         self.task_id = self.cur.lastrowid
 
         # Record browser details for each brower
-        for i in range(self.manager_params['num_browsers']):
+        for i in range(self.manager_params["num_browsers"]):
             self.cur.execute(
                 "INSERT INTO crawl (crawl_id, task_id, browser_params) "
                 "VALUES (?,?,?)",
-                (self.browser_params[i]['crawl_id'], self.task_id,
-                 json.dumps(self.browser_params[i]))
+                (
+                    self.browser_params[i]["crawl_id"],
+                    self.task_id,
+                    json.dumps(self.browser_params[i]),
+                ),
             )
         self.db.commit()
 
@@ -248,8 +253,7 @@ class LocalAggregator(BaseAggregator):
 
     def launch(self):
         """Launch the aggregator listener process"""
-        super(LocalAggregator, self).launch(
-            listener_process_runner, self.ldb_enabled)
+        super(LocalAggregator, self).launch(listener_process_runner, self.ldb_enabled)
 
     def shutdown(self):
         """ Terminates the aggregator"""

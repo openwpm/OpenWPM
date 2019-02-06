@@ -11,26 +11,26 @@ from ..automation.utilities import db_utils, domain_utils
 from .openwpmtest import OpenWPMTest
 
 TEST_SITES = [
-    'http://google.com',
-    'http://facebook.com',
-    'http://youtube.com',
-    'http://yahoo.com',
-    'http://baidu.com',
-    'http://wikipedia.org',
-    'http://qq.com',
-    'http://linkedin.com',
-    'http://taobao.com',
-    'http://twitter.com',
-    'http://live.com',
-    'http://amazon.com',
-    'http://sina.com.cn',
-    'http://google.co.in',
-    'http://hao123.com',
-    'http://blogspot.com',
-    'http://weibo.com',
-    'http://wordpress.com',
-    'http://yandex.ru',
-    'http://yahoo.co.jp'
+    "http://google.com",
+    "http://facebook.com",
+    "http://youtube.com",
+    "http://yahoo.com",
+    "http://baidu.com",
+    "http://wikipedia.org",
+    "http://qq.com",
+    "http://linkedin.com",
+    "http://taobao.com",
+    "http://twitter.com",
+    "http://live.com",
+    "http://amazon.com",
+    "http://sina.com.cn",
+    "http://google.co.in",
+    "http://hao123.com",
+    "http://blogspot.com",
+    "http://weibo.com",
+    "http://wordpress.com",
+    "http://yandex.ru",
+    "http://yahoo.co.jp",
 ]
 
 psl = domain_utils.get_psl()
@@ -46,9 +46,10 @@ class TestCrawl(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]['profile_archive_dir'] =\
-            os.path.join(manager_params['data_directory'], 'browser_profile')
-        browser_params[0]['http_instrument'] = True
+        browser_params[0]["profile_archive_dir"] = os.path.join(
+            manager_params["data_directory"], "browser_profile"
+        )
+        browser_params[0]["http_instrument"] = True
         return manager_params, browser_params
 
     @pytest.mark.slow
@@ -60,34 +61,36 @@ class TestCrawl(OpenWPMTest):
         it is likely the profile is lost at some point during the crawl
         """
         # Run the test crawl
-        data_dir = os.path.join(str(tmpdir), 'data_dir')
+        data_dir = os.path.join(str(tmpdir), "data_dir")
         manager_params, browser_params = self.get_config(data_dir)
         manager = TaskManager.TaskManager(manager_params, browser_params)
         for site in TEST_SITES:
             manager.get(site)
-        ff_db_tar = os.path.join(browser_params[0]['profile_archive_dir'],
-                                 'profile.tar.gz')
+        ff_db_tar = os.path.join(
+            browser_params[0]["profile_archive_dir"], "profile.tar.gz"
+        )
         manager.close()
 
         # Extract crawl profile
         with tarfile.open(ff_db_tar) as tar:
-            tar.extractall(browser_params[0]['profile_archive_dir'])
+            tar.extractall(browser_params[0]["profile_archive_dir"])
 
         # Output databases
-        ff_db = os.path.join(browser_params[0]['profile_archive_dir'],
-                             'places.sqlite')
-        crawl_db = manager_params['db']
+        ff_db = os.path.join(browser_params[0]["profile_archive_dir"], "places.sqlite")
+        crawl_db = manager_params["db"]
 
         # Grab urls from crawl database
         rows = db_utils.query_db(crawl_db, "SELECT url FROM http_requests")
         req_ps = set()  # visited domains from http_requests table
-        for url, in rows:
+        for (url,) in rows:
             req_ps.add(psl.get_public_suffix(urlparse(url).hostname))
 
         hist_ps = set()  # visited domains from crawl_history Table
         successes = dict()
-        rows = db_utils.query_db(crawl_db, "SELECT arguments, bool_success "
-                                 "FROM crawl_history WHERE command='GET'")
+        rows = db_utils.query_db(
+            crawl_db,
+            "SELECT arguments, bool_success " "FROM crawl_history WHERE command='GET'",
+        )
         for url, success in rows:
             ps = psl.get_public_suffix(urlparse(url).hostname)
             hist_ps.add(ps)
@@ -96,7 +99,7 @@ class TestCrawl(OpenWPMTest):
         # Grab urls from Firefox database
         profile_ps = set()  # visited domains from firefox profile
         rows = db_utils.query_db(ff_db, "SELECT url FROM moz_places")
-        for host, in rows:
+        for (host,) in rows:
             try:
                 profile_ps.add(psl.get_public_suffix(urlparse(host).hostname))
             except AttributeError:
@@ -115,27 +118,31 @@ class TestCrawl(OpenWPMTest):
                 continue
 
             # Get the visit id for the url
-            rows = db_utils.query_db(crawl_db,
-                                     "SELECT visit_id FROM site_visits "
-                                     "WHERE site_url = ?",
-                                     ('http://' + url,))
+            rows = db_utils.query_db(
+                crawl_db,
+                "SELECT visit_id FROM site_visits " "WHERE site_url = ?",
+                ("http://" + url,),
+            )
             visit_id = rows[0]
 
-            rows = db_utils.query_db(crawl_db,
-                                     "SELECT COUNT(*) FROM http_responses "
-                                     "WHERE visit_id = ?",
-                                     (visit_id,))
+            rows = db_utils.query_db(
+                crawl_db,
+                "SELECT COUNT(*) FROM http_responses " "WHERE visit_id = ?",
+                (visit_id,),
+            )
             if rows[0] > 1:
                 continue
 
-            rows = db_utils.query_db(crawl_db,
-                                     "SELECT response_status, location FROM "
-                                     "http_responses WHERE visit_id = ?",
-                                     (visit_id,))
+            rows = db_utils.query_db(
+                crawl_db,
+                "SELECT response_status, location FROM "
+                "http_responses WHERE visit_id = ?",
+                (visit_id,),
+            )
             response_status, location = rows[0]
             if response_status == 204:
                 continue
-            if location == 'http://':  # site returned a blank redirect
+            if location == "http://":  # site returned a blank redirect
                 continue
             unexpected_missing_urls.add(url)
 

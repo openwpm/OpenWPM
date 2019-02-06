@@ -11,7 +11,7 @@ from six.moves import range
 from six.moves.urllib.parse import urlparse
 
 # We cache the Public Suffix List in temp directory
-PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(), 'public_suffix_list.dat')
+PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(), "public_suffix_list.dat")
 
 
 def get_psl():
@@ -21,22 +21,23 @@ def get_psl():
     if not os.path.isfile(PSL_CACHE_LOC):
         print("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
         psl_file = fetch()
-        with codecs.open(PSL_CACHE_LOC, 'w', encoding='utf8') as f:
+        with codecs.open(PSL_CACHE_LOC, "w", encoding="utf8") as f:
             f.write(psl_file.read())
     print("Using psl from cache: %s" % PSL_CACHE_LOC)
-    psl_cache = codecs.open(PSL_CACHE_LOC, encoding='utf8')
+    psl_cache = codecs.open(PSL_CACHE_LOC, encoding="utf8")
     return PublicSuffixList(psl_cache)
 
 
 def load_psl(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
-        if 'psl' not in kwargs:
+        if "psl" not in kwargs:
             if wrapper.psl is None:
                 wrapper.psl = get_psl()
             return function(*args, psl=wrapper.psl, **kwargs)
         else:
             return function(*args, **kwargs)
+
     wrapper.psl = None
     return wrapper
 
@@ -46,6 +47,7 @@ def is_ip_address(hostname):
     Check if the given string is a valid IP address
     """
     import six
+
     try:
         ip_address(six.text_type(hostname))
         return True
@@ -63,9 +65,8 @@ def get_ps_plus_1(url, **kwargs):
     An (optional) PublicSuffixList object can be passed with keyword arg 'psl',
     otherwise a version cached in the system temp directory is used.
     """
-    if 'psl' not in kwargs:
-        raise ValueError(
-            "A PublicSuffixList must be passed as a keyword argument.")
+    if "psl" not in kwargs:
+        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
     if is_ip_address(hostname):
         return hostname
@@ -77,7 +78,7 @@ def get_ps_plus_1(url, **kwargs):
         # * many others
         return
     else:
-        return kwargs['psl'].get_public_suffix(hostname)
+        return kwargs["psl"].get_public_suffix(hostname)
 
 
 @load_psl
@@ -93,9 +94,8 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     An (optional) PublicSuffixList object can be passed with keyword arg 'psl'.
     otherwise a version cached in the system temp directory is used.
     """
-    if 'psl' not in kwargs:
-        raise ValueError(
-            "A PublicSuffixList must be passed as a keyword argument.")
+    if "psl" not in kwargs:
+        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
     hostname = urlparse(url).hostname
 
     # If an IP address, just return a single item list with the IP
@@ -103,22 +103,22 @@ def hostname_subparts(url, include_ps=False, **kwargs):
         return [hostname]
 
     subparts = list()
-    ps_plus_1 = kwargs['psl'].get_public_suffix(hostname)
+    ps_plus_1 = kwargs["psl"].get_public_suffix(hostname)
 
     # We expect all ps_plus_1s to have at least one '.'
     # If they don't, the url was likely malformed, so we'll just return an
     # empty list
-    if '.' not in ps_plus_1:
+    if "." not in ps_plus_1:
         return []
-    subdomains = hostname[:-(len(ps_plus_1) + 1)].split('.')
-    if subdomains == ['']:
+    subdomains = hostname[: -(len(ps_plus_1) + 1)].split(".")
+    if subdomains == [""]:
         subdomains = []
     for i in range(len(subdomains)):
-        subparts.append('.'.join(subdomains[i:]) + '.' + ps_plus_1)
+        subparts.append(".".join(subdomains[i:]) + "." + ps_plus_1)
     subparts.append(ps_plus_1)
     if include_ps:
         try:
-            subparts.append(ps_plus_1[ps_plus_1.index('.') + 1:])
+            subparts.append(ps_plus_1[ps_plus_1.index(".") + 1 :])
         except Exception:
             pass
     return subparts
@@ -127,9 +127,9 @@ def hostname_subparts(url, include_ps=False, **kwargs):
 def get_stripped_url(url, scheme=False):
     """Returns a url stripped to (scheme)?+hostname+path"""
     purl = urlparse(url)
-    surl = ''
+    surl = ""
     if scheme:
-        surl += purl.scheme + '://'
+        surl += purl.scheme + "://"
     try:
         surl += purl.hostname + purl.path
     except TypeError:
