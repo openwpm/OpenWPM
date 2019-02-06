@@ -34,12 +34,18 @@ def load_default_params(num_browsers=1):
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
     """
-    fp = open(os.path.join(os.path.dirname(__file__), "default_browser_params.json"))
+    fp = open(
+        os.path.join(os.path.dirname(__file__), "default_browser_params.json")
+    )
     preferences = json.load(fp)
     fp.close()
-    browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
+    browser_params = [
+        copy.deepcopy(preferences) for i in range(0, num_browsers)
+    ]
 
-    fp = open(os.path.join(os.path.dirname(__file__), "default_manager_params.json"))
+    fp = open(
+        os.path.join(os.path.dirname(__file__), "default_manager_params.json")
+    )
     manager_params = json.load(fp)
     fp.close()
     manager_params["num_browsers"] = num_browsers
@@ -115,7 +121,9 @@ class TaskManager:
         self.loggingserver = self._launch_loggingserver()
         # socket location: (address, port)
         self.manager_params["logger_address"] = self.logging_status_queue.get()
-        self.logger = MPLogger.loggingclient(*self.manager_params["logger_address"])
+        self.logger = MPLogger.loggingclient(
+            *self.manager_params["logger_address"]
+        )
 
         # Initialize the data aggregators
         self._launch_aggregators()
@@ -142,7 +150,9 @@ class TaskManager:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
-            browser_params[i]["crawl_id"] = self.data_aggregator.get_next_crawl_id()
+            browser_params[i][
+                "crawl_id"
+            ] = self.data_aggregator.get_next_crawl_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -190,7 +200,11 @@ class TaskManager:
                         self.logger.info(
                             "BROWSER %i: Memory usage: %iMB"
                             ", exceeding limit of %iMB"
-                            % (browser.crawl_id, int(mem), BROWSER_MEMORY_LIMIT)
+                            % (
+                                browser.crawl_id,
+                                int(mem),
+                                BROWSER_MEMORY_LIMIT,
+                            )
                         )
                         browser.restart_required = True
                 except psutil.NoSuchProcess:
@@ -215,14 +229,19 @@ class TaskManager:
                             and process.pid not in browser_pids
                         )
                         or (
-                            process.name() == "Xvfb" and process.pid not in display_pids
+                            process.name() == "Xvfb"
+                            and process.pid not in display_pids
                         )
                     ):
                         self.logger.debug(
                             "Process: %s (pid: %i) with start "
                             "time %s found running but not in "
                             "browser process list. Killing."
-                            % (process.name(), process.pid, process.create_time())
+                            % (
+                                process.name(),
+                                process.pid,
+                                process.create_time(),
+                            )
                         )
                         process.kill()
 
@@ -238,7 +257,8 @@ class TaskManager:
             )
         else:
             raise Exception(
-                "Unrecognized output format: %s" % self.manager_params["output_format"]
+                "Unrecognized output format: %s"
+                % self.manager_params["output_format"]
             )
         self.data_aggregator.launch()
         self.manager_params[
@@ -315,7 +335,9 @@ class TaskManager:
                     "execution failures.",
                     self.failure_status["CommandSequence"],
                 )
-            elif self.failure_status["ErrorType"] == ("ExceedLaunch" "FailureLimit"):
+            elif self.failure_status["ErrorType"] == (
+                "ExceedLaunch" "FailureLimit"
+            ):
                 raise CommandExecutionError(
                     "TaskManager failed to launch browser within allowable "
                     "failure limit.",
@@ -368,8 +390,12 @@ class TaskManager:
             while False in command_executed:
                 for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[i].current_timeout = command_seq.total_timeout
-                        thread = self._start_thread(self.browsers[i], command_seq)
+                        self.browsers[
+                            i
+                        ].current_timeout = command_seq.total_timeout
+                        thread = self._start_thread(
+                            self.browsers[i], command_seq
+                        )
                         command_executed[i] = True
                 time.sleep(SLEEP_CONS)
         elif index == "**":
@@ -379,7 +405,9 @@ class TaskManager:
             while False in command_executed:
                 for i in range(len(self.browsers)):
                     if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[i].current_timeout = command_seq.total_timeout
+                        self.browsers[
+                            i
+                        ].current_timeout = command_seq.total_timeout
                         thread = self._start_thread(
                             self.browsers[i], command_seq, condition
                         )
@@ -391,12 +419,18 @@ class TaskManager:
             # send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self.browsers[index].current_timeout = command_seq.total_timeout
-                    thread = self._start_thread(self.browsers[index], command_seq)
+                    self.browsers[
+                        index
+                    ].current_timeout = command_seq.total_timeout
+                    thread = self._start_thread(
+                        self.browsers[index], command_seq
+                    )
                     break
                 time.sleep(SLEEP_CONS)
         else:
-            self.logger.info("Command index type is not supported or out of range")
+            self.logger.info(
+                "Command index type is not supported or out of range"
+            )
             return
 
         if command_seq.blocking:
@@ -408,7 +442,9 @@ class TaskManager:
 
         # Check status flags before starting thread
         if self.closing:
-            self.logger.error("Attempted to execute command on a closed TaskManager")
+            self.logger.error(
+                "Attempted to execute command on a closed TaskManager"
+            )
             return
         self._check_failure_status()
 
@@ -467,7 +503,9 @@ class TaskManager:
 
             # received reply from BrowserManager, either success or failure
             try:
-                status = browser.status_queue.get(True, browser.current_timeout)
+                status = browser.status_queue.get(
+                    True, browser.current_timeout
+                )
                 if status == "OK":
                     command_succeeded = 1
                 elif status[0] == "CRITICAL":
@@ -570,10 +608,14 @@ class TaskManager:
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def browse(self, url, num_links=2, sleep=0, index=None, timeout=60, reset=False):
+    def browse(
+        self, url, num_links=2, sleep=0, index=None, timeout=60, reset=False
+    ):
         """ browse a website and visit <num_links> links on the page """
         command_sequence = CommandSequence.CommandSequence(url)
-        command_sequence.browse(num_links=num_links, sleep=sleep, timeout=timeout)
+        command_sequence.browse(
+            num_links=num_links, sleep=sleep, timeout=timeout
+        )
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 

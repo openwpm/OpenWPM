@@ -114,7 +114,9 @@ def tab_restart_browser(webdriver):
     webdriver.switch_to_window(webdriver.window_handles[0])
 
 
-def get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket):
+def get_website(
+    url, sleep, visit_id, webdriver, browser_params, extension_socket
+):
     """
     goes to <url> using the given <webdriver> instance
     """
@@ -164,14 +166,20 @@ def browse_website(
     be the site_url of the original page and NOT the url of the links visited.
     """
     # First get the site
-    get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket)
+    get_website(
+        url, sleep, visit_id, webdriver, browser_params, extension_socket
+    )
 
     # Connect to logger
     logger = loggingclient(*manager_params["logger_address"])
 
     # Then visit a few subpages
     for _ in range(num_links):
-        links = [x for x in get_intra_links(webdriver, url) if is_displayed(x) is True]
+        links = [
+            x
+            for x in get_intra_links(webdriver, url)
+            if is_displayed(x) is True
+        ]
         if not links:
             break
         r = int(random.random() * len(links))
@@ -192,7 +200,9 @@ def browse_website(
             pass
 
 
-def dump_flash_cookies(start_time, visit_id, webdriver, browser_params, manager_params):
+def dump_flash_cookies(
+    start_time, visit_id, webdriver, browser_params, manager_params
+):
     """ Save newly changed Flash LSOs to database
 
     We determine which LSOs to save by the `start_time` timestamp.
@@ -254,7 +264,8 @@ def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=""):
 
     urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
     outname = os.path.join(
-        manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
+        manager_params["screenshot_path"],
+        "%i-%s%s.png" % (visit_id, urlhash, suffix),
     )
     driver.save_screenshot(outname)
 
@@ -268,7 +279,9 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
     parts = list()
     for f in glob(
         os.path.join(
-            manager_params["screenshot_path"], "parts", "%i*-part-*.png" % visit_id
+            manager_params["screenshot_path"],
+            "parts",
+            "%i*-part-*.png" % visit_id,
         )
     ):
 
@@ -321,7 +334,9 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
         pass
 
 
-def screenshot_full_page(visit_id, crawl_id, driver, manager_params, suffix=""):
+def screenshot_full_page(
+    visit_id, crawl_id, driver, manager_params, suffix=""
+):
     logger = loggingclient(*manager_params["logger_address"])
 
     outdir = os.path.join(manager_params["screenshot_path"], "parts")
@@ -339,8 +354,12 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params, suffix=""):
         max_height = execute_script_with_retry(
             driver, "return document.body.scrollHeight;"
         )
-        inner_height = execute_script_with_retry(driver, "return window.innerHeight;")
-        curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
+        inner_height = execute_script_with_retry(
+            driver, "return window.innerHeight;"
+        )
+        curr_scrollY = execute_script_with_retry(
+            driver, "return window.scrollY;"
+        )
         prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
         while (
@@ -360,7 +379,9 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params, suffix=""):
             # Update control variables
             part += 1
             prev_scrollY = curr_scrollY
-            curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
+            curr_scrollY = execute_script_with_retry(
+                driver, "return window.scrollY;"
+            )
 
             # Save screenshot
             driver.save_screenshot(outname % (part, curr_scrollY))
@@ -381,7 +402,8 @@ def dump_page_source(visit_id, driver, manager_params, suffix=""):
 
     outname = md5(driver.current_url.encode("utf-8")).hexdigest()
     outfile = os.path.join(
-        manager_params["source_dump_path"], "%i-%s%s.html" % (visit_id, outname, suffix)
+        manager_params["source_dump_path"],
+        "%i-%s%s.html" % (visit_id, outname, suffix),
     )
 
     with open(outfile, "wb") as f:

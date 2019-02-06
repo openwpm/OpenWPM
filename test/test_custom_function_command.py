@@ -70,6 +70,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
         query_result = db_utils.query_db(
-            manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
+            manager_params["db"],
+            "SELECT top_url, link FROM page_links;",
+            as_tuple=True,
         )
         assert PAGE_LINKS == set(query_result)

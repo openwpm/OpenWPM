@@ -432,7 +432,9 @@ _Translator = {
 _idmap = "".join(chr(x) for x in range(256))
 
 
-def _quote(s, LegalChars=_LegalChars, idmap=_idmap, translate=string.translate):
+def _quote(
+    s, LegalChars=_LegalChars, idmap=_idmap, translate=string.translate
+):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
@@ -634,7 +636,11 @@ class Morsel(dict):
     __str__ = output
 
     def __repr__(self):
-        return "<%s: %s=%s>" % (self.__class__.__name__, self.key, repr(self.value))
+        return "<%s: %s=%s>" % (
+            self.__class__.__name__,
+            self.key,
+            repr(self.value),
+        )
 
     def js_output(self, attrs=None):
         # Print javascript
@@ -915,7 +921,8 @@ class SmartCookie(BaseCookie):
 
     def __init__(self, input=None):
         warnings.warn(
-            "Cookie/SmartCookie class is insecure; do not use it", DeprecationWarning
+            "Cookie/SmartCookie class is insecure; do not use it",
+            DeprecationWarning,
         )
         BaseCookie.__init__(self, input)
 

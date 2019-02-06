@@ -42,7 +42,9 @@ class serversocket:
         """ Listen for connections and pass handling to a new thread """
         while True:
             (client, address) = self.sock.accept()
-            thread = threading.Thread(target=self._handle_conn, args=(client, address))
+            thread = threading.Thread(
+                target=self._handle_conn, args=(client, address)
+            )
             thread.daemon = True
             thread.start()
 
@@ -59,7 +61,10 @@ class serversocket:
             'j' : json
         """
         if self.verbose:
-            print("Thread: %s connected to: %s" % (threading.current_thread(), address))
+            print(
+                "Thread: %s connected to: %s"
+                % (threading.current_thread(), address)
+            )
         try:
             while True:
                 msg = self.receive_msg(client, 5)
@@ -79,7 +84,10 @@ class serversocket:
                         elif serialization == b"u":  # utf-8 serialization
                             msg = msg.decode("utf-8")
                         else:
-                            print("Unrecognized serialization type: %r" % serialization)
+                            print(
+                                "Unrecognized serialization type: %r"
+                                % serialization
+                            )
                             continue
                     except (UnicodeDecodeError, ValueError) as e:
                         print(
@@ -116,7 +124,9 @@ class clientsocket:
         """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if serialization != "json" and serialization != "dill":
-            raise ValueError("Unsupported serialization type: %s" % serialization)
+            raise ValueError(
+                "Unsupported serialization type: %s" % serialization
+            )
         self.serialization = serialization
         self.verbose = verbose
 
@@ -145,7 +155,9 @@ class clientsocket:
             msg = json.dumps(msg).encode("utf-8")
             serialization = b"j"
         else:
-            raise ValueError("Unsupported serialization type set: %s" % serialization)
+            raise ValueError(
+                "Unsupported serialization type set: %s" % serialization
+            )
 
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
@@ -175,7 +187,9 @@ def main():
     elif sys.argv[1] == "c":
         host = input("Enter the host name:\n")
         port = input("Enter the port:\n")
-        serialization = input("Enter the serialization type (default: 'json'):\n")
+        serialization = input(
+            "Enter the serialization type (default: 'json'):\n"
+        )
         if serialization == "":
             serialization = "json"
         sock = clientsocket(serialization=serialization)

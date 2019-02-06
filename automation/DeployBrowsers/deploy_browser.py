@@ -4,7 +4,9 @@ from . import deploy_firefox
 from ..Errors import BrowserConfigError
 
 
-def deploy_browser(status_queue, browser_params, manager_params, crash_recovery):
+def deploy_browser(
+    status_queue, browser_params, manager_params, crash_recovery
+):
     """Deploy Firefox browser (Chrome no longer supported)"""
     if browser_params["browser"].lower() == "chrome":
         raise BrowserConfigError(

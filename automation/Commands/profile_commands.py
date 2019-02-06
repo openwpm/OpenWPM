@@ -56,7 +56,8 @@ def save_flash_files(logger, browser_params, dump_location, clear=False):
         if not os.path.isdir(location):
             logger.warning(
                 "BROWSER %i: %s not found when attempting to save "
-                "flash files, skipping..." % (browser_params["crawl_id"], location)
+                "flash files, skipping..."
+                % (browser_params["crawl_id"], location)
             )
             continue
 
@@ -88,7 +89,8 @@ def load_flash_files(logger, browser_params, tar_location):
         if not os.path.isdir(location):
             logger.warning(
                 "BROWSER %i: %s not found when attempting to load "
-                "flash files, skipping..." % (browser_params["crawl_id"], location)
+                "flash files, skipping..."
+                % (browser_params["crawl_id"], location)
             )
             continue
 
@@ -106,7 +108,10 @@ def load_flash_files(logger, browser_params, tar_location):
             logger.warning(
                 "BROWSER %i: %s not found while loading flash "
                 "files, skipping..."
-                % (browser_params["crawl_id"], os.path.join(tar_location, tail))
+                % (
+                    browser_params["crawl_id"],
+                    os.path.join(tar_location, tail),
+                )
             )
             continue
 
@@ -162,7 +167,11 @@ def dump_profile(
         tar = tarfile.open(tar_location + tar_name, "w", errorlevel=1)
     logger.debug(
         "BROWSER %i: Backing up full profile from %s to %s"
-        % (browser_params["crawl_id"], browser_profile_folder, tar_location + tar_name)
+        % (
+            browser_params["crawl_id"],
+            browser_profile_folder,
+            tar_location + tar_name,
+        )
     )
     storage_vector_files = [
         "cookies.sqlite",  # cookies
@@ -254,13 +263,19 @@ def load_profile(
         shutil.copy(tar_location + tar_name, browser_profile_folder)
 
         if tar_name == "profile.tar.gz":
-            f = tarfile.open(browser_profile_folder + tar_name, "r:gz", errorlevel=1)
+            f = tarfile.open(
+                browser_profile_folder + tar_name, "r:gz", errorlevel=1
+            )
         else:
-            f = tarfile.open(browser_profile_folder + tar_name, "r", errorlevel=1)
+            f = tarfile.open(
+                browser_profile_folder + tar_name, "r", errorlevel=1
+            )
         f.extractall(browser_profile_folder)
         f.close()
         os.remove(browser_profile_folder + tar_name)
-        logger.debug("BROWSER %i: Tarfile extracted" % browser_params["crawl_id"])
+        logger.debug(
+            "BROWSER %i: Tarfile extracted" % browser_params["crawl_id"]
+        )
 
         # clear and load flash cookies
         if load_flash:

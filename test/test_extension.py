@@ -37,7 +37,13 @@ PROPERTIES = {
 CANVAS_TEST_URL = u"%s/canvas_fingerprinting.html" % utilities.BASE_TEST_URL
 
 CANVAS_CALLS = {
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.fillStyle", "set", "#f60", None),
+    (
+        CANVAS_TEST_URL,
+        "CanvasRenderingContext2D.fillStyle",
+        "set",
+        "#f60",
+        None,
+    ),
     (
         CANVAS_TEST_URL,
         "CanvasRenderingContext2D.textBaseline",
@@ -45,9 +51,27 @@ CANVAS_CALLS = {
         "alphabetic",
         None,
     ),
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.textBaseline", "set", "top", None),
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.font", "set", "14px 'Arial'", None),
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.fillStyle", "set", "#069", None),
+    (
+        CANVAS_TEST_URL,
+        "CanvasRenderingContext2D.textBaseline",
+        "set",
+        "top",
+        None,
+    ),
+    (
+        CANVAS_TEST_URL,
+        "CanvasRenderingContext2D.font",
+        "set",
+        "14px 'Arial'",
+        None,
+    ),
+    (
+        CANVAS_TEST_URL,
+        "CanvasRenderingContext2D.fillStyle",
+        "set",
+        "#069",
+        None,
+    ),
     (
         CANVAS_TEST_URL,
         "CanvasRenderingContext2D.fillStyle",
@@ -55,7 +79,13 @@ CANVAS_CALLS = {
         "rgba(102, 204, 0, 0.7)",
         None,
     ),
-    (CANVAS_TEST_URL, "HTMLCanvasElement.getContext", "call", "", '{"0":"2d"}'),
+    (
+        CANVAS_TEST_URL,
+        "HTMLCanvasElement.getContext",
+        "call",
+        "",
+        '{"0":"2d"}',
+    ),
     (
         CANVAS_TEST_URL,
         "CanvasRenderingContext2D.fillRect",
@@ -90,7 +120,13 @@ WEBRTC_CALLS = {
         "",
         '{"0":"FUNCTION","1":"FUNCTION"}',
     ),
-    (WEBRTC_TEST_URL, "RTCPeerConnection.createDataChannel", "call", "", '{"0":""}'),
+    (
+        WEBRTC_TEST_URL,
+        "RTCPeerConnection.createDataChannel",
+        "call",
+        "",
+        '{"0":""}',
+    ),
     (
         WEBRTC_TEST_URL,
         "RTCPeerConnection.createDataChannel",
@@ -98,7 +134,13 @@ WEBRTC_CALLS = {
         "",
         '{"0":"","1":"{\\"reliable\\":false}"}',
     ),
-    (WEBRTC_TEST_URL, "RTCPeerConnection.onicecandidate", "set", "FUNCTION", None),
+    (
+        WEBRTC_TEST_URL,
+        "RTCPeerConnection.onicecandidate",
+        "set",
+        "FUNCTION",
+        None,
+    ),
 }
 
 # we expect these strings to be present in the WebRTC SDP
@@ -244,7 +286,8 @@ DOCUMENT_COOKIE_WRITE = (
     "\nonload@" + JS_COOKIE_TEST_URL + ":1:1",
     u"window.document.cookie",
     u"set",
-    u"test_cookie=Test-0123456789; " "expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/",
+    u"test_cookie=Test-0123456789; "
+    "expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/",
 )
 
 DOCUMENT_COOKIE_READ_WRITE = set([DOCUMENT_COOKIE_READ, DOCUMENT_COOKIE_WRITE])
@@ -259,7 +302,9 @@ class TestExtension(OpenWPMTest):
     def test_property_enumeration(self):
         test_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
         db = self.visit(test_url)
-        rows = db_utils.query_db(db, "SELECT script_url, symbol FROM javascript")
+        rows = db_utils.query_db(
+            db, "SELECT script_url, symbol FROM javascript"
+        )
         observed_symbols = set()
         for script_url, symbol in rows:
             assert script_url == test_url
@@ -389,7 +434,9 @@ class TestExtension(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
         assert len(rows)  # make sure we have some JS events captured
         for row in rows:
-            js_time = datetime.strptime(row["time_stamp"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            js_time = datetime.strptime(
+                row["time_stamp"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
             # compare UTC now and the timestamp recorded at the visit
             assert (utc_now - js_time).seconds < MAX_TIMEDELTA
         assert not db_utils.any_command_failed(db)

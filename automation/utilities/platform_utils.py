@@ -48,7 +48,9 @@ def get_firefox_binary_path():
         return firefox_binary_path
 
     root_dir = os.path.dirname(__file__)  # directory of this file
-    firefox_binary_path = os.path.abspath(root_dir + "/../../firefox-bin/firefox-bin")
+    firefox_binary_path = os.path.abspath(
+        root_dir + "/../../firefox-bin/firefox-bin"
+    )
     if not os.path.isfile(firefox_binary_path):
         raise RuntimeError(
             "The `firefox-bin/firefox-bin` binary is not found in the root "
@@ -65,7 +67,9 @@ def get_geckodriver_exec_path():
     we throw a RuntimeError.
     """
     firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = os.path.dirname(firefox_binary_path) + "/geckodriver"
+    geckodriver_executable_path = (
+        os.path.dirname(firefox_binary_path) + "/geckodriver"
+    )
 
     if not os.path.isfile(geckodriver_executable_path):
         raise RuntimeError(
@@ -153,13 +157,17 @@ def get_configuration_string(manager_params, browser_params, versions):
     if profile_all_none:
         config_str += "  No profile tar files specified"
     else:
-        config_str += json.dumps(profile_dirs, indent=2, separators=(",", ": "))
+        config_str += json.dumps(
+            profile_dirs, indent=2, separators=(",", ": ")
+        )
 
     config_str += "\n\n========== Output (archive) profile dirs ==========\n"
     if archive_all_none:
         config_str += "  No profile archive directories specified"
     else:
-        config_str += json.dumps(archive_dirs, indent=2, separators=(",", ": "))
+        config_str += json.dumps(
+            archive_dirs, indent=2, separators=(",", ": ")
+        )
 
     config_str += "\n\n"
     return config_str

@@ -25,7 +25,9 @@ class TestProfile(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get("http://example.com")
         manager.close()
-        assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
+        assert isfile(
+            join(browser_params[0]["profile_archive_dir"], "profile.tar.gz")
+        )
 
     def test_crash(self):
         manager_params, browser_params = self.get_config()
@@ -48,7 +50,9 @@ class TestProfile(OpenWPMTest):
             manager.get("example.com")  # Requires two commands to shut down
         except CommandExecutionError:
             pass
-        assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
+        assert isfile(
+            join(browser_params[0]["profile_archive_dir"], "profile.tar.gz")
+        )
 
     def test_profile_error(self):
         manager_params, browser_params = self.get_config()
@@ -77,4 +81,6 @@ class TestProfile(OpenWPMTest):
         except CommandExecutionError:
             pass
         manager.close()
-        assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
+        assert isfile(
+            join(browser_params[0]["profile_archive_dir"], "profile.tar.gz")
+        )

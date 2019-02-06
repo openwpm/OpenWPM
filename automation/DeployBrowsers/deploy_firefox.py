@@ -24,7 +24,9 @@ from .selenium_firefox import (
 DEFAULT_SCREEN_RES = (1366, 768)
 
 
-def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
+def deploy_firefox(
+    status_queue, browser_params, manager_params, crash_recovery
+):
     """
     launches a firefox instance with parameters set by the input dictionary
     """
@@ -104,7 +106,9 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             "BROWSER %i: Overriding user agent string to '%s'"
             % (browser_params["crawl_id"], profile_settings["ua_string"])
         )
-        fo.set_preference("general.useragent.override", profile_settings["ua_string"])
+        fo.set_preference(
+            "general.useragent.override", profile_settings["ua_string"]
+        )
 
     if browser_params["headless"]:
         display = Display(visible=0, size=profile_settings["screen_res"])
@@ -122,7 +126,9 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         extension_config = dict()
         extension_config.update(browser_params)
         extension_config["logger_address"] = manager_params["logger_address"]
-        extension_config["aggregator_address"] = manager_params["aggregator_address"]
+        extension_config["aggregator_address"] = manager_params[
+            "aggregator_address"
+        ]
         if "ldb_address" in manager_params:
             extension_config["leveldb_address"] = manager_params["ldb_address"]
         else:
@@ -131,7 +137,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         with open(browser_profile_path + "browser_params.json", "w") as f:
             json.dump(extension_config, f)
         logger.debug(
-            "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params["crawl_id"]
+            "BROWSER %i: OpenWPM Firefox extension loaded"
+            % browser_params["crawl_id"]
         )
 
     # Disable flash
@@ -145,7 +152,9 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     fo.set_preference("browser.tabs.remote.autostart.2", False)
 
     # Configure privacy settings
-    configure_firefox.privacy(browser_params, fp, fo, root_dir, browser_profile_path)
+    configure_firefox.privacy(
+        browser_params, fp, fo, root_dir, browser_profile_path
+    )
 
     # Set various prefs to improve speed and eliminate traffic to Mozilla
     configure_firefox.optimize_prefs(fo)
@@ -189,6 +198,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     else:
         raise RuntimeError("Unable to identify Firefox process ID.")
 
-    status_queue.put(("STATUS", "Browser Launched", (int(pid), profile_settings)))
+    status_queue.put(
+        ("STATUS", "Browser Launched", (int(pid), profile_settings))
+    )
 
     return driver, interceptor.profile_path, profile_settings

@@ -66,7 +66,9 @@ def get_ps_plus_1(url, **kwargs):
     otherwise a version cached in the system temp directory is used.
     """
     if "psl" not in kwargs:
-        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
+        raise ValueError(
+            "A PublicSuffixList must be passed as a keyword argument."
+        )
     hostname = urlparse(url).hostname
     if is_ip_address(hostname):
         return hostname
@@ -95,7 +97,9 @@ def hostname_subparts(url, include_ps=False, **kwargs):
     otherwise a version cached in the system temp directory is used.
     """
     if "psl" not in kwargs:
-        raise ValueError("A PublicSuffixList must be passed as a keyword argument.")
+        raise ValueError(
+            "A PublicSuffixList must be passed as a keyword argument."
+        )
     hostname = urlparse(url).hostname
 
     # If an IP address, just return a single item list with the IP

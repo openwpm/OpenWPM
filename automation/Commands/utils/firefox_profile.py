@@ -10,7 +10,9 @@ from glob import glob
 
 def tmp_sqlite_files_exist(path):
     """Check if temporary sqlite files(wal, shm) exist in a given path."""
-    return glob(os.path.join(path, "*-wal")) or glob(os.path.join(path, "*-shm"))
+    return glob(os.path.join(path, "*-wal")) or glob(
+        os.path.join(path, "*-shm")
+    )
 
 
 def sleep_until_sqlite_checkpoint(profile_dir, timeout=60):

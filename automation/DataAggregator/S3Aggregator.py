@@ -24,9 +24,13 @@ SITE_VISITS_INDEX = "_site_visits_index"
 CONTENT_DIRECTORY = "content"
 
 
-def listener_process_runner(manager_params, status_queue, shutdown_queue, instance_id):
+def listener_process_runner(
+    manager_params, status_queue, shutdown_queue, instance_id
+):
     """S3Listener runner. Pass to new process"""
-    listener = S3Listener(status_queue, shutdown_queue, manager_params, instance_id)
+    listener = S3Listener(
+        status_queue, shutdown_queue, manager_params, instance_id
+    )
     listener.startup()
 
     while True:
@@ -52,7 +56,9 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(self, status_queue, shutdown_queue, manager_params, instance_id):
+    def __init__(
+        self, status_queue, shutdown_queue, manager_params, instance_id
+    ):
         self.dir = manager_params["s3_directory"]
         self.browser_map = dict()  # maps crawl_id to visit_id
         self._records = dict()  # maps visit_id and table to records
@@ -62,8 +68,13 @@ class S3Listener(BaseListener):
         self._s3 = boto3.client("s3")
         self._s3_resource = boto3.resource("s3")
         self._fs = s3fs.S3FileSystem()
-        self._s3_bucket_uri = "s3://%s/%s/visits/%%s" % (self._bucket, self.dir)
-        super(S3Listener, self).__init__(status_queue, shutdown_queue, manager_params)
+        self._s3_bucket_uri = "s3://%s/%s/visits/%%s" % (
+            self._bucket,
+            self.dir,
+        )
+        super(S3Listener, self).__init__(
+            status_queue, shutdown_queue, manager_params
+        )
 
     def _get_records(self, visit_id):
         """Get the RecordBatch corresponding to `visit_id`"""
@@ -125,10 +136,14 @@ class S3Listener(BaseListener):
                 raise
         return True
 
-    def _write_str_to_s3(self, string, filename, compressed=True, skip_if_exists=True):
+    def _write_str_to_s3(
+        self, string, filename, compressed=True, skip_if_exists=True
+    ):
         """Write `string` data to S3 with name `filename`"""
         if skip_if_exists and self._exists_on_s3(filename):
-            self.logger.debug("File `%s` already exists on s3, skipping..." % filename)
+            self.logger.debug(
+                "File `%s` already exists on s3, skipping..." % filename
+            )
             return
         if not isinstance(string, six.binary_type):
             string = string.encode("utf-8")
@@ -143,7 +158,9 @@ class S3Listener(BaseListener):
         # Upload to S3
         try:
             self._s3.upload_fileobj(out_f, self._bucket, filename)
-            self.logger.debug("Successfully uploaded file `%s` to S3." % filename)
+            self.logger.debug(
+                "Successfully uploaded file `%s` to S3." % filename
+            )
         except Exception as e:
             self.logger.error(
                 "Exception while uploading %s\n%s\n%s" % (filename, type(e), e)
@@ -235,7 +252,8 @@ class S3Listener(BaseListener):
         if record[0] != RECORD_TYPE_CONTENT:
             raise ValueError(
                 "Incorrect record type passed to `process_content`. Expected "
-                "record of type `%s`, received `%s`." % (RECORD_TYPE_CONTENT, record[0])
+                "record of type `%s`, received `%s`."
+                % (RECORD_TYPE_CONTENT, record[0])
             )
         content, content_hash = record[1]
         fname = "%s/%s/%s.gz" % (self.dir, CONTENT_DIRECTORY, content_hash)
@@ -290,7 +308,10 @@ class S3Aggregator(BaseAggregator):
         """Save configuration details for this crawl to the database"""
 
         # Save config keyed by task id
-        fname = "%s/instance-%s_configuration.json" % (self.dir, self._instance_id)
+        fname = "%s/instance-%s_configuration.json" % (
+            self.dir,
+            self._instance_id,
+        )
 
         # Config parameters for update
         out = dict()
@@ -325,4 +346,6 @@ class S3Aggregator(BaseAggregator):
 
     def launch(self):
         """Launch the aggregator listener process"""
-        super(S3Aggregator, self).launch(listener_process_runner, self._instance_id)
+        super(S3Aggregator, self).launch(
+            listener_process_runner, self._instance_id
+        )

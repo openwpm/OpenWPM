@@ -76,7 +76,9 @@ class TestCrawl(OpenWPMTest):
             tar.extractall(browser_params[0]["profile_archive_dir"])
 
         # Output databases
-        ff_db = os.path.join(browser_params[0]["profile_archive_dir"], "places.sqlite")
+        ff_db = os.path.join(
+            browser_params[0]["profile_archive_dir"], "places.sqlite"
+        )
         crawl_db = manager_params["db"]
 
         # Grab urls from crawl database
@@ -89,7 +91,8 @@ class TestCrawl(OpenWPMTest):
         successes = dict()
         rows = db_utils.query_db(
             crawl_db,
-            "SELECT arguments, bool_success " "FROM crawl_history WHERE command='GET'",
+            "SELECT arguments, bool_success "
+            "FROM crawl_history WHERE command='GET'",
         )
         for url, success in rows:
             ps = psl.get_public_suffix(urlparse(url).hostname)

@@ -92,7 +92,12 @@ def ExtractXPath(element, use_id=True):
         # Check id first
         if use_id and parent.get("id") is not None:
             return (
-                "//*/" + parent.name + '[@id="' + parent.get("id") + '"]/' + xpath
+                "//*/"
+                + parent.name
+                + '[@id="'
+                + parent.get("id")
+                + '"]/'
+                + xpath
             )  # noqa
 
         xpath = check_previous_tags(parent) + "/" + xpath

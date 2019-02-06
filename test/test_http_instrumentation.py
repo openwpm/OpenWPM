@@ -621,7 +621,9 @@ class TestHTTPInstrument(OpenWPMTest):
         channel_to_url = dict()
 
         # HTTP Requests
-        rows = db_utils.query_db(db, "SELECT * FROM http_requests WHERE visit_id = 2")
+        rows = db_utils.query_db(
+            db, "SELECT * FROM http_requests WHERE visit_id = 2"
+        )
         observed_records = set()
         for row in rows:
             observed_records.add(
@@ -643,7 +645,9 @@ class TestHTTPInstrument(OpenWPMTest):
         assert HTTP_CACHED_REQUESTS == observed_records
 
         # HTTP Responses
-        rows = db_utils.query_db(db, "SELECT * FROM http_responses WHERE visit_id = 2")
+        rows = db_utils.query_db(
+            db, "SELECT * FROM http_responses WHERE visit_id = 2"
+        )
         observed_records = set()
         for row in rows:
             observed_records.add(
@@ -654,7 +658,9 @@ class TestHTTPInstrument(OpenWPMTest):
         assert HTTP_CACHED_RESPONSES == observed_records
 
         # HTTP Redirects
-        rows = db_utils.query_db(db, "SELECT * FROM http_redirects WHERE visit_id = 2")
+        rows = db_utils.query_db(
+            db, "SELECT * FROM http_redirects WHERE visit_id = 2"
+        )
         observed_records = set()
         for row in rows:
             src = channel_to_url[row["old_channel_id"]].split("?")[0]
@@ -665,7 +671,9 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_http_stacktrace(self):
         test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
         db = self.visit(test_url, sleep_after=3)
-        rows = db_utils.query_db(db, ("SELECT url, req_call_stack FROM http_requests"))
+        rows = db_utils.query_db(
+            db, ("SELECT url, req_call_stack FROM http_requests")
+        )
         observed_records = set()
         for row in rows:
             url, stacktrace = row
@@ -686,7 +694,9 @@ class TestHTTPInstrument(OpenWPMTest):
         # stacktrace should be empty for requests NOT triggered by scripts
         test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
         db = self.visit(test_url, sleep_after=3)
-        rows = db_utils.query_db(db, ("SELECT url, req_call_stack FROM http_requests"))
+        rows = db_utils.query_db(
+            db, ("SELECT url, req_call_stack FROM http_requests")
+        )
         for row in rows:
             _, stacktrace = row
             assert stacktrace == ""
@@ -826,7 +836,9 @@ class TestPOSTInstrument(OpenWPMTest):
         # Binary strings get put into the database as-if they were latin-1.
         import six
 
-        assert six.binary_type(bytearray(range(100))) == post_body.encode("latin-1")
+        assert six.binary_type(bytearray(range(100))) == post_body.encode(
+            "latin-1"
+        )
 
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.

@@ -25,7 +25,11 @@ def ensure_unicode(val):
     except (UnicodeDecodeError, TypeError):
         # Backslash escaping on decode doesn't work in Python 2.
         # This does approximately the same thing.
-        return val.decode("latin1").encode("ascii", "backslashreplace").decode("ascii")
+        return (
+            val.decode("latin1")
+            .encode("ascii", "backslashreplace")
+            .decode("ascii")
+        )
 
 
 # TODO: Linux only
@@ -80,7 +84,9 @@ def get_flash_cookies(mod_since=0):
                 try:
                     flash_cookies.extend(parse_flash_cookies(lso_file))
                 except Exception:
-                    sys.stderr.write("Exception reading {!r}:\n".format(lso_file))
+                    sys.stderr.write(
+                        "Exception reading {!r}:\n".format(lso_file)
+                    )
                     traceback.print_exc()
 
     return flash_cookies

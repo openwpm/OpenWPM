@@ -99,9 +99,13 @@ class TestJSInstrument(OpenWPMTest):
             assert row["document_url"] == doc_url
             assert row["top_level_url"] == top_url
             if row["operation"] == "get" or row["operation"] == "set":
-                observed_gets_and_sets.add((symbol, row["operation"], row["value"]))
+                observed_gets_and_sets.add(
+                    (symbol, row["operation"], row["value"])
+                )
             else:
-                observed_calls.add((symbol, row["operation"], row["arguments"]))
+                observed_calls.add(
+                    (symbol, row["operation"], row["arguments"])
+                )
         assert observed_calls == METHOD_CALLS
         assert observed_gets_and_sets == GETS_AND_SETS
 
@@ -128,7 +132,9 @@ class TestJSInstrument(OpenWPMTest):
                     (row["symbol"], row["operation"], row["value"])
                 )
             else:
-                observed_calls.add((row["symbol"], row["operation"], row["arguments"]))
+                observed_calls.add(
+                    (row["symbol"], row["operation"], row["arguments"])
+                )
         assert observed_calls == RECURSIVE_METHOD_CALLS
         assert observed_gets_and_sets == RECURSIVE_GETS_AND_SETS
 
@@ -153,7 +159,9 @@ class TestJSInstrument(OpenWPMTest):
             assert row["document_url"] == TOP_URL
             assert row["top_level_url"] == TOP_URL
             if row["operation"] == "call":
-                observed_calls.add((row["symbol"], row["operation"], row["arguments"]))
+                observed_calls.add(
+                    (row["symbol"], row["operation"], row["arguments"])
+                )
             else:
                 observed_gets_and_sets.add(
                     (row["symbol"], row["operation"], row["value"])

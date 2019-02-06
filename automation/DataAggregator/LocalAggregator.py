@@ -19,9 +19,13 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "..", "schema.sql")
 LDB_NAME = "content.ldb"
 
 
-def listener_process_runner(manager_params, status_queue, shutdown_queue, ldb_enabled):
+def listener_process_runner(
+    manager_params, status_queue, shutdown_queue, ldb_enabled
+):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(status_queue, shutdown_queue, manager_params, ldb_enabled)
+    listener = LocalListener(
+        status_queue, shutdown_queue, manager_params, ldb_enabled
+    )
     listener.startup()
 
     while True:
@@ -48,7 +52,9 @@ def listener_process_runner(manager_params, status_queue, shutdown_queue, ldb_en
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
 
-    def __init__(self, status_queue, shutdown_queue, manager_params, ldb_enabled):
+    def __init__(
+        self, status_queue, shutdown_queue, manager_params, ldb_enabled
+    ):
         db_path = manager_params["database_name"]
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -96,7 +102,9 @@ class LocalListener(BaseListener):
         elif record[0] == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
-        statement, args = self._generate_insert(table=record[0], data=record[1])
+        statement, args = self._generate_insert(
+            table=record[0], data=record[1]
+        )
         for i in range(len(args)):
             if isinstance(args[i], six.binary_type):
                 args[i] = six.text_type(args[i], errors="ignore")
@@ -116,7 +124,8 @@ class LocalListener(BaseListener):
         if record[0] != RECORD_TYPE_CONTENT:
             raise ValueError(
                 "Incorrect record type passed to `process_content`. Expected "
-                "record of type `%s`, received `%s`." % (RECORD_TYPE_CONTENT, record[0])
+                "record of type `%s`, received `%s`."
+                % (RECORD_TYPE_CONTENT, record[0])
             )
         if not self.ldb_enabled:
             raise RuntimeError(
@@ -223,7 +232,11 @@ class LocalAggregator(BaseAggregator):
             "INSERT INTO task "
             "(manager_params, openwpm_version, browser_version) "
             "VALUES (?,?,?)",
-            (json.dumps(self.manager_params), openwpm_version, browser_version),
+            (
+                json.dumps(self.manager_params),
+                openwpm_version,
+                browser_version,
+            ),
         )
         self.db.commit()
         self.task_id = self.cur.lastrowid
@@ -253,7 +266,9 @@ class LocalAggregator(BaseAggregator):
 
     def launch(self):
         """Launch the aggregator listener process"""
-        super(LocalAggregator, self).launch(listener_process_runner, self.ldb_enabled)
+        super(LocalAggregator, self).launch(
+            listener_process_runner, self.ldb_enabled
+        )
 
     def shutdown(self):
         """ Terminates the aggregator"""

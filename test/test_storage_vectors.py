@@ -55,7 +55,10 @@ class TestStorageVectors(OpenWPMTest):
         # Get a site we know sets Flash cookies and visit it twice
         lso_value_a = utilities.rand_str(8)
         expected_lso_content_a[5] = lso_value_a  # expected to be present
-        qry_str = "?lso_test_key=%s&lso_test_value=%s" % ("test_key", lso_value_a)
+        qry_str = "?lso_test_key=%s&lso_test_value=%s" % (
+            "test_key",
+            lso_value_a,
+        )
         test_url_a = utilities.BASE_TEST_URL + "/lso/setlso.html" + qry_str
         cs = CommandSequence.CommandSequence(test_url_a)
         cs.get(sleep=3, timeout=120)
@@ -64,7 +67,10 @@ class TestStorageVectors(OpenWPMTest):
 
         lso_value_b = utilities.rand_str(8)
         expected_lso_content_b[5] = lso_value_b  # expected to be present
-        qry_str = "?lso_test_key=%s&lso_test_value=%s" % ("test_key", lso_value_b)
+        qry_str = "?lso_test_key=%s&lso_test_value=%s" % (
+            "test_key",
+            lso_value_b,
+        )
         test_url_b = utilities.BASE_TEST_URL + "/lso/setlso.html" + qry_str
         cs = CommandSequence.CommandSequence(test_url_b)
         cs.get(sleep=3, timeout=120)
@@ -121,7 +127,9 @@ class TestStorageVectors(OpenWPMTest):
         manager.close()
         # Check that the JS cookie we stored is recorded
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT * FROM profile_cookies", as_tuple=True
+            manager_params["db"],
+            "SELECT * FROM profile_cookies",
+            as_tuple=True,
         )
         assert len(qry_res) == 1  # we store only one cookie
         cookies = qry_res[0]  # take the first cookie

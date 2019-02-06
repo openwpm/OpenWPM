@@ -22,7 +22,12 @@ from selenium.webdriver.firefox.firefox_profile import (
 from selenium.webdriver.firefox.options import Options
 from six.moves import range
 
-__all__ = ["FirefoxBinary", "FirefoxProfile", "FirefoxLogInterceptor", "Options"]
+__all__ = [
+    "FirefoxBinary",
+    "FirefoxProfile",
+    "FirefoxLogInterceptor",
+    "Options",
+]
 
 
 def mktempfifo(suffix="", prefix="tmp", dir=None):
@@ -74,12 +79,13 @@ class FirefoxLogInterceptor(threading.Thread):
             with open(self.fifo, "rt") as f:
                 for line in f:
                     self.logger.debug(
-                        "BROWSER %i: driver: %s" % (self.crawl_id, line.strip())
+                        "BROWSER %i: driver: %s"
+                        % (self.crawl_id, line.strip())
                     )
                     if "Using profile path" in line:
-                        self.profile_path = line.partition("Using profile path")[
-                            -1
-                        ].strip()
+                        self.profile_path = line.partition(
+                            "Using profile path"
+                        )[-1].strip()
 
                     if self.fifo is not None:
                         os.unlink(self.fifo)
@@ -201,7 +207,8 @@ class FirefoxProfile(BaseFirefoxProfile):
                     manifest = f.read()
             else:
                 raise IOError(
-                    "Add-on path is neither an XPI nor a " "directory: %s" % addon_path
+                    "Add-on path is neither an XPI nor a "
+                    "directory: %s" % addon_path
                 )
         except (IOError, KeyError) as e:
             raise AddonFormatError(str(e), sys.exc_info()[2])

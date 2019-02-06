@@ -82,7 +82,9 @@ class BaseListener(object):
             return
         qsize = self.record_queue.qsize()
         self.status_queue.put(qsize)
-        self.logger.debug("Status update; current record queue size: %d" % qsize)
+        self.logger.debug(
+            "Status update; current record queue size: %d" % qsize
+        )
         self._last_update = time.time()
 
     def shutdown(self):
@@ -175,8 +177,14 @@ class BaseAggregator(object):
 
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
-        args = (self.manager_params, self.status_queue, self.shutdown_queue) + args
-        self.listener_process = Process(target=listener_process_runner, args=args)
+        args = (
+            self.manager_params,
+            self.status_queue,
+            self.shutdown_queue,
+        ) + args
+        self.listener_process = Process(
+            target=listener_process_runner, args=args
+        )
         self.listener_process.daemon = True
         self.listener_process.start()
         self.listener_address = self.status_queue.get()

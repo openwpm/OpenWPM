@@ -95,7 +95,8 @@ class CommandSequence:
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError(
-                "No get or browse request preceding " "the save screenshot command",
+                "No get or browse request preceding "
+                "the save screenshot command",
                 self,
             )
         command = ("SAVE_SCREENSHOT", suffix)
@@ -123,7 +124,8 @@ class CommandSequence:
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError(
-                "No get or browse request preceding " "the dump page source command",
+                "No get or browse request preceding "
+                "the dump page source command",
                 self,
             )
         command = ("SCREENSHOT_FULL_PAGE", suffix)
@@ -134,7 +136,8 @@ class CommandSequence:
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError(
-                "No get or browse request preceding " "the dump page source command",
+                "No get or browse request preceding "
+                "the dump page source command",
                 self,
             )
         command = ("DUMP_PAGE_SOURCE", suffix)
@@ -163,7 +166,8 @@ class CommandSequence:
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError(
-                "No get or browse request preceding " "the dump page source command",
+                "No get or browse request preceding "
+                "the dump page source command",
                 self,
             )
         command = ("RECURSIVE_DUMP_PAGE_SOURCE", suffix)
@@ -174,7 +178,8 @@ class CommandSequence:
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError(
-                "No get or browse request preceding " "the dump page source command",
+                "No get or browse request preceding "
+                "the dump page source command",
                 self,
             )
         command = ("RUN_CUSTOM_FUNCTION", function_handle, func_args)

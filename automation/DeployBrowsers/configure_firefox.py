@@ -54,14 +54,19 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     if browser_params["ghostery"]:
         fp.add_extension(
             extension=os.path.join(
-                root_dir, "firefox_extensions", "ghostery", "ghostery-7.3.3.7.xpi"
+                root_dir,
+                "firefox_extensions",
+                "ghostery",
+                "ghostery-7.3.3.7.xpi",
             )
         )
         ghostery_dir = os.path.join(storage_dir, "firefox@ghostery.com")
         if not os.path.isdir(ghostery_dir):
             os.mkdir(ghostery_dir)
         shutil.copy(
-            os.path.join(root_dir, "firefox_extensions", "ghostery", "storage.js"),
+            os.path.join(
+                root_dir, "firefox_extensions", "ghostery", "storage.js"
+            ),
             ghostery_dir,
         )
 
@@ -79,7 +84,9 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     if browser_params["https-everywhere"]:
         fp.add_extension(
             extension=os.path.join(
-                root_dir, "firefox_extensions", "https_everywhere-2017.10.4.xpi"
+                root_dir,
+                "firefox_extensions",
+                "https_everywhere-2017.10.4.xpi",
             )
         )
 
@@ -99,7 +106,9 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         if not os.path.isdir(ublock_dir):
             os.mkdir(ublock_dir)
         shutil.copy(
-            os.path.join(root_dir, "firefox_extensions", "ublock_origin", "storage.js"),
+            os.path.join(
+                root_dir, "firefox_extensions", "ublock_origin", "storage.js"
+            ),
             ublock_dir,
         )
 
@@ -138,7 +147,9 @@ def optimize_prefs(fo):
     fo.set_preference("browser.selfsupport.url", "")
     fo.set_preference("browser.tabs.crashReporting.sendReport", False)
     fo.set_preference("browser.crashReports.unsubmittedCheck.enabled", False)
-    fo.set_preference("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False)
+    fo.set_preference(
+        "dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False
+    )
 
     # Predictive Actions / Prefetch
     fo.set_preference("network.predictor.enabled", False)

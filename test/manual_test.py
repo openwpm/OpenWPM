@@ -18,7 +18,9 @@ from .utilities import BASE_TEST_URL, start_server
 
 # import commonly used modules and utilities so they can be easily accessed
 # in the interactive session
-from automation.Commands.utils import webdriver_extensions as wd_ext  # noqa isort:skip
+from automation.Commands.utils import (
+    webdriver_extensions as wd_ext,
+)  # noqa isort:skip
 from automation.utilities import domain_utils as du  # noqa isort:skip
 from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 from selenium.common.exceptions import *  # noqa isort:skip
@@ -59,7 +61,11 @@ class bcolors:
 
 def get_command_output(command, cwd=None):
     popen = subprocess.Popen(
-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=cwd,
     )
     return iter(popen.stdout.readline, b"")
 
@@ -68,7 +74,9 @@ def colorize(line):
     if INSERT_PREFIX in line:  # print long DB insert lines in blue
         line = line.replace(INSERT_PREFIX, bcolors.OKBLUE + INSERT_PREFIX)
     if OPENWPM_LOG_PREFIX in line:
-        line = line.replace(OPENWPM_LOG_PREFIX, OPENWPM_LOG_PREFIX + bcolors.OKGREEN)
+        line = line.replace(
+            OPENWPM_LOG_PREFIX, OPENWPM_LOG_PREFIX + bcolors.OKGREEN
+        )
     return line
 
 

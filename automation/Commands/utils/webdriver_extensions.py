@@ -39,7 +39,9 @@ def scroll_down(driver):
 
 def scroll_to_bottom(driver):
     try:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        driver.execute_script(
+            "window.scrollTo(0, document.body.scrollHeight);"
+        )
     except WebDriverException:
         pass
 
@@ -91,7 +93,9 @@ def execute_script_with_retry(driver, script):
 
 
 # ####### Search Helpers ########
-def wait_and_find(driver, locator_type, locator, timeout=3, check_iframes=True):
+def wait_and_find(
+    driver, locator_type, locator, timeout=3, check_iframes=True
+):
     """Search for element with `locator` and block if not found
 
     Parameters
@@ -210,7 +214,8 @@ def move_to_element(driver, element):
 def scroll_to_element(driver, element):
     try:
         driver.execute_script(
-            "window.scrollTo(%s, %s);" % (element.location["x"], element.location["y"])
+            "window.scrollTo(%s, %s);"
+            % (element.location["x"], element.location["y"])
         )
     except WebDriverException:
         pass
@@ -361,7 +366,9 @@ def execute_in_all_frames(
         else:
             if logger is not None:
                 doc_url = driver.execute_script("return window.document.URL;")
-                logger.info("Switched to frame: %s (visit: %d)" % (doc_url, visit_id))
+                logger.info(
+                    "Switched to frame: %s (visit: %d)" % (doc_url, visit_id)
+                )
             # Search within child frame
             execute_in_all_frames(driver, func, kwargs, frame_stack, max_depth)
             switch_to_parent_frame(driver, frame_stack)

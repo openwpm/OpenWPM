@@ -276,7 +276,8 @@ class TestSimpleCommands(OpenWPMTest):
         # We expect 4 urls: a,c,d and a favicon request
         qry_res = db_utils.query_db(
             manager_params["db"],
-            "SELECT COUNT(DISTINCT url) FROM http_responses" " WHERE visit_id = ?",
+            "SELECT COUNT(DISTINCT url) FROM http_responses"
+            " WHERE visit_id = ?",
             (visit_ids[url_a],),
         )
         assert qry_res[0][0] == 4
@@ -358,7 +359,8 @@ class TestSimpleCommands(OpenWPMTest):
         # We expect 4 urls: a,c,d and a favicon request
         qry_res = db_utils.query_db(
             manager_params["db"],
-            "SELECT COUNT(DISTINCT url) FROM http_responses" " WHERE visit_id = ?",
+            "SELECT COUNT(DISTINCT url) FROM http_responses"
+            " WHERE visit_id = ?",
             (visit_ids[url_a],),
         )
         assert qry_res[0][0] == 4
