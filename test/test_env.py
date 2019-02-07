@@ -14,7 +14,6 @@ class TestDependencies(OpenWPMTest):
 
     def test_dependencies(self):
         self.assert_is_installed("npm")
-        self.assert_is_installed("jpm")
         firefox_binary_path = get_firefox_binary_path()
         geckodriver_executable_path = get_geckodriver_exec_path()
         assert isfile(firefox_binary_path)
