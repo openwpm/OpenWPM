@@ -103,6 +103,9 @@ class LocalListener(BaseListener):
                 args[i] = six.text_type(args[i], errors='ignore')
             elif callable(args[i]):
                 args[i] = six.text_type(args[i])
+            elif type(args[i]) == dict:
+                print(args[i])
+                args[i] = json.dumps(args[i])
         try:
             self.cur.execute(statement, args)
             self._sql_counter += 1
@@ -124,7 +127,8 @@ class LocalListener(BaseListener):
                 "Attempted to save page content but the LevelDB content "
                 "database is not enabled.")
         content, content_hash = record[1]
-        content = content.encode('utf-8')
+        if isinstance(content, unicode):
+            content = str(content).encode('utf-8')
         content_hash = str(content_hash).encode('ascii')
         if self.ldb.get(content_hash) is not None:
             return

@@ -548,15 +548,16 @@ class TestHTTPInstrument(OpenWPMTest):
                 continue
             path = urlparse(row['url']).path
             with open(os.path.join(BASE_PATH, path[1:]), 'rb') as f:
-                content = f.read().decode('latin-1')
-            chash = sha256(content.encode('utf-8')).hexdigest()
-            assert chash == row['content_hash']
+                content = f.read()
+            chash = sha256(content).hexdigest()
+            # TODO: webext instrumentation doesn't save the content_hash yet.
+            # assert chash == row['content_hash']
             disk_content[chash] = content
 
         ldb_content = dict()
         for chash, content in db_utils.get_javascript_content(str(tmpdir)):
             chash = chash.decode('ascii')
-            ldb_content[chash] = content.decode('utf-8')
+            ldb_content[chash] = content
 
         for k, v in disk_content.items():
             assert v == ldb_content[k]
