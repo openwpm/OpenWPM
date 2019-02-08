@@ -22,168 +22,154 @@ from .openwpmtest import OpenWPMTest
 # loading_origin,
 # loading_href,
 # is_XHR, is_frame_load, is_full_page, is_tp_content, is_tp_window,
-#   content_policy_type
+#   resource_type
 HTTP_REQUESTS = {
     (u'http://localtest.me:8000/test_pages/http_test_page.html',
-        None,
-        u'[System Principal]',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'undefined',
         u'undefined',
-        0, 0, 1, None, None, 6,
+        u'undefined',
+        0, 0, 1, None, None, u'main_frame',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
-        None,
+        u'undefined',
         u'http://localtest.me:8000',
-        u'[System Principal]',
-        u'chrome://browser/content/browser.xul',
-        0, None, None, None, None, 3,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 0, 1, None, None, u'image',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
-        None,
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000',
         u'undefined',
-        0, None, None, None, None, 3,
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        0, 0, 1, None, None, u'image',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 3,
+        0, 0, 0, None, None, u'image',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 2,
+        0, 0, 0, None, None, u'script',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_script.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 2,
+        0, 0, 1, None, None, u'script',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_image.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 3,
+        0, 0, 1, None, None, u'image',
      ),
     (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 1, 0, 0, 0, 7,
+        0, 1, 0, None, None, u'sub_frame',
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_style.css',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 4,
+        0, 0, 1, None, None, u'stylesheet',
      ),
     (u'http://localtest.me:8000/404.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 3
+        0, 0, 0, None, None, u'image'
      ),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 3
+        0, 0, 0, None, None, u'image'
      ),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 3
+        0, 0, 0, None, None, u'image'
      ),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 3
+        0, 0, 1, None, None, u'image'
      ),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 3
+        0, 0, 1, None, None, u'image'
      ),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 3
+        0, 0, 1, None, None, u'image'
      ),
     (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, 0, 0, 3
+        0, 0, 1, None, None, u'image'
      ),
 }
 
 # format: (request_url, referrer, location)
+# TODO: webext instrumentation doesn't support referrer yet
 HTTP_RESPONSES = {
     (u'http://localtest.me:8000/test_pages/http_test_page.html',
-        u'',
+        #u'',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
-        u'',
+        #u'',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_style.css',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page.html',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_script.js',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page.html',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_image.png',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page.html',
         u''),
     (u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page.html',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
-        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u''),
     (u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
-        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u''),
-    (u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
-        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        u'frame2.png?dst=/404.png'),
-    (u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
-        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        u'/404.png'),
     (u'http://localtest.me:8000/404.png',
-        u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u''),
-    (u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
-        u'req2.png?dst=req3.png&dst=/test_pages/shared/test_image_2.png'),
-    (u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
-        u'req3.png?dst=/test_pages/shared/test_image_2.png'),
-    (u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
-        u'/test_pages/shared/test_image_2.png'),
     (u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
+        #u'http://localtest.me:8000/test_pages/http_test_page.html',
         u''),
 }
 
@@ -250,14 +236,14 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 3
+        0, None, None, 0, 0, u'image'
      ),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, None, None, 0, 0, 3
+        0, None, None, 0, 0, u'image'
      ),
 }
 
@@ -352,7 +338,7 @@ class TestHTTPInstrument(OpenWPMTest):
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
         db = self.visit(test_url)
 
-        channel_to_url = dict()
+        request_id_to_url = dict()
 
         # HTTP Requests
         rows = db_utils.query_db(db, "SELECT * FROM http_requests")
@@ -365,9 +351,9 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
-                row['content_policy_type'])
+                row['resource_type'])
             )
-            channel_to_url[row['channel_id']] = row['url']
+            request_id_to_url[row['request_id']] = row['url']
         assert HTTP_REQUESTS == observed_records
 
         # HTTP Responses
@@ -375,17 +361,21 @@ class TestHTTPInstrument(OpenWPMTest):
         observed_records = set()
         for row in rows:
             observed_records.add((
-                row['url'].split('?')[0], row['referrer'], row['location']))
-            assert row['channel_id'] in channel_to_url
-            assert channel_to_url[row['channel_id']] == row['url']
+                row['url'].split('?')[0], #TODO: webext-instrumentation doesn't support referrer yet | row['referrer'],
+                row['location']))
+            assert row['request_id'] in request_id_to_url
+            assert request_id_to_url[row['request_id']] == row['url']
         assert HTTP_RESPONSES == observed_records
 
         # HTTP Redirects
         rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
         observed_records = set()
         for row in rows:
-            src = channel_to_url[row['old_channel_id']].split('?')[0]
-            dst = channel_to_url[row['new_channel_id']].split('?')[0]
+            # TODO: webext instrumentation doesn't support new_request_id yet
+            #src = request_id_to_url[row['old_request_id']].split('?')[0]
+            #dst = request_id_to_url[row['new_request_id']].split('?')[0]
+            src = row['old_request_url'].split('?')[0]
+            dst = row['new_request_url'].split('?')[0]
             observed_records.add((src, dst))
         assert HTTP_REDIRECTS == observed_records
 
@@ -424,7 +414,7 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
-                row['content_policy_type'])
+                row['resource_type'])
             )
             channel_to_url[row['channel_id']] = row['url']
         assert HTTP_CACHED_REQUESTS == observed_records
