@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import json
 import os
-from hashlib import md5
+from hashlib import sha256
 from time import sleep
 
 from six.moves import range
@@ -485,45 +485,48 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add((src, dst))
         assert HTTP_CACHED_REDIRECTS == observed_records
 
-    def test_http_stacktrace(self):
-        test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
-        db = self.visit(test_url, sleep_after=3)
-        rows = db_utils.query_db(db, (
-            "SELECT url, req_call_stack FROM http_requests"))
-        observed_records = set()
-        for row in rows:
-            url, stacktrace = row
-            if (url.endswith("inject_pixel.js") or
-                    url.endswith("test_image.png") or
-                    url.endswith("Blank.gif")):
-                observed_records.add(stacktrace)
-        assert observed_records == HTTP_STACKTRACES
+    # TODO: webext instrumentation doesn't support req_call_stack yet.
+    # def test_http_stacktrace(self):
+    #     test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
+    #     db = self.visit(test_url, sleep_after=3)
+    #     rows = db_utils.query_db(db, (
+    #         "SELECT url, req_call_stack FROM http_requests"))
+    #     observed_records = set()
+    #     for row in rows:
+    #         print(row)
+    #         url, stacktrace = row
+    #         if (url.endswith("inject_pixel.js") or
+    #                 url.endswith("test_image.png") or
+    #                 url.endswith("Blank.gif")):
+    #             observed_records.add(stacktrace)
+    #     assert HTTP_STACKTRACES == observed_records
 
     def test_parse_http_stack_trace_str(self):
         stacktrace = STACK_TRACE_INJECT_IMAGE
         stack_frames = parse_http_stack_trace_str(stacktrace)
         assert stack_frames == CALL_STACK_INJECT_IMAGE
 
-    def test_http_stacktrace_nonjs_loads(self):
-        # stacktrace should be empty for requests NOT triggered by scripts
-        test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        db = self.visit(test_url, sleep_after=3)
-        rows = db_utils.query_db(db, (
-            "SELECT url, req_call_stack FROM http_requests"))
-        for row in rows:
-            _, stacktrace = row
-            assert stacktrace == ""
+    # TODO: webext instrumentation doesn't support req_call_stack yet.
+    # def test_http_stacktrace_nonjs_loads(self):
+    #     # stacktrace should be empty for requests NOT triggered by scripts
+    #     test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
+    #     db = self.visit(test_url, sleep_after=3)
+    #     rows = db_utils.query_db(db, (
+    #         "SELECT url, req_call_stack FROM http_requests"))
+    #     for row in rows:
+    #         _, stacktrace = row
+    #         assert stacktrace == ""
 
     def test_javascript_saving(self, tmpdir):
         """ check that javascript content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
         self.visit(test_url, str(tmpdir), sleep_after=3)
-        expected_hashes = {'973e28500d500eab2c27b3bc55c8b621',
-                           'a6475af1ad58b55cf781ca5e1218c7b1'}
+        expected_hashes = {'0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc',
+                           'b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08'}
         for chash, content in db_utils.get_javascript_content(str(tmpdir)):
-            chash = chash.decode('ascii')
-            pyhash = md5(content).hexdigest()
-            assert pyhash == chash  # Verify expected key (md5 of content)
+            chash = chash.decode('ascii').lower()
+            pyhash = sha256(content).hexdigest().lower()
+            assert pyhash == chash  # Verify expected key (sha256 of content)
             assert chash in expected_hashes
             expected_hashes.remove(chash)
         assert len(expected_hashes) == 0  # All expected hashes have been seen
@@ -546,7 +549,7 @@ class TestHTTPInstrument(OpenWPMTest):
             path = urlparse(row['url']).path
             with open(os.path.join(BASE_PATH, path[1:]), 'rb') as f:
                 content = f.read().decode('latin-1')
-            chash = md5(content.encode('utf-8')).hexdigest()
+            chash = sha256(content.encode('utf-8')).hexdigest()
             assert chash == row['content_hash']
             disk_content[chash] = content
 
