@@ -85,12 +85,9 @@ WEBRTC_SDP_OFFER_STRINGS = ("a=ice-options",
                             "a=sendrecv",
                             "a=ice-pwd:",
                             "a=ice-ufrag:",
-                            "a=mid:sdparta",
-                            "a=sctpmap:",
+                            "a=mid:0",
+                            "a=sctp-port:",
                             "a=setup:")
-                            # TODO: investigate whether it's fine that the ssrc isn't present.
-                            #"a=ssrc:",
-                            #"cname:")
 
 # AudioContext and AudioNode symbols we expect from our test script
 AUDIO_SYMBOLS = {
