@@ -34,7 +34,7 @@ for site in sites:
     command_sequence = CommandSequence.CommandSequence(site)
 
     # Start by visiting the page
-    command_sequence.get(sleep=0, timeout=60)
+    command_sequence.browse(sleep=0, timeout=60)
 
     # dump_profile_cookies/dump_flash_cookies closes the current tab.
     command_sequence.dump_profile_cookies(120)

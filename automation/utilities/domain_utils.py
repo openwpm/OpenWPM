@@ -14,16 +14,30 @@ from six.moves.urllib.parse import urlparse
 PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(), 'public_suffix_list.dat')
 
 
-def get_psl():
+def get_psl(logger=None):
     """
     Grabs an updated public suffix list.
     """
     if not os.path.isfile(PSL_CACHE_LOC):
-        print("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
+        if logger is not None:
+            logger.info("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
+        else:
+            print("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
+        
         psl_file = fetch()
         with codecs.open(PSL_CACHE_LOC, 'w', encoding='utf8') as f:
-            f.write(psl_file.read())
-    print("Using psl from cache: %s" % PSL_CACHE_LOC)
+            f.write(psl_file.read())    
+        
+        if logger is not None:
+            logger.info("Using psl from cache: %s" % PSL_CACHE_LOC)
+        else:
+            print("Using psl from cache: %s" % PSL_CACHE_LOC)
+    else:
+        if logger is not None:
+            logger.debug("Using local copy of %s." % PSL_CACHE_LOC)
+        else:
+            print("Using local copy of %s." % PSL_CACHE_LOC)
+    
     psl_cache = codecs.open(PSL_CACHE_LOC, encoding='utf8')
     return PublicSuffixList(psl_cache)
 
@@ -33,7 +47,10 @@ def load_psl(function):
     def wrapper(*args, **kwargs):
         if 'psl' not in kwargs:
             if wrapper.psl is None:
-                wrapper.psl = get_psl()
+                if 'logger' in kwargs:
+                    wrapper.psl = get_psl(logger=kwargs['logger'])
+                else:
+                    wrapper.psl = get_psl()
             return function(*args, psl=wrapper.psl, **kwargs)
         else:
             return function(*args, **kwargs)
