@@ -20,14 +20,15 @@ def get_psl(logger=None):
     """
     if not os.path.isfile(PSL_CACHE_LOC):
         if logger is not None:
-            logger.info("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
+            logger.info("%s does not exist, downloading a copy."
+                % PSL_CACHE_LOC)
         else:
             print("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
-        
+
         psl_file = fetch()
         with codecs.open(PSL_CACHE_LOC, 'w', encoding='utf8') as f:
             f.write(psl_file.read())    
-        
+
         if logger is not None:
             logger.info("Using psl from cache: %s" % PSL_CACHE_LOC)
         else:
@@ -37,7 +38,7 @@ def get_psl(logger=None):
             logger.debug("Using local copy of %s." % PSL_CACHE_LOC)
         else:
             print("Using local copy of %s." % PSL_CACHE_LOC)
-    
+
     psl_cache = codecs.open(PSL_CACHE_LOC, encoding='utf8')
     return PublicSuffixList(psl_cache)
 
@@ -76,7 +77,6 @@ def get_ps_plus_1(url, **kwargs):
     Returns the PS+1 of the url. This will also return
     an IP address if the hostname of the url is a valid
     IP address.
-
     An (optional) PublicSuffixList object can be passed with keyword arg 'psl',
     otherwise a version cached in the system temp directory is used.
     """

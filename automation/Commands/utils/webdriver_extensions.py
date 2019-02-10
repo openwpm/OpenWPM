@@ -58,7 +58,7 @@ def wait_until_loaded(webdriver, timeout, period=0.25, min_time=0):
 
 
 def get_intra_links(webdriver, url, logger=None):
-    ps1 = du.get_ps_plus_1(url, **{'logger':logger})
+    ps1 = du.get_ps_plus_1(url, **{'logger' : logger})
     links = list()
     for elem in webdriver.find_elements_by_tag_name("a"):
         try:
@@ -70,7 +70,7 @@ def get_intra_links(webdriver, url, logger=None):
         full_href = urljoin(url, href)
         if not full_href.startswith('http'):
             continue
-        if du.get_ps_plus_1(full_href, **{'logger':logger}) == ps1:
+        if du.get_ps_plus_1(full_href, **{'logger' : logger}) == ps1:
             links.append(elem)
     return links
 
