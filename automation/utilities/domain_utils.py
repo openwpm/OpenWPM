@@ -21,13 +21,13 @@ def get_psl(logger=None):
     if not os.path.isfile(PSL_CACHE_LOC):
         if logger is not None:
             logger.info("%s does not exist, downloading a copy."
-                % PSL_CACHE_LOC)
+                        % PSL_CACHE_LOC)
         else:
             print("%s does not exist, downloading a copy." % PSL_CACHE_LOC)
 
         psl_file = fetch()
         with codecs.open(PSL_CACHE_LOC, 'w', encoding='utf8') as f:
-            f.write(psl_file.read())    
+            f.write(psl_file.read())
 
         if logger is not None:
             logger.info("Using psl from cache: %s" % PSL_CACHE_LOC)
