@@ -159,7 +159,7 @@ class Browser:
                 if ready != 'READY':
                     self.logger.error(
                         ("BROWSER %i: Mismatch of status queue return values, "
-                        "trying again...") % self.crawl_id
+                         "trying again...") % self.crawl_id
                     )
                     unsuccessful_spawns += 1
                     continue
@@ -225,34 +225,35 @@ class Browser:
                 self.browser_manager.pid is not None):
             try:
                 self.logger.debug(
-                    ("BROWSER %i: Attempting to kill BrowserManager with pid %i. "
-                    "Display PID: %s | Display Port: %s | Browser PID: %s") % (
-                        self.crawl_id, self.browser_manager.pid, self.display_pid,
-                        self.display_port, self.browser_pid)
+                    ("BROWSER %i: Attempting to kill BrowserManager with pid "
+                     "%i. Display PID: %s | Display Port: %s | Browser PID: "
+                     "%s") % (self.crawl_id, self.browser_manager.pid,
+                              self.display_pid, self.display_port,
+                              self.browser_pid)
                 )
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(("BROWSER %i: Browser manager process does "
-                                  "not exist") % self.crawl_id)
+                                   "not exist") % self.crawl_id)
                 pass
         if self.display_pid is not None:
             try:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(("BROWSER %i: Display process does not "
-                                  "exit") % self.crawl_id)
+                                   "exit") % self.crawl_id)
                 pass
             except TypeError:
                 self.logger.error(("BROWSER %i: PID may not be the correct "
-                                  "type %s") % (self.crawl_id,
-                                               str(self.display_pid)))
+                                   "type %s") % (self.crawl_id,
+                                                 str(self.display_pid)))
         if self.display_port is not None:  # xvfb diplay lock
             lockfile = "/tmp/.X%s-lock" % self.display_port
             try:
                 os.remove(lockfile)
             except OSError:
                 self.logger.debug(("BROWSER %i: Screen lockfile (%s) already "
-                                  "removed") % (self.crawl_id, lockfile))
+                                   "removed") % (self.crawl_id, lockfile))
                 pass
         if self.browser_pid is not None:
             """`browser_pid` is the geckodriver process. We first kill
@@ -266,7 +267,7 @@ class Browser:
                     except psutil.NoSuchProcess:
                         self.logger.debug(
                             ("BROWSER %i: Geckodriver child process already "
-                            "killed (pid=%i).") % (self.crawl_id, child.pid))
+                             "killed (pid=%i).") % (self.crawl_id, child.pid))
                         pass
                 geckodriver.kill()
                 geckodriver.wait(timeout=20)
@@ -278,8 +279,8 @@ class Browser:
                 pass
             except psutil.TimeoutExpired:
                 self.logger.debug(("BROWSER %i: Timeout while waiting for "
-                                  "geckodriver or browser process to close ") %
-                                  self.crawl_id)
+                                   "geckodriver or browser process to close "
+                                   ) % self.crawl_id)
                 pass
 
     def shutdown_browser(self, during_init):
