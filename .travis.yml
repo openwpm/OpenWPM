@@ -22,6 +22,7 @@ git:
 before_install:
   - "export DISPLAY=:99.0"
 install:
+  - echo "y" | ./install.sh
   - echo "y" | ./install-dev.sh
   - pip install -r requirements.txt
 before_script:
