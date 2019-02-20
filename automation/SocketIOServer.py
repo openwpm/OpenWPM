@@ -28,7 +28,7 @@ def start(
 
     class OpenWpmExtensionListenConfigurationNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
                 sid + ", " + environ['HTTP_USER_AGENT']
             pass
 
@@ -48,7 +48,7 @@ def start(
 
     class OpenWpmExtensionSendLogNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
                 sid + ", " + environ['HTTP_USER_AGENT']
 
         def on_disconnect(self, sid):
@@ -59,7 +59,7 @@ def start(
 
     class OpenWpmExtensionSendDataNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
                 sid + ", " + environ['HTTP_USER_AGENT']
 
         def on_disconnect(self, sid):
@@ -70,7 +70,7 @@ def start(
 
     class OpenWpmExtensionSendLdbNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" + \
+            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
                 sid + ", " + environ['HTTP_USER_AGENT']
 
         def on_disconnect(self, sid):
