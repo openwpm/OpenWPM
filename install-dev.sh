@@ -14,4 +14,9 @@ cd automation/Extension/firefox/
 npm install
 cd -
 
-pip install --user -U -r requirements-dev.txt
+if [[ "$VIRTUAL_ENV" != "" ]]
+then
+  pip install -U -r requirements-dev.txt
+else
+  pip install --user -U -r requirements-dev.txt
+fi
