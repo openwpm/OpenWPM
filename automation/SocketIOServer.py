@@ -28,12 +28,12 @@ def start(
 
     class OpenWpmExtensionListenConfigurationNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
-                sid + ", " + environ['HTTP_USER_AGENT']
+            print("Client connected - sid, environ['HTTP_USER_AGENT']" +
+                  sid + ", " + environ['HTTP_USER_AGENT'])
             pass
 
         def on_request(self, sid):
-            print "Sending config over socket"
+            print("Sending config over socket")
             self.emit('config',
                       {'browser_params': browser_params,
                        'manager_params': manager_params})
@@ -48,36 +48,36 @@ def start(
 
     class OpenWpmExtensionSendLogNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
-                sid + ", " + environ['HTTP_USER_AGENT']
+            print("Client connected - sid, environ['HTTP_USER_AGENT']" +
+                  sid + ", " + environ['HTTP_USER_AGENT'])
 
         def on_disconnect(self, sid):
             pass
 
         def on_record(self, sid, record):
-            print "record received over socket", record
+            print("record received over socket", record)
 
     class OpenWpmExtensionSendDataNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
-                sid + ", " + environ['HTTP_USER_AGENT']
+            print("Client connected - sid, environ['HTTP_USER_AGENT']" +
+                  sid + ", " + environ['HTTP_USER_AGENT'])
 
         def on_disconnect(self, sid):
             pass
 
         def on_record(self, sid, record):
-            print "record received over socket", record
+            print("record received over socket", record)
 
     class OpenWpmExtensionSendLdbNamespace(socketio.Namespace):
         def on_connect(self, sid, environ):
-            print "Client connected - sid, environ['HTTP_USER_AGENT']" +
-                sid + ", " + environ['HTTP_USER_AGENT']
+            print("Client connected - sid, environ['HTTP_USER_AGENT']" +
+                  sid + ", " + environ['HTTP_USER_AGENT'])
 
         def on_disconnect(self, sid):
             pass
 
         def on_record(self, sid, record):
-            print "record received over socket", record
+            print("record received over socket", record)
 
     sio.register_namespace(
         OpenWpmExtensionSendLogNamespace('/openwpm-extension-send-log'))
@@ -91,7 +91,7 @@ def start(
     socket_server_process.daemon = daemon
     socket_server_process.start()
 
-    print "Socket server deployed with pid " + str(socket_server_process.pid)
+    print("Socket server deployed with pid " + str(socket_server_process.pid))
 
     return sio
 
