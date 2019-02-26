@@ -629,10 +629,11 @@ class TestPOSTInstrument(OpenWPMTest):
     The encoding types tested are explained here:
     https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Using_nothing_but_XMLHttpRequest
     """
-    post_data = '{"email":"test@example.com","username":"name surname+"}'
+    post_data = '{"email":["test@example.com"],"username":["name surname+"]}'
     post_data_json = json.loads(post_data)
-    post_data_multiline = r'{"email":"test@example.com","username":'\
-        r'"name surname+","multiline_text":"line1\r\n\r\nline2 line2_word2"}'
+    post_data_multiline = r'{"email":["test@example.com"],"username":'\
+        r'["name surname+"],'\
+        r'"multiline_text":["line1\r\n\r\nline2 line2_word2"]}'
     post_data_multiline_json = json.loads(post_data_multiline)
 
     def get_config(self, data_dir=""):
