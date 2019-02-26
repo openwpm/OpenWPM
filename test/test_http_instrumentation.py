@@ -408,6 +408,7 @@ def fix_about_page_url(url):
     else:
         return url
 
+
 class TestHTTPInstrument(OpenWPMTest):
 
     def get_config(self, data_dir=""):
@@ -629,8 +630,10 @@ class TestPOSTInstrument(OpenWPMTest):
     https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Using_nothing_but_XMLHttpRequest
     """
     post_data = '{"email":"test@example.com","username":"name surname+"}'
+    post_data_json = json.loads(post_data)
     post_data_multiline = r'{"email":"test@example.com","username":'\
         r'"name surname+","multiline_text":"line1\r\n\r\nline2 line2_word2"}'
+    post_data_multiline_json = json.loads(post_data_multiline)
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
@@ -651,19 +654,19 @@ class TestPOSTInstrument(OpenWPMTest):
         encoding_type = "application/x-www-form-urlencoded"
         db = self.visit("/post_request.html?encoding_type=" + encoding_type)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == self.post_data_multiline
+        assert json.loads(post_body) == self.post_data_multiline_json
 
     def test_record_post_data_text_plain(self):
         encoding_type = "text/plain"
         db = self.visit('/post_request.html?encoding_type=' + encoding_type)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == self.post_data_multiline
+        assert json.loads(post_body) == self.post_data_multiline_json
 
     def test_record_post_data_multipart_formdata(self):
         encoding_type = "multipart/form-data"
         db = self.visit('/post_request.html?encoding_type=' + encoding_type)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == self.post_data_multiline
+        assert json.loads(post_body) == self.post_data_multiline_json
         post_row = self.get_post_requests_from_db(db)[0]
         headers = post_row['headers']
         # make sure the "request headers from upload stream" are stored in db
@@ -675,7 +678,7 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "object"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == self.post_data
+        assert json.loads(post_body) == self.post_data_json
 
     def test_record_post_data_ajax_no_key_value(self):
         """Test AJAX payloads that are not in the key=value form."""
