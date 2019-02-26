@@ -34,7 +34,7 @@ HTTP_REQUESTS = {
      ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
-        u'undefined',
+        u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -402,6 +402,12 @@ CALL_STACK_INJECT_IMAGE =\
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
+def fix_about_page_url(url):
+    if url == "about:blank":
+        return u'http://localtest.me:8000/test_pages/http_test_page.html'
+    else:
+        return url
+
 class TestHTTPInstrument(OpenWPMTest):
 
     def get_config(self, data_dir=""):
@@ -421,7 +427,8 @@ class TestHTTPInstrument(OpenWPMTest):
         observed_records = set()
         for row in rows:
             observed_records.add((
-                row['url'].split('?')[0], row['top_level_url'],
+                row['url'].split('?')[0],
+                fix_about_page_url(row['top_level_url']),
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
                 row['is_frame_load'], row['is_full_page'],
@@ -495,9 +502,7 @@ class TestHTTPInstrument(OpenWPMTest):
                 # logged as about:blank.
                 # In this case, manually replace that value with the test
                 # page URL.
-                row['top_level_url'] if row['top_level_url'] != "about:blank"
-                else
-                u'http://localtest.me:8000/test_pages/http_test_page.html',
+                fix_about_page_url(row['top_level_url']),
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
                 row['is_frame_load'], row['is_full_page'],
