@@ -40,14 +40,14 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image',
      ),
-    (
-        u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
-        u'undefined',
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image',
-     ),
+    # (
+    #     u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
+    #     u'undefined',
+    #     u'http://localtest.me:8000',
+    #     u'http://localtest.me:8000',
+    #     u'http://localtest.me:8000/test_pages/http_test_page.html',
+    #     0, 0, 1, None, None, u'image',
+    #  ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
