@@ -4,7 +4,8 @@ import json
 import os
 import sqlite3
 import time
-from sqlite3 import IntegrityError, OperationalError, ProgrammingError, InterfaceError
+from sqlite3 import (IntegrityError, OperationalError,
+                     ProgrammingError, InterfaceError)
 
 import plyvel
 import six
@@ -109,7 +110,8 @@ class LocalListener(BaseListener):
         try:
             self.cur.execute(statement, args)
             self._sql_counter += 1
-        except (OperationalError, ProgrammingError, IntegrityError, InterfaceError) as e:
+        except (OperationalError, ProgrammingError,
+                IntegrityError, InterfaceError) as e:
             self.logger.error(
                 "Unsupported record:\n%s\n%s\n%s\n%s\n"
                 % (type(e), e, statement, repr(args)))
@@ -127,7 +129,7 @@ class LocalListener(BaseListener):
                 "Attempted to save page content but the LevelDB content "
                 "database is not enabled.")
         content, content_hash = record[1]
-        if isinstance(content, unicode):
+        if isinstance(content, six.text_type):
             content = str(content).encode('utf-8')
         content_hash = str(content_hash).encode('ascii')
         if self.ldb.get(content_hash) is not None:
