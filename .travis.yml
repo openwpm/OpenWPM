@@ -30,3 +30,17 @@ before_script:
 script:
   - cd test
   - py.test -s -v --durations=10 $TESTS
+
+jobs:
+  include:
+    language:
+    python:
+    env:
+      - TESTS="Docker"
+    services:
+      - docker
+    before_install:
+    before_script:
+    install:
+    script:
+      - docker build -f Dockerfile -t openwpm .
