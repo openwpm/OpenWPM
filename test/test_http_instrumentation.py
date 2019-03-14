@@ -699,7 +699,7 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "formData"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == self.post_data
+        assert json.loads(post_body) == self.post_data_json
 
     def test_record_binary_post_data(self):
         post_format = "binary"
