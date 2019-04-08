@@ -4,6 +4,8 @@ from six.moves import range
 
 from automation import CommandSequence, TaskManager
 
+from sys import platform
+
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 3
 sites = ['http://www.example.com',
@@ -19,7 +21,8 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['http_instrument'] = True
     # Enable flash for all three browsers
     browser_params[i]['disable_flash'] = False
-browser_params[0]['headless'] = True  # Launch only browser 0 headless
+if platform != 'darwin':
+    browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params['data_directory'] = '~/Desktop/'
