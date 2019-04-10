@@ -12,7 +12,7 @@ fi
 brew install leveldb || brew upgrade leveldb
 
 # Make sure we build plyvel properly to work with the installed leveldb
-CLFAGS='-std=c++11' pip install --user --force-reinstall --ignore-installed --no-binary :all: plyvel
+CFLAGS='-std=c++11' pip install --user --force-reinstall --ignore-installed --no-binary :all: plyvel
 
 pip install -U -r requirements.txt
 
