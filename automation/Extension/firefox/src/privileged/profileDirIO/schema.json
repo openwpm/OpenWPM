@@ -1,0 +1,33 @@
+[
+  {
+    "namespace": "profileDirIO",
+    "functions": [
+      {
+        "name": "writeFile",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          {
+            "type": "string",
+            "name": "filename"
+          },
+          {
+            "type": "string",
+            "name": "data"
+          }
+        ]
+      },
+      {
+        "name": "readFile",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          {
+            "type": "string",
+            "name": "filename"
+          }
+        ]
+      }
+    ]
+  }
+]
