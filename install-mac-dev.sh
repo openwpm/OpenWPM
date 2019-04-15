@@ -30,7 +30,7 @@ rm target.dmg
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
 # packaged.
-GECKODRIVER_VERSION=0.23.0
+GECKODRIVER_VERSION=0.24.0
 GECKODRIVER_ARCH=macos
 
 wget https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz

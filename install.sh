@@ -82,7 +82,7 @@ rm target.tar.bz2
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
 # packaged.
-GECKODRIVER_VERSION=0.23.0
+GECKODRIVER_VERSION=0.24.0
 case $(uname -m) in
     (x86_64)
         GECKODRIVER_ARCH=linux64
