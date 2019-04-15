@@ -402,6 +402,12 @@ CALL_STACK_INJECT_IMAGE =\
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
+# HACK: sometimes the browser has time to load about:blank
+# before getting our load request, so the top level URL is
+# logged as about:blank.
+# In this case, manually replace that value with the test
+# page URL.
+# Issue #245 tracks the issue of incorrect top level urls.
 def fix_about_page_url(url):
     if url == "about:blank":
         return u'http://localtest.me:8000/test_pages/http_test_page.html'
@@ -498,11 +504,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 continue
             observed_records.add((
                 row['url'].split('?')[0],
-                # HACK: sometimes the browser has time to load about:blank
-                # before getting our load request, so the top level URL is
-                # logged as about:blank.
-                # In this case, manually replace that value with the test
-                # page URL.
                 fix_about_page_url(row['top_level_url']),
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
