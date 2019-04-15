@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS crawl_history (
 CREATE TABLE IF NOT EXISTS http_requests(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
-  crawl_id INTEGER,
-  visit_id INTEGER,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   event_ordinal INTEGER,
   window_id INTEGER,
@@ -114,8 +114,8 @@ CREATE TABLE IF NOT EXISTS http_requests(
 CREATE TABLE IF NOT EXISTS http_responses(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
-  crawl_id INTEGER,
-  visit_id INTEGER,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   event_ordinal INTEGER,
   window_id INTEGER,
@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS http_responses(
 CREATE TABLE IF NOT EXISTS http_redirects(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
-  crawl_id INTEGER,
-  visit_id INTEGER,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
   old_request_url TEXT,
   old_request_id TEXT,
   new_request_url TEXT,
@@ -161,8 +161,8 @@ CREATE TABLE IF NOT EXISTS http_redirects(
 CREATE TABLE IF NOT EXISTS javascript(
   id INTEGER PRIMARY KEY,
   incognito INTEGER,
-  crawl_id INTEGER,
-  visit_id INTEGER,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   event_ordinal INTEGER,
   page_scoped_event_ordinal INTEGER,
@@ -189,8 +189,8 @@ CREATE TABLE IF NOT EXISTS javascript(
  */
 CREATE TABLE IF NOT EXISTS javascript_cookies(
     id INTEGER PRIMARY KEY ASC,
-    crawl_id INTEGER,
-    visit_id INTEGER,
+    crawl_id INTEGER NOT NULL,
+    visit_id INTEGER NOT NULL,
     extension_session_uuid TEXT,
     event_ordinal INTEGER,
     record_type TEXT,
@@ -216,8 +216,8 @@ CREATE TABLE IF NOT EXISTS javascript_cookies(
 CREATE TABLE IF NOT EXISTS navigations(
   id INTEGER,
   incognito INTEGER,
-  crawl_id INTEGER,
-  visit_id INTEGER,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   process_id INTEGER,
   window_id INTEGER,
