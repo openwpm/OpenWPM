@@ -6,6 +6,7 @@ import os
 import sqlite3
 import time
 from glob import glob
+from shutil import copy2
 
 
 def tmp_sqlite_files_exist(path):
@@ -46,7 +47,9 @@ def get_cookies(profile_directory, mod_since):
     if not os.path.isfile(cookie_db):
         print("cannot find cookie.db", cookie_db)
     else:
-        conn = sqlite3.connect(cookie_db)
+        cookie_db_copy = os.path.join(profile_directory, 'cookies_copy.sqlite')
+        copy2(cookie_db, cookie_db_copy)
+        conn = sqlite3.connect(cookie_db_copy)
         conn.row_factory = sqlite3.Row
         with conn:
             c = conn.cursor()
@@ -55,4 +58,5 @@ def get_cookies(profile_directory, mod_since):
                 FROM moz_cookies \
                 WHERE lastAccessed > ? ; ', (int(mod_since * 1000000),))
             rows = c.fetchall()
+        os.remove(cookie_db_copy)
         return rows

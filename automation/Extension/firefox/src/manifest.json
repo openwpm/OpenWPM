@@ -1,0 +1,56 @@
+{
+  "manifest_version": 2,
+  "name": "OpenWPM",
+  "version": "1.0",
+  "description": "OpenWPM Client Extension",
+  "background": {
+    "scripts": ["feature.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "applications": {
+    "gecko": {
+      "id": "openwpm@mozilla.org",
+      "strict_min_version": "60.0"
+    }
+  },
+
+  "permissions": [
+    "<all_urls>",
+    "webRequest",
+    "webRequestBlocking",
+    "webNavigation",
+    "cookies",
+    "management",
+    "storage",
+    "alarms",
+    "downloads",
+    "tabs"
+  ],
+
+  "experiment_apis": {
+    "sockets": {
+      "schema": "./privileged/sockets/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "./privileged/sockets/api.js",
+        "paths": [["sockets"]]
+      }
+    },
+    "profileDirIO": {
+      "schema": "./privileged/profileDirIO/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "./privileged/profileDirIO/api.js",
+        "paths": [["profileDirIO"]]
+      }
+    }
+  }
+}

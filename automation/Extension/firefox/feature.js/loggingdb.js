@@ -1,15 +1,13 @@
-const fileIO            = require("sdk/io/file");
-const system            = require("sdk/system");
-var socket              = require("./socket.js");
+import * as socket from "./socket.js";
 
-var crawlID = null;
-var visitID = null;
-var debugging = false;
-var dataAggregator = null;
-var logAggregator = null;
-var listeningSocket = null;
+let crawlID = null;
+let visitID = null;
+let debugging = false;
+let dataAggregator = null;
+let logAggregator = null;
+let listeningSocket = null;
 
-exports.open = function(aggregatorAddress, logAddress, curr_crawlID) {
+export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
@@ -22,32 +20,26 @@ exports.open = function(aggregatorAddress, logAddress, curr_crawlID) {
     // Connect to MPLogger for extension info/debug/error logging
     if (logAddress != null) {
         logAggregator = new socket.SendingSocket();
-        var rv = logAggregator.connect(logAddress[0], logAddress[1]);
+        let rv = await logAggregator.connect(logAddress[0], logAddress[1]);
         console.log("logSocket started?", rv)
     }
 
     // Connect to databases for saving data
     if (aggregatorAddress != null) {
         dataAggregator = new socket.SendingSocket();
-        var rv = dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
+        let rv = await dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
         console.log("sqliteSocket started?",rv);
     }
 
     // Listen for incomming urls as visit ids
     listeningSocket = new socket.ListeningSocket();
-    var path = system.pathFor("ProfD") + '/extension_port.txt';
-    console.log("Writing listening socket port to disk at:", path);
-    var file = fileIO.open(path, 'w');
-    if (!file.closed) {
-        file.write(listeningSocket.port);
-        file.close();
-        console.log("Port",listeningSocket.port,"written to disk.");
-    }
     console.log("Starting socket listening for incomming connections.");
-    listeningSocket.startListening();
+    listeningSocket.startListening().then(() => {
+        browser.profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
+    });
 };
 
-exports.close = function() {
+export let close = function() {
     if (dataAggregator != null) {
         dataAggregator.close();
     }
@@ -56,7 +48,7 @@ exports.close = function() {
     }
 };
 
-var makeLogJSON = function(lvl, msg) {
+let makeLogJSON = function(lvl, msg) {
     var log_json = {
         'name': 'Extension-Logger',
         'level': lvl,
@@ -70,7 +62,7 @@ var makeLogJSON = function(lvl, msg) {
     return log_json;
 }
 
-exports.logInfo = function(msg) {
+export let logInfo = function(msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -80,10 +72,10 @@ exports.logInfo = function(msg) {
 
     // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(20, msg);
-    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-exports.logDebug = function(msg) {
+export let logDebug = function(msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -93,10 +85,10 @@ exports.logDebug = function(msg) {
 
     // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(10, msg);
-    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-exports.logWarn = function(msg) {
+export let logWarn = function(msg) {
     // Always log to browser console
     console.warn(msg);
 
@@ -106,10 +98,10 @@ exports.logWarn = function(msg) {
 
     // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(30, msg);
-    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-exports.logError = function(msg) {
+export let logError = function(msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -119,10 +111,10 @@ exports.logError = function(msg) {
 
     // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(40, msg);
-    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-exports.logCritical = function(msg) {
+export let logCritical = function(msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -132,20 +124,26 @@ exports.logCritical = function(msg) {
 
     // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(50, msg);
-    logAggregator.send(['EXT', JSON.stringify(log_json)]);
+    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-exports.saveRecord = function(instrument, record) {
+export let dataReceiver = {
+    saveRecord(a, b) {
+        console.log(b);
+    },
+};
+
+export let saveRecord = function(instrument, record) {
     // Add visit id if changed
     while (!debugging && listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
-        exports.logDebug("Visit Id: " + visitID);
+        logDebug("Visit Id: " + visitID);
     }
     record["visit_id"] = visitID;
 
 
     if (!visitID && !debugging) {
-        exports.logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
+        logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
                     JSON.stringify(record));
         record["visit_id"] = -1;
     }
@@ -155,32 +153,32 @@ exports.saveRecord = function(instrument, record) {
       console.log("EXTENSION", instrument, JSON.stringify(record));
       return;
     }
-    dataAggregator.send([instrument, record]);
-}
+    dataAggregator.send(JSON.stringify([instrument, record]));
+};
 
-exports.saveContent = function(content, contentHash) {
+// Stub for now
+export let saveContent = async function(content, contentHash) {
   // Send page content to the data aggregator
   // deduplicated by contentHash in a levelDB database
   if (debugging) {
     console.log("LDB contentHash:",contentHash,"with length",content.length);
     return;
   }
-  dataAggregator.send(['page_content', [content, contentHash]]);
-}
+  dataAggregator.send(JSON.stringify(['page_content', [content, contentHash]]));
+};
 
 function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
 }
 
-var escapeString = function(string) {
+export let escapeString = function(string) {
     // Convert to string if necessary
     if(typeof string != "string")
         string = "" + string;
 
     return encode_utf8(string);
 };
-exports.escapeString = escapeString;
 
-exports.boolToInt = function(bool) {
+export let boolToInt = function(bool) {
     return bool ? 1 : 0;
 };

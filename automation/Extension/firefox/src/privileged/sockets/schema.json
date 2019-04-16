@@ -1,0 +1,99 @@
+[
+  {
+    "namespace": "sockets",
+    "functions": [
+      {
+        "name": "createServerSocket",
+        "type": "function",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "startListening",
+        "type": "function",
+        "async": false,
+        "parameters": [
+          {
+            "type": "number",
+            "name": "id"
+          }
+        ]
+      },
+      {
+        "name": "createSendingSocket",
+        "type": "function",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "connect",
+        "type": "function",
+        "async": false,
+        "parameters": [
+          {
+            "type": "number",
+            "name": "id"
+          },
+          {
+            "type": "string",
+            "name": "host"
+          },
+          {
+            "type": "number",
+            "name": "port"
+          }
+        ]
+      },
+      {
+        "name": "sendData",
+        "type": "function",
+        "async": false,
+        "parameters": [
+          {
+            "type": "number",
+            "name": "id"
+          },
+          {
+            "type": "string",
+            "name": "data"
+          },
+          {
+            "type": "boolean",
+            "name": "json"
+          }
+        ]
+      },
+      {
+        "name": "close",
+        "type": "function",
+        "async": false,
+        "parameters": [
+          {
+            "type": "number",
+            "name": "id"
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "onDataReceived",
+        "type": "function",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id"
+          },
+          {
+            "type": "string",
+            "name": "data"
+          },
+          {
+            "type": "boolean",
+            "name": "json"
+          }
+        ]
+      }
+    ]
+  }
+]
