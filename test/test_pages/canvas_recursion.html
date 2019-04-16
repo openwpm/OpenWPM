@@ -1,0 +1,47 @@
+<html>
+<title>Canvas Fingerprinting Test Page</title>
+<h1>Canvas Fingerprinting Test Page</h1>
+
+<div id="canvases"></div>
+
+<script>
+  function createCanvas(canvasName) {
+    var canvas = document.createElement('canvas');
+    canvas.name = canvasName;
+    canvas.id = canvasName;
+    var container = document.getElementById('canvases');
+    container.appendChild(canvas);
+    return canvas;
+  }
+  const instrumentObjectAvailable = new Promise(function(resolve) {
+    function check() {
+      if (typeof window.instrumentObject !== "undefined") {
+        resolve();
+      } else {
+        setTimeout(check, 250);
+      }
+    }
+    check();
+  });
+  instrumentObjectAvailable.then(function () {
+    var originalCanvas = createCanvas('canvas1');
+    var originalContext = originalCanvas.getContext("2d");
+    var originalLength = originalContext.measureText('test_text');
+    var newCanvas = createCanvas('canvas2');
+    var newContext = newCanvas.getContext("2d");
+    newContext.oldMeasureText = newContext.measureText;
+    newContext.measureText = function(t) {
+      var out = newContext.oldMeasureText(t);
+      out.width += 100;
+      return out;
+    }
+    var newLength = originalContext.measureText('test_text');
+    if (newLength.width != originalLength.width) {
+      console.log("FAIL", originalLength, newLength);
+    } else {
+      console.log("PASS", originalLength, newLength);
+    }
+  });
+</script>
+
+</html>

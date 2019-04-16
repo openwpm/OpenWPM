@@ -1,3 +1,10 @@
+Warning
+-------
+This branch is built on Firefox 52 ESR, which has been unsupported since
+June  2018. Crawls with this branch should only be run in an isolated
+environment, as there are almost certainly browser exploits for this outdated
+browser.
+
 OpenWPM [![Build Status](https://travis-ci.org/mozilla/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
 =======
 
@@ -6,6 +13,7 @@ collect data for privacy studies on a scale of thousands to millions
 of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
+
 
 Installation
 ------------
@@ -580,7 +588,7 @@ on the infrastructure. You can use the following BibTeX.
         year      = "2016",
     }
 
-OpenWPM has been used in over [25 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
+OpenWPM has been used in over [30 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
 
 License
 -------
