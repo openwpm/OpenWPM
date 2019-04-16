@@ -1,11 +1,12 @@
 sudo: required
 language: python
 os: linux
-dist: trusty
+dist: xenial
 python:
  - "2.7"
  - "3.5"
  - "3.6"
+ - "3.7"
 env:
 # See, https://docs.travis-ci.com/user/speeding-up-the-build/
 # We need a balanced distribution of the tests
@@ -21,7 +22,6 @@ git:
   depth: 3
 before_install:
   - "export DISPLAY=:99.0"
-  - "npm install -g jpm"
 install:
   - echo "y" | ./install.sh
   - pip install -r requirements.txt
