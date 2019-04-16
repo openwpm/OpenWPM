@@ -1,5 +1,15 @@
-v0.9.0 - under development
+v0.10.0 - under development
+=======
+
+Changes:
+  * Migrate to WebExtensions from the addon-sdk.
+
+v0.9.0 - 2019-04-15
 ======
+
+A checkpoint release for the final version of OpenWPM to support Firefox 52
+and the addon-sdk framework. We recommend against using this release as Firefox
+52ESR is no longer receiving security updates.
 
 Changes:
   * The `automation` library can now be used with Python 3.4 or later,
@@ -17,6 +27,8 @@ Changes:
     * Ghostery has been updated.
   * Extensions built using the WebExtensions API are now supported. Our
     extension still uses the add-on sdk.
+  * Experimental support for saving Parquet files on S3
+  * Numerous bug fixes
 
 v0.8.0 - 2017-10-09
 ======
