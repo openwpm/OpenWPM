@@ -427,7 +427,9 @@ Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 We've added an installation file to make it easier to run tests and develop on
 Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
-instead of `install.sh` and `install-dev.sh`.
+instead of `install.sh` and `install-dev.sh` in [the official getting started 
+instructions](https://github.com/mozilla/OpenWPM/wiki/Setting-Up-OpenWPM).
+
 This will install Python packages in a local Python 3.6 virtualenv, 
 download the latest Unbranded Firefox Release into the current folder, 
 move geckodriver next to the Firefox binary and install development dependencies.
@@ -445,6 +447,9 @@ Running the OpenWPM tests on Mac OSX:
     source venv/bin/activate
     export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
     python -m pytest -vv
+
+For more detailed setup instructions for Mac, see [Running a fork of OpenWPM on 
+your Mac Natively](https://gist.github.com/motin/540377d5a3fff20db3fe1d2b160d8652).
 
 There are known limitations on Mac:
 1. Flash cookies are not parsed correctly since we
