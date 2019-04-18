@@ -429,8 +429,8 @@ We've added an installation file to make it easier to run tests and develop on
 Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
 instead of `install.sh` and `install-dev.sh`.
 This will install Python packages in a local Python 3.6 virtualenv, 
-download Firefox Nightly into the current folder, move geckodriver
-next to the Firefox binary and install development dependencies.
+download the latest Unbranded Firefox Release into the current folder, 
+move geckodriver next to the Firefox binary and install development dependencies.
 For the OpenWPM to be aware of which Firefox installation to run, set the
 FIREFOX_BINARY environment variable before running any commands.
 

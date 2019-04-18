@@ -28,7 +28,7 @@ CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install --force
 # Make npm available (used by build-extension.sh)
 brew install node || brew upgrade node
 
-# Download Firefox Nightly
+# Download the latest Unbranded Firefox Release version
 brew install wget || brew upgrade wget
 wget https://index.taskcluster.net/v1/task/gecko.v2.mozilla-release.latest.firefox.macosx64-add-on-devel/artifacts/public/build/target.dmg
 
