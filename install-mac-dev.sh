@@ -23,8 +23,7 @@ rm requirements.mac.txt
 brew install leveldb || brew upgrade leveldb
 
 # Make sure we build plyvel properly to work with the installed leveldb on recent OSX versions
-CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install plyvel
-# --force-reinstall --ignore-installed --no-binary :all:
+CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install --force-reinstall --ignore-installed --no-binary :all: plyvel
 
 # Make npm available (used by build-extension.sh)
 brew install node || brew upgrade node
