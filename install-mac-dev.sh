@@ -9,8 +9,8 @@ if [[ $# -gt 0 ]]; then
     exit 1
 fi
 
-# Create and activate a local Python 3.6 venv
-python3.6 -m venv venv
+# Create and activate a local Python 3 venv
+python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 
