@@ -9,24 +9,36 @@ if [[ $# -gt 0 ]]; then
     exit 1
 fi
 
+# Create and activate a local Python 3.6 venv
+python3.6 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+
+# Install all requirements except plyvel
+cat requirements.txt | grep -v plyvel > requirements.mac.txt
+CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++' pip install -r requirements.mac.txt
+rm requirements.mac.txt
+
+# A recent version of leveldb is required
 brew install leveldb || brew upgrade leveldb
 
-# Make sure we build plyvel properly to work with the installed leveldb
-CFLAGS='-std=c++11' pip install --user --force-reinstall --ignore-installed --no-binary :all: plyvel
+# Make sure we build plyvel properly to work with the installed leveldb on recent OSX versions
+CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install plyvel
+# --force-reinstall --ignore-installed --no-binary :all:
 
-pip install -U -r requirements.txt
-
-# Make npm packages available
+# Make npm available (used by build-extension.sh)
 brew install node || brew upgrade node
 
+# Download Firefox Nightly
+brew install wget || brew upgrade wget
 wget https://index.taskcluster.net/v1/task/gecko.v2.mozilla-release.latest.firefox.macosx64-add-on-devel/artifacts/public/build/target.dmg
 
-rm -rf Nightly.app
+# Install Firefox Nightly
+rm -rf Nightly.app || true
 hdiutil attach -nobrowse -mountpoint /Volumes/firefox-tmp target.dmg
 cp -r /Volumes/firefox-tmp/Nightly.app .
 hdiutil detach /Volumes/firefox-tmp
 rm target.dmg
-
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
 # packaged.
@@ -41,4 +53,5 @@ mv geckodriver Nightly.app/Contents/MacOS/
 # Download and build client extension
 ./build-extension.sh
 
+# Install requirements related to OpenWPM development
 pip install -U -r requirements-dev.txt
