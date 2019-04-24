@@ -448,8 +448,7 @@ Running the OpenWPM tests on Mac OSX:
     export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
     python -m pytest -vv
 
-For more detailed setup instructions for Mac, see [Running a fork of OpenWPM on 
-your Mac Natively](https://gist.github.com/motin/540377d5a3fff20db3fe1d2b160d8652).
+For more detailed setup instructions for Mac, see [Running OpenWPM natively on macOS](https://github.com/mozilla/OpenWPM/wiki/Running-OpenWPM-natively-on-macOS).
 
 There are known limitations on Mac:
 1. Flash cookies are not parsed correctly since we
