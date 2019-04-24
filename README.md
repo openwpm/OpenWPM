@@ -455,9 +455,11 @@ There are known limitations on Mac:
    [hardcode](https://github.com/citp/OpenWPM/blob/de84f0595dd512649e46c87b47d5ab18c8374d7e/automation/Commands/utils/lso.py#L34)
    the Flash storage path to that used on Linux.
 2. Headless mode does not work since we currently use XVFB and the Firefox
-   GUI on Mac doesn't make use of X. The X virtual frame buffer is created, but
+   GUI on Mac doesn't make use of X. If [XQuartz](https://www.xquartz.org/) is
+   installed, the X virtual frame buffer is created but
    is not used by the Firefox GUI. Thus Firefox windows will always be visible
-   regardless of the `headless` configuration parameter set.
+   regardless of the `headless` configuration parameter set. If XQuartz is not
+   installed, attempts to use the `headless` configuration will lead to crashes.
 
 We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
 these issues and add full support and CI testing for Mac.
