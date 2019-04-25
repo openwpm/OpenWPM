@@ -28,9 +28,9 @@ GETS_AND_SETS = {
 }
 
 METHOD_CALLS = {
-    ('prop1', 'call', '{"0":"now accepting arugments"}'),
-    ('method1', 'call', '{"0":"hello","1":"{\\"world\\":true}"}'),
-    ('method1', 'call', '{"0":"new argument"}')
+    ('prop1', 'call', '["now accepting arugments"]'),
+    ('method1', 'call', '["hello","{\\\"world\\\":true}"]'),
+    ('method1', 'call', '["new argument"]')
 }
 
 RECURSIVE_GETS_AND_SETS = {
@@ -46,9 +46,9 @@ RECURSIVE_GETS_AND_SETS = {
 }
 
 RECURSIVE_METHOD_CALLS = {
-    ('window.test2.nestedObj.method1', 'call', '{"0":"arg-before"}'),
-    ('window.test2.nestedObj.method1', 'call', '{"0":"arg-after"}'),
-    ('window.test2.nestedObj.doubleNested.method1', 'call', '{"0":"blah"}')
+    ('window.test2.nestedObj.method1', 'call', '["arg-before"]'),
+    ('window.test2.nestedObj.method1', 'call', '["arg-after"]'),
+    ('window.test2.nestedObj.doubleNested.method1', 'call', '["blah"]')
 }
 
 RECURSIVE_PROP_SET = {
