@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import re
 
-from . import utilities as util
 from ..automation.utilities import db_utils
+from . import utilities as util
 from .openwpmtest import OpenWPMTest
 
 GETS_AND_SETS = {

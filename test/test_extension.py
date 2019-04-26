@@ -5,9 +5,9 @@ from datetime import datetime
 
 import pytest
 
-from . import utilities
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
+from . import utilities
 from .openwpmtest import OpenWPMTest
 
 # Expected Navigator and Screen properties

@@ -9,9 +9,9 @@ import re
 from PIL import Image
 from six.moves.urllib.parse import urlparse
 
-from . import utilities
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
+from . import utilities
 from .openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'

@@ -15,8 +15,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from six.moves.urllib.parse import urljoin
 
-from . import XPathUtil
 from ...utilities import domain_utils as du
+from . import XPathUtil
 
 # Basic functions
 
