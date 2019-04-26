@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-from . import utilities
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
+from . import utilities
 from .openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + '/simple_a.html'

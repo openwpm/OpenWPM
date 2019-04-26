@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-from . import utilities
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
+from . import utilities
 from .openwpmtest import OpenWPMTest
 
 expected_lso_content_a = [

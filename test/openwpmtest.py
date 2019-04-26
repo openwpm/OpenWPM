@@ -5,8 +5,8 @@ from os.path import isfile, join
 
 import pytest
 
-from . import utilities
 from ..automation import TaskManager
+from . import utilities
 
 
 class OpenWPMTest(object):

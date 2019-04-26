@@ -8,10 +8,10 @@ from time import sleep
 from six.moves import range
 from six.moves.urllib.parse import urlparse
 
-from . import utilities
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
 from ..automation.utilities.platform_utils import parse_http_stack_trace_str
+from . import utilities
 from .openwpmtest import OpenWPMTest
 
 # Data for test_page_visit

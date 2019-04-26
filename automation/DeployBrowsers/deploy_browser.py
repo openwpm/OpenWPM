@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-from . import deploy_firefox
 from ..Errors import BrowserConfigError
+from . import deploy_firefox
 
 
 def deploy_browser(status_queue, browser_params,
