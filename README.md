@@ -427,25 +427,39 @@ Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 We've added an installation file to make it easier to run tests and develop on
 Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
-instead of `install.sh` and `install-dev.sh`.
-This will download Firefox ESR into the current folder, move geckodriver
-next to the Firefox binary and install development dependencies.
+instead of `install.sh` and `install-dev.sh` in [the official getting started 
+instructions](https://github.com/mozilla/OpenWPM/wiki/Setting-Up-OpenWPM).
+
+This will install Python packages in a local Python 3 virtualenv, 
+download the latest Unbranded Firefox Release into the current folder, 
+move geckodriver next to the Firefox binary and install development dependencies.
 For the OpenWPM to be aware of which Firefox installation to run, set the
 FIREFOX_BINARY environment variable before running any commands.
 
-Example, running the OpenWPM tests on Mac OSX:
+Example, running a demo crawl on Mac OSX:
 
-    export FIREFOX_BINARY="$(PWD)/Firefox.app/Contents/MacOS/firefox-bin"
+    source venv/bin/activate
+    export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
+    python demo.py
+
+Running the OpenWPM tests on Mac OSX:
+
+    source venv/bin/activate
+    export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
     python -m pytest -vv
+
+For more detailed setup instructions for Mac, see [Running OpenWPM natively on macOS](https://github.com/mozilla/OpenWPM/wiki/Running-OpenWPM-natively-on-macOS).
 
 There are known limitations on Mac:
 1. Flash cookies are not parsed correctly since we
    [hardcode](https://github.com/citp/OpenWPM/blob/de84f0595dd512649e46c87b47d5ab18c8374d7e/automation/Commands/utils/lso.py#L34)
    the Flash storage path to that used on Linux.
 2. Headless mode does not work since we currently use XVFB and the Firefox
-   GUI on Mac doesn't make use of X. The X virtual frame buffer is created, but
+   GUI on Mac doesn't make use of X. If [XQuartz](https://www.xquartz.org/) is
+   installed, the X virtual frame buffer is created but
    is not used by the Firefox GUI. Thus Firefox windows will always be visible
-   regardless of the `headless` configuration parameter set.
+   regardless of the `headless` configuration parameter set. If XQuartz is not
+   installed, attempts to use the `headless` configuration will lead to crashes.
 
 We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
 these issues and add full support and CI testing for Mac.
