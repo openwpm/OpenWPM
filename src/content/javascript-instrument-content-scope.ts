@@ -1,8 +1,8 @@
+import { jsInstruments } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString() {
-  // return a string
-  return "(" + pageScript + "());";
+  return jsInstruments + "\n" + "(" + pageScript + "(jsInstruments));"
 }
 
 function insertScript(text, data) {
