@@ -1,8 +1,11 @@
 import { jsInstruments } from "../lib/js-instruments";
+import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
 import { pageScript } from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString() {
-  return jsInstruments + "\n" + "(" + pageScript + "(jsInstruments));"
+  return jsInstruments + "\n"
+    + instrumentFingerprintingApis + "\n"
+    + "(" + pageScript + "({jsInstruments, instrumentFingerprintingApis}));"
 }
 
 function insertScript(text, data) {
