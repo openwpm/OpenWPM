@@ -8,6 +8,13 @@ import {
 import * as loggingDB from "./loggingdb.js";
 
 async function main() {
+
+  // Start the JS instrumentation listener as early as possible
+  // in order not to miss events that may arrive before the
+  // logging backend is configured
+  let jsInstrument = new JavascriptInstrument(loggingDB);
+  jsInstrument.listen();
+
   // Read the browser configuration from file
   let filename = "browser_params.json";
   let config = await browser.profileDirIO.readFile(filename);
@@ -46,8 +53,9 @@ async function main() {
 
   if (config['js_instrument']) {
     loggingDB.logDebug("Javascript instrumentation enabled");
-    let jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
+  } else {
+    jsInstrument.cleanup();
   }
 
   if (config['http_instrument']) {
