@@ -1,5 +1,7 @@
-export function instrumentFingerprintingApis({instrumentObjectProperty, instrumentObject}) {
-
+export function instrumentFingerprintingApis({
+  instrumentObjectProperty,
+  instrumentObject,
+}) {
   // Access to navigator properties
   const navigatorProperties = [
     "appCodeName",
@@ -119,5 +121,4 @@ export function instrumentFingerprintingApis({instrumentObjectProperty, instrume
   instrumentObject(window.AnalyserNode.prototype, "AnalyserNode");
   instrumentObject(window.GainNode.prototype, "GainNode");
   instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
-
 }

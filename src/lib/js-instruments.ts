@@ -26,7 +26,6 @@ interface LogSettings {
 }
 
 export function jsInstruments(event_id, sendMessagesToLogger) {
-
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -36,7 +35,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   function debounce(func, wait, immediate = false) {
     let timeout, args, context, timestamp, result;
 
-    const later = function () {
+    const later = function() {
       const last = Date.now() - timestamp;
       if (last < wait) {
         timeout = setTimeout(later, wait - last);
@@ -49,7 +48,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       }
     };
 
-    return function () {
+    return function() {
       context = this;
       args = arguments;
       timestamp = Date.now();
@@ -119,7 +118,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
         return object;
       }
       const seenObjects = [];
-      return JSON.stringify(object, function (key, value) {
+      return JSON.stringify(object, function(key, value) {
         if (value === null) {
           return "null";
         }
@@ -161,20 +160,19 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
    * Direct instrumentation of javascript objects
    */
 
-  const sendFactory = function (event_id, sendMessagesToLogger) {
+  const sendFactory = function($event_id, $sendMessagesToLogger) {
     let messages = [];
     // debounce sending queued messages
-    const _send = debounce(function () {
-
-      sendMessagesToLogger(event_id, messages);
+    const _send = debounce(function() {
+      $sendMessagesToLogger($event_id, messages);
 
       // clear the queue
       messages = [];
     }, 100);
 
-    return function (msgType, msg) {
+    return function(msgType, msg) {
       // queue the message
-      messages.push({type: msgType, content: msg});
+      messages.push({ type: msgType, content: msg });
       _send();
     };
   };
@@ -305,7 +303,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
 
   // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
   // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-  Object.getPropertyDescriptor = function (subject, name) {
+  Object.getPropertyDescriptor = function(subject, name) {
     let pd = Object.getOwnPropertyDescriptor(subject, name);
     let proto = Object.getPrototypeOf(subject);
     while (pd === undefined && proto !== null) {
@@ -315,7 +313,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     return pd;
   };
 
-  Object.getPropertyNames = function (subject) {
+  Object.getPropertyNames = function(subject) {
     let props = Object.getOwnPropertyNames(subject);
     let proto = Object.getPrototypeOf(subject);
     while (proto !== null) {
@@ -340,7 +338,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // from http://stackoverflow.com/a/5202185
-  String.prototype.rsplit = function (sep, maxsplit) {
+  String.prototype.rsplit = function(sep, maxsplit) {
     const split = this.split(sep);
     return maxsplit
       ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit))
@@ -404,9 +402,9 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
         scriptLocEval,
         callStack: getCallStack
           ? trace
-            .slice(3)
-            .join("\n")
-            .trim()
+              .slice(3)
+              .join("\n")
+              .trim()
           : "",
       };
       return callContext;
@@ -528,7 +526,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   // to `func`. `objectName` and `methodName` are used strictly to identify
   // which object method `func` is coming from in the logs
   function instrumentFunction(objectName, methodName, func, logSettings) {
-    return function () {
+    return function() {
       const callContext = getOriginatingScriptContext(
         !!logSettings.logCallStack,
       );
@@ -570,8 +568,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     // accessor property
     Object.defineProperty(object, propertyName, {
       configurable: true,
-      get: (function () {
-        return function () {
+      get: (function() {
+        return function() {
           let origProperty;
           const callContext = getOriginatingScriptContext(
             !!logSettings.logCallStack,
@@ -629,8 +627,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           }
         };
       })(),
-      set: (function () {
-        return function (value) {
+      set: (function() {
+        return function(value) {
           const callContext = getOriginatingScriptContext(
             !!logSettings.logCallStack,
           );
@@ -699,5 +697,5 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     });
   }
 
-  return {instrumentObject, instrumentObjectProperty};
+  return { instrumentObject, instrumentObjectProperty };
 }

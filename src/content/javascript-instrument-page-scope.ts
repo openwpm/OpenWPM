@@ -2,20 +2,25 @@
 // Also, no webpack/es6 imports may be used in this file since the script
 // is exported as a page script as a string
 
-export const pageScript = function({jsInstruments, instrumentFingerprintingApis}) {
-
+export const pageScript = function({
+  jsInstruments,
+  instrumentFingerprintingApis,
+}) {
   // messages the injected script
-  function sendMessagesToLogger(event_id, messages) {
+  function sendMessagesToLogger($event_id, messages) {
     document.dispatchEvent(
-        new CustomEvent(event_id, {
-          detail: messages,
-        }),
-      );
+      new CustomEvent($event_id, {
+        detail: messages,
+      }),
+    );
   }
 
   const event_id = document.currentScript.getAttribute("data-event-id");
 
-  const {instrumentObject, instrumentObjectProperty} = jsInstruments(event_id, sendMessagesToLogger);
+  const { instrumentObject, instrumentObjectProperty } = jsInstruments(
+    event_id,
+    sendMessagesToLogger,
+  );
 
   const testing =
     document.currentScript.getAttribute("data-testing") === "true";
@@ -29,7 +34,7 @@ export const pageScript = function({jsInstruments, instrumentFingerprintingApis}
    */
   // TODO: user should be able to choose what to instrument
 
-  instrumentFingerprintingApis({instrumentObjectProperty, instrumentObject});
+  instrumentFingerprintingApis({ instrumentObjectProperty, instrumentObject });
 
   if (testing) {
     console.log(
