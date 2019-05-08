@@ -389,7 +389,7 @@ dependencies, which can be installed with `install-dev.sh`.
 The instrumentation extension is included in `/automation/Extension/firefox/`.
 Any edits within this directory will require the extension to be re-built to produce a new `openwpm.xpi` with your updates. You can use `build_extension.sh` to do this.
 
-The actual instrumentation code is maintained in https://github.com/mozilla/openwpm-webext-instrumentation. To test changes to the instrumentation code, change the dependency in package.json to point to your local clone (e.g. `"openwpm-webext-instrumentation": "file:/path/to/openwpm-webext-instrumentation"`). Make sure to run `npm run build` in the `openwpm-webext-instrumentation` repo to pick up changes.
+The actual instrumentation code is maintained in https://github.com/mozilla/openwpm-webext-instrumentation. To test changes to the instrumentation code, change the dependency in [package.json](https://github.com/mozilla/OpenWPM/blob/master/automation/Extension/firefox/package.json) to point to your local clone (e.g. `"openwpm-webext-instrumentation": "file:/path/to/openwpm-webext-instrumentation"`). Make sure to run `npm run build` in the `openwpm-webext-instrumentation` repo to pick up changes.
 
 ### Debugging the platform
 
