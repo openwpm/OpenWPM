@@ -21,6 +21,10 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['http_instrument'] = True
     # Record cookie changes
     browser_params[i]['cookie_instrument'] = True
+    # Record Navigations
+    browser_params[i]['navigation_instrument'] = True
+    # Record JS Web API calls
+    browser_params[i]['js_instrument'] = True
     # Enable flash for all three browsers
     browser_params[i]['disable_flash'] = False
 if platform != 'darwin':
