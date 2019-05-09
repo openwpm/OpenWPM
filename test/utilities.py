@@ -141,8 +141,16 @@ def local_s3_bucket():
     """Use localstack as our local S3 service."""
     # Make boto3 use our localstack S3 endpoint
     URL = "http://localhost:4572"
-    boto3.client = functools.partial(boto3.client, endpoint_url=URL)
-    boto3.resource = functools.partial(boto3.resource, endpoint_url=URL)
+    boto3.client = functools.partial(
+        boto3.client,
+        endpoint_url=URL,
+        aws_access_key_id='foo',
+        aws_secret_access_key='foo')
+    boto3.resource = functools.partial(
+        boto3.resource,
+        endpoint_url=URL,
+        aws_access_key_id='foo',
+        aws_secret_access_key='foo')
     # Create a local bucket
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('localstack-foo')
