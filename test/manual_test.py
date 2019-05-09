@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 import atexit
 import subprocess
 from os.path import dirname, join, realpath
+from sys import platform
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
@@ -62,6 +63,10 @@ def get_command_output(command, cwd=None):
 
 
 def colorize(line):
+    if platform == 'darwin':
+        # to prevent the error TypeError: a bytes-like object is required, not 'str'
+        # which shows up in the environment setup by install-mac-dev.sh
+        return line
     if INSERT_PREFIX in line:  # print long DB insert lines in blue
         line = line.replace(INSERT_PREFIX, bcolors.OKBLUE + INSERT_PREFIX)
     if OPENWPM_LOG_PREFIX in line:
