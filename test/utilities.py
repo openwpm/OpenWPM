@@ -5,6 +5,9 @@ import threading
 from os.path import dirname, realpath
 from random import choice
 
+import functools
+import boto3
+
 from six.moves import range, socketserver
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
 from six.moves.urllib.parse import parse_qs, urlparse
@@ -132,3 +135,33 @@ def rand_str(size=8):
     """Return random string with the given size."""
     RAND_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
     return ''.join(choice(RAND_CHARS) for _ in range(size))
+
+
+def local_s3_bucket():
+    """Use localstack as our local S3 service."""
+    # Make boto3 use our localstack S3 endpoint
+    URL = "http://localhost:4572"
+    boto3.client = functools.partial(boto3.client, endpoint_url=URL)
+    boto3.resource = functools.partial(boto3.resource, endpoint_url=URL)
+    # Create a local bucket
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket('localstack-foo')
+    bucket.create()
+    return 'localstack-foo'
+
+
+def download_s3_directory(dir, destination='/tmp', bucket='your_bucket'):
+    client = boto3.client('s3')
+    resource = boto3.resource('s3')
+    paginator = client.get_paginator('list_objects')
+    for result in paginator.paginate(Bucket=bucket, Delimiter='/', Prefix=dir):
+        if result.get('CommonPrefixes') is not None:
+            for subdir in result.get('CommonPrefixes'):
+                download_s3_directory(
+                    subdir.get('Prefix'), destination, bucket)
+        for file in result.get('Contents', []):
+            dest_pathname = os.path.join(destination, file.get('Key'))
+            if not os.path.exists(os.path.dirname(dest_pathname)):
+                os.makedirs(os.path.dirname(dest_pathname))
+            resource.meta.client.download_file(
+                bucket, file.get('Key'), dest_pathname)

@@ -79,6 +79,9 @@ docs/_build/
 # npm packages
 node_modules
 
+# local S3 data
+local-s3-data
+
 # built extension
 automation/Extension/firefox/dist
 automation/Extension/firefox/openwpm.xpi
