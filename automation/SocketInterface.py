@@ -47,6 +47,7 @@ class serversocket:
                 thread.daemon = True
                 thread.start()
             except ConnectionAbortedError:
+                # Workaround for #278
                 print("A connection establish request was performed on a closed socket")
                 return
 
