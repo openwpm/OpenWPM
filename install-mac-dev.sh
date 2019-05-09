@@ -26,7 +26,7 @@ brew install leveldb || brew upgrade leveldb
 CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install --force-reinstall --ignore-installed --no-binary :all: plyvel
 
 # Make npm available (used by build-extension.sh)
-brew install node || brew upgrade node
+brew install node || true
 
 # Download the latest Unbranded Firefox Release version
 brew install wget || brew upgrade wget
