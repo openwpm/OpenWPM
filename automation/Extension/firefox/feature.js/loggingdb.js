@@ -31,9 +31,9 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
         console.log("sqliteSocket started?",rv);
     }
 
-    // Listen for incomming urls as visit ids
+    // Listen for incoming urls as visit ids
     listeningSocket = new socket.ListeningSocket();
-    console.log("Starting socket listening for incomming connections.");
+    console.log("Starting socket listening for incoming connections.");
     listeningSocket.startListening().then(() => {
         browser.profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
     });
