@@ -139,7 +139,7 @@ export let saveRecord = function(instrument, record) {
         visitID = listeningSocket.queue.shift();
         logDebug("Visit Id: " + visitID);
     }
-    record["visit_id"] = visitID;
+    record["visit_id"] = parseInt(visitID, 10);
 
 
     if (!visitID && !debugging) {
