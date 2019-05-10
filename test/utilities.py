@@ -5,8 +5,8 @@ import threading
 from os.path import dirname, realpath
 from random import choice
 
-import functools
 import boto3
+from botocore.credentials import Credentials
 
 from six.moves import range, socketserver
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -137,20 +137,53 @@ def rand_str(size=8):
     return ''.join(choice(RAND_CHARS) for _ in range(size))
 
 
+class LocalS3Session(object):
+    """
+    Ensures that the local s3 service is used when
+    setup as the default boto3 Session
+    Based on localstack_client/session.py
+    """
+    def __init__(self, aws_access_key_id='accesskey', aws_secret_access_key='secretkey',
+                 aws_session_token='token', region_name='us-east-1', endpoint_url='http://localhost:4572',
+                 botocore_session=None, profile_name=None, localstack_host=None):
+        self.env = 'local'
+        self.session = boto3.session.Session()
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.aws_session_token = aws_session_token
+        self.region_name = region_name
+        self.endpoint_url = endpoint_url
+
+    def resource(self, service_name, **kwargs):
+        return self.session.resource(service_name,
+                                     endpoint_url=self.endpoint_url,
+                                     aws_access_key_id=self.aws_access_key_id,
+                                     aws_secret_access_key=self.aws_secret_access_key,
+                                     region_name=self.region_name, verify=False)
+
+    def get_credentials(self):
+        return Credentials(access_key=self.aws_access_key_id,
+                           secret_key=self.aws_secret_access_key,
+                           token=self.aws_session_token)
+
+    def client(self, service_name, **kwargs):
+        return self.session.client(service_name, endpoint_url=self.endpoint_url,
+                                   aws_access_key_id=self.aws_access_key_id,
+                                   aws_secret_access_key=self.aws_secret_access_key,
+                                   region_name=self.region_name, verify=False)
+
+    def resource(self, service_name, **kwargs):
+        return self.session.resource(service_name,
+                                     endpoint_url=self.endpoint_url,
+                                     aws_access_key_id=self.aws_access_key_id,
+                                     aws_secret_access_key=self.aws_secret_access_key,
+                                     region_name=self.region_name, verify=False)
+
+
 def local_s3_bucket():
     """Use localstack as our local S3 service."""
     # Make boto3 use our localstack S3 endpoint
-    URL = "http://localhost:4572"
-    boto3.client = functools.partial(
-        boto3.client,
-        endpoint_url=URL,
-        aws_access_key_id='foo',
-        aws_secret_access_key='foo')
-    boto3.resource = functools.partial(
-        boto3.resource,
-        endpoint_url=URL,
-        aws_access_key_id='foo',
-        aws_secret_access_key='foo')
+    boto3.DEFAULT_SESSION = LocalS3Session()
     # Create a local bucket
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('localstack-foo')
