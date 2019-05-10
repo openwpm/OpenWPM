@@ -65,7 +65,7 @@ class S3Listener(BaseListener):
         self._bucket = manager_params['s3_bucket']
         self._s3 = boto3.client('s3')
         self._s3_resource = boto3.resource('s3')
-        self._fs = s3fs.S3FileSystem()
+        self._fs = s3fs.S3FileSystem(session=boto3.DEFAULT_SESSION)
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
         super(S3Listener, self).__init__(
