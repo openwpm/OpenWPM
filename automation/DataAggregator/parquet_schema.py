@@ -140,7 +140,7 @@ fields = [
     pa.field('instance_id', pa.int32(), nullable=False),
     pa.field('extension_session_uuid', pa.string()),
     pa.field('event_ordinal', pa.int64()),
-    pa.field('page_scopedevent_ordinal', pa.int64()),
+    pa.field('page_scoped_event_ordinal', pa.int64()),
     pa.field('window_id', pa.int64()),
     pa.field('tab_id', pa.int64()),
     pa.field('frame_id', pa.int64()),
