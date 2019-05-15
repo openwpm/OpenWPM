@@ -5,6 +5,7 @@ import os
 import subprocess
 from collections import OrderedDict
 from copy import deepcopy
+from sys import platform
 
 from tabulate import tabulate
 
@@ -44,9 +45,14 @@ def get_firefox_binary_path():
                 "Current `FIREFOX_BINARY`: %s" % firefox_binary_path)
         return firefox_binary_path
 
-    root_dir = os.path.dirname(__file__)  # directory of this file
-    firefox_binary_path = os.path.abspath(root_dir +
-                                          "/../../firefox-bin/firefox-bin")
+    root_dir = os.path.dirname(__file__) + "/../.."
+    if platform == 'darwin':
+        firefox_binary_path = os.path.abspath(root_dir +
+                                              "/Nightly.app/Contents/MacOS/firefox-bin")
+    else:
+        firefox_binary_path = os.path.abspath(root_dir +
+                                              "/firefox-bin/firefox-bin")
+
     if not os.path.isfile(firefox_binary_path):
         raise RuntimeError(
             "The `firefox-bin/firefox-bin` binary is not found in the root "
