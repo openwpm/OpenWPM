@@ -48,7 +48,8 @@ class serversocket:
                 thread.start()
             except ConnectionAbortedError:
                 # Workaround for #278
-                print("A connection establish request was performed on a closed socket")
+                print("A connection establish request was performed " +
+                      "on a closed socket")
                 return
 
     def _handle_conn(self, client, address):
