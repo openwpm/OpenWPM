@@ -5,5 +5,6 @@
     "database_name": "crawl-data.sqlite",
     "log_file": "openwpm.log",
     "failure_limit": null,
-    "testing": false
+    "testing": false,
+    "parquet_batch_size": 500
 }

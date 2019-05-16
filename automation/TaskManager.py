@@ -16,7 +16,7 @@ from tblib import pickling_support
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
-from .DataAggregator import LocalAggregator, S3Aggregator
+from .DataAggregator import LocalAggregator, ParquetAggregator
 from .Errors import CommandExecutionError
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
@@ -220,8 +220,9 @@ class TaskManager:
         if self.manager_params["output_format"] == "local":
             self.data_aggregator = LocalAggregator.LocalAggregator(
                 self.manager_params, self.browser_params)
-        elif self.manager_params["output_format"] == "s3":
-            self.data_aggregator = S3Aggregator.S3Aggregator(
+        elif (self.manager_params["output_format"] == "s3" or
+              self.manager_params["output_format"] == "local_parquet"):
+            self.data_aggregator = ParquetAggregator.ParquetAggregator(
                 self.manager_params, self.browser_params)
         else:
             raise Exception("Unrecognized output format: %s" %
