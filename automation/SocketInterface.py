@@ -7,8 +7,13 @@ import threading
 import traceback
 
 import dill
+import six
 from six.moves import input
 from six.moves.queue import Queue
+
+if six.PY2:
+    class ConnectionAbortedError(Exception):
+        pass
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237
