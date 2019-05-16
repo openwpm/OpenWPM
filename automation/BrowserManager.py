@@ -35,6 +35,7 @@ class Browser:
      <browser_params> are per-browser parameter settings (e.g. whether
                       this browser is headless, etc.)
      """
+
     def __init__(self, manager_params, browser_params):
         # Constants
         self._SPAWN_TIMEOUT = 120  # seconds

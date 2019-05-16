@@ -71,6 +71,7 @@ class MyHandler(SimpleHTTPRequestHandler):
     If a request is made the to `/MAGIC_REDIRECT/` path without a
     `dst` parameter defined, a `404` response is returned.
     """
+
     def __init__(self, *args, **kwargs):
         SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 

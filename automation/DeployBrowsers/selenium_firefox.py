@@ -57,6 +57,7 @@ class FirefoxLogInterceptor(threading.Thread):
     instance.  Also responsible for extracting the _real_ profile location
     from geckodriver's log output (geckodriver copies the profile).
     """
+
     def __init__(self, crawl_id, logger, profile_path):
         threading.Thread.__init__(self, name="log-interceptor-%i" % crawl_id)
         self.crawl_id = crawl_id
@@ -138,6 +139,7 @@ FirefoxDriverModule.Service = PatchedGeckoDriverService
 
 class FirefoxProfile(BaseFirefoxProfile):
     """Hook class for patching bugs in Selenium's FirefoxProfile class"""
+
     def __init__(self, *args, **kwargs):
         BaseFirefoxProfile.__init__(self, *args, **kwargs)
 

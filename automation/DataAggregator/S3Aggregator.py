@@ -53,6 +53,7 @@ class S3Listener(BaseListener):
     a parquet dataset. The schema for this dataset is given in
     ./parquet_schema.py
     """
+
     def __init__(
             self, status_queue, shutdown_queue, manager_params, instance_id):
         self.dir = manager_params['s3_directory']
@@ -275,6 +276,7 @@ class S3Aggregator(BaseAggregator):
     columns up to 32 bits. Currently, `instance_id` is the only partition
     column, and thus can be no larger than 32 bits.
     """
+
     def __init__(self, manager_params, browser_params):
         super(S3Aggregator, self).__init__(manager_params, browser_params)
         self.dir = manager_params['s3_directory']
