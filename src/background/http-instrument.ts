@@ -555,7 +555,7 @@ export class HttpInstrument {
       const respBody = await responseBodyListener.getResponseBody();
       const contentHash = await responseBodyListener.getContentHash();
       this.dataReceiver.saveContent(
-        escapeString(respBody),
+        respBody,
         escapeString(contentHash),
       );
       this.dataReceiver.saveRecord("http_responses", update);
