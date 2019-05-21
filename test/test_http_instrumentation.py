@@ -686,14 +686,16 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "noKeyValue"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == "test@example.com + name surname"
+        assert json.loads(post_body) == {
+            "test@example.com   name surname": [None]}
 
     def test_record_post_data_ajax_no_key_value_base64_encoded(self):
         """Test Base64 encoded AJAX payloads (no key=value form)."""
         post_format = "noKeyValueBase64"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
-        assert post_body == "dGVzdEBleGFtcGxlLmNvbSArIG5hbWUgc3VybmFtZQ=="
+        assert json.loads(post_body) == {
+            "dGVzdEBleGFtcGxlLmNvbSArIG5hbWUgc3VybmFtZQ": [""]}
 
     def test_record_post_formdata(self):
         post_format = "formData"
