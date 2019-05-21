@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import base64
 import json
 import os
 import sqlite3
@@ -129,8 +130,7 @@ class LocalListener(BaseListener):
                 "Attempted to save page content but the LevelDB content "
                 "database is not enabled.")
         content, content_hash = record[1]
-        if isinstance(content, six.text_type):
-            content = str(content).encode('utf-8')
+        content = base64.b64decode(content)
         content_hash = str(content_hash).encode('ascii')
         if self.ldb.get(content_hash) is not None:
             return
