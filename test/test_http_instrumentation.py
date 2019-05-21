@@ -686,6 +686,8 @@ class TestPOSTInstrument(OpenWPMTest):
         post_format = "noKeyValue"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db)
+        # "test@example.com + name surname" is actually expected here, but
+        # the + sign seems to be removed by Firefox
         assert json.loads(post_body) == {
             "test@example.com   name surname": [None]}
 
