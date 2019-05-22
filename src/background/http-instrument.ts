@@ -558,6 +558,7 @@ export class HttpInstrument {
         respBody,
         escapeString(contentHash),
       );
+      update.content_hash = contentHash;
       this.dataReceiver.saveRecord("http_responses", update);
     } catch (err) {
       /*
