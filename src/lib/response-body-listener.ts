@@ -20,17 +20,11 @@ export class ResponseBodyListener {
       details.requestId,
     ) as any;
 
-    // const decoder = new TextDecoder("utf-8");
-    // const encoder = new TextEncoder();
-
     let responseBody = new Uint8Array();
     filter.ondata = event => {
       sha256Buffer(event.data).then(digest => {
         this.resolveContentHash(digest);
       });
-      //const str = decoder.decode(event.data, { stream: true });
-      // responseBody = responseBody + str;
-      // pass through all the response data
       const incoming = new Uint8Array(event.data);
       const tmp = new Uint8Array(responseBody.length + incoming.length);
       tmp.set(responseBody);
