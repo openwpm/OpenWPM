@@ -611,8 +611,7 @@ class TestHTTPInstrument(OpenWPMTest):
             with open(os.path.join(BASE_PATH, path[1:]), 'rb') as f:
                 content = f.read()
             chash = sha256(content).hexdigest()
-            # TODO: webext instrumentation doesn't save the content_hash yet.
-            # assert chash == row['content_hash']
+            assert chash == row['content_hash']
             disk_content[chash] = content
 
         ldb_content = dict()
