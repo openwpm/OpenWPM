@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import base64
 import gzip
 import hashlib
 import json
@@ -248,6 +249,7 @@ class S3Listener(BaseListener):
                     RECORD_TYPE_CONTENT, record[0])
             )
         content, content_hash = record[1]
+        content = base64.b64decode(content)
         fname = "%s/%s/%s.gz" % (self.dir, CONTENT_DIRECTORY, content_hash)
         self._write_str_to_s3(content, fname)
 
