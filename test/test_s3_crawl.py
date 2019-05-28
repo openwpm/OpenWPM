@@ -33,8 +33,6 @@ class TestS3Crawl(OpenWPMTest):
         manager_params['output_format'] = 's3'
         manager_params['s3_bucket'] = local_s3_bucket()
         manager_params['s3_directory'] = 'demo-local-s3'
-        browser_params[0]['profile_archive_dir'] =\
-            os.path.join(manager_params['data_directory'], 'browser_profile')
         browser_params[0]['http_instrument'] = True
         return manager_params, browser_params
 
