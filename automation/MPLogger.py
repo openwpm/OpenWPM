@@ -18,6 +18,7 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
     """
     Make SocketHandler compatible with SocketInterface.py
     """
+
     def makePickle(self, record):
         """
         Serializes the record via json and prepends a length/serialization
@@ -26,7 +27,7 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         ei = record.exc_info
         if ei:
             # just to get traceback text into record.exc_text ...
-            dummy = self.format(record) # noqa
+            dummy = self.format(record)  # noqa
             record.exc_info = None  # to avoid Unpickleable error
         d = dict(record.__dict__)
         d['msg'] = record.getMessage()

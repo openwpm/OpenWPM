@@ -31,7 +31,7 @@ HTTP_REQUESTS = {
         u'undefined',
         u'undefined',
         0, 0, 1, None, None, u'main_frame',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -39,7 +39,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image',
-     ),
+    ),
     # (
     #     u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
     #     u'undefined',
@@ -55,7 +55,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -63,7 +63,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'script',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -71,7 +71,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'script',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -79,7 +79,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -87,7 +87,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 1, 0, None, None, u'sub_frame',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_style.css',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -95,7 +95,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'stylesheet',
-     ),
+    ),
     (
         u'http://localtest.me:8000/404.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -103,7 +103,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -111,7 +111,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -119,7 +119,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -127,7 +127,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -135,7 +135,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -143,7 +143,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -151,7 +151,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image'
-     ),
+    ),
 }
 
 # format: (request_url, referrer, location)
@@ -222,7 +222,7 @@ HTTP_CACHED_REQUESTS = {
         u'undefined',
         u'undefined',
         0, 0, 1, None, None, u'main_frame'
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -230,7 +230,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'script'
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script.js',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -238,7 +238,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'script',
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -246,7 +246,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 1, 0, None, None, u'sub_frame'
-     ),
+    ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_style.css',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -254,7 +254,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'stylesheet'
-     ),
+    ),
     (
         u'http://localtest.me:8000/404.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -262,7 +262,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -270,7 +270,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -278,7 +278,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
         0, 0, 0, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
@@ -294,7 +294,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, 0, 1, None, None, u'image'
-     ),
+    ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',

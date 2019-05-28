@@ -50,6 +50,7 @@ def listener_process_runner(
 
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
+
     def __init__(
             self, status_queue, shutdown_queue, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
@@ -180,6 +181,7 @@ class LocalAggregator(BaseAggregator):
 
     If content saving is enabled, we write page content to a LevelDB database.
     """
+
     def __init__(self, manager_params, browser_params):
         super(LocalAggregator, self).__init__(manager_params, browser_params)
         db_path = self.manager_params['database_name']

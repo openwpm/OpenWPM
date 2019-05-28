@@ -19,6 +19,7 @@ class serversocket:
     A server socket to receive and process string messages
     from client sockets to a central queue
     """
+
     def __init__(self, name=None, verbose=False):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', 0))
@@ -111,6 +112,7 @@ class serversocket:
 
 class clientsocket:
     """A client socket for sending messages"""
+
     def __init__(self, serialization='json', verbose=False):
         """ `serialization` specifies the type of serialization to use for
         non-string messages. Supported formats:
