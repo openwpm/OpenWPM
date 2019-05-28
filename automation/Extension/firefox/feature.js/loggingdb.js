@@ -164,11 +164,30 @@ export let saveContent = async function(content, contentHash) {
     console.log("LDB contentHash:",contentHash,"with length",content.length);
     return;
   }
-  dataAggregator.send(JSON.stringify(['page_content', [content, contentHash]]));
+  // Since the content might not be a valid utf8 string and it needs to be
+  // json encoded later, it is encoded using base64 first.
+  const b64 = Uint8ToBase64(content);
+  dataAggregator.send(JSON.stringify(['page_content', [b64, contentHash]]));
 };
 
 function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
+}
+
+// Base64 encoding, found on:
+// https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
+function Uint8ToBase64(u8Arr){
+  var CHUNK_SIZE = 0x8000; //arbitrary number
+  var index = 0;
+  var length = u8Arr.length;
+  var result = '';
+  var slice;
+  while (index < length) {
+    slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
+    result += String.fromCharCode.apply(null, slice);
+    index += CHUNK_SIZE;
+  }
+  return btoa(result);
 }
 
 export let escapeString = function(string) {
