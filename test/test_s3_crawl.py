@@ -10,7 +10,7 @@ from ..automation import TaskManager
 from ..automation.utilities import db_utils, domain_utils
 from .openwpmtest import OpenWPMTest
 
-from .utilities import local_s3_bucket, download_s3_directory
+from ..automation.utilities.local_s3_utils import local_s3_bucket, download_s3_directory
 
 TEST_SITES = [
     'http://example.com'
