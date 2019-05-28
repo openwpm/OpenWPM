@@ -542,8 +542,8 @@ export class HttpInstrument {
   }
 
   /*
-  * HTTP Response Handlers and Helper Functions
-  */
+   * HTTP Response Handlers and Helper Functions
+   */
 
   private async logWithResponseBody(
     details: WebRequestOnBeforeRequestEventDetails,
