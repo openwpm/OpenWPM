@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 # Copy the package.json and package-lock.json first and install all the
 # packages. Should the source code of the extension be changed without
-# altering the list of required packages, this stop can be cached by Docker.
+# altering the list of required packages, this step can be cached by Docker.
 COPY automation/Extension/firefox/package*.json ./
 
 # The extension needs to run for example the TypeScript transpiler
@@ -23,8 +23,8 @@ RUN npm run build
 FROM ubuntu:18.04
 
 WORKDIR /opt/OpenWPM
-# This is just a performance evaluation and can be skipped by none us based
-# users
+# This is just a performance optimization and can be skipped by non-US
+# based users
 RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
 
 RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && apt-get update -y && apt-get upgrade -y && apt-get install sudo -y
@@ -38,7 +38,7 @@ RUN ./install-system.sh --no-flash
 # final image.
 RUN apt-get -y install python-pip python3-pip
 
-# For some reasons, python3-publicsuffix doesn't work with pip3 at the moent,
+# For some reasons, python3-publicsuffix doesn't work with pip3 at the moment,
 # so install it from the ubuntu repository
 RUN apt-get -y install python3-publicsuffix
 

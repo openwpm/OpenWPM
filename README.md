@@ -425,11 +425,11 @@ Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 We've added an installation file to make it easier to run tests and develop on
 Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
-instead of `install.sh` and `install-dev.sh` in [the official getting started 
+instead of `install.sh` and `install-dev.sh` in [the official getting started
 instructions](https://github.com/mozilla/OpenWPM/wiki/Setting-Up-OpenWPM).
 
-This will install Python packages in a local Python 3 virtualenv, 
-download the latest Unbranded Firefox Release into the current folder, 
+This will install Python packages in a local Python 3 virtualenv,
+download the latest Unbranded Firefox Release into the current folder,
 move geckodriver next to the Firefox binary and install development dependencies.
 For the OpenWPM to be aware of which Firefox installation to run, set the
 FIREFOX_BINARY environment variable before running any commands.
@@ -514,11 +514,9 @@ Docker service.
 __Step 2:__ to build the image, run the following command from a terminal
 within the root OpenWPM directory:
 
+```
     docker build -f Dockerfile -t openwpm .
-
-After building the above, you may optionally build a docker image for OpenWPM development:
-
-    docker build -f Dockerfile-dev -t openwpm-dev .
+```
 
 After a few minutes, the container is ready to use.
 
@@ -526,9 +524,18 @@ After a few minutes, the container is ready to use.
 
 You can run the demo measurement from inside the container, as follows:
 
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/Desktop \
+First of all, you need to give the container permissions on your local
+X-server. You can do this by running: `xhost +local:docker`
+
+Then you can run the demo script using:
+
+```
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/root/Desktop \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
     -it openwpm python /opt/OpenWPM/demo.py
+```
+
+Instead of _python_, _python3_ can be used here as well.
 
 This command uses _bind-mounts_ to share scripts and output between the
 container and host, as explained below (note the paths in the command assume
@@ -538,7 +545,7 @@ it's being run from the root OpenWPM directory):
     `python /opt/OpenWPM/demo.py` command.
 
 - `-v` binds a directory on the host (`$PWD/docker-volume`) to a
-    directory in the container (`/home/user`). Binding allows the script's
+    directory in the container (`/root`). Binding allows the script's
     output to be saved on the host (`./docker-volume/Desktop`), and also allows
     you to pass inputs to the docker container (if necessary). We first create
     the `docker-volume` direction (if it doesn't exist), as docker will
@@ -552,6 +559,10 @@ it's being run from the root OpenWPM directory):
     running headless crawls you can remove the following options:
     `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
+Alternatively, it is possible to run jobs as the user _openwpm_ in the container
+too, but this might cause problems with none headless browers. It is therefore
+only recommended for headless crawls.
+
 Instruction on how to run Docker GUI applications in Mac OSX are available
 [here](https://stackoverflow.com/questions/37523980/running-gui-apps-on-docker-container-with-a-macbookpro-host).
 Given properly installed prerequisites (including a reboot), the helper script
@@ -560,7 +571,7 @@ working with Docker in Mac OSX.
 
 To open a bash session within the environment:
 
-    ./run-on-osx-via-docker.sh # 
+    ./run-on-osx-via-docker.sh #
 
 Or, run commands directly:
 
