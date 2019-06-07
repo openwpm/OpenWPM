@@ -343,6 +343,9 @@ export class HttpInstrument {
           if ("post_body" in postObj) {
             update.post_body = postObj.post_body;
           }
+          if ("post_body_raw" in postObj) {
+            update.post_body_raw = postObj.post_body_raw;
+          }
         }
       }
     }

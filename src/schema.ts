@@ -68,6 +68,7 @@ export interface HttpRequest {
   req_call_stack?: string;
   resource_type: string;
   post_body?: string;
+  post_body_raw?: string;
   time_stamp: DateTime;
 }
 
