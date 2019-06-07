@@ -341,7 +341,7 @@ class ParquetAggregator(BaseAggregator):
         else:
             raise ValueError(
                 "The ParquetAggregator supports saving data to the local disk "
-                "(`local`) or to Amazon S3 (`s3`). You set "
+                "(`local_parquet`) or to Amazon S3 (`s3`). You set "
                 "manager_params['output_format'] to %s." %
                 manager_params['output_format']
             )
