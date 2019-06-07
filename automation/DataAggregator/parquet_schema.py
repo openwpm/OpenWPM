@@ -83,6 +83,7 @@ fields = [
     pa.field('req_call_stack', pa.string()),
     pa.field('resource_type', pa.string(), nullable=False),
     pa.field('post_body', pa.string()),
+    pa.field('post_body_raw', pa.string()),
     pa.field('time_stamp', pa.string(), nullable=False),
 ]
 PQ_SCHEMAS['http_requests'] = pa.schema(fields)

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import base64
 import json
 import os
 from hashlib import sha256
@@ -635,6 +636,9 @@ class TestPOSTInstrument(OpenWPMTest):
         r'["name surname+"],'\
         r'"multiline_text":["line1\r\n\r\nline2 line2_word2"]}'
     post_data_multiline_json = json.loads(post_data_multiline)
+    post_data_multiline_raw = 'email=test@example.com\r\n'\
+        'username=name surname+\r\nmultiline_text=line1\r\n\r\n'\
+        'line2 line2_word2\r\n'
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
@@ -646,10 +650,14 @@ class TestPOSTInstrument(OpenWPMTest):
         return db_utils.query_db(db, "SELECT * FROM http_requests\
                                        WHERE method = 'POST'")
 
-    def get_post_request_body_from_db(self, db):
+    def get_post_request_body_from_db(self, db, raw=False):
         """Return the body of the first POST request in crawl db."""
         posts = self.get_post_requests_from_db(db)
-        return posts[0]['post_body']
+        if raw:
+            return base64.b64decode(
+                json.loads(posts[0]['post_body_raw'])[0][1])
+        else:
+            return posts[0]['post_body']
 
     def test_record_post_data_x_www_form_urlencoded(self):
         encoding_type = "application/x-www-form-urlencoded"
@@ -660,8 +668,8 @@ class TestPOSTInstrument(OpenWPMTest):
     def test_record_post_data_text_plain(self):
         encoding_type = "text/plain"
         db = self.visit('/post_request.html?encoding_type=' + encoding_type)
-        post_body = self.get_post_request_body_from_db(db)
-        assert json.loads(post_body) == self.post_data_multiline_json
+        post_body = self.get_post_request_body_from_db(db, True)
+        assert post_body.decode('utf8') == self.post_data_multiline_raw
 
     def test_record_post_data_multipart_formdata(self):
         encoding_type = "multipart/form-data"
@@ -704,11 +712,10 @@ class TestPOSTInstrument(OpenWPMTest):
     def test_record_binary_post_data(self):
         post_format = "binary"
         db = self.visit("/post_request_ajax.html?format=" + post_format)
-        post_body = self.get_post_request_body_from_db(db)
+        post_body = self.get_post_request_body_from_db(db, True)
         # Binary strings get put into the database as-if they were latin-1.
         import six
-        assert six.binary_type(
-            bytearray(range(100))) == post_body.encode('latin-1')
+        assert six.binary_type(bytearray(range(100))) == post_body
 
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.
