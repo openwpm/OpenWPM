@@ -12,8 +12,9 @@ from six.moves import input
 from six.moves.queue import Queue
 
 if six.PY2:
-    class ConnectionAbortedError(Exception):
-        pass
+    ConnectionAbortedException = socket.error
+else:
+    ConnectionAbortedException = ConnectionAbortedError
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237
@@ -51,7 +52,7 @@ class serversocket:
                                           args=(client, address))
                 thread.daemon = True
                 thread.start()
-            except ConnectionAbortedError:
+            except ConnectionAbortedException:
                 # Workaround for #278
                 print("A connection establish request was performed " +
                       "on a closed socket")
