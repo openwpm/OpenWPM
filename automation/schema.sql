@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS http_requests(
   req_call_stack TEXT,
   resource_type TEXT NOT NULL,
   post_body TEXT,
+  post_body_raw TEXT,
   time_stamp DATETIME NOT NULL
 );
 
