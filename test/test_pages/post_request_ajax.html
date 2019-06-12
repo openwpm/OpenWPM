@@ -8,14 +8,18 @@
     <script type="text/javascript" src="shared/utils.js"></script>
     <script type="application/javascript">
 
+      function do_xhr(data) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "bogus_submit.html");
+        xhr.send(data);
+      }
+
 	    function send_form_data() {
 	      // Use "FormData"
 	      var formData = new FormData();
 	      formData.append("email", "test@example.com");
 	      formData.append("username", "name surname+");
-	      var request = new XMLHttpRequest();
-	      request.open("POST", "/bogus_submit");
-	      request.send(formData);
+	      do_xhr(formData);
 	    }
 
 	    function send_binary_data(){
@@ -27,9 +31,7 @@
 	        longInt8View[i] = i % 255;
 	      }
 
-	      var xhr = new XMLHttpRequest;
-	      xhr.open("POST", "ajax_post.html", false);
-	      xhr.send(myArray);
+        do_xhr(myArray);
 	    }
 
       $(document).ready(function(){
@@ -40,9 +42,9 @@
           var post_obj = {email:"test@example.com", username:"name surname+"};
           $.post("bogus_submit.html", post_obj);
         } else if (format == "noKeyValue") {
-          $.post("bogus_submit.html", 'test@example.com + name surname', null, "text");
+          do_xhr('test@example.com + name surname');
         } else if (format == "noKeyValueBase64") {
-          $.post("bogus_submit.html", btoa('test@example.com + name surname'), null, "text");
+          do_xhr(btoa('test@example.com + name surname'));
         } else if (format == "binary") {
           send_binary_data();
         }
