@@ -20,7 +20,6 @@ from six.moves import range
 
 from ..MPLogger import loggingclient
 from ..SocketInterface import clientsocket
-from .utils.firefox_profile import get_cookies
 from .utils.lso import get_flash_cookies
 from .utils.webdriver_extensions import (execute_in_all_frames,
                                          execute_script_with_retry,
@@ -198,36 +197,6 @@ def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
         data["crawl_id"] = browser_params["crawl_id"]
         data["visit_id"] = visit_id
         sock.send(("flash_cookies", data))
-
-    # Close connection to db
-    sock.close()
-
-
-def dump_profile_cookies(start_time, visit_id, webdriver,
-                         browser_params, manager_params):
-    """ Save changes to Firefox's cookies.sqlite to database
-
-    We determine which cookies to save by the `start_time` timestamp.
-    This timestamp should be taken prior to calling the `get` for
-    which creates these changes.
-
-    Note that the extension's cookieInstrument is preferred to this approach,
-    as this is likely to miss changes still present in the sqlite `wal` files.
-    This will likely be removed in a future version.
-    """
-    # Set up a connection to DataAggregator
-    tab_restart_browser(webdriver)  # kills window to avoid stray requests
-    sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
-
-    # Cookies
-    rows = get_cookies(browser_params['profile_path'], start_time)
-    if rows is not None:
-        for row in rows:
-            data = dict(row)
-            data["crawl_id"] = browser_params['crawl_id']
-            data["visit_id"] = visit_id
-            sock.send(("profile_cookies", data))
 
     # Close connection to db
     sock.close()

@@ -114,18 +114,10 @@ available [below](#output-format).
     * NOTE: Flash cookies are shared across browsers, so this instrumentation
         will not correctly attribute flash cookie changes if more than 1
         browser is running on the machine.
-* Cookie Access (*Experimental* -- Needs tests)
+* Cookie Access
     * Set `browser_params['cookie_instrument'] = True`
     * Data is saved to the `javascript_cookies` table.
     * Will record cookies set both by Javascript and via HTTP Responses
-* Cookie Access (Alternate)
-    * Recorded by scanning the `cookies.sqlite` database in the Firefox profile
-        directory.
-    * Should contain both cookies added by Javascript and by HTTP Responses
-    * To enable: call the `CommandSequence::dump_profile_cookies` command after
-        a page visit. Note that calling this command will close the current tab
-        before recording the cookie changes.
-    * Data is saved to the `profile_cookies` table
 * Log Files
     * Stored in the directory specified by `manager_params['data_directory']`.
     * Name specified by `manager_params['log_file']`.
@@ -329,7 +321,7 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 for site in sites:
     command_sequence = CommandSequence.CommandSequence(site, reset=True)
     command_sequence.get(sleep=30, timeout=60)
-    command_sequence.dump_profile_cookies(120)
+    command_sequence.dump_flash_cookies(120)
     manager.execute_command_sequence(command_sequence)
 ```
 
