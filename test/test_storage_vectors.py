@@ -94,25 +94,6 @@ class TestStorageVectors(OpenWPMTest):
         assert lso_content_a == expected_lso_content_a
         assert lso_content_b == expected_lso_content_b
 
-    def test_profile_cookies(self):
-        """ Check that some profile cookies are saved """
-        # Run the test crawl
-        manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        # TODO update this to local test site
-        url = 'http://www.yahoo.com'
-        cs = CommandSequence.CommandSequence(url)
-        cs.get(sleep=3, timeout=120)
-        cs.dump_profile_cookies()
-        manager.execute_command_sequence(cs)
-        manager.close()
-
-        # Check that some flash cookies are recorded
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT COUNT(*) FROM profile_cookies")
-        prof_cookie_count = qry_res[0][0]
-        assert prof_cookie_count > 0
-
     def test_js_profile_cookies(self):
         """ Check that profile cookies set by JS are saved """
         # Run the test crawl

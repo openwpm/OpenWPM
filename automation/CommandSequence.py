@@ -11,16 +11,16 @@ class CommandSequence:
 
     sequence = CommandSequence(url)
     sequence.get()
-    sequence.dump_profile_cookies()
+    sequence.save_screenshot()
     task_manager.execute_command_sequence(sequence)
 
     CommandSequence guarantees that a series of commands will be performed
     by a single browser instance.
 
-    NOTE: Commands dump_profile_cookies and dump_flash_cookies will close
+    NOTE: Command dump_flash_cookies will close
     the current tab - any command that relies on the page still being open,
     like save_screenshot, extract_links, or dump_page_source, should be
-    called prior to one of those two commands.
+    called prior to that.
     """
 
     def __init__(self, url, reset=False, blocking=False):
@@ -65,17 +65,6 @@ class CommandSequence:
                 "No get or browse request preceding "
                 "the dump storage vectors command", self)
         command = ('DUMP_FLASH_COOKIES',)
-        self.commands_with_timeout.append((command, timeout))
-
-    def dump_profile_cookies(self, timeout=60):
-        """ dumps from the profile path to a given file (absolute path)
-        Side effect: closes the current tab."""
-        self.total_timeout += timeout
-        if not self.contains_get_or_browse:
-            raise CommandExecutionError(
-                "No get or browse request preceding "
-                "the dump storage vectors command", self)
-        command = ('DUMP_PROFILE_COOKIES',)
         self.commands_with_timeout.append((command, timeout))
 
     def dump_profile(self, dump_folder, close_webdriver=False,

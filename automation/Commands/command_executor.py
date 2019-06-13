@@ -27,12 +27,6 @@ def execute_command(command, webdriver, browser_settings, browser_params,
             webdriver=webdriver, browser_params=browser_params,
             manager_params=manager_params)
 
-    if command[0] == 'DUMP_PROFILE_COOKIES':
-        browser_commands.dump_profile_cookies(
-            start_time=command[1], visit_id=command[2],
-            webdriver=webdriver, browser_params=browser_params,
-            manager_params=manager_params)
-
     if command[0] == 'DUMP_PROF':
         profile_commands.dump_profile(
             browser_profile_folder=browser_params['profile_path'],

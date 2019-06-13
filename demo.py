@@ -19,6 +19,8 @@ manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 for i in range(NUM_BROWSERS):
     # Record HTTP Requests and Responses
     browser_params[i]['http_instrument'] = True
+    # Record cookie changes
+    browser_params[i]['cookie_instrument'] = True
     # Enable flash for all three browsers
     browser_params[i]['disable_flash'] = False
 if platform != 'darwin':
@@ -37,10 +39,7 @@ for site in sites:
     command_sequence = CommandSequence.CommandSequence(site)
 
     # Start by visiting the page
-    command_sequence.get(sleep=0, timeout=60)
-
-    # dump_profile_cookies/dump_flash_cookies closes the current tab.
-    command_sequence.dump_profile_cookies(120)
+    command_sequence.get(sleep=3, timeout=60)
 
     # index='**' synchronizes visits between the three browsers
     manager.execute_command_sequence(command_sequence, index='**')
