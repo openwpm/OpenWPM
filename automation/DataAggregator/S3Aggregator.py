@@ -4,7 +4,7 @@ import base64
 import gzip
 import hashlib
 import json
-import uuid
+import random
 from collections import defaultdict
 
 import boto3
@@ -284,7 +284,7 @@ class S3Aggregator(BaseAggregator):
         self.dir = manager_params['s3_directory']
         self.bucket = manager_params['s3_bucket']
         self.s3 = boto3.client('s3')
-        self._instance_id = (uuid.uuid4().int & (1 << 32) - 1) - 2**31
+        self._instance_id = random.getrandbits(32)
         self._create_bucket()
 
     def _create_bucket(self):
@@ -325,17 +325,21 @@ class S3Aggregator(BaseAggregator):
             raise
 
     def get_next_visit_id(self):
-        """Generate visit id as randomly generated 64bit UUIDs
+        """Generate visit id as randomly generated 53bit random number
+
+        The database supports visit ids up to 64 bit, but JavaScript might
+        truncate numbers larger than 53 bit. Therefore, only 53 bit integers
+        are used here.
         """
-        return (uuid.uuid4().int & (1 << 64) - 1) - 2**63
+        return random.getrandbits(53)
 
     def get_next_crawl_id(self):
-        """Generate crawl id as randomly generated 32bit UUIDs
+        """Generate crawl id as randomly generated 32bit random number
 
         Note: Parquet's partitioned dataset reader only supports integer
         partition columns up to 32 bits.
         """
-        return (uuid.uuid4().int & (1 << 32) - 1) - 2**31
+        return random.getrandbits(32)
 
     def launch(self):
         """Launch the aggregator listener process"""
