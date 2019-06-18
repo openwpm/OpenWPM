@@ -46,6 +46,17 @@ jobs:
       install:
       script:
         - docker build -f Dockerfile -t openwpm .
+    - language:
+      python:
+      env:
+        - TESTS="Dockerfile-dev"
+      services:
+        - docker
+      before_install:
+      before_script:
+      install:
+      script:
+        - docker build -f Dockerfile-dev -t openwpm-dev .
     - language: node_js
       python:
       env:

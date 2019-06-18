@@ -47,7 +47,12 @@ COPY --from=extension /usr/src/app/dist/openwpm-*.zip automation/Extension/firef
 
 # Technically, the automation/Extension/firefox directory could be skipped
 # here, but there is no nice way to do that with the Docker COPY command
-COPY . .
+COPY *.py ./
+COPY automation/*.py automation/*.json automation/*.sql automation/
+COPY automation/Commands automation/Commands/
+COPY automation/DataAggregator automation/DataAggregator/
+COPY automation/DeployBrowsers automation/DeployBrowsers/
+COPY automation/utilities automation/utilities/
 
 # Optionally create an OpenWPM user. This is not strictly required since it is
 # possible to run everything as root as well.

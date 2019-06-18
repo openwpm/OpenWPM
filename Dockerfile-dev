@@ -1,0 +1,44 @@
+FROM ubuntu:18.04
+
+WORKDIR /opt/OpenWPM
+# This is just a performance optimization and can be skipped by non-US
+# based users
+RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
+
+RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && apt-get update -y && apt-get upgrade -y && apt-get install sudo -y
+
+# Install the Ubuntu packages as well as firefox and the geckodriver first
+COPY ./install-system.sh .
+RUN ./install-system.sh --no-flash
+
+# Instead of running install-pip-and-packages.sh, the packages are installed
+# manually using pip and pip3 so that python2 and python3 are supported in the
+# final image.
+RUN apt-get -y install python-pip python3-pip
+
+# For some reasons, python3-publicsuffix doesn't work with pip3 at the moment,
+# so install it from the ubuntu repository
+RUN apt-get -y install python3-publicsuffix
+
+COPY requirements.txt .
+RUN pip3 install -U -r requirements.txt && pip install -U -r requirements.txt
+
+# Install node, it's required to build the extension in the same image.
+COPY install-node.sh .
+RUN ./install-node.sh
+RUN npm config set unsafe-perm true
+
+# Add and build the extension
+COPY automation/Extension/firefox ./automation/Extension/firefox
+COPY automation/Extension/webext-instrumentation ./automation/Extension/webext-instrumentation
+COPY build-extension.sh .
+RUN ./build-extension.sh
+
+COPY . .
+
+# Optionally create an OpenWPM user. This is not strictly required since it is
+# possible to run everything as root as well.
+RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
+
+# Alternatively, python3 could be used here
+CMD python demo.py
