@@ -6,6 +6,7 @@ import os
 from hashlib import sha256
 from time import sleep
 
+import pytest
 from six.moves import range
 from six.moves.urllib.parse import urlparse
 
@@ -718,6 +719,8 @@ class TestPOSTInstrument(OpenWPMTest):
         import six
         assert six.binary_type(bytearray(range(100))) == post_body
 
+    @pytest.mark.skip(reason="Firefox is currently not able to return the "
+                      "file content for an upload, only the filename")
     def test_record_file_upload(self):
         """Test that we correctly capture the uploaded file contents.
 
@@ -726,6 +729,14 @@ class TestPOSTInstrument(OpenWPMTest):
 
         File uploads are not expected in the crawl data, but we make sure we
         correctly parse the POST data in this very common scenario.
+
+        Firefox is currently not able to return the FormData with the file
+        contents, currently only the filenames are returned. This is due to
+        a limitation in the current API implementation:
+
+        https://searchfox.org/mozilla-central/rev/b3b401254229f0a26f7ee625ef5f09c6c31e3949/toolkit/components/extensions/webrequest/WebRequestUpload.jsm#339
+
+        Therefore, the test is currently skipped.
         """
         img_file_path = os.path.abspath("test_pages/shared/test_image.png")
         css_file_path = os.path.abspath("test_pages/shared/test_style.css")
