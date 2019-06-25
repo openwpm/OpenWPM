@@ -191,25 +191,6 @@ def local_s3_bucket(resource, name='localstack-foo'):
     return name
 
 
-def download_s3_directory(resource, client, source, destination, bucket):
-    paginator = client.get_paginator('list_objects')
-    for result in paginator.paginate(
-            Bucket=bucket, Delimiter='/', Prefix=source):
-        if result.get('CommonPrefixes') is not None:
-            for subdir in result.get('CommonPrefixes'):
-                download_s3_directory(
-                    resource, client, subdir.get('Prefix'),
-                    destination, bucket
-                )
-        for f in result.get('Contents', []):
-            dest_pathname = os.path.join(destination, f.get('Key'))
-            print("Downloading " + dest_pathname)
-            if not os.path.exists(os.path.dirname(dest_pathname)):
-                os.makedirs(os.path.dirname(dest_pathname))
-            resource.meta.client.download_file(
-                bucket, f.get('Key'), dest_pathname)
-
-
 class LocalS3Dataset(object):
     def __init__(self, bucket, directory):
         self.bucket_uri = '%s/%s/visits/%%s' % (bucket, directory)
