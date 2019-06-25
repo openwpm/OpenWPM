@@ -4,11 +4,7 @@ Allows WebExtensions to track and monitor privacy-related browsing behavior
 
 ## Installation
 
-This package is yet to be published to npm, but can be installed directly from Github as follows:
-
-```
-npm install --save mozilla/openwpm-webext-instrumentation
-```
+This package is yet to be published to npm.
 
 ## Instrumentation
 
@@ -24,7 +20,7 @@ More specifically, all packets sent by the instrumentation conform to [these int
 
 The instrumentation is designed to invoke a `dataReceiver` object whenever a packet or log entry is available.
 
-Pending proper documentation, the best way to see how this library is used is to check how the instrumentation is incorporated into the following projects:
+Pending proper documentation, the best way to see how this library is used is to check how the instrumentation is incorporated into the following extensions:
 
- * https://github.com/citp/OpenWPM/tree/develop
+ * https://github.com/mozilla/OpenWPM/tree/master/automation/Extension/firefox
  * https://github.com/motin/jestr-pioneer-shield-study
