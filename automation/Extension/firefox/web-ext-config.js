@@ -10,7 +10,7 @@ const defaultConfig = {
     overwriteDest: true,
   },
   run: {
-    firefox: process.env.FIREFOX_BINARY || "firefox",
+    firefox: process.env.FIREFOX_BINARY || "firefoxdeveloperedition",
     browserConsole: true,
     startUrl: ["about:debugging"],
     pref: ["extensions.legacy.enabled=true"],
