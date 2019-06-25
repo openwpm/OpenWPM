@@ -25,6 +25,7 @@ before_install:
 install:
   - echo "y" | ./install.sh
   - pip install -r requirements.txt
+  - ./install-dev.sh
 before_script:
   - flake8
 script:
