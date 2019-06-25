@@ -6,8 +6,10 @@ from os.path import dirname, realpath
 from random import choice
 
 import boto3
+import pyarrow.parquet as pq
+import s3fs
 from botocore.credentials import Credentials
-
+from pyarrow.filesystem import S3FSWrapper  # noqa
 from six.moves import range, socketserver
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
 from six.moves.urllib.parse import parse_qs, urlparse
@@ -143,9 +145,13 @@ class LocalS3Session(object):
     setup as the default boto3 Session
     Based on localstack_client/session.py
     """
-    def __init__(self, aws_access_key_id='accesskey', aws_secret_access_key='secretkey',
-                 aws_session_token='token', region_name='us-east-1', endpoint_url='http://localhost:4572',
-                 botocore_session=None, profile_name=None, localstack_host=None):
+
+    def __init__(self, aws_access_key_id='accesskey',
+                 aws_secret_access_key='secretkey',
+                 aws_session_token='token', region_name='us-east-1',
+                 endpoint_url='http://localhost:4572',
+                 botocore_session=None, profile_name=None,
+                 localstack_host=None):
         self.env = 'local'
         self.session = boto3.session.Session()
         self.aws_access_key_id = aws_access_key_id
@@ -155,54 +161,62 @@ class LocalS3Session(object):
         self.endpoint_url = endpoint_url
 
     def resource(self, service_name, **kwargs):
-        return self.session.resource(service_name,
-                                     endpoint_url=self.endpoint_url,
-                                     aws_access_key_id=self.aws_access_key_id,
-                                     aws_secret_access_key=self.aws_secret_access_key,
-                                     region_name=self.region_name, verify=False)
+        return self.session.resource(
+            service_name,
+            endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.region_name, verify=False
+        )
 
     def get_credentials(self):
-        return Credentials(access_key=self.aws_access_key_id,
-                           secret_key=self.aws_secret_access_key,
-                           token=self.aws_session_token)
+        return Credentials(
+            access_key=self.aws_access_key_id,
+            secret_key=self.aws_secret_access_key,
+            token=self.aws_session_token
+        )
 
     def client(self, service_name, **kwargs):
-        return self.session.client(service_name, endpoint_url=self.endpoint_url,
-                                   aws_access_key_id=self.aws_access_key_id,
-                                   aws_secret_access_key=self.aws_secret_access_key,
-                                   region_name=self.region_name, verify=False)
-
-    def resource(self, service_name, **kwargs):
-        return self.session.resource(service_name,
-                                     endpoint_url=self.endpoint_url,
-                                     aws_access_key_id=self.aws_access_key_id,
-                                     aws_secret_access_key=self.aws_secret_access_key,
-                                     region_name=self.region_name, verify=False)
+        return self.session.client(
+            service_name, endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.region_name, verify=False
+        )
 
 
-def local_s3_bucket():
-    """Use localstack as our local S3 service."""
-    # Make boto3 use our localstack S3 endpoint
-    boto3.DEFAULT_SESSION = LocalS3Session()
-    # Create a local bucket
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket('localstack-foo')
+def local_s3_bucket(resource, name='localstack-foo'):
+    bucket = resource.Bucket(name)
     bucket.create()
-    return 'localstack-foo'
+    return name
 
 
-def download_s3_directory(dir, destination='/tmp', bucket='your_bucket'):
-    client = boto3.client('s3')
-    resource = boto3.resource('s3')
+def download_s3_directory(resource, client, source, destination, bucket):
     paginator = client.get_paginator('list_objects')
-    for result in paginator.paginate(Bucket=bucket, Delimiter='/', Prefix=dir):
+    for result in paginator.paginate(
+            Bucket=bucket, Delimiter='/', Prefix=source):
         if result.get('CommonPrefixes') is not None:
             for subdir in result.get('CommonPrefixes'):
                 download_s3_directory(
-                    subdir.get('Prefix'), destination, bucket)
-        for file in result.get('Contents', []):
-            dest_pathname = os.path.join(destination, file.get('Key'))
+                    resource, client, subdir.get('Prefix'),
+                    destination, bucket
+                )
+        for f in result.get('Contents', []):
+            dest_pathname = os.path.join(destination, f.get('Key'))
+            print("Downloading " + dest_pathname)
             if not os.path.exists(os.path.dirname(dest_pathname)):
                 os.makedirs(os.path.dirname(dest_pathname))
             resource.meta.client.download_file(
-                bucket, file.get('Key'), dest_pathname)
+                bucket, f.get('Key'), dest_pathname)
+
+
+class LocalS3Dataset(object):
+    def __init__(self, bucket, directory):
+        self.bucket_uri = '%s/%s/visits/%%s' % (bucket, directory)
+        self.s3_fs = s3fs.S3FileSystem(session=LocalS3Session())
+
+    def load_table(self, table_name):
+        return pq.ParquetDataset(
+            self.bucket_uri % table_name,
+            filesystem=self.s3_fs
+        ).read_pandas().to_pandas()
