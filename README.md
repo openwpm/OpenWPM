@@ -518,6 +518,16 @@ within the root OpenWPM directory:
 
 After a few minutes, the container is ready to use.
 
+Optionally, you may consider using a container to test and develop OpenWPM
+using the _Dockerfile-dev_ dockerfile. The resulting image contains everything
+the standard OpenWPM image contains and also the _.git_ folder, the tests and
+the build environment for the OpenWPM Firefox extension. Use the following
+command to build the development image:
+
+```
+    docker build -f Dockerfile-dev -t openwpm-dev .
+```
+
 ### Running Measurements from inside the Container
 
 You can run the demo measurement from inside the container, as follows:
