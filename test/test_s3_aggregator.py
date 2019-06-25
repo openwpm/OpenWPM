@@ -23,7 +23,6 @@ class TestS3Aggregator(OpenWPMTest):
     @classmethod
     def teardown_class(self):
         infra.stop_infra()
-        return
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
