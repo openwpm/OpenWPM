@@ -31,4 +31,4 @@ class TestDependencies(OpenWPMTest):
 
     def test_py_pkgs(self):
         self.check_py_pkgs(join(self.BASE_DIR, "requirements.txt"))
-        self.check_py_pkgs(join(dirname(__file__), "requirements.txt"))
+        self.check_py_pkgs(join(self.BASE_DIR, "requirements-dev.txt"))
