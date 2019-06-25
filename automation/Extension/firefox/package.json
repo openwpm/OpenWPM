@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "author": "Mozilla",
   "dependencies": {
-    "openwpm-webext-instrumentation": "github:mozilla/openwpm-webext-instrumentation#master"
+    "openwpm-webext-instrumentation": "../webext-instrumentation"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
@@ -38,7 +38,7 @@
     "url": "https://github.com/mozilla/openwpm-firefox-webext"
   },
   "scripts": {
-    "prebuild": "webpack",
+    "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
     "build": "web-ext build",
     "eslint": "eslint . --ext jsm,js,json",
     "lint": "npm-run-all lint:*",
