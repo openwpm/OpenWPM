@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import os
-
 import boto3
 from localstack.services import infra
 
@@ -36,8 +34,7 @@ class TestS3Aggregator(OpenWPMTest):
         TEST_SITE = "%s/http_test_page.html" % BASE_TEST_URL
 
         # Run the test crawl
-        data_dir = os.path.join(str(tmpdir), 'data_dir')
-        manager_params, browser_params = self.get_config(data_dir)
+        manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get(TEST_SITE)
         manager.close()

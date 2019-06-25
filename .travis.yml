@@ -25,11 +25,11 @@ before_install:
 install:
   - echo "y" | ./install.sh
   - pip install -r requirements.txt
-  - pip install -r requirements-dev.txt
 before_script:
   - flake8
 script:
   - cd test
+  - pip install -r requirements-dev.txt
   - py.test -s -v --durations=10 $TESTS
 
 jobs:
