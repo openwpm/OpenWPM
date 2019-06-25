@@ -4,20 +4,15 @@
 FROM node:10 as extension
 WORKDIR /usr/src/app
 
-# Copy the package.json and package-lock.json first and install all the
-# packages. Should the source code of the extension be changed without
-# altering the list of required packages, this step can be cached by Docker.
-COPY automation/Extension/firefox/package*.json ./
-
 # The extension needs to run for example the TypeScript transpiler
 # to generate the JavaScript code of the extension. This must be done as root
 # as long as the directory of the extension is only writeable as root.
 RUN npm config set unsafe-perm true
 
-RUN npm install
 COPY automation/Extension/firefox/. ./
+COPY automation/Extension/webext-instrumentation/. ../webext-instrumentation
+RUN npm install
 RUN npm run build
-
 
 # Stage 2, build the main OpenWPM image
 FROM ubuntu:18.04
