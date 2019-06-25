@@ -39,6 +39,7 @@
   },
   "scripts": {
     "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
+    "postinstall": "cd ../webext-instrumentation && npm install",
     "build": "web-ext build",
     "eslint": "eslint . --ext jsm,js,json",
     "lint": "npm-run-all lint:*",
