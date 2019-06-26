@@ -22,12 +22,14 @@ git:
   depth: 3
 before_install:
   - "export DISPLAY=:99.0"
+  - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
   - echo "y" | ./install.sh
   - pip install -r requirements.txt
 before_script:
   - flake8
 script:
+  - pip install -r requirements-dev.txt
   - cd test
   - py.test -s -v --durations=10 $TESTS
 

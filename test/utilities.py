@@ -5,6 +5,11 @@ import threading
 from os.path import dirname, realpath
 from random import choice
 
+import boto3
+import pyarrow.parquet as pq
+import s3fs
+from botocore.credentials import Credentials
+from pyarrow.filesystem import S3FSWrapper  # noqa
 from six.moves import range, socketserver
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
 from six.moves.urllib.parse import parse_qs, urlparse
@@ -132,3 +137,67 @@ def rand_str(size=8):
     """Return random string with the given size."""
     RAND_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
     return ''.join(choice(RAND_CHARS) for _ in range(size))
+
+
+class LocalS3Session(object):
+    """
+    Ensures that the local s3 service is used when
+    setup as the default boto3 Session
+    Based on localstack_client/session.py
+    """
+
+    def __init__(self, aws_access_key_id='accesskey',
+                 aws_secret_access_key='secretkey',
+                 aws_session_token='token', region_name='us-east-1',
+                 endpoint_url='http://localhost:4572',
+                 botocore_session=None, profile_name=None,
+                 localstack_host=None):
+        self.env = 'local'
+        self.session = boto3.session.Session()
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.aws_session_token = aws_session_token
+        self.region_name = region_name
+        self.endpoint_url = endpoint_url
+
+    def resource(self, service_name, **kwargs):
+        return self.session.resource(
+            service_name,
+            endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.region_name, verify=False
+        )
+
+    def get_credentials(self):
+        return Credentials(
+            access_key=self.aws_access_key_id,
+            secret_key=self.aws_secret_access_key,
+            token=self.aws_session_token
+        )
+
+    def client(self, service_name, **kwargs):
+        return self.session.client(
+            service_name, endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.region_name, verify=False
+        )
+
+
+def local_s3_bucket(resource, name='localstack-foo'):
+    bucket = resource.Bucket(name)
+    bucket.create()
+    return name
+
+
+class LocalS3Dataset(object):
+    def __init__(self, bucket, directory):
+        self.bucket_uri = '%s/%s/visits/%%s' % (bucket, directory)
+        self.s3_fs = s3fs.S3FileSystem(session=LocalS3Session())
+
+    def load_table(self, table_name):
+        return pq.ParquetDataset(
+            self.bucket_uri % table_name,
+            filesystem=self.s3_fs
+        ).read_pandas().to_pandas()
