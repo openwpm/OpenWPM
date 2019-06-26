@@ -13,17 +13,15 @@ env:
 # Once we add and remove tests, this distribution may become unbalanced.
 # Feel free to move tests around to make the running time of the jobs
 # as close as possible.
-#  - TESTS=test_[a-b,d-e]*
+  - TESTS=test_[a-b,d-e]*
 # test_crawl.py is the longest running test.
-#  - TESTS=test_c*
-#  - TESTS=test_[f-h]*
-#  - TESTS=test_[i-z]*
-  - TESTS=test_s3*
+  - TESTS=test_c*
+  - TESTS=test_[f-h]*
+  - TESTS=test_[i-z]*
 git:
   depth: 3
 before_install:
   - "export DISPLAY=:99.0"
-  - "export DEBUG=1"
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
   - echo "y" | ./install.sh
