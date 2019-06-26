@@ -13,7 +13,7 @@ class TestS3Aggregator(OpenWPMTest):
 
     @classmethod
     def setup_class(self):
-        infra.start_infra(asynchronous=True)
+        infra.start_infra(asynchronous=True, apis=["s3"])
         boto3.DEFAULT_SESSION = LocalS3Session()
         self.s3_client = boto3.client('s3')
         self.s3_resource = boto3.resource('s3')
