@@ -28,8 +28,8 @@ install:
 before_script:
   - flake8
 script:
-  - cd test
   - pip install -r requirements-dev.txt
+  - cd test
   - py.test -s -v --durations=10 $TESTS
 
 jobs:
