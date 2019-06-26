@@ -20,6 +20,8 @@ C:\\nppdf32Log\\debuglog.txt
 .idea/*
 *.idea
 */idea
+
+# Local Python virtual environments
 venv/
 
 # Byte-compiled / optimized / DLL files
@@ -79,7 +81,7 @@ docs/_build/
 # npm packages
 node_modules
 
-# built extension
+# built extension artifacts
 automation/Extension/firefox/dist
 automation/Extension/firefox/openwpm.xpi
 automation/Extension/firefox/src/content.js
