@@ -110,7 +110,16 @@ export class JavascriptInstrument {
     });
   }
 
-  public async registerContentScript() {
+  public async registerContentScript(testing = false) {
+    if (testing) {
+      await browser.contentScripts.register({
+        js: [{ code: "window.openWpmTesting = true;" }],
+        matches: ["<all_urls>"],
+        allFrames: true,
+        runAt: "document_start",
+        matchAboutBlank: true,
+      });
+    }
     return browser.contentScripts.register({
       js: [{ file: "/content.js" }],
       matches: ["<all_urls>"],

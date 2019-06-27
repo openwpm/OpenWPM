@@ -1,4 +1,4 @@
 import { injectJavascriptInstrumentPageScript } from "openwpm-webext-instrumentation";
 
-injectJavascriptInstrumentPageScript(true);
-
+const testing = window.openWpmTesting || false;
+injectJavascriptInstrumentPageScript(testing);
