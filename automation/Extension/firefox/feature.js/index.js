@@ -48,6 +48,7 @@ async function main() {
     loggingDB.logDebug("Javascript instrumentation enabled");
     let jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
+    await jsInstrument.registerContentScript();
   }
 
   if (config['http_instrument']) {

@@ -6,15 +6,7 @@
   "background": {
     "scripts": ["feature.js"]
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_start",
-      "all_frames": true,
-      "match_about_blank": true
-    }
-  ],
+  "content_scripts": [],
   "applications": {
     "gecko": {
       "id": "openwpm@mozilla.org",
