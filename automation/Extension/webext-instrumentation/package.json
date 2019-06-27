@@ -38,7 +38,9 @@
     "clean": "trash build test",
     "all": "run-s reset test cov:check doc:html",
     "prepare": "run-s build",
-    "prepare-release": "run-s all version doc:publish"
+    "prepare-release": "run-s all version doc:publish",
+    "publish-please": "publish-please",
+    "prepublishOnly": "publish-please guard"
   },
   "scripts-info": {
     "info": "Display information about the package scripts",
@@ -68,6 +70,7 @@
     "nyc": "^13.0.1",
     "opn-cli": "^3.1.0",
     "prettier": "^1.14.3",
+    "publish-please": "^5.4.3",
     "standard-version": "^4.4.0",
     "trash-cli": "^1.4.0",
     "tslint": "^5.11.0",
