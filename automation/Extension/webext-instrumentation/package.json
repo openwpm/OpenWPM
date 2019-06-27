@@ -31,7 +31,9 @@
     "doc:html": "typedoc src/ --target ES6 --mode file --out build/docs",
     "doc:json": "typedoc src/ --target ES6 --mode file --json build/docs/typedoc.json",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
-    "version": "standard-version",
+    "version-major": "standard-version --release-as major",
+    "version-minor": "standard-version --release-as minor",
+    "version-patch": "standard-version --release-as patch",
     "reset": "git clean -dfx && git reset --hard && npm i",
     "clean": "trash build test",
     "all": "run-s reset test cov:check doc:html",
@@ -86,6 +88,13 @@
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "standard-version": {
+    "tag-prefix": "webext-instrumentation/v",
+    "infile": "README.md",
+    "skip": {
+      "changelog": true
     }
   },
   "prettier": {
