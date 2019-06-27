@@ -30,9 +30,9 @@ export const escapeUrl = function(
 // Base64 encoding, found on:
 // https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
 export const Uint8ToBase64 = function(u8Arr: Uint8Array) {
-  let CHUNK_SIZE = 0x8000; // arbitrary number
+  const CHUNK_SIZE = 0x8000; // arbitrary number
   let index = 0;
-  let length = u8Arr.length;
+  const length = u8Arr.length;
   let result = "";
   let slice: Uint8Array;
   while (index < length) {
