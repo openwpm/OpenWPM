@@ -557,10 +557,7 @@ export class HttpInstrument {
       const responseBodyListener = pendingResponse.responseBodyListener;
       const respBody = await responseBodyListener.getResponseBody();
       const contentHash = await responseBodyListener.getContentHash();
-      this.dataReceiver.saveContent(
-        respBody,
-        escapeString(contentHash),
-      );
+      this.dataReceiver.saveContent(respBody, escapeString(contentHash));
       update.content_hash = contentHash;
       this.dataReceiver.saveRecord("http_responses", update);
     } catch (err) {
