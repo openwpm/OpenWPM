@@ -35,14 +35,37 @@ script:
 
 jobs:
   include:
-    language:
-    python:
-    env:
-      - TESTS="Docker"
-    services:
-      - docker
-    before_install:
-    before_script:
-    install:
-    script:
-      - docker build -f Dockerfile -t openwpm .
+    - language:
+      python:
+      env:
+        - TESTS="Docker"
+      services:
+        - docker
+      before_install:
+      before_script:
+      install:
+      script:
+        - docker build -f Dockerfile -t openwpm .
+    - language: node_js
+      python:
+      env:
+        - TESTS="webext-instrumentation"
+      before_install:
+      - cd automation/Extension/webext-instrumentation
+      before_script:
+      install:
+        - npm install
+      script:
+        - npm test
+      sudo: false
+      node_js:
+        - "8"
+        - "10"
+        - "12"
+      # keep the npm cache to speed up installs
+      cache:
+        directories:
+        - "$HOME/.npm"
+      after_success:
+        - npx nyc report --reporter=lcov | npx codecov
+        - npm run cov:check
