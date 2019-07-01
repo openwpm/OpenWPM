@@ -5,7 +5,7 @@
     "untrackedFiles": true,
     "sensitiveData": true,
     "branch": "master",
-    "gitTag": false
+    "gitTag": "webext-instrumentation/v"
   },
   "confirm": true,
   "publishCommand": "npm publish",
