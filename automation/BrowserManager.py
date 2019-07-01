@@ -5,7 +5,6 @@ import os
 import shutil
 import signal
 import sys
-import tempfile
 import time
 import traceback
 
@@ -16,7 +15,7 @@ from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 
-from .Commands import command_executor, profile_commands
+from .Commands import command_executor
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .MPLogger import loggingclient
@@ -78,8 +77,8 @@ class Browser:
 
     def ready(self):
         """ return if the browser is ready to accept a command """
-        return (self.command_thread is None or
-                not self.command_thread.is_alive())
+        return self.command_thread is None or \
+            not self.command_thread.is_alive()
 
     def set_visit_id(self, visit_id):
         self.curr_visit_id = visit_id
@@ -89,8 +88,10 @@ class Browser:
         sets up the BrowserManager and gets the process id, browser pid and,
         if applicable, screen pid. loads associated user profile if necessary
         """
+        # Unsupported. See https://github.com/mozilla/OpenWPM/projects/2
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
+        """
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_") + "/"
@@ -108,8 +109,9 @@ class Browser:
             self.browser_params['random_attributes'] = False
             crash_recovery = True
         else:
-            tempdir = None
-            crash_recovery = False
+        """
+        tempdir = None
+        crash_recovery = False
         self.is_fresh = not crash_recovery
 
         # Try to spawn the browser within the timelimit
@@ -127,8 +129,8 @@ class Browser:
                 raise BrowserCrashError(
                     'Browser spawn returned failure status')
 
-        while (not success and
-                unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT):
+        while not success and \
+                unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT:
             self.logger.debug("BROWSER %i: Spawn attempt %i " % (
                 self.crawl_id, unsuccessful_spawns))
             # Resets the command/status queues
@@ -229,8 +231,8 @@ class Browser:
                 self.crawl_id, self.browser_manager.pid, self.display_pid,
                 self.display_port, self.browser_pid)
         )
-        if (self.browser_manager is not None and
-                self.browser_manager.pid is not None):
+        if self.browser_manager is not None and \
+                self.browser_manager.pid is not None:
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
@@ -305,6 +307,15 @@ class Browser:
         self.kill_browser_manager()
 
         # Archive browser profile (if requested)
+        if not during_init and \
+                self.browser_params['profile_archive_dir'] is not None:
+            self.logger.warn(
+                "BROWSER %i: Archiving the browser profile directory is "
+                "currently unsupported. "
+                "See: https://github.com/mozilla/OpenWPM/projects/2" %
+                self.crawl_id
+            )
+        """
         self.logger.debug(
             "BROWSER %i: during_init=%s | profile_archive_dir=%s" % (
                 self.crawl_id, str(during_init),
@@ -325,6 +336,7 @@ class Browser:
                 compress=True,
                 save_flash=self.browser_params['disable_flash'] is False
             )
+        """
 
         # Clean up temporary files
         if self.current_profile_path is not None:
@@ -351,8 +363,8 @@ def BrowserManager(command_queue, status_queue, browser_params,
 
         # Read the extension port -- if extension is enabled
         # TODO: Initial communication from extension to TM should use sockets
-        if (browser_params['browser'] == 'firefox' and
-                browser_params['extension_enabled']):
+        if browser_params['browser'] == 'firefox' and \
+                browser_params['extension_enabled']:
             logger.debug("BROWSER %i: Looking for extension port information "
                          "in %s" % (browser_params['crawl_id'], prof_folder))
             elapsed = 0

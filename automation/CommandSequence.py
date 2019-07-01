@@ -23,7 +23,7 @@ class CommandSequence:
     called prior to that.
     """
 
-    def __init__(self, url, reset=False, blocking=False):
+    def __init__(self, url, reset=True, blocking=False):
         """Initialize command sequence.
 
         Parameters
@@ -70,6 +70,9 @@ class CommandSequence:
     def dump_profile(self, dump_folder, close_webdriver=False,
                      compress=True, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """
+        raise NotImplementedError(
+            "Profile saving is currently unsupported. "
+            "See: https://github.com/mozilla/OpenWPM/projects/2.")
         self.total_timeout += timeout
         command = ('DUMP_PROF', dump_folder, close_webdriver, compress)
         self.commands_with_timeout.append((command, timeout))
