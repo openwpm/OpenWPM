@@ -37,6 +37,11 @@ class CommandSequence:
         """
         self.url = url
         self.reset = reset
+        if not self.reset:
+            raise NotImplementedError(
+                "Stateful crawls are not currently supported. "
+                "See https://github.com/mozilla/OpenWPM/projects/2."
+            )
         self.blocking = blocking
         self.commands_with_timeout = []
         self.total_timeout = 0

@@ -51,6 +51,7 @@ class TestCrawl(OpenWPMTest):
         browser_params[0]['http_instrument'] = True
         return manager_params, browser_params
 
+    @pytest.mark.xfail(run=False)
     @pytest.mark.slow
     def test_browser_profile_coverage(self, tmpdir):
         """ Test the coverage of the browser's profile
