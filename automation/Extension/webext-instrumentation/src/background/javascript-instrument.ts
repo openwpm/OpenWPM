@@ -110,6 +110,16 @@ export class JavascriptInstrument {
     });
   }
 
+  public async registerContentScript() {
+    return browser.contentScripts.register({
+      js: [{ file: "/content.js" }],
+      matches: ["<all_urls>"],
+      allFrames: true,
+      runAt: "document_start",
+      matchAboutBlank: true,
+    });
+  }
+
   public cleanup() {
     this.pendingRecords = [];
     if (this.onMessageListener) {
