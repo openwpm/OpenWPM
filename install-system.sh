@@ -48,11 +48,9 @@ if [ "$flash" = true ]; then
     sudo apt-get install -y adobe-flashplugin
 fi
 
-# ESR 60 has a bug that prevents WebExtension Experiments in unsigned
-# addons from working. Until its fixed, we'll download an Unbranded
-# build of the latest release.
-
-wget https://index.taskcluster.net/v1/task/gecko.v2.mozilla-release.latest.firefox.linux64-add-on-devel/artifacts/public/build/target.tar.bz2
+# We use the latest unbranded release build. For the time being, we hardcode
+# a specific build from Taskcluster.
+wget https://index.taskcluster.net/v1/task/gecko.v2.mozilla-release.pushdate.2019.07.01.20190701165736.firefox.linux64-add-on-devel/artifacts/public/build/target.tar.bz2
 tar jxf target.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
