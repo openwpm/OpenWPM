@@ -61,12 +61,8 @@ class TestS3Aggregator(OpenWPMTest):
                 continue
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
-            table.to_json('/tmp/test-%s.json' % table_name)
-            print(visit_ids[table_name])
-            print("checking table %s" % table_name)
             assert len(visit_ids[table_name]) == NUM_VISITS * NUM_BROWSERS
         for table_name, ids in visit_ids.items():
-            print("checking table %s" % table_name)
             assert set(ids) == set(visit_ids['site_visits'])
 
         assert TEST_SITE in dataset.load_table(
