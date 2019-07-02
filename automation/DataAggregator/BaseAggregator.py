@@ -93,10 +93,9 @@ class BaseListener(object):
 
     def drain_queue(self):
         """ Ensures queue is empty before closing """
-        self.sock.close()
         time.sleep(3)  # TODO: the socket needs a better way of closing
-        while not self.sock.queue.empty():
-            record = self.sock.queue.get()
+        while not self.record_queue.empty():
+            record = self.record_queue.get()
             self.process_record(record)
 
 

@@ -40,7 +40,8 @@ class OpenWPMTest(object):
             load_default_params(num_browsers)
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
-        browser_params[0]['headless'] = True
+        for i in range(num_browsers):
+            browser_params[i]['headless'] = True
         manager_params['db'] = join(manager_params['data_directory'],
                                     manager_params['database_name'])
         return manager_params, browser_params
