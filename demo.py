@@ -40,7 +40,7 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites with all browsers simultaneously
 for site in sites:
-    command_sequence = CommandSequence.CommandSequence(site)
+    command_sequence = CommandSequence.CommandSequence(site, reset=True)
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
