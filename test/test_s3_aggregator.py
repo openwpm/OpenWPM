@@ -62,6 +62,8 @@ class TestS3Aggregator(OpenWPMTest):
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
             assert len(visit_ids[table_name]) == NUM_VISITS * NUM_BROWSERS
+            for vid in visit_ids[table_name]:
+                assert(vid >= 0) and (vid < (1 << 53))
         for table_name, ids in visit_ids.items():
             assert set(ids) == set(visit_ids['site_visits'])
 
