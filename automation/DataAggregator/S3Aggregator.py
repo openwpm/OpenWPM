@@ -257,8 +257,8 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
-        for crawl_id in self.browser_map.keys():
-            self._create_batch(self.browser_map[crawl_id])
+        for visit_id in self.browser_map.values():
+            self._create_batch(visit_id)
         self._send_to_s3(force=True)
 
 
