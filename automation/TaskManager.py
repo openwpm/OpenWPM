@@ -428,6 +428,17 @@ class TaskManager:
                 condition.wait()
 
         reset = command_sequence.reset
+        if not reset:
+            self.logger.warn(
+                "BROWSER %i: Browser will not reset after CommandSequence "
+                "executes. OpenWPM does not currently support stateful crawls "
+                "(see: https://github.com/mozilla/OpenWPM/projects/2). "
+                "The next command issued to this browser may or may not "
+                "use the same profile (depending on the failure status of "
+                "this command). To prevent this warning, initialize the "
+                "CommandSequence with `reset` set to `True` to use a fresh "
+                "profile for each command." % browser.crawl_id
+            )
         start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout

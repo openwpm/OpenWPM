@@ -114,6 +114,11 @@ def dump_profile(browser_profile_folder, manager_params, browser_params,
     # Connect to logger
     logger = loggingclient(*manager_params['logger_address'])
 
+    logger.debug("BROWSER %i: Profile dumping is currently unsupported. "
+                 "See: https://github.com/mozilla/OpenWPM/projects/2." %
+                 browser_params['crawl_id'])
+    return
+
     # ensures that folder paths end with slashes
     if browser_profile_folder[-1] != '/':
         browser_profile_folder = browser_profile_folder + "/"
@@ -165,14 +170,14 @@ def dump_profile(browser_profile_folder, manager_params, browser_params,
     ]
     for item in storage_vector_files:
         full_path = os.path.join(browser_profile_folder, item)
-        if (not os.path.isfile(full_path) and
-                full_path[-3:] != 'shm' and
-                full_path[-3:] != 'wal'):
+        if not os.path.isfile(full_path) and \
+                full_path[-3:] != 'shm' and \
+                full_path[-3:] != 'wal':
             logger.critical(
                 "BROWSER %i: %s NOT FOUND IN profile folder, skipping." %
                 (browser_params['crawl_id'], full_path))
-        elif (not os.path.isfile(full_path) and
-              (full_path[-3:] == 'shm' or full_path[-3:] == 'wal')):
+        elif not os.path.isfile(full_path) and \
+                (full_path[-3:] == 'shm' or full_path[-3:] == 'wal'):
             continue  # These are just checkpoint files
         tar.add(full_path, arcname=item)
     for item in storage_vector_dirs:

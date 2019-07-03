@@ -292,8 +292,8 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             driver, 'return window.scrollY;')
         prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
-        while ((curr_scrollY + inner_height) < max_height and
-                curr_scrollY != prev_scrollY):
+        while (curr_scrollY + inner_height) < max_height and \
+                curr_scrollY != prev_scrollY:
 
             # Scroll down to bottom of previous viewport
             try:

@@ -303,6 +303,11 @@ left out of this section.
 Browser Profile Support
 -----------------------
 
+**WARNING: Stateful crawls are currently not supported. Attempts to run
+stateful crawls will throw `NotImplementedError`s. The work required to
+restore support is tracked in
+[this project](https://github.com/mozilla/OpenWPM/projects/2).**
+
 ### Stateful vs Stateless crawls
 
 By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
