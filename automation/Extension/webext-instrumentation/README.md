@@ -50,3 +50,7 @@ npm run publish-please
 ```
 
 Note: This will run various additional validation and ask for explicit approval before actually publishing the package.
+
+### Push the release commit and tag
+
+Just a reminder. :)
