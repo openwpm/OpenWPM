@@ -113,7 +113,7 @@ export class JavascriptInstrument {
   public async registerContentScript(testing = false) {
     if (testing) {
       await browser.contentScripts.register({
-        js: [{ code: "const openWpmTesting = true;" }],
+        js: [{ code: "window.openWpmTesting = true;" }],
         matches: ["<all_urls>"],
         allFrames: true,
         runAt: "document_start",
