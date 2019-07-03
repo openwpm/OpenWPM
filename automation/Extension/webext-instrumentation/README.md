@@ -24,3 +24,29 @@ Pending proper documentation, the best way to see how this library is used is to
 
  * https://github.com/mozilla/OpenWPM/tree/master/automation/Extension/firefox
  * https://github.com/motin/jestr-pioneer-shield-study
+
+## Npm publishing
+
+### From the master branch
+
+Publishing is done by a core maintainer in the master branch. If there are any impediments to publishing, a PR should be created to address those issues and merged to master before publishing is attempted again.
+
+### Bump the semantic package version
+
+Choose the relevant command below based on the changes since the last version:
+
+```
+npm run version-patch # X.Y.Z+1
+npm run version-minor # X.Y+1.0
+npm run version-major # X+1.0.0
+```
+
+Note: This will stash any uncommitted changes, validate that the build succeeds, test passes and finally bump the package version in a new commit and add a git tag corresponding to the version number (using [standard-version](https://github.com/conventional-changelog/standard-version#cli-usage)).
+
+### Publish the package
+
+```
+npm run publish-please
+```
+
+Note: This will run various additional validation and ask for explicit approval before actually publishing the package.
