@@ -94,7 +94,7 @@
     }
   },
   "standard-version": {
-    "tag-prefix": "webext-instrumentation/v",
+    "tag-prefix": "@openwpm/webext-instrumentation@",
     "infile": "README.md",
     "skip": {
       "changelog": true
