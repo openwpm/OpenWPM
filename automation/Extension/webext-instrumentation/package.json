@@ -71,7 +71,7 @@
     "opn-cli": "^3.1.0",
     "prettier": "^1.14.3",
     "publish-please": "^5.5.0",
-    "standard-version": "^4.4.0",
+    "standard-version": "github:conventional-changelog/standard-version#master",
     "trash-cli": "^1.4.0",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
@@ -95,6 +95,7 @@
   },
   "standard-version": {
     "tag-prefix": "@openwpm/webext-instrumentation@",
+    "format-commit-message": "chore(release): @openwpm/webext-instrumentation@%s",
     "infile": "README.md",
     "skip": {
       "changelog": true
