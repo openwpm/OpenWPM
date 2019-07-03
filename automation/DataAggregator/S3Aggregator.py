@@ -257,6 +257,8 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
+        for visit_id in self.browser_map.values():
+            self._create_batch(visit_id)
         self._send_to_s3(force=True)
 
 
@@ -325,9 +327,14 @@ class S3Aggregator(BaseAggregator):
             raise
 
     def get_next_visit_id(self):
-        """Generate visit id as randomly generated 64bit UUIDs
+        """Generate visit id as randomly generated 53bit UUIDs.
+
+        Parquet can support integers up to 64 bits, but Javascript can only
+        represent integers up to 53 bits:
+        https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+        Thus, we cap these values at 53 bits.
         """
-        return (uuid.uuid4().int & (1 << 64) - 1) - 2**63
+        return (uuid.uuid4().int & (1 << 53) - 1) - 2**52
 
     def get_next_crawl_id(self):
         """Generate crawl id as randomly generated 32bit UUIDs
