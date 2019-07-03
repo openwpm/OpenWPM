@@ -24,6 +24,7 @@ async function main() {
       http_instrument:true,
       save_javascript:false,
       save_all_content:false,
+      testing:true,
       crawl_id:0
     };
   }
@@ -48,7 +49,7 @@ async function main() {
     loggingDB.logDebug("Javascript instrumentation enabled");
     let jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
-    await jsInstrument.registerContentScript();
+    await jsInstrument.registerContentScript(config['testing']);
   }
 
   if (config['http_instrument']) {
