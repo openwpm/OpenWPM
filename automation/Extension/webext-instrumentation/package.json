@@ -93,14 +93,6 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "standard-version": {
-    "tag-prefix": "@openwpm/webext-instrumentation@",
-    "format-commit-message": "chore(release): @openwpm/webext-instrumentation@%s",
-    "infile": "README.md",
-    "skip": {
-      "changelog": true
-    }
-  },
   "prettier": {
     "singleQuote": false,
     "trailingComma": "all"
