@@ -29,19 +29,19 @@ export const escapeUrl = function(
 
 // Base64 encoding, found on:
 // https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
-export const Uint8ToBase64 = function(u8Arr: Uint8Array){
-  var CHUNK_SIZE = 0x8000; //arbitrary number
-  var index = 0;
-  var length = u8Arr.length;
-  var result = '';
-  var slice: Uint8Array;
+export const Uint8ToBase64 = function(u8Arr: Uint8Array) {
+  const CHUNK_SIZE = 0x8000; // arbitrary number
+  let index = 0;
+  const length = u8Arr.length;
+  let result = "";
+  let slice: Uint8Array;
   while (index < length) {
     slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
     result += String.fromCharCode.apply(null, slice);
     index += CHUNK_SIZE;
   }
   return btoa(result);
-}
+};
 
 export const boolToInt = function(bool: boolean) {
   return bool ? 1 : 0;

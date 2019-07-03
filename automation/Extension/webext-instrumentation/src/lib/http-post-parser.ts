@@ -66,8 +66,12 @@ export class HttpPostParser {
     }
     if (requestBody.raw) {
       return {
-        post_body_raw: JSON.stringify(requestBody.raw.map(x =>
-          [x.file, Uint8ToBase64(new Uint8Array(x.bytes))])),
+        post_body_raw: JSON.stringify(
+          requestBody.raw.map(x => [
+            x.file,
+            Uint8ToBase64(new Uint8Array(x.bytes)),
+          ]),
+        ),
       };
     }
 
