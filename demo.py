@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from sys import platform
-
 from six.moves import range
 
 from automation import CommandSequence, TaskManager
@@ -27,8 +25,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Enable flash for all three browsers
     browser_params[i]['disable_flash'] = False
-if platform != 'darwin':
-    browser_params[0]['headless'] = True  # Launch only browser 0 headless
+browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params['data_directory'] = '~/Desktop/'
