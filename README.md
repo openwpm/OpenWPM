@@ -569,7 +569,7 @@ working with Docker in Mac OSX.
 
 To open a bash session within the environment:
 
-    ./run-on-osx-via-docker.sh #
+    ./run-on-osx-via-docker.sh /bin/bash
 
 Or, run commands directly:
 
