@@ -28,6 +28,11 @@ RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && ap
 COPY ./install-system.sh .
 RUN ./install-system.sh --no-flash
 
+# Move the firefox binary away from the /opt/OpenWPM root so that it is available if
+# we mount a local source code directory as /opt/OpenWPM
+RUN mv firefox-bin /opt/firefox-bin
+ENV FIREFOX_BINARY /opt/firefox-bin/firefox-bin
+
 # Instead of running install-pip-and-packages.sh, the packages are installed
 # manually using pip and pip3 so that python2 and python3 are supported in the
 # final image.
