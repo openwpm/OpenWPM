@@ -43,7 +43,7 @@ RUN pip3 install -U -r requirements.txt && pip install -U -r requirements.txt
 COPY --from=extension /usr/src/app/dist/openwpm-*.zip automation/Extension/firefox/openwpm.xpi
 
 # Node is not required, the extension is build in the first build stage so
-# there is no noeed to run install-node.sh and build-extension.sh
+# there is no need to run install-node.sh and build-extension.sh
 
 # Technically, the automation/Extension/firefox directory could be skipped
 # here, but there is no nice way to do that with the Docker COPY command
