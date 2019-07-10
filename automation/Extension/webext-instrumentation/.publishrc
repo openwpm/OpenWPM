@@ -8,7 +8,7 @@
     "gitTag": "@openwpm/webext-instrumentation@"
   },
   "confirm": true,
-  "publishCommand": "npm publish",
+  "publishCommand": "npm publish --access=public",
   "publishTag": "latest",
   "prePublishScript": "npm test",
   "postPublishScript": false
