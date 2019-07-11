@@ -1,6 +1,6 @@
 {
   "name": "@openwpm/webext-instrumentation",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Allows WebExtensions to track and monitor privacy-related browsing behavior",
   "author": "OpenWPM Contributors",
   "license": "GPL-3.0-or-later",
