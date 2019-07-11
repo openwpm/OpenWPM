@@ -28,9 +28,9 @@ CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install --force
 # Make npm available (used by build-extension.sh)
 brew install node || true
 
-# Download the latest Unbranded Firefox Release version
-brew install wget || brew upgrade wget
-wget https://index.taskcluster.net/v1/task/gecko.v2.mozilla-release.latest.firefox.macosx64-add-on-devel/artifacts/public/build/target.dmg
+# Use the Unbranded build that corresponds to Firefox 68 release (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
+brew install wget || true
+wget https://queue.taskcluster.net/v1/task/EPaShNEQTYaBrJYpULyxwg/runs/0/artifacts/public/build/target.dmg
 
 # Install Firefox Nightly
 rm -rf Nightly.app || true

@@ -48,9 +48,8 @@ if [ "$flash" = true ]; then
     sudo apt-get install -y adobe-flashplugin
 fi
 
-# We use the latest unbranded release build. For the time being, we hardcode
-# a specific build from Taskcluster.
-wget https://index.taskcluster.net/v1/task/gecko.v2.mozilla-release.pushdate.2019.07.01.20190701165736.firefox.linux64-add-on-devel/artifacts/public/build/target.tar.bz2
+# Use the Unbranded build that corresponds to Firefox 68 release (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
+wget https://queue.taskcluster.net/v1/task/HYGMEM_UT06yMsOpWtHyVQ/runs/0/artifacts/public/build/target.tar.bz2
 tar jxf target.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
