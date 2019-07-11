@@ -28,6 +28,11 @@ RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && ap
 COPY ./install-system.sh .
 RUN ./install-system.sh --no-flash
 
+# Move the firefox binary away from the /opt/OpenWPM root so that it is available if
+# we mount a local source code directory as /opt/OpenWPM
+RUN mv firefox-bin /opt/firefox-bin
+ENV FIREFOX_BINARY /opt/firefox-bin/firefox-bin
+
 # Instead of running install-pip-and-packages.sh, the packages are installed
 # manually using pip and pip3 so that python2 and python3 are supported in the
 # final image.
@@ -43,7 +48,7 @@ RUN pip3 install -U -r requirements.txt && pip install -U -r requirements.txt
 COPY --from=extension /usr/src/app/dist/openwpm-*.zip automation/Extension/firefox/openwpm.xpi
 
 # Node is not required, the extension is build in the first build stage so
-# there is no noeed to run install-node.sh and build-extension.sh
+# there is no need to run install-node.sh and build-extension.sh
 
 # Technically, the automation/Extension/firefox directory could be skipped
 # here, but there is no nice way to do that with the Docker COPY command
