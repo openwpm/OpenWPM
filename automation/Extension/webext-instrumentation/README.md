@@ -4,7 +4,24 @@ Allows WebExtensions to track and monitor privacy-related browsing behavior
 
 ## Installation
 
-This package is yet to be published to npm.
+Add to `package.json`:
+
+```
+npm install @openwpm/webext-instrumentation
+```
+
+Your web extension needs to specify the following permissions in `manifest.json`.
+
+```
+  "permissions": [
+    "<all_urls>",
+    "webRequest",
+    "webRequestBlocking",
+    "webNavigation",
+    "cookies",
+    "tabs"
+  ],
+```
 
 ## Instrumentation
 
@@ -14,7 +31,7 @@ The instrumentation leverages the available [JavaScript APIs for WebExtensions](
  - Response body content
  - Cookie Access (Experimental)
 
-More specifically, all packets sent by the instrumentation conform to [these interfaces](https://github.com/mozilla/openwpm-webext-instrumentation/blob/refactor-legacy-sdk-code-to-webext-equivalent/src/schema.ts).
+More specifically, all packets sent by the instrumentation conform to [these interfaces](https://github.com/mozilla/OpenWPM/tree/master/automation/Extension/webext-instrumentation/src/schema.ts).
 
 ## Usage
 
@@ -23,7 +40,7 @@ The instrumentation is designed to invoke a `dataReceiver` object whenever a pac
 Pending proper documentation, the best way to see how this library is used is to check how the instrumentation is incorporated into the following extensions:
 
  * https://github.com/mozilla/OpenWPM/tree/master/automation/Extension/firefox
- * https://github.com/motin/jestr-pioneer-shield-study
+ * https://github.com/mozilla/jestr-pioneer-shield-study
 
 ## Npm publishing
 
