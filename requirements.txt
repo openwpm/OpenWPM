@@ -21,6 +21,7 @@ PyOPenSSL
 pytest
 python-dateutil
 pyvirtualdisplay
+redis
 s3fs
 selenium
 setuptools
@@ -28,4 +29,3 @@ six
 tabulate
 tblib
 tld
-redis
