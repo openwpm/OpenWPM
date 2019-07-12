@@ -28,3 +28,4 @@ six
 tabulate
 tblib
 tld
+redis
