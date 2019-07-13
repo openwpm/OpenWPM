@@ -42,14 +42,15 @@ while not job_queue.empty():
     if job is None:
         print("Waiting for work")
         time.sleep(1)
-    site_rank, site = job.decode("utf-8").split(',')
-    print("Visiting %s..." % site)
-    command_sequence = CommandSequence.CommandSequence(
-        'http://' + site, reset=True
-    )
-    command_sequence.get(sleep=10, timeout=60)
-    manager.execute_command_sequence(command_sequence)
-    job_queue.complete(job)
+    else:
+        site_rank, site = job.decode("utf-8").split(',')
+        print("Visiting %s..." % site)
+        command_sequence = CommandSequence.CommandSequence(
+            'http://' + site, reset=True
+        )
+        command_sequence.get(sleep=10, timeout=60)
+        manager.execute_command_sequence(command_sequence)
+        job_queue.complete(job)
 
 print("Job queue finished, exiting.")
 manager.close()
