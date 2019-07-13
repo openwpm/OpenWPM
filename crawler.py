@@ -11,28 +11,28 @@ from automation.utilities import rediswq
 from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
-NUM_BROWSERS = int(os.getenv('NUM_BROWSERS'))
-REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME')
-CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY')
-S3_BUCKET = os.getenv('S3_BUCKET')
-HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT')
-COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT')
-NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT')
-JS_INSTRUMENT = os.getenv('JS_INSTRUMENT')
-SAVE_JAVASCRIPT = os.getenv('SAVE_JAVASCRIPT')
-DWELL_TIME = int(os.getenv('DWELL_TIME'))
-TIMEOUT = int(os.getenv('TIMEOUT'))
+NUM_BROWSERS = int(os.getenv('NUM_BROWSERS', '1'))
+REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
+CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
+S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawl')
+HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT', '1') == '1'
+COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
+NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
+JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
+SAVE_JAVASCRIPT = os.getenv('SAVE_JAVASCRIPT', '0') == '1'
+DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
+TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 
 # Loads the manager preference and NUM_BROWSERS copies of the default browser params
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
-    browser_params[i]['http_instrument'] = HTTP_INSTRUMENT == "1"
-    browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT == "1"
-    browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT == "1"
-    browser_params[i]['js_instrument'] = JS_INSTRUMENT == "1"
-    browser_params[i]['save_javascript'] = SAVE_JAVASCRIPT == "1"
+    browser_params[i]['http_instrument'] = HTTP_INSTRUMENT
+    browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT
+    browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
+    browser_params[i]['js_instrument'] = JS_INSTRUMENT
+    browser_params[i]['save_javascript'] = SAVE_JAVASCRIPT
     browser_params[i]['headless'] = True
 
 # Manager configuration
