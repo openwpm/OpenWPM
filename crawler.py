@@ -3,12 +3,11 @@ from __future__ import absolute_import
 import os
 import time
 
+import boto3
 from six.moves import range
 
 from automation import CommandSequence, TaskManager
 from automation.utilities import rediswq
-
-import boto3
 from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
@@ -24,7 +23,7 @@ SAVE_JAVASCRIPT = os.getenv('SAVE_JAVASCRIPT')
 DWELL_TIME = int(os.getenv('DWELL_TIME'))
 TIMEOUT = int(os.getenv('TIMEOUT'))
 
-# Loads the manager preference and NUM_BROWSERS copies of the default browser dictionaries
+# Loads the manager preference and NUM_BROWSERS copies of the default browser params
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Browser configuration
@@ -43,11 +42,12 @@ manager_params['output_format'] = 's3'
 manager_params['s3_bucket'] = S3_BUCKET
 manager_params['s3_directory'] = CRAWL_DIRECTORY
 
-# Allow the use of localstack's mock s3 service via an alternative s3 endpoint configuration
+# Allow the use of localstack's mock s3 service
 S3_ENDPOINT = os.getenv('S3_ENDPOINT')
 if S3_ENDPOINT:
     boto3.DEFAULT_SESSION = LocalS3Session(endpoint_url=S3_ENDPOINT)
-    manager_params['s3_bucket'] = local_s3_bucket(boto3.resource('s3'), name=S3_BUCKET)
+    manager_params['s3_bucket'] = local_s3_bucket(
+        boto3.resource('s3'), name=S3_BUCKET)
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
