@@ -14,7 +14,7 @@ from test.utilities import LocalS3Session, local_s3_bucket
 NUM_BROWSERS = int(os.getenv('NUM_BROWSERS', '1'))
 REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
 CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
-S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawl')
+S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
 HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT', '1') == '1'
 COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
