@@ -55,18 +55,18 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Connect to job queue
 job_queue = rediswq.RedisWQ(name=REDIS_QUEUE_NAME, host="redis")
-print("Worker with sessionID: %s" % job_queue.sessionID())
-print("Initial queue state: empty=%s" % job_queue.empty())
+manager.logger.info("Worker with sessionID: %s" % job_queue.sessionID())
+manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job = job_queue.lease(lease_secs=120, block=True, timeout=5)
     if job is None:
-        print("Waiting for work")
+        manager.logger.info("Waiting for work")
         time.sleep(1)
     else:
         site_rank, site = job.decode("utf-8").split(',')
-        print("Visiting %s..." % site)
+        manager.logger.info("Visiting %s..." % site)
         command_sequence = CommandSequence.CommandSequence(
             site, reset=True
         )
@@ -74,5 +74,5 @@ while not job_queue.empty():
         manager.execute_command_sequence(command_sequence)
         job_queue.complete(job)
 
-print("Job queue finished, exiting.")
+manager.logger.info("Job queue finished, exiting.")
 manager.close()
