@@ -67,6 +67,8 @@ while not job_queue.empty():
         time.sleep(1)
     else:
         site_rank, site = job.decode("utf-8").split(',')
+        if "://" not in site:
+            site = "http://" + site
         manager.logger.info("Visiting %s..." % site)
         command_sequence = CommandSequence.CommandSequence(
             site, reset=True
