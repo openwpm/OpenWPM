@@ -10,7 +10,8 @@ sites = ['http://www.example.com',
          'http://www.princeton.edu',
          'http://citp.princeton.edu/']
 
-# Loads the manager preference and NUM_BROWSERS copies of the default browser params
+# Loads the default manager params
+# and NUM_BROWSERS copies of the default browser params
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Update browser configuration (use this for per-browser settings)

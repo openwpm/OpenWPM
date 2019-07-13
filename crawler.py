@@ -23,7 +23,8 @@ SAVE_JAVASCRIPT = os.getenv('SAVE_JAVASCRIPT', '0') == '1'
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 
-# Loads the manager preference and NUM_BROWSERS copies of the default browser params
+# Loads the default manager params
+# and NUM_BROWSERS copies of the default browser params
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Browser configuration
