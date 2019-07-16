@@ -63,6 +63,7 @@ class S3Listener(BaseListener):
         self._batches = dict()  # maps table_name to a list of batches
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
+        self._s3_content_cache = set()  # cache of filenames already uploaded
         self._s3 = boto3.client('s3')
         self._s3_resource = boto3.resource('s3')
         self._fs = s3fs.S3FileSystem(session=boto3.DEFAULT_SESSION)
@@ -122,6 +123,13 @@ class S3Listener(BaseListener):
 
     def _exists_on_s3(self, filename):
         """Check if `filename` already exists on S3"""
+        # Check local filename cache
+        if filename.split('/', 1)[1] in self._s3_content_cache:
+            self.logger.debug(
+                "File `%s` found in content cache." % filename)
+            return True
+
+        # Check S3
         try:
             self._s3_resource.Object(self._bucket, filename).load()
         except ClientError as e:
@@ -129,6 +137,10 @@ class S3Listener(BaseListener):
                 return False
             else:
                 raise
+
+        # Add filename to local cache to avoid remote lookups on next request
+        # We strip the bucket name as its the same for all files
+        self._s3_content_cache.add(filename.split('/', 1)[1])
         return True
 
     def _write_str_to_s3(self, string, filename,
@@ -153,6 +165,10 @@ class S3Listener(BaseListener):
             self._s3.upload_fileobj(out_f, self._bucket, filename)
             self.logger.debug(
                 "Successfully uploaded file `%s` to S3." % filename)
+            # Cache the filenames that are already on S3
+            # We strip the bucket name as its the same for all files
+            if skip_if_exists:
+                self._s3_content_cache.add(filename.split('/', 1)[1])
         except Exception as e:
             self.logger.error(
                 "Exception while uploading %s\n%s\n%s" % (
