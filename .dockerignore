@@ -1,6 +1,9 @@
 # Docker volume
 docker-volume
 
+# Git metadata
+.git
+
 # pytest
 .pytest_cache
 
