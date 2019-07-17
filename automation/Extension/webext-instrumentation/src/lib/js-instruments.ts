@@ -338,8 +338,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // from http://stackoverflow.com/a/5202185
-  String.prototype.rsplit = function(sep, maxsplit) {
-    const split = this.split(sep);
+  const rsplit = function(source: string, sep, maxsplit) {
+    const split = source.split(sep);
     return maxsplit
       ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit))
       : split;
@@ -380,7 +380,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       let scriptLocEval = ""; // for eval or Function calls
       const callSiteParts = callSite.split("@");
       const funcName = callSiteParts[0] || "";
-      const items = callSiteParts[1].rsplit(":", 2);
+      const items = rsplit(callSiteParts[1], ":", 2);
       const columnNo = items[items.length - 1];
       const lineNo = items[items.length - 2];
       const scriptFileName = items[items.length - 3] || "";
