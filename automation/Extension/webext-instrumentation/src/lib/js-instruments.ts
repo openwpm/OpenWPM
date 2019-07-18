@@ -9,10 +9,6 @@ declare global {
   interface Object {
     getPropertyNames(subject: any): string[];
   }
-
-  interface String {
-    rsplit(sep: any, maxsplit: any): string;
-  }
 }
 
 interface LogSettings {
