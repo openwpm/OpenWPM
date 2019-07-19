@@ -15,19 +15,19 @@ fi
 echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 if [ "${TRAVIS_BRANCH}" == "master" ]; then
   echo "Deploying master branch to DockerHub..."
-  docker tag app:build ${DOCKERHUB_REPO}:latest
+  docker tag openwpm ${DOCKERHUB_REPO}:latest
   docker push ${DOCKERHUB_REPO}:latest
 fi
 if [ ! -z "${TRAVIS_TAG}" ]; then
   echo "Deploying release tag to DockerHub..."
   echo "${DOCKERHUB_REPO}:${TRAVIS_TAG}"
-  docker tag app:build "${DOCKERHUB_REPO}:${TRAVIS_TAG}"
+  docker tag openwpm "${DOCKERHUB_REPO}:${TRAVIS_TAG}"
   docker push "${DOCKERHUB_REPO}:${TRAVIS_TAG}"
 fi
 if [ ! -z "${TRAVIS_COMMIT}" ]; then
   echo "Deploying commit-based build to DockerHub..."
   echo "${DOCKERHUB_REPO}:commit-${TRAVIS_COMMIT}"
-  docker tag app:build "${DOCKERHUB_REPO}:commit-${TRAVIS_COMMIT}"
+  docker tag openwpm "${DOCKERHUB_REPO}:commit-${TRAVIS_COMMIT}"
   docker push "${DOCKERHUB_REPO}:commit-${TRAVIS_COMMIT}"
 fi
 
