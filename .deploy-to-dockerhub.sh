@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+
+# stop on errors
+set -e
+
 if [ "${DOCKER_USER}" != "" ]; then
     echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
     if [ "${TRAVIS_BRANCH}" == "master" ]; then
@@ -17,4 +22,8 @@ if [ "${DOCKER_USER}" != "" ]; then
       docker images
       docker push "${DOCKERHUB_REPO}:commit-${TRAVIS_COMMIT}"
     fi
+else
+    echo "Deploy to Docker Hub skipped since the DOCKER_USER env var is not available"
 fi
+
+exit 0
