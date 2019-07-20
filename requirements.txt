@@ -24,6 +24,7 @@ pyvirtualdisplay
 redis
 s3fs
 selenium
+sentry-sdk==0.10.2
 setuptools
 six
 tabulate
