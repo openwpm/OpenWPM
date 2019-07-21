@@ -4,6 +4,7 @@ import base64
 import gzip
 import hashlib
 import json
+import time
 import uuid
 from collections import defaultdict
 
@@ -23,6 +24,7 @@ from .parquet_schema import PQ_SCHEMAS
 CACHE_SIZE = 500
 SITE_VISITS_INDEX = '_site_visits_index'
 CONTENT_DIRECTORY = 'content'
+QUEUE_DRAIN_INTERVAL = 15  # seconds
 
 
 def listener_process_runner(
@@ -34,6 +36,7 @@ def listener_process_runner(
 
     while True:
         listener.update_status_queue()
+        listener.periodically_drain_queue()
         if listener.should_shutdown():
             break
         try:
@@ -69,6 +72,7 @@ class S3Listener(BaseListener):
         self._fs = s3fs.S3FileSystem(session=boto3.DEFAULT_SESSION)
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
+        self._last_queue_drain = time.time()  # last queue drain time
         super(S3Listener, self).__init__(
             status_queue, shutdown_queue, manager_params)
 
@@ -208,6 +212,15 @@ class S3Listener(BaseListener):
                     )
                     pass
             self._batches[table_name] = list()
+
+    def periodically_drain_queue(self):
+        """Periodically drain the write queue in order to avoid
+        data loss in stalled or indefinite processes"""
+        if (time.time() - self._last_queue_drain) < QUEUE_DRAIN_INTERVAL:
+            return
+        self.logger.debug("Periodically draining queue")
+        self.drain_queue()
+        self._last_queue_drain = time.time()
 
     def process_record(self, record):
         """Add `record` to database"""
