@@ -237,7 +237,7 @@ class S3Listener(BaseListener):
         if len(record) != 2:
             self.logger.error("Query is not the correct length")
             return
-
+        self._last_record_received = time.time()
         table, data = record
         if table == "create_table":  # drop these statements
             return
