@@ -23,6 +23,7 @@ from .parquet_schema import PQ_SCHEMAS
 CACHE_SIZE = 500
 SITE_VISITS_INDEX = '_site_visits_index'
 CONTENT_DIRECTORY = 'content'
+CONFIG_DIR = 'config'
 
 
 def listener_process_runner(
@@ -321,8 +322,8 @@ class S3Aggregator(BaseAggregator):
         """Save configuration details for this crawl to the database"""
 
         # Save config keyed by task id
-        fname = "%s/instance-%s_configuration.json" % (
-            self.dir, self._instance_id)
+        fname = "%s/%s/instance-%s_configuration.json" % (
+            self.dir, CONFIG_DIR, self._instance_id)
 
         # Config parameters for update
         out = dict()

@@ -193,11 +193,42 @@ def local_s3_bucket(resource, name='localstack-foo'):
 
 class LocalS3Dataset(object):
     def __init__(self, bucket, directory):
-        self.bucket_uri = '%s/%s/visits/%%s' % (bucket, directory)
+        self.bucket = bucket
+        self.root_directory = directory
+        self.visits_uri = '%s/%s/visits/%%s' % (
+            self.bucket, self.root_directory)
         self.s3_fs = s3fs.S3FileSystem(session=LocalS3Session())
+        boto3.DEFAULT_SESSION = LocalS3Session()
+        self.s3_client = boto3.client('s3')
+        self.s3_resource = boto3.resource('s3')
 
     def load_table(self, table_name):
         return pq.ParquetDataset(
-            self.bucket_uri % table_name,
+            self.visits_uri % table_name,
             filesystem=self.s3_fs
         ).read_pandas().to_pandas()
+
+    def list_files(self, directory, prepend_root=False):
+        bucket = self.s3_resource.Bucket(self.bucket)
+        files = list()
+        if prepend_root:
+            prefix = "%s/%s/" % (self.root_directory, directory)
+        else:
+            prefix = directory
+        for summary in bucket.objects.filter(Prefix=prefix):
+            files.append(summary.key)
+        return files
+
+    def get_file(self, filename, prepend_root=False):
+        if prepend_root:
+            key = "%s/%s" % (self.root_directory, filename)
+        else:
+            key = filename
+        obj = self.s3_client.get_object(
+            Bucket=self.bucket,
+            Key=key
+        )
+        body = obj["Body"]
+        content = body.read()
+        body.close()
+        return content

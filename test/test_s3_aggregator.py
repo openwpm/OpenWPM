@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import json
 from collections import defaultdict
 
 import boto3
@@ -38,7 +39,7 @@ class TestS3Aggregator(OpenWPMTest):
             browser_params[i]['navigation_instrument'] = True
         return manager_params, browser_params
 
-    def test_visit_id_consistency(self):
+    def test_basic_properties(self):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
         NUM_VISITS = 2
         NUM_BROWSERS = 4
@@ -54,6 +55,7 @@ class TestS3Aggregator(OpenWPMTest):
             manager_params['s3_directory']
         )
 
+        # Test visit_id consistency
         visit_ids = defaultdict(set)
         for table_name in PQ_SCHEMAS:
             # flash cookie instrumentation not enabled
@@ -65,5 +67,13 @@ class TestS3Aggregator(OpenWPMTest):
         for table_name, ids in visit_ids.items():
             assert set(ids) == set(visit_ids['site_visits'])
 
+        # Ensure http table is created
         assert TEST_SITE in dataset.load_table(
             'http_requests').top_level_url.unique()
+
+        # Ensure config directory is created and contains the correct number
+        # of configuration files
+        config_file = dataset.list_files('config', prepend_root=True)
+        assert len(config_file) == 1  # only one instance started in test
+        config = json.loads(dataset.get_file(config_file[0]))
+        assert len(config['browser_params']) == NUM_BROWSERS
