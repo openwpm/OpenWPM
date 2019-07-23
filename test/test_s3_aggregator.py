@@ -85,7 +85,7 @@ class TestS3Aggregator(OpenWPMTest):
             manager_params['s3_bucket'],
             manager_params['s3_directory']
         )
-        with pytest.raises(FileNotFoundError, OSError):
+        with pytest.raises((FileNotFoundError, OSError)):
             requests = dataset.load_table('http_requests')
         time.sleep(45)  # Current timeout
         dataset2 = LocalS3Dataset(
