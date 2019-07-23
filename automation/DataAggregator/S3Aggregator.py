@@ -222,7 +222,7 @@ class S3Listener(BaseListener):
         regardless of the current batch size."""
         if self._last_record_received is None:
             return
-        if self._last_record_received - time.time() < BATCH_COMMIT_TIMEOUT:
+        if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
             return
         self.logger.debug(
             "Saving current record batches to S3 since no new data has "
