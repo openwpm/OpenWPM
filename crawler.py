@@ -64,7 +64,7 @@ while not job_queue.empty():
     job = job_queue.lease(lease_secs=120, block=True, timeout=5)
     if job is None:
         manager.logger.info("Waiting for work")
-        time.sleep(1)
+        time.sleep(5)
     else:
         site_rank, site = job.decode("utf-8").split(',')
         if "://" not in site:

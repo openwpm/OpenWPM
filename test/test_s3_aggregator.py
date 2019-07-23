@@ -1,9 +1,11 @@
 from __future__ import absolute_import
 
 import json
+import time
 from collections import defaultdict
 
 import boto3
+import pytest
 from localstack.services import infra
 
 from ..automation import TaskManager
@@ -11,6 +13,11 @@ from ..automation.DataAggregator.parquet_schema import PQ_SCHEMAS
 from .openwpmtest import OpenWPMTest
 from .utilities import (BASE_TEST_URL, LocalS3Dataset, LocalS3Session,
                         local_s3_bucket)
+
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 
 class TestS3Aggregator(OpenWPMTest):
@@ -77,3 +84,24 @@ class TestS3Aggregator(OpenWPMTest):
         assert len(config_file) == 1  # only one instance started in test
         config = json.loads(dataset.get_file(config_file[0]))
         assert len(config['browser_params']) == NUM_BROWSERS
+
+    def test_commit_on_timeout(self):
+        TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
+        manager_params, browser_params = self.get_config(num_browsers=1)
+        manager_params['s3_directory'] = 's3-aggregator-tests-2'
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get(TEST_SITE, sleep=1, index='*')
+        dataset = LocalS3Dataset(
+            manager_params['s3_bucket'],
+            manager_params['s3_directory']
+        )
+        with pytest.raises((FileNotFoundError, OSError)):
+            requests = dataset.load_table('http_requests')
+        time.sleep(45)  # Current timeout
+        dataset2 = LocalS3Dataset(
+            manager_params['s3_bucket'],
+            manager_params['s3_directory']
+        )
+        requests = dataset2.load_table('http_requests')
+        assert TEST_SITE in requests.top_level_url.unique()
+        manager.close()

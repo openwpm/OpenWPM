@@ -4,6 +4,7 @@ import base64
 import gzip
 import hashlib
 import json
+import time
 import uuid
 from collections import defaultdict
 
@@ -24,6 +25,7 @@ CACHE_SIZE = 500
 SITE_VISITS_INDEX = '_site_visits_index'
 CONTENT_DIRECTORY = 'content'
 CONFIG_DIR = 'config'
+BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 
 def listener_process_runner(
@@ -35,6 +37,7 @@ def listener_process_runner(
 
     while True:
         listener.update_status_queue()
+        listener.save_batch_if_past_timeout()
         if listener.should_shutdown():
             break
         try:
@@ -70,6 +73,7 @@ class S3Listener(BaseListener):
         self._fs = s3fs.S3FileSystem(session=boto3.DEFAULT_SESSION)
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
+        self._last_record_received = None  # time last record was received
         super(S3Listener, self).__init__(
             status_queue, shutdown_queue, manager_params)
 
@@ -192,6 +196,8 @@ class S3Listener(BaseListener):
                 )
                 self._write_str_to_s3(out_str, fname)
             else:
+                if len(batches) == 0:
+                    continue
                 try:
                     table = pa.Table.from_batches(batches)
                     pq.write_to_dataset(
@@ -210,12 +216,29 @@ class S3Listener(BaseListener):
                     pass
             self._batches[table_name] = list()
 
+    def save_batch_if_past_timeout(self):
+        """Save the current batch of records if no new data has been received.
+
+        If we aren't receiving new data for this batch we commit early
+        regardless of the current batch size."""
+        if self._last_record_received is None:
+            return
+        if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
+            return
+        self.logger.debug(
+            "Saving current record batches to S3 since no new data has "
+            "been written for %d seconds." %
+            (self._last_record_received - time.time())
+        )
+        self.drain_queue()
+        self._last_record_received = None
+
     def process_record(self, record):
         """Add `record` to database"""
         if len(record) != 2:
             self.logger.error("Query is not the correct length")
             return
-
+        self._last_record_received = time.time()
         table, data = record
         if table == "create_table":  # drop these statements
             return
