@@ -227,7 +227,7 @@ class S3Listener(BaseListener):
         self.logger.debug(
             "Saving current record batches to S3 since no new data has "
             "been written for %d seconds." %
-            self._last_record_received - time.time()
+            (self._last_record_received - time.time())
         )
         self.drain_queue()
         self._last_record_received = None
