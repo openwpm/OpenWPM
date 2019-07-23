@@ -83,7 +83,8 @@ class TestS3Aggregator(OpenWPMTest):
         # of configuration files
         config_file = dataset.list_files('config', prepend_root=True)
         assert len(config_file) == 1  # only one instance started in test
-        config = json.loads(six.text_type(dataset.get_file(config_file[0])))
+        config = json.loads(six.text_type(
+            dataset.get_file(config_file[0], 'utf-8')))
         assert len(config['browser_params']) == NUM_BROWSERS
 
     def test_commit_on_timeout(self):
