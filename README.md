@@ -513,7 +513,7 @@ __Step 2:__ to build the image, run the following command from a terminal
 within the root OpenWPM directory:
 
 ```
-    docker build -f Dockerfile -t openwpm .
+    docker-compose build
 ```
 
 After a few minutes, the container is ready to use.
