@@ -3,9 +3,7 @@ from __future__ import absolute_import
 import json
 import os.path
 import random
-import sys
 
-from pyvirtualdisplay import Display
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
