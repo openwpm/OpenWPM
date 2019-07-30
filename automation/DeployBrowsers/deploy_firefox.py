@@ -11,7 +11,7 @@ from ..MPLogger import loggingclient
 from ..utilities.platform_utils import (get_firefox_binary_path,
                                         get_geckodriver_exec_path)
 from . import configure_firefox
-from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
+from .selenium_firefox import (FirefoxBinary,
                                FirefoxProfile, Options)
 
 DEFAULT_SCREEN_RES = (1366, 768)
@@ -136,9 +136,9 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.  This will also inform us where the real profile
     # directory is hiding.
-    interceptor = FirefoxLogInterceptor(
-        browser_params['crawl_id'], logger, browser_profile_path)
-    interceptor.start()
+    #   interceptor = FirefoxLogInterceptor(
+    #       browser_params['crawl_id'], logger, browser_profile_path)
+    #   interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow
     # our defaults to be overwritten.
@@ -153,7 +153,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb,
                                executable_path=geckodriver_executable_path,
-                               firefox_options=fo, log_path=interceptor.fifo)
+                               firefox_options=fo)
 
     # Add extension
     if browser_params['extension_enabled']:
