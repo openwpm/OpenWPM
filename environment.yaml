@@ -1,0 +1,25 @@
+name: openwpm
+channels:
+    - conda-forge
+dependencies:
+    - python=3.7
+    - beautifulsoup4
+    - geckodriver
+    - leveldb
+    - multiprocess
+    - nodejs
+    - pandas
+    - pillow
+    - pip
+    - psutil
+    - pyarrow
+    - python-dateutil
+    - python-leveldb
+    - selenium
+    - s3fs
+    - tabulate
+    - tblib
+    - wget
+    - pip:
+        - publicsuffix
+        - mini-amf

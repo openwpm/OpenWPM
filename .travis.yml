@@ -3,10 +3,11 @@ language: python
 os: linux
 dist: xenial
 python:
- - "2.7"
- - "3.5"
- - "3.6"
- - "3.7"
+  # We don't actually use the Travis Python, but this keeps it organized.
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "3.7"
 env:
 # See, https://docs.travis-ci.com/user/speeding-up-the-build/
 # We need a balanced distribution of the tests
@@ -20,16 +21,41 @@ env:
   - TESTS=test_[i-z]*
 git:
   depth: 3
+
 before_install:
   - "export DISPLAY=:99.0"
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
+
 install:
-  - echo "y" | ./install.sh
-  - pip install -r requirements.txt
+  - sudo apt-get update
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  - echo "Test Python version is"
+  - echo $TRAVIS_PYTHON_VERSION
+  # Edit the environment.yml file for the target Python version
+  - sed -i -E 's/(python=)(.*)/\1'$TRAVIS_PYTHON_VERSION'/' ./environment.yml
+
+  - conda env create -f environment.yml
+  - source activate openwpm
+  - pip install -r requirements-dev.txt
+
 before_script:
   - flake8
+
 script:
-  - pip install -r requirements-dev.txt
   - cd test
   - py.test -s -v --durations=10 $TESTS
 
