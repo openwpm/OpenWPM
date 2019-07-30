@@ -1,0 +1,13 @@
+version: "3"
+services:
+  openwpm:
+    image: openwpm
+    environment:
+      # Pickup the AWS secret and access key from host env
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_ACCESS_KEY_ID
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/src
