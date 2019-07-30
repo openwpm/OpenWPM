@@ -68,15 +68,16 @@ def get_geckodriver_exec_path():
     If the geckodriver executable does not exist next to the Firefox binary,
     we throw a RuntimeError.
     """
-    firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = (os.path.dirname(firefox_binary_path)
-                                   + "/geckodriver")
+    #firefox_binary_path = get_firefox_binary_path()
+    #geckodriver_executable_path = (os.path.dirname(firefox_binary_path)
+    #                               + "/geckodriver")
 
-    if not os.path.isfile(geckodriver_executable_path):
-        raise RuntimeError(
-            "The `geckodriver` executable is not found next to the "
-            "Firefox binary. Did you run the install script (`install.sh`)?")
-    return geckodriver_executable_path
+    #if not os.path.isfile(geckodriver_executable_path):
+    #    raise RuntimeError(
+    #        "The `geckodriver` executable is not found next to the "
+    #        "Firefox binary. Did you run the install script (`install.sh`)?")
+    #return geckodriver_executable_path
+    return "geckodriver"
 
 
 def get_version():
