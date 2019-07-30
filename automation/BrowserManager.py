@@ -234,14 +234,14 @@ class Browser:
         if self.browser_manager is not None and \
                 self.browser_manager.pid is not None:
             try:
-                os.kill(self.browser_manager.pid, signal.SIGKILL)
+                os.kill(self.browser_manager.pid, signal.SIGTERM)
             except OSError:
                 self.logger.debug("BROWSER %i: Browser manager process does "
                                   "not exist" % self.crawl_id)
                 pass
         if self.display_pid is not None:
             try:
-                os.kill(self.display_pid, signal.SIGKILL)
+                os.kill(self.display_pid, signal.SIGTERM)
             except OSError:
                 self.logger.debug("BROWSER %i: Display process does not "
                                   "exit" % self.crawl_id)

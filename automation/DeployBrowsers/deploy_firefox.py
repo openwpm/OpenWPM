@@ -169,12 +169,15 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     driver.set_window_size(*profile_settings['screen_res'])
 
     # Get browser process pid
-    if hasattr(driver, 'service') and hasattr(driver.service, 'process'):
-        pid = driver.service.process.pid
-    elif hasattr(driver, 'binary') and hasattr(driver.binary, 'process'):
-        pid = driver.binary.process.pid
-    else:
-        raise RuntimeError("Unable to identify Firefox process ID.")
+    #if hasattr(driver, 'service') and hasattr(driver.service, 'process'):
+    #    pid = driver.service.process.pid
+    #elif hasattr(driver, 'binary') and hasattr(driver.binary, 'process'):
+    #    pid = driver.binary.process.pid
+    #else:
+    #    raise RuntimeError("Unable to identify Firefox process ID.")
+    for proc in psutil.process_iter():
+        if proc.name() == 'firefox.exe':
+            pid  = prod.pid
 
     status_queue.put(('STATUS', 'Browser Launched',
                       (int(pid), profile_settings)))
