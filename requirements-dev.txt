@@ -1,2 +1,9 @@
 autopep8
 localstack
+flake8
+flake8-isort
+IPython>=5.0,<6.0; python_version < '3.0'
+IPython>=5.0; python_version >= '3.0'
+pytest
+redis
+sentry-sdk==0.10.2

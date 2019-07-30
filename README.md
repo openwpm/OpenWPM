@@ -16,18 +16,31 @@ version of Firefox.
 Installation
 ------------
 
-OpenWPM has been developed and tested on Ubuntu 14.04/16.04. An installation
-script, `install.sh` is included to install both the system and python
-dependencies automatically. A few of the python dependencies require specific
-versions, so you should install the dependencies in a virtual environment if
-you're installing a shared machine. If you plan to develop OpenWPM's
-instrumentation extension or run tests you will also need to install the
-development dependencies included in `install-dev.sh`.
+Install miniconda (or Anaconda) -
+https://docs.conda.io/en/latest/miniconda.html
 
-It is likely that OpenWPM will work on platforms other than Ubuntu, however
-we do not officially support anything else. For pointers on alternative
-platform support see
-[the wiki](https://github.com/citp/OpenWPM/wiki/OpenWPM-on-Alternate-Platforms).
+Create your conda environment
+
+    conda env create -f environment.yaml
+
+Activate your conda environment
+
+    conda activate openwpm
+
+Get a copy of firefox and place it in the directory firefox-bin
+
+    ./install-firefox-linux.sh
+    ./install-firefox-osx.sh
+
+Build the openwpm web extension instrumentation
+
+    ./build-instrumentation.sh
+
+Optional, if you want to run crawls with adbobe flash, install flash. For Ubuntu, you can
+use the following script.
+
+    ./install-flash-ubuntu.sh
+
 
 Quick Start
 -----------
@@ -379,7 +392,10 @@ Development pointers
 
 Much of OpenWPM's instrumentation is included in a Firefox add-on SDK extension.
 Thus, in order to add or change instrumentation you will need a few additional
-dependencies, which can be installed with `install-dev.sh`.
+dependencies, which can be installed from inside your conda environment:
+
+    conda activate openwpm
+    pip install -r requirements-dev.txt
 
 ### Editing instrumentation
 
@@ -421,41 +437,11 @@ Once installed, execute `py.test -vv` in the test directory to run all tests.
 
 ### Mac OSX (Limited support for developers)
 
-We've added an installation file to make it easier to run tests and develop on
-Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
-instead of `install.sh` and `install-dev.sh` in [the official getting started
-instructions](https://github.com/mozilla/OpenWPM/wiki/Setting-Up-OpenWPM).
-
-This will install Python packages in a local Python 3 virtualenv,
-download the latest Unbranded Firefox Release into the current folder,
-move geckodriver next to the Firefox binary and install development dependencies.
-For the OpenWPM to be aware of which Firefox installation to run, set the
-FIREFOX_BINARY environment variable before running any commands.
-
-Example, running a demo crawl on Mac OSX:
-
-    source venv/bin/activate
-    export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
-    python demo.py
-
-Running the OpenWPM tests on Mac OSX:
-
-    source venv/bin/activate
-    export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
-    python -m pytest -vv
-
-For more detailed setup instructions for Mac, see [Running OpenWPM natively on macOS](https://github.com/mozilla/OpenWPM/wiki/Running-OpenWPM-natively-on-macOS).
-
 There are known limitations on Mac:
+
 1. Flash cookies are not parsed correctly since we
    [hardcode](https://github.com/citp/OpenWPM/blob/de84f0595dd512649e46c87b47d5ab18c8374d7e/automation/Commands/utils/lso.py#L34)
    the Flash storage path to that used on Linux.
-2. Headless mode does not work since we currently use XVFB and the Firefox
-   GUI on Mac doesn't make use of X. If [XQuartz](https://www.xquartz.org/) is
-   installed, the X virtual frame buffer is created but
-   is not used by the Firefox GUI. Thus Firefox windows will always be visible
-   regardless of the `headless` configuration parameter set. If XQuartz is not
-   installed, attempts to use the `headless` configuration will lead to crashes.
 
 We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
 these issues and add full support and CI testing for Mac.
