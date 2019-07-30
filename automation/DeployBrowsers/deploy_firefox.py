@@ -4,6 +4,7 @@ import json
 import os.path
 import random
 
+import psutil
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
