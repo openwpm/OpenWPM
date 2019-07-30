@@ -8,7 +8,7 @@ import time
 from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
                      ProgrammingError)
 
-import plyvel
+import leveldb
 import six
 from six.moves import range
 
@@ -59,7 +59,7 @@ class LocalListener(BaseListener):
         self.cur = self.db.cursor()
         self.ldb_enabled = ldb_enabled
         if self.ldb_enabled:
-            self.ldb = plyvel.DB(
+            self.ldb = leveldb.LevelDB(
                 os.path.join(manager_params['data_directory'], LDB_NAME),
                 create_if_missing=True, write_buffer_size=128 * 10 ** 6,
                 compression='snappy'
