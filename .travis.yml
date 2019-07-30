@@ -43,7 +43,7 @@ install:
   - sed -i -E 's/(python=)(.*)/\1'$TRAVIS_PYTHON_VERSION'/' ./environment.yaml
 
   # Setup our conda environment and dev requirements
-  - conda env create -f environment.yml
+  - conda env create -f environment.yaml
   - source activate openwpm
   - pip install -r requirements-dev.txt
 
