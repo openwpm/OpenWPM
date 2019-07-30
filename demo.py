@@ -5,10 +5,12 @@ from six.moves import range
 from automation import CommandSequence, TaskManager
 
 # The list of sites that we wish to crawl
-NUM_BROWSERS = 3
-sites = ['http://www.example.com',
-         'http://www.princeton.edu',
-         'http://citp.princeton.edu/']
+NUM_BROWSERS = 1
+sites = [
+    #'http://www.example.com',
+    #'http://www.princeton.edu',
+    'http://citp.princeton.edu/'
+]
 
 # Loads the default manager params
 # and NUM_BROWSERS copies of the default browser params
@@ -29,8 +31,8 @@ for i in range(NUM_BROWSERS):
 browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
-manager_params['data_directory'] = '~/Desktop/'
-manager_params['log_directory'] = '~/Desktop/'
+manager_params['data_directory'] = 'demo-data'
+manager_params['log_directory'] = 'demo-data'
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds

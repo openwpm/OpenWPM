@@ -6,6 +6,7 @@ dependencies:
     - beautifulsoup4
     - geckodriver
     - leveldb
+    - make
     - multiprocess
     - nodejs
     - pandas
