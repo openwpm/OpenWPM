@@ -19,7 +19,6 @@ dependencies:
     - s3fs
     - tabulate
     - tblib
-    - wget
     - pip:
         - publicsuffix
         - mini-amf
