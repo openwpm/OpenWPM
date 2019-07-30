@@ -52,22 +52,19 @@ install:
   # Setup npm dependencies
   # THIS HAS TEMPORARILY REMOVED THE TESTING OF DIFFERENT NODE VERSIONS
   # THESE CAN BE ADDED BACK WITH TEST MATRIX
-  - cd automation/Extension/webext-instrumentation
+  - pushd automation/Extension/webext-instrumentation
   - npm install
-
-  # Return home
-  - cd
+  - popd
 
 before_script:
   - flake8
 
 script:
-  - cd test
-  - py.test -s -v --durations=10 $TESTS
-  - cd ../automation/Extension/webext-instrumentation
-  - npm test
+  - pushd test && py.test -s -v --durations=10 $TESTS && popd
+  - pushd automation/Extension/webext-instrumentation && npm test && popd
 
 after_success:
+  - pushd automation/Extension/webext-instrumentation
   - # npx nyc report --reporter=lcov | npx codecov
   - npm run cov:check
 
