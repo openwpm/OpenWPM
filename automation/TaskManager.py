@@ -243,7 +243,7 @@ class TaskManager:
         self.logging_status_queue = Queue()
         loggingserver = Process(target=MPLogger.loggingserver,
                                 args=(self.manager_params['log_file'],
-                                      self.logging_status_queue, ))
+                                      self.logging_status_queue))
         loggingserver.daemon = True
         loggingserver.start()
         return loggingserver
