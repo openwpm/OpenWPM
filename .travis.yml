@@ -44,22 +44,23 @@ install:
   - echo $TRAVIS_PYTHON_VERSION
   - sed -i -E 's/(python=)(.*)/\1'$TRAVIS_PYTHON_VERSION'/' ./environment.yaml
 
-  # Setup our conda environment and dev requirements
+  # Setup our conda environment
   - conda env create -f environment.yaml
   - source activate openwpm
-  - pip install -r requirements-dev.txt
 
   # Install firefox and flash
   - ./install-firefox-linux.sh
   - ./install-flash-ubuntu.sh
 
-  # Setup npm dependencies
-  # THIS HAS TEMPORARILY REMOVED THE TESTING OF DIFFERENT NODE VERSIONS THESE CAN BE ADDED BACK WITH TEST MATRIX
-  - pushd automation/Extension/webext-instrumentation && npm install && popd
-  - pushd automation/Extension/firefox && npm install && popd
+  # Install extension
+  - ./build-extension.sh
+
+  # Add in our dev requirements
+  - pip install -r requirements-dev.txt
 
 script:
   - pushd test && py.test -s -v --durations=10 $TESTS && popd
+  # THIS SETUP HAS TEMPORARILY REMOVED THE TESTING OF DIFFERENT NODE VERSIONS THESE CAN BE ADDED BACK WITH TEST MATRIX
   - pushd automation/Extension/webext-instrumentation && npm test && popd
 
 after_success:
