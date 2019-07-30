@@ -1,8 +1,14 @@
 from __future__ import absolute_import
 
+import os
 from six.moves import range
 from automation import CommandSequence, TaskManager
 from multiprocess import freeze_support
+
+# 1) PUT CORRECT LOCATION HERE
+os.environ['FIREFOX_BINARY'] = '../firefox-bin/firefox.exe'
+# 2) YOU NEED TO BUILD openwpm.xpi elsewhere (linux or osx) and copy to automation/Extension/firefox
+# see build-extension.sh for details
 
 def crawl():
     # The list of sites that we wish to crawl
