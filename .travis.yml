@@ -52,6 +52,7 @@ install:
   # Setup npm dependencies
   # THIS HAS TEMPORARILY REMOVED THE TESTING OF DIFFERENT NODE VERSIONS THESE CAN BE ADDED BACK WITH TEST MATRIX
   - pushd automation/Extension/webext-instrumentation && npm install && popd
+  - pushd automation/Extension/firefox && npm install && popd
 
 script:
   - pushd test && py.test -s -v --durations=10 $TESTS && popd
