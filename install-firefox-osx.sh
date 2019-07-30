@@ -3,6 +3,12 @@ set -e
 
 # THIS SCRIPT ASSUMES YOUR CONDA ENVIRONMENT IS ACTIVE
 
+if hash wget 2>/dev/null; then
+    echo "Great you already have wget"
+else
+    conda install -y wget
+fi
+
 # rm existing Nightly.app
 rm -rf Nightly.app || true
 
