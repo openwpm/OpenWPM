@@ -82,4 +82,6 @@ jobs:
       install:
       script:
         - docker build -f Dockerfile -t openwpm .
+      after_success:
         - ./.deploy-to-dockerhub.sh
+      
