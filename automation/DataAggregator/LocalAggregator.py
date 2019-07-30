@@ -62,7 +62,7 @@ class LocalListener(BaseListener):
             self.ldb = leveldb.LevelDB(
                 os.path.join(manager_params['data_directory'], LDB_NAME),
                 create_if_missing=True, write_buffer_size=128 * 10 ** 6,
-                compression='snappy'
+                #compression='snappy'
             )
             self.content_batch = self.ldb.write_batch()
         self._ldb_counter = 0
