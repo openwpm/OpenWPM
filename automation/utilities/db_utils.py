@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 import sqlite3
 
-import plyvel
+import leveldb
 
 CONTENT_DB_NAME = 'content.ldb'
 
@@ -33,7 +33,7 @@ def get_javascript_content(data_directory):
         root directory of the crawl files containing the content database
     """
     db_path = os.path.join(data_directory, CONTENT_DB_NAME)
-    db = plyvel.DB(db_path,
+    db = leveldb.LevelDB(db_path,
                    create_if_missing=False,
                    compression='snappy')
     for content_hash, content in db.iterator():

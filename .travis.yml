@@ -50,20 +50,15 @@ install:
   - pip install -r requirements-dev.txt
 
   # Setup npm dependencies
-  # THIS HAS TEMPORARILY REMOVED THE TESTING OF DIFFERENT NODE VERSIONS
-  # THESE CAN BE ADDED BACK WITH TEST MATRIX
-  - pushd automation/Extension/webext-instrumentation
-  - npm install
-  - popd
-
-before_script:
-  - flake8
+  # THIS HAS TEMPORARILY REMOVED THE TESTING OF DIFFERENT NODE VERSIONS THESE CAN BE ADDED BACK WITH TEST MATRIX
+  - pushd automation/Extension/webext-instrumentation && npm install && popd
 
 script:
   - pushd test && py.test -s -v --durations=10 $TESTS && popd
   - pushd automation/Extension/webext-instrumentation && npm test && popd
 
 after_success:
+  - flake8
   - pushd automation/Extension/webext-instrumentation
   - # npx nyc report --reporter=lcov | npx codecov
   - npm run cov:check
