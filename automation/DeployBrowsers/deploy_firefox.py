@@ -178,7 +178,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     #    raise RuntimeError("Unable to identify Firefox process ID.")
     for proc in psutil.process_iter():
         if proc.name() == 'firefox.exe':
-            pid  = prod.pid
+            pid  = proc.pid
 
     status_queue.put(('STATUS', 'Browser Launched',
                       (int(pid), profile_settings)))
