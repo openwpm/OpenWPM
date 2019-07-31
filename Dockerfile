@@ -12,6 +12,7 @@ RUN conda update -n base -c defaults conda
 COPY ./automation ./automation
 COPY ./build-extension.sh ./
 COPY ./install-firefox-linux.sh ./
+COPY ./install-flash-linux.sh ./
 COPY ./environment.yaml ./
 COPY ./VERSION ./
 
@@ -19,6 +20,7 @@ COPY ./VERSION ./
 RUN conda env create -f environment.yaml
 RUN ["/bin/bash", "-c", "source activate openwpm && npm config set unsafe-perm true && ./build-extension.sh"]
 RUN ./install-firefox-linux.sh
+RUN ./install-flash-linux.sh
 
 # Run crawls
 ENV FIREFOX_BINARY /app/firefox-bin/firefox
