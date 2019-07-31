@@ -9,7 +9,6 @@ import struct
 import sys
 import time
 
-import sentry_sdk
 from sentry_sdk.integrations.logging import LoggingIntegration
 from six.moves.queue import Empty as EmptyQueue
 
