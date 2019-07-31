@@ -118,59 +118,6 @@ class MPLogger(object):
             # before_send=self._sentry_before_send
         )
 
-        with sentry_sdk.configure_scope() as scope:
-            # tags generate breakdown charts and search filters
-            S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
-            CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
-            scope.set_tag(
-                'NUM_BROWSERS',
-                int(os.getenv('NUM_BROWSERS', '1'))
-            )
-            scope.set_tag(
-                'CRAWL_DIRECTORY', CRAWL_DIRECTORY
-            )
-            scope.set_tag(
-                'S3_BUCKET', S3_BUCKET
-            )
-            scope.set_tag(
-                'HTTP_INSTRUMENT',
-                os.getenv('HTTP_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'COOKIE_INSTRUMENT',
-                os.getenv('COOKIE_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'NAVIGATION_INSTRUMENT',
-                os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'JS_INSTRUMENT',
-                os.getenv('JS_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'SAVE_JAVASCRIPT',
-                os.getenv('SAVE_JAVASCRIPT', '0') == '1'
-            )
-            scope.set_tag(
-                'DWELL_TIME',
-                int(os.getenv('DWELL_TIME', '10'))
-            )
-            scope.set_tag(
-                'TIMEOUT',
-                int(os.getenv('TIMEOUT', '60'))
-            )
-            scope.set_tag(
-                'CRAWL_REFERENCE', '%s/%s' %
-                (S3_BUCKET, CRAWL_DIRECTORY)
-            )
-            # context adds addition information that may be of interest
-            scope.set_context("crawl_config", {
-                'REDIS_QUEUE_NAME': os.getenv(
-                    'REDIS_QUEUE_NAME', 'crawl-queue'),
-            })
-        sentry_sdk.capture_message("[MPLogger] Crawl started.")
-
     def _start_listener(self, status_queue):
         """Start listening socket for remote logs from extension"""
         socket = serversocket(name="loggingserver")
@@ -230,10 +177,8 @@ class MPLogger(object):
                 self._breadcrumb_handler.handle(record)
             if record.levelno >= self._event_handler.level:
                 self._event_handler.handle(record)
-
+    
     def close(self):
-        if self._sentry_dsn:
-            sentry_sdk.capture_message("[MPLogger] Crawl finished.")
         self._status_queue.put("SHUTDOWN")
         self._listener.join()
 
