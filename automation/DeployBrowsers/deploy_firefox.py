@@ -3,7 +3,9 @@ from __future__ import absolute_import
 import json
 import os.path
 import random
+import sys
 
+from pyvirtualdisplay import Display
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
@@ -93,9 +95,16 @@ def deploy_firefox(status_queue, browser_params, manager_params,
                           profile_settings['ua_string'])
 
     if browser_params['headless']:
-        fo.set_headless(True)
-        fo.add_argument('--width={}'.format(DEFAULT_SCREEN_RES[0]))
-        fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
+        if sys.platform == 'darwin':
+            logger.warn(
+                "BROWSER %i: headless mode is not supported on MacOS. "
+                "Browser window will be visible." % browser_params['crawl_id']
+            )
+        else:
+            display = Display(visible=0, size=profile_settings['screen_res'])
+            display.start()
+            display_pid = display.pid
+            display_port = display.cmd_param[-1][1:]
     status_queue.put(('STATUS', 'Display', (display_pid, display_port)))
 
     if browser_params['extension_enabled']:
