@@ -15,8 +15,8 @@ import time
 import sentry_sdk
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
-# from .SocketInterface import serversocket
-from SocketInterface import serversocket
+
+from .SocketInterface import serversocket
 
 BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:")
 
