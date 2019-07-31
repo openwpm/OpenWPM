@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import gzip
 import json
+import logging
 import os
 import random
 import sys
@@ -18,7 +19,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from six.moves import range
 
-from ..MPLogger import loggingclient
 from ..SocketInterface import clientsocket
 from .utils.lso import get_flash_cookies
 from .utils.webdriver_extensions import (execute_in_all_frames,
@@ -152,9 +152,6 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
     get_website(url, sleep, visit_id, webdriver,
                 browser_params, extension_socket)
 
-    # Connect to logger
-    logger = loggingclient(*manager_params['logger_address'])
-
     # Then visit a few subpages
     for _ in range(num_links):
         links = [x for x in get_intra_links(webdriver, url)
@@ -162,7 +159,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
         if not links:
             break
         r = int(random.random() * len(links))
-        logger.info("BROWSER %i: visiting internal link %s" % (
+        logging.info("BROWSER %i: visiting internal link %s" % (
             browser_params['crawl_id'], links[r].get_attribute("href")))
 
         try:
@@ -214,7 +211,7 @@ def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
     driver.save_screenshot(outname)
 
 
-def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
+def _stitch_screenshot_parts(visit_id, crawl_id, manager_params):
     # Read image parts and compute dimensions of output image
     total_height = -1
     max_scroll = -1
@@ -260,7 +257,7 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
     try:
         output.save(outname)
     except SystemError:
-        logger.error(
+        logging.error(
             "BROWSER %i: SystemError while trying to save screenshot %s. \n"
             "Slices of image %s \n Final size %s, %s." %
             (crawl_id, outname, '\n'.join([str(x) for x in parts]),
@@ -271,7 +268,6 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
 
 def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
                          suffix=''):
-    logger = loggingclient(*manager_params['logger_address'])
 
     outdir = os.path.join(manager_params['screenshot_path'], 'parts')
     if not os.path.isdir(outdir):
@@ -299,7 +295,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             try:
                 driver.execute_script('window.scrollBy(0, window.innerHeight)')
             except WebDriverException:
-                logger.info(
+                logging.info(
                     "BROWSER %i: WebDriverException while scrolling, "
                     "screenshot may be misaligned!" % crawl_id)
                 pass
@@ -314,12 +310,12 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             driver.save_screenshot(outname % (part, curr_scrollY))
     except WebDriverException:
         excp = traceback.format_exception(*sys.exc_info())
-        logger.error(
+        logging.error(
             "BROWSER %i: Exception while taking full page screenshot \n %s" %
             (crawl_id, ''.join(excp)))
         return
 
-    _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params)
+    _stitch_screenshot_parts(visit_id, crawl_id, manager_params)
 
 
 def dump_page_source(visit_id, driver, manager_params, suffix=''):

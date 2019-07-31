@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import errno
+import logging
 import os
 import shutil
 import signal
@@ -18,7 +19,6 @@ from tblib import pickling_support
 from .Commands import command_executor
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
-from .MPLogger import loggingclient
 from .SocketInterface import clientsocket
 
 pickling_support.install()
@@ -43,7 +43,6 @@ class Browser:
         # manager parameters
         self.current_profile_path = None
         self.db_socket_address = manager_params['aggregator_address']
-        self.logger_address = manager_params['logger_address']
         self.crawl_id = browser_params['crawl_id']
         self.curr_visit_id = None
         self.browser_params = browser_params
@@ -73,7 +72,6 @@ class Browser:
         # dict of additional browser profile settings (e.g. screen_res)
         self.browser_settings = None
         self.browser_manager = None  # process that controls browser
-        self.logger = loggingclient(*self.logger_address)
 
     def ready(self):
         """ return if the browser is ready to accept a command """
@@ -131,7 +129,7 @@ class Browser:
 
         while not success and \
                 unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT:
-            self.logger.debug("BROWSER %i: Spawn attempt %i " % (
+            logging.debug("BROWSER %i: Spawn attempt %i " % (
                 self.crawl_id, unsuccessful_spawns))
             # Resets the command/status queues
             (self.command_queue, self.status_queue) = (Queue(), Queue())
@@ -161,7 +159,7 @@ class Browser:
 
                 (driver_profile_path, ready) = check_queue(launch_status)
                 if ready != 'READY':
-                    self.logger.error(
+                    logging.error(
                         "BROWSER %i: Mismatch of status queue return values, "
                         "trying again..." % self.crawl_id
                     )
@@ -177,7 +175,7 @@ class Browser:
                 for string in status_strings:
                     error_string += " | %s: %s " % (
                         string, launch_status.get(string, False))
-                self.logger.error(
+                logging.error(
                     "BROWSER %i: Spawn unsuccessful %s" % (self.crawl_id,
                                                            error_string))
                 self.kill_browser_manager()
@@ -188,7 +186,7 @@ class Browser:
         # current profile path class variable and clean up the tempdir
         # and previous profile path.
         if success:
-            self.logger.debug(
+            logging.debug(
                 "BROWSER %i: Browser spawn sucessful!" % self.crawl_id)
             previous_profile_path = self.current_profile_path
             self.current_profile_path = driver_profile_path
@@ -206,11 +204,11 @@ class Browser:
         kill and restart the two worker processes
         <clear_profile> marks whether we want to wipe the old profile
         """
-        self.logger.info("BROWSER %i: BrowserManager restart initiated. "
-                         "Clear profile? %s" % (self.crawl_id, clear_profile))
+        logging.info("BROWSER %i: BrowserManager restart initiated. "
+                     "Clear profile? %s" % (self.crawl_id, clear_profile))
         if self.is_fresh:  # Return success if browser is fresh
-            self.logger.info("BROWSER %i: Skipping restart since the browser "
-                             "is a fresh instance already" % self.crawl_id)
+            logging.info("BROWSER %i: Skipping restart since the browser "
+                         "is a fresh instance already" % self.crawl_id)
             return True
 
         self.kill_browser_manager()
@@ -225,7 +223,7 @@ class Browser:
 
     def kill_browser_manager(self):
         """Kill the BrowserManager process and all of its children"""
-        self.logger.debug(
+        logging.debug(
             "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
             "Display PID: %s | Display Port: %s | Browser PID: %s" % (
                 self.crawl_id, self.browser_manager.pid, self.display_pid,
@@ -236,27 +234,27 @@ class Browser:
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
-                self.logger.debug("BROWSER %i: Browser manager process does "
-                                  "not exist" % self.crawl_id)
+                logging.debug("BROWSER %i: Browser manager process does "
+                              "not exist" % self.crawl_id)
                 pass
         if self.display_pid is not None:
             try:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
-                self.logger.debug("BROWSER %i: Display process does not "
-                                  "exit" % self.crawl_id)
+                logging.debug("BROWSER %i: Display process does not "
+                              "exit" % self.crawl_id)
                 pass
             except TypeError:
-                self.logger.error("BROWSER %i: PID may not be the correct "
-                                  "type %s" % (self.crawl_id,
-                                               str(self.display_pid)))
+                logging.error("BROWSER %i: PID may not be the correct "
+                              "type %s" % (self.crawl_id,
+                                           str(self.display_pid)))
         if self.display_port is not None:  # xvfb diplay lock
             lockfile = "/tmp/.X%s-lock" % self.display_port
             try:
                 os.remove(lockfile)
             except OSError:
-                self.logger.debug("BROWSER %i: Screen lockfile (%s) already "
-                                  "removed" % (self.crawl_id, lockfile))
+                logging.debug("BROWSER %i: Screen lockfile (%s) already "
+                              "removed" % (self.crawl_id, lockfile))
                 pass
         if self.browser_pid is not None:
             """`browser_pid` is the geckodriver process. We first kill
@@ -268,7 +266,7 @@ class Browser:
                     try:
                         child.kill()
                     except psutil.NoSuchProcess:
-                        self.logger.debug(
+                        logging.debug(
                             "BROWSER %i: Geckodriver child process already "
                             "killed (pid=%i)." % (self.crawl_id, child.pid))
                         pass
@@ -277,53 +275,53 @@ class Browser:
                 for child in geckodriver.children():
                     child.wait(timeout=20)
             except psutil.NoSuchProcess:
-                self.logger.debug("BROWSER %i: Geckodriver process already "
-                                  "killed." % self.crawl_id)
+                logging.debug("BROWSER %i: Geckodriver process already "
+                              "killed." % self.crawl_id)
                 pass
             except psutil.TimeoutExpired:
-                self.logger.debug("BROWSER %i: Timeout while waiting for "
-                                  "geckodriver or browser process to close " %
-                                  self.crawl_id)
+                logging.debug("BROWSER %i: Timeout while waiting for "
+                              "geckodriver or browser process to close " %
+                              self.crawl_id)
                 pass
 
     def shutdown_browser(self, during_init):
         """ Runs the closing tasks for this Browser/BrowserManager """
         # Join command thread
         if self.command_thread is not None:
-            self.logger.debug(
+            logging.debug(
                 "BROWSER %i: Joining command thread" % self.crawl_id)
             start_time = time.time()
             if self.current_timeout is not None:
                 self.command_thread.join(self.current_timeout + 10)
             else:
                 self.command_thread.join(60)
-            self.logger.debug(
+            logging.debug(
                 "BROWSER %i: %f seconds to join command thread" % (
                     self.crawl_id, time.time() - start_time))
 
         # Kill BrowserManager process and children
-        self.logger.debug(
+        logging.debug(
             "BROWSER %i: Killing browser manager..." % self.crawl_id)
         self.kill_browser_manager()
 
         # Archive browser profile (if requested)
         if not during_init and \
                 self.browser_params['profile_archive_dir'] is not None:
-            self.logger.warn(
+            logging.warn(
                 "BROWSER %i: Archiving the browser profile directory is "
                 "currently unsupported. "
                 "See: https://github.com/mozilla/OpenWPM/projects/2" %
                 self.crawl_id
             )
         """
-        self.logger.debug(
+        logging.debug(
             "BROWSER %i: during_init=%s | profile_archive_dir=%s" % (
                 self.crawl_id, str(during_init),
                 self.browser_params['profile_archive_dir'])
         )
         if (not during_init and
                 self.browser_params['profile_archive_dir'] is not None):
-            self.logger.debug(
+            logging.debug(
                 "BROWSER %i: Archiving browser profile directory to %s" % (
                     self.crawl_id, self.browser_params['profile_archive_dir']))
             profile_commands.dump_profile(
@@ -353,8 +351,6 @@ def BrowserManager(command_queue, status_queue, browser_params,
     to the TaskManager.
     """
     try:
-        logger = loggingclient(*manager_params['logger_address'])
-
         # Start the virtualdisplay (if necessary), webdriver, and browser
         driver, prof_folder, browser_settings = deploy_browser.deploy_browser(
             status_queue, browser_params, manager_params, crash_recovery)
@@ -365,8 +361,8 @@ def BrowserManager(command_queue, status_queue, browser_params,
         # TODO: Initial communication from extension to TM should use sockets
         if browser_params['browser'] == 'firefox' and \
                 browser_params['extension_enabled']:
-            logger.debug("BROWSER %i: Looking for extension port information "
-                         "in %s" % (browser_params['crawl_id'], prof_folder))
+            logging.debug("BROWSER %i: Looking for extension port information "
+                          "in %s" % (browser_params['crawl_id'], prof_folder))
             elapsed = 0
             port = None
             ep_filename = os.path.join(prof_folder, 'extension_port.txt')
@@ -385,14 +381,14 @@ def BrowserManager(command_queue, status_queue, browser_params,
                 with open(ep_filename, 'rt') as f:
                     port = int(f.read().strip())
 
-            logger.debug("BROWSER %i: Connecting to extension on port %i" % (
+            logging.debug("BROWSER %i: Connecting to extension on port %i" % (
                 browser_params['crawl_id'], port))
             extension_socket = clientsocket(serialization='json')
             extension_socket.connect('127.0.0.1', int(port))
         else:
             extension_socket = None
 
-        logger.debug(
+        logging.debug(
             "BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])
 
         # passes the profile folder, WebDriver pid and display pid back to the
@@ -410,7 +406,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
             # reads in the command tuple of form:
             # (command, arg0, arg1, arg2, ..., argN) where N is variable
             command = command_queue.get()
-            logger.info("BROWSER %i: EXECUTING COMMAND: %s" % (
+            logging.info("BROWSER %i: EXECUTING COMMAND: %s" % (
                 browser_params['crawl_id'], str(command)))
             # attempts to perform an action and return an OK signal
             # if command fails for whatever reason, tell the TaskManager to
@@ -421,14 +417,16 @@ def BrowserManager(command_queue, status_queue, browser_params,
             status_queue.put("OK")
 
     except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
-        logger.error("BROWSER %i: %s thrown, informing parent and raising" % (
+        logging.error("BROWSER %i: %s thrown, informing parent and raising" % (
             browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
     except Exception:
         excp = traceback.format_exception(*sys.exc_info())
-        logger.error("BROWSER %i: Crash in driver, restarting browser manager "
-                     "\n %s" % (browser_params['crawl_id'], ''.join(excp)))
+        logging.error(
+            "BROWSER %i: Crash in driver, restarting browser manager "
+            "\n %s" % (browser_params['crawl_id'], ''.join(excp))
+        )
         status_queue.put(('FAILED', None))
         return

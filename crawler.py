@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import logging
 import os
 import time
 
@@ -83,20 +84,20 @@ if SENTRY_DSN:
 
 # Connect to job queue
 job_queue = rediswq.RedisWQ(name=REDIS_QUEUE_NAME, host="redis")
-manager.logger.info("Worker with sessionID: %s" % job_queue.sessionID())
-manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
+logging.info("Worker with sessionID: %s" % job_queue.sessionID())
+logging.info("Initial queue state: empty=%s" % job_queue.empty())
 
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job = job_queue.lease(lease_secs=120, block=True, timeout=5)
     if job is None:
-        manager.logger.info("Waiting for work")
+        logging.info("Waiting for work")
         time.sleep(5)
     else:
         site_rank, site = job.decode("utf-8").split(',')
         if "://" not in site:
             site = "http://" + site
-        manager.logger.info("Visiting %s..." % site)
+        logging.info("Visiting %s..." % site)
         command_sequence = CommandSequence.CommandSequence(
             site, reset=True
         )
@@ -104,7 +105,7 @@ while not job_queue.empty():
         manager.execute_command_sequence(command_sequence)
         job_queue.complete(job)
 
-manager.logger.info("Job queue finished, exiting.")
+logging.info("Job queue finished, exiting.")
 manager.close()
 
 if SENTRY_DSN:

@@ -77,7 +77,7 @@ class MPLogger(object):
         )
         self._listener.daemon = True
         self._listener.start()
-        self._listener_address = self._status_queue.get()
+        self.logger_address = self._status_queue.get()
 
         # Attach console handler to log to console
         logger = logging.getLogger()
@@ -90,7 +90,7 @@ class MPLogger(object):
         logger.addHandler(consoleHandler)
 
         # Attach socket handler to logger to serialize writes to file
-        socketHandler = ClientSocketHandler(*self._listener_address)
+        socketHandler = ClientSocketHandler(*self.logger_address)
         socketHandler.setLevel(logging.DEBUG)
         logger.addHandler(socketHandler)
 
@@ -104,17 +104,10 @@ class MPLogger(object):
     def _initialize_sentry(self):
         """If running a cloud crawl, we can pull the sentry endpoint
         and related config varibles from the environment"""
-        print("**********")
         self._breadcrumb_handler = BreadcrumbHandler(level=logging.DEBUG)
         self._event_handler = EventHandler(level=logging.ERROR)
-
-        # sentry_logging = LoggingIntegration(
-        #     level=logging.DEBUG,
-        #     event_level=logging.ERROR
-        # )
         sentry_sdk.init(
             dsn=self._sentry_dsn,
-            # integrations=[sentry_logging],
             # before_send=self._sentry_before_send
         )
 
@@ -177,7 +170,7 @@ class MPLogger(object):
                 self._breadcrumb_handler.handle(record)
             if record.levelno >= self._event_handler.level:
                 self._event_handler.handle(record)
-    
+
     def close(self):
         self._status_queue.put("SHUTDOWN")
         self._listener.join()
