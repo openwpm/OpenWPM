@@ -36,10 +36,10 @@ Build the openwpm web extension instrumentation
 
     ./build-instrumentation.sh
 
-Optional, if you want to run crawls with adbobe flash, install flash. For linux, you can
+Optional, if you want to run crawls with adbobe flash, install flash. For Ubuntu, you can
 use the following script.
 
-    ./install-flash-linux.sh
+    ./install-flash-ubuntu.sh
 
 
 Quick Start

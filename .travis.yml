@@ -50,7 +50,7 @@ install:
 
   # Install firefox and flash
   - ./install-firefox-linux.sh
-  - ./install-flash-linux.sh
+  - ./install-flash-ubuntu.sh
 
   # Install extension
   - ./build-extension.sh
