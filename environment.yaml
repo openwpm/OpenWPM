@@ -15,11 +15,11 @@ dependencies:
     - psutil
     - pyarrow
     - python-dateutil
-    - python-leveldb
     - selenium
     - s3fs
     - tabulate
     - tblib
     - pip:
         - publicsuffix
+        - plyvel
         - mini-amf
