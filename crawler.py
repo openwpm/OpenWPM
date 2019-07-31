@@ -4,7 +4,6 @@ import os
 import time
 
 import boto3
-import sentry_sdk
 from six.moves import range
 
 from automation import CommandSequence, TaskManager
@@ -24,29 +23,6 @@ SAVE_JAVASCRIPT = os.getenv('SAVE_JAVASCRIPT', '0') == '1'
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', '')
-
-# Activate Sentry if configured
-if SENTRY_DSN != '':
-    sentry_sdk.init(dsn=SENTRY_DSN)
-    with sentry_sdk.configure_scope() as scope:
-        # tags generate breakdown charts and search filters
-        scope.set_tag('NUM_BROWSERS', NUM_BROWSERS)
-        scope.set_tag('CRAWL_DIRECTORY', CRAWL_DIRECTORY)
-        scope.set_tag('S3_BUCKET', S3_BUCKET)
-        scope.set_tag('HTTP_INSTRUMENT', HTTP_INSTRUMENT)
-        scope.set_tag('COOKIE_INSTRUMENT', COOKIE_INSTRUMENT)
-        scope.set_tag('NAVIGATION_INSTRUMENT', NAVIGATION_INSTRUMENT)
-        scope.set_tag('JS_INSTRUMENT', JS_INSTRUMENT)
-        scope.set_tag('SAVE_JAVASCRIPT', SAVE_JAVASCRIPT)
-        scope.set_tag('DWELL_TIME', DWELL_TIME)
-        scope.set_tag('TIMEOUT', TIMEOUT)
-        scope.set_tag('CRAWL_REFERENCE', '%s/%s' %
-                      (S3_BUCKET, CRAWL_DIRECTORY))
-        # context adds addition information that may be of interest
-        scope.set_context("crawl_config", {
-            'REDIS_QUEUE_NAME': REDIS_QUEUE_NAME,
-        })
-    sentry_sdk.capture_message("Crawl worker started")
 
 # Loads the default manager params
 # and NUM_BROWSERS copies of the default browser params
@@ -104,6 +80,3 @@ while not job_queue.empty():
 
 manager.logger.info("Job queue finished, exiting.")
 manager.close()
-
-if SENTRY_DSN != '':
-    sentry_sdk.capture_message("Crawl worker finished")

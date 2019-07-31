@@ -421,14 +421,14 @@ def BrowserManager(command_queue, status_queue, browser_params,
             status_queue.put("OK")
 
     except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
-        logger.info("BROWSER %i: %s thrown, informing parent and raising" % (
+        logger.error("BROWSER %i: %s thrown, informing parent and raising" % (
             browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
     except Exception:
         excp = traceback.format_exception(*sys.exc_info())
-        logger.info("BROWSER %i: Crash in driver, restarting browser manager "
-                    "\n %s" % (browser_params['crawl_id'], ''.join(excp)))
+        logger.error("BROWSER %i: Crash in driver, restarting browser manager "
+                     "\n %s" % (browser_params['crawl_id'], ''.join(excp)))
         status_queue.put(('FAILED', None))
         return

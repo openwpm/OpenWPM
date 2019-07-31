@@ -5,9 +5,9 @@ import json
 import os
 import threading
 import time
+from queue import Queue
 
 import psutil
-from multiprocess import Process, Queue
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves import range
@@ -241,9 +241,10 @@ class TaskManager:
     def _launch_loggingserver(self):
         """ sets up logging server """
         self.logging_status_queue = Queue()
-        loggingserver = Process(target=MPLogger.loggingserver,
-                                args=(self.manager_params['log_file'],
-                                      self.logging_status_queue))
+        loggingserver = threading.Thread(
+            target=MPLogger.loggingserver,
+            args=(self.manager_params['log_file'], self.logging_status_queue)
+        )
         loggingserver.daemon = True
         loggingserver.start()
         return loggingserver

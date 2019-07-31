@@ -5,15 +5,21 @@ import json
 import logging
 import logging.handlers
 import os
+import queue
+import re
 import struct
 import sys
+import threading
 import time
 
 import sentry_sdk
-from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
 
-from .SocketInterface import serversocket
+# from .SocketInterface import serversocket
+from SocketInterface import serversocket
+
+BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:")
 
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
@@ -40,20 +46,43 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         return struct.pack('>Lc', len(s), b'j') + s
 
 
-def loggingclient(logger_address, logger_port, level=logging.DEBUG):
-    """ Establishes a logger that sends log records to loggingserver """
-    logger = logging.getLogger(__name__)
-    logger.setLevel(level)
+class MPLogger(object):
+    """Configure OpenWPM logging across processes"""
 
-    # Logger object shared, so we only want to connect handlers once
-    if not len(logger.handlers):
+    def __init__(self, log_file):
+        self._status_queue = queue.Queue()
+        self._log_file = os.path.expanduser(log_file)
+        self._initialize_loggers()
 
-        # Set up the SocketHandler - formatted server-side
-        socketHandler = ClientSocketHandler(logger_address, logger_port)
-        socketHandler.setLevel(level)
-        logger.addHandler(socketHandler)
+        # Configure sentry (if available)
+        self._sentry_dsn = os.getenv('SENTRY_DSN', None)
+        if self._sentry_dsn:
+            self._initialize_sentry()
 
-        # Set up logging to console
+    def _initialize_loggers(self):
+        """Set up console logging and serialized file logging"""
+
+        # Start file handler and listener thread (for serialization)
+        handler = logging.FileHandler(self._log_file)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(processName)-11s[%(threadName)-10s]"
+            "- %(module)-20s - %(levelname)-8s: %(message)s"
+        )
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
+        self._file_handler = handler
+
+        self._listener = threading.Thread(
+            target=self._start_listener,
+            args=(self._status_queue,)
+        )
+        self._listener.daemon = True
+        self._listener.start()
+        self._listener_address = self._status_queue.get()
+
+        # Attach console handler to log to console
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(logging.INFO)
         formatter = logging.Formatter(
@@ -61,33 +90,33 @@ def loggingclient(logger_address, logger_port, level=logging.DEBUG):
         consoleHandler.setFormatter(formatter)
         logger.addHandler(consoleHandler)
 
-    return logger
+        # Attach socket handler to logger to serialize writes to file
+        socketHandler = ClientSocketHandler(*self._listener_address)
+        socketHandler.setLevel(logging.DEBUG)
+        logger.addHandler(socketHandler)
 
+    def _sentry_before_send(self, event, hint):
+        """Update sentry events before they are sent"""
+        # Strip browser ID prefix for better grouping
+        if re.match(BROWSER_PREFIX, event['message']):
+            event['message'] = re.sub(BROWSER_PREFIX, '', event['message'])
+        return event
 
-def loggingserver(log_file, status_queue):
-    """
-    A logging server to serialize writes to the log file from multiple
-    processes.
+    def _initialize_sentry(self):
+        """If running a cloud crawl, we can pull the sentry endpoint
+        and related config varibles from the environment"""
+        print("**********")
+        self._breadcrumb_handler = BreadcrumbHandler(level=logging.DEBUG)
+        self._event_handler = EventHandler(level=logging.ERROR)
 
-    Parameters
-    ----------
-    log_file : string
-        The location of the log file on disk
-    status_queue : Queue
-        A queue to connect to the TaskManager process
-    """
-
-    # If running a cloud crawl, we can pull the sentry endpoint and related
-    # config varibles from the environment
-    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
-    if SENTRY_DSN:
-        sentry_logging = LoggingIntegration(
-            level=logging.DEBUG,
-            event_level=logging.ERROR
-        )
+        # sentry_logging = LoggingIntegration(
+        #     level=logging.DEBUG,
+        #     event_level=logging.ERROR
+        # )
         sentry_sdk.init(
-            dsn=SENTRY_DSN,
-            integrations=[sentry_logging]
+            dsn=self._sentry_dsn,
+            #integrations=[sentry_logging],
+            #before_send=self._sentry_before_send
         )
 
         with sentry_sdk.configure_scope() as scope:
@@ -141,84 +170,107 @@ def loggingserver(log_file, status_queue):
                 'REDIS_QUEUE_NAME': os.getenv(
                     'REDIS_QUEUE_NAME', 'crawl-queue'),
             })
+        sentry_sdk.capture_message("[MPLogger] Crawl started.")
 
-    # Configure the log file
-    logging.basicConfig(
-        filename=os.path.expanduser(log_file),
-        format=(
-            "%(asctime)s - %(processName)-11s[%(threadName)-10s]"
-            "- %(module)-20s - %(levelname)-8s: %(message)s"),
-        level=logging.INFO)
+    def _start_listener(self, status_queue):
+        """Start listening socket for remote logs from extension"""
+        socket = serversocket(name="loggingserver")
+        status_queue.put(socket.sock.getsockname())
+        socket.start_accepting()
 
-    # Sets up the serversocket to start accepting connections
-    sock = serversocket(name="loggingserver")
-    status_queue.put(sock.sock.getsockname())  # let TM know location
-    sock.start_accepting()
+        while True:
+            # Check for shutdown
+            if not self._status_queue.empty():
+                self._status_queue.get()
+                socket.close()
+                time.sleep(3)  # TODO: the socket needs a better way of closing
+                while not socket.queue.empty():
+                    obj = socket.queue.get()
+                    self._process_record(obj)
+                break
 
-    while True:
-        # Check for KILL command from TaskManager
-        if not status_queue.empty():
-            status_queue.get()
-            sock.close()
-            _drain_queue(sock.queue)
-            break
+            # Process logs
+            try:
+                obj = socket.queue.get(True, 10)
+                self._process_record(obj)
+            except EmptyQueue:
+                pass
 
-        # Process logs
-        try:
-            obj = sock.queue.get(True, 10)
-            _handleLogRecord(obj)
-        except EmptyQueue:
-            pass
+    def _process_record(self, obj):
+        if len(obj) == 2 and obj[0] == 'EXT':
+            self._handle_extension_log(obj)
+        else:
+            self._handle_serialized_writes(obj)
 
-
-def _handleLogRecord(obj):
-    """ Handle log, logs everything sent. Should filter client-side """
-
-    # Log message came from browser extension: requires special handling
-    if len(obj) == 2 and obj[0] == 'EXT':
+    def _handle_extension_log(self, obj):
+        """Pass messages received from the extension to logger"""
         obj = json.loads(obj[1])
-        record = logging.LogRecord(name=__name__,
-                                   level=obj['level'],
-                                   pathname=obj['pathname'],
-                                   lineno=obj['lineno'],
-                                   msg=obj['msg'],
-                                   args=obj['args'],
-                                   exc_info=obj['exc_info'],
-                                   func=obj['func'])
-    else:
+        record = logging.LogRecord(
+            name=__name__,
+            level=obj['level'],
+            pathname=obj['pathname'],
+            lineno=obj['lineno'],
+            msg=obj['msg'],
+            args=obj['args'],
+            exc_info=obj['exc_info'],
+            func=obj['func']
+        )
+        logger = logging.getLogger()
+        logger.handle(record)
+
+    def _handle_serialized_writes(self, obj):
+        """Handle records that must be serialized to the main process
+
+        This is currently records that are written to a file on disk
+        and those sent to Sentry.
+        """
         record = logging.makeLogRecord(obj)
-    logger = logging.getLogger(record.name)
-    logger.handle(record)
+        self._file_handler.emit(record)
+        if self._sentry_dsn:
+            if record.levelno >= self._breadcrumb_handler.level:
+                self._breadcrumb_handler.handle(record)
+            if record.levelno >= self._event_handler.level:
+                self._event_handler.handle(record)
 
-
-def _drain_queue(sock_queue):
-    """ Ensures queue is empty before closing """
-    time.sleep(3)  # TODO: the socket needs a better way of closing
-    while not sock_queue.empty():
-        obj = sock_queue.get()
-        _handleLogRecord(obj)
+    def close(self):
+        if self._sentry_dsn:
+            sentry_sdk.capture_message("[MPLogger] Crawl finished.")
+        self._status_queue.put("SHUTDOWN")
+        self._listener.join()
 
 
 def main():
-    # Some tests
     import logging
-    import logging.handlers
     import multiprocess as mp
 
     # Set up loggingserver
     log_file = '~/mplogger.log'
-    status_queue = mp.Queue()
-    lserver_process = mp.Process(target=loggingserver,
-                                 args=(log_file, status_queue))
-    lserver_process.daemon = True
-    lserver_process.start()
-    server_address = status_queue.get()
+    openwpm_logger = MPLogger(log_file)
 
-    # Connect main process to logging server
-    rootLogger = logging.getLogger('')
-    rootLogger.setLevel(logging.DEBUG)
-    socketHandler = ClientSocketHandler(*server_address)
-    rootLogger.addHandler(socketHandler)
+    # Connect a child process to the server
+    def child_proc(index):
+        logging.info('Child %d - Test1' % index)
+        logging.info('Child %d - Test2' % index)
+        logging.info('Child %d - Test3' % index)
+        logging.info('Child %d - Test4' % index)
+        logging.debug('Child %d - Test5' % index)
+        time.sleep(1)
+        logging.error('Child %d - Test6' % index)
+        logging.critical('Child %d - Test7' % index)
+        logging.warning('Child %d - Test8' % index)
+        return
+    child_process_1 = mp.Process(
+        target=child_proc,
+        args=(1,)
+    )
+    child_process_1.daemon = True
+    child_process_1.start()
+    child_process_2 = mp.Process(
+        target=child_proc,
+        args=(2,)
+    )
+    child_process_2.daemon = True
+    child_process_2.start()
 
     # Send some sample logs
     logging.info('Test1')
@@ -233,8 +285,9 @@ def main():
     logger2.info('1234567890')
 
     # Close the logging server
-    status_queue.put('DIE')
-    lserver_process.join()
+    openwpm_logger.close()
+    child_process_1.join()
+    child_process_2.join()
     print("Server closed, exiting...")
 
 
