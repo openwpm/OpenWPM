@@ -14,6 +14,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from six.moves.queue import Empty as EmptyQueue
 
 from .SocketInterface import serversocket
+from .utilities.sentry import activate_sentry
 
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
@@ -85,62 +86,10 @@ def loggingserver(log_file, status_queue):
             level=logging.DEBUG,
             event_level=logging.ERROR
         )
-        sentry_sdk.init(
+        activate_sentry(
             dsn=SENTRY_DSN,
             integrations=[sentry_logging]
         )
-
-        with sentry_sdk.configure_scope() as scope:
-            # tags generate breakdown charts and search filters
-            S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
-            CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
-            scope.set_tag(
-                'NUM_BROWSERS',
-                int(os.getenv('NUM_BROWSERS', '1'))
-            )
-            scope.set_tag(
-                'CRAWL_DIRECTORY', CRAWL_DIRECTORY
-            )
-            scope.set_tag(
-                'S3_BUCKET', S3_BUCKET
-            )
-            scope.set_tag(
-                'HTTP_INSTRUMENT',
-                os.getenv('HTTP_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'COOKIE_INSTRUMENT',
-                os.getenv('COOKIE_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'NAVIGATION_INSTRUMENT',
-                os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'JS_INSTRUMENT',
-                os.getenv('JS_INSTRUMENT', '1') == '1'
-            )
-            scope.set_tag(
-                'SAVE_JAVASCRIPT',
-                os.getenv('SAVE_JAVASCRIPT', '0') == '1'
-            )
-            scope.set_tag(
-                'DWELL_TIME',
-                int(os.getenv('DWELL_TIME', '10'))
-            )
-            scope.set_tag(
-                'TIMEOUT',
-                int(os.getenv('TIMEOUT', '60'))
-            )
-            scope.set_tag(
-                'CRAWL_REFERENCE', '%s/%s' %
-                (S3_BUCKET, CRAWL_DIRECTORY)
-            )
-            # context adds addition information that may be of interest
-            scope.set_context("crawl_config", {
-                'REDIS_QUEUE_NAME': os.getenv(
-                    'REDIS_QUEUE_NAME', 'crawl-queue'),
-            })
 
     # Configure the log file
     logging.basicConfig(
