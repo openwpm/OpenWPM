@@ -15,7 +15,6 @@ import time
 import sentry_sdk
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
-
 # from .SocketInterface import serversocket
 from SocketInterface import serversocket
 
@@ -115,8 +114,8 @@ class MPLogger(object):
         # )
         sentry_sdk.init(
             dsn=self._sentry_dsn,
-            #integrations=[sentry_logging],
-            #before_send=self._sentry_before_send
+            # integrations=[sentry_logging],
+            # before_send=self._sentry_before_send
         )
 
         with sentry_sdk.configure_scope() as scope:
