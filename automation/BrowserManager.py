@@ -10,7 +10,7 @@ import time
 import traceback
 
 import psutil
-from multiprocess import Process, Queue
+from multiprocess import Queue
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
@@ -20,6 +20,7 @@ from .Commands import command_executor
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
+from .utilities.multiprocess import Process
 
 pickling_support.install()
 

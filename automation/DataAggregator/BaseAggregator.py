@@ -2,10 +2,11 @@ import abc
 import logging
 import time
 
-from multiprocess import Process, Queue
+from multiprocess import Queue
 from six.moves import queue
 
 from ..SocketInterface import serversocket
+from ..utilities.multiprocess import Process
 
 RECORD_TYPE_CONTENT = 'page_content'
 STATUS_TIMEOUT = 120  # seconds
