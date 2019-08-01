@@ -64,8 +64,8 @@ class MPLogger(object):
         logger = logging.getLogger()
 
         # Remove any previous handlers to avoid registering duplicates
-        for i in range(len(logger.handlers)):
-            logger.removeHandler(logger.handlers[i])
+        if len(logger.handlers) > 0:
+            logger.handlers = list()
 
         # Start file handler and listener thread (for serialization)
         handler = logging.FileHandler(self._log_file)
