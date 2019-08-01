@@ -49,11 +49,6 @@ class MPLogger(object):
     """Configure OpenWPM logging across processes"""
 
     def __init__(self, log_file):
-        # Return early if handlers already attached to logger
-        logger = logging.getLogger()
-        if len(logger.handlers) > 0:
-            return
-
         # Configure log handlers
         self._status_queue = queue.Queue()
         self._log_file = os.path.expanduser(log_file)
@@ -66,6 +61,11 @@ class MPLogger(object):
 
     def _initialize_loggers(self):
         """Set up console logging and serialized file logging"""
+        logger = logging.getLogger()
+
+        # Remove any previous handlers to avoid registering duplicates
+        for i in range(len(logger.handlers)):
+            logger.removeHandler(logger.handlers[i])
 
         # Start file handler and listener thread (for serialization)
         handler = logging.FileHandler(self._log_file)
@@ -86,7 +86,6 @@ class MPLogger(object):
         self.logger_address = self._status_queue.get()
 
         # Attach console handler to log to console
-        logger = logging.getLogger()
         logger.setLevel(logging.INFO)
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(logging.INFO)
@@ -178,9 +177,8 @@ class MPLogger(object):
                 self._event_handler.handle(record)
 
     def close(self):
-        if self._status_queue:
-            self._status_queue.put("SHUTDOWN")
-            self._listener.join()
+        self._status_queue.put("SHUTDOWN")
+        self._listener.join()
 
 
 def main():
