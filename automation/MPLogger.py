@@ -49,6 +49,12 @@ class MPLogger(object):
     """Configure OpenWPM logging across processes"""
 
     def __init__(self, log_file):
+        # Return early if handlers already attached to logger
+        logger = logging.getLogger()
+        if len(logger.handlers) > 0:
+            return
+
+        # Configure log handlers
         self._status_queue = queue.Queue()
         self._log_file = os.path.expanduser(log_file)
         self._initialize_loggers()
@@ -172,8 +178,9 @@ class MPLogger(object):
                 self._event_handler.handle(record)
 
     def close(self):
-        self._status_queue.put("SHUTDOWN")
-        self._listener.join()
+        if self._status_queue:
+            self._status_queue.put("SHUTDOWN")
+            self._listener.join()
 
 
 def main():
