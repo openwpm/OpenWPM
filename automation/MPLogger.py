@@ -5,7 +5,6 @@ import json
 import logging
 import logging.handlers
 import os
-import queue
 import re
 import struct
 import sys
@@ -13,6 +12,7 @@ import threading
 import time
 
 import sentry_sdk
+from multiprocess import Queue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
 
@@ -50,7 +50,7 @@ class MPLogger(object):
 
     def __init__(self, log_file):
         # Configure log handlers
-        self._status_queue = queue.Queue()
+        self._status_queue = Queue()
         self._log_file = os.path.expanduser(log_file)
         self._initialize_loggers()
 
@@ -62,6 +62,7 @@ class MPLogger(object):
     def _initialize_loggers(self):
         """Set up console logging and serialized file logging"""
         logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
 
         # Remove any previous handlers to avoid registering duplicates
         if len(logger.handlers) > 0:
@@ -74,7 +75,7 @@ class MPLogger(object):
             "- %(module)-20s - %(levelname)-8s: %(message)s"
         )
         handler.setFormatter(formatter)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.DEBUG)
         self._file_handler = handler
 
         self._listener = threading.Thread(
@@ -83,10 +84,9 @@ class MPLogger(object):
         )
         self._listener.daemon = True
         self._listener.start()
-        self.logger_address = self._status_queue.get()
+        self.logger_address = self._status_queue.get(timeout=60)
 
         # Attach console handler to log to console
-        logger.setLevel(logging.INFO)
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(logging.INFO)
         formatter = logging.Formatter(
@@ -179,59 +179,3 @@ class MPLogger(object):
     def close(self):
         self._status_queue.put("SHUTDOWN")
         self._listener.join()
-
-
-def main():
-    import logging
-    import multiprocess as mp
-
-    # Set up loggingserver
-    log_file = '~/mplogger.log'
-    openwpm_logger = MPLogger(log_file)
-
-    # Connect a child process to the server
-    def child_proc(index):
-        logging.info('Child %d - Test1' % index)
-        logging.info('Child %d - Test2' % index)
-        logging.info('Child %d - Test3' % index)
-        logging.info('Child %d - Test4' % index)
-        logging.debug('Child %d - Test5' % index)
-        time.sleep(1)
-        logging.error('Child %d - Test6' % index)
-        logging.critical('Child %d - Test7' % index)
-        logging.warning('Child %d - Test8' % index)
-        return
-    child_process_1 = mp.Process(
-        target=child_proc,
-        args=(1,)
-    )
-    child_process_1.daemon = True
-    child_process_1.start()
-    child_process_2 = mp.Process(
-        target=child_proc,
-        args=(2,)
-    )
-    child_process_2.daemon = True
-    child_process_2.start()
-
-    # Send some sample logs
-    logging.info('Test1')
-    logging.error('Test2')
-    logging.critical('Test3')
-    logging.debug('Test4')
-    logging.warning('Test5')
-
-    logger1 = logging.getLogger('test1')
-    logger2 = logging.getLogger('test2')
-    logger1.info('asdfasdfsa')
-    logger2.info('1234567890')
-
-    # Close the logging server
-    openwpm_logger.close()
-    child_process_1.join()
-    child_process_2.join()
-    print("Server closed, exiting...")
-
-
-if __name__ == '__main__':
-    main()
