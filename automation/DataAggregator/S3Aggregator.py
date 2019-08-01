@@ -97,6 +97,9 @@ class S3Listener(BaseListener):
 
     def _create_batch(self, visit_id):
         """Create record batches for all records from `visit_id`"""
+        if visit_id not in self._records:
+            # I don't know how this happens but causes errors on gcp
+            return
         for table_name, data in self._records[visit_id].items():
             if table_name not in self._batches:
                 self._batches[table_name] = list()

@@ -11,6 +11,7 @@ import traceback
 
 import psutil
 from multiprocess import Process, Queue
+from selenium.common.exceptions import WebDriverException
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
@@ -175,7 +176,8 @@ class Browser:
                 for string in status_strings:
                     error_string += " | %s: %s " % (
                         string, launch_status.get(string, False))
-                logging.error(
+                # Changed this to info as it's too noisy and not actually a problem
+                logging.info(
                     "BROWSER %i: Spawn unsuccessful %s" % (self.crawl_id,
                                                            error_string))
                 self.kill_browser_manager()
@@ -186,7 +188,8 @@ class Browser:
         # current profile path class variable and clean up the tempdir
         # and previous profile path.
         if success:
-            logging.debug(
+            # Changed this to info so we can see success
+            logging.info(
                 "BROWSER %i: Browser spawn sucessful!" % self.crawl_id)
             previous_profile_path = self.current_profile_path
             self.current_profile_path = driver_profile_path
@@ -422,6 +425,14 @@ def BrowserManager(command_queue, status_queue, browser_params,
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
+    except WebDriverException as e:
+        logging.error(
+            # Don't put browser on first line or you get a million different sentry items
+            "Selenium WebDriver Exception "
+            "\n BROWSER %i"
+            "\n %s" % (browser_params['crawl_id'], str(e))
+        )
+        status_queue.put(('FAILED', None))
     except Exception:
         excp = traceback.format_exception(*sys.exc_info())
         logging.error(

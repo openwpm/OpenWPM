@@ -82,13 +82,13 @@ def get_geckodriver_exec_path():
 
 def get_version():
     """Return OpenWPM version tag/current commit and Firefox version """
-    try:
-        openwpm = subprocess.check_output(
-            ["git", "describe", "--tags", "--always"]).strip()
-    except subprocess.CalledProcessError:
-        ver = os.path.join(os.path.dirname(__file__), '../../VERSION')
-        with open(ver, 'r') as f:
-            openwpm = f.readline().strip()
+    #try:
+    #    openwpm = subprocess.check_output(
+    #        ["git", "describe", "--tags", "--always"]).strip()
+    #except subprocess.CalledProcessError:
+    #    ver = os.path.join(os.path.dirname(__file__), '../../VERSION')
+    #    with open(ver, 'r') as f:
+    #        openwpm = f.readline().strip()
 
     firefox_binary_path = get_firefox_binary_path()
     import six
@@ -100,7 +100,7 @@ def get_version():
             e)
 
     ff = firefox.split()[-1]
-    return openwpm, ff
+    return "openwpm", ff
 
 
 def get_configuration_string(manager_params, browser_params, versions):

@@ -10,7 +10,7 @@ from six.moves import range
 
 from automation import CommandSequence, TaskManager
 from automation.utilities import rediswq
-from test.utilities import LocalS3Session, local_s3_bucket
+#from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
 NUM_BROWSERS = int(os.getenv('NUM_BROWSERS', '1'))
@@ -47,11 +47,11 @@ manager_params['s3_bucket'] = S3_BUCKET
 manager_params['s3_directory'] = CRAWL_DIRECTORY
 
 # Allow the use of localstack's mock s3 service
-S3_ENDPOINT = os.getenv('S3_ENDPOINT')
-if S3_ENDPOINT:
-    boto3.DEFAULT_SESSION = LocalS3Session(endpoint_url=S3_ENDPOINT)
-    manager_params['s3_bucket'] = local_s3_bucket(
-        boto3.resource('s3'), name=S3_BUCKET)
+#S3_ENDPOINT = os.getenv('S3_ENDPOINT')
+#if S3_ENDPOINT:
+#    boto3.DEFAULT_SESSION = LocalS3Session(endpoint_url=S3_ENDPOINT)
+#    manager_params['s3_bucket'] = local_s3_bucket(
+#        boto3.resource('s3'), name=S3_BUCKET)
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds

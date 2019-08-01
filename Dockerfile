@@ -25,4 +25,5 @@ RUN ./install-flash-linux.sh
 # Run crawls
 ENV FIREFOX_BINARY /app/firefox-bin/firefox
 COPY ./demo.py ./
+COPY ./crawler.py ./
 CMD ["source activate openwpm && python demo.py"]
