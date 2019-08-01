@@ -15,7 +15,9 @@ dependencies:
     - psutil
     - pyarrow
     - python-dateutil
+    - redis-py
     - selenium
+    - sentry-sdk
     - s3fs
     - tabulate
     - tblib
