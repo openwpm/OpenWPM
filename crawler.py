@@ -13,6 +13,7 @@ from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
 NUM_BROWSERS = int(os.getenv('NUM_BROWSERS', '1'))
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
 CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
 S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
@@ -80,7 +81,7 @@ if S3_ENDPOINT:
 manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Connect to job queue
-job_queue = rediswq.RedisWQ(name=REDIS_QUEUE_NAME, host="redis")
+job_queue = rediswq.RedisWQ(name=REDIS_QUEUE_NAME, host=REDIS_HOST)
 manager.logger.info("Worker with sessionID: %s" % job_queue.sessionID())
 manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
