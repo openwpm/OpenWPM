@@ -5,7 +5,7 @@ import os
 import time
 
 from ..automation import MPLogger
-from ..automation.utilities.multiprocess import Process
+from ..automation.utilities.multiprocess_utils import Process
 from .openwpmtest import OpenWPMTest
 
 CHILD_INFO_STR_1 = 'Child %d - INFO1'

@@ -10,7 +10,7 @@ import time
 import traceback
 
 import psutil
-from multiprocess import Queue
+from multiprocess_utils import Queue
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
