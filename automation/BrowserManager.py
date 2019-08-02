@@ -427,10 +427,9 @@ def BrowserManager(command_queue, status_queue, browser_params,
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
     except Exception:
-        excp = traceback.format_exception(*sys.exc_info())
         logger.error(
-            "BROWSER %i: Crash in driver, restarting browser manager "
-            "\n %s" % (browser_params['crawl_id'], ''.join(excp))
+            "BROWSER %i: Crash in driver, restarting browser manager" %
+            browser_params['crawl_id'], exc_info=True
         )
         status_queue.put(('FAILED', None))
         return
