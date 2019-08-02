@@ -11,7 +11,7 @@ import threading
 import time
 
 import sentry_sdk
-from multiprocess import Queue
+from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
 
@@ -49,7 +49,7 @@ class MPLogger(object):
 
     def __init__(self, log_file):
         # Configure log handlers
-        self._status_queue = Queue()
+        self._status_queue = JoinableQueue()
         self._log_file = os.path.expanduser(log_file)
         self._initialize_loggers()
 
@@ -78,12 +78,12 @@ class MPLogger(object):
         self._file_handler = handler
 
         self._listener = threading.Thread(
-            target=self._start_listener,
-            args=(self._status_queue,)
+            target=self._start_listener
         )
         self._listener.daemon = True
         self._listener.start()
         self.logger_address = self._status_queue.get(timeout=60)
+        self._status_queue.task_done()
 
         # Attach console handler to log to console
         consoleHandler = logging.StreamHandler(sys.stdout)
@@ -129,11 +129,12 @@ class MPLogger(object):
             before_send=self._sentry_before_send
         )
 
-    def _start_listener(self, status_queue):
+    def _start_listener(self):
         """Start listening socket for remote logs from extension"""
         socket = serversocket(name="loggingserver")
-        status_queue.put(socket.sock.getsockname())
+        self._status_queue.put(socket.sock.getsockname())
         socket.start_accepting()
+        self._status_queue.join()  # block to allow parent to retrieve address
 
         while True:
             # Check for shutdown
@@ -144,6 +145,7 @@ class MPLogger(object):
                 while not socket.queue.empty():
                     obj = socket.queue.get()
                     self._process_record(obj)
+                self._status_queue.task_done()
                 break
 
             # Process logs
@@ -191,4 +193,5 @@ class MPLogger(object):
 
     def close(self):
         self._status_queue.put("SHUTDOWN")
+        self._status_queue.join()
         self._listener.join()
