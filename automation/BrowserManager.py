@@ -20,7 +20,7 @@ from .Commands import command_executor
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
-from .utilities.multiprocess_utils import Process
+from .utilities.multiprocess_utils import Process, parse_traceback_for_sentry
 
 pickling_support.install()
 
@@ -428,10 +428,11 @@ def BrowserManager(command_queue, status_queue, browser_params,
         return
     except Exception:
         tb = traceback.format_exception(*sys.exc_info())
+        extra = parse_traceback_for_sentry(tb)
+        extra['exception'] = repr(e)
         logger.error(
             "BROWSER %i: Crash in driver, restarting browser manager" %
-            browser_params['crawl_id'], exc_info=True,
-            extra={'traceback': tb}
+            browser_params['crawl_id'], exc_info=True, extra=extra
         )
         status_queue.put(('FAILED', None))
         return

@@ -108,15 +108,11 @@ class MPLogger(object):
                     BROWSER_PREFIX, '', event['logentry']['message'])
 
         # Add traceback info to fingerprint for logs that contain a traceback
-        if 'logentry' in event and 'extra' in event:
-            if 'traceback' in event['extra']:
-                try:
-                    error = event['extra']['traceback'].strip().split('\n')[-1]
-                except Exception:
-                    error = ''
-                if 'message' in event['logentry']:
-                    event['logentry']['message'] = "%s [%s]" % \
-                        (event['logentry']['message'], error)
+        try:
+            event['logentry']['message'] = "%s [%s]" % \
+                (event['logentry']['message'], event['extra']['exception'])
+        except KeyError:
+            pass
         return event
 
     def _initialize_sentry(self):
