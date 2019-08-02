@@ -43,7 +43,7 @@ class Process(mp.Process):
         except Exception as e:
             tb = traceback.format_exception(*sys.exc_info())
             extra = parse_traceback_for_sentry(tb)
-            extra['exception'] = repr(e)
+            extra['exception'] = tb[-1]
             self.logger.error(
                 "Exception in child process.", exc_info=True, extra=extra
             )
