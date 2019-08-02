@@ -7,7 +7,6 @@ import shutil
 import signal
 import sys
 import time
-import traceback
 
 import psutil
 from multiprocess import Queue
