@@ -17,6 +17,7 @@ from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
                                FirefoxProfile, Options)
 
 DEFAULT_SCREEN_RES = (1366, 768)
+logger = logging.getLogger('openwpm')
 
 
 def deploy_firefox(status_queue, browser_params, manager_params,
@@ -42,8 +43,8 @@ def deploy_firefox(status_queue, browser_params, manager_params,
 
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
-        logging.debug("BROWSER %i: Loading initial browser profile from: %s"
-                      % (browser_params['crawl_id'],
+        logger.debug("BROWSER %i: Loading initial browser profile from: %s"
+                     % (browser_params['crawl_id'],
                          browser_params['profile_tar']))
         load_flash = browser_params['disable_flash'] is False
         profile_settings = load_profile(browser_profile_path,
@@ -52,8 +53,8 @@ def deploy_firefox(status_queue, browser_params, manager_params,
                                         browser_params['profile_tar'],
                                         load_flash=load_flash)
     elif browser_params['profile_tar']:
-        logging.debug("BROWSER %i: Loading recovered browser profile from: %s"
-                      % (browser_params['crawl_id'],
+        logger.debug("BROWSER %i: Loading recovered browser profile from: %s"
+                     % (browser_params['crawl_id'],
                          browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
@@ -62,8 +63,8 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     status_queue.put(('STATUS', 'Profile Tar', None))
 
     if browser_params['random_attributes'] and profile_settings is None:
-        logging.debug("BROWSER %i: Loading random attributes for browser"
-                      % browser_params['crawl_id'])
+        logger.debug("BROWSER %i: Loading random attributes for browser"
+                     % browser_params['crawl_id'])
         profile_settings = dict()
 
         # choose a random screen-res from list
@@ -87,15 +88,15 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         profile_settings['ua_string'] = None
 
     if profile_settings['ua_string'] is not None:
-        logging.debug("BROWSER %i: Overriding user agent string to '%s'"
-                      % (browser_params['crawl_id'],
+        logger.debug("BROWSER %i: Overriding user agent string to '%s'"
+                     % (browser_params['crawl_id'],
                          profile_settings['ua_string']))
         fo.set_preference("general.useragent.override",
                           profile_settings['ua_string'])
 
     if browser_params['headless']:
         if sys.platform == 'darwin':
-            logging.warn(
+            logger.warn(
                 "BROWSER %i: headless mode is not supported on MacOS. "
                 "Browser window will be visible." % browser_params['crawl_id']
             )
@@ -121,8 +122,8 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         ext_config_file = browser_profile_path + 'browser_params.json'
         with open(ext_config_file, 'w') as f:
             json.dump(extension_config, f)
-        logging.debug("BROWSER %i: Saved extension config file to: %s" %
-                      (browser_params['crawl_id'], ext_config_file))
+        logger.debug("BROWSER %i: Saved extension config file to: %s" %
+                     (browser_params['crawl_id'], ext_config_file))
 
         # TODO restore detailed logging
         # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
@@ -151,7 +152,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     # Set custom prefs. These are set after all of the default prefs to allow
     # our defaults to be overwritten.
     for name, value in browser_params['prefs'].items():
-        logging.info(
+        logger.info(
             "BROWSER %i: Setting custom preference: %s = %s" %
             (browser_params['crawl_id'], name, value))
         fo.set_preference(name, value)
@@ -170,8 +171,8 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         ext_loc = os.path.join(root_dir, '../Extension/firefox/openwpm.xpi')
         ext_loc = os.path.normpath(ext_loc)
         driver.install_addon(ext_loc, temporary=True)
-        logging.debug("BROWSER %i: OpenWPM Firefox extension loaded"
-                      % browser_params['crawl_id'])
+        logger.debug("BROWSER %i: OpenWPM Firefox extension loaded"
+                     % browser_params['crawl_id'])
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])

@@ -60,7 +60,7 @@ class MPLogger(object):
 
     def _initialize_loggers(self):
         """Set up console logging and serialized file logging"""
-        logger = logging.getLogger()
+        logger = logging.getLogger('openwpm')
         logger.setLevel(logging.DEBUG)
 
         # Remove any previous handlers to avoid registering duplicates
@@ -158,7 +158,7 @@ class MPLogger(object):
             exc_info=obj['exc_info'],
             func=obj['func']
         )
-        logger = logging.getLogger()
+        logger = logging.getLogger('openwpm')
         logger.handle(record)
 
     def _handle_serialized_writes(self, obj):

@@ -37,6 +37,7 @@ class BaseListener(object):
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
+        self.logger = logging.getLogger('openwpm')
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -71,7 +72,7 @@ class BaseListener(object):
         """Return `True` if the listener has received a shutdown signal"""
         if not self.shutdown_queue.empty():
             self.shutdown_queue.get()
-            logging.info("Received shutdown signal!")
+            self.logger.info("Received shutdown signal!")
             return True
         return False
 
@@ -81,7 +82,7 @@ class BaseListener(object):
             return
         qsize = self.record_queue.qsize()
         self.status_queue.put(qsize)
-        logging.debug(
+        self.logger.debug(
             "Status update; current record queue size: %d" % qsize)
         self._last_update = time.time()
 
@@ -122,6 +123,7 @@ class BaseAggregator(object):
         self.shutdown_queue = Queue()
         self._last_status = None
         self._last_status_received = None
+        self.logger = logging.getLogger('openwpm')
 
     @abc.abstractmethod
     def save_configuration(self, openwpm_version, browser_version):
@@ -183,14 +185,14 @@ class BaseAggregator(object):
 
     def shutdown(self):
         """ Terminate the aggregator listener process"""
-        logging.debug(
+        self.logger.debug(
             "Sending the shutdown signal to the %s listener process..." %
             type(self).__name__
         )
         self.shutdown_queue.put(SHUTDOWN_SIGNAL)
         start_time = time.time()
         self.listener_process.join(300)
-        logging.debug(
+        self.logger.debug(
             "%s took %s seconds to close." % (
                 type(self).__name__,
                 str(time.time() - start_time)

@@ -65,6 +65,7 @@ class FirefoxLogInterceptor(threading.Thread):
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
         self.profile_path = profile_path
         self.daemon = True
+        self.logger = logging.getLogger('openwpm')
 
     def run(self):
         # We might not ever get EOF on the FIFO, so instead we delete
@@ -73,8 +74,8 @@ class FirefoxLogInterceptor(threading.Thread):
         try:
             with open(self.fifo, "rt") as f:
                 for line in f:
-                    logging.debug("BROWSER %i: driver: %s" %
-                                  (self.crawl_id, line.strip()))
+                    self.logger.debug("BROWSER %i: driver: %s" %
+                                      (self.crawl_id, line.strip()))
                     if "Using profile path" in line:
                         self.profile_path = \
                             line.partition("Using profile path")[-1].strip()

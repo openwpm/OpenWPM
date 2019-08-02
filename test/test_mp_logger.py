@@ -24,22 +24,25 @@ PARENT_WARNING_STR = 'Parent - WARNING'
 PARENT_EXCEPTION_STR = 'Parent - Test Exception!'
 NAMED_LOGGER_INFO_1 = 'Named Logger 1 Parent - INFO'
 NAMED_LOGGER_INFO_2 = 'Named Logger 2 Parent - INFO'
+logger = logging.getLogger('openwpm')
 
 
 def child_proc(index):
-    logging.info(CHILD_INFO_STR_1 % index)
-    logging.info(CHILD_INFO_STR_2 % index)
-    logging.debug(CHILD_DEBUG_STR % index)
+    logger = logging.getLogger('openwpm')
+    logger.info(CHILD_INFO_STR_1 % index)
+    logger.info(CHILD_INFO_STR_2 % index)
+    logger.debug(CHILD_DEBUG_STR % index)
     time.sleep(1)
-    logging.error(CHILD_ERROR_STR % index)
-    logging.critical(CHILD_CRITICAL_STR % index)
-    logging.warning(CHILD_WARNING_STR % index)
+    logger.error(CHILD_ERROR_STR % index)
+    logger.critical(CHILD_CRITICAL_STR % index)
+    logger.warning(CHILD_WARNING_STR % index)
     return
 
 
 def child_proc_with_exception(index):
-    logging.info(CHILD_INFO_STR_1 % index)
-    logging.info(CHILD_INFO_STR_2 % index)
+    logger = logging.getLogger('openwpm')
+    logger.info(CHILD_INFO_STR_1 % index)
+    logger.info(CHILD_INFO_STR_2 % index)
     raise RuntimeError(CHILD_EXCEPTION_STR % index)
 
 
@@ -72,11 +75,11 @@ class TestMPLogger(OpenWPMTest):
         child_process_2.start()
 
         # Send some sample logs
-        logging.info(PARENT_INFO_STR_1)
-        logging.error(PARENT_ERROR_STR)
-        logging.critical(PARENT_CRITICAL_STR)
-        logging.debug(PARENT_DEBUG_STR)
-        logging.warning(PARENT_WARNING_STR)
+        logger.info(PARENT_INFO_STR_1)
+        logger.error(PARENT_ERROR_STR)
+        logger.critical(PARENT_CRITICAL_STR)
+        logger.debug(PARENT_DEBUG_STR)
+        logger.warning(PARENT_WARNING_STR)
 
         logger1 = logging.getLogger('test1')
         logger2 = logging.getLogger('test2')

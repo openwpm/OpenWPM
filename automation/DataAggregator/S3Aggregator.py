@@ -4,7 +4,6 @@ import base64
 import gzip
 import hashlib
 import json
-import logging
 import time
 import uuid
 from collections import defaultdict
@@ -106,12 +105,12 @@ class S3Listener(BaseListener):
                     df, schema=PQ_SCHEMAS[table_name], preserve_index=False
                 )
                 self._batches[table_name].append(batch)
-                logging.debug(
+                self.logger.debug(
                     "Successfully created batch for table %s and "
                     "visit_id %s" % (table_name, visit_id)
                 )
             except pa.lib.ArrowInvalid as e:
-                logging.error(
+                self.logger.error(
                     "Error while creating record batch:\n%s\n%s\n%s\n"
                     % (table_name, type(e), e)
                 )
@@ -131,7 +130,7 @@ class S3Listener(BaseListener):
         """Check if `filename` already exists on S3"""
         # Check local filename cache
         if filename.split('/', 1)[1] in self._s3_content_cache:
-            logging.debug(
+            self.logger.debug(
                 "File `%s` found in content cache." % filename)
             return True
 
@@ -153,7 +152,7 @@ class S3Listener(BaseListener):
                          compressed=True, skip_if_exists=True):
         """Write `string` data to S3 with name `filename`"""
         if skip_if_exists and self._exists_on_s3(filename):
-            logging.debug(
+            self.logger.debug(
                 "File `%s` already exists on s3, skipping..." % filename)
             return
         if not isinstance(string, six.binary_type):
@@ -169,14 +168,14 @@ class S3Listener(BaseListener):
         # Upload to S3
         try:
             self._s3.upload_fileobj(out_f, self._bucket, filename)
-            logging.debug(
+            self.logger.debug(
                 "Successfully uploaded file `%s` to S3." % filename)
             # Cache the filenames that are already on S3
             # We strip the bucket name as its the same for all files
             if skip_if_exists:
                 self._s3_content_cache.add(filename.split('/', 1)[1])
         except Exception as e:
-            logging.error(
+            self.logger.error(
                 "Exception while uploading %s\n%s\n%s" % (
                     filename, type(e), e)
             )
@@ -210,7 +209,7 @@ class S3Listener(BaseListener):
                         flavor='spark'
                     )
                 except pa.lib.ArrowInvalid as e:
-                    logging.error(
+                    self.logger.error(
                         "Error while sending record:\n%s\n%s\n%s\n"
                         % (table_name, type(e), e)
                     )
@@ -226,7 +225,7 @@ class S3Listener(BaseListener):
             return
         if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
             return
-        logging.debug(
+        self.logger.debug(
             "Saving current record batches to S3 since no new data has "
             "been written for %d seconds." %
             (self._last_record_received - time.time())
@@ -237,7 +236,7 @@ class S3Listener(BaseListener):
     def process_record(self, record):
         """Add `record` to database"""
         if len(record) != 2:
-            logging.error("Query is not the correct length")
+            self.logger.error("Query is not the correct length")
             return
         self._last_record_received = time.time()
         table, data = record
@@ -251,14 +250,14 @@ class S3Listener(BaseListener):
         try:
             visit_id = data['visit_id']
         except KeyError:
-            logging.error("Record for table %s has no visit id" % table)
-            logging.error(json.dumps(data))
+            self.logger.error("Record for table %s has no visit id" % table)
+            self.logger.error(json.dumps(data))
             return
         try:
             crawl_id = data['crawl_id']
         except KeyError:
-            logging.error("Record for table %s has no crawl id" % table)
-            logging.error(json.dumps(data))
+            self.logger.error("Record for table %s has no crawl id" % table)
+            self.logger.error(json.dumps(data))
             return
 
         # Check if the browser for this record has moved on to a new visit
@@ -364,7 +363,7 @@ class S3Aggregator(BaseAggregator):
         try:
             self.s3.upload_fileobj(out_f, self.bucket, fname)
         except Exception:
-            logging.error("Exception while uploading %s" % fname)
+            self.logger.error("Exception while uploading %s" % fname)
             raise
 
     def get_next_visit_id(self):

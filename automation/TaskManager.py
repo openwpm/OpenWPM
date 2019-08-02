@@ -112,6 +112,7 @@ class TaskManager:
             self.manager_params['log_file'])
         self.manager_params[
             'logger_address'] = self.logging_server.logger_address
+        self.logger = logging.getLogger('openwpm')
 
         # Initialize the data aggregators
         self._launch_aggregators()
@@ -128,7 +129,7 @@ class TaskManager:
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
         self.data_aggregator.save_configuration(openwpm_v, browser_v)
-        logging.info(
+        self.logger.info(
             get_configuration_string(
                 self.manager_params, browser_params, (openwpm_v, browser_v)
             )
@@ -154,8 +155,8 @@ class TaskManager:
                 raise
 
             if not success:
-                logging.critical("Browser spawn failure during "
-                                 "TaskManager initialization, exiting...")
+                self.logger.critical("Browser spawn failure during "
+                                     "TaskManager initialization, exiting...")
                 self.close()
                 break
 
@@ -169,8 +170,8 @@ class TaskManager:
               kill browser processes started by Selenium 3 (with `subprocess`)
         """
         if self.process_watchdog:
-            logging.error("BROWSER %i: Process watchdog is not currently "
-                          "supported." % self.crawl_id)
+            self.logger.error("BROWSER %i: Process watchdog is not currently "
+                              "supported." % self.crawl_id)
         while not self.closing:
             time.sleep(10)
 
@@ -180,10 +181,10 @@ class TaskManager:
                     process = psutil.Process(browser.browser_pid)
                     mem = process.memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
-                        logging.info("BROWSER %i: Memory usage: %iMB"
-                                     ", exceeding limit of %iMB" %
-                                     (browser.crawl_id, int(mem),
-                                      BROWSER_MEMORY_LIMIT))
+                        self.logger.info("BROWSER %i: Memory usage: %iMB"
+                                         ", exceeding limit of %iMB" %
+                                         (browser.crawl_id, int(mem),
+                                          BROWSER_MEMORY_LIMIT))
                         browser.restart_required = True
                 except psutil.NoSuchProcess:
                     pass
@@ -206,11 +207,11 @@ class TaskManager:
                              process.pid not in browser_pids) or
                             (process.name() == 'Xvfb' and
                              process.pid not in display_pids))):
-                        logging.debug("Process: %s (pid: %i) with start "
-                                      "time %s found running but not in "
-                                      "browser process list. Killing." % (
-                                          process.name(), process.pid,
-                                          process.create_time()))
+                        self.logger.debug("Process: %s (pid: %i) with start "
+                                          "time %s found running but not in "
+                                          "browser process list. Killing." % (
+                                              process.name(), process.pid,
+                                              process.create_time()))
                         process.kill()
 
     def _launch_aggregators(self):
@@ -266,9 +267,9 @@ class TaskManager:
         remote browser manager processes. If a failure status is found, the
         appropriate steps are taken to gracefully close the infrastructure
         """
-        logging.debug("Checking command failure status indicator...")
+        self.logger.debug("Checking command failure status indicator...")
         if self.failure_status:
-            logging.debug(
+            self.logger.debug(
                 "TaskManager failure status set, halting command execution.")
             self._cleanup_before_fail()
             if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
@@ -302,7 +303,7 @@ class TaskManager:
         agg_queue_size = self.data_aggregator.get_most_recent_status()
         if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
             while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
-                logging.info(
+                self.logger.info(
                     "Blocking command submission until the DataAggregator "
                     "is below the max queue size of %d. Current queue "
                     "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
@@ -362,7 +363,7 @@ class TaskManager:
                     break
                 time.sleep(SLEEP_CONS)
         else:
-            logging.info(
+            self.logger.info(
                 "Command index type is not supported or out of range")
             return
 
@@ -375,7 +376,7 @@ class TaskManager:
 
         # Check status flags before starting thread
         if self.closing:
-            logging.error(
+            self.logger.error(
                 "Attempted to execute command on a closed TaskManager")
             return
         self._check_failure_status()
@@ -408,7 +409,7 @@ class TaskManager:
 
         reset = command_sequence.reset
         if not reset:
-            logging.warn(
+            self.logger.warn(
                 "BROWSER %i: Browser will not reset after CommandSequence "
                 "executes. OpenWPM does not currently support stateful crawls "
                 "(see: https://github.com/mozilla/OpenWPM/projects/2). "
@@ -443,7 +444,7 @@ class TaskManager:
                 if status == "OK":
                     command_succeeded = 1
                 elif status[0] == "CRITICAL":
-                    logging.critical(
+                    self.logger.critical(
                         "BROWSER %i: Received critical error from browser "
                         "process while executing command %s. Setting failure "
                         "status." % (browser.crawl_id, str(command)))
@@ -455,12 +456,12 @@ class TaskManager:
                     return
                 else:
                     command_succeeded = 0
-                    logging.info(
+                    self.logger.info(
                         "BROWSER %i: Received failure status while executing "
                         "command: %s" % (browser.crawl_id, command[0]))
             except EmptyQueue:
                 command_succeeded = -1
-                logging.info(
+                self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.crawl_id, command[0]))
 
@@ -476,7 +477,7 @@ class TaskManager:
                 with self.threadlock:
                     self.failurecount += 1
                 if self.failurecount > self.failure_limit:
-                    logging.critical(
+                    self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
                         "failure_status." % browser.crawl_id)
@@ -486,7 +487,7 @@ class TaskManager:
                     }
                     return
                 browser.restart_required = True
-                logging.debug("BROWSER %i: Browser restart required" % (
+                self.logger.debug("BROWSER %i: Browser restart required" % (
                     browser.crawl_id))
             else:
                 with self.threadlock:
@@ -505,7 +506,7 @@ class TaskManager:
         if browser.restart_required or reset:
             success = browser.restart_browser_manager(clear_profile=reset)
             if not success:
-                logging.critical(
+                self.logger.critical(
                     "BROWSER %i: Exceeded the maximum allowable consecutive "
                     "browser launch failures. Setting failure_status." % (
                         browser.crawl_id))
@@ -545,6 +546,6 @@ class TaskManager:
         Execute shutdown procedure for TaskManager
         """
         if self.closing:
-            logging.error("TaskManager already closed")
+            self.logger.error("TaskManager already closed")
             return
         self._shutdown_manager()

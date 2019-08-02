@@ -30,6 +30,7 @@ from .utils.webdriver_extensions import (execute_in_all_frames,
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
 RANDOM_SLEEP_LOW = 1  # low (in sec) for random sleep between page loads
 RANDOM_SLEEP_HIGH = 7  # high (in sec) for random sleep between page loads
+logger = logging.getLogger('openwpm')
 
 
 def bot_mitigation(webdriver):
@@ -159,7 +160,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
         if not links:
             break
         r = int(random.random() * len(links))
-        logging.info("BROWSER %i: visiting internal link %s" % (
+        logger.info("BROWSER %i: visiting internal link %s" % (
             browser_params['crawl_id'], links[r].get_attribute("href")))
 
         try:
@@ -257,7 +258,7 @@ def _stitch_screenshot_parts(visit_id, crawl_id, manager_params):
     try:
         output.save(outname)
     except SystemError:
-        logging.error(
+        logger.error(
             "BROWSER %i: SystemError while trying to save screenshot %s. \n"
             "Slices of image %s \n Final size %s, %s." %
             (crawl_id, outname, '\n'.join([str(x) for x in parts]),
@@ -295,7 +296,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             try:
                 driver.execute_script('window.scrollBy(0, window.innerHeight)')
             except WebDriverException:
-                logging.info(
+                logger.info(
                     "BROWSER %i: WebDriverException while scrolling, "
                     "screenshot may be misaligned!" % crawl_id)
                 pass
@@ -310,7 +311,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             driver.save_screenshot(outname % (part, curr_scrollY))
     except WebDriverException:
         excp = traceback.format_exception(*sys.exc_info())
-        logging.error(
+        logger.error(
             "BROWSER %i: Exception while taking full page screenshot \n %s" %
             (crawl_id, ''.join(excp)))
         return

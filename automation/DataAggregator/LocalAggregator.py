@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function
 
 import base64
 import json
-import logging
 import os
 import sqlite3
 import time
@@ -91,7 +90,7 @@ class LocalListener(BaseListener):
     def process_record(self, record):
         """Add `record` to database"""
         if len(record) != 2:
-            logging.error("Query is not the correct length")
+            self.logger.error("Query is not the correct length")
             return
         if record[0] == "create_table":
             self.cur.execute(record[1])
@@ -115,7 +114,7 @@ class LocalListener(BaseListener):
             self._sql_counter += 1
         except (OperationalError, ProgrammingError,
                 IntegrityError, InterfaceError) as e:
-            logging.error(
+            self.logger.error(
                 "Unsupported record:\n%s\n%s\n%s\n%s\n"
                 % (type(e), e, statement, repr(args)))
 
