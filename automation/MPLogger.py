@@ -51,11 +51,11 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
 class MPLogger(object):
     """Configure OpenWPM logging across processes"""
 
-    def __init__(self, manager_params):
-        self._manager_params = manager_params
+    def __init__(self, log_file, crawl_context=None):
+        self._crawl_context = crawl_context
         # Configure log handlers
         self._status_queue = JoinableQueue()
-        self._log_file = os.path.expanduser(manager_params['log_file'])
+        self._log_file = os.path.expanduser(log_file)
         self._initialize_loggers()
 
         # Configure sentry (if available)
@@ -146,11 +146,12 @@ class MPLogger(object):
             before_send=self._sentry_before_send
         )
         with sentry_sdk.configure_scope() as scope:
-            scope.set_tag(
-                'CRAWL_REFERENCE', '%s/%s' %
-                (self._manager_params['s3_bucket'],
-                 self._manager_params['s3_directory'])
-            )
+            if self._crawl_context:
+                scope.set_tag(
+                    'CRAWL_REFERENCE', '%s/%s' %
+                    (self._crawl_context.get('s3_bucket', 'UNKNOWN'),
+                     self._crawl_context.get('s3_directory', 'UNKNOWN'))
+                )
 
     def _start_listener(self):
         """Start listening socket for remote logs from extension"""
