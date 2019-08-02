@@ -150,7 +150,7 @@ export let saveRecord = function(instrument, record) {
 
     // send to console if debugging
     if (debugging) {
-      console.log("EXTENSION", instrument, JSON.stringify(record));
+      console.log("EXTENSION", instrument, record);
       return;
     }
     dataAggregator.send(JSON.stringify([instrument, record]));
