@@ -17,7 +17,7 @@ from six.moves.queue import Empty as EmptyQueue
 
 from .SocketInterface import serversocket
 
-BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:")
+BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:\s*")
 
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
@@ -100,9 +100,23 @@ class MPLogger(object):
 
     def _sentry_before_send(self, event, hint):
         """Update sentry events before they are sent"""
-        # Strip browser ID prefix for better grouping
-        if re.match(BROWSER_PREFIX, event['message']):
-            event['message'] = re.sub(BROWSER_PREFIX, '', event['message'])
+
+        # Strip "BROWSER X: " prefix to clean up logs
+        if 'logentry' in event and 'message' in event['logentry']:
+            if re.match(BROWSER_PREFIX, event['logentry']['message']):
+                event['logentry']['message'] = re.sub(
+                    BROWSER_PREFIX, '', event['logentry']['message'])
+
+        # Add traceback info to fingerprint for logs that contain a traceback
+        if 'logentry' in event and 'extra' in event:
+            if 'traceback' in event['extra']:
+                try:
+                    error = event['extra']['traceback'].strip().split('\n')[-1]
+                except Exception:
+                    error = ''
+                if 'message' in event['logentry']:
+                    event['logentry']['message'] = "%s [%s]" % \
+                        (event['logentry']['message'], error)
         return event
 
     def _initialize_sentry(self):
@@ -112,7 +126,7 @@ class MPLogger(object):
         self._event_handler = EventHandler(level=logging.ERROR)
         sentry_sdk.init(
             dsn=self._sentry_dsn,
-            # before_send=self._sentry_before_send
+            before_send=self._sentry_before_send
         )
 
     def _start_listener(self, status_queue):

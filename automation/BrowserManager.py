@@ -7,6 +7,7 @@ import shutil
 import signal
 import sys
 import time
+import traceback
 
 import psutil
 from multiprocess import Queue
@@ -426,9 +427,11 @@ def BrowserManager(command_queue, status_queue, browser_params,
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
     except Exception:
+        tb = traceback.format_exception(*sys.exc_info())
         logger.error(
             "BROWSER %i: Crash in driver, restarting browser manager" %
-            browser_params['crawl_id'], exc_info=True
+            browser_params['crawl_id'], exc_info=True,
+            extra={'traceback': tb}
         )
         status_queue.put(('FAILED', None))
         return

@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import multiprocess as mp
 
@@ -13,7 +14,9 @@ class Process(mp.Process):
         try:
             mp.Process.run(self)
         except Exception as e:
+            tb = traceback.format_exc()
             self.logger.error(
-                "Exception in child process.", exc_info=True
+                "Exception in child process.", exc_info=True,
+                extra={'traceback': tb}
             )
             raise e
