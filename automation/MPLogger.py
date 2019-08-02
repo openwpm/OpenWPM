@@ -14,10 +14,14 @@ import sentry_sdk
 from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
+from six.moves.urllib import parse as urlparse
 
 from .SocketInterface import serversocket
 
 BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:\s*")
+NETERROR_RE = re.compile(
+    r"WebDriverException: Message: Reached error page: about:neterror\?(.*)\."
+)
 
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
@@ -100,7 +104,13 @@ class MPLogger(object):
         logger.addHandler(socketHandler)
 
     def _sentry_before_send(self, event, hint):
-        """Update sentry events before they are sent"""
+        """Update sentry events before they are sent
+
+        Note: we want to be very conservative in handling errors here. If this
+        method throws an error, Sentry silently discards it and no record is
+        sent. It's much better to have Sentry send an unparsed error then no
+        error.
+        """
 
         # Strip "BROWSER X: " prefix to clean up logs
         if 'logentry' in event and 'message' in event['logentry']:
@@ -110,10 +120,20 @@ class MPLogger(object):
 
         # Add traceback info to fingerprint for logs that contain a traceback
         try:
-            event['logentry']['message'] = "%s [%s]" % \
-                (event['logentry']['message'], event['extra']['exception'])
+            event['logentry']['message'] = event['extra']['exception'].strip()
         except KeyError:
             pass
+
+        # Combine neterrors of the same type
+        try:
+            if 'about:neterror' in event['extra']['exception']:
+                qs = re.match(
+                    NETERROR_RE, event['extra']['exception']).group(1)
+                params = urlparse.parse_qs(qs)
+                event['fingerprint'] = ['neterror-%s' % '&'.join(params['e'])]
+        except Exception:
+            pass
+
         return event
 
     def _initialize_sentry(self):
