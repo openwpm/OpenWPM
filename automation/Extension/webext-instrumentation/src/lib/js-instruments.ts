@@ -546,20 +546,22 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   ) {
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
-    if (!propDesc) {
-      console.error(
-        "Property descriptor not found for",
-        objectName,
-        propertyName,
-        object,
-      );
-      return;
-    }
+    const undefinedPropDesc = {
+      get: () => {
+        throw new TypeError("undefined has no properties");
+      },
+      set: _value => {
+        throw new TypeError("undefined has no properties");
+      },
+      value: () => {
+        return undefined;
+      },
+    };
 
     // Instrument data or accessor property descriptors
-    const originalGetter = propDesc.get;
-    const originalSetter = propDesc.set;
-    let originalValue = propDesc.value;
+    const originalGetter = propDesc ? propDesc.get : undefinedPropDesc.get;
+    const originalSetter = propDesc ? propDesc.set : undefinedPropDesc.set;
+    let originalValue = propDesc ? propDesc.value : undefinedPropDesc.value;
 
     // We overwrite both data and accessor properties as an instrumented
     // accessor property
@@ -573,7 +575,10 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           );
 
           // get original value
-          if (originalGetter) {
+          if (!propDesc) {
+            // if undefined property
+            origProperty = undefined;
+          } else if (originalGetter) {
             // if accessor property
             origProperty = originalGetter.call(this);
           } else if ("value" in propDesc) {
