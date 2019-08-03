@@ -109,7 +109,7 @@ class TaskManager:
 
         # Start logging server thread
         self.logging_server = MPLogger.MPLogger(
-            self.manager_param['log_file'], self.manager_params
+            self.manager_params['log_file'], self.manager_params
         )
         self.manager_params[
             'logger_address'] = self.logging_server.logger_address
