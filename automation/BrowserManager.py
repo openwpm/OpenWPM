@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import errno
+import logging
 import os
 import shutil
 import signal
@@ -9,7 +10,7 @@ import time
 import traceback
 
 import psutil
-from multiprocess import Process, Queue
+from multiprocess import Queue
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
@@ -18,8 +19,8 @@ from tblib import pickling_support
 from .Commands import command_executor
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
-from .MPLogger import loggingclient
 from .SocketInterface import clientsocket
+from .utilities.multiprocess_utils import Process, parse_traceback_for_sentry
 
 pickling_support.install()
 
@@ -43,7 +44,6 @@ class Browser:
         # manager parameters
         self.current_profile_path = None
         self.db_socket_address = manager_params['aggregator_address']
-        self.logger_address = manager_params['logger_address']
         self.crawl_id = browser_params['crawl_id']
         self.curr_visit_id = None
         self.browser_params = browser_params
@@ -73,7 +73,8 @@ class Browser:
         # dict of additional browser profile settings (e.g. screen_res)
         self.browser_settings = None
         self.browser_manager = None  # process that controls browser
-        self.logger = loggingclient(*self.logger_address)
+
+        self.logger = logging.getLogger('openwpm')
 
     def ready(self):
         """ return if the browser is ready to accept a command """
@@ -352,9 +353,8 @@ def BrowserManager(command_queue, status_queue, browser_params,
     and interface with Selenium. Command execution status is sent back
     to the TaskManager.
     """
+    logger = logging.getLogger('openwpm')
     try:
-        logger = loggingclient(*manager_params['logger_address'])
-
         # Start the virtualdisplay (if necessary), webdriver, and browser
         driver, prof_folder, browser_settings = deploy_browser.deploy_browser(
             status_queue, browser_params, manager_params, crash_recovery)
@@ -421,14 +421,18 @@ def BrowserManager(command_queue, status_queue, browser_params,
             status_queue.put("OK")
 
     except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
-        logger.info("BROWSER %i: %s thrown, informing parent and raising" % (
+        logger.error("BROWSER %i: %s thrown, informing parent and raising" % (
             browser_params['crawl_id'], e.__class__.__name__))
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
     except Exception:
-        excp = traceback.format_exception(*sys.exc_info())
-        logger.info("BROWSER %i: Crash in driver, restarting browser manager "
-                    "\n %s" % (browser_params['crawl_id'], ''.join(excp)))
+        tb = traceback.format_exception(*sys.exc_info())
+        extra = parse_traceback_for_sentry(tb)
+        extra['exception'] = tb[-1]
+        logger.error(
+            "BROWSER %i: Crash in driver, restarting browser manager" %
+            browser_params['crawl_id'], exc_info=True, extra=extra
+        )
         status_queue.put(('FAILED', None))
         return

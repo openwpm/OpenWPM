@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import json
+import logging
 import os.path
 import random
 import sys
@@ -9,7 +10,6 @@ from pyvirtualdisplay import Display
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
-from ..MPLogger import loggingclient
 from ..utilities.platform_utils import (get_firefox_binary_path,
                                         get_geckodriver_exec_path)
 from . import configure_firefox
@@ -17,6 +17,7 @@ from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
                                FirefoxProfile, Options)
 
 DEFAULT_SCREEN_RES = (1366, 768)
+logger = logging.getLogger('openwpm')
 
 
 def deploy_firefox(status_queue, browser_params, manager_params,
@@ -28,7 +29,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     geckodriver_executable_path = get_geckodriver_exec_path()
 
     root_dir = os.path.dirname(__file__)  # directory of this file
-    logger = loggingclient(*manager_params['logger_address'])
 
     display_pid = None
     display_port = None
@@ -45,7 +45,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     if browser_params['profile_tar'] and not crash_recovery:
         logger.debug("BROWSER %i: Loading initial browser profile from: %s"
                      % (browser_params['crawl_id'],
-                        browser_params['profile_tar']))
+                         browser_params['profile_tar']))
         load_flash = browser_params['disable_flash'] is False
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
@@ -55,7 +55,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     elif browser_params['profile_tar']:
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s"
                      % (browser_params['crawl_id'],
-                        browser_params['profile_tar']))
+                         browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
                                         browser_params,
@@ -90,7 +90,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     if profile_settings['ua_string'] is not None:
         logger.debug("BROWSER %i: Overriding user agent string to '%s'"
                      % (browser_params['crawl_id'],
-                        profile_settings['ua_string']))
+                         profile_settings['ua_string']))
         fo.set_preference("general.useragent.override",
                           profile_settings['ua_string'])
 
@@ -146,7 +146,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     # main logger.  This will also inform us where the real profile
     # directory is hiding.
     interceptor = FirefoxLogInterceptor(
-        browser_params['crawl_id'], logger, browser_profile_path)
+        browser_params['crawl_id'], browser_profile_path)
     interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow

@@ -2,12 +2,12 @@ from __future__ import absolute_import, division
 
 import copy
 import json
+import logging
 import os
 import threading
 import time
 
 import psutil
-from multiprocess import Process, Queue
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves import range
@@ -107,13 +107,13 @@ class TaskManager:
 
         self.process_watchdog = process_watchdog
 
-        # sets up logging server + connect a client
-        self.logging_status_queue = None
-        self.loggingserver = self._launch_loggingserver()
-        # socket location: (address, port)
-        self.manager_params['logger_address'] = self.logging_status_queue.get()
-        self.logger = MPLogger.loggingclient(
-            *self.manager_params['logger_address'])
+        # Start logging server thread
+        self.logging_server = MPLogger.MPLogger(
+            self.manager_params['log_file'], self.manager_params
+        )
+        self.manager_params[
+            'logger_address'] = self.logging_server.logger_address
+        self.logger = logging.getLogger('openwpm')
 
         # Initialize the data aggregators
         self._launch_aggregators()
@@ -183,9 +183,9 @@ class TaskManager:
                     mem = process.memory_info()[0] / float(2 ** 20)
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB"
-                                         ", exceeding limit of %iMB" % (
-                                             browser.crawl_id, int(mem),
-                                             BROWSER_MEMORY_LIMIT))
+                                         ", exceeding limit of %iMB" %
+                                         (browser.crawl_id, int(mem),
+                                          BROWSER_MEMORY_LIMIT))
                         browser.restart_required = True
                 except psutil.NoSuchProcess:
                     pass
@@ -234,25 +234,6 @@ class TaskManager:
         self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-    def _kill_aggregators(self):
-        """Shutdown any currently running data aggregators"""
-        self.data_aggregator.shutdown()
-
-    def _launch_loggingserver(self):
-        """ sets up logging server """
-        self.logging_status_queue = Queue()
-        loggingserver = Process(target=MPLogger.loggingserver,
-                                args=(self.manager_params['log_file'],
-                                      self.logging_status_queue, ))
-        loggingserver.daemon = True
-        loggingserver.start()
-        return loggingserver
-
-    def _kill_loggingserver(self):
-        """ terminates logging server gracefully """
-        self.logging_status_queue.put("DIE")
-        self.loggingserver.join(300)
-
     def _shutdown_manager(self, during_init=False):
         """
         Wait for current commands to finish, close all child processes and
@@ -266,8 +247,8 @@ class TaskManager:
             browser.shutdown_browser(during_init)
 
         self.sock.close()  # close socket to data aggregator
-        self._kill_aggregators()
-        self._kill_loggingserver()
+        self.data_aggregator.shutdown()
+        self.logging_server.close()
 
     def _cleanup_before_fail(self, during_init=False):
         """

@@ -54,7 +54,7 @@ class serversocket:
                 thread.start()
             except ConnectionAbortedError:
                 # Workaround for #278
-                print("A connection establish request was performed " +
+                print("A connection establish request was performed "
                       "on a closed socket")
                 return
 

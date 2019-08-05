@@ -1,11 +1,12 @@
 import abc
+import logging
 import time
 
-from multiprocess import Process, Queue
+from multiprocess import Queue
 from six.moves import queue
 
-from ..MPLogger import loggingclient
 from ..SocketInterface import serversocket
+from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = 'page_content'
 STATUS_TIMEOUT = 120  # seconds
@@ -33,10 +34,10 @@ class BaseListener(object):
     def __init__(self, status_queue, shutdown_queue, manager_params):
         self.status_queue = status_queue
         self.shutdown_queue = shutdown_queue
-        self.logger = loggingclient(*manager_params['logger_address'])
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
+        self.logger = logging.getLogger('openwpm')
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -116,13 +117,13 @@ class BaseAggregator(object):
     def __init__(self, manager_params, browser_params):
         self.manager_params = manager_params
         self.browser_params = browser_params
-        self.logger = loggingclient(*manager_params['logger_address'])
         self.listener_address = None
         self.listener_process = None
         self.status_queue = Queue()
         self.shutdown_queue = Queue()
         self._last_status = None
         self._last_status_received = None
+        self.logger = logging.getLogger('openwpm')
 
     @abc.abstractmethod
     def save_configuration(self, openwpm_version, browser_version):
