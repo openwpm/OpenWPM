@@ -25,7 +25,7 @@ before_install:
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
   - echo "y" | ./install.sh
-  - pip install -r requirements.txt -r requirements-dev.txt
+  - pip install --upgrade -r requirements.txt -r requirements-dev.txt
 before_script:
   - flake8
 script:
