@@ -241,8 +241,8 @@ class TestExtension(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for row in rows:
-            if (row['symbol'] == "RTCPeerConnection.setLocalDescription" and
-                    row['operation'] == 'call'):
+            if (row['symbol'] == "RTCPeerConnection.setLocalDescription" and (
+                    row['operation'] == 'call')):
                 sdp_offer = row['arguments']
                 self.check_webrtc_sdp_offer(sdp_offer)
             else:

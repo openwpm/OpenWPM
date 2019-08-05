@@ -203,11 +203,11 @@ class TaskManager:
                     if browser.display_pid is not None:
                         display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
-                    if (process.create_time() + 300 < check_time and (
-                            (process.name() == 'firefox' and
-                             process.pid not in browser_pids) or
-                            (process.name() == 'Xvfb' and
-                             process.pid not in display_pids))):
+                    if process.create_time() + 300 < check_time and (
+                            (process.name() == 'firefox' and (
+                                process.pid not in browser_pids)) or (
+                            process.name() == 'Xvfb' and (
+                                process.pid not in display_pids))):
                         self.logger.debug("Process: %s (pid: %i) with start "
                                           "time %s found running but not in "
                                           "browser process list. Killing." % (
