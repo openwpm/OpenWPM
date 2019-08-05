@@ -1,6 +1,7 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import json
+import logging
 import socket
 import struct
 import threading
@@ -25,15 +26,14 @@ class serversocket:
     from client sockets to a central queue
     """
 
-    def __init__(self, name=None, verbose=False):
+    def __init__(self, name=None):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', 0))
         self.sock.listen(10)  # queue a max of n connect requests
-        self.verbose = verbose
         self.name = name
         self.queue = Queue()
-        if self.verbose:
-            print("Server bound to: " + str(self.sock.getsockname()))
+        self.logger = logging.getLogger('openwpm')
+        self.logger.debug("Server bound to: " + str(self.sock.getsockname()))
 
     def start_accepting(self):
         """ Start the listener thread """
@@ -54,8 +54,10 @@ class serversocket:
                 thread.start()
             except ConnectionAbortedError:
                 # Workaround for #278
-                print("A connection establish request was performed "
-                      "on a closed socket")
+                self.logger.error(
+                    "A connection establish request was performed "
+                    "on a closed socket"
+                )
                 return
 
     def _handle_conn(self, client, address):
@@ -70,16 +72,18 @@ class serversocket:
             'd' : dill pickle
             'j' : json
         """
-        if self.verbose:
-            print("Thread: %s connected to: %s" %
-                  (threading.current_thread(), address))
+        self.logger.debug(
+            "Thread: %s connected to: %s" %
+            (threading.current_thread(), address)
+        )
         try:
             while True:
                 msg = self.receive_msg(client, 5)
                 msglen, serialization = struct.unpack('>Lc', msg)
-                if self.verbose:
-                    print("Received message, length %d, serialization %r"
-                          % (msglen, serialization))
+                self.logger.debug(
+                    "Received message, length %d, serialization %r" %
+                    (msglen, serialization)
+                )
                 msg = self.receive_msg(client, msglen)
                 if serialization != b'n':
                     try:
@@ -90,17 +94,20 @@ class serversocket:
                         elif serialization == b'u':  # utf-8 serialization
                             msg = msg.decode('utf-8')
                         else:
-                            print("Unrecognized serialization type: %r"
-                                  % serialization)
+                            self.logger.error(
+                                "Unrecognized serialization type: %r" %
+                                serialization
+                            )
                             continue
                     except (UnicodeDecodeError, ValueError) as e:
-                        print("Error de-serializing message: %s \n %s" % (
-                            msg, traceback.format_exc(e)))
+                        self.logger.error(
+                            "Error de-serializing message: %s \n" %
+                            (msg, traceback.format_exc(e))
+                        )
                         continue
                 self.queue.put(msg)
         except RuntimeError:
-            if self.verbose:
-                print("Client socket: " + str(address) + " closed")
+            self.logger.debug("Client socket: " + str(address) + " closed")
 
     def receive_msg(self, client, msglen):
         msg = b''
@@ -118,7 +125,7 @@ class serversocket:
 class clientsocket:
     """A client socket for sending messages"""
 
-    def __init__(self, serialization='json', verbose=False):
+    def __init__(self, serialization='json'):
         """ `serialization` specifies the type of serialization to use for
         non-string messages. Supported formats:
             * 'json' uses the json module. Cross-language support. (default)
@@ -129,11 +136,10 @@ class clientsocket:
             raise ValueError(
                 "Unsupported serialization type: %s" % serialization)
         self.serialization = serialization
-        self.verbose = verbose
+        self.logger = logging.getLogger('openwpm')
 
     def connect(self, host, port):
-        if self.verbose:
-            print("Connecting to: %s:%i" % (host, port))
+        self.logger.debug("Connecting to: %s:%i" % (host, port))
         self.sock.connect((host, port))
 
     def send(self, msg):
@@ -158,8 +164,8 @@ class clientsocket:
             raise ValueError("Unsupported serialization type set: %s"
                              % serialization)
 
-        if self.verbose:
-            print("Sending message with serialization %s" % serialization)
+        self.logger.debug(
+            "Sending message with serialization %s" % serialization)
 
         # prepend with message length
         msg = struct.pack('>Lc', len(msg), serialization) + msg
@@ -179,7 +185,7 @@ def main():
 
     # Just for testing
     if sys.argv[1] == 's':
-        sock = serversocket(verbose=True)
+        sock = serversocket()
         sock.start_accepting()
         input("Press enter to exit...")
         sock.close()

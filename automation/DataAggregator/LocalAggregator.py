@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import base64
 import json
@@ -107,7 +107,6 @@ class LocalListener(BaseListener):
             elif callable(args[i]):
                 args[i] = six.text_type(args[i])
             elif type(args[i]) == dict:
-                print(args[i])
                 args[i] = json.dumps(args[i])
         try:
             self.cur.execute(statement, args)
