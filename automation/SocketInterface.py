@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 import struct
+import sys
 import threading
 import traceback
 
@@ -11,6 +12,8 @@ import dill
 import six
 from six.moves import input
 from six.moves.queue import Queue
+
+from .utilities.multiprocess_utils import parse_traceback_for_sentry
 
 if six.PY2:
     class ConnectionAbortedError(Exception):
@@ -99,10 +102,13 @@ class serversocket:
                                 serialization
                             )
                             continue
-                    except (UnicodeDecodeError, ValueError) as e:
+                    except (UnicodeDecodeError, ValueError):
+                        tb = traceback.format_exception(*sys.exc_info())
+                        extra = parse_traceback_for_sentry(tb)
+                        extra['message'] = msg
                         self.logger.error(
-                            "Error de-serializing message: %s \n" %
-                            (msg, traceback.format_exc(e))
+                            "Error de-serializing message: %s" % msg,
+                            exc_info=True, extra=extra
                         )
                         continue
                 self.queue.put(msg)
