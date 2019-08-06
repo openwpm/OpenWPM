@@ -11,6 +11,7 @@ import traceback
 
 import psutil
 from multiprocess import Queue
+from selenium.common.exceptions import WebDriverException
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
@@ -426,6 +427,11 @@ def BrowserManager(command_queue, status_queue, browser_params,
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
+	except WebDriverException as e:
+        logging.error("BROWSER %i: Selenium WebDriver Exception: %s" % (
+             browser_params['crawl_id'], str(e))
+        )
+        status_queue.put(('FAILED', None))
     except Exception:
         tb = traceback.format_exception(*sys.exc_info())
         extra = parse_traceback_for_sentry(tb)
