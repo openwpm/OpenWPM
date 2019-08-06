@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import base64
@@ -7,6 +9,7 @@ from hashlib import sha256
 from time import sleep
 
 import pytest
+import six
 from six.moves import range
 from six.moves.urllib.parse import urlparse
 
@@ -631,14 +634,19 @@ class TestPOSTInstrument(OpenWPMTest):
     The encoding types tested are explained here:
     https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Using_nothing_but_XMLHttpRequest
     """
-    post_data = '{"email":["test@example.com"],"username":["name surname+"]}'
+    post_data = ('{"email":["test@example.com"],'
+                 '"username":["name surname+你好"],'
+                 '"test":["ПриватБанк – банк для тих, хто йде вперед"]}')
     post_data_json = json.loads(post_data)
     post_data_multiline = r'{"email":["test@example.com"],"username":'\
-        r'["name surname+"],'\
+        r'["name surname+你好"],'\
+        r'"test":["ПриватБанк – банк для тих, хто йде вперед"],'\
         r'"multiline_text":["line1\r\n\r\nline2 line2_word2"]}'
     post_data_multiline_json = json.loads(post_data_multiline)
     post_data_multiline_raw = 'email=test@example.com\r\n'\
-        'username=name surname+\r\nmultiline_text=line1\r\n\r\n'\
+        'username=name surname+你好\r\n'\
+        'test=ПриватБанк – банк для тих, хто йде вперед\r\n'\
+        'multiline_text=line1\r\n\r\n'\
         'line2 line2_word2\r\n'
 
     def get_config(self, data_dir=""):
@@ -670,7 +678,11 @@ class TestPOSTInstrument(OpenWPMTest):
         encoding_type = "text/plain"
         db = self.visit('/post_request.html?encoding_type=' + encoding_type)
         post_body = self.get_post_request_body_from_db(db, True)
-        assert post_body.decode('utf8') == self.post_data_multiline_raw
+        if not isinstance(self.post_data_multiline_raw, six.text_type):
+            expected = self.post_data_multiline_raw.decode('utf-8')
+        else:
+            expected = self.post_data_multiline_raw
+        assert post_body.decode('utf8') == expected
 
     def test_record_post_data_multipart_formdata(self):
         encoding_type = "multipart/form-data"
@@ -716,7 +728,6 @@ class TestPOSTInstrument(OpenWPMTest):
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db, True)
         # Binary strings get put into the database as-if they were latin-1.
-        import six
         assert six.binary_type(bytearray(range(100))) == post_body
 
     @pytest.mark.skip(reason="Firefox is currently not able to return the "
