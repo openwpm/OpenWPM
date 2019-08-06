@@ -96,6 +96,9 @@ class S3Listener(BaseListener):
 
     def _create_batch(self, visit_id):
         """Create record batches for all records from `visit_id`"""
+        if visit_id not in self._records:
+            # The batch for this `visit_id` was already created, skip
+            return
         for table_name, data in self._records[visit_id].items():
             if table_name not in self._batches:
                 self._batches[table_name] = list()
@@ -228,7 +231,7 @@ class S3Listener(BaseListener):
         self.logger.debug(
             "Saving current record batches to S3 since no new data has "
             "been written for %d seconds." %
-            (self._last_record_received - time.time())
+            (time.time() - self._last_record_received)
         )
         self.drain_queue()
         self._last_record_received = None
