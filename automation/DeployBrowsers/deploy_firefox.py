@@ -28,8 +28,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
 
     root_dir = os.path.dirname(__file__)  # directory of this file
 
-    display_pid = None
-    display_port = None
     fp = FirefoxProfile()
     browser_profile_path = fp.path + '/'
     status_queue.put(('STATUS', 'Profile Created', browser_profile_path))
@@ -96,7 +94,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.set_headless(True)
         fo.add_argument('--width={}'.format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
-    status_queue.put(('STATUS', 'Display', (display_pid, display_port)))
 
     if browser_params['extension_enabled']:
         # Write config file
