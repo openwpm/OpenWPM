@@ -1,2 +1,2 @@
 autopep8
-localstack
+localstack==0.9.6
