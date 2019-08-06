@@ -59,10 +59,6 @@ class Browser:
         self.status_queue = None
         # pid for browser instance controlled by BrowserManager
         self.browser_pid = None
-        # the pid of the display for the headless browser (if it exists)
-        self.display_pid = None
-        # the port of the display for the headless browser (if it exists)
-        self.display_port = None
 
         # boolean that says if the BrowserManager new (to optimize restarts)
         self.is_fresh = True
@@ -151,12 +147,9 @@ class Browser:
                 spawned_profile_path = check_queue(launch_status)
                 # 2. Profile tar loaded (if necessary)
                 check_queue(launch_status)
-                # 3. Display launched
-                (self.display_pid, self.display_port) = check_queue(
-                    launch_status)
-                # 4. Browser launch attempted
+                # 3. Browser launch attempted
                 check_queue(launch_status)
-                # 5. Browser launched
+                # 4. Browser launched
                 (self.browser_pid, self.browser_settings) = check_queue(
                     launch_status)
 
@@ -228,10 +221,11 @@ class Browser:
         """Kill the BrowserManager process and all of its children"""
         self.logger.debug(
             "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
-            "Display PID: %s | Display Port: %s | Browser PID: %s" % (
-                self.crawl_id, self.browser_manager.pid, self.display_pid,
-                self.display_port, self.browser_pid)
+            "Browser PID: %s" % (
+                self.crawl_id, self.browser_manager.pid,
+                self.browser_pid)
         )
+
         if self.browser_manager is not None and \
                 self.browser_manager.pid is not None:
             try:
@@ -240,25 +234,7 @@ class Browser:
                 self.logger.debug("BROWSER %i: Browser manager process does "
                                   "not exist" % self.crawl_id)
                 pass
-        if self.display_pid is not None:
-            try:
-                os.kill(self.display_pid, signal.SIGKILL)
-            except OSError:
-                self.logger.debug("BROWSER %i: Display process does not "
-                                  "exit" % self.crawl_id)
-                pass
-            except TypeError:
-                self.logger.error("BROWSER %i: PID may not be the correct "
-                                  "type %s" % (self.crawl_id,
-                                               str(self.display_pid)))
-        if self.display_port is not None:  # xvfb diplay lock
-            lockfile = "/tmp/.X%s-lock" % self.display_port
-            try:
-                os.remove(lockfile)
-            except OSError:
-                self.logger.debug("BROWSER %i: Screen lockfile (%s) already "
-                                  "removed" % (self.crawl_id, lockfile))
-                pass
+
         if self.browser_pid is not None:
             """`browser_pid` is the geckodriver process. We first kill
             the child processes (i.e. firefox) and then kill the geckodriver
@@ -395,7 +371,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
         logger.debug(
             "BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])
 
-        # passes the profile folder, WebDriver pid and display pid back to the
+        # passes the profile folder, WebDriver pid back to the
         # TaskManager to signal a successful startup
         status_queue.put(('STATUS', 'Browser Ready', (prof_folder, 'READY')))
         browser_params['profile_path'] = prof_folder
