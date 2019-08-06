@@ -50,7 +50,7 @@ class TestStorageVectors(OpenWPMTest):
     def get_config(self, data_dir=""):
         return self.get_test_config(data_dir)
 
-    @pytest.mark.skip('Flash cookies are no longer supported in OpenWPM')
+    @pytest.mark.xfail(reason='Flash cookies are no longer supported in OpenWPM')
     def test_flash_cookies(self):
         """ Check that some Flash LSOs are saved and
         are properly keyed in db."""
