@@ -105,7 +105,6 @@ class serversocket:
                     except (UnicodeDecodeError, ValueError):
                         tb = traceback.format_exception(*sys.exc_info())
                         extra = parse_traceback_for_sentry(tb)
-                        extra['message'] = msg
                         self.logger.error(
                             "Error de-serializing message: %s" % msg,
                             exc_info=True, extra=extra
