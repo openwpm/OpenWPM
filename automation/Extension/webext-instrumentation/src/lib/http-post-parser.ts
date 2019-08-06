@@ -61,7 +61,7 @@ export class HttpPostParser {
     if (requestBody.formData) {
       return {
         // TODO: requestBody.formData should probably be transformed into another format
-        post_body: escapeString(requestBody.formData),
+        post_body: escapeString(JSON.stringify(requestBody.formData)),
       };
     }
     if (requestBody.raw) {
