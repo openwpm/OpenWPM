@@ -6,7 +6,7 @@ import {
 } from "../types/browser-web-request-event-details";
 // import { escapeString, escapeUrl } from "./string-utils";
 
-import { Uint8ToBase64 } from "./string-utils";
+import { escapeString, Uint8ToBase64 } from "./string-utils";
 
 // const components: any = {};
 
@@ -61,7 +61,7 @@ export class HttpPostParser {
     if (requestBody.formData) {
       return {
         // TODO: requestBody.formData should probably be transformed into another format
-        post_body: requestBody.formData,
+        post_body: escapeString(JSON.stringify(requestBody.formData)),
       };
     }
     if (requestBody.raw) {

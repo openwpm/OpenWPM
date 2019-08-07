@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Test page - POST request using AJAX</title>
+    <meta charset="utf-8"/>
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"
       integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
       crossorigin="anonymous"></script>
@@ -15,11 +16,12 @@
       }
 
 	    function send_form_data() {
-	      // Use "FormData"
-	      var formData = new FormData();
-	      formData.append("email", "test@example.com");
-	      formData.append("username", "name surname+");
-	      do_xhr(formData);
+        	// Use "FormData"
+        	var formData = new FormData();
+        	formData.append("email", "test@example.com")
+        	formData.append("username", "name surname+你好");
+        	formData.append("test", "ПриватБанк – банк для тих, хто йде вперед");
+        	do_xhr(formData);
 	    }
 
 	    function send_binary_data(){
@@ -39,7 +41,11 @@
         if (format == "formData") {
           send_form_data();
         } else if (format == "object") {
-          var post_obj = {email:"test@example.com", username:"name surname+"};
+          var post_obj = {
+            email:"test@example.com",
+            username:"name surname+你好",
+            test:"ПриватБанк – банк для тих, хто йде вперед"
+          };
           $.post("bogus_submit.html", post_obj);
         } else if (format == "noKeyValue") {
           do_xhr('test@example.com + name surname');
