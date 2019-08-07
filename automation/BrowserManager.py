@@ -427,9 +427,9 @@ def BrowserManager(command_queue, status_queue, browser_params,
         err_info = sys.exc_info()
         status_queue.put(('CRITICAL', pickle.dumps(err_info)))
         return
-	except WebDriverException as e:
+    except WebDriverException as e:
         logging.error("BROWSER %i: Selenium WebDriver Exception: %s" % (
-             browser_params['crawl_id'], str(e))
+            browser_params['crawl_id'], str(e))
         )
         status_queue.put(('FAILED', None))
     except Exception:
