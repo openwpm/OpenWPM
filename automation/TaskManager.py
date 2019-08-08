@@ -190,7 +190,7 @@ class TaskManager:
                 except psutil.NoSuchProcess:
                     pass
 
-            # Check for browsers or displays that were not closed correctly
+            # Check for browsers that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:

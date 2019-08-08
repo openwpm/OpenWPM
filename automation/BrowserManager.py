@@ -331,7 +331,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
     """
     logger = logging.getLogger('openwpm')
     try:
-        # Start the virtualdisplay (if necessary), webdriver, and browser
+        # Start webdriver and browser
         driver, prof_folder, browser_settings = deploy_browser.deploy_browser(
             status_queue, browser_params, manager_params, crash_recovery)
         if prof_folder[-1] != '/':
