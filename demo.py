@@ -25,7 +25,7 @@ for i in range(NUM_BROWSERS):
     # Record JS Web API calls
     browser_params[i]['js_instrument'] = True
     # Enable flash for all three browsers
-    browser_params[i]['disable_flash'] = False
+    browser_params[i]['disable_flash'] = True
 browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)

@@ -48,11 +48,10 @@ def get_firefox_binary_path():
     root_dir = os.path.dirname(__file__) + "/../.."
     if platform == 'darwin':
         firefox_binary_path = os.path.abspath(
-            root_dir +
-            "/Nightly.app/Contents/MacOS/firefox-bin")
+            root_dir + "/Nightly.app/Contents/MacOS/firefox-bin")
     else:
-        firefox_binary_path = os.path.abspath(root_dir +
-                                              "/firefox-bin/firefox-bin")
+        firefox_binary_path = os.path.abspath(
+            root_dir + "/firefox-bin/firefox-bin")
 
     if not os.path.isfile(firefox_binary_path):
         raise RuntimeError(
@@ -69,8 +68,8 @@ def get_geckodriver_exec_path():
     we throw a RuntimeError.
     """
     firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = (os.path.dirname(firefox_binary_path)
-                                   + "/geckodriver")
+    geckodriver_executable_path = (
+        os.path.dirname(firefox_binary_path) + "/geckodriver")
 
     if not os.path.isfile(geckodriver_executable_path):
         raise RuntimeError(
