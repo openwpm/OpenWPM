@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import copy
 import json
 import logging
 import logging.handlers
@@ -10,13 +11,18 @@ import sys
 import threading
 import time
 
+import dill
 import sentry_sdk
+import six
 from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
 from six.moves.urllib import parse as urlparse
+from tblib import pickling_support
 
 from .SocketInterface import serversocket
+
+pickling_support.install()
 
 BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:\s*")
 NETERROR_RE = re.compile(
@@ -34,18 +40,25 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         Serializes the record via json and prepends a length/serialization
         flag. Returns it ready for transmission across the socket.
         """
-        ei = record.exc_info
-        if ei:
-            # just to get traceback text into record.exc_text ...
-            dummy = self.format(record)  # noqa
-            record.exc_info = None  # to avoid Unpickleable error
-        d = dict(record.__dict__)
-        d['msg'] = record.getMessage()
-        d['args'] = None
-        s = json.dumps(d).encode('utf-8')
-        if ei:
-            record.exc_info = ei  # for next handler
-        return struct.pack('>Lc', len(s), b'j') + s
+        d = copy.deepcopy(record.__dict__)
+
+        # Pickle fields to so record is safe to send across socket
+        if 'exc_info' in d and d['exc_info']:
+            try:
+                d['exc_info'] = dill.dumps(d['exc_info'])
+            except dill.PicklingError:
+                d['exc_info'] = None
+        if 'args' in d and d['args']:
+            try:
+                d['args'] = dill.dumps(d['args'])
+            except dill.PicklingError:
+                d['msg'] = record.getMessage()
+                d['args'] = None
+
+        # Serialize logging record so it can be sent to MPLogger
+        # s = json.dumps(d).encode('utf-8')
+        s = dill.dumps(d)
+        return struct.pack('>Lc', len(s), b'd') + s
 
 
 class MPLogger(object):
@@ -207,6 +220,10 @@ class MPLogger(object):
         This is currently records that are written to a file on disk
         and those sent to Sentry.
         """
+        if obj['exc_info']:
+            obj['exc_info'] = dill.loads(six.ensure_str(obj['exc_info']))
+        if obj['args']:
+            obj['args'] = dill.loads(six.ensure_str(obj['args']))
         record = logging.makeLogRecord(obj)
         self._file_handler.emit(record)
         if self._sentry_dsn:
