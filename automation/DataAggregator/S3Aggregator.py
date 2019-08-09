@@ -14,7 +14,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import s3fs
 import six
-from botocore.exceptions import ClientError
+from botocore.client import Config
+from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 from six.moves import queue
 
@@ -26,6 +27,12 @@ SITE_VISITS_INDEX = '_site_visits_index'
 CONTENT_DIRECTORY = 'content'
 CONFIG_DIR = 'config'
 BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
+S3_CONFIG_KWARGS = {
+    'retries': {
+        'max_attempts': 20
+    }
+}
+S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
 def listener_process_runner(
@@ -68,9 +75,12 @@ class S3Listener(BaseListener):
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
         self._s3_content_cache = set()  # cache of filenames already uploaded
-        self._s3 = boto3.client('s3')
-        self._s3_resource = boto3.resource('s3')
-        self._fs = s3fs.S3FileSystem(session=boto3.DEFAULT_SESSION)
+        self._s3 = boto3.client('s3', config=S3_CONFIG)
+        self._s3_resource = boto3.resource('s3', config=S3_CONFIG)
+        self._fs = s3fs.S3FileSystem(
+            session=boto3.DEFAULT_SESSION,
+            config_kwargs=S3_CONFIG_KWARGS
+        )
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
         self._last_record_received = None  # time last record was received
@@ -145,6 +155,12 @@ class S3Listener(BaseListener):
                 return False
             else:
                 raise
+        except EndpointConnectionError as e:
+            self.logger.error(
+                "Exception while checking if file exists %s\n%s\n%s" % (
+                    filename, type(e), e)
+            )
+            return False
 
         # Add filename to local cache to avoid remote lookups on next request
         # We strip the bucket name as its the same for all files
@@ -211,7 +227,7 @@ class S3Listener(BaseListener):
                         compression='snappy',
                         flavor='spark'
                     )
-                except pa.lib.ArrowInvalid as e:
+                except (pa.lib.ArrowInvalid, EndpointConnectionError) as e:
                     self.logger.error(
                         "Error while sending record:\n%s\n%s\n%s\n"
                         % (table_name, type(e), e)
