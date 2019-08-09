@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 
+import dill
 import sentry_sdk
 from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
@@ -42,10 +43,11 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         d = dict(record.__dict__)
         d['msg'] = record.getMessage()
         d['args'] = None
-        s = json.dumps(d).encode('utf-8')
+        # s = json.dumps(d).encode('utf-8')
+        s = dill.dumps(d)
         if ei:
             record.exc_info = ei  # for next handler
-        return struct.pack('>Lc', len(s), b'j') + s
+        return struct.pack('>Lc', len(s), b'd') + s
 
 
 class MPLogger(object):
