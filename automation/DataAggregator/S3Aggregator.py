@@ -155,7 +155,7 @@ class S3Listener(BaseListener):
                 return False
             else:
                 raise
-        except EndpointConnectionError as e:
+        except EndpointConnectionError:
             self.logger.error(
                 "Exception while checking if file exists %s" % filename,
                 exc_info=True
