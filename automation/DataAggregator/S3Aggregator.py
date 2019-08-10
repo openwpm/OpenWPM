@@ -122,10 +122,10 @@ class S3Listener(BaseListener):
                     "Successfully created batch for table %s and "
                     "visit_id %s" % (table_name, visit_id)
                 )
-            except pa.lib.ArrowInvalid as e:
+            except pa.lib.ArrowInvalid:
                 self.logger.error(
-                    "Error while creating record batch:\n%s\n%s\n%s\n"
-                    % (table_name, type(e), e)
+                    "Error while creating record batch for table %s\n"
+                    % table_name, exc_info=True
                 )
                 pass
 
@@ -157,8 +157,8 @@ class S3Listener(BaseListener):
                 raise
         except EndpointConnectionError as e:
             self.logger.error(
-                "Exception while checking if file exists %s\n%s\n%s" % (
-                    filename, type(e), e)
+                "Exception while checking if file exists %s" % filename,
+                exc_info=True
             )
             return False
 
@@ -193,10 +193,9 @@ class S3Listener(BaseListener):
             # We strip the bucket name as its the same for all files
             if skip_if_exists:
                 self._s3_content_cache.add(filename.split('/', 1)[1])
-        except Exception as e:
+        except Exception:
             self.logger.error(
-                "Exception while uploading %s\n%s\n%s" % (
-                    filename, type(e), e)
+                "Exception while uploading %s" % filename, exc_info=True
             )
             pass
 
@@ -227,10 +226,10 @@ class S3Listener(BaseListener):
                         compression='snappy',
                         flavor='spark'
                     )
-                except (pa.lib.ArrowInvalid, EndpointConnectionError) as e:
+                except (pa.lib.ArrowInvalid, EndpointConnectionError):
                     self.logger.error(
-                        "Error while sending record:\n%s\n%s\n%s\n"
-                        % (table_name, type(e), e)
+                        "Error while sending records for: %s" % table_name,
+                        exc_info=True
                     )
                     pass
             self._batches[table_name] = list()
