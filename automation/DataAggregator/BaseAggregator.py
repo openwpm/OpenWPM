@@ -1,5 +1,6 @@
 import abc
 import logging
+import threading
 import time
 
 from multiprocess import Queue
@@ -83,7 +84,10 @@ class BaseListener(object):
         qsize = self.record_queue.qsize()
         self.status_queue.put(qsize)
         self.logger.debug(
-            "Status update; current record queue size: %d" % qsize)
+            "Status update; current record queue size: %d. "
+            "current number of threads: %d." %
+            (qsize, threading.active_count())
+        )
         self._last_update = time.time()
 
     def shutdown(self):
