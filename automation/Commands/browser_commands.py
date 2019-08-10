@@ -133,7 +133,7 @@ def get_website(url, sleep, visit_id, webdriver,
         alert = webdriver.switch_to_alert()
         alert.dismiss()
         time.sleep(1)
-    except TimeoutException:
+    except (TimeoutException, WebDriverException):
         pass
 
     close_other_windows(webdriver)
