@@ -25,13 +25,15 @@ async function main() {
       save_javascript:false,
       save_all_content:false,
       testing:true,
-      crawl_id:0
+      crawl_id:0,
+      visit_id:-99
     };
   }
 
   await loggingDB.open(config['aggregator_address'],
                        config['logger_address'],
-                       config['crawl_id']);
+                       config['crawl_id'],
+                       config['visit_id']);
 
   if (config["navigation_instrument"]) {
     loggingDB.logDebug("Navigation instrumentation enabled");

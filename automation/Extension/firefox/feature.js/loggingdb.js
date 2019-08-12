@@ -7,13 +7,15 @@ let dataAggregator = null;
 let logAggregator = null;
 let listeningSocket = null;
 
-export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
-    if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
+export let open = async function(aggregatorAddress, logAddress, crawlID, visitID) {
+    if (aggregatorAddress == null && logAddress == null) {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
     }
-    crawlID = curr_crawlID;
+
+    crawlID = crawlID;
+    visitID = visitID;
 
     console.log("Opening socket connections...");
 
@@ -135,12 +137,10 @@ export let dataReceiver = {
 
 export let saveRecord = function(instrument, record) {
     // Add visit id if changed
-    while (!debugging && listeningSocket.queue.length != 0) {
-        visitID = listeningSocket.queue.shift();
+    while (!debugging) {
         logDebug("Visit Id: " + visitID);
     }
     record["visit_id"] = parseInt(visitID, 10);
-
 
     if (!visitID && !debugging) {
         logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
