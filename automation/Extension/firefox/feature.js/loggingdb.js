@@ -7,8 +7,8 @@ let dataAggregator = null;
 let logAggregator = null;
 let listeningSocket = null;
 
-export let open = async function(aggregatorAddress, logAddress, crawlID, visitID) {
-    if (aggregatorAddress == null && logAddress == null) {
+export let open = async function(aggregatorAddress, logAddress, crawlID, visitID, testing=False) {
+    if (testing === True) {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
@@ -16,7 +16,6 @@ export let open = async function(aggregatorAddress, logAddress, crawlID, visitID
 
     crawlID = crawlID;
     visitID = visitID;
-    console.log('BOO', visitID);
 
     console.log("Opening socket connections...");
 

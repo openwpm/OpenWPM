@@ -13,10 +13,7 @@ async function main() {
   let config = await browser.profileDirIO.readFile(filename);
   if (config) {
     config = JSON.parse(config);
-    console.log("Browser Config:", config);
   } else {
-    console.log("WARNING: config not found. Assuming this is a test run of",
-                "the extension. Outputting all queries to console.");
     config = {
       navigation_instrument:true,
       cookie_instrument:true,
@@ -28,12 +25,17 @@ async function main() {
       crawl_id:0,
       visit_id:-99
     };
+    console.log("WARNING: config not found. Assuming this is a test run of",
+                "the extension. Outputting all queries to console.");
+
   }
+  console.log("Browser Config:", config);
 
   await loggingDB.open(config['aggregator_address'],
                        config['logger_address'],
                        config['crawl_id'],
-                       config['visit_id']);
+                       config['visit_id'],
+                       testing=config['testing']);
 
   if (config["navigation_instrument"]) {
     loggingDB.logDebug("Navigation instrumentation enabled");
