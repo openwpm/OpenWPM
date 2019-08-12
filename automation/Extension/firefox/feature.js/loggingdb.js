@@ -16,6 +16,7 @@ export let open = async function(aggregatorAddress, logAddress, crawlID, visitID
 
     crawlID = crawlID;
     visitID = visitID;
+    console.log('BOO', visitID);
 
     console.log("Opening socket connections...");
 
@@ -140,6 +141,9 @@ export let saveRecord = function(instrument, record) {
     while (!debugging) {
         logDebug("Visit Id: " + visitID);
     }
+
+    logDebug("Debugging set to: " + debugging);
+    logDebug("Visit Id: " + visitID);
     record["visit_id"] = parseInt(visitID, 10);
 
     if (!visitID && !debugging) {
