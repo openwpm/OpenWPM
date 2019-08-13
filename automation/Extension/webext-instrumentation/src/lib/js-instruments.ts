@@ -301,6 +301,9 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
   // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
   Object.getPropertyDescriptor = function(subject, name) {
+    if (subject === undefined) {
+      throw new Error("Can't get property descriptor for undefined");
+    }
     let pd = Object.getOwnPropertyDescriptor(subject, name);
     let proto = Object.getPrototypeOf(subject);
     while (pd === undefined && proto !== null) {
