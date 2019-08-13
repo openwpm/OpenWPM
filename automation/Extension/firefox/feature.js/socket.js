@@ -1,50 +1,55 @@
-let DataReceiver = {
-  callbacks: new Map(),
-  onDataReceived: (aSocketId, aData, aJSON) => {
-    if (!DataReceiver.callbacks.has(aSocketId)) {
-      return;
-    }
-    if (aJSON) {
-      aData = JSON.parse(aData);
-    }
-    DataReceiver.callbacks.get(aSocketId)._updateQueue(aData);
-  },
+import io from 'socket.io-client';
+
+const getSocketIoInstance = function(namespace) {
+  console.log('http://127.0.0.1:7799/' + namespace);
+  return io('http://127.0.0.1:7799/' + namespace, {
+    transports: ['websocket'] // https://github.com/socketio/socket.io-client/blob/master/docs/API.md#with-websocket-transport-only
+  });
 };
 
-browser.sockets.onDataReceived.addListener(DataReceiver.onDataReceived);
+class ListeningSocket {
 
-let ListeningSockets = new Map();
-
-export class ListeningSocket {
-  constructor() {
+  // Socket which feeds incoming messages to a queue
+  constructor(namespaceSuffix) {
+    this.namespace = 'openwpm-extension-listen-' + namespaceSuffix;
     this.queue = []; // stores messages sent to socket
   }
 
-  async startListening() {
-    this.port = await browser.sockets.createServerSocket();
-    DataReceiver.callbacks.set(this.port, this);
-    browser.sockets.startListening(this.port);
-    console.log('Listening on port ' + this.port);
+  startListening() {
+    console.log('Listening for incoming web socket messages...');
+    this.socket = getSocketIoInstance(this.namespace);
+    /*
+    this.socket.on('ping', (data) => {
+      console.log(this.namespace + " - socket ping", data);
+    });
+    this.socket.emit('ping', 'foo');
+    */
+    this.socket.on('message', this._updateQueue);
   }
 
   _updateQueue(data) {
+    console.log(this.namespace + '_updateQueue data', data);
     this.queue.push(data);
   }
 }
 
-export class SendingSocket {
-  constructor() {
+class SendingSocket {
+
+  // Socket which encodes messages and sends to specified namespace
+  constructor(namespaceSuffix) {
+    this.namespace = 'openwpm-extension-send-' + namespaceSuffix;
   }
 
-  async connect(host, port) {
-    this.id = await browser.sockets.createSendingSocket();
-    browser.sockets.connect(this.id, host, port);
-    console.log(`Connected to ${host}:${port}`);
+  connect() {
+    this.socket = getSocketIoInstance(this.namespace);
+    console.log(this.namespace);
+    console.log(this.socket);
+    return this.socket;
   }
 
-  send(aData, aJSON=true) {
+  send(record) {
     try {
-      browser.sockets.sendData(this.id, aData, !!aJSON);
+      this.socket.emit('record', record);
       return true;
     } catch (err) {
       console.error(err,err.message);
@@ -53,7 +58,7 @@ export class SendingSocket {
   }
 
   close() {
-    browser.sockets.close(this.id);
+    this.socket.close()
   }
 }
-
+export { ListeningSocket, SendingSocket };
