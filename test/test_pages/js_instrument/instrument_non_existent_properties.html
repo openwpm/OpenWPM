@@ -1,10 +1,10 @@
 <!doctype html>
 <html>
   <head>
-    <title>Test page for JS Instrument's instrumentObject method - specifically testing non-existent properties</title>
+    <title>Test page for JS Instrument's instrumentObject method - specifically testing non-existing properties</title>
   </head>
   <body>
-    <h3>Test page for JS Instrument's instrumentObject method - specifically testing non-existent properties</h3>
+    <h3>Test page for JS Instrument's instrumentObject method - specifically testing non-existing properties</h3>
     <p> This page defines several types of objects and tests the js
     instrument's instrumentObject() method. <br/>
     NOTE: The platform config option `manager_params['testing']` must be set
@@ -15,32 +15,103 @@
       function interactWithTestObjects() {
 
         /*
-         * Interact with non-existent object instrumented non-recursively
+         * Interact with non-existing object instrumented non-recursively
          */
 
         // get object
-        console.log("nonExistent",window.nonExistent);
+        console.log("nonExisting",window.nonExisting);
 
         // call object as method
         try {
-          window.nonExistent('hello', {'world': true});
+          window.nonExisting('hello', {'world': true});
         } catch (e) {
           console.log("call object as method - caught exception: ", e);
         }
 
-        return;
+        // get and set nonExistingProp1 (data property 1)
+        try {
+          console.log("nonExistingProp1 before set",window.nonExisting.nonExistingProp1);
+        } catch (e) {
+          console.log("nonExistingProp1 before set - caught exception: ", e);
+        }
+        try {
+          window.nonExisting.nonExistingProp1 = 'blah1';
+        } catch (e) {
+          console.log("nonExistingProp1 set - caught exception: ", e);
+        }
+        try {
+          console.log("nonExistingProp1 after set",window.nonExisting.nonExistingProp1);
+        } catch (e) {
+          console.log("nonExistingProp1 after set - caught exception: ", e);
+        }
+
+        /*
+         * Interact with partially existing object instrumented non-recursively
+         */
+
+        // get object
+        console.log("partiallyExisting",window.partiallyExisting);
+
+        // call object as method
+        try {
+          window.partiallyExisting('hello', {'world': true});
+        } catch (e) {
+          console.log("call object as method - caught exception: ", e);
+        }
+
+        // get and set existingProp
+        try {
+          console.log("existingProp before set",window.partiallyExisting.existingProp);
+        } catch (e) {
+          console.log("existingProp before set - caught exception: ", e);
+        }
+        window.partiallyExisting.existingProp = 'blah1';
+        try {
+          console.log("existingProp after set",window.partiallyExisting.existingProp);
+        } catch (e) {
+          console.log("existingProp after set - caught exception: ", e);
+        }
+
+        // get and set nonExistingProp1 (data property 1)
+        console.log("nonExistingProp1 before set",window.partiallyExisting.nonExistingProp1);
+        window.partiallyExisting.nonExistingProp1 = 'blah1';
+        console.log("nonExistingProp1 after set",window.partiallyExisting.nonExistingProp1);
+
       }
 
-      // Don't build nonExistent object
+      // Don't build nonExisting object
       /*
-      window.nonExistent = {};
+      window.nonExisting = {};
       */
 
-      // Instrument non-existent object non-recursively
-      console.log("Instrumenting window.nonExistent!");
+      // Build partiallyExisting object
+      window.partiallyExisting = {
+        "existingProp": "foo",
+      };
+
+      // don't create data property
+      /*
+      partiallyExisting.nonExistingProp1 = 'nonExistingProp1';
+      */
+
+      // Instrument non-existing object non-recursively
+      console.log("Instrumenting window.nonExisting!");
       window.instrumentObject(window, "window", {
-        propertiesToInstrument: ["nonExistent"],
-        logCallStack: true,
+        propertiesToInstrument: ["nonExisting"],
+      });
+
+      // Instrument partially existing object non-recursively
+      console.log("Instrumenting window.partiallyExisting!");
+      // Instrument the window.partiallyExisting property itself (not its object properties)
+      window.instrumentObject(window, "window", {
+        propertiesToInstrument: ["partiallyExisting"],
+      });
+      // Instrument window.partiallyExisting object properties
+      window.instrumentObject(window.partiallyExisting, "window.partiallyExisting", {
+        propertiesToInstrument: [
+          "existingProp",
+          "nonExistingProp1",
+        ],
       });
 
       interactWithTestObjects();
