@@ -311,6 +311,9 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   };
 
   Object.getPropertyNames = function(subject) {
+    if (subject === undefined) {
+      throw new Error("Can't get property names for undefined");
+    }
     let props = Object.getOwnPropertyNames(subject);
     let proto = Object.getPrototypeOf(subject);
     while (proto !== null) {
