@@ -5,9 +5,8 @@ let visitID = null;
 let debugging = false;
 let dataAggregator = null;
 let logAggregator = null;
-let listeningSocket = null;
 
-export let open = async function(aggregatorAddress, logAddress, crawlID, visitID, testing=False) {
+export let open = async function(aggregatorAddress, logAddress, crawlID, visitID, testing=false) {
     if (testing === true) {
         console.log("Debugging, everything will output to console");
         debugging = true;
@@ -20,25 +19,18 @@ export let open = async function(aggregatorAddress, logAddress, crawlID, visitID
     console.log("Opening socket connections...");
 
     // Connect to MPLogger for extension info/debug/error logging
-    if (logAddress != null) {
+    if (!debugging && logAddress != null) {
         logAggregator = new socket.SendingSocket();
         let rv = await logAggregator.connect(logAddress[0], logAddress[1]);
         console.log("logSocket started?", rv)
     }
 
     // Connect to databases for saving data
-    if (aggregatorAddress != null) {
+    if (!debugging && aggregatorAddress != null) {
         dataAggregator = new socket.SendingSocket();
         let rv = await dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
         console.log("sqliteSocket started?",rv);
     }
-
-    // Listen for incoming urls as visit ids
-    listeningSocket = new socket.ListeningSocket();
-    console.log("Starting socket listening for incoming connections.");
-    listeningSocket.startListening().then(() => {
-        browser.profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
-    });
 };
 
 export let close = function() {
@@ -136,14 +128,7 @@ export let dataReceiver = {
 };
 
 export let saveRecord = function(instrument, record) {
-    // Add visit id if changed
-    while (!debugging) {
-        logDebug("Visit Id: " + visitID);
-    }
-
-    logDebug("Debugging set to: " + debugging);
-    logDebug("Visit Id: " + visitID);
-    record["visit_id"] = parseInt(visitID, 10);
+    record["visit_id"] = visitID;
 
     if (!visitID && !debugging) {
         logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +

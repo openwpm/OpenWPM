@@ -35,7 +35,7 @@ async function main() {
                        config['logger_address'],
                        config['crawl_id'],
                        config['visit_id'],
-                       testing=config['testing']);
+                       config['testing']);
 
   if (config["navigation_instrument"]) {
     loggingDB.logDebug("Navigation instrumentation enabled");
