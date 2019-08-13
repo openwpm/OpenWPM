@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "author": "Mozilla",
   "dependencies": {
+    "socket.io-client": "^1.5.1",
     "openwpm-webext-instrumentation": "../webext-instrumentation"
   },
   "devDependencies": {
