@@ -77,6 +77,14 @@
         window.partiallyExisting.nonExistingProp1 = 'blah1';
         console.log("nonExistingProp1 after set",window.partiallyExisting.nonExistingProp1);
 
+        // call non-existing object method
+        try {
+          window.partiallyExisting.nonExistingMethod1('hello', {'world': true});
+        } catch (e) {
+          console.log("call object method - caught exception: ", e);
+        }
+
+
       }
 
       // Don't build nonExisting object
@@ -92,6 +100,13 @@
       // don't create data property
       /*
       partiallyExisting.nonExistingProp1 = 'nonExistingProp1';
+      */
+
+      // don't create a method
+      /*
+      partiallyExisting.nonExistingMethod1 = function(arg1, arg2) {
+        console.log('nonExistingMethod1', arg1, arg2);
+      };
       */
 
       // Instrument non-existing object non-recursively
@@ -111,6 +126,7 @@
         propertiesToInstrument: [
           "existingProp",
           "nonExistingProp1",
+          "nonExistingMethod1",
         ],
       });
 
