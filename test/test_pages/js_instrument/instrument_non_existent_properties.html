@@ -20,8 +20,15 @@
 
         // get object
         console.log("nonExistent",window.nonExistent);
-        return;
 
+        // call object as method
+        try {
+          window.nonExistent('hello', {'world': true});
+        } catch (e) {
+          console.log("call object as method - caught exception: ", e);
+        }
+
+        return;
       }
 
       // Don't build nonExistent object
