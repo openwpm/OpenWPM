@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument's instrumentObject method - specifically testing non-existent properties</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrument's instrumentObject method - specifically testing non-existent properties</h3>
+    <p> This page defines several types of objects and tests the js
+    instrument's instrumentObject() method. <br/>
+    NOTE: The platform config option `manager_params['testing']` must be set
+    to True otherwise the instrumentObject method won't be exposed to this
+    test script.
+    </p>
+    <script type="text/javascript">
+      function interactWithTestObjects() {
+
+        /*
+         * Interact with non-existent object instrumented non-recursively
+         */
+
+        // get object
+        console.log("nonExistent",window.nonExistent);
+        return;
+
+      }
+
+      // Don't build nonExistent object
+      /*
+      window.nonExistent = {};
+      */
+
+      // Instrument non-existent object non-recursively
+      console.log("Instrumenting window.nonExistent!");
+      window.instrumentObject(window, "window", {
+        propertiesToInstrument: ["nonExistent"],
+        logCallStack: true,
+      });
+
+      interactWithTestObjects();
+    </script>
+  </body>
+</html>
