@@ -40,10 +40,31 @@ def child_proc(index):
 
 
 def child_proc_with_exception(index):
+    def test_func():
+        print("test")
+
+    class TestClass(object):
+        def __init__(self):
+            return
+
+        def test_method(self):
+            return
+
+    class TestSubClass(TestClass):
+        def test_method(self):
+            print("test method")
+            return
+
     logger = logging.getLogger('openwpm')
     logger.info(CHILD_INFO_STR_1 % index)
     logger.info(CHILD_INFO_STR_2 % index)
-    raise RuntimeError(CHILD_EXCEPTION_STR % index)
+    test_class = TestClass()
+    test_subclass = TestSubClass()
+    raise IOError(
+        CHILD_EXCEPTION_STR % index,
+        ('blah', 1, test_func, test_class, test_subclass,
+         TestClass, TestSubClass)
+    )
 
 
 class TestMPLogger(OpenWPMTest):
