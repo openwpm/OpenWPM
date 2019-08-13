@@ -554,7 +554,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
 
     // Property descriptor for undefined properties
-    let undefinedPropValue = undefined;
+    let undefinedPropValue;
     const undefinedPropDesc = {
       get: () => {
         return undefinedPropValue;
