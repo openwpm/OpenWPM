@@ -30,8 +30,10 @@ brew install node || true
 
 # Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
 brew install wget || true
-UNBRANDED_FF68_RELEASE_MAC_BUILD="https://queue.taskcluster.net/v1/task/EPaShNEQTYaBrJYpULyxwg/runs/0/artifacts/public/build/target.dmg"
-wget "$UNBRANDED_FF68_RELEASE_MAC_BUILD"
+# UNBRANDED_FF68_RELEASE_MAC_BUILD="https://queue.taskcluster.net/v1/task/EPaShNEQTYaBrJYpULyxwg/runs/0/artifacts/public/build/target.dmg"
+# wget "$UNBRANDED_FF68_RELEASE_MAC_BUILD"
+UNBRANDED_FF69_B12_MAC_BUILD="https://queue.taskcluster.net/v1/task/PYLiXEOqQ5CTncfwxRaaHA/runs/0/artifacts/public/build/target.dmg"
+wget "$UNBRANDED_FF69_B12_MAC_BUILD"
 
 # Install Firefox Nightly
 rm -rf Nightly.app || true
