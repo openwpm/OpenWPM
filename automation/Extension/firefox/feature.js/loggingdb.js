@@ -6,30 +6,31 @@ let debugging = false;
 let dataAggregator = null;
 let logAggregator = null;
 
-export let open = async function(aggregatorAddress, logAddress, crawlID, visitID, testing=false) {
+export let open = async function(aggregatorAddress, logAddress, cId, vId, testing=false) {
     if (testing === true) {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
     }
 
-    crawlID = crawlID;
-    visitID = visitID;
+    crawlID = cId;
+    visitID = vId;
 
+    console.log("VisitID: ", visitID, "CrawlID: ", crawlID);
     console.log("Opening socket connections...");
 
     // Connect to MPLogger for extension info/debug/error logging
     if (!debugging && logAddress != null) {
-        logAggregator = new socket.SendingSocket();
-        let rv = await logAggregator.connect(logAddress[0], logAddress[1]);
-        console.log("logSocket started?", rv)
+        logAggregator = new socket.SendingSocket("log");
+        let rv = await logAggregator.connect();
+        console.log("log socket started?", rv)
     }
 
     // Connect to databases for saving data
     if (!debugging && aggregatorAddress != null) {
-        dataAggregator = new socket.SendingSocket();
-        let rv = await dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
-        console.log("sqliteSocket started?",rv);
+        dataAggregator = new socket.SendingSocket("data");
+        let rv = await dataAggregator.connect();
+        console.log("data socket started?",rv);
     }
 };
 
@@ -66,7 +67,7 @@ export let logInfo = function(msg) {
 
     // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(20, msg);
-    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 export let logDebug = function(msg) {
@@ -79,7 +80,7 @@ export let logDebug = function(msg) {
 
     // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(10, msg);
-    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 export let logWarn = function(msg) {
@@ -92,7 +93,7 @@ export let logWarn = function(msg) {
 
     // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(30, msg);
-    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 export let logError = function(msg) {
@@ -105,7 +106,7 @@ export let logError = function(msg) {
 
     // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(40, msg);
-    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 export let logCritical = function(msg) {
@@ -118,30 +119,29 @@ export let logCritical = function(msg) {
 
     // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
     var log_json = makeLogJSON(50, msg);
-    logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
+    logAggregator.send(['EXT', JSON.stringify(log_json)]);
 };
 
 export let dataReceiver = {
-    saveRecord(a, b) {
-        console.log(b);
+    saveRecord(instrument_type, msg) {
+        console.log(msg);
     },
 };
 
-export let saveRecord = function(instrument, record) {
+export let saveRecord = function(instrument_type, record) {
     record["visit_id"] = visitID;
 
     if (!visitID && !debugging) {
         logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
                     JSON.stringify(record));
-        record["visit_id"] = -1;
     }
 
     // send to console if debugging
     if (debugging) {
-      console.log("EXTENSION", instrument, JSON.stringify(record));
+      console.log("EXTENSION", instrument_type, JSON.stringify(record));
       return;
     }
-    dataAggregator.send(JSON.stringify([instrument, record]));
+    dataAggregator.send([instrument_type, JSON.stringify(record)]);
 };
 
 // Stub for now
@@ -155,7 +155,7 @@ export let saveContent = async function(content, contentHash) {
   // Since the content might not be a valid utf8 string and it needs to be
   // json encoded later, it is encoded using base64 first.
   const b64 = Uint8ToBase64(content);
-  dataAggregator.send(JSON.stringify(['page_content', [b64, contentHash]]));
+  dataAggregator.send(['page_content', [b64, contentHash]]);
 };
 
 function encode_utf8(s) {
