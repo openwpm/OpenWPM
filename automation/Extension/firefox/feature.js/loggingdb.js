@@ -1,4 +1,4 @@
-import * as socket from "./socket.js";
+import {WebSocket} from "./socket.js";
 
 let crawlID = null;
 let visitID = null;
@@ -19,18 +19,18 @@ export let open = async function(aggregatorAddress, logAddress, cId, vId, testin
     console.log("VisitID: ", visitID, "CrawlID: ", crawlID);
     console.log("Opening socket connections...");
 
-    // Connect to MPLogger for extension info/debug/error logging
+    // Connect to WS for extension info/debug/error logging
     if (!debugging && logAddress != null) {
-        logAggregator = new socket.SendingSocket("log");
-        let rv = await logAggregator.connect();
-        console.log("log socket started?", rv)
+        logAggregator = new WebSocket("log");
+        logAggregator.connect();
+        console.log("log socket started")
     }
 
-    // Connect to databases for saving data
+    // Connect to WS for saving data
     if (!debugging && aggregatorAddress != null) {
-        dataAggregator = new socket.SendingSocket("data");
-        let rv = await dataAggregator.connect();
-        console.log("data socket started?",rv);
+        dataAggregator = new WebSocket("data");
+        dataAggregator.connect();
+        console.log("data socket started");
     }
 };
 
