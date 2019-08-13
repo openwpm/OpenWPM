@@ -43,8 +43,8 @@ for site in sites:
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
 
-    # index='**' synchronizes visits between the three browsers
-    manager.execute_command_sequence(command_sequence, index='**')
+    # Run commands across the three browsers (simple parallelization)
+    manager.execute_command_sequence(command_sequence)
 
 # Shuts down the browsers and waits for the data to finish logging
 manager.close()
