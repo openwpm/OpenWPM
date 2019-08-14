@@ -99,7 +99,7 @@ export class HttpInstrument {
     browser.webRequest.onBeforeRequest.addListener(
       this.onBeforeRequestListener,
       filter,
-      this.shouldPossiblýSaveContent(saveContentOption)
+      this.isContentSavingEnabled(saveContentOption)
         ? ["requestBody", "blocking"]
         : ["requestBody"],
     );
@@ -178,7 +178,7 @@ export class HttpInstrument {
     }
   }
 
-  private shouldPossiblýSaveContent(saveContentOption: SaveContentOption) {
+  private isContentSavingEnabled(saveContentOption: SaveContentOption) {
     if (saveContentOption === true) {
       return true;
     }
