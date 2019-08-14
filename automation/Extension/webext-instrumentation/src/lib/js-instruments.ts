@@ -16,6 +16,7 @@ interface LogSettings {
   excludedProperties?: string[];
   logCallStack?: boolean;
   logFunctionsAsStrings?: boolean;
+  logFunctionGets?: boolean;
   preventSets?: boolean;
   recursive?: boolean;
   depth?: number;
@@ -599,6 +600,15 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           // * Returned objects may be instrumented if recursive
           //   instrumentation is enabled and this isn't at the depth limit.
           if (typeof origProperty === "function") {
+            if (logSettings.logFunctionGets) {
+              logValue(
+                objectName + "." + propertyName,
+                origProperty,
+                "get(function)",
+                callContext,
+                logSettings,
+              );
+            }
             return instrumentFunction(
               objectName,
               propertyName,
