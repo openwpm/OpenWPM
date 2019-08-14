@@ -66,7 +66,7 @@ class TestProfile(OpenWPMTest):
     def test_profile_saved_when_launch_crashes(self):
         manager_params, browser_params = self.get_config()
         browser_params[0]['proxy'] = True
-        browser_params[0]['save_javascript'] = True
+        browser_params[0]['save_content'] = "script"
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get('http://example.com')
 

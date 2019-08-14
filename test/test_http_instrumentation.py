@@ -425,7 +425,7 @@ class TestHTTPInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['save_javascript'] = True
+        browser_params[0]['save_content'] = "script"
         return manager_params, browser_params
 
     def test_page_visit(self):
@@ -602,7 +602,7 @@ class TestHTTPInstrument(OpenWPMTest):
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['save_all_content'] = True
+        browser_params[0]['save_content'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
