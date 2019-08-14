@@ -604,8 +604,9 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_document_saving(self, tmpdir):
         """ check that document content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        expected_hashes = {'foo',
-                           'bar'}
+        expected_hashes = {
+            '2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966',
+            '25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d'}
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['http_instrument'] = True
         browser_params[0]['save_content'] = "main_frame,sub_frame"
