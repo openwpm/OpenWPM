@@ -22,8 +22,7 @@ async function main() {
       cookie_instrument:true,
       js_instrument:true,
       http_instrument:true,
-      save_javascript:false,
-      save_all_content:false,
+      save_content:false,
       testing:true,
       crawl_id:0
     };
@@ -56,8 +55,7 @@ async function main() {
     loggingDB.logDebug("HTTP Instrumentation enabled");
     let httpInstrument = new HttpInstrument(loggingDB);
     httpInstrument.run(config['crawl_id'],
-                       config['save_javascript'],
-                       config['save_all_content']);
+                       config['save_content']);
   }
 }
 
