@@ -36,7 +36,12 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
     browser_params[i]['js_instrument'] = JS_INSTRUMENT
-    browser_params[i]['save_content'] = SAVE_CONTENT
+    if SAVE_CONTENT == '1':
+        browser_params[i]['save_content'] = True
+    elif SAVE_CONTENT == '0':
+        browser_params[i]['save_content'] = False
+    else:
+        browser_params[i]['save_content'] = SAVE_CONTENT
     browser_params[i]['headless'] = True
 
 # Manager configuration
