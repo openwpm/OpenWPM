@@ -188,9 +188,7 @@ export class HttpInstrument {
     return this.saveContentResourceTypes(saveContentOption).length > 0;
   }
 
-  private saveContentResourceTypes(
-    saveContentOption: string,
-  ): ResourceType[] {
+  private saveContentResourceTypes(saveContentOption: string): ResourceType[] {
     return saveContentOption.split(",") as ResourceType[];
   }
 
