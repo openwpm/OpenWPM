@@ -5,9 +5,11 @@ import logging
 import os.path
 import random
 
+import six
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
+from ..Errors import BrowserConfigError
 from ..utilities.platform_utils import (get_firefox_binary_path,
                                         get_geckodriver_exec_path)
 from . import configure_firefox
@@ -15,6 +17,28 @@ from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
                                FirefoxProfile, Options)
 
 DEFAULT_SCREEN_RES = (1366, 768)
+ALL_RESOURCE_TYPES = {
+    "beacon",
+    "csp_report",
+    "font",
+    "image",
+    "imageset",
+    "main_frame",
+    "media",
+    "object",
+    "object_subrequest",
+    "ping",
+    "script",
+    "stylesheet",
+    "sub_frame",
+    "web_manifest",
+    "websocket",
+    "xbl",
+    "xml_dtd",
+    "xmlhttprequest",
+    "xslt",
+    "other",
+}
 logger = logging.getLogger('openwpm')
 
 
@@ -94,6 +118,15 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.set_headless(True)
         fo.add_argument('--width={}'.format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
+
+    if browser_params['save_content']:
+        if isinstance(browser_params['save_content'], six.string_types):
+            configured_types = set(browser_params['save_content'].split(','))
+            if not configured_types.issubset(ALL_RESOURCE_TYPES):
+                diff = configured_types.difference(ALL_RESOURCE_TYPES)
+                raise BrowserConfigError(
+                    ("Unrecognized resource types provided ",
+                     "in browser_params['save_content`] (%s)" % diff))
 
     if browser_params['extension_enabled']:
         # Write config file
