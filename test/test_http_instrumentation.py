@@ -425,7 +425,6 @@ class TestHTTPInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['save_javascript'] = True
         return manager_params, browser_params
 
     def test_page_visit(self):
@@ -585,11 +584,36 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_javascript_saving(self, tmpdir):
         """ check that javascript content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-        self.visit(test_url, str(tmpdir), sleep_after=3)
+        manager_params, browser_params = self.get_test_config(str(tmpdir))
+        browser_params[0]['http_instrument'] = True
+        browser_params[0]['save_content'] = "script"
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get(url=test_url, sleep=1)
+        manager.close()
         expected_hashes = {
             '0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc',
             'b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08'}
-        for chash, content in db_utils.get_javascript_content(str(tmpdir)):
+        for chash, content in db_utils.get_content(str(tmpdir)):
+            chash = chash.decode('ascii').lower()
+            pyhash = sha256(content).hexdigest().lower()
+            assert pyhash == chash  # Verify expected key (sha256 of content)
+            assert chash in expected_hashes
+            expected_hashes.remove(chash)
+        assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+    def test_document_saving(self, tmpdir):
+        """ check that document content is saved and hashed correctly """
+        test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
+        expected_hashes = {
+            '2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966',
+            '25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d'}
+        manager_params, browser_params = self.get_test_config(str(tmpdir))
+        browser_params[0]['http_instrument'] = True
+        browser_params[0]['save_content'] = "main_frame,sub_frame"
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get(url=test_url, sleep=1)
+        manager.close()
+        for chash, content in db_utils.get_content(str(tmpdir)):
             chash = chash.decode('ascii').lower()
             pyhash = sha256(content).hexdigest().lower()
             assert pyhash == chash  # Verify expected key (sha256 of content)
@@ -602,7 +626,7 @@ class TestHTTPInstrument(OpenWPMTest):
         test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]['http_instrument'] = True
-        browser_params[0]['save_all_content'] = True
+        browser_params[0]['save_content'] = True
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
@@ -620,7 +644,7 @@ class TestHTTPInstrument(OpenWPMTest):
             disk_content[chash] = content
 
         ldb_content = dict()
-        for chash, content in db_utils.get_javascript_content(str(tmpdir)):
+        for chash, content in db_utils.get_content(str(tmpdir)):
             chash = chash.decode('ascii')
             ldb_content[chash] = content
 

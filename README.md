@@ -96,13 +96,16 @@ available [below](#output-format).
 * Response body content
     * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
-    * Set `browser_params['save_all_content'] = True`
+    * Set `browser_params['save_content'] = True`
     * The `content_hash` column of the `http_responses` table contains the md5
         hash for each script, and can be used to do content lookups in the
         LevelDB content database.
     * NOTE: this instrumentation may lead to performance issues when a large
         number of browsers are in use.
-    * Set `browser_params['save_javascript'] = True` to save only Javascript
+    * Set `browser_params['save_content']` to a comma-separated list of 
+        [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
+        to save only specific types of files, for instance 
+        `browser_params['save_content'] = "script"` to save only Javascript
         files. This will lessen the performance impact of this instrumentation
         when a large number of browsers are used in parallel.
 * Flash Cookies
@@ -190,10 +193,9 @@ inline by sending a `create_table` message to the data aggregator.
 #### Parquet on Amazon S3 **Experimental**
 As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
 Parquet Dataset. This is currently experimental and hasn't been thoroughly
-tested. Response body content (both `save_javascript` and `save_all_content`),
-screenshots, and page source saving is not currently supported and will still
-be stored in local databases and directories. To enable S3 saving specify the
-following configuration parameters in `manager_params`:
+tested. Screenshots, and page source saving is not currently supported and 
+will still be stored in local databases and directories. To enable S3 
+saving specify the following configuration parameters in `manager_params`:
 * Output format: `manager_params['output_format'] = 's3'`
 * S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
 * Directory within S3 bucket: `manager_params['s3_directory'] = '2018-09-09_test-crawl-new'`

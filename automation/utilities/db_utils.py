@@ -24,7 +24,7 @@ def query_db(db, query, params=None, as_tuple=False):
     return rows
 
 
-def get_javascript_content(data_directory):
+def get_content(data_directory):
     """Yield key, value pairs from the deduplicated leveldb content database
 
     Parameters

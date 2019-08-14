@@ -15,6 +15,8 @@ import {
   WebRequestOnCompletedEventDetails,
 } from "../types/browser-web-request-event-details";
 
+type SaveContentOption = boolean | string;
+
 /**
  * Note: Different parts of the desired information arrives in different events as per below:
  * request = headers in onBeforeSendHeaders + body in onBeforeRequest
@@ -40,7 +42,7 @@ export class HttpInstrument {
     this.dataReceiver = dataReceiver;
   }
 
-  public run(crawlID, saveJavascript, saveAllContent) {
+  public run(crawlID, saveContentOption: SaveContentOption) {
     const allTypes: ResourceType[] = [
       "beacon",
       "csp_report",
@@ -77,7 +79,9 @@ export class HttpInstrument {
      * Attach handlers to event listeners
      */
 
-    this.onBeforeRequestListener = details => {
+    this.onBeforeRequestListener = (
+      details: WebRequestOnBeforeRequestEventDetails,
+    ) => {
       const blockingResponseThatDoesNothing: BlockingResponse = {};
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
@@ -87,9 +91,7 @@ export class HttpInstrument {
       pendingRequest.resolveOnBeforeRequestEventDetails(details);
       const pendingResponse = this.getPendingResponse(details.requestId);
       pendingResponse.resolveOnBeforeRequestEventDetails(details);
-      if (saveAllContent) {
-        pendingResponse.addResponseResponseBodyListener(details);
-      } else if (saveJavascript && this.isJS(details.type)) {
+      if (this.shouldSaveContent(saveContentOption, details.type)) {
         pendingResponse.addResponseResponseBodyListener(details);
       }
       return blockingResponseThatDoesNothing;
@@ -97,7 +99,7 @@ export class HttpInstrument {
     browser.webRequest.onBeforeRequest.addListener(
       this.onBeforeRequestListener,
       filter,
-      saveJavascript || saveAllContent
+      this.isContentSavingEnabled(saveContentOption)
         ? ["requestBody", "blocking"]
         : ["requestBody"],
     );
@@ -145,8 +147,7 @@ export class HttpInstrument {
         details,
         crawlID,
         incrementedEventOrdinal(),
-        saveJavascript,
-        saveAllContent,
+        saveContentOption,
       );
     };
     browser.webRequest.onCompleted.addListener(
@@ -175,6 +176,42 @@ export class HttpInstrument {
     if (this.onCompletedListener) {
       browser.webRequest.onCompleted.removeListener(this.onCompletedListener);
     }
+  }
+
+  private isContentSavingEnabled(saveContentOption: SaveContentOption) {
+    if (saveContentOption === true) {
+      return true;
+    }
+    if (saveContentOption === false) {
+      return false;
+    }
+    return this.saveContentResourceTypes(saveContentOption).length > 0;
+  }
+
+  private saveContentResourceTypes(saveContentOption: string): ResourceType[] {
+    return saveContentOption.split(",") as ResourceType[];
+  }
+
+  /**
+   * We rely on the resource type to filter responses
+   * See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
+   *
+   * @param saveContentOption
+   * @param resourceType
+   */
+  private shouldSaveContent(
+    saveContentOption: SaveContentOption,
+    resourceType: ResourceType,
+  ) {
+    if (saveContentOption === true) {
+      return true;
+    }
+    if (saveContentOption === false) {
+      return false;
+    }
+    return this.saveContentResourceTypes(saveContentOption).includes(
+      resourceType,
+    );
   }
 
   private getPendingRequest(requestId): PendingRequest {
@@ -582,34 +619,19 @@ export class HttpInstrument {
     }
   }
 
-  /**
-   * Return true if this request is loading javascript
-   * We rely mostly on the content policy type to filter responses
-   * and fall back to the URI and content type string for types that can
-   * load various resource types.
-   * See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
-   *
-   * @param resourceType
-   */
-  private isJS(resourceType: ResourceType): boolean {
-    return resourceType === "script";
-  }
-
   // Instrument HTTP responses
   private async onCompletedHandler(
     details: WebRequestOnCompletedEventDetails,
     crawlID,
     eventOrdinal,
-    saveJavascript,
-    saveAllContent,
+    saveContent,
   ) {
     /*
     console.log(
       "onCompletedHandler (previously httpRequestHandler)",
       details,
       crawlID,
-      saveJavascript,
-      saveAllContent,
+      saveContent,
     );
     */
 
@@ -676,9 +698,7 @@ export class HttpInstrument {
     update.headers = JSON.stringify(headers);
     update.location = escapeString(location);
 
-    if (saveAllContent) {
-      this.logWithResponseBody(details, update);
-    } else if (saveJavascript && this.isJS(details.type)) {
+    if (this.shouldSaveContent(saveContent, details.type)) {
       this.logWithResponseBody(details, update);
     } else {
       this.dataReceiver.saveRecord("http_responses", update);

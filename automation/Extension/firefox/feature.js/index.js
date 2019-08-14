@@ -15,19 +15,18 @@ async function main() {
     config = JSON.parse(config);
     console.log("Browser Config:", config);
   } else {
-    console.log("WARNING: config not found. Assuming this is a test run of",
-                "the extension. Outputting all queries to console.");
     config = {
       navigation_instrument:true,
       cookie_instrument:true,
       js_instrument:true,
       js_instrument_modules:"fingerprinting",
       http_instrument:true,
-      save_javascript:false,
-      save_all_content:false,
+      save_content:false,
       testing:true,
       crawl_id:0
     };
+    console.log("WARNING: config not found. Assuming this is a test run of",
+                "the extension. Outputting all queries to console.", {config});
   }
 
   await loggingDB.open(config['aggregator_address'],
@@ -57,8 +56,7 @@ async function main() {
     loggingDB.logDebug("HTTP Instrumentation enabled");
     let httpInstrument = new HttpInstrument(loggingDB);
     httpInstrument.run(config['crawl_id'],
-                       config['save_javascript'],
-                       config['save_all_content']);
+                       config['save_content']);
   }
 }
 
