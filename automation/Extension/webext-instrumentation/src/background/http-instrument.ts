@@ -15,7 +15,7 @@ import {
   WebRequestOnCompletedEventDetails,
 } from "../types/browser-web-request-event-details";
 
-type SaveContentOption = boolean | string | ResourceType[];
+type SaveContentOption = boolean | string;
 
 /**
  * Note: Different parts of the desired information arrives in different events as per below:
@@ -185,18 +185,13 @@ export class HttpInstrument {
     if (saveContentOption === false) {
       return false;
     }
-    if (this.saveContentResourceTypes(saveContentOption).length > 0) {
-      return true;
-    }
-    return false;
+    return this.saveContentResourceTypes(saveContentOption).length > 0;
   }
 
   private saveContentResourceTypes(
-    saveContentOption: string | ResourceType[],
+    saveContentOption: string,
   ): ResourceType[] {
-    return typeof saveContentOption === "string"
-      ? (saveContentOption.split(",") as ResourceType[])
-      : saveContentOption;
+    return saveContentOption.split(",") as ResourceType[];
   }
 
   /**
