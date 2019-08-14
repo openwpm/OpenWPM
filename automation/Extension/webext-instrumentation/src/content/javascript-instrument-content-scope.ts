@@ -52,9 +52,9 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   }
 });
 
-export function injectJavascriptInstrumentPageScript(testing = false) {
+export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
   insertScript(getPageScriptAsString(), {
     event_id,
-    testing,
+    ...contentScriptConfig,
   });
 }

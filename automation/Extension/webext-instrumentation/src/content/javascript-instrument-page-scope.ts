@@ -32,13 +32,21 @@ export const pageScript = function({
   /*
    * Start Instrumentation
    */
-  // TODO: user should be able to choose what to instrument
+  const modules = document.currentScript.getAttribute("data-modules")
+    ? document.currentScript.getAttribute("data-modules").split(",")
+    : [];
 
-  instrumentFingerprintingApis({ instrumentObjectProperty, instrumentObject });
+  if (modules.includes("fingerprinting")) {
+    instrumentFingerprintingApis({
+      instrumentObjectProperty,
+      instrumentObject,
+    });
+  }
 
   if (testing) {
     console.log(
       "OpenWPM: Content-side javascript instrumentation started",
+      { modules },
       new Date().toISOString(),
     );
   }
