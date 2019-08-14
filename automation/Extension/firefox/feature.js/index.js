@@ -15,8 +15,6 @@ async function main() {
     config = JSON.parse(config);
     console.log("Browser Config:", config);
   } else {
-    console.log("WARNING: config not found. Assuming this is a test run of",
-                "the extension. Outputting all queries to console.");
     config = {
       navigation_instrument:true,
       cookie_instrument:true,
@@ -26,6 +24,8 @@ async function main() {
       testing:true,
       crawl_id:0
     };
+    console.log("WARNING: config not found. Assuming this is a test run of",
+                "the extension. Outputting all queries to console.", {config});
   }
 
   await loggingDB.open(config['aggregator_address'],
