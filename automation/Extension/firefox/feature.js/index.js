@@ -21,6 +21,7 @@ async function main() {
       navigation_instrument:true,
       cookie_instrument:true,
       js_instrument:true,
+      js_instrument_modules:"fingerprinting",
       http_instrument:true,
       save_javascript:false,
       save_all_content:false,
@@ -49,7 +50,7 @@ async function main() {
     loggingDB.logDebug("Javascript instrumentation enabled");
     let jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
-    await jsInstrument.registerContentScript(config['testing']);
+    await jsInstrument.registerContentScript(config['testing'], config['js_instrument_modules']);
   }
 
   if (config['http_instrument']) {

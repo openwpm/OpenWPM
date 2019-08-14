@@ -110,10 +110,21 @@ export class JavascriptInstrument {
     });
   }
 
-  public async registerContentScript(testing = false) {
-    if (testing) {
+  public async registerContentScript(testing, modules) {
+    const contentScriptConfig = {
+      testing,
+      modules,
+    };
+    if (contentScriptConfig) {
+      // TODO: Avoid using window to pass the content script config
       await browser.contentScripts.register({
-        js: [{ code: "window.openWpmTesting = true;" }],
+        js: [
+          {
+            code: `window.openWpmContentScriptConfig = ${JSON.stringify(
+              contentScriptConfig,
+            )};`,
+          },
+        ],
         matches: ["<all_urls>"],
         allFrames: true,
         runAt: "document_start",
