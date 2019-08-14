@@ -290,12 +290,15 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     inLog = false;
   }
 
-  function logErrorToConsole(error) {
+  function logErrorToConsole(error, context: any = false) {
     console.log("OpenWPM: Error name: " + error.name);
     console.log("OpenWPM: Error message: " + error.message);
     console.log("OpenWPM: Error filename: " + error.fileName);
     console.log("OpenWPM: Error line number: " + error.lineNumber);
     console.log("OpenWPM: Error stack: " + error.stack);
+    if (context) {
+      console.log("OpenWPM: Error context: " + JSON.stringify(context));
+    }
   }
 
   // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
@@ -519,7 +522,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           logSettings,
         );
       } catch (error) {
-        logErrorToConsole(error);
+        logErrorToConsole(error, { objectName, property: properties[i] });
       }
     }
   }
