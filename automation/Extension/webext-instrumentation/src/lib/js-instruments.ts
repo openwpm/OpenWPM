@@ -609,12 +609,21 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
                 logSettings,
               );
             }
-            return instrumentFunction(
+            const instrumentedFunctionWrapper = instrumentFunction(
               objectName,
               propertyName,
               origProperty,
               logSettings,
             );
+            // Restore the original prototype and constructor so that instrumented classes remain intact
+            if (origProperty.prototype) {
+              instrumentedFunctionWrapper.prototype = origProperty.prototype;
+              if (origProperty.prototype.constructor) {
+                instrumentedFunctionWrapper.prototype.constructor =
+                  origProperty.prototype.constructor;
+              }
+            }
+            return instrumentedFunctionWrapper;
           } else if (
             typeof origProperty === "object" &&
             !!logSettings.recursive &&
