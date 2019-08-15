@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <title>webkitSpeechRecognition</title>
+  </head>
+  <body>
+    <h3>Test page - webkitSpeechRecognition</h3>
+    <script type="text/javascript">
+      // First some simple instantiations
+      const wsr = new window.webkitSpeechRecognition();
+      wsr.abort;
+      const wsre = new window.webkitSpeechRecognitionEvent();
+      wsre.emma;
+      // Then, some code from https://codeburst.io/html5-speech-recognition-api-670846a50e92
+      window.SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      if ('SpeechRecognition' in window) {
+        // speech recognition API supported
+        console.log("speech recognition API reported as supported");
+
+        const recognition = new window.SpeechRecognition();
+        recognition.onresult = (event) => {
+          const speechToText = event.results[0][0].transcript;
+          console.log({ speechToText });
+        };
+        recognition.start();
+
+      } else {
+        // speech recognition API not supported
+        console.log("speech recognition API reported as not supported");
+      }
+    </script>
+  </body>
+</html>

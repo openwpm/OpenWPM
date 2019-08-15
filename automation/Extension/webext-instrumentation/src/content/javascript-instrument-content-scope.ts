@@ -1,4 +1,5 @@
 import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
+import { instrumentWebcompatApis } from "../lib/instrument-webcompat-apis";
 import { jsInstruments } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
@@ -8,9 +9,11 @@ function getPageScriptAsString() {
     "\n" +
     instrumentFingerprintingApis +
     "\n" +
+    instrumentWebcompatApis +
+    "\n" +
     "(" +
     pageScript +
-    "({jsInstruments, instrumentFingerprintingApis}));"
+    "({jsInstruments, instrumentFingerprintingApis, instrumentWebcompatApis}));"
   );
 }
 

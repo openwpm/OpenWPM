@@ -5,6 +5,7 @@
 export const pageScript = function({
   jsInstruments,
   instrumentFingerprintingApis,
+  instrumentWebcompatApis,
 }) {
   // messages the injected script
   function sendMessagesToLogger($event_id, messages) {
@@ -41,6 +42,10 @@ export const pageScript = function({
       instrumentObjectProperty,
       instrumentObject,
     });
+  }
+
+  if (modules.includes("webcompat")) {
+    instrumentWebcompatApis({ instrumentObject });
   }
 
   if (testing) {

@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <title>MouseEvent_fromAndToElement</title>
+  </head>
+  <body>
+    <h3>Test page - MouseEvent_fromAndToElement</h3>
+    <script type="text/javascript">
+      function OnMouseOver(event) {
+        var from = event.fromElement;
+        var to = event.toElement;
+
+        if (from && ('checked' in from)) {
+          from.checked = false;
+        }
+        if (to && ('checked' in to)) {
+          to.checked = true;
+        }
+      }
+    </script>
+    Move the mouse over the check box items!
+    <table>
+        <tr>
+            <td onmouseover="OnMouseOver (event);" style="background-color:#e0a0f0; padding:30px;">
+                <input type="checkbox"/>&nbsp;<input type="checkbox"/>&nbsp;<input type="checkbox"/>
+                <br />
+                <input type="checkbox"/>&nbsp;<input type="checkbox"/>&nbsp;<input type="checkbox"/>
+                <br />
+                <input type="checkbox"/>&nbsp;<input type="checkbox"/>&nbsp;<input type="checkbox"/>
+            </td>
+        </tr>
+    </table>
+  </body>
+</html>
