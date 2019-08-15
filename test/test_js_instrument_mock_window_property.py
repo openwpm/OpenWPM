@@ -19,13 +19,13 @@ METHOD_CALLS = {
     ('nonExistingMethod1', 'call', '["hello","{\\\"world\\\":true}"]'),
 }
 
-TEST_PAGE = "instrument_non_existing_window_property.html"
+TEST_PAGE = "instrument_mock_window_property.html"
 TOP_URL = (
     u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 )
 
 
-class TestJSInstrumentNonExistingWindowProperty(OpenWPMTest):
+class TestJSInstrumentMockWindowProperty(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
@@ -60,4 +60,5 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
-        self._check_calls(rows, 'window.nonExisting.', TOP_URL, TOP_URL)
+        self._check_calls(rows, 'window.alreadyInstantiatedMockClassInstance', TOP_URL, TOP_URL)
+        self._check_calls(rows, 'window.newMockClassInstance', TOP_URL, TOP_URL)

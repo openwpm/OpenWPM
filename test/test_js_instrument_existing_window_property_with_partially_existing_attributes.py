@@ -19,13 +19,14 @@ METHOD_CALLS = {
     ('nonExistingMethod1', 'call', '["hello","{\\\"world\\\":true}"]'),
 }
 
+TEST_PAGE = ("instrument_existing_window_property_"
+             "with_partially_existing_attributes.html")
 TOP_URL = (
-    u"%s/js_instrument/instrument_non_existing_properties.html" % (
-        util.BASE_TEST_URL)
+    u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 )
 
 
-class TestJSInstrumentNonExistingProperties(OpenWPMTest):
+class TestJSInstrumentExistingWindowPropertyWithPartiallyExistingAttributes(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
@@ -56,8 +57,7 @@ class TestJSInstrumentNonExistingProperties(OpenWPMTest):
 
     def test_instrument_object(self):
         """ Ensure instrumentObject logs all property gets, sets, and calls """
-        db = self.visit(
-            '/js_instrument/instrument_non_existing_properties.html')
+        db = self.visit('/js_instrument/%s' % TEST_PAGE)
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
