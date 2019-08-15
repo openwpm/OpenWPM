@@ -31,14 +31,13 @@ GETS_AND_SETS = {
 
 METHOD_CALLS = set()  # Note 2
 
-TEST_PAGE = ("instrument_existing_window_property_"
-             "with_partially_existing_attributes.html")
+TEST_PAGE = "instrument_existing_window_property.html"
 TOP_URL = (
     u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 )
 
 
-class TestJSInstrumentExistingWindowPropertyWithPartiallyExistingAttributes(OpenWPMTest):
+class TestJSInstrumentExistingWindowProperty(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)

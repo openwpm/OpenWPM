@@ -12,7 +12,8 @@ GETS_AND_SETS = {
     ("alreadyInstantiatedMockClassInstance", "get", "{}"),
     ("alreadyInstantiatedMockClassInstance", "get", "{}"),
     ("MockClass.nonExistingProp1", "get", "undefined"),
-    ("alreadyInstantiatedMockClassInstance.nonExistingProp1", "get", "undefined"),
+    ("alreadyInstantiatedMockClassInstance.nonExistingProp1",
+     "get", "undefined"),
     ("alreadyInstantiatedMockClassInstance", "get", "{}"),
     ("MockClass.nonExistingProp1", "set", "blah1"),
     ("alreadyInstantiatedMockClassInstance.nonExistingProp1", "set", "blah1"),
@@ -36,7 +37,8 @@ GETS_AND_SETS = {
 }
 
 # Note 1: nonExistingMethod1 shows up as a get rather than call
-# Note 2: This may be a bug - this new instance should not have a value here yet
+# Note 2: This may be a bug - the new instance
+#         should not have a value here yet
 
 METHOD_CALLS = {
     ("MockClass", "call", None),
