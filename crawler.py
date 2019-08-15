@@ -21,6 +21,7 @@ HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT', '1') == '1'
 COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
+JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
@@ -36,6 +37,8 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
     browser_params[i]['js_instrument'] = JS_INSTRUMENT
+    if JS_INSTRUMENT_MODULES:
+        browser_params[i]['js_instrument_modules'] = JS_INSTRUMENT_MODULES
     if SAVE_CONTENT == '1':
         browser_params[i]['save_content'] = True
     elif SAVE_CONTENT == '0':
@@ -74,6 +77,7 @@ if SENTRY_DSN:
         scope.set_tag('COOKIE_INSTRUMENT', COOKIE_INSTRUMENT)
         scope.set_tag('NAVIGATION_INSTRUMENT', NAVIGATION_INSTRUMENT)
         scope.set_tag('JS_INSTRUMENT', JS_INSTRUMENT)
+        scope.set_tag('JS_INSTRUMENT_MODULES', JS_INSTRUMENT)
         scope.set_tag('SAVE_CONTENT', SAVE_CONTENT)
         scope.set_tag('DWELL_TIME', DWELL_TIME)
         scope.set_tag('TIMEOUT', TIMEOUT)
