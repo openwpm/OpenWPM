@@ -7,17 +7,29 @@ from . import utilities as util
 from .openwpmtest import OpenWPMTest
 
 GETS_AND_SETS = {
-    ("existingProp", "get", "foo"),
-    ("existingProp", "set", "blah1"),
-    ("existingProp", "get", "blah1"),
-    ("nonExistingProp1", "get", "undefined"),
-    ("nonExistingProp1", "set", "blah2"),
-    ("nonExistingProp1", "get", "blah2"),
+    ("", "get", "{\"existingProp\":\"foo\"}"),
+    ("", "get", "{\"existingProp\":\"foo\"}"),
+    ("", "get", "{\"existingProp\":\"foo\"}"),
+    ("", "get", "{\"existingProp\":\"foo\"}"),
+    (".existingProp", "get", "foo"),
+    ("", "get", "{\"existingProp\":\"foo\"}"),
+    (".existingProp", "set", "blah1"),
+    ("", "get", "{\"existingProp\":\"blah1\"}"),
+    (".existingProp", "get", "blah1"),
+    ("", "get", "{\"existingProp\":\"blah1\"}"),
+    (".nonExistingProp1", "get", "undefined"),
+    ("", "get", "{\"existingProp\":\"blah1\"}"),
+    (".nonExistingProp1", "set", "blah1"),
+    ("", "get", "{\"existingProp\":\"blah1\"}"),
+    (".nonExistingProp1", "get", "blah1"),
+    ("", "get", "{\"existingProp\":\"blah1\"}"),  # Note 1
+    (".nonExistingMethod1", "get", "undefined"),  # Note 2
 }
 
-METHOD_CALLS = {
-    ('nonExistingMethod1', 'call', '["hello","{\\\"world\\\":true}"]'),
-}
+# Note 1: nonExistingProp1 is not enumerable even after being set
+# Note 2: nonExistingMethod1 shows up as a get rather than call
+
+METHOD_CALLS = set()  # Note 2
 
 TEST_PAGE = ("instrument_existing_window_property_"
              "with_partially_existing_attributes.html")
@@ -61,4 +73,4 @@ class TestJSInstrumentExistingWindowPropertyWithPartiallyExistingAttributes(Open
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
-        self._check_calls(rows, 'window.partiallyExisting.', TOP_URL, TOP_URL)
+        self._check_calls(rows, 'window.partiallyExisting', TOP_URL, TOP_URL)
