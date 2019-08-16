@@ -10,14 +10,16 @@ from .openwpmtest import OpenWPMTest
 # access the window property's attributes first fails when evaluating
 # the non-existing window property, thus preventing us from receiving
 # events about the attributes that were attempted to be accessed
+# This is why we don't see any gets to window.nonExisting.nonExistingProp1
+# etc below
 
 GETS_AND_SETS = {
-    ("", "get", "undefined"),
-    ("", "get", "undefined"),
-    ("", "get", "undefined"),
-    ("", "get", "undefined"),
-    ("", "get", "undefined"),
-    ("", "get", "undefined"),
+    ("window.nonExisting", "get", "undefined"),
+    ("window.nonExisting", "get", "undefined"),
+    ("window.nonExisting", "get", "undefined"),
+    ("window.nonExisting", "get", "undefined"),
+    ("window.nonExisting", "get", "undefined"),
+    ("window.nonExisting", "get", "undefined"),
 }
 
 METHOD_CALLS = set()
@@ -63,4 +65,4 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
-        self._check_calls(rows, 'window.nonExisting', TOP_URL, TOP_URL)
+        self._check_calls(rows, '', TOP_URL, TOP_URL)

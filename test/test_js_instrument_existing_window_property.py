@@ -7,23 +7,24 @@ from . import utilities as util
 from .openwpmtest import OpenWPMTest
 
 GETS_AND_SETS = {
-    ("", "get", "{\"existingProp\":\"foo\"}"),
-    ("", "get", "{\"existingProp\":\"foo\"}"),
-    ("", "get", "{\"existingProp\":\"foo\"}"),
-    ("", "get", "{\"existingProp\":\"foo\"}"),
-    (".existingProp", "get", "foo"),
-    ("", "get", "{\"existingProp\":\"foo\"}"),
-    (".existingProp", "set", "blah1"),
-    ("", "get", "{\"existingProp\":\"blah1\"}"),
-    (".existingProp", "get", "blah1"),
-    ("", "get", "{\"existingProp\":\"blah1\"}"),
-    (".nonExistingProp1", "get", "undefined"),
-    ("", "get", "{\"existingProp\":\"blah1\"}"),
-    (".nonExistingProp1", "set", "blah1"),
-    ("", "get", "{\"existingProp\":\"blah1\"}"),
-    (".nonExistingProp1", "get", "blah1"),
-    ("", "get", "{\"existingProp\":\"blah1\"}"),  # Note 1
-    (".nonExistingMethod1", "get", "undefined"),  # Note 2
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"foo\"}"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"foo\"}"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"foo\"}"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"foo\"}"),
+    ("window.partiallyExisting.existingProp", "get", "foo"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"foo\"}"),
+    ("window.partiallyExisting.existingProp", "set", "blah1"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"blah1\"}"),
+    ("window.partiallyExisting.existingProp", "get", "blah1"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"blah1\"}"),
+    ("window.partiallyExisting.nonExistingProp1", "get", "undefined"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"blah1\"}"),
+    ("window.partiallyExisting.nonExistingProp1", "set", "blah1"),
+    ("window.partiallyExisting", "get", "{\"existingProp\":\"blah1\"}"),
+    ("window.partiallyExisting.nonExistingProp1", "get", "blah1"),
+    ("window.partiallyExisting", "get",
+     "{\"existingProp\":\"blah1\"}"),  # Note 1
+    ("window.partiallyExisting.nonExistingMethod1", "get", "undefined"),  # Note 2
 }
 
 # Note 1: nonExistingProp1 is not enumerable even after being set
@@ -72,4 +73,4 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
-        self._check_calls(rows, 'window.partiallyExisting', TOP_URL, TOP_URL)
+        self._check_calls(rows, '', TOP_URL, TOP_URL)

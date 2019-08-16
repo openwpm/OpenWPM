@@ -7,33 +7,33 @@ from . import utilities as util
 from .openwpmtest import OpenWPMTest
 
 GETS_AND_SETS = {
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingProp1", "get", "undefined"),
-    ("alreadyInstantiatedMockClassInstance.nonExistingProp1",
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingProp1", "get", "undefined"),
+    ("window.alreadyInstantiatedMockClassInstance.nonExistingProp1",
      "get", "undefined"),
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingProp1", "set", "blah1"),
-    ("alreadyInstantiatedMockClassInstance.nonExistingProp1", "set", "blah1"),
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingProp1", "get", "blah1"),
-    ("alreadyInstantiatedMockClassInstance.nonExistingProp1", "get", "blah1"),
-    ("alreadyInstantiatedMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingMethod1", "get", "undefined"),  # Note 1
-    ("alreadyInstantiatedMockClassInstance.nonExistingMethod1",
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingProp1", "set", "blah1"),
+    ("window.alreadyInstantiatedMockClassInstance.nonExistingProp1", "set", "blah1"),
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingProp1", "get", "blah1"),
+    ("window.alreadyInstantiatedMockClassInstance.nonExistingProp1", "get", "blah1"),
+    ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingMethod1", "get", "undefined"),  # Note 1
+    ("window.alreadyInstantiatedMockClassInstance.nonExistingMethod1",
      "get", "undefined"),  # Note 1
-    ("newMockClassInstance", "get", "{}"),
-    ("newMockClassInstance", "get", "{}"),
-    ("newMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingProp1", "get", "blah1"),  # Note 2
-    ("newMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingProp1", "set", "blah1"),
-    ("newMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingProp1", "get", "blah1"),
-    ("newMockClassInstance", "get", "{}"),
-    ("MockClass.nonExistingMethod1", "get", "undefined"),  # Note 1
+    ("window.newMockClassInstance", "get", "{}"),
+    ("window.newMockClassInstance", "get", "{}"),
+    ("window.newMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingProp1", "get", "blah1"),  # Note 2
+    ("window.newMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingProp1", "set", "blah1"),
+    ("window.newMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingProp1", "get", "blah1"),
+    ("window.newMockClassInstance", "get", "{}"),
+    ("window.MockClass.nonExistingMethod1", "get", "undefined"),  # Note 1
 }
 
 # Note 1: nonExistingMethod1 shows up as a get rather than call
@@ -41,7 +41,7 @@ GETS_AND_SETS = {
 #         should not have a value here yet
 
 METHOD_CALLS = {
-    ("MockClass", "call", None),
+    ("window.MockClass", "call", None),
 }
 
 TEST_PAGE = "instrument_mock_window_property.html"
@@ -85,4 +85,4 @@ class TestJSInstrumentMockWindowProperty(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
-        self._check_calls(rows, 'window.', TOP_URL, TOP_URL)
+        self._check_calls(rows, '', TOP_URL, TOP_URL)
