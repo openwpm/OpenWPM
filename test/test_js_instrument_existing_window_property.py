@@ -24,7 +24,8 @@ GETS_AND_SETS = {
     ("window.partiallyExisting.nonExistingProp1", "get", "blah1"),
     ("window.partiallyExisting", "get",
      "{\"existingProp\":\"blah1\"}"),  # Note 1
-    ("window.partiallyExisting.nonExistingMethod1", "get", "undefined"),  # Note 2
+    ("window.partiallyExisting.nonExistingMethod1",
+     "get", "undefined"),  # Note 2
 }
 
 # Note 1: nonExistingProp1 is not enumerable even after being set
