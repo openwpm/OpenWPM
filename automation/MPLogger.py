@@ -122,7 +122,10 @@ class MPLogger(object):
             self._initialize_sentry()
 
     def _initialize_loggers(self):
-        """Set up console logging and serialized file logging"""
+        """Set up console logging and serialized file logging.
+
+        The logger and socket handler are set to log at the logging.DEBUG level
+        and filtering happens at the outputs (console, file, and sentry)."""
         logger = logging.getLogger('openwpm')
         logger.setLevel(logging.DEBUG)
 
@@ -158,7 +161,7 @@ class MPLogger(object):
 
         # Attach socket handler to logger to serialize writes to file
         socketHandler = ClientSocketHandler(*self.logger_address)
-        socketHandler.setLevel(self._log_level_file)
+        socketHandler.setLevel(logging.DEBUG)
         logger.addHandler(socketHandler)
 
     def _sentry_before_send(self, event, hint):
