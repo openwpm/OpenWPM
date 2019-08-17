@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import uuid
 
 import redis
@@ -27,7 +28,7 @@ class RedisWQ(object):
             * db=0
         The work queue is identified by "name".  The library may create other
         keys with "name" as a prefix."""
-        self._db = redis.StrictRedis(**redis_kwargs)
+        self._db = redis.Redis(**redis_kwargs)
         # The session ID will uniquely identify this "worker".
         self._session = str(uuid.uuid4())
         # Work queue is implemented as two queues: main, and processing.
@@ -36,6 +37,7 @@ class RedisWQ(object):
         self._main_q_key = name
         self._processing_q_key = name + ":processing"
         self._lease_key_prefix = name + ":leased_by_session:"
+        self._logger = logging.getLogger('openwpm')
 
     def sessionID(self):
         """Return the ID for this session."""
@@ -61,21 +63,39 @@ class RedisWQ(object):
     def check_expired_leases(self):
         """Return to the work queue
 
-        Return True if the queue is empty, False otherwise."""
-        raise NotImplementedError("Lease expiration is not yet supported")
-        # Processing list should not be _too_ long since it is approximately
-        # as long as the number of active and recently active workers.
+        If the lease key is not present for an item (it expired or was
+        never created because the client crashed before creating it)
+        then move the item back to the main queue so others can work on
+        it.
+        """
+        expired = list()
         processing = self._db.lrange(self._processing_q_key, 0, -1)
         for item in processing:
-            # If the lease key is not present for an item (it expired or was
-            # never created because the client crashed before creating it)
-            # then move the item back to the main queue so others can work on
-            # it.
             if not self._lease_exists(item):
-                # TODO: transactionally move the key from processing queue to
-                # to main queue, while detecting if a new lease is created
-                # or if either queue is modified.
+                self._logger.debug(
+                    "Lease expired for job %s. Moving from processing queue "
+                    "to job queue." % item
+                )
+                # transactionally move the key with an expired lease from the
+                # processing queue to to the main queue
+                try:
+                    pipe = self._db.pipeline(transaction=True)
+                    pipe.multi()
+                    pipe = pipe.delete(
+                        self._processing_q_key, item
+                    ).rpush(
+                        self._main_q_key, item
+                    )
+                    pipe.execute()
+                    expired.append(item)
+                except Exception:
+                    self._logger.error(
+                        "Exception while expiring lease for job %s" % item,
+                        exc_info=True
+                    )
+                    pass
                 continue
+        return expired
 
     def _itemkey(self, item):
         """Returns a string that uniquely identifies an item (bytes)."""

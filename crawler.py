@@ -13,7 +13,7 @@ from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
 NUM_BROWSERS = int(os.getenv('NUM_BROWSERS', '1'))
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis-box')
 REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
 CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
 S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
@@ -100,6 +100,7 @@ manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
+    job_queue.check_expired_leases()
     job = job_queue.lease(lease_secs=120, block=True, timeout=5)
     if job is None:
         manager.logger.info("Waiting for work")
