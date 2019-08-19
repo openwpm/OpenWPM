@@ -100,8 +100,7 @@ class RedisWQ(object):
         # Next, ensure that the job is still in the processing queue.
         # The processing queue is relatively small, so this shouldn't
         # be an expensive operation.
-        p_queue = self._db.lrange(self._processing_q_key, 0, -1)
-        if job not in p_queue:
+        if job not in self._db.lrange(self._processing_q_key, 0, -1):
             pipe.reset()
             self._logger.debug(
                 "Job %s no longer in the processing queue, there is no need "
@@ -138,7 +137,7 @@ class RedisWQ(object):
                     )
                 else:
                     self._logger.debug(
-                        "Moving job %s was interrupted due to a change by a "
+                        "Removing job %s was interrupted due to a change by a "
                         "concurrent worker. [session %s]" %
                         (job, self.sessionID())
                     )
@@ -161,12 +160,19 @@ class RedisWQ(object):
             ).hincrby(
                 self._retry_hash_map_key, job, 1
             )
-            pipe.execute()
-            self._logger.debug(
-                "Job %s successfully moved from processing queue to "
-                "work queue for retry attempt %d. [session %s]" %
-                (job, retry_count + 1, self.sessionID())
-            )
+            results = pipe.execute()
+            if results:
+                self._logger.debug(
+                    "Job %s successfully moved from processing queue to "
+                    "work queue for retry attempt %d. [session %s]" %
+                    (job, retry_count + 1, self.sessionID())
+                )
+            else:
+                self._logger.debug(
+                    "Moving job %s was interrupted due to a change by a "
+                    "concurrent worker. [session %s]" %
+                    (job, self.sessionID())
+                )
         except Exception:
             self._logger.error(
                 "Exception while renewing job %s. [session %s]" %
