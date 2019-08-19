@@ -415,7 +415,8 @@ BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 # Issue #245 tracks the issue of incorrect top level urls.
 def fix_about_page_url(url):
     if url == "about:blank":
-        return u'http://localtest.me:8000/test_pages/http_test_page.html'
+        return url
+        # return u'http://localtest.me:8000/test_pages/http_test_page.html'
     else:
         return url
 

@@ -94,6 +94,7 @@ export class HttpInstrument {
       if (this.shouldSaveContent(saveContentOption, details.type)) {
         pendingResponse.addResponseResponseBodyListener(details);
       }
+      console.log("Frame ancestors: ", JSON.stringify(details.frameAncestors));
       return blockingResponseThatDoesNothing;
     };
     browser.webRequest.onBeforeRequest.addListener(
@@ -468,13 +469,56 @@ export class HttpInstrument {
       }
     }
     */
-    update.top_level_url = escapeUrl(tab.url);
+    // update.top_level_url = escapeUrl(tab.url);
+    update.top_level_url = this.getDocumentUrlForRequest(details);
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
       JSON.stringify(details.frameAncestors),
     );
-
+    console.log("Frame ancestors: ", JSON.stringify(details.frameAncestors));
     this.dataReceiver.saveRecord("http_requests", update);
+  }
+
+  /**
+   * Gets the URL for a given request's top-level document.
+   *
+   * The request's document may be different from the current top-level document
+   * loaded in tab as requests can come out of order:
+   *
+   * - "main_frame" requests usually but not always mark a boundary
+   *   (navigating to another site while the current page is still loading)
+   * - sometimes there is no "main_frame" request
+   *   (service worker pages in Firefox)
+   *
+   * @param {Object} details chrome.webRequest request/response details object
+   *
+   * @return {?String} the URL for the request's top-level document
+   */
+  private getDocumentUrlForRequest(details) {
+    let url = null;
+
+    // Firefox 54+
+    if (details.hasOwnProperty("documentUrl")) {
+      if (details.type === "main_frame") {
+        // the top-level document itself
+        url = details.url;
+      } else if (details.hasOwnProperty("frameAncestors")) {
+        // Firefox 58+
+        url = details.frameAncestors.length
+          ? details.frameAncestors[details.frameAncestors.length - 1].url
+          // inside the top-level document
+          : details.documentUrl;
+      } else {
+        // TODO Firefox 54-57 or a service worker request
+        // service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
+        if (details.type === "script" && details.parentFrameId === -1 && details.tabId === -1) {
+          url = details.documentUrl;
+        }
+      }
+    } else {
+      url = "something";
+    }
+    return url;
   }
 
   private async onBeforeRedirectHandler(
