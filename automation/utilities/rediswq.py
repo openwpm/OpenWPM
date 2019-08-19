@@ -21,13 +21,25 @@ class RedisWQ(object):
     https://kubernetes.io/docs/tasks/job/fine-parallel-processing-work-queue
     """
 
-    def __init__(self, name, **redis_kwargs):
-        """The default connection parameters are:
+    def __init__(self, name, max_retries=3, **redis_kwargs):
+        """Redis worker queue instance
+
+        The default connection parameters are:
             * host='localhost'
             * port=6379
             * db=0
-        The work queue is identified by "name".  The library may create other
-        keys with "name" as a prefix."""
+
+        Parameters
+        ----------
+        name : string
+            A prefix that identified all of the objects associated with this
+            worker queue. e.g., the main work queue is identified by `name`,
+            and the processesing queue is identified by `name`:processing.
+        max_retries : int, optional
+            Number of times to retry a job before removing it from the queue.
+            The default is 5. If you don't wish to retry jobs, set the limit
+            to 0.
+        """
         self._db = redis.Redis(**redis_kwargs)
         # The session ID will uniquely identify this "worker".
         self._session = str(uuid.uuid4())
@@ -36,8 +48,10 @@ class RedisWQ(object):
         # picks it up.
         self._main_q_key = name
         self._processing_q_key = name + ":processing"
+        self._retry_hash_map_key = name + ":retries"
         self._lease_key_prefix = name + ":leased_by_session:"
         self._logger = logging.getLogger('openwpm')
+        self._max_retries = max_retries
 
     def sessionID(self):
         """Return the ID for this session."""
@@ -60,6 +74,107 @@ class RedisWQ(object):
         """
         return self._main_qsize() == 0 and self._processing_qsize() == 0
 
+    def _maybe_renew_job(self, job):
+        """Transactionally move job from the processing to the work queue.
+
+        A job will not be renewed if it appears that another worker is
+        changing the processing queue or it the job has exceeded the
+        maximum number of retries.
+        """
+        self._logger.debug(
+            "Lease expired for job %s. Attempting to move from processing "
+            "queue to work queue...[session %s]" % (job, self.sessionID())
+        )
+        # A pipeline executes a set of commands as a transaction, but
+        # does not support rollback in the event any individual
+        # command fails.
+        pipe = self._db.pipeline(transaction=True)
+
+        # First, watch the processing queue and retry count hash map for
+        # changes. The pipeline transaction won't execute if changes occur
+        # after this point. This allows us to prevent duplicate updates from
+        # different workers.
+        pipe.watch(self._processing_q_key)
+        pipe.watch(self._retry_hash_map_key)
+
+        # Next, ensure that the job is still in the processing queue.
+        # The processing queue is relatively small, so this shouldn't
+        # be an expensive operation.
+        p_queue = self._db.lrange(self._processing_q_key, 0, -1)
+        if job not in p_queue:
+            pipe.reset()
+            self._logger.debug(
+                "Job %s no longer in the processing queue, there is no need "
+                "to renew..." % job
+            )
+            return
+
+        # Next, check that we haven't exceeded the retry limit for this job
+        # If we have, remove the job from the queue entirely and don't add it
+        # back to the main work queue
+        retry_count = self._db.hget(self._retry_hash_map_key, job)
+        if not retry_count:
+            retry_count = 0
+        else:
+            retry_count = int(retry_count)
+        if retry_count + 1 > self._max_retries:
+            self._logger.debug(
+                "Job %s exceeded maximum retry count, attempting to remove "
+                "from the processing queue. [session %s]" %
+                (job, self.sessionID())
+            )
+            try:
+                pipe.multi()
+                pipe = pipe.lrem(
+                    self._processing_q_key, 0, job
+                ).hdel(
+                    self._retry_hash_map_key, job
+                )
+                results = pipe.execute()
+                if results:
+                    self._logger.debug(
+                        "Job %s successfully removed from the processing "
+                        "queue. [session %s]" % (job, self.sessionID())
+                    )
+                else:
+                    self._logger.debug(
+                        "Moving job %s was interrupted due to a change by a "
+                        "concurrent worker. [session %s]" %
+                        (job, self.sessionID())
+                    )
+            except Exception:
+                self._logger.error(
+                    "Exception while removing job %s due to too many "
+                    "retries. [session %s]" %
+                    (job, self.sessionID()), exc_info=True
+                )
+            return
+
+        # Finally, execute the transaction to move the expired job
+        # back to the main queue and increment the retry counter by 1
+        try:
+            pipe.multi()
+            pipe = pipe.lrem(
+                self._processing_q_key, 0, job
+            ).rpush(
+                self._main_q_key, job
+            ).hincrby(
+                self._retry_hash_map_key, job, 1
+            )
+            pipe.execute()
+            self._logger.debug(
+                "Job %s successfully moved from processing queue to "
+                "work queue for retry attempt %d. [session %s]" %
+                (job, retry_count + 1, self.sessionID())
+            )
+        except Exception:
+            self._logger.error(
+                "Exception while renewing job %s. [session %s]" %
+                (job, self.sessionID()), exc_info=True
+            )
+            pass
+        return
+
     def check_expired_leases(self):
         """Return to the work queue
 
@@ -68,34 +183,11 @@ class RedisWQ(object):
         then move the item back to the main queue so others can work on
         it.
         """
-        expired = list()
         processing = self._db.lrange(self._processing_q_key, 0, -1)
-        for item in processing:
-            if not self._lease_exists(item):
-                self._logger.debug(
-                    "Lease expired for job %s. Moving from processing queue "
-                    "to job queue." % item
-                )
-                # transactionally move the key with an expired lease from the
-                # processing queue to to the main queue
-                try:
-                    pipe = self._db.pipeline(transaction=True)
-                    pipe.multi()
-                    pipe = pipe.delete(
-                        self._processing_q_key, item
-                    ).rpush(
-                        self._main_q_key, item
-                    )
-                    pipe.execute()
-                    expired.append(item)
-                except Exception:
-                    self._logger.error(
-                        "Exception while expiring lease for job %s" % item,
-                        exc_info=True
-                    )
-                    pass
-                continue
-        return expired
+        for job in processing:
+            if not self._lease_exists(job):
+                self._maybe_renew_job(job)
+        return
 
     def _itemkey(self, item):
         """Returns a string that uniquely identifies an item (bytes)."""
@@ -129,16 +221,17 @@ class RedisWQ(object):
                            lease_secs, self._session)
         return item
 
-    def complete(self, value):
-        """Complete working on the item with 'value'.
+    def complete(self, job):
+        """Complete working on the `job`.
 
         If the lease expired, the item may not have completed, and some
         other worker may have picked it up.  There is no indication
         of what happened.
         """
-        self._db.lrem(self._processing_q_key, 0, value)
+        self._db.lrem(self._processing_q_key, 0, job)
+        self._db.hdel(self._retry_hash_map_key, job)
         # If we crash here, then the GC code will try to move the value, but
         # it will not be here, which is fine.  So this does not need to be a
         # transaction.
-        itemkey = self._itemkey(value)
+        itemkey = self._itemkey(job)
         self._db.delete(self._lease_key_prefix + itemkey, self._session)

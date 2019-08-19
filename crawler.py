@@ -111,7 +111,7 @@ while not job_queue.empty():
             site = "http://" + site
         manager.logger.info("Visiting %s..." % site)
         command_sequence = CommandSequence.CommandSequence(
-            site, reset=True
+            site, blocking=True, reset=True
         )
         command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
         manager.execute_command_sequence(command_sequence)
