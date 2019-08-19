@@ -477,41 +477,34 @@ export class HttpInstrument {
   }
 
   /**
+   * Code taken and adapted from
+   * https://github.com/EFForg/privacybadger/pull/2198/files
+   *
    * Gets the URL for a given request's top-level document.
    *
    * The request's document may be different from the current top-level document
    * loaded in tab as requests can come out of order:
-   *
-   * - "main_frame" requests usually but not always mark a boundary
-   *   (navigating to another site while the current page is still loading)
-   * - sometimes there is no "main_frame" request
-   *   (service worker pages in Firefox)
    *
    * @param {Object} details chrome.webRequest request/response details object
    *
    * @return {?String} the URL for the request's top-level document
    */
   private getDocumentUrlForRequest(details) {
-    let url = null;
+    let url = "";
 
-    // Firefox 54+
-    if (details.hasOwnProperty("documentUrl")) {
-      if (details.type === "main_frame") {
-        // the top-level document itself
-        url = details.url;
-      } else if (details.hasOwnProperty("frameAncestors")) {
-        // Firefox 58+
-        url = details.frameAncestors.length
-          ? details.frameAncestors[details.frameAncestors.length - 1].url
-          // inside the top-level document
-          : details.documentUrl;
-      } else {
-        // TODO Firefox 54-57 or a service worker request
-        // service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
-        if (details.type === "script" && details.parentFrameId === -1 && details.tabId === -1) {
-          url = details.documentUrl;
-        }
-      }
+    if (details.type === "main_frame") {
+      // Url of the top-level document itself.
+      url = details.url;
+    } else if (details.hasOwnProperty("frameAncestors")) {
+      // In case of nested frames, retrieve url from top-most ancestor.
+      // If frameAncestors == [], request comes from the top-level-document.
+      url = details.frameAncestors.length
+        ? details.frameAncestors[details.frameAncestors.length - 1].url
+        : details.documentUrl;
+    } else {
+      // type != 'main_frame' and frameAncestors == undefined
+      // For example service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
+      url = details.documentUrl;
     }
     return url;
   }
