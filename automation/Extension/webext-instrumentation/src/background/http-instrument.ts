@@ -94,7 +94,6 @@ export class HttpInstrument {
       if (this.shouldSaveContent(saveContentOption, details.type)) {
         pendingResponse.addResponseResponseBodyListener(details);
       }
-      console.log("Frame ancestors: ", JSON.stringify(details.frameAncestors));
       return blockingResponseThatDoesNothing;
     };
     browser.webRequest.onBeforeRequest.addListener(
@@ -469,13 +468,11 @@ export class HttpInstrument {
       }
     }
     */
-    // update.top_level_url = escapeUrl(tab.url);
     update.top_level_url = this.getDocumentUrlForRequest(details);
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
       JSON.stringify(details.frameAncestors),
     );
-    console.log("Frame ancestors: ", JSON.stringify(details.frameAncestors));
     this.dataReceiver.saveRecord("http_requests", update);
   }
 
@@ -515,8 +512,6 @@ export class HttpInstrument {
           url = details.documentUrl;
         }
       }
-    } else {
-      url = "something";
     }
     return url;
   }
