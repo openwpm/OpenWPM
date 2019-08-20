@@ -34,9 +34,7 @@ manager_params['log_directory'] = '~/Desktop/'
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
-manager = TaskManager.TaskManager(
-    manager_params, browser_params,
-    logger_kwargs={'log_level_console': 'DEBUG'})
+manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites with all browsers simultaneously
 for site in sites:
