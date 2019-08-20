@@ -406,6 +406,7 @@ CALL_STACK_INJECT_IMAGE =\
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
+
 class TestHTTPInstrument(OpenWPMTest):
 
     def get_config(self, data_dir=""):
