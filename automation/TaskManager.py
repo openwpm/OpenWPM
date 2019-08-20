@@ -51,22 +51,35 @@ def load_default_params(num_browsers=1):
 
 
 class TaskManager:
-    """
-    User-facing Class for interfacing with OpenWPM
+    """ User-facing Class for interfacing with OpenWPM
+
     The TaskManager spawns several child processes to run the automation tasks.
-        - DataAggregator to aggregate data in a SQLite database
+        - DataAggregator to aggregate data across browsers and save to the
+          database.
         - MPLogger to aggregate logs across processes
         - BrowserManager processes to isolate Browsers in a separate process
-    <manager_params> dict of TaskManager configuration parameters
-    <browser_params> is a list of (or a single) dictionaries that specify
-    preferences for browsers to instantiate
-    <process_watchdog> will monitor firefox and Xvfb processes, killing
-    any not indexed in TaskManager's browser list.
-        NOTE: Only run this in isolated environments. It kills processes
-        by name, indiscriminately.
     """
 
-    def __init__(self, manager_params, browser_params, process_watchdog=False):
+    def __init__(self, manager_params, browser_params,
+                 process_watchdog=False, logger_kwargs={}):
+        """Initialize the TaskManager with browser and manager config params
+
+        Parameters
+        ----------
+        manager_params : dict
+            Dictionary of TaskManager configuration parameters. See the
+            default in `default_manager_params.json`.
+        browser_params : list of dict or dict
+            Browser configuration parameters. If this is given as a list, it
+            includes individual configurations for each browser.
+        process_watchdog : bool, optional
+            Set to True to monitor Firefox processes for zombie instances or
+            instances that exceed a reasonable amount of memory. Any process
+            found and not indexed by the TaskManager will be killed.
+            (Currently broken: https://github.com/mozilla/OpenWPM/issues/174)
+        logger_kwargs : dict, optional
+            Keyword arguments to pass to MPLogger on initialization.
+        """
 
         # Make paths absolute in manager_params
         for path in ['data_directory', 'log_directory']:
@@ -82,6 +95,7 @@ class TaskManager:
             manager_params['data_directory'], 'sources')
         self.manager_params = manager_params
         self.browser_params = browser_params
+        self._logger_kwargs = logger_kwargs
 
         # Create data directories if they do not exist
         if not os.path.exists(manager_params['screenshot_path']):
@@ -105,11 +119,18 @@ class TaskManager:
         else:
             self.failure_limit = self.num_browsers * 2 + 10
 
+        if process_watchdog:
+            raise ValueError(
+                "The Process watchdog functionality is currently broken. "
+                "See: https://github.com/mozilla/OpenWPM/issues/174.")
+
         self.process_watchdog = process_watchdog
 
         # Start logging server thread
         self.logging_server = MPLogger.MPLogger(
-            self.manager_params['log_file'], self.manager_params
+            self.manager_params['log_file'],
+            self.manager_params,
+            **self._logger_kwargs
         )
         self.manager_params[
             'logger_address'] = self.logging_server.logger_address
@@ -170,9 +191,6 @@ class TaskManager:
         TODO: process watchdog needs to be updated since `psutil` won't
               kill browser processes started by Selenium 3 (with `subprocess`)
         """
-        if self.process_watchdog:
-            self.logger.error("BROWSER %i: Process watchdog is not currently "
-                              "supported." % self.crawl_id)
         while not self.closing:
             time.sleep(10)
 

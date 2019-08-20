@@ -28,6 +28,43 @@ BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:\s*")
 NETERROR_RE = re.compile(
     r"WebDriverException: Message: Reached error page: about:neterror\?(.*)\."
 )
+# These config variable names should name to lowercase kwargs for MPLogger
+ENV_CONFIG_VARS = [
+    'LOG_LEVEL_CONSOLE',
+    'LOG_LEVEL_FILE',
+    'LOG_LEVEL_SENTRY_BREADCRUMB',
+    'LOG_LEVEL_SENTRY_EVENT'
+]
+
+
+def _retrive_log_level_from_env(env_var_name):
+    """Retrieve log level from `env_var_name`
+
+    Levels from: https://docs.python.org/3/library/logging.html#levels"""
+    level = os.getenv(env_var_name, None)
+    if level == 'CRITICAL':
+        level = logging.CRITICAL
+    elif level == 'ERROR':
+        level = logging.ERROR
+    elif level == 'WARNING':
+        level = logging.WARNING
+    elif level == 'INFO':
+        level = logging.INFO
+    elif level == 'DEBUG':
+        level = logging.DEBUG
+    elif level == 'NOTSET':
+        level = logging.NOTSET
+    return level
+
+
+def parse_config_from_env():
+    """Parse the logger config from environment variables"""
+    out = dict()
+    for env_var_name in ENV_CONFIG_VARS:
+        level = _retrive_log_level_from_env(env_var_name)
+        if level:
+            out[env_var_name.lower()] = level
+    return out
 
 
 class ClientSocketHandler(logging.handlers.SocketHandler):
@@ -64,8 +101,16 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
 class MPLogger(object):
     """Configure OpenWPM logging across processes"""
 
-    def __init__(self, log_file, crawl_context=None):
+    def __init__(self, log_file, crawl_context=None,
+                 log_level_console=logging.INFO,
+                 log_level_file=logging.DEBUG,
+                 log_level_sentry_breadcrumb=logging.DEBUG,
+                 log_level_sentry_event=logging.ERROR):
         self._crawl_context = crawl_context
+        self._log_level_console = log_level_console
+        self._log_level_file = log_level_file
+        self._log_level_sentry_breadcrumb = log_level_sentry_breadcrumb
+        self._log_level_sentry_event = log_level_sentry_event
         # Configure log handlers
         self._status_queue = JoinableQueue()
         self._log_file = os.path.expanduser(log_file)
@@ -77,7 +122,10 @@ class MPLogger(object):
             self._initialize_sentry()
 
     def _initialize_loggers(self):
-        """Set up console logging and serialized file logging"""
+        """Set up console logging and serialized file logging.
+
+        The logger and socket handler are set to log at the logging.DEBUG level
+        and filtering happens at the outputs (console, file, and sentry)."""
         logger = logging.getLogger('openwpm')
         logger.setLevel(logging.DEBUG)
 
@@ -92,7 +140,7 @@ class MPLogger(object):
             "- %(module)-20s - %(levelname)-8s: %(message)s"
         )
         handler.setFormatter(formatter)
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(self._log_level_file)
         self._file_handler = handler
 
         self._listener = threading.Thread(
@@ -105,7 +153,7 @@ class MPLogger(object):
 
         # Attach console handler to log to console
         consoleHandler = logging.StreamHandler(sys.stdout)
-        consoleHandler.setLevel(logging.INFO)
+        consoleHandler.setLevel(self._log_level_console)
         formatter = logging.Formatter(
             '%(module)-20s - %(levelname)-8s - %(message)s')
         consoleHandler.setFormatter(formatter)
@@ -152,8 +200,10 @@ class MPLogger(object):
     def _initialize_sentry(self):
         """If running a cloud crawl, we can pull the sentry endpoint
         and related config varibles from the environment"""
-        self._breadcrumb_handler = BreadcrumbHandler(level=logging.DEBUG)
-        self._event_handler = EventHandler(level=logging.ERROR)
+        self._breadcrumb_handler = BreadcrumbHandler(
+            level=self._log_level_sentry_breadcrumb)
+        self._event_handler = EventHandler(
+            level=self._log_level_sentry_event)
         sentry_sdk.init(
             dsn=self._sentry_dsn,
             before_send=self._sentry_before_send

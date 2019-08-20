@@ -7,7 +7,7 @@ import boto3
 import sentry_sdk
 from six.moves import range
 
-from automation import CommandSequence, TaskManager
+from automation import CommandSequence, MPLogger, TaskManager
 from automation.utilities import rediswq
 from test.utilities import LocalS3Session, local_s3_bucket
 
@@ -26,6 +26,7 @@ SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+LOGGER_SETTINGS = MPLogger.parse_config_from_env()
 
 # Loads the default manager params
 # and NUM_BROWSERS copies of the default browser params
@@ -63,7 +64,8 @@ if S3_ENDPOINT:
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
-manager = TaskManager.TaskManager(manager_params, browser_params)
+manager = TaskManager.TaskManager(manager_params, browser_params,
+                                  logger_kwargs=LOGGER_SETTINGS)
 
 # At this point, Sentry should be initiated
 if SENTRY_DSN:
