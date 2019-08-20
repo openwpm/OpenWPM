@@ -133,7 +133,8 @@ class RedisWQ(object):
                 if results:
                     self._logger.debug(
                         "Job %s successfully removed from the processing "
-                        "queue. [session %s]" % (job, self.sessionID())
+                        "queue due to too many retries. [session %s]"
+                        % (job, self.sessionID())
                     )
                 else:
                     self._logger.debug(
