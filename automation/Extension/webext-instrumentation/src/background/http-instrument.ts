@@ -490,7 +490,7 @@ export class HttpInstrument {
    * @return {?String} the URL for the request's top-level document
    */
   private getDocumentUrlForRequest(
-    details: WebRequestOnBeforeSendHeadersEventDetails
+    details: WebRequestOnBeforeSendHeadersEventDetails,
   ) {
     let url = "";
 
