@@ -60,18 +60,6 @@
         "existingProp": "foo",
       };
 
-      // don't create data property
-      /*
-      partiallyExisting.nonExistingProp1 = 'nonExistingProp1';
-      */
-
-      // don't create a method
-      /*
-      partiallyExisting.nonExistingMethod1 = function(arg1, arg2) {
-        console.log('nonExistingMethod1', arg1, arg2);
-      };
-      */
-
       // Instrument partially existing object non-recursively
       console.log("Instrumenting window.partiallyExisting!");
       // Instrument the window.partiallyExisting property itself (not its object properties)
