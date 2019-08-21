@@ -13,6 +13,7 @@ declare global {
 
 interface LogSettings {
   propertiesToInstrument?: string[];
+  nonExistingPropertiesToInstrument?: string[];
   excludedProperties?: string[];
   logCallStack?: boolean;
   logFunctionsAsStrings?: boolean;
@@ -452,6 +453,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     //   propertiesToInstrument : Array
     //     An array of properties to instrument on this object. Default is
     //     all properties.
+    //   nonExistingPropertiesToInstrument : Array
+    //     An array of non-existing properties to instrument on this object.
     //   excludedProperties : Array
     //     Properties excluded from instrumentation. Default is an empty
     //     array.
@@ -482,9 +485,10 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       ? logSettings.propertiesToInstrument
       : Object.getPropertyNames(object);
     for (let i = 0; i < properties.length; i++) {
+      const propertyName = properties[i];
       if (
         logSettings.excludedProperties &&
-        logSettings.excludedProperties.indexOf(properties[i]) > -1
+        logSettings.excludedProperties.indexOf(propertyName) > -1
       ) {
         continue;
       }
@@ -493,8 +497,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       // depth not set (at which point its set to default) or not at limit.
       if (
         !!logSettings.recursive &&
-        properties[i] !== "__proto__" &&
-        isObject(object, properties[i]) &&
+        propertyName !== "__proto__" &&
+        isObject(object, propertyName) &&
         (!("depth" in logSettings) || logSettings.depth > 0)
       ) {
         // set recursion limit to default if not specified
@@ -502,8 +506,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           logSettings.depth = 5;
         }
         instrumentObject(
-          object[properties[i]],
-          objectName + "." + properties[i],
+          object[propertyName],
+          objectName + "." + propertyName,
           {
             excludedProperties: logSettings.excludedProperties,
             logCallStack: logSettings.logCallStack,
@@ -515,14 +519,24 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
         );
       }
       try {
-        instrumentObjectProperty(
-          object,
-          objectName,
-          properties[i],
-          logSettings,
-        );
+        instrumentObjectProperty(object, objectName, propertyName, logSettings);
       } catch (error) {
-        logErrorToConsole(error, { objectName, property: properties[i] });
+        logErrorToConsole(error, { objectName, propertyName });
+      }
+    }
+    const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
+    for (let i = 0; i < nonExistingProperties.length; i++) {
+      const propertyName = nonExistingProperties[i];
+      if (
+        logSettings.excludedProperties &&
+        logSettings.excludedProperties.indexOf(propertyName) > -1
+      ) {
+        continue;
+      }
+      try {
+        instrumentObjectProperty(object, objectName, propertyName, logSettings);
+      } catch (error) {
+        logErrorToConsole(error, { objectName, propertyName });
       }
     }
   }
@@ -555,6 +569,19 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   ) {
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
+
+    if (
+      !propDesc &&
+      logSettings.nonExistingPropertiesToInstrument.indexOf(propertyName) == -1
+    ) {
+      console.error(
+        "Property descriptor not found for",
+        objectName,
+        propertyName,
+        object,
+      );
+      return;
+    }
 
     // Property descriptor for undefined properties
     let undefinedPropValue;
