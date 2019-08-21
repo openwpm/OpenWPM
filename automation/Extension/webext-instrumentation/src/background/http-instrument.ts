@@ -468,7 +468,7 @@ export class HttpInstrument {
       }
     }
     */
-    update.top_level_url = this.getDocumentUrlForRequest(details);
+    update.top_level_url = escapeUrl(this.getDocumentUrlForRequest(details));
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
       JSON.stringify(details.frameAncestors),
@@ -485,11 +485,13 @@ export class HttpInstrument {
    * The request's document may be different from the current top-level document
    * loaded in tab as requests can come out of order:
    *
-   * @param {Object} details chrome.webRequest request/response details object
+   * @param {WebRequestOnBeforeSendHeadersEventDetails} details
    *
    * @return {?String} the URL for the request's top-level document
    */
-  private getDocumentUrlForRequest(details) {
+  private getDocumentUrlForRequest(
+    details: WebRequestOnBeforeSendHeadersEventDetails
+  ) {
     let url = "";
 
     if (details.type === "main_frame") {
