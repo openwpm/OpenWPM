@@ -111,6 +111,7 @@
 
       // Instrument window.MockClass object properties
       window.instrumentObject(window.MockClass.prototype, "window.MockClass", {
+        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
         nonExistingPropertiesToInstrument: [
           "nonExistingProp1",
           "nonExistingMethod1",
@@ -124,6 +125,7 @@
 
       // Instrument window.alreadyInstantiatedMockClassInstance object properties
       window.instrumentObject(window.alreadyInstantiatedMockClassInstance, "window.alreadyInstantiatedMockClassInstance", {
+        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
         nonExistingPropertiesToInstrument: [
           "nonExistingProp1",
           "nonExistingMethod1",

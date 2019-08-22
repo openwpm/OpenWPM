@@ -58,6 +58,7 @@
       console.log("Instrumenting window.nonExisting!");
       // Instrument the window.nonExisting property itself (not its object properties)
       window.instrumentObject(window, "window", {
+        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
         nonExistingPropertiesToInstrument: ["nonExisting"],
       });
       // Instrument window.nonExisting object properties - currently not supported
