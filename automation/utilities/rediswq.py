@@ -21,7 +21,7 @@ class RedisWQ(object):
     https://kubernetes.io/docs/tasks/job/fine-parallel-processing-work-queue
     """
 
-    def __init__(self, name, max_retries=3, **redis_kwargs):
+    def __init__(self, name, max_retries=2, **redis_kwargs):
         """Redis worker queue instance
 
         The default connection parameters are:
@@ -37,8 +37,7 @@ class RedisWQ(object):
             and the processesing queue is identified by `name`:processing.
         max_retries : int, optional
             Number of times to retry a job before removing it from the queue.
-            The default is 5. If you don't wish to retry jobs, set the limit
-            to 0.
+            If you don't wish to retry jobs, set the limit to 0.
         """
         self._db = redis.Redis(**redis_kwargs)
         # The session ID will uniquely identify this "worker".

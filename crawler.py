@@ -26,7 +26,7 @@ DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 LOGGER_SETTINGS = MPLogger.parse_config_from_env()
-MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '3'))
+MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '2'))
 
 # Loads the default manager params
 # We can't use more than one browser per instance because the job management
