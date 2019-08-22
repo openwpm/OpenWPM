@@ -237,7 +237,7 @@ class RedisWQ(object):
         state).
         """
         num_retries = self._db.hget(self._retry_hash_map_key, job)
-        if not num_retries:
+        if num_retries is None:
             return 0
         return num_retries
 
