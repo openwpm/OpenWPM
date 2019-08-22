@@ -416,7 +416,11 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       };
       return callContext;
     } catch (e) {
-      console.log("OpenWPM: Error parsing the script context", e, callSite);
+      console.log(
+        "OpenWPM: Error parsing the script context",
+        e.toString(),
+        callSite,
+      );
       return empty_context;
     }
   }
@@ -484,8 +488,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     const properties = logSettings.propertiesToInstrument
       ? logSettings.propertiesToInstrument
       : Object.getPropertyNames(object);
-    for (let i = 0; i < properties.length; i++) {
-      const propertyName = properties[i];
+    for (const propertyName of properties) {
       if (
         logSettings.excludedProperties &&
         logSettings.excludedProperties.indexOf(propertyName) > -1
@@ -526,8 +529,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     }
     const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
     if (nonExistingProperties) {
-      for (let i = 0; i < nonExistingProperties.length; i++) {
-        const propertyName = nonExistingProperties[i];
+      for (const propertyName of nonExistingProperties) {
         if (
           logSettings.excludedProperties &&
           logSettings.excludedProperties.indexOf(propertyName) > -1
@@ -574,6 +576,16 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     propertyName,
     logSettings: LogSettings = {},
   ) {
+    if (!object) {
+      throw new Error("Invalid object: " + propertyName);
+    }
+    if (!objectName) {
+      throw new Error("Invalid object name: " + propertyName);
+    }
+    if (!propertyName || propertyName === "undefined") {
+      throw new Error("Invalid object property name: " + propertyName);
+    }
+
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
 
