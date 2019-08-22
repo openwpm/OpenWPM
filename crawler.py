@@ -108,7 +108,9 @@ manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job_queue.check_expired_leases()
-    job = job_queue.lease(lease_secs=TIMEOUT + 30, block=True, timeout=5)
+    job = job_queue.lease(
+        lease_secs=TIMEOUT + DWELL_TIME + 30, block=True, timeout=5
+    )
     if job is None:
         manager.logger.info("Waiting for work")
         time.sleep(5)
