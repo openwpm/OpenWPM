@@ -23,21 +23,25 @@ class CommandSequence:
     called prior to that.
     """
 
-    def __init__(self, url, reset=False, blocking=False):
+    def __init__(self, url, reset=False, blocking=False, retry_number=None):
         """Initialize command sequence.
 
         Parameters
         ----------
         url : string
             url of page visit the command sequence should execute on
-        reset : bool
+        reset : bool, optional
             True if browser should clear state and restart after sequence
-        blocking : bool
+        blocking : bool, optional
             True if sequence should block parent process during execution
+        retry_number : int, optional
+            Integer denoting the number of attempts that have been made to
+            execute this command. Will be saved in `crawl_history`.
         """
         self.url = url
         self.reset = reset
         self.blocking = blocking
+        self.retry_number = retry_number
         self.commands_with_timeout = []
         self.total_timeout = 0
         self.contains_get_or_browse = False

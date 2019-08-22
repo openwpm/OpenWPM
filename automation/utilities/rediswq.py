@@ -227,6 +227,14 @@ class RedisWQ(object):
                            lease_secs, self._session)
         return item
 
+    def get_retry_number(self, job):
+        """Return the number of retries for the given `job`.
+
+        This returns None if the job has never been retried. We do not attempt
+        to verify that the job is valid, leased by the current worker, etc.
+        """
+        return self._db.hget(self._retry_hash_map_key, job)
+
     def complete(self, job):
         """Complete working on the `job`.
 

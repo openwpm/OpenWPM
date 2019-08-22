@@ -111,20 +111,23 @@ while not job_queue.empty():
     job = job_queue.lease(
         lease_secs=TIMEOUT + DWELL_TIME + 30, block=True, timeout=5
     )
+
     if job is None:
         manager.logger.info("Waiting for work")
         time.sleep(5)
-    else:
-        site_rank, site = job.decode("utf-8").split(',')
-        if "://" not in site:
-            site = "http://" + site
-        manager.logger.info("Visiting %s..." % site)
-        command_sequence = CommandSequence.CommandSequence(
-            site, blocking=True, reset=True
-        )
-        command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
-        manager.execute_command_sequence(command_sequence)
-        job_queue.complete(job)
+        continue
+
+    retry_number = job_queue.get_retry_number(job)
+    site_rank, site = job.decode("utf-8").split(',')
+    if "://" not in site:
+        site = "http://" + site
+    manager.logger.info("Visiting %s..." % site)
+    command_sequence = CommandSequence.CommandSequence(
+        site, blocking=True, reset=True, retry_number=retry_number
+    )
+    command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
+    manager.execute_command_sequence(command_sequence)
+    job_queue.complete(job)
 
 manager.logger.info("Job queue finished, exiting.")
 manager.close()

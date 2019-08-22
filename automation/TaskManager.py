@@ -484,6 +484,7 @@ class TaskManager:
                 "visit_id": browser.curr_visit_id,
                 "command": command[0],
                 "arguments": str(command_arguments),
+                "retry_number": command_sequence.retry_number,
                 "bool_success": command_succeeded
             }))
 
