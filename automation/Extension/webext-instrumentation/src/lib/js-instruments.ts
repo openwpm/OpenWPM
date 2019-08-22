@@ -525,18 +525,25 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       }
     }
     const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
-    for (let i = 0; i < nonExistingProperties.length; i++) {
-      const propertyName = nonExistingProperties[i];
-      if (
-        logSettings.excludedProperties &&
-        logSettings.excludedProperties.indexOf(propertyName) > -1
-      ) {
-        continue;
-      }
-      try {
-        instrumentObjectProperty(object, objectName, propertyName, logSettings);
-      } catch (error) {
-        logErrorToConsole(error, { objectName, propertyName });
+    if (nonExistingProperties) {
+      for (let i = 0; i < nonExistingProperties.length; i++) {
+        const propertyName = nonExistingProperties[i];
+        if (
+          logSettings.excludedProperties &&
+          logSettings.excludedProperties.indexOf(propertyName) > -1
+        ) {
+          continue;
+        }
+        try {
+          instrumentObjectProperty(
+            object,
+            objectName,
+            propertyName,
+            logSettings,
+          );
+        } catch (error) {
+          logErrorToConsole(error, { objectName, propertyName });
+        }
       }
     }
   }
