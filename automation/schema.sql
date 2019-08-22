@@ -50,7 +50,9 @@ CREATE TABLE IF NOT EXISTS crawl_history (
     command TEXT,
     arguments TEXT,
     retry_number INTEGER,
-    bool_success INTEGER,
+    command_status TEXT,
+    error TEXT,
+    traceback TEXT,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 

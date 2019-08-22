@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 
 import random
+import re
 import time
 
 from selenium.common.exceptions import (ElementNotVisibleException,
@@ -13,12 +14,27 @@ from selenium.common.exceptions import (ElementNotVisibleException,
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from six.moves.urllib.parse import urljoin
+from six.moves.urllib import parse as urlparse
 
 from ...utilities import domain_utils as du
 from . import XPathUtil
 
-# Basic functions
+NETERROR_RE = re.compile(
+    r"WebDriverException: Message: Reached error page: about:neterror\?(.*)\."
+)
+
+
+def parse_neterror(error_message):
+    """Attempt to parse the about:neterror message.
+
+    If any errors occur while parsing, we fall back to the unparsed message
+    """
+    try:
+        qs = re.match(NETERROR_RE, error_message).group(1)
+        params = urlparse.parse_qs(qs)
+        return '&'.join(params['e'])
+    except Exception:
+        return error_message
 
 
 def scroll_down(driver):
@@ -67,7 +83,7 @@ def get_intra_links(webdriver, url):
             continue
         if href is None:
             continue
-        full_href = urljoin(url, href)
+        full_href = urlparse.urljoin(url, href)
         if not full_href.startswith('http'):
             continue
         if du.get_ps_plus_1(full_href) == ps1:

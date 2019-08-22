@@ -86,13 +86,13 @@ class TestCrawl(OpenWPMTest):
             req_ps.add(psl.get_public_suffix(urlparse(url).hostname))
 
         hist_ps = set()  # visited domains from crawl_history Table
-        successes = dict()
-        rows = db_utils.query_db(crawl_db, "SELECT arguments, bool_success "
+        statuses = dict()
+        rows = db_utils.query_db(crawl_db, "SELECT arguments, command_status "
                                  "FROM crawl_history WHERE command='GET'")
-        for url, success in rows:
+        for url, command_status in rows:
             ps = psl.get_public_suffix(urlparse(url).hostname)
             hist_ps.add(ps)
-            successes[ps] = success
+            statuses[ps] = command_status
 
         # Grab urls from Firefox database
         profile_ps = set()  # visited domains from firefox profile
@@ -112,7 +112,7 @@ class TestCrawl(OpenWPMTest):
         missing_urls = req_ps.intersection(hist_ps).difference(profile_ps)
         unexpected_missing_urls = set()
         for url in missing_urls:
-            if successes[url] == 0 or successes[url] == -1:
+            if command_status[url] != 'ok':
                 continue
 
             # Get the visit id for the url

@@ -12,6 +12,7 @@ import traceback
 
 import psutil
 from multiprocess import Queue
+from selenium.common.exceptions import WebDriverException
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves.queue import Empty as EmptyQueue
@@ -478,16 +479,33 @@ def BrowserManager(command_queue, status_queue, browser_params,
             # attempts to perform an action and return an OK signal
             # if command fails for whatever reason, tell the TaskManager to
             # kill and restart its worker processes
-            command_executor.execute_command(
-                command, driver, browser_settings,
-                browser_params, manager_params, extension_socket)
-            status_queue.put("OK")
+            try:
+                command_executor.execute_command(
+                    command, driver, browser_settings,
+                    browser_params, manager_params, extension_socket)
+                status_queue.put("OK")
+            except WebDriverException:
+                # We handle WebDriverExceptions separately here because they
+                # are quite common, and we often still have a handle to the
+                # browser, allowing us to run the SHUTDOWN command.
+                tb = traceback.format_exception(*sys.exc_info())
+                if 'about:neterror' in tb[-1]:
+                    status_queue.put(
+                        ('NETERROR', pickle.dumps(sys.exc_info()))
+                    )
+                    continue
+                extra = parse_traceback_for_sentry(tb)
+                extra['exception'] = tb[-1]
+                logger.error(
+                    "BROWSER %i: WebDriverException while executing command" %
+                    browser_params['crawl_id'], exc_info=True, extra=extra
+                )
+                status_queue.put(('FAILED', pickle.dumps(sys.exc_info())))
 
     except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
         logger.error("BROWSER %i: %s thrown, informing parent and raising" % (
             browser_params['crawl_id'], e.__class__.__name__))
-        err_info = sys.exc_info()
-        status_queue.put(('CRITICAL', pickle.dumps(err_info)))
+        status_queue.put(('CRITICAL', pickle.dumps(sys.exc_info())))
         return
     except Exception:
         tb = traceback.format_exception(*sys.exc_info())
@@ -497,5 +515,5 @@ def BrowserManager(command_queue, status_queue, browser_params,
             "BROWSER %i: Crash in driver, restarting browser manager" %
             browser_params['crawl_id'], exc_info=True, extra=extra
         )
-        status_queue.put(('FAILED', None))
+        status_queue.put(('FAILED', pickle.dumps(sys.exc_info())))
         return

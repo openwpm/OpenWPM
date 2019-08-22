@@ -17,17 +17,14 @@ import six
 from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from six.moves.queue import Empty as EmptyQueue
-from six.moves.urllib import parse as urlparse
 from tblib import pickling_support
 
+from .Commands.utils.webdriver_utils import parse_neterror
 from .SocketInterface import serversocket
 
 pickling_support.install()
 
 BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:\s*")
-NETERROR_RE = re.compile(
-    r"WebDriverException: Message: Reached error page: about:neterror\?(.*)\."
-)
 # These config variable names should name to lowercase kwargs for MPLogger
 ENV_CONFIG_VARS = [
     'LOG_LEVEL_CONSOLE',
@@ -188,10 +185,8 @@ class MPLogger(object):
         # Combine neterrors of the same type
         try:
             if 'about:neterror' in event['extra']['exception']:
-                qs = re.match(
-                    NETERROR_RE, event['extra']['exception']).group(1)
-                params = urlparse.parse_qs(qs)
-                event['fingerprint'] = ['neterror-%s' % '&'.join(params['e'])]
+                error_text = parse_neterror(event['extra']['exception'])
+                event['fingerprint'] = ['neterror-%s' % error_text]
         except Exception:
             pass
 
