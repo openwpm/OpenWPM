@@ -12,7 +12,6 @@ from automation.utilities import rediswq
 from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
-NUM_BROWSERS = int(os.getenv('NUM_BROWSERS', '1'))
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis-box')
 REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
 CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
@@ -30,7 +29,10 @@ LOGGER_SETTINGS = MPLogger.parse_config_from_env()
 MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '3'))
 
 # Loads the default manager params
-# and NUM_BROWSERS copies of the default browser params
+# We can't use more than one browser per instance because the job management
+# code below requires blocking commands. For more context see:
+# https://github.com/mozilla/OpenWPM/issues/470
+NUM_BROWSERS = 1
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Browser configuration
@@ -73,7 +75,6 @@ if SENTRY_DSN:
     # Add crawler.py-specific context
     with sentry_sdk.configure_scope() as scope:
         # tags generate breakdown charts and search filters
-        scope.set_tag('NUM_BROWSERS', NUM_BROWSERS)
         scope.set_tag('CRAWL_DIRECTORY', CRAWL_DIRECTORY)
         scope.set_tag('S3_BUCKET', S3_BUCKET)
         scope.set_tag('HTTP_INSTRUMENT', HTTP_INSTRUMENT)
