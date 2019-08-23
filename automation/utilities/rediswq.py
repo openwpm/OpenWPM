@@ -117,64 +117,50 @@ class RedisWQ(object):
                 "from the processing queue. [session %s]" %
                 (job, self.sessionID())
             )
-            try:
-                pipe.multi()
-                pipe = pipe.lrem(
-                    self._processing_q_key, 0, job
-                ).hdel(
-                    self._retry_hash_map_key, job
+            pipe.multi()
+            pipe = pipe.lrem(
+                self._processing_q_key, 0, job
+            ).hdel(
+                self._retry_hash_map_key, job
+            )
+            results = pipe.execute()
+            if results:
+                self._logger.debug(
+                    "Job %s successfully removed from the processing "
+                    "queue due to too many retries. [session %s]"
+                    % (job, self.sessionID())
                 )
-                results = pipe.execute()
-                if results:
-                    self._logger.debug(
-                        "Job %s successfully removed from the processing "
-                        "queue due to too many retries. [session %s]"
-                        % (job, self.sessionID())
-                    )
-                else:
-                    self._logger.debug(
-                        "Removing job %s was interrupted due to a change by a "
-                        "concurrent worker. [session %s]" %
-                        (job, self.sessionID())
-                    )
-            except Exception:
-                self._logger.error(
-                    "Exception while removing job %s due to too many "
-                    "retries. [session %s]" %
-                    (job, self.sessionID()), exc_info=True
+            else:
+                self._logger.debug(
+                    "Removing job %s was interrupted due to a change by a "
+                    "concurrent worker. [session %s]" %
+                    (job, self.sessionID())
                 )
             return
 
         # Finally, execute the transaction to move the expired job
         # back to the main queue and increment the retry counter by 1
-        try:
-            pipe.multi()
-            pipe = pipe.lrem(
-                self._processing_q_key, 0, job
-            ).rpush(
-                self._main_q_key, job
-            ).hincrby(
-                self._retry_hash_map_key, job, 1
+        pipe.multi()
+        pipe = pipe.lrem(
+            self._processing_q_key, 0, job
+        ).rpush(
+            self._main_q_key, job
+        ).hincrby(
+            self._retry_hash_map_key, job, 1
+        )
+        results = pipe.execute()
+        if results:
+            self._logger.debug(
+                "Job %s successfully moved from processing queue to "
+                "work queue for retry attempt %d. [session %s]" %
+                (job, retry_count + 1, self.sessionID())
             )
-            results = pipe.execute()
-            if results:
-                self._logger.debug(
-                    "Job %s successfully moved from processing queue to "
-                    "work queue for retry attempt %d. [session %s]" %
-                    (job, retry_count + 1, self.sessionID())
-                )
-            else:
-                self._logger.debug(
-                    "Moving job %s was interrupted due to a change by a "
-                    "concurrent worker. [session %s]" %
-                    (job, self.sessionID())
-                )
-        except Exception:
-            self._logger.error(
-                "Exception while renewing job %s. [session %s]" %
-                (job, self.sessionID()), exc_info=True
+        else:
+            self._logger.debug(
+                "Moving job %s was interrupted due to a change by a "
+                "concurrent worker. [session %s]" %
+                (job, self.sessionID())
             )
-            pass
         return
 
     def check_expired_leases(self):
@@ -191,10 +177,15 @@ class RedisWQ(object):
                 try:
                     self._maybe_renew_job(job)
                 except redis.exceptions.WatchError:
-                    self.logger.debug(
+                    self._logger.debug(
                         "Watched variable changed while trying to renew lease "
                         "for job %s. Skipping lease renew for now... "
                         "[session %s]" % (job, self.sessionID())
+                    )
+                except Exception:
+                    self._logger.error(
+                        "Exception while renewing job %s. [session %s]" %
+                        (job, self.sessionID()), exc_info=True
                     )
         return
 
