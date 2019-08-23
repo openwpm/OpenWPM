@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument's instrumentObject method - specifically instrumenting existing window property with partially existing attributes</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrument's instrumentObject method - specifically instrumenting existing window property with partially existing attributes</h3>
+    <p> This page defines several types of objects and tests the js
+    instrument's instrumentObject() method. <br/>
+    NOTE: The platform config option `manager_params['testing']` must be set
+    to True otherwise the instrumentObject method won't be exposed to this
+    test script.
+    </p>
+    <script type="text/javascript">
+      function interactWithTestObjects() {
+
+        /*
+         * Interact with partially existing object instrumented non-recursively
+         */
+
+        // get object
+        console.log("partiallyExisting",window.partiallyExisting);
+
+        // call object as method
+        try {
+          window.partiallyExisting('hello', {'world': true});
+        } catch (e) {
+          console.log("call object as method - caught exception: ", e);
+        }
+
+        // get and set existingProp
+        try {
+          console.log("existingProp before set",window.partiallyExisting.existingProp);
+        } catch (e) {
+          console.log("existingProp before set - caught exception: ", e);
+        }
+        window.partiallyExisting.existingProp = 'blah1';
+        try {
+          console.log("existingProp after set",window.partiallyExisting.existingProp);
+        } catch (e) {
+          console.log("existingProp after set - caught exception: ", e);
+        }
+
+        // get and set nonExistingProp1 (data property 1)
+        console.log("nonExistingProp1 before set",window.partiallyExisting.nonExistingProp1);
+        window.partiallyExisting.nonExistingProp1 = 'blah1';
+        console.log("nonExistingProp1 after set",window.partiallyExisting.nonExistingProp1);
+
+        // call non-existing object method
+        try {
+          window.partiallyExisting.nonExistingMethod1('hello', {'world': true});
+        } catch (e) {
+          console.log("call object method - caught exception: ", e);
+        }
+
+      }
+
+      // Build partiallyExisting object
+      window.partiallyExisting = {
+        "existingProp": "foo",
+      };
+
+      // Instrument partially existing object non-recursively
+      console.log("Instrumenting window.partiallyExisting!");
+      // Instrument the window.partiallyExisting property itself (not its object properties)
+      window.instrumentObject(window, "window", {
+        propertiesToInstrument: ["partiallyExisting"],
+      });
+      // Instrument window.partiallyExisting object properties
+      window.instrumentObject(window.partiallyExisting, "window.partiallyExisting", {
+        propertiesToInstrument: [
+          "existingProp",
+        ],
+        nonExistingPropertiesToInstrument: [
+          "nonExistingProp1",
+          "nonExistingMethod1",
+        ],
+      });
+
+      interactWithTestObjects();
+    </script>
+  </body>
+</html>

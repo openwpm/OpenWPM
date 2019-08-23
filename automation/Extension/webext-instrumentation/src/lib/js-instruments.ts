@@ -13,6 +13,7 @@ declare global {
 
 interface LogSettings {
   propertiesToInstrument?: string[];
+  nonExistingPropertiesToInstrument?: string[];
   excludedProperties?: string[];
   logCallStack?: boolean;
   logFunctionsAsStrings?: boolean;
@@ -290,17 +291,23 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     inLog = false;
   }
 
-  function logErrorToConsole(error) {
+  function logErrorToConsole(error, context: any = false) {
     console.log("OpenWPM: Error name: " + error.name);
     console.log("OpenWPM: Error message: " + error.message);
     console.log("OpenWPM: Error filename: " + error.fileName);
     console.log("OpenWPM: Error line number: " + error.lineNumber);
     console.log("OpenWPM: Error stack: " + error.stack);
+    if (context) {
+      console.log("OpenWPM: Error context: " + JSON.stringify(context));
+    }
   }
 
   // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
   // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
   Object.getPropertyDescriptor = function(subject, name) {
+    if (subject === undefined) {
+      throw new Error("Can't get property descriptor for undefined");
+    }
     let pd = Object.getOwnPropertyDescriptor(subject, name);
     let proto = Object.getPrototypeOf(subject);
     while (pd === undefined && proto !== null) {
@@ -311,6 +318,9 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   };
 
   Object.getPropertyNames = function(subject) {
+    if (subject === undefined) {
+      throw new Error("Can't get property names for undefined");
+    }
     let props = Object.getOwnPropertyNames(subject);
     let proto = Object.getPrototypeOf(subject);
     while (proto !== null) {
@@ -406,7 +416,11 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       };
       return callContext;
     } catch (e) {
-      console.log("OpenWPM: Error parsing the script context", e, callSite);
+      console.log(
+        "OpenWPM: Error parsing the script context",
+        e.toString(),
+        callSite,
+      );
       return empty_context;
     }
   }
@@ -443,6 +457,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     //   propertiesToInstrument : Array
     //     An array of properties to instrument on this object. Default is
     //     all properties.
+    //   nonExistingPropertiesToInstrument : Array
+    //     An array of non-existing properties to instrument on this object.
     //   excludedProperties : Array
     //     Properties excluded from instrumentation. Default is an empty
     //     array.
@@ -472,10 +488,10 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     const properties = logSettings.propertiesToInstrument
       ? logSettings.propertiesToInstrument
       : Object.getPropertyNames(object);
-    for (let i = 0; i < properties.length; i++) {
+    for (const propertyName of properties) {
       if (
         logSettings.excludedProperties &&
-        logSettings.excludedProperties.indexOf(properties[i]) > -1
+        logSettings.excludedProperties.indexOf(propertyName) > -1
       ) {
         continue;
       }
@@ -484,8 +500,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       // depth not set (at which point its set to default) or not at limit.
       if (
         !!logSettings.recursive &&
-        properties[i] !== "__proto__" &&
-        isObject(object, properties[i]) &&
+        propertyName !== "__proto__" &&
+        isObject(object, propertyName) &&
         (!("depth" in logSettings) || logSettings.depth > 0)
       ) {
         // set recursion limit to default if not specified
@@ -493,8 +509,8 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           logSettings.depth = 5;
         }
         instrumentObject(
-          object[properties[i]],
-          objectName + "." + properties[i],
+          object[propertyName],
+          objectName + "." + propertyName,
           {
             excludedProperties: logSettings.excludedProperties,
             logCallStack: logSettings.logCallStack,
@@ -506,14 +522,30 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
         );
       }
       try {
-        instrumentObjectProperty(
-          object,
-          objectName,
-          properties[i],
-          logSettings,
-        );
+        instrumentObjectProperty(object, objectName, propertyName, logSettings);
       } catch (error) {
-        logErrorToConsole(error);
+        logErrorToConsole(error, { objectName, propertyName });
+      }
+    }
+    const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
+    if (nonExistingProperties) {
+      for (const propertyName of nonExistingProperties) {
+        if (
+          logSettings.excludedProperties &&
+          logSettings.excludedProperties.indexOf(propertyName) > -1
+        ) {
+          continue;
+        }
+        try {
+          instrumentObjectProperty(
+            object,
+            objectName,
+            propertyName,
+            logSettings,
+          );
+        } catch (error) {
+          logErrorToConsole(error, { objectName, propertyName });
+        }
       }
     }
   }
@@ -544,9 +576,23 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     propertyName,
     logSettings: LogSettings = {},
   ) {
+    if (!object) {
+      throw new Error("Invalid object: " + propertyName);
+    }
+    if (!objectName) {
+      throw new Error("Invalid object name: " + propertyName);
+    }
+    if (!propertyName || propertyName === "undefined") {
+      throw new Error("Invalid object property name: " + propertyName);
+    }
+
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
-    if (!propDesc) {
+
+    if (
+      !propDesc &&
+      logSettings.nonExistingPropertiesToInstrument.indexOf(propertyName) == -1
+    ) {
       console.error(
         "Property descriptor not found for",
         objectName,
@@ -556,10 +602,22 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       return;
     }
 
+    // Property descriptor for undefined properties
+    let undefinedPropValue;
+    const undefinedPropDesc = {
+      get: () => {
+        return undefinedPropValue;
+      },
+      set: value => {
+        undefinedPropValue = value;
+      },
+      enumerable: false,
+    };
+
     // Instrument data or accessor property descriptors
-    const originalGetter = propDesc.get;
-    const originalSetter = propDesc.set;
-    let originalValue = propDesc.value;
+    const originalGetter = propDesc ? propDesc.get : undefinedPropDesc.get;
+    const originalSetter = propDesc ? propDesc.set : undefinedPropDesc.set;
+    let originalValue = propDesc ? propDesc.value : undefinedPropValue;
 
     // We overwrite both data and accessor properties as an instrumented
     // accessor property
@@ -573,7 +631,10 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           );
 
           // get original value
-          if (originalGetter) {
+          if (!propDesc) {
+            // if undefined property
+            origProperty = undefinedPropValue;
+          } else if (originalGetter) {
             // if accessor property
             origProperty = originalGetter.call(this);
           } else if ("value" in propDesc) {
@@ -616,6 +677,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
               logSettings,
             );
             // Restore the original prototype and constructor so that instrumented classes remain intact
+            // TODO: This may have introduced prototype pollution as per https://github.com/mozilla/OpenWPM/issues/471
             if (origProperty.prototype) {
               instrumentedFunctionWrapper.prototype = origProperty.prototype;
               if (origProperty.prototype.constructor) {

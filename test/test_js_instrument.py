@@ -28,7 +28,7 @@ GETS_AND_SETS = {
 }
 
 METHOD_CALLS = {
-    ('prop1', 'call', '["now accepting arugments"]'),
+    ('prop1', 'call', '["now accepting arguments"]'),
     ('method1', 'call', '["hello","{\\\"world\\\":true}"]'),
     ('method1', 'call', '["new argument"]')
 }
