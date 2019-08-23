@@ -77,7 +77,7 @@ class RedisWQ(object):
         """Transactionally move job from the processing to the work queue.
 
         A job will not be renewed if it appears that another worker is
-        changing the processing queue or it the job has exceeded the
+        changing the processing queue or if the job has exceeded the
         maximum number of retries.
         """
         self._logger.debug(
