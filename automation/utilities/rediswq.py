@@ -110,11 +110,7 @@ class RedisWQ(object):
         # Next, check that we haven't exceeded the retry limit for this job
         # If we have, remove the job from the queue entirely and don't add it
         # back to the main work queue
-        retry_count = self._db.hget(self._retry_hash_map_key, job)
-        if not retry_count:
-            retry_count = 0
-        else:
-            retry_count = int(retry_count)
+        retry_count = self.get_retry_number(job)
         if retry_count + 1 > self._max_retries:
             self._logger.debug(
                 "Job %s exceeded maximum retry count, attempting to remove "
@@ -239,6 +235,8 @@ class RedisWQ(object):
         num_retries = self._db.hget(self._retry_hash_map_key, job)
         if num_retries is None:
             return 0
+        else:
+            num_retries = int(num_retries)
         return num_retries
 
     def complete(self, job):
