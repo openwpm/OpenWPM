@@ -457,7 +457,6 @@ class TaskManager:
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
-            command_succeeded = 0  # 1 success, 0 error, -1 timeout
             command_arguments = command[1] if len(command) > 1 else None
 
             # received reply from BrowserManager, either success or failure
@@ -520,7 +519,7 @@ class TaskManager:
             if critical_failure:
                 return
 
-            if command_succeeded != 1:
+            if command_status != 'ok':
                 with self.threadlock:
                     self.failurecount += 1
                 if self.failurecount > self.failure_limit:
