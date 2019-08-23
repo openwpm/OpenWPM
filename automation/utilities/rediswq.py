@@ -188,7 +188,14 @@ class RedisWQ(object):
         processing = self._db.lrange(self._processing_q_key, 0, -1)
         for job in processing:
             if not self._lease_exists(job):
-                self._maybe_renew_job(job)
+                try:
+                    self._maybe_renew_job(job)
+                except redis.exceptions.WatchError:
+                    self.logger.debug(
+                        "Watched variable changed while trying to renew lease "
+                        "for job %s. Skipping lease renew for now... "
+                        "[session %s]" % (job, self.sessionID())
+                    )
         return
 
     def _itemkey(self, item):
