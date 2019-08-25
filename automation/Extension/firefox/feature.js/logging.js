@@ -32,7 +32,12 @@ export class Logger {
         let wsPath = 'ws://' + wsAddress[0] + ':' + wsAddress[1];
         console.log('WebSocket Path is: ', wsPath);
         this.socket = new WebSocket(wsPath);
-        this.send("VisitID: " + visitID + " || CrawlID: " + crawlID);
+        let start_msg = {
+            '_component': 'WebExtension::Start',
+            'visit_id': visitID,
+            'crawl_id': crawlID,
+        };
+        this.send(JSON.stringify(start_msg));
     }
 
     send(msg) {
@@ -48,17 +53,11 @@ export class Logger {
     }
 
     makeLogJSON(level, msg) {
-        var log_json = {
-            'name': 'Extension-Logger',
+        return {
+            '_component': 'WebExtension::Log',
             'level': level,
-            'pathname': 'FirefoxExtension',
-            'lineno': 1,
             'msg': escapeString(msg),
-            'args': null,
-            'exc_info': null,
-            'func': null
         }
-        return log_json;
     }
 
     logInfo(msg) {
@@ -71,7 +70,7 @@ export class Logger {
 
         // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
         var log_json = this.makeLogJSON(20, msg);
-        this.send(['LOG EXTENSION', JSON.stringify(log_json)]);
+        this.send(JSON.stringify(log_json));
     }
 
     logDebug(msg) {
@@ -84,7 +83,7 @@ export class Logger {
 
         // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
         var log_json = this.makeLogJSON(10, msg);
-        this.send(['LOG EXTENSION', JSON.stringify(log_json)]);
+        this.send(JSON.stringify(log_json));
     }
 
     logWarn(msg) {
@@ -96,8 +95,7 @@ export class Logger {
         }
 
         // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
-        var log_json = this.makeLogJSON(30, msg);
-        this.send(['LOG EXTENSION', JSON.stringify(log_json)]);
+        this.send(JSON.stringify(log_json));
     }
 
     logError(msg) {
@@ -110,7 +108,7 @@ export class Logger {
 
         // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
         var log_json = this.makeLogJSON(40, msg);
-        this.send(['LOG EXTENSION', JSON.stringify(log_json)]);
+        this.send(JSON.stringify(log_json));
     }
 
     logCritical(msg) {
@@ -123,7 +121,7 @@ export class Logger {
 
         // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
         var log_json = this.makeLogJSON(50, msg);
-        this.send(['LOG EXTENSION', JSON.stringify(log_json)]);
+        this.send(JSON.stringify(log_json));
     }
 
     saveRecord(instrument_type, record) {
@@ -137,11 +135,14 @@ export class Logger {
             console.log("EXTENSION", instrument_type, JSON.stringify(record));
             return;
         }
-        record["visit_id"] = this.visitID;
-        this.send(["DATA " + instrument_type, JSON.stringify(record)]); 
+        record['visit_id'] = this.visitID;
+        record['_component'] = 'WebExtension::Data::' + instrument_type;
+        this.send(JSON.stringify(record)); 
     }
 
     saveContent(content, contentHash) {
+        // TODO THIS IS STILL UNTESTED!!!
+    
         // Send page content to the data aggregator
         // deduplicated by contentHash in a levelDB database
         if (this.debugging) {
@@ -151,7 +152,12 @@ export class Logger {
         // Since the content might not be a valid utf8 string and it needs to be
         // json encoded later, it is encoded using base64 first.
         let b64 = Uint8ToBase64(content);
-        this.send(["DATA " + page_content, [b64, contentHash]]);
+        content = {
+            '_component': 'WebExtension::Content',
+            'b64': b64,
+            'content_hash': contentHash,
+        }
+        this.send(JSON.stringify(content));
     }
 
 }
