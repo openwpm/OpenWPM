@@ -19,6 +19,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from six.moves import range
 
+from ..Errors import BrowserCrashError
 from ..SocketInterface import clientsocket
 from .utils.lso import get_flash_cookies
 from .utils.webdriver_extensions import (execute_in_all_frames,
@@ -127,13 +128,22 @@ def get_website(url, sleep, visit_id, webdriver,
     # Sleep after get returns
     time.sleep(sleep)
 
+    # Check if the browser crashed
+    try:
+        webdriver.current_url
+    except Exception:
+        raise BrowserCrashError(
+            "The webdriver connection is no longer active. This usually means "
+            "the Firefox process crashed or is unresponsive."
+        )
+
     # Close modal dialog if exists
     try:
         WebDriverWait(webdriver, .5).until(EC.alert_is_present())
         alert = webdriver.switch_to_alert()
         alert.dismiss()
         time.sleep(1)
-    except (TimeoutException, WebDriverException):
+    except TimeoutException:
         pass
 
     close_other_windows(webdriver)
