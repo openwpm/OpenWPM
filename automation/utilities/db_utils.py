@@ -55,6 +55,6 @@ def any_command_failed(db):
     """Returns True if any command in a given database failed"""
     rows = query_db(db, "SELECT * FROM crawl_history;")
     for row in rows:
-        if row['bool_success'] != 1:
+        if row['command_status'] != 'ok':
             return True
     return False

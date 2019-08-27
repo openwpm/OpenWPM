@@ -6,22 +6,24 @@ import logging
 import os
 import threading
 import time
+import traceback
 
 import psutil
+import tblib
 from six import reraise
 from six.moves import cPickle as pickle
 from six.moves import range
 from six.moves.queue import Empty as EmptyQueue
-from tblib import pickling_support
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
+from .Commands.utils.webdriver_utils import parse_neterror
 from .DataAggregator import LocalAggregator, S3Aggregator
 from .Errors import CommandExecutionError
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
 
-pickling_support.install()
+tblib.pickling_support.install()
 
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
@@ -410,6 +412,13 @@ class TaskManager:
         thread.start()
         return thread
 
+    def _unpack_picked_error(self, pickled_error):
+        """Unpacks `pickled_error` into and error `message` and `tb` string."""
+        exc = pickle.loads(pickled_error)
+        message = traceback.format_exception(*exc)[-1]
+        tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
+        return message, tb
+
     def _issue_command(self, browser, command_sequence, condition=None):
         """
         sends command tuple to the BrowserManager
@@ -448,15 +457,17 @@ class TaskManager:
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
-            command_succeeded = 0  # 1 success, 0 error, -1 timeout
             command_arguments = command[1] if len(command) > 1 else None
 
             # received reply from BrowserManager, either success or failure
+            critical_failure = False
+            error_text = None
+            tb = None
             try:
                 status = browser.status_queue.get(
                     True, browser.current_timeout)
                 if status == "OK":
-                    command_succeeded = 1
+                    command_status = 'ok'
                 elif status[0] == "CRITICAL":
                     self.logger.critical(
                         "BROWSER %i: Received critical error from browser "
@@ -467,14 +478,29 @@ class TaskManager:
                         'CommandSequence': command_sequence,
                         'Exception': status[1]
                     }
-                    return
-                else:
-                    command_succeeded = 0
+                    error_text, tb = self._unpack_picked_error(status[1])
+                    critical_failure = True
+                elif status[0] == "FAILED":
+                    command_status = 'error'
+                    error_text, tb = self._unpack_picked_error(status[1])
                     self.logger.info(
                         "BROWSER %i: Received failure status while executing "
                         "command: %s" % (browser.crawl_id, command[0]))
+                elif status[0] == 'NETERROR':
+                    command_status = 'neterror'
+                    error_text, tb = self._unpack_picked_error(status[1])
+                    error_text = parse_neterror(error_text)
+                    self.logger.info(
+                        "BROWSER %i: Received neterror %s while executing "
+                        "command: %s" %
+                        (browser.crawl_id, error_text, command[0])
+                    )
+                else:
+                    raise ValueError(
+                        "Unknown browser status message %s" % status
+                    )
             except EmptyQueue:
-                command_succeeded = -1
+                command_status = 'timeout'
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.crawl_id, command[0]))
@@ -485,10 +511,15 @@ class TaskManager:
                 "command": command[0],
                 "arguments": str(command_arguments),
                 "retry_number": command_sequence.retry_number,
-                "bool_success": command_succeeded
+                "command_status": command_status,
+                "error": error_text,
+                "traceback": tb
             }))
 
-            if command_succeeded != 1:
+            if critical_failure:
+                return
+
+            if command_status != 'ok':
                 with self.threadlock:
                     self.failurecount += 1
                 if self.failurecount > self.failure_limit:

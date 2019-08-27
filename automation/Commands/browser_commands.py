@@ -21,10 +21,10 @@ from six.moves import range
 
 from ..SocketInterface import clientsocket
 from .utils.lso import get_flash_cookies
-from .utils.webdriver_extensions import (execute_in_all_frames,
-                                         execute_script_with_retry,
-                                         get_intra_links, is_displayed,
-                                         scroll_down, wait_until_loaded)
+from .utils.webdriver_utils import (execute_in_all_frames,
+                                    execute_script_with_retry, get_intra_links,
+                                    is_displayed, scroll_down,
+                                    wait_until_loaded)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
