@@ -521,11 +521,15 @@ Then you can run the demo script using:
 
 ```
     mkdir -p docker-volume && docker run -v $PWD/docker-volume:/root/Desktop \
-    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
     -it openwpm python /opt/OpenWPM/demo.py
 ```
 
 Instead of _python_, _python3_ can be used here as well.
+
+**Note:** the `--shm-size=2g` parameter is required, as it increases the
+amount of shared memory available to Firefox. Without this parameter you can
+expect Firefox to crash on 20-30% of sites.
 
 This command uses _bind-mounts_ to share scripts and output between the
 container and host, as explained below (note the paths in the command assume
