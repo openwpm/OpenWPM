@@ -7,12 +7,6 @@ of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
-**Note**: The master branch OpenWPM is currently unstable while we push to
-complete the upgrade to WebExtensions. If you're running crawls we recommend
-using the `firefox-52-archive` branch, noting that it is running an outdated
-version of Firefox.
-
-
 Installation
 ------------
 
