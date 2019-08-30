@@ -7107,8 +7107,8 @@ export function instrumentWebcompatApis({ instrumentObject }) {
     // console.debug(`typeof window[${className}]`, typeof window[className]);
     // console.debug(`typeof window[${className}].prototype`, typeof window[className].prototype);
 
-    // To be able to instrument to instrument properties to
-    // non-existing classes, we must create a mock class item or instance first
+    // To be able to instrument properties of non-existing classes,
+    // we must create a mock class item or instance first
     if (typeof window[className] === "undefined") {
       const MockClass = function() {};
       if (classIsLikelyInstantiatedAlready) {
