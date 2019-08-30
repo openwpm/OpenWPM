@@ -7079,6 +7079,9 @@ export function instrumentWebcompatApis({ instrumentObject }) {
   // Typing this long list here instead of above avoids TS2590
   const $propertiesToInstrumentData: PropertyToInstrumentConfiguration[] = propertiesToInstrumentData;
 
+  // Configuration switches (hard-coded for now)
+  const configMockNonExistingWindowClassNames = false;
+
   const startsWithLowercase = (str: string) => {
     const firstChar = str.charAt(0);
     return firstChar.toLowerCase() === firstChar;
@@ -7147,6 +7150,16 @@ export function instrumentWebcompatApis({ instrumentObject }) {
   const propertiesToInstrumentByClassName: {
     [className: string]: string[];
   } = $propertiesToInstrumentData.reduce((_, propertyToInstrumentData) => {
+    if (
+      !configMockNonExistingWindowClassNames &&
+      propertyToInstrumentData.className !== "window" &&
+      propertyToInstrumentData.objectMissingOnWindow
+    ) {
+      // If we don't mock non-existing window classes, we make
+      // sure not to instrument them
+      return _;
+    }
+
     if (!_[propertyToInstrumentData.className]) {
       _[propertyToInstrumentData.className] = [];
     }
