@@ -7194,8 +7194,18 @@ export function instrumentWebcompatApis({ instrumentObject }) {
     console.info(
       `Instrumenting ${windowProperties.length} properties on window`,
     );
+
     instrumentObject(window, `window`, {
       propertiesToInstrument: windowProperties,
+      logCallStack: true,
+      logFunctionGets: true,
+    });
+
+    // Instrument a trap window-level class
+    window.NothingToSeeHere = function() {};
+
+    instrumentObject(window, `window`, {
+      propertiesToInstrument: ["NothingToSeeHere"],
       logCallStack: true,
       logFunctionGets: true,
     });
