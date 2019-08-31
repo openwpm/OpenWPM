@@ -7131,6 +7131,7 @@ export function instrumentWebcompatApis({ instrumentObject }) {
       );
 
       instrumentObject(window[className].prototype, objectName, {
+        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
         nonExistingPropertiesToInstrument,
         logCallStack: true,
         logFunctionGets: true,
@@ -7143,6 +7144,7 @@ export function instrumentWebcompatApis({ instrumentObject }) {
       `Instrumenting ${nonExistingPropertiesToInstrument.length} properties on window.${className}`,
     );
     instrumentObject(window[className], objectName, {
+      propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
       nonExistingPropertiesToInstrument,
       logCallStack: true,
       logFunctionGets: true,
@@ -7207,6 +7209,7 @@ export function instrumentWebcompatApis({ instrumentObject }) {
     );
 
     instrumentObject(window, `window`, {
+      propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
       nonExistingPropertiesToInstrument: windowProperties,
       logCallStack: true,
       logFunctionGets: true,
