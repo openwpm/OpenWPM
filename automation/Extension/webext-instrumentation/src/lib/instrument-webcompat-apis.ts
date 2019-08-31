@@ -5777,7 +5777,7 @@ export function instrumentWebcompatApis({ instrumentObject }) {
   );
 
   console.log(
-    "Instrumenting webcompat-related properties",
+    "Webcompat-related properties",
     nonExistingPropertiesToInstrumentByClassName,
   );
 
@@ -5817,6 +5817,10 @@ export function instrumentWebcompatApis({ instrumentObject }) {
 
     // Instrument a trap window-level class
     window.NothingToSeeHere = function() {};
+
+    console.info(
+      `Instrumenting the window.NothingToSeeHere trap property on window`,
+    );
 
     instrumentObject(window, `window`, {
       propertiesToInstrument: ["NothingToSeeHere"],
