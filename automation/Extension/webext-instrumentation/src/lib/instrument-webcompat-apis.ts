@@ -11,7 +11,7 @@ declare global {
 }
 
 export function instrumentWebcompatApis({ instrumentObject }) {
-  const propertiesToInstrumentData: any[] = [
+  const nonExistingPropertiesToInstrumentData: any[] = [
     {
       className: "AudioContext",
       property: "baseLatency",
@@ -7077,7 +7077,7 @@ export function instrumentWebcompatApis({ instrumentObject }) {
     },
   ];
   // Typing this long list here instead of above avoids TS2590
-  const $propertiesToInstrumentData: PropertyToInstrumentConfiguration[] = propertiesToInstrumentData;
+  const $nonExistingPropertiesToInstrumentData: PropertyToInstrumentConfiguration[] = nonExistingPropertiesToInstrumentData;
 
   // Configuration switches (hard-coded for now)
   const configMockNonExistingWindowClassNames = false;
@@ -7089,9 +7089,9 @@ export function instrumentWebcompatApis({ instrumentObject }) {
 
   const instrumentPossiblyNonExistingObject = (
     className,
-    propertiesToInstrument,
+    nonExistingPropertiesToInstrument,
   ) => {
-    // console.debug({ className, propertiesToInstrument });
+    // console.debug({ className, nonExistingPropertiesToInstrument });
     const classIsWindow = className.toLowerCase() === "window";
 
     if (classIsWindow) {
@@ -7127,66 +7127,77 @@ export function instrumentWebcompatApis({ instrumentObject }) {
     // Instrument the prototype if available so that new instances of the class subsequently gets instrumented
     if (typeof window[className].prototype !== "undefined") {
       console.info(
-        `Instrumenting ${propertiesToInstrument.length} properties on window.${className}.prototype`,
+        `Instrumenting ${nonExistingPropertiesToInstrument.length} properties on window.${className}.prototype`,
       );
+
       instrumentObject(window[className].prototype, objectName, {
-        propertiesToInstrument,
+        nonExistingPropertiesToInstrument,
         logCallStack: true,
         logFunctionGets: true,
       });
     }
 
     // Instrument the class instance and it's properties
+
     console.info(
-      `Instrumenting ${propertiesToInstrument.length} properties on window.${className}`,
+      `Instrumenting ${nonExistingPropertiesToInstrument.length} properties on window.${className}`,
     );
     instrumentObject(window[className], objectName, {
-      propertiesToInstrument,
+      nonExistingPropertiesToInstrument,
       logCallStack: true,
       logFunctionGets: true,
     });
   };
 
-  const propertiesToInstrumentByClassName: {
+  const nonExistingPropertiesToInstrumentByClassName: {
     [className: string]: string[];
-  } = $propertiesToInstrumentData.reduce((_, propertyToInstrumentData) => {
-    if (
-      !configMockNonExistingWindowClassNames &&
-      propertyToInstrumentData.className !== "window" &&
-      propertyToInstrumentData.objectMissingOnWindow
-    ) {
-      // If we don't mock non-existing window classes, we make
-      // sure not to instrument them
-      return _;
-    }
+  } = $nonExistingPropertiesToInstrumentData.reduce(
+    (_, propertyToInstrumentData) => {
+      if (
+        !configMockNonExistingWindowClassNames &&
+        propertyToInstrumentData.className !== "window" &&
+        propertyToInstrumentData.objectMissingOnWindow
+      ) {
+        // If we don't mock non-existing window classes, we make
+        // sure not to instrument them
+        return _;
+      }
 
-    if (!_[propertyToInstrumentData.className]) {
-      _[propertyToInstrumentData.className] = [];
-    }
-    _[propertyToInstrumentData.className].push(
-      propertyToInstrumentData.property,
-    );
-    return _;
-  }, {});
+      if (!_[propertyToInstrumentData.className]) {
+        _[propertyToInstrumentData.className] = [];
+      }
+      _[propertyToInstrumentData.className].push(
+        propertyToInstrumentData.property,
+      );
+      return _;
+    },
+    {},
+  );
 
   console.log(
     "Instrumenting webcompat-related properties",
-    propertiesToInstrumentByClassName,
+    nonExistingPropertiesToInstrumentByClassName,
   );
 
   // Instrument conflicting window-level properties separately
-  const windowProperties = propertiesToInstrumentByClassName.Window.concat(
-    propertiesToInstrumentByClassName.window
-      ? propertiesToInstrumentByClassName.window
+  const windowProperties = nonExistingPropertiesToInstrumentByClassName.Window.concat(
+    nonExistingPropertiesToInstrumentByClassName.window
+      ? nonExistingPropertiesToInstrumentByClassName.window
       : [],
   );
-  delete propertiesToInstrumentByClassName.Window;
-  delete propertiesToInstrumentByClassName.window;
+  delete nonExistingPropertiesToInstrumentByClassName.Window;
+  delete nonExistingPropertiesToInstrumentByClassName.window;
 
   // Instrument non-window-level properties
-  for (const className of Object.keys(propertiesToInstrumentByClassName)) {
-    const propertiesToInstrument = propertiesToInstrumentByClassName[className];
-    instrumentPossiblyNonExistingObject(className, propertiesToInstrument);
+  for (const className of Object.keys(
+    nonExistingPropertiesToInstrumentByClassName,
+  )) {
+    const nonExistingPropertiesToInstrument =
+      nonExistingPropertiesToInstrumentByClassName[className];
+    instrumentPossiblyNonExistingObject(
+      className,
+      nonExistingPropertiesToInstrument,
+    );
   }
 
   // Instrument window-level properties last
@@ -7196,7 +7207,7 @@ export function instrumentWebcompatApis({ instrumentObject }) {
     );
 
     instrumentObject(window, `window`, {
-      propertiesToInstrument: windowProperties,
+      nonExistingPropertiesToInstrument: windowProperties,
       logCallStack: true,
       logFunctionGets: true,
     });
