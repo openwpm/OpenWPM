@@ -468,13 +468,47 @@ export class HttpInstrument {
       }
     }
     */
-    update.top_level_url = escapeUrl(tab.url);
+    update.top_level_url = escapeUrl(this.getDocumentUrlForRequest(details));
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
       JSON.stringify(details.frameAncestors),
     );
-
     this.dataReceiver.saveRecord("http_requests", update);
+  }
+
+  /**
+   * Code taken and adapted from
+   * https://github.com/EFForg/privacybadger/pull/2198/files
+   *
+   * Gets the URL for a given request's top-level document.
+   *
+   * The request's document may be different from the current top-level document
+   * loaded in tab as requests can come out of order:
+   *
+   * @param {WebRequestOnBeforeSendHeadersEventDetails} details
+   *
+   * @return {?String} the URL for the request's top-level document
+   */
+  private getDocumentUrlForRequest(
+    details: WebRequestOnBeforeSendHeadersEventDetails,
+  ) {
+    let url = "";
+
+    if (details.type === "main_frame") {
+      // Url of the top-level document itself.
+      url = details.url;
+    } else if (details.hasOwnProperty("frameAncestors")) {
+      // In case of nested frames, retrieve url from top-most ancestor.
+      // If frameAncestors == [], request comes from the top-level-document.
+      url = details.frameAncestors.length
+        ? details.frameAncestors[details.frameAncestors.length - 1].url
+        : details.documentUrl;
+    } else {
+      // type != 'main_frame' and frameAncestors == undefined
+      // For example service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
+      url = details.documentUrl;
+    }
+    return url;
   }
 
   private async onBeforeRedirectHandler(
