@@ -27,5 +27,5 @@ fi
 docker run \
     -v $PWD/docker-volume:/home/user/Desktop/ \
     -v $PWD:/opt/OpenWPM/ \
-    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
     -it openwpm $@
