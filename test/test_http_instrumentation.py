@@ -364,8 +364,8 @@ HTTP_CACHED_REDIRECTS = {
      u'http://localtest.me:8000/test_pages/shared/test_image_2.png'),
 }
 
-# Test URL attribution for servie worker requests
-HTTP_SERVICE_WORKER_REQUESTS = {
+# Test URL attribution for worker script requests
+HTTP_WORKER_SCRIPT_REQUESTS = {
     (
         u'http://localtest.me:8000/test_pages/http_worker_page.html',
         u'http://localtest.me:8000/test_pages/http_worker_page.html',
@@ -404,6 +404,52 @@ HTTP_SERVICE_WORKER_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/shared/worker.js',
+        1, 0, 1, None, None, u'xmlhttprequest'
+    ),
+}
+
+# Test URL-attribution for Service Worker requests.
+# localhost URLs are used instead of localtest.me because service workers
+# are only loaded from secure contexts.
+HTTP_SERVICE_WORKER_REQUESTS = {
+    (
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        u'undefined',
+        u'undefined',
+        u'undefined',
+        0, 0, 1, None, None, u'main_frame',
+    ),
+    (
+        u'http://localhost:8000/test_pages/shared/test_favicon.ico',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        u'http://localhost:8000',
+        u'http://localhost:8000',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        0, 0, 1, None, None, u'image',
+    ),
+    (
+        u'http://localhost:8000/test_pages/shared/service_worker.js',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        u'http://localhost:8000',
+        u'http://localhost:8000',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        0, 0, 1, None, None, u'script'
+    ),
+    (
+        u'http://localhost:8000/test_pages/shared/test_image.png',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        u'http://localhost:8000',
+        u'http://localhost:8000',
+        u'http://localhost:8000/test_pages/http_service_worker_page.html',
+        1, 0, 1, None, None, u'xmlhttprequest'
+    ),
+    (
+        u'http://localhost:8000/test_pages/shared/test_image_2.png',
+        u'http://localhost:8000/test_pages/shared/service_worker.js',
+        u'http://localhost:8000',
+        u'http://localhost:8000',
+        u'http://localhost:8000/test_pages/shared/service_worker.js',
         1, 0, 1, None, None, u'xmlhttprequest'
     ),
 }
@@ -682,9 +728,35 @@ class TestHTTPInstrument(OpenWPMTest):
         for k, v in disk_content.items():
             assert v == ldb_content[k]
 
-    def test_worker_requests(self):
-        """Check correct URL attribution for requests made by service worker"""
+    def test_worker_script_requests(self):
+        """Check correct URL attribution for requests made by worker script"""
         test_url = utilities.BASE_TEST_URL + '/http_worker_page.html'
+        db = self.visit(test_url)
+
+        request_id_to_url = dict()
+
+        # HTTP Requests
+        rows = db_utils.query_db(db, "SELECT * FROM http_requests")
+        observed_records = set()
+        for row in rows:
+            observed_records.add((
+                row['url'].split('?')[0],
+                row['top_level_url'],
+                row['triggering_origin'], row['loading_origin'],
+                row['loading_href'], row['is_XHR'],
+                row['is_frame_load'], row['is_full_page'],
+                row['is_third_party_channel'],
+                row['is_third_party_to_top_window'],
+                row['resource_type'])
+            )
+            request_id_to_url[row['request_id']] = row['url']
+
+        assert HTTP_WORKER_SCRIPT_REQUESTS == observed_records
+
+    def test_service_worker_requests(self):
+        """Check correct URL attribution for requests made by service worker"""
+        test_url = 'http://localhost:8000/test_pages' + \
+            '/http_service_worker_page.html'
         db = self.visit(test_url)
 
         request_id_to_url = dict()
