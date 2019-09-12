@@ -51,8 +51,8 @@ fi
 # Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
 # UNBRANDED_FF68_RELEASE_LINUX_BUILD="https://queue.taskcluster.net/v1/task/HYGMEM_UT06yMsOpWtHyVQ/runs/0/artifacts/public/build/target.tar.bz2"
 # wget "$UNBRANDED_FF68_RELEASE_LINUX_BUILD"
-UNBRANDED_FF69_B16_LINUX_BUILD="https://queue.taskcluster.net/v1/task/fWhbEJf1T-q3voxnbmcEJA/runs/0/artifacts/public/build/target.tar.bz2"
-wget "$UNBRANDED_FF69_B16_LINUX_BUILD"
+UNBRANDED_FF69_RELEASE_LINUX_BUILD="https://queue.taskcluster.net/v1/task/TSw-9H80SrqYLYJIYTXGVg/runs/0/artifacts/public/build/target.tar.bz2"
+wget "$UNBRANDED_FF69_RELEASE_LINUX_BUILD"
 tar jxf target.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin

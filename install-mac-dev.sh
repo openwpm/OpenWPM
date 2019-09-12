@@ -32,8 +32,8 @@ brew install node || true
 brew install wget || true
 # UNBRANDED_FF68_RELEASE_MAC_BUILD="https://queue.taskcluster.net/v1/task/EPaShNEQTYaBrJYpULyxwg/runs/0/artifacts/public/build/target.dmg"
 # wget "$UNBRANDED_FF68_RELEASE_MAC_BUILD"
-UNBRANDED_FF69_B16_MAC_BUILD="https://queue.taskcluster.net/v1/task/GkQbSOZtTjChchdGDhXb2w/runs/0/artifacts/public/build/target.dmg"
-wget "$UNBRANDED_FF69_B16_MAC_BUILD"
+UNBRANDED_FF69_RELEASE_MAC_BUILD="https://queue.taskcluster.net/v1/task/FisMhYV_QGKQbFslObtP9Q/runs/0/artifacts/public/build/target.dmg"
+wget "$UNBRANDED_FF69_RELEASE_MAC_BUILD"
 
 # Install Firefox Nightly
 rm -rf Nightly.app || true
