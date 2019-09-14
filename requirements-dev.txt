@@ -1,3 +1,2 @@
 autopep8
-localstack
-requests
+localstack[full]
