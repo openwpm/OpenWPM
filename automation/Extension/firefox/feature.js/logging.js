@@ -140,9 +140,7 @@ export class Logger {
         this.send(JSON.stringify(record)); 
     }
 
-    saveContent(content, contentHash) {
-        // TODO THIS IS STILL UNTESTED!!!
-    
+    saveContent(content, contentHash) {    
         // Send page content to the data aggregator
         // deduplicated by contentHash in a levelDB database
         if (this.debugging) {
