@@ -5,15 +5,17 @@ import {
   NavigationInstrument,
 } from "openwpm-webext-instrumentation";
 
-import * as loggingDB from "./loggingdb.js";
+import {Logger} from "./logging.js";
+
+let logging = null;
 
 async function main() {
+
   // Read the browser configuration from file
   let filename = "browser_params.json";
   let config = await browser.profileDirIO.readFile(filename);
   if (config) {
     config = JSON.parse(config);
-    console.log("Browser Config:", config);
   } else {
     config = {
       navigation_instrument:true,
@@ -23,38 +25,44 @@ async function main() {
       http_instrument:true,
       save_content:false,
       testing:true,
-      crawl_id:0
+      crawl_id:0,
+      visit_id:-99,
+      ws_address: ['127.0.0.1', 9999],
     };
     console.log("WARNING: config not found. Assuming this is a test run of",
                 "the extension. Outputting all queries to console.", {config});
   }
+  console.log("Browser Config:", config);
 
-  await loggingDB.open(config['aggregator_address'],
-                       config['logger_address'],
-                       config['crawl_id']);
+  logging = new Logger(
+    config['ws_address'],
+    config['crawl_id'],
+    config['visit_id'],
+    config['testing']
+  );
 
   if (config["navigation_instrument"]) {
-    loggingDB.logDebug("Navigation instrumentation enabled");
-    let navigationInstrument = new NavigationInstrument(loggingDB);
+    logging.logDebug("Navigation instrumentation enabled");
+    let navigationInstrument = new NavigationInstrument(logging);
     navigationInstrument.run(config["crawl_id"]);
   }
 
   if (config['cookie_instrument']) {
-    loggingDB.logDebug("Cookie instrumentation enabled");
-    let cookieInstrument = new CookieInstrument(loggingDB);
+    logging.logDebug("Cookie instrumentation enabled");
+    let cookieInstrument = new CookieInstrument(logging);
     cookieInstrument.run(config['crawl_id']);
   }
 
   if (config['js_instrument']) {
-    loggingDB.logDebug("Javascript instrumentation enabled");
-    let jsInstrument = new JavascriptInstrument(loggingDB);
+    logging.logDebug("Javascript instrumentation enabled");
+    let jsInstrument = new JavascriptInstrument(logging);
     jsInstrument.run(config['crawl_id']);
     await jsInstrument.registerContentScript(config['testing'], config['js_instrument_modules']);
   }
 
   if (config['http_instrument']) {
-    loggingDB.logDebug("HTTP Instrumentation enabled");
-    let httpInstrument = new HttpInstrument(loggingDB);
+    logging.logDebug("HTTP Instrumentation enabled");
+    let httpInstrument = new HttpInstrument(logging);
     httpInstrument.run(config['crawl_id'],
                        config['save_content']);
   }
