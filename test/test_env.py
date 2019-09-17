@@ -25,7 +25,8 @@ class TestDependencies(OpenWPMTest):
             line = line.strip()
             if line == "" or line[0] == "#":
                 continue
-            pkg = re.split(r'[>=<]', line)[0]
+            # Extract the package name by stripping requirement specifiers
+            pkg = re.split(r'[>=<\[]', line)[0]
             print("Checking Python package", pkg)
             self.assert_py_pkg_installed(pkg)
 

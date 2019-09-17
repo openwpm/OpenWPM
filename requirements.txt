@@ -9,7 +9,7 @@ IPython>=5.0; python_version >= '3.0'
 mini-amf
 mmh3
 multiprocess
-numpy>=1.14
+numpy
 pandas
 pillow
 plyvel
@@ -23,7 +23,7 @@ python-dateutil
 redis
 s3fs
 selenium
-sentry-sdk==0.10.2
+sentry-sdk
 setuptools
 six
 tabulate
