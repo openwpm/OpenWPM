@@ -59,4 +59,4 @@ COPY . .
 RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
 
 # Alternatively, python3 could be used here
-CMD python demo.py
+CMD python3 demo.py
