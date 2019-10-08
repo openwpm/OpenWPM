@@ -43,7 +43,7 @@ RUN apt-get -y install python-pip python3-pip
 RUN apt-get -y install python3-publicsuffix
 
 COPY requirements.txt .
-RUN pip3 install -U -r requirements.txt && pip install -U -r requirements.txt
+RUN pip3 install -U -r requirements.txt
 
 COPY --from=extension /usr/src/app/dist/openwpm-*.zip automation/Extension/firefox/openwpm.xpi
 
