@@ -408,6 +408,19 @@ instance (without any instrumentation)
   through variable `driver`.
 
 
+### Managing requirements
+
+We use [`pip-tools`](https://github.com/jazzband/pip-tools) to pin
+requirements. This means that the `requirements.txt` and `requirements-dev.txt`
+files should not be edited directly. Instead, place new requirements in
+`requirements.in` or `requirements-dev.in`. Requirements necessary to run
+OpenWPM should be placed in the former, while those only required to run the
+tests (or perform other development tasks) should be placed in the latter.
+
+To update dependencies, run:
+* `pip-compile --upgrade requirements.txt`
+* `pip-compile --upgrade requirements-dev.txt`
+
 ### Running tests
 
 OpenWPM's tests are build on `py.test`. To run the tests you will need a few
