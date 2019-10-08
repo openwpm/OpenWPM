@@ -417,9 +417,18 @@ files should not be edited directly. Instead, place new requirements in
 OpenWPM should be placed in the former, while those only required to run the
 tests (or perform other development tasks) should be placed in the latter.
 
-To update dependencies, run:
+To update dependencies, run the following two commands **in order**:
 * `pip-compile --upgrade requirements.txt`
 * `pip-compile --upgrade requirements-dev.txt`
+
+It's important that these are run in order, as we layer the dev
+dependencies on the output of the pinned production dependencies as per
+[the official documentation](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements).
+This means you may need to manually pin some versions of a dependency in
+`requirements.in` so there exists a compatible version for a dependency in
+`requirements-dev.in`. Before you run an upgrade, check if the previous pins
+that are related to layering in `requirements.in` are still necessary by
+removing them and attempting an upgrade without the pins.
 
 ### Running tests
 
