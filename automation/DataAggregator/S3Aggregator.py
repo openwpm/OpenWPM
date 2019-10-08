@@ -221,7 +221,6 @@ class S3Listener(BaseListener):
                     pq.write_to_dataset(
                         table, self._s3_bucket_uri % table_name,
                         filesystem=self._fs,
-                        preserve_index=False,
                         partition_cols=['instance_id'],
                         compression='snappy',
                         flavor='spark'
