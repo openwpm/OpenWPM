@@ -3,7 +3,6 @@ language: python
 os: linux
 dist: xenial
 python:
- - "2.7"
  - "3.5"
  - "3.6"
  - "3.7"
@@ -25,12 +24,12 @@ before_install:
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
   - echo "y" | ./install.sh
-  - pip install --upgrade -r requirements.txt -r requirements-dev.txt
+  - pip3 install --upgrade -r requirements.txt -r requirements-dev.txt
 before_script:
   - flake8
 script:
   - cd test
-  - py.test -s -v --durations=10 $TESTS
+  - python3 -m pytest -s -v --durations=10 $TESTS
 
 jobs:
   include:
