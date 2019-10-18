@@ -18,7 +18,7 @@ RUN cp dist/openwpm-1.0.zip openwpm.xpi
 COPY dist/*.zip ./openwpm.xpi
 
 # Stage 2, build the main OpenWPM image
-FROM ubuntu:18.04 as openwpm
+FROM ubuntu:18.04
 
 WORKDIR /opt/OpenWPM
 # This is just a performance optimization and can be skipped by non-US
