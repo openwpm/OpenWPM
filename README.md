@@ -573,8 +573,10 @@ Alternatively, it is possible to run jobs as the user _openwpm_ in the container
 too, but this might cause problems with none headless browers. It is therefore
 only recommended for headless crawls.
 
-Instruction on how to run Docker GUI applications in Mac OSX are available
-[here](https://stackoverflow.com/questions/37523980/running-gui-apps-on-docker-container-with-a-macbookpro-host).
+### MacOS GUI applications in Docker
+
+**Requirements**: Install XQuartz by following [these instructions](https://stackoverflow.com/a/47309184).
+
 Given properly installed prerequisites (including a reboot), the helper script
 `run-on-osx-via-docker.sh` in the project root folder can be used to facilitate
 working with Docker in Mac OSX.
