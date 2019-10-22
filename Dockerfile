@@ -13,6 +13,7 @@ COPY automation/Extension/firefox/. ./
 COPY automation/Extension/webext-instrumentation/. ../webext-instrumentation
 RUN npm install
 RUN npm run build
+RUN cp dist/openwpm-1.0.zip openwpm.xpi
 
 # Stage 2, build the main OpenWPM image
 FROM ubuntu:18.04
