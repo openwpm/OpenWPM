@@ -32,9 +32,7 @@ fields = [
     pa.field('command', pa.string()),
     pa.field('arguments', pa.string()),
     pa.field('retry_number', pa.int8()),
-    pa.field('command_status', pa.string()),
-    pa.field('error', pa.string()),
-    pa.field('traceback', pa.string())
+    pa.field('bool_success', pa.int8()),
 ]
 PQ_SCHEMAS['crawl_history'] = pa.schema(fields)
 
