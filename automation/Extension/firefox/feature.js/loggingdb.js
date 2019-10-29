@@ -7,7 +7,7 @@ let dataAggregator = null;
 let logAggregator = null;
 let listeningSocket = null;
 
-export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
+export let open = async function (aggregatorAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
@@ -28,7 +28,7 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress != null) {
         dataAggregator = new socket.SendingSocket();
         let rv = await dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
-        console.log("sqliteSocket started?",rv);
+        console.log("sqliteSocket started?", rv);
     }
 
     // Listen for incoming urls as visit ids
@@ -39,7 +39,7 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     });
 };
 
-export let close = function() {
+export let close = function () {
     if (dataAggregator != null) {
         dataAggregator.close();
     }
@@ -48,7 +48,7 @@ export let close = function() {
     }
 };
 
-let makeLogJSON = function(lvl, msg) {
+let makeLogJSON = function (lvl, msg) {
     var log_json = {
         'name': 'Extension-Logger',
         'level': lvl,
@@ -62,7 +62,7 @@ let makeLogJSON = function(lvl, msg) {
     return log_json;
 }
 
-export let logInfo = function(msg) {
+export let logInfo = function (msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -75,7 +75,7 @@ export let logInfo = function(msg) {
     logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-export let logDebug = function(msg) {
+export let logDebug = function (msg) {
     // Always log to browser console
     console.log(msg);
 
@@ -88,7 +88,7 @@ export let logDebug = function(msg) {
     logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-export let logWarn = function(msg) {
+export let logWarn = function (msg) {
     // Always log to browser console
     console.warn(msg);
 
@@ -101,7 +101,7 @@ export let logWarn = function(msg) {
     logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-export let logError = function(msg) {
+export let logError = function (msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -114,7 +114,7 @@ export let logError = function(msg) {
     logAggregator.send(JSON.stringify(['EXT', JSON.stringify(log_json)]));
 };
 
-export let logCritical = function(msg) {
+export let logCritical = function (msg) {
     // Always log to browser console
     console.error(msg);
 
@@ -133,71 +133,72 @@ export let dataReceiver = {
     },
 };
 
-export let saveRecord = function(instrument, record) {
+export let saveRecord = function (instrument, record) {
+    // send to console if debugging
+    if (debugging) {
+        console.log("EXTENSION", instrument, record);
+        return;
+    }
     // Add visit id if changed
-    while (!debugging && listeningSocket.queue.length != 0) {
+    while (listeningSocket.queue.length != 0) {
         visitID = listeningSocket.queue.shift();
         logDebug("Visit Id: " + visitID);
     }
     record["visit_id"] = parseInt(visitID, 10);
 
 
-    if (!visitID && !debugging) {
+    if (!visitID) {
         logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(record));
+            JSON.stringify(record));
         record["visit_id"] = -1;
     }
 
-    // send to console if debugging
-    if (debugging) {
-      console.log("EXTENSION", instrument, record);
-      return;
-    }
+
     dataAggregator.send(JSON.stringify([instrument, record]));
 };
 
 // Stub for now
-export let saveContent = async function(content, contentHash) {
-  // Send page content to the data aggregator
-  // deduplicated by contentHash in a levelDB database
-  if (debugging) {
-    console.log("LDB contentHash:",contentHash,"with length",content.length);
-    return;
-  }
-  // Since the content might not be a valid utf8 string and it needs to be
-  // json encoded later, it is encoded using base64 first.
-  const b64 = Uint8ToBase64(content);
-  dataAggregator.send(JSON.stringify(['page_content', [b64, contentHash]]));
+export let saveContent = async function (content, contentHash) {
+    // Send page content to the data aggregator
+    // deduplicated by contentHash in a levelDB database
+    if (debugging) {
+        console.log("LDB contentHash:", contentHash, "with length", content.length);
+        return;
+    }
+    // Since the content might not be a valid utf8 string and it needs to be
+    // json encoded later, it is encoded using base64 first.
+    const b64 = Uint8ToBase64(content);
+    dataAggregator.send(JSON.stringify(['page_content', [b64, contentHash]]));
 };
 
 function encode_utf8(s) {
-  return unescape(encodeURIComponent(s));
+    return unescape(encodeURIComponent(s));
 }
 
 // Base64 encoding, found on:
 // https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
-function Uint8ToBase64(u8Arr){
-  var CHUNK_SIZE = 0x8000; //arbitrary number
-  var index = 0;
-  var length = u8Arr.length;
-  var result = '';
-  var slice;
-  while (index < length) {
-    slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
-    result += String.fromCharCode.apply(null, slice);
-    index += CHUNK_SIZE;
-  }
-  return btoa(result);
+function Uint8ToBase64(u8Arr) {
+    var CHUNK_SIZE = 0x8000; //arbitrary number
+    var index = 0;
+    var length = u8Arr.length;
+    var result = '';
+    var slice;
+    while (index < length) {
+        slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
+        result += String.fromCharCode.apply(null, slice);
+        index += CHUNK_SIZE;
+    }
+    return btoa(result);
 }
 
-export let escapeString = function(string) {
+export let escapeString = function (string) {
     // Convert to string if necessary
-    if(typeof string != "string")
+    if (typeof string != "string")
         string = "" + string;
 
     return encode_utf8(string);
 };
 
-export let boolToInt = function(bool) {
+export let boolToInt = function (bool) {
     return bool ? 1 : 0;
 };
