@@ -116,6 +116,7 @@ def get_website(url, sleep, visit_id, webdriver,
     tab_restart_browser(webdriver)
 
     if extension_socket is not None:
+        logger.debug("Sending visit id %s" % (visit_id))
         extension_socket.send(visit_id)
 
     # Execute a get through selenium

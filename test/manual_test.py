@@ -118,6 +118,21 @@ def start_webdriver(with_extension=False):
         # TODO: Restore preference for log level in a way that works in Fx 57+
         # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         configure_firefox.optimize_prefs(fp)
+              # Write config file
+        extension_config = """{
+            "navigation_instrument":true,
+            "cookie_instrument":true,
+            "js_instrument":true,
+            "js_instrument_modules":"fingerprinting",
+            "http_instrument":true,
+            "save_content":false,
+            "testing":true,
+            "crawl_id":1
+        }"""
+        browser_profile_path = fp.path + '/'
+        ext_config_file = browser_profile_path + 'browser_params.json'
+        with open(ext_config_file, 'w') as f:
+            f.write(extension_config)
     driver = webdriver.Firefox(
         firefox_binary=fb, firefox_profile=fp,
         executable_path=geckodriver_executable_path
