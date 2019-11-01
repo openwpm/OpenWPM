@@ -21,6 +21,9 @@ C:\\nppdf32Log\\debuglog.txt
 *.idea
 */idea
 
+#VSCode
+.vscode
+
 # Local Python virtual environments
 venv/
 
