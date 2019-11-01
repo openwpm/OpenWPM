@@ -30,6 +30,7 @@ this.sockets = class extends ExtensionAPI {
     return {
       sockets: {
         async createServerSocket() {
+          console.error("Opening port on " + port)
           let serverSocket = Cc["@mozilla.org/network/server-socket;1"]
                                .createInstance(Ci.nsIServerSocket);
           serverSocket.init(-1, true, -1); // init with random port
@@ -39,11 +40,13 @@ this.sockets = class extends ExtensionAPI {
 
         startListening(port) {
           if (!gManager.serverSocketMap.has(port)) {
+            console.error("Port " + port + " not found")
             return;
           }
           let socket = gManager.serverSocketMap.get(port);
           socket.asyncListen({
             onSocketAccepted: (sock, transport) => {
+              console.log("Connection established")
               let inputStream = transport.openInputStream(0, 0, 0);
               let socketListener = {
                 onInputStreamReady: () => {
