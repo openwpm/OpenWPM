@@ -86,7 +86,6 @@ this.sockets = class extends ExtensionAPI {
             let listener = (id, data) => {
               fire.async(id, data);
             };
-            console.log(gManager.onDataReceivedListeners)
             gManager.onDataReceivedListeners.add(listener);
             return () => {
               gManager.onDataReceivedListeners.delete(listener);
