@@ -79,20 +79,19 @@ this.sockets = class extends ExtensionAPI {
           });
         },
 
-        onDataReceived: new ExtensionCommon.EventManager(
-          context,
-          "sockets.onDataReceived",
-          (fire) => {
+        onDataReceived: new ExtensionCommon.EventManager({
+          context: context,
+          name: "sockets.onDataReceived",
+          register: (fire) => {
             let listener = (id, data) => {
               fire.async(id, data);
             };
-
             gManager.onDataReceivedListeners.add(listener);
             return () => {
               gManager.onDataReceivedListeners.delete(listener);
             };
           }
-        ).api(),
+        }).api(),
 
         async createSendingSocket() {
           gManager.nextSendingSocketId++;
