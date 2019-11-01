@@ -30,7 +30,7 @@ this.sockets = class extends ExtensionAPI {
     return {
       sockets: {
         async createServerSocket() {
-          console.error("Opening port on " + port)
+          console.info("Opening server socket");
           let serverSocket = Cc["@mozilla.org/network/server-socket;1"]
                                .createInstance(Ci.nsIServerSocket);
           serverSocket.init(-1, true, -1); // init with random port
@@ -40,9 +40,10 @@ this.sockets = class extends ExtensionAPI {
 
         startListening(port) {
           if (!gManager.serverSocketMap.has(port)) {
-            console.error("Port " + port + " not found")
+            console.error(`Port ${port} not found`);
             return;
           }
+          console.info(`Listening on Port ${port}`);
           let socket = gManager.serverSocketMap.get(port);
           socket.asyncListen({
             onSocketAccepted: (sock, transport) => {
@@ -65,8 +66,9 @@ this.sockets = class extends ExtensionAPI {
                   let buff = bis.readByteArray(5); // 32 bit int followed by a char = 5 bytes
                   let meta = bufferpack.unpack('>Lc', buff);
                   let string = bis.readBytes(meta[0]);
-
+                  console.debug(`On port ${port} received \n Meta: ${meta} and content ${string} `)
                   if (['j', 'n'].includes(meta[1])) {
+                    console.debug(gManager.onDataReceivedListeners)
                     gManager.onDataReceivedListeners.forEach((listener) => {
                       listener(port, string, meta[1] == 'j');
                     });
