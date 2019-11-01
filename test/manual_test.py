@@ -169,6 +169,8 @@ def main():
         if len(sys.argv) == 3 and sys.argv[2] == '--no-extension':
             driver = start_webdriver(False)
         else:
+            from automation.SocketInterface import clientsocket
+            client = clientsocket(verbose = True) #noqa
             driver = start_webdriver(True)  # noqa
         print("\nDropping into ipython shell....\n"
               "  * Interact with the webdriver instance using `driver`\n"
