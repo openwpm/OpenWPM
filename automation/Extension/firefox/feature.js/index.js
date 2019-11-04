@@ -22,6 +22,7 @@ async function main() {
       js_instrument:true,
       js_instrument_modules:"fingerprinting",
       http_instrument:true,
+      spoof_navigator:false,
       save_content:false,
       testing:true,
       crawl_id:0
@@ -60,9 +61,11 @@ async function main() {
                        config['save_content']);
   }
 
-  loggingDB.logDebug("Now spoofing `webdriver` attribute to `false`"); // TODO Add config option
-  let spoofNavigator = new SpoofNavigator();
-  await spoofNavigator.registerContentScript();
+  if (config['spoof_navigator']) {
+    loggingDB.logDebug("Now spoofing `webdriver` attribute to `false`");
+    let spoofNavigator = new SpoofNavigator();
+    await spoofNavigator.registerContentScript();
+  }
 }
 
 main();
