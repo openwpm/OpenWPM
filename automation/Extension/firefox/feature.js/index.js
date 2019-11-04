@@ -3,6 +3,7 @@ import {
   JavascriptInstrument,
   HttpInstrument,
   NavigationInstrument,
+  SpoofNavigator,
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
@@ -58,6 +59,10 @@ async function main() {
     httpInstrument.run(config['crawl_id'],
                        config['save_content']);
   }
+
+  loggingDB.logDebug("Now spoofing `webdriver` attribute to `false`"); // TODO Add config option
+  let spoofNavigator = new SpoofNavigator();
+  await spoofNavigator.registerContentScript();
 }
 
 main();

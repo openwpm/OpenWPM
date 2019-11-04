@@ -2,6 +2,7 @@ export * from "./background/cookie-instrument";
 export * from "./background/http-instrument";
 export * from "./background/javascript-instrument";
 export * from "./background/navigation-instrument";
+export * from "./background/spoof-navigator";
 export * from "./content/javascript-instrument-content-scope";
 export * from "./lib/http-post-parser";
 export * from "./lib/string-utils";
