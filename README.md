@@ -296,6 +296,8 @@ left out of this section.
   * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
+* `spoof_navigator`
+  * Set to `True` to spoof the JavaScript DOM attribute `webdriver` to be `false`.
 
 Browser Profile Support
 -----------------------
