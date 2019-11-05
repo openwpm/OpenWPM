@@ -19,7 +19,7 @@ STATUS_UPDATE_INTERVAL = 5  # seconds
 class BaseListener(object):
     """Base class for the data aggregator listener process. This class is used
     alongside the BaseAggregator class to spawn an aggregator process that
-    combines data collected in multiple crawl processes and write it to disk as
+    combines data collected in multiple crawl processes and stores it persistently as
     specified in the child class. The BaseListener class is instantiated in the
     remote process, and sets up a listening socket to receive data. Classes
     which inherit from this base class define how that data is written to disk.
