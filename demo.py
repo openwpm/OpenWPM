@@ -14,10 +14,8 @@ sites = ['http://www.example.com',
 # and NUM_BROWSERS copies of the default browser params
 manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
-
 # Update browser configuration (use this for per-browser settings)
 for i in range(NUM_BROWSERS):
-    browser_params[i]['ublock-origin'] = True
     # Record HTTP Requests and Responses
     browser_params[i]['http_instrument'] = True
     # Record cookie changes
