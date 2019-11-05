@@ -17,7 +17,7 @@ from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100
 MIN_TIME = 5  # seconds
-SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
+SCHEMA_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
 LDB_NAME = 'content.ldb'
 
 

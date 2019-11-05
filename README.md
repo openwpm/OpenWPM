@@ -181,7 +181,7 @@ bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
 the hash of the content. In addition, the browser commands that dump page
 source and save screenshots save them in the `sources` and `screenshots`
 subdirectories of the main output directory. The SQLite schema
-specified by: `automation/schema.sql`. You can specify additional tables
+specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
 inline by sending a `create_table` message to the data aggregator.
 
 #### Parquet on Amazon S3 **Experimental**
@@ -201,7 +201,7 @@ location.
 **NOTE:** The schemas should be kept in sync with the exception of
 output-specific columns (e.g., `instance_id` in the S3 output). You can compare
 the two schemas by running
-`diff -y automation/schema.sql automation/DataAggregator/parquet_schema.py`.
+`diff -y automation/DataAggregator/schema.sql automation/DataAggregator/parquet_schema.py`.
 
 Browser and Platform Configuration
 ----------------------------------
