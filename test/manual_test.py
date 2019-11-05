@@ -139,7 +139,7 @@ def start_webext():
     try:
         # http://stackoverflow.com/a/4417735/3104416
         for line in get_command_output(cmd_webext_run, cwd=EXT_PATH):
-            print(colorize(line), bcolors.ENDC, end=' ')
+            print(colorize(str(line)), bcolors.ENDC, end=' ')
     except KeyboardInterrupt:
         print("Keyboard Interrupt detected, shutting down...")
     print("\nClosing server thread...")
