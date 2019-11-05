@@ -3,7 +3,6 @@ from __future__ import absolute_import, print_function
 import atexit
 import subprocess
 from os.path import dirname, join, realpath
-from sys import platform
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
