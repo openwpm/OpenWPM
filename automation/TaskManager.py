@@ -401,7 +401,8 @@ class TaskManager:
         self.sock.send(("site_visits", {
             "visit_id": browser.curr_visit_id,
             "crawl_id": browser.crawl_id,
-            "site_url": command_sequence.url
+            "site_url": command_sequence.url,
+            "site_rank": command_sequence.site_rank
         }))
 
         # Start command execution thread
