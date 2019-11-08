@@ -23,7 +23,8 @@ class CommandSequence:
     called prior to that.
     """
 
-    def __init__(self, url, reset=False, blocking=False, retry_number=None, site_rank=None):
+    def __init__(self, url, reset=False,
+                 blocking=False, retry_number=None, site_rank=None):
         """Initialize command sequence.
 
         Parameters
@@ -39,7 +40,7 @@ class CommandSequence:
             execute this command. Will be saved in `crawl_history`.
         site_rank : int, optional
             Integer indicating the ranking of the page to visit, saved
-            to `site_visits` 
+            to `site_visits`
         """
         self.url = url
         self.reset = reset
