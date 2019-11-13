@@ -162,15 +162,16 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT site_url FROM site_visits")
+                                    "SELECT site_url, site_rank"
+                                    " FROM site_visits")
 
         # We had two separate page visits
         assert len(qry_res) == 2
 
         assert qry_res[0][0] == url_a
-        assert qry_res[0][3] == 0
+        assert qry_res[0][1] == 0
         assert qry_res[1][0] == url_b
-        assert qry_res[1][3] == 1
+        assert qry_res[1][1] == 1
 
     def test_browse_http_table_valid(self):
         """Check CommandSequence.browse() works and populates http tables correctly.
