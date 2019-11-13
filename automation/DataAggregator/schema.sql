@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS crawl (
 
 /*
 # site_visits
- */
+*/
 CREATE TABLE IF NOT EXISTS site_visits (
     visit_id INTEGER PRIMARY KEY,
     crawl_id INTEGER NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS site_visits (
 
 /*
 # flash_cookies
- */
+*/
 CREATE TABLE IF NOT EXISTS flash_cookies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     crawl_id INTEGER NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS flash_cookies (
 
 /*
 # crawl_history
- */
+*/
 CREATE TABLE IF NOT EXISTS crawl_history (
     crawl_id INTEGER,
     visit_id INTEGER,
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS http_requests(
 
 /*
 # http_responses
- */
+*/
 CREATE TABLE IF NOT EXISTS http_responses(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS http_responses(
 
 /*
 # http_redirects
- */
+*/
 CREATE TABLE IF NOT EXISTS http_redirects(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS http_redirects(
 
 /*
 # javascript
- */
+*/
 CREATE TABLE IF NOT EXISTS javascript(
   id INTEGER PRIMARY KEY,
   incognito INTEGER,
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS javascript(
 
 /*
 # javascript_cookies
- */
+*/
 CREATE TABLE IF NOT EXISTS javascript_cookies(
     id INTEGER PRIMARY KEY ASC,
     crawl_id INTEGER NOT NULL,
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS javascript_cookies(
 
 /*
 # Navigations
- */
+*/
 CREATE TABLE IF NOT EXISTS navigations(
   id INTEGER,
   incognito INTEGER,
