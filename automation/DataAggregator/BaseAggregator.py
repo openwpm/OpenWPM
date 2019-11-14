@@ -111,9 +111,9 @@ class BaseListener(object):
         while not self.record_queue.empty():
             record = self.record_queue.get()
             self.process_record(record)
+        self.logger.info("Queue was flushed completely")
 
-    def process_term(self, *args):
-        print(args)
+    def process_term(self, signal, frame):
         self.received_shutdown_signal = True
         self.logger.info("Received process term signal")
 
