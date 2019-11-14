@@ -1,7 +1,11 @@
 import abc
 import logging
+import signal
 import threading
 import time
+import os
+from functools import partial
+
 
 from multiprocess import Queue
 from six.moves import queue
@@ -39,6 +43,9 @@ class BaseListener(object):
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
+        self.received_shutdown_signal = False
+        self.logger.info("Aggregator PID is %d" % os.getpid())
+        signal.signal(signal.SIGTERM, self.process_term)
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -75,6 +82,8 @@ class BaseListener(object):
             self.shutdown_queue.get()
             self.logger.info("Received shutdown signal!")
             return True
+        if self.received_shutdown_signal:
+            return True
         return False
 
     def update_status_queue(self):
@@ -102,6 +111,11 @@ class BaseListener(object):
         while not self.record_queue.empty():
             record = self.record_queue.get()
             self.process_record(record)
+
+    def process_term(self, *args):
+        print(args)
+        self.received_shutdown_signal = True
+        self.logger.info("Received process term signal")
 
 
 class BaseAggregator(object):
