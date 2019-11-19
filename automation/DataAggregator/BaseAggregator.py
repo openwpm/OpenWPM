@@ -1,11 +1,9 @@
 import abc
 import logging
+import os
 import signal
 import threading
 import time
-import os
-from functools import partial
-
 
 from multiprocess import Queue
 from six.moves import queue
