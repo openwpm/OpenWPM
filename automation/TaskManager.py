@@ -298,7 +298,7 @@ class TaskManager:
                     "failure limit.", self.failure_status['CommandSequence']
                 )
             if self.failure_status['ErrorType'] == 'CriticalChildException':
-                reraise(*pickle.loads(self.failure_status['Exception']))
+                raise pickle.loads(self.failure_status['Exception'])
 
     # CRAWLER COMMAND CODE
 
