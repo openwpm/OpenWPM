@@ -10,7 +10,6 @@ import traceback
 from queue import Empty as EmptyQueue
 
 import psutil
-import reraise
 import tblib
 
 from . import CommandSequence, MPLogger
