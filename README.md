@@ -21,7 +21,7 @@ Table of Contents
 * [Browser Profile Support](#browser-profile-support)
   * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
   * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
-* [Development pointers](development-pointers)
+* [Development pointers](#development-pointers)
   * [Editing instrumentation](#editing-instrumentation)
   * [Debugging the platform](#debugging-the-platform)
   * [Managing requirements](#managing-requirements)
