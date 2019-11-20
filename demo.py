@@ -1,6 +1,4 @@
 
-import range
-
 from automation import CommandSequence, TaskManager
 
 # The list of sites that we wish to crawl

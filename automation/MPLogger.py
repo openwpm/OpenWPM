@@ -291,5 +291,3 @@ class MPLogger(object):
         self._status_queue.put("SHUTDOWN")
         self._status_queue.join()
         self._listener.join()
-
-   
