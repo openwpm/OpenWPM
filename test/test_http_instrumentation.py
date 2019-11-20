@@ -6,11 +6,9 @@ import json
 import os
 from hashlib import sha256
 from time import sleep
+from urllib.parse import urlparse
 
 import pytest
-import six
-from six.moves import range
-from six.moves.urllib.parse import urlparse
 
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
@@ -829,7 +827,7 @@ class TestPOSTInstrument(OpenWPMTest):
         encoding_type = "text/plain"
         db = self.visit('/post_request.html?encoding_type=' + encoding_type)
         post_body = self.get_post_request_body_from_db(db, True)
-        if not isinstance(self.post_data_multiline_raw, six.text_type):
+        if not isinstance(self.post_data_multiline_raw, str):
             expected = self.post_data_multiline_raw.decode('utf-8')
         else:
             expected = self.post_data_multiline_raw
@@ -879,7 +877,7 @@ class TestPOSTInstrument(OpenWPMTest):
         db = self.visit("/post_request_ajax.html?format=" + post_format)
         post_body = self.get_post_request_body_from_db(db, True)
         # Binary strings get put into the database as-if they were latin-1.
-        assert six.binary_type(bytearray(range(100))) == post_body
+        assert bytes(bytearray(range(100))) == post_body
 
     @pytest.mark.skip(reason="Firefox is currently not able to return the "
                       "file content for an upload, only the filename")

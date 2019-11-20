@@ -3,16 +3,15 @@ import copy
 import json
 import logging
 import os
+import pickle
 import threading
 import time
 import traceback
+from queue import Empty as EmptyQueue
 
 import psutil
+import reraise
 import tblib
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves import range
-from six.moves.queue import Empty as EmptyQueue
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser

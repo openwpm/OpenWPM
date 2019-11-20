@@ -215,9 +215,7 @@ import re
 #
 import string
 import warnings
-
-from six.moves import map, range
-from six.moves.cPickle import dumps, loads
+from pickle import dumps, loads
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie", "SerialCookie",
            "SmartCookie", "Cookie"]

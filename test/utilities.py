@@ -1,17 +1,17 @@
 
 import os
+import socketserver
 import threading
+from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
 from random import choice
+from urllib.parse import parse_qs, urlparse
 
 import boto3
 import pyarrow.parquet as pq
 import s3fs
 from botocore.credentials import Credentials
 from pyarrow.filesystem import S3FSWrapper  # noqa
-from six.moves import range, socketserver
-from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.urllib.parse import parse_qs, urlparse
 
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"

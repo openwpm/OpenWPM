@@ -4,9 +4,9 @@ import gzip
 import json
 import os
 import re
+from urllib.parse import urlparse
 
 from PIL import Image
-from six.moves.urllib.parse import urlparse
 
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils

@@ -5,7 +5,6 @@ from collections import defaultdict
 
 import boto3
 import pytest
-import six
 from localstack.services import infra
 
 from ..automation import TaskManager
@@ -82,7 +81,7 @@ class TestS3Aggregator(OpenWPMTest):
         # of configuration files
         config_file = dataset.list_files('config', prepend_root=True)
         assert len(config_file) == 1  # only one instance started in test
-        config = json.loads(six.text_type(
+        config = json.loads(str(
             dataset.get_file(config_file[0]), 'utf-8'))
         assert len(config['browser_params']) == NUM_BROWSERS
 

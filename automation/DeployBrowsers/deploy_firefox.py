@@ -4,7 +4,6 @@ import logging
 import os.path
 import random
 
-import six
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
@@ -119,7 +118,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
 
     if browser_params['save_content']:
-        if isinstance(browser_params['save_content'], six.string_types):
+        if isinstance(browser_params['save_content'], str):
             configured_types = set(browser_params['save_content'].split(','))
             if not configured_types.issubset(ALL_RESOURCE_TYPES):
                 diff = configured_types.difference(ALL_RESOURCE_TYPES)

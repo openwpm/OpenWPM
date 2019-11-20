@@ -9,7 +9,6 @@ import re
 
 import bs4
 from bs4 import BeautifulSoup as bs
-from six.moves import range
 
 
 def is_clickable(xpath):
@@ -149,7 +148,7 @@ def xp1_wildcard(attr, string, normalize=True):
 def main():
     # Output some sample XPaths
     print("--- Sample XPaths ---")
-    from six.moves.urllib.request import urlopen
+    from urllib.request import urlopen
     import re
     from random import choice
     rsp = urlopen('http://www.reddit.com/')

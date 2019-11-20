@@ -1,5 +1,5 @@
 
-from six.moves import range
+import range
 
 from automation import CommandSequence, TaskManager
 

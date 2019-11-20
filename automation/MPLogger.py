@@ -9,13 +9,12 @@ import struct
 import sys
 import threading
 import time
+from queue import Empty as EmptyQueue
 
 import dill
 import sentry_sdk
-import six
 from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
-from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 
 from .Commands.utils.webdriver_utils import parse_neterror
@@ -264,10 +263,22 @@ class MPLogger(object):
         This is currently records that are written to a file on disk
         and those sent to Sentry.
         """
+        def ensure_str(s):
+            """Ensures we get a string
+
+                Stolen and simplified from six
+                because idk what inputs we expect here
+            """
+            if not isinstance(s, (str, bytes)):
+                raise TypeError("not expecting type '%s'" % type(s))
+            elif isinstance(s, bytes):
+                s = s.decode('utf-8', 'strict')
+            return s
+
         if obj['exc_info']:
-            obj['exc_info'] = dill.loads(six.ensure_str(obj['exc_info']))
+            obj['exc_info'] = dill.loads(ensure_str(obj['exc_info']))
         if obj['args']:
-            obj['args'] = dill.loads(six.ensure_str(obj['args']))
+            obj['args'] = dill.loads(ensure_str(obj['args']))
         record = logging.makeLogRecord(obj)
         self._file_handler.emit(record)
         if self._sentry_dsn:
@@ -280,3 +291,5 @@ class MPLogger(object):
         self._status_queue.put("SHUTDOWN")
         self._status_queue.join()
         self._listener.join()
+
+   

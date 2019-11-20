@@ -4,7 +4,6 @@ import time
 
 import boto3
 import sentry_sdk
-from six.moves import range
 
 from automation import CommandSequence, MPLogger, TaskManager
 from automation.utilities import rediswq

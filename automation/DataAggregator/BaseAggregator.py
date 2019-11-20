@@ -1,10 +1,10 @@
 import abc
 import logging
+import queue
 import threading
 import time
 
 from multiprocess import Queue
-from six.moves import queue
 
 from ..SocketInterface import serversocket
 from ..utilities.multiprocess_utils import Process
