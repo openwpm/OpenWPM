@@ -7,6 +7,36 @@ of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
+Table of Contents
+-----------------
+
+* [Installation](#installation)
+* [Quick Start](#quick-start)
+* [Instrumentation and Data Access](#instrumentation-and-data-access)
+* [Output Formats](#output-format)
+  * [Local Databases](#local-databases)
+  * [Parquet on Amazon S3 (Experimental)](#parquet-on-amazon-s3-experimental)
+* [Browser and Platform Configuration](#browser-and-platform-configuration)
+  * [Browser Configuration Options](#platform-configuration-options)
+* [Browser Profile Support](#browser-profile-support)
+  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+* [Development pointers](development-pointers)
+  * [Editing instrumentation](#editing-instrumentation)
+  * [Debugging the platform](#debugging-the-platform)
+  * [Managing requirements](#managing-requirements)
+  * [Running tests](#running-tests)
+  * [Mac OSX (Limited support for developers)](#mac-osx-limited-support-for-developers)
+* [Troubleshooting](#troubleshooting)
+* [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+  * [Building the Docker Container](#building-the-docker-container)
+  * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+  * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+* [Disclaimer](#disclaimer)
+* [Citation](#citation)
+* [License](#license)
+
+
 Installation
 ------------
 
