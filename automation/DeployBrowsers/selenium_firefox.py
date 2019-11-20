@@ -2,7 +2,6 @@
 Workarounds for Selenium headaches.
 """
 
-from __future__ import absolute_import
 
 import errno
 import json

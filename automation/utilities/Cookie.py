@@ -210,7 +210,6 @@ Finis.
 
 # Import our required modules
 #
-from __future__ import absolute_import
 
 import re
 #

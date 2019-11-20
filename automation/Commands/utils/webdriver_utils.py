@@ -1,7 +1,6 @@
 # A set of extensions to the functions normally provided by the selenium
 # webdriver. These are primarily for parsing and searching.
 
-from __future__ import absolute_import
 
 import random
 import re

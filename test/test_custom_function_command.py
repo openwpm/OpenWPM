@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
