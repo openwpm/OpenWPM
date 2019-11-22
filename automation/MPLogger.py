@@ -266,8 +266,7 @@ class MPLogger(object):
         def ensure_str(s):
             """Ensures we get a string
 
-                Stolen and simplified from six
-                because idk what inputs we expect here
+            Raises a TypeError or UnicodeError if it's not
             """
             if not isinstance(s, (str, bytes)):
                 raise TypeError("not expecting type '%s'" % type(s))
