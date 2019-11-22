@@ -109,6 +109,7 @@ class MPLogger(object):
         # Configure log handlers
         self._status_queue = JoinableQueue()
         self._log_file = os.path.expanduser(log_file)
+
         self._initialize_loggers()
 
         # Configure sentry (if available)
@@ -263,21 +264,10 @@ class MPLogger(object):
         This is currently records that are written to a file on disk
         and those sent to Sentry.
         """
-        def ensure_str(s):
-            """Ensures we get a string
-
-            Raises a TypeError or UnicodeError if it's not
-            """
-            if not isinstance(s, (str, bytes)):
-                raise TypeError("not expecting type '%s'" % type(s))
-            elif isinstance(s, bytes):
-                s = s.decode('utf-8', 'strict')
-            return s
-
         if obj['exc_info']:
-            obj['exc_info'] = dill.loads(ensure_str(obj['exc_info']))
+            obj['exc_info'] = dill.loads(obj['exc_info'])
         if obj['args']:
-            obj['args'] = dill.loads(ensure_str(obj['args']))
+            obj['args'] = dill.loads(obj['args'])
         record = logging.makeLogRecord(obj)
         self._file_handler.emit(record)
         if self._sentry_dsn:
