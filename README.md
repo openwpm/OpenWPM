@@ -40,7 +40,8 @@ Table of Contents
 Installation
 ------------
 
-OpenWPM has been developed and tested on Ubuntu 14.04/16.04. An installation
+OpenWPM is a Python 3 application developed and tested for Ubuntu 18.04.
+Python 2 is not supported. An installation
 script, `install.sh` is included to install both the system and python
 dependencies automatically. A few of the python dependencies require specific
 versions, so you should install the dependencies in a virtual environment if
