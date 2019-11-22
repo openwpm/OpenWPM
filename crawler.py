@@ -1,11 +1,9 @@
-from __future__ import absolute_import
 
 import os
 import time
 
 import boto3
 import sentry_sdk
-from six.moves import range
 
 from automation import CommandSequence, MPLogger, TaskManager
 from automation.utilities import rediswq

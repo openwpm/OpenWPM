@@ -1,19 +1,16 @@
-from __future__ import absolute_import, division
 
 import copy
 import json
 import logging
 import os
+import pickle
 import threading
 import time
 import traceback
+from queue import Empty as EmptyQueue
 
 import psutil
 import tblib
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves import range
-from six.moves.queue import Empty as EmptyQueue
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
@@ -301,7 +298,7 @@ class TaskManager:
                     "failure limit.", self.failure_status['CommandSequence']
                 )
             if self.failure_status['ErrorType'] == 'CriticalChildException':
-                reraise(*pickle.loads(self.failure_status['Exception']))
+                raise pickle.loads(self.failure_status['Exception'])
 
     # CRAWLER COMMAND CODE
 

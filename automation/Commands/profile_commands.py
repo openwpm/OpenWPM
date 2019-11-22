@@ -1,11 +1,9 @@
-from __future__ import absolute_import
 
 import logging
 import os
+import pickle
 import shutil
 import tarfile
-
-from six.moves import cPickle as pickle
 
 from ..Errors import ProfileLoadError
 from .utils.file_utils import rmsubtree

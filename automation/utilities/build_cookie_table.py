@@ -1,12 +1,11 @@
-from __future__ import absolute_import, print_function
 
 import json
 import os
 import sqlite3
 import time
+from urllib.parse import urlparse
 
 from netlib.odict import ODictCaseless
-from six.moves.urllib.parse import urlparse
 
 # This should be the modified Cookie.py included
 # the standard lib Cookie.py has many bugs
@@ -24,14 +23,13 @@ def encode_to_unicode(string):
     Encode from UTF-8/ISO-8859-1 to Unicode.
     Ignore errors if both of these don't work
     """
-    import six
     try:
-        encoded = six.text_type(string, 'UTF-8')
+        encoded = str(string, 'UTF-8')
     except UnicodeDecodeError:
         try:
-            encoded = six.text_type(string, 'ISO-8859-1')
+            encoded = str(string, 'ISO-8859-1')
         except UnicodeDecodeError:
-            encoded = six.text_type(string, 'UTF-8', errors='ignore')
+            encoded = str(string, 'UTF-8', errors='ignore')
     return encoded
 
 
@@ -122,9 +120,8 @@ def parse_cookies(cookie_string, verbose, url=None, response_cookie=False):
     """
     queries = list()
     attrs = ()
-    import six
     try:
-        if type(cookie_string) == six.text_type:
+        if type(cookie_string) == str:
             cookie_string = cookie_string.encode('utf-8')
         cookie = Cookie.BaseCookie(cookie_string)
         for key in cookie.keys():

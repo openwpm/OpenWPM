@@ -1,19 +1,11 @@
-from __future__ import absolute_import, print_function
-
 import json
 import socket
 import struct
 import threading
 import traceback
+from queue import Queue
 
 import dill
-import six
-from six.moves import input
-from six.moves.queue import Queue
-
-if six.PY2:
-    class ConnectionAbortedError(Exception):
-        pass
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237
@@ -142,10 +134,9 @@ class clientsocket:
         using dill if not string, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
-        import six
-        if isinstance(msg, six.binary_type):
+        if isinstance(msg, bytes):
             serialization = b'n'
-        elif isinstance(msg, six.text_type):
+        elif isinstance(msg, str):
             serialization = b'u'
             msg = msg.encode('utf-8')
         elif self.serialization == 'dill':

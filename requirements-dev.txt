@@ -11,10 +11,10 @@ attrs==19.3.0             # via jsonschema
 autopep8==1.4.4
 aws-sam-translator==1.15.1  # via cfn-lint
 aws-xray-sdk==2.4.2       # via moto-ext
-awscli==1.16.288          # via localstack
-boto3==1.10.24            # via aws-sam-translator, localstack, localstack-client, moto-ext
+awscli==1.16.289          # via localstack
+boto3==1.10.25            # via aws-sam-translator, localstack, localstack-client, moto-ext
 boto==2.49.0              # via amazon-kclpy-ext, localstack, moto-ext
-botocore==1.13.24         # via aws-xray-sdk, awscli, boto3, localstack, moto-ext, s3transfer
+botocore==1.13.25         # via aws-xray-sdk, awscli, boto3, localstack, moto-ext
 cachetools==3.1.1         # via airspeed
 certifi==2019.9.11        # via requests
 cffi==1.13.2              # via cryptography
@@ -42,7 +42,6 @@ forbiddenfruit==0.1.3     # via localstack
 future==0.18.2            # via aws-xray-sdk, python-jose
 idna==2.8                 # via moto-ext, requests
 importlib-metadata==0.23  # via jsonschema
-importlib-resources==1.0.2  # via cfn-lint
 itsdangerous==1.1.0       # via flask
 jinja2==2.10.3            # via flask, moto-ext
 jmespath==0.9.4           # via boto3, botocore
@@ -81,7 +80,7 @@ requests==2.22.0          # via docker, localstack, localstack-ext, moto-ext, py
 responses==0.10.6         # via moto-ext
 rsa==3.4.2                # via awscli, python-jose
 s3transfer==0.2.1         # via awscli, boto3
-six==1.13.0               # via airspeed, aws-sam-translator, cfn-lint, cryptography, docker, ecdsa, flask-cors, jsonpath-rw, jsonschema, localstack, mock, moto-ext, pyopenssl, pyrsistent, python-coveralls, python-dateutil, python-jose, responses, websocket-client
+six==1.13.0               # via airspeed, aws-sam-translator, cfn-lint, cryptography, docker, ecdsa, flask-cors, jsonpath-rw, jsonschema, localstack, mock, moto-ext, pyopenssl, pyrsistent, python-coveralls, python-jose, responses, websocket-client
 sshpubkeys==3.1.0         # via moto-ext
 subprocess32==3.5.4       # via localstack
 urllib3==1.25.7           # via botocore, elasticsearch, requests

@@ -23,7 +23,6 @@ s3fs
 selenium
 sentry-sdk
 setuptools
-six
 tabulate
 tblib
 tld
