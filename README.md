@@ -449,8 +449,8 @@ OpenWPM should be placed in the former, while those only required to run the
 tests (or perform other development tasks) should be placed in the latter.
 
 To update dependencies, run the following two commands **in order**:
-* `pip-compile --upgrade requirements.txt`
-* `pip-compile --upgrade requirements-dev.txt`
+* `pip-compile --upgrade requirements.in`
+* `pip-compile --upgrade requirements-dev.in`
 
 It's important that these are run in order, as we layer the dev
 dependencies on the output of the pinned production dependencies as per
