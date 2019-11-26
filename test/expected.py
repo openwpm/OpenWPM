@@ -1,5 +1,4 @@
 """ Contains lists of expected data and or rows for tests """
-from __future__ import absolute_import
 
 from .utilities import BASE_TEST_URL, BASE_TEST_URL_DOMAIN
 

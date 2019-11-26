@@ -1,14 +1,12 @@
-from __future__ import absolute_import, print_function
 
 import codecs
 import os
 import tempfile
 from functools import wraps
 from ipaddress import ip_address
+from urllib.parse import urlparse
 
 from publicsuffix import PublicSuffixList, fetch
-from six.moves import range
-from six.moves.urllib.parse import urlparse
 
 # We cache the Public Suffix List in temp directory
 PSL_CACHE_LOC = os.path.join(tempfile.gettempdir(), 'public_suffix_list.dat')
@@ -45,9 +43,8 @@ def is_ip_address(hostname):
     """
     Check if the given string is a valid IP address
     """
-    import six
     try:
-        ip_address(six.text_type(hostname))
+        ip_address(str(hostname))
         return True
     except ValueError:
         return False

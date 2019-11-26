@@ -1,9 +1,10 @@
-from __future__ import absolute_import, print_function
 
 import base64
 import gzip
 import hashlib
+import io
 import json
+import queue
 import time
 import uuid
 from collections import defaultdict
@@ -13,11 +14,9 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import s3fs
-import six
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
-from six.moves import queue
 
 from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
 from .parquet_schema import PQ_SCHEMAS
@@ -174,15 +173,15 @@ class S3Listener(BaseListener):
             self.logger.debug(
                 "File `%s` already exists on s3, skipping..." % filename)
             return
-        if not isinstance(string, six.binary_type):
+        if not isinstance(string, bytes):
             string = string.encode('utf-8')
         if compressed:
-            out_f = six.BytesIO()
+            out_f = io.BytesIO()
             with gzip.GzipFile(fileobj=out_f, mode='w') as writer:
                 writer.write(string)
             out_f.seek(0)
         else:
-            out_f = six.BytesIO(string)
+            out_f = io.BytesIO(string)
 
         # Upload to S3
         try:
@@ -206,7 +205,7 @@ class S3Listener(BaseListener):
                 continue
             if table_name == SITE_VISITS_INDEX:
                 out_str = '\n'.join([json.dumps(x) for x in batches])
-                if not isinstance(out_str, six.binary_type):
+                if not isinstance(out_str, bytes):
                     out_str = out_str.encode('utf-8')
                 fname = '%s/site_index/instance-%s-%s.json.gz' % (
                     self.dir, self._instance_id,
@@ -287,10 +286,10 @@ class S3Listener(BaseListener):
 
         # Convert data to text type
         for k, v in data.items():
-            if isinstance(v, six.binary_type):
-                data[k] = six.text_type(v, errors='ignore')
+            if isinstance(v, bytes):
+                data[k] = str(v, errors='ignore')
             elif callable(v):
-                data[k] = six.text_type(v)
+                data[k] = str(v)
             # TODO: Can we fix this in the extension?
             elif type(v) == dict:
                 data[k] = json.dumps(v)
@@ -368,13 +367,13 @@ class S3Aggregator(BaseAggregator):
         # Config parameters for update
         out = dict()
         out['manager_params'] = self.manager_params
-        out['openwpm_version'] = six.text_type(openwpm_version)
-        out['browser_version'] = six.text_type(browser_version)
+        out['openwpm_version'] = str(openwpm_version)
+        out['browser_version'] = str(browser_version)
         out['browser_params'] = self.browser_params
         out_str = json.dumps(out)
-        if not isinstance(out_str, six.binary_type):
+        if not isinstance(out_str, bytes):
             out_str = out_str.encode('utf-8')
-        out_f = six.BytesIO(out_str)
+        out_f = io.BytesIO(out_str)
 
         # Upload to S3 and delete local copy
         try:

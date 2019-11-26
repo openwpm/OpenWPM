@@ -7,7 +7,8 @@ fields = [
     pa.field('visit_id', pa.int64(), nullable=False),
     pa.field('crawl_id', pa.int32(), nullable=False),
     pa.field('instance_id', pa.int32(), nullable=False),
-    pa.field('site_url', pa.string(), nullable=False)
+    pa.field('site_url', pa.string(), nullable=False),
+    pa.field('site_rank', pa.uint32())
 ]
 PQ_SCHEMAS['site_visits'] = pa.schema(fields)
 

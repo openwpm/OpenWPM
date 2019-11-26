@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 
 from .Errors import CommandExecutionError
 
@@ -23,7 +22,8 @@ class CommandSequence:
     called prior to that.
     """
 
-    def __init__(self, url, reset=False, blocking=False, retry_number=None):
+    def __init__(self, url, reset=False,
+                 blocking=False, retry_number=None, site_rank=None):
         """Initialize command sequence.
 
         Parameters
@@ -37,6 +37,9 @@ class CommandSequence:
         retry_number : int, optional
             Integer denoting the number of attempts that have been made to
             execute this command. Will be saved in `crawl_history`.
+        site_rank : int, optional
+            Integer indicating the ranking of the page to visit, saved
+            to `site_visits`
         """
         self.url = url
         self.reset = reset
@@ -45,6 +48,7 @@ class CommandSequence:
         self.commands_with_timeout = []
         self.total_timeout = 0
         self.contains_get_or_browse = False
+        self.site_rank = site_rank
 
     def get(self, sleep=0, timeout=60):
         """ goes to a url """
