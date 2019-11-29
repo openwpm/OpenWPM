@@ -1,8 +1,6 @@
 import abc
 import logging
-import os
 import queue
-import signal
 import threading
 import time
 
@@ -42,9 +40,6 @@ class BaseListener(object):
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
-        self.received_shutdown_signal = False
-        self.logger.info("Aggregator PID is %d" % os.getpid())
-        signal.signal(signal.SIGTERM, self.process_term)
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -81,8 +76,6 @@ class BaseListener(object):
             self.shutdown_queue.get()
             self.logger.info("Received shutdown signal!")
             return True
-        if self.received_shutdown_signal:
-            return True
         return False
 
     def update_status_queue(self):
@@ -111,10 +104,6 @@ class BaseListener(object):
             record = self.record_queue.get()
             self.process_record(record)
         self.logger.info("Queue was flushed completely")
-
-    def process_term(self, signal, frame):
-        self.received_shutdown_signal = True
-        self.logger.info("Received process term signal")
 
 
 class BaseAggregator(object):
