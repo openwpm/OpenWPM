@@ -56,4 +56,4 @@ COPY . .
 RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
 
 # Setting demo.py as the default command
-CMD python3 demo.py
+ENTRYPOINT [ "python3", "demo.py"]
