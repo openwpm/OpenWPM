@@ -23,7 +23,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Enable flash for all three browsers
     browser_params[i]['disable_flash'] = True
-    browser_params[i]['headless'] = True  # Launch only browser 0 headless
+browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params['data_directory'] = '~/Desktop/'
@@ -34,7 +34,7 @@ manager_params['log_directory'] = '~/Desktop/'
 manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites
-for site in sites * 1000:
+for site in sites:
 
     # Parallelize sites over all number of browsers set above.
     # (To have all browsers go to the same sites, add `index='**'`)
