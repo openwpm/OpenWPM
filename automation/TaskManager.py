@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import pickle
+import signal
 import threading
 import time
 import traceback
@@ -155,6 +156,8 @@ class TaskManager:
                 self.manager_params, browser_params, (openwpm_v, browser_v)
             )
         )
+        signal.signal(signal.SIGTERM, lambda signal, frame: self.close())
+        signal.signal(signal.SIGINT, lambda signal, frame: self.close())
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of params """
@@ -391,7 +394,8 @@ class TaskManager:
         if self.closing:
             self.logger.error(
                 "Attempted to execute command on a closed TaskManager")
-            return
+            raise RuntimeError("Attempted to execute"
+                               " command on a closed TaskManager")
         self._check_failure_status()
 
         browser.set_visit_id(self.data_aggregator.get_next_visit_id())
