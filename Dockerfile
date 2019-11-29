@@ -19,6 +19,7 @@ RUN cp dist/openwpm-1.0.zip openwpm.xpi
 FROM ubuntu:18.04
 
 WORKDIR /opt/OpenWPM
+
 # This is just a performance optimization and can be skipped by non-US
 # based users
 RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
@@ -55,5 +56,11 @@ COPY . .
 # possible to run everything as root as well.
 RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
 
+# Add Tini
+ENV TINI_VERSION v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
+
 # Setting demo.py as the default command
-ENTRYPOINT [ "python3", "demo.py"]
+CMD [ "python3", "demo.py"]
