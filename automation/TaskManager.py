@@ -156,8 +156,8 @@ class TaskManager:
                 self.manager_params, browser_params, (openwpm_v, browser_v)
             )
         )
-        signal.signal(signal.SIGTERM, lambda signal, frame: self.close())
-        signal.signal(signal.SIGINT, lambda signal, frame: self.close())
+        for sig in [signal.SIGTERM, signal.SIGINT]:
+            signal.signal(sig, lambda signal, frame: self.close())
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of params """
