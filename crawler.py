@@ -24,10 +24,6 @@ JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 PREFS = os.getenv('PREFS', None)
-GHOSTERY = os.getenv('GHOSTERY', '0') == '1'
-DISCONNECT = os.getenv('DISCONNECT', '0') == '1'
-HTTPS_EVERYWHERE = os.getenv('HTTPS_EVERYWHERE', '0') == '1'
-UBLOCK_ORIGIN = os.getenv('UBLOCK_ORIGIN', '0') == '1'
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
@@ -57,10 +53,6 @@ for i in range(NUM_BROWSERS):
         browser_params[i]['save_content'] = SAVE_CONTENT
     if PREFS:
         browser_params[i]['prefs'] = json.loads(PREFS)
-    browser_params[i]['ghostery'] = GHOSTERY
-    browser_params[i]['disconnect'] = DISCONNECT
-    browser_params[i]['https-everywhere'] = HTTPS_EVERYWHERE
-    browser_params[i]['ublock-origin'] = UBLOCK_ORIGIN
     browser_params[i]['headless'] = True
 
 # Manager configuration
@@ -95,10 +87,6 @@ if SENTRY_DSN:
         scope.set_tag('JS_INSTRUMENT', JS_INSTRUMENT)
         scope.set_tag('JS_INSTRUMENT_MODULES', JS_INSTRUMENT)
         scope.set_tag('SAVE_CONTENT', SAVE_CONTENT)
-        scope.set_tag('GHOSTERY', GHOSTERY)
-        scope.set_tag('DISCONNECT', DISCONNECT)
-        scope.set_tag('HTTPS_EVERYWHERE', HTTPS_EVERYWHERE)
-        scope.set_tag('UBLOCK_ORIGIN', UBLOCK_ORIGIN)
         scope.set_tag('DWELL_TIME', DWELL_TIME)
         scope.set_tag('TIMEOUT', TIMEOUT)
         scope.set_tag('MAX_JOB_RETRIES', MAX_JOB_RETRIES)
