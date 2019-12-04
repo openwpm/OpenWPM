@@ -66,6 +66,16 @@ def child_proc_with_exception(index):
     )
 
 
+def child_proc_logging_exception():
+    logger = logging.getLogger('openwpm')
+    try:
+        raise Exception("This is my generic Test Exception")
+    except Exception:
+        logger.error(
+            "I'm logging an exception", exc_info=True,
+        )
+
+
 class TestMPLogger(OpenWPMTest):
 
     def get_logfile_path(self, directory):
@@ -162,3 +172,14 @@ class TestMPLogger(OpenWPMTest):
             assert(log_content.count(CHILD_INFO_STR_1 % child) == 1)
             assert(log_content.count(CHILD_INFO_STR_2 % child) == 1)
             assert(log_content.count(CHILD_EXCEPTION_STR % child) == 1)
+
+    def test_child_process_logging(self, tmpdir):
+        log_file = self.get_logfile_path(str(tmpdir))
+        openwpm_logger = MPLogger.MPLogger(log_file)
+        child_process = Process(target=child_proc_logging_exception())
+        child_process.daemon = True
+        child_process.start()
+        openwpm_logger.close()
+        child_process.join()
+        log_content = self.get_logfile_contents(log_file)
+        assert ("I'm logging an exception" in log_content)
