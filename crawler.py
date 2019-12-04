@@ -93,8 +93,7 @@ if SENTRY_DSN:
         scope.set_tag('CRAWL_REFERENCE', '%s/%s' %
                       (S3_BUCKET, CRAWL_DIRECTORY))
         # context adds addition information that may be of interest
-        scope.set_context("PREFS",
-                          PREFS)
+        scope.set_context("PREFS", PREFS)
         scope.set_context("crawl_config", {
             'REDIS_QUEUE_NAME': REDIS_QUEUE_NAME,
         })
