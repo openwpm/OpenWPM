@@ -2,14 +2,16 @@
 
 var EXPORTED_SYMBOLS = ["OpenWPMStackDumpParent"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 class OpenWPMStackDumpParent extends JSWindowActorParent {
   constructor() {
     super();
   }
-  handleEvent(e) {
-    Cu.reportError(e);
-  }
-  observe(subject, topic, data) {
-    Cu.reportError(topic);
+  receiveMessage(msg, data) {
+    Services.obs.notifyObservers(
+      { wrappedJSObject: msg.data },
+      "openwpm-stacktrace"
+    );
   }
 }

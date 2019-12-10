@@ -59,7 +59,9 @@ async function main() {
                        config['save_content']);
   }
 
-  console.log(browser.stackDump.onStackAvailable.addListener(() => {}));
+  browser.stackDump.onStackAvailable.addListener((channelId, stack) => {
+    console.log(channelId, stack);
+  });
 }
 
 main();

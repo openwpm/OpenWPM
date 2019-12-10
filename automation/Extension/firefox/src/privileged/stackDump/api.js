@@ -15,22 +15,26 @@ XPCOMUtils.defineLazyServiceGetter(
 
 gOnStackAvailableListeners = new Set();
 
-    Cu.reportError("Hello!!!");
 this.stackDump = class extends ExtensionAPI {
   getAPI(context) {
-    Cu.reportError("Registering actor!");
-    let uri = Services.io.newURI(context.extension.getURL(""));
-    resProto.setSubstitution("openwpm", uri);
-    ChromeUtils.registerWindowActor("OpenWPM", {
+    Services.obs.addObserver((data) => {
+      data = data.wrappedJSObject;
+      gOnStackAvailableListeners.forEach((listener) => {
+        listener(data.channelId, data.stacktrace);
+      });
+    }, "openwpm-stacktrace");
+
+    resProto.setSubstitution("openwpm", context.extension.rootURI);
+    ChromeUtils.registerWindowActor("OpenWPMStackDump", {
+      parent: {
+        moduleURI: "resource://openwpm/privileged/stackDump/OpenWPMStackDumpParent.jsm",
+      },
       child: {
         moduleURI: "resource://openwpm/privileged/stackDump/OpenWPMStackDumpChild.jsm",
-        events: {
-          load: {},
-        },
+        observers: ["content-document-global-created"],
       },
       allFrames: true,
     });
-    Cu.reportError("Done!");
 
     return {
       stackDump: {
