@@ -1,0 +1,21 @@
+[
+  {
+    "namespace": "stackDump",
+    "events": [
+      {
+        "name": "onStackAvailable",
+        "type": "function",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "channelId"
+          },
+          {
+            "type": "string",
+            "name": "stack"
+          }
+        ]
+      }
+    ]
+  }
+]

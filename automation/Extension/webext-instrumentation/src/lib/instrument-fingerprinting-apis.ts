@@ -121,4 +121,19 @@ export function instrumentFingerprintingApis({
   instrumentObject(window.AnalyserNode.prototype, "AnalyserNode");
   instrumentObject(window.GainNode.prototype, "GainNode");
   instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("STACKY STACKY!");
+    document.body.addEventListener("load", (e) => {
+      console.log("PAGE SCOPE STACK! " + new Error().stack);
+      console.error("test!!~! ");
+      console.log(e);
+    }, true);
+    document.addEventListener("testtest", (e) => {
+      console.log("PAGE SCOPE STACK! " + new Error().stack);
+      console.error("test!!~! ");
+      console.log(e);
+    });
+  }, {once: true});
 }

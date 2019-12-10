@@ -16,11 +16,11 @@ async function main() {
     console.log("Browser Config:", config);
   } else {
     config = {
-      navigation_instrument:true,
-      cookie_instrument:true,
-      js_instrument:true,
+      navigation_instrument:false,
+      cookie_instrument:false,
+      js_instrument:false,
       js_instrument_modules:"fingerprinting",
-      http_instrument:true,
+      http_instrument:false,
       save_content:false,
       testing:true,
       crawl_id:0
@@ -58,6 +58,9 @@ async function main() {
     httpInstrument.run(config['crawl_id'],
                        config['save_content']);
   }
+
+  console.log(browser.stackDump.onStackAvailable.addListener(() => {}));
 }
 
 main();
+
