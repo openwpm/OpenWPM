@@ -342,7 +342,7 @@ class S3Aggregator(BaseAggregator):
         self.dir = manager_params['s3_directory']
         self.bucket = manager_params['s3_bucket']
         self.s3 = boto3.client('s3')
-        self._instance_id = random.getrandbits(31)
+        self._instance_id = random.getrandbits(32)
         self._create_bucket()
 
     def _create_bucket(self):
