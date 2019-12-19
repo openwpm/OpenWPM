@@ -3,7 +3,7 @@ import {
   JavascriptInstrument,
   HttpInstrument,
   NavigationInstrument,
-  SpoofNavigator,
+  HideWebdriver,
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
@@ -22,7 +22,7 @@ async function main() {
       js_instrument:true,
       js_instrument_modules:"fingerprinting",
       http_instrument:true,
-      spoof_navigator:false,
+      hide_webdriver:false,
       save_content:false,
       testing:true,
       crawl_id:0
@@ -61,10 +61,10 @@ async function main() {
                        config['save_content']);
   }
 
-  if (config['spoof_navigator']) {
-    loggingDB.logDebug("Now spoofing `webdriver` attribute to `false`");
-    let spoofNavigator = new SpoofNavigator();
-    await spoofNavigator.registerContentScript();
+  if (config['hide_webdriver']) {
+    loggingDB.logDebug("Hide webdriver enabled");
+    let hideWebdriver = new HideWebdriver();
+    await hideWebdriver.registerContentScript();
   }
 }
 

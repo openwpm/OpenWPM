@@ -1,4 +1,4 @@
-export class SpoofNavigator {
+export class HideWebdriver {
   /**
    * Dynamically register the content script to proxy
    * `window.navigator`. The proxy object returns `false`
