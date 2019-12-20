@@ -50,7 +50,12 @@ function spoofNavigator(window) {
       if (prop === "webdriver") {
         return false;
       } else {
-        return Reflect.get(origNavigator, prop);
+        let value = Reflect.get(origNavigator, prop);
+        if(typeof(value) === "function") { // Bind functions like `navigator.javaEnabled()` to the orginal object in the page scope to allow them to execute
+          let boundFunc = Function.prototype.bind.call(value, origNavigator); // `value` is used as `this` to call the `bind` function that creates a copy of `Function.prototype` that always runs in the `this` context `origiNavigator`
+          value = cloneIntoFull(boundFunc, window.wrappedJSObject);
+        }
+        return value;
       }
     }
   }, window.wrappedJSObject); // The `get` function, defined in privileged code (that is here in the extension / content script), is cloned into the target scope (that is the web page / `window.wrappedJSObject`) and thus accessible there. The return value is the reference to the cloned object in the defined scope.
