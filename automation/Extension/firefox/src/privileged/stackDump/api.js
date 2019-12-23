@@ -20,7 +20,7 @@ this.stackDump = class extends ExtensionAPI {
     Services.obs.addObserver((data) => {
       data = data.wrappedJSObject;
       gOnStackAvailableListeners.forEach((listener) => {
-        listener(data.channelId, data.stacktrace);
+        listener(data.requestId, data.stacktrace);
       });
     }, "openwpm-stacktrace");
 

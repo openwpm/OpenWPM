@@ -8,7 +8,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "channelId"
+            "name": "requestId"
           },
           {
             "type": "string",

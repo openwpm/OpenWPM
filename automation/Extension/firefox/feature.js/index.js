@@ -59,8 +59,12 @@ async function main() {
                        config['save_content']);
   }
 
-  browser.stackDump.onStackAvailable.addListener((channelId, stack) => {
-    console.log(channelId, stack);
+  browser.webRequest.onBeforeRequest.addListener((details) => {
+    console.log(`req id: ${details.requestId}`);
+  }, {urls: ["<all_urls>"]});
+
+  browser.stackDump.onStackAvailable.addListener((requestId, stack) => {
+    console.log(requestId, stack);
   });
 }
 
