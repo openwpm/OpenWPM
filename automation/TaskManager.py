@@ -1,19 +1,16 @@
-from __future__ import absolute_import, division
 
 import copy
 import json
 import logging
 import os
+import pickle
 import threading
 import time
 import traceback
+from queue import Empty as EmptyQueue
 
 import psutil
 import tblib
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves import range
-from six.moves.queue import Empty as EmptyQueue
 
 from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
@@ -301,7 +298,7 @@ class TaskManager:
                     "failure limit.", self.failure_status['CommandSequence']
                 )
             if self.failure_status['ErrorType'] == 'CriticalChildException':
-                reraise(*pickle.loads(self.failure_status['Exception']))
+                raise pickle.loads(self.failure_status['Exception'])
 
     # CRAWLER COMMAND CODE
 
@@ -401,7 +398,8 @@ class TaskManager:
         self.sock.send(("site_visits", {
             "visit_id": browser.curr_visit_id,
             "crawl_id": browser.crawl_id,
-            "site_url": command_sequence.url
+            "site_url": command_sequence.url,
+            "site_rank": command_sequence.site_rank
         }))
 
         # Start command execution thread
@@ -469,6 +467,7 @@ class TaskManager:
                 if status == "OK":
                     command_status = 'ok'
                 elif status[0] == "CRITICAL":
+                    command_status = 'critical'
                     self.logger.critical(
                         "BROWSER %i: Received critical error from browser "
                         "process while executing command %s. Setting failure "

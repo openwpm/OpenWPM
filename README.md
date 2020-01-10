@@ -7,10 +7,41 @@ of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
+Table of Contents
+-----------------
+
+* [Installation](#installation)
+* [Quick Start](#quick-start)
+* [Instrumentation and Data Access](#instrumentation-and-data-access)
+* [Output Formats](#output-format)
+  * [Local Databases](#local-databases)
+  * [Parquet on Amazon S3 (Experimental)](#parquet-on-amazon-s3-experimental)
+* [Browser and Platform Configuration](#browser-and-platform-configuration)
+  * [Browser Configuration Options](#platform-configuration-options)
+* [Browser Profile Support](#browser-profile-support)
+  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+* [Development pointers](#development-pointers)
+  * [Editing instrumentation](#editing-instrumentation)
+  * [Debugging the platform](#debugging-the-platform)
+  * [Managing requirements](#managing-requirements)
+  * [Running tests](#running-tests)
+  * [Mac OSX (Limited support for developers)](#mac-osx-limited-support-for-developers)
+* [Troubleshooting](#troubleshooting)
+* [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+  * [Building the Docker Container](#building-the-docker-container)
+  * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+  * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+* [Disclaimer](#disclaimer)
+* [Citation](#citation)
+* [License](#license)
+
+
 Installation
 ------------
 
-OpenWPM has been developed and tested on Ubuntu 14.04/16.04. An installation
+OpenWPM is a Python 3 application developed and tested for Ubuntu 18.04.
+Python 2 is not supported. An installation
 script, `install.sh` is included to install both the system and python
 dependencies automatically. A few of the python dependencies require specific
 versions, so you should install the dependencies in a virtual environment if
@@ -419,8 +450,8 @@ OpenWPM should be placed in the former, while those only required to run the
 tests (or perform other development tasks) should be placed in the latter.
 
 To update dependencies, run the following two commands **in order**:
-* `pip-compile --upgrade requirements.txt`
-* `pip-compile --upgrade requirements-dev.txt`
+* `pip-compile --upgrade requirements.in`
+* `pip-compile --upgrade requirements-dev.in`
 
 It's important that these are run in order, as we layer the dev
 dependencies on the output of the pinned production dependencies as per

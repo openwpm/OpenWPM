@@ -1,4 +1,3 @@
-from __future__ import absolute_import, print_function
 
 import json
 import os
@@ -89,13 +88,11 @@ def get_version():
             openwpm = f.readline().strip()
 
     firefox_binary_path = get_firefox_binary_path()
-    import six
     try:
         firefox = subprocess.check_output([firefox_binary_path, "--version"])
     except subprocess.CalledProcessError as e:
-        six.raise_from(
-            RuntimeError("Firefox not found.  Did you run `./install.sh`?"),
-            e)
+        raise RuntimeError("Firefox not found. "
+                           " Did you run `./install.sh`?") from e
 
     ff = firefox.split()[-1]
     return openwpm, ff

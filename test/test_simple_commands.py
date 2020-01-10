@@ -1,13 +1,12 @@
-from __future__ import absolute_import
 
 import glob
 import gzip
 import json
 import os
 import re
+from urllib.parse import urlparse
 
 from PIL import Image
-from six.moves.urllib.parse import urlparse
 
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
@@ -152,9 +151,9 @@ class TestSimpleCommands(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = CommandSequence.CommandSequence(url_a, site_rank=0)
         cs_a.browse(num_links=1, sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = CommandSequence.CommandSequence(url_b, site_rank=1)
         cs_b.browse(num_links=1, sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -162,13 +161,16 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT site_url FROM site_visits")
+                                    "SELECT site_url, site_rank"
+                                    " FROM site_visits")
 
         # We had two separate page visits
         assert len(qry_res) == 2
 
         assert qry_res[0][0] == url_a
+        assert qry_res[0][1] == 0
         assert qry_res[1][0] == url_b
+        assert qry_res[1][1] == 1
 
     def test_browse_http_table_valid(self):
         """Check CommandSequence.browse() works and populates http tables correctly.

@@ -1,11 +1,10 @@
-from __future__ import absolute_import
 
+import json
 import os
 import time
 
 import boto3
 import sentry_sdk
-from six.moves import range
 
 from automation import CommandSequence, MPLogger, TaskManager
 from automation.utilities import rediswq
@@ -22,6 +21,7 @@ NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
+PREFS = os.getenv('PREFS', None)
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
@@ -49,6 +49,8 @@ for i in range(NUM_BROWSERS):
         browser_params[i]['save_content'] = False
     else:
         browser_params[i]['save_content'] = SAVE_CONTENT
+    if PREFS:
+        browser_params[i]['prefs'] = json.loads(PREFS)
     browser_params[i]['headless'] = True
 
 # Manager configuration
@@ -89,6 +91,7 @@ if SENTRY_DSN:
         scope.set_tag('CRAWL_REFERENCE', '%s/%s' %
                       (S3_BUCKET, CRAWL_DIRECTORY))
         # context adds addition information that may be of interest
+        scope.set_context("PREFS", PREFS)
         scope.set_context("crawl_config", {
             'REDIS_QUEUE_NAME': REDIS_QUEUE_NAME,
         })

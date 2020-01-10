@@ -1,21 +1,19 @@
-from __future__ import absolute_import
 
 import errno
 import logging
 import os
+import pickle
 import shutil
 import signal
 import sys
 import threading
 import time
 import traceback
+from queue import Empty as EmptyQueue
 
 import psutil
 from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 
 from .Commands import command_executor
@@ -126,7 +124,7 @@ class Browser:
                 launch_status[result[1]] = True
                 return result[2]
             elif result[0] == 'CRITICAL':
-                reraise(*pickle.loads(result[1]))
+                raise pickle.loads(result[1])
             elif result[0] == 'FAILED':
                 raise BrowserCrashError(
                     'Browser spawn returned failure status')

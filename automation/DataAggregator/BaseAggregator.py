@@ -1,10 +1,10 @@
 import abc
 import logging
+import queue
 import threading
 import time
 
 from multiprocess import Queue
-from six.moves import queue
 
 from ..SocketInterface import serversocket
 from ..utilities.multiprocess_utils import Process
@@ -19,10 +19,11 @@ STATUS_UPDATE_INTERVAL = 5  # seconds
 class BaseListener(object):
     """Base class for the data aggregator listener process. This class is used
     alongside the BaseAggregator class to spawn an aggregator process that
-    combines data collected in multiple crawl processes and write it to disk as
-    specified in the child class. The BaseListener class is instantiated in the
-    remote process, and sets up a listening socket to receive data. Classes
-    which inherit from this base class define how that data is written to disk.
+    combines data collected in multiple crawl processes and stores it
+    persistently as specified in the child class. The BaseListener class
+    is instantiated in the remote process, and sets up a listening socket to
+    receive data. Classes which inherit from this base class define
+    how that data is written to disk.
 
     Parameters
     ----------

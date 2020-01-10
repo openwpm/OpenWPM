@@ -34,17 +34,13 @@ RUN ./install-system.sh --no-flash
 RUN mv firefox-bin /opt/firefox-bin
 ENV FIREFOX_BINARY /opt/firefox-bin/firefox-bin
 
-# Instead of running install-pip-and-packages.sh, the packages are installed
-# manually using pip and pip3 so that python2 and python3 are supported in the
-# final image.
-RUN apt-get -y install python-pip python3-pip
-
 # For some reasons, python3-publicsuffix doesn't work with pip3 at the moment,
 # so install it from the ubuntu repository
 RUN apt-get -y install python3-publicsuffix
 
 COPY requirements.txt .
-RUN pip3 install -U -r requirements.txt
+COPY install-pip-and-packages.sh .
+RUN ./install-pip-and-packages.sh
 
 COPY --from=extension /usr/src/app/dist/openwpm-*.zip automation/Extension/firefox/openwpm.xpi
 
@@ -59,5 +55,5 @@ COPY . .
 # possible to run everything as root as well.
 RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
 
-# Alternatively, python3 could be used here
+# Setting demo.py as the default command
 CMD python3 demo.py

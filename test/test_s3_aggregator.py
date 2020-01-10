@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 
 import json
 import time
@@ -6,7 +5,6 @@ from collections import defaultdict
 
 import boto3
 import pytest
-import six
 from localstack.services import infra
 
 from ..automation import TaskManager
@@ -72,6 +70,8 @@ class TestS3Aggregator(OpenWPMTest):
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
             assert len(visit_ids[table_name]) == NUM_VISITS * NUM_BROWSERS
+            for vid in visit_ids[table_name]:
+                assert(vid >= 0) and (vid < (1 << 53))
         for table_name, ids in visit_ids.items():
             assert set(ids) == set(visit_ids['site_visits'])
 
@@ -83,7 +83,7 @@ class TestS3Aggregator(OpenWPMTest):
         # of configuration files
         config_file = dataset.list_files('config', prepend_root=True)
         assert len(config_file) == 1  # only one instance started in test
-        config = json.loads(six.text_type(
+        config = json.loads(str(
             dataset.get_file(config_file[0]), 'utf-8'))
         assert len(config['browser_params']) == NUM_BROWSERS
 

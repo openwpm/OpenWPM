@@ -1,4 +1,3 @@
-from __future__ import absolute_import, print_function
 
 import copy
 import json
@@ -10,13 +9,12 @@ import struct
 import sys
 import threading
 import time
+from queue import Empty as EmptyQueue
 
 import dill
 import sentry_sdk
-import six
 from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
-from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 
 from .Commands.utils.webdriver_utils import parse_neterror
@@ -111,6 +109,7 @@ class MPLogger(object):
         # Configure log handlers
         self._status_queue = JoinableQueue()
         self._log_file = os.path.expanduser(log_file)
+
         self._initialize_loggers()
 
         # Configure sentry (if available)
@@ -266,9 +265,9 @@ class MPLogger(object):
         and those sent to Sentry.
         """
         if obj['exc_info']:
-            obj['exc_info'] = dill.loads(six.ensure_str(obj['exc_info']))
+            obj['exc_info'] = dill.loads(obj['exc_info'])
         if obj['args']:
-            obj['args'] = dill.loads(six.ensure_str(obj['args']))
+            obj['args'] = dill.loads(obj['args'])
         record = logging.makeLogRecord(obj)
         self._file_handler.emit(record)
         if self._sentry_dsn:

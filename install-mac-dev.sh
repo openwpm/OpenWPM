@@ -31,8 +31,8 @@ brew install node || true
 # Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
 brew install wget || true
 
-UNBRANDED_FF70_RELEASE_MAC_BUILD="https://queue.taskcluster.net/v1/task/Kclp8treRdORNcAmrNLgJg/runs/0/artifacts/public/build/target.dmg"
-wget "$UNBRANDED_FF70_RELEASE_MAC_BUILD"
+UNBRANDED_FF71_RELEASE_MAC_BUILD="https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/LQgnuH1-R8a31vCSFufr2g/runs/0/artifacts/public/build/target.dmg"
+wget "$UNBRANDED_FF71_RELEASE_MAC_BUILD"
 # Install Firefox Nightly
 rm -rf Nightly.app || true
 hdiutil attach -nobrowse -mountpoint /Volumes/firefox-tmp target.dmg
@@ -42,7 +42,7 @@ rm target.dmg
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
 # packaged.
-GECKODRIVER_VERSION=0.24.0
+GECKODRIVER_VERSION=0.26.0
 GECKODRIVER_ARCH=macos
 
 wget https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz

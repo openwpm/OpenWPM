@@ -1,4 +1,3 @@
-from __future__ import absolute_import, print_function
 
 import base64
 import json
@@ -9,8 +8,6 @@ from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
                      ProgrammingError)
 
 import plyvel
-import six
-from six.moves import range
 
 from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
 
@@ -102,10 +99,10 @@ class LocalListener(BaseListener):
         statement, args = self._generate_insert(
             table=record[0], data=record[1])
         for i in range(len(args)):
-            if isinstance(args[i], six.binary_type):
-                args[i] = six.text_type(args[i], errors='ignore')
+            if isinstance(args[i], bytes):
+                args[i] = str(args[i], errors='ignore')
             elif callable(args[i]):
-                args[i] = six.text_type(args[i])
+                args[i] = str(args[i])
             elif type(args[i]) == dict:
                 print(args[i])
                 args[i] = json.dumps(args[i])
