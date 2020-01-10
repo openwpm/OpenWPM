@@ -200,3 +200,11 @@ fields = [
     pa.field('time_stamp', pa.string())
 ]
 PQ_SCHEMAS['navigations'] = pa.schema(fields)
+
+fields = [
+    pa.field('visit_id', pa.int64(), nullable=False),
+    pa.field('crawl_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('callstack', pa.string())
+]
+PQ_SCHEMAS['callstacks'] = pa.schema(fields)

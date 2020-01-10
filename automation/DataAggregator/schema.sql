@@ -224,3 +224,13 @@ CREATE TABLE IF NOT EXISTS navigations(
   committed_event_ordinal INTEGER,
   committed_time_stamp DATETIME
 );
+
+/*
+# Callstacks
+ */
+CREATE TABLE IF NOT EXISTS callstacks(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  crawl_id INTEGER NOT NULL,
+  visit_id INTEGER NOT NULL,
+  callstack TEXT
+)
