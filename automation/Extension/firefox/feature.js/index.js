@@ -2,10 +2,11 @@ import {
   CookieInstrument,
   JavascriptInstrument,
   HttpInstrument,
-  NavigationInstrument,
+  NavigationInstrument
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
+import { CallstackInstrument } from "openwpm-webext-instrumentation/src/background/callstack-instrument";
 
 async function main() {
   // Read the browser configuration from file
@@ -16,11 +17,12 @@ async function main() {
     console.log("Browser Config:", config);
   } else {
     config = {
-      navigation_instrument:false,
-      cookie_instrument:false,
-      js_instrument:false,
+      navigation_instrument:true,
+      cookie_instrument:true,
+      js_instrument:true,
       js_instrument_modules:"fingerprinting",
-      http_instrument:false,
+      http_instrument:true,
+      callstack_instrument:true,
       save_content:false,
       testing:true,
       crawl_id:0
@@ -59,13 +61,11 @@ async function main() {
                        config['save_content']);
   }
 
-  browser.webRequest.onBeforeRequest.addListener((details) => {
-    console.log(`req id: ${details.requestId}`);
-  }, {urls: ["<all_urls>"]});
-
-  browser.stackDump.onStackAvailable.addListener((requestId, stack) => {
-    console.log(requestId, stack);
-  });
+  if (config['callstack_instrument']) {
+    loggingDB.logDebug("Callstack Instrumentation enabled");
+    let callstackInstrument = new CallstackInstrument(loggingDB);
+    callstackInstrument.run(config['crawl_id']);
+  }
 }
 
 main();
