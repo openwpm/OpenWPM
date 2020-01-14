@@ -116,7 +116,7 @@ class Controller {
       } catch(e) {
         return;
       }
-      if (!this.matchRequest(channel, { window: this.actor.content })) {
+      if (!this.matchRequest(channel, { window: this.actor.contentWindow })) {
         return;
       }
       let frame = Components.stack;

@@ -6,7 +6,7 @@ import {
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
-import { CallstackInstrument } from "openwpm-webext-instrumentation/src/background/callstack-instrument";
+import { CallstackInstrument } from "./callstack-instrument.js";
 
 async function main() {
   // Read the browser configuration from file
