@@ -124,6 +124,7 @@ class Controller {
       if (frame && frame.caller) {
         frame = frame.caller;
         while (frame) {
+          // Format described here https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
           stacktrace.push(
             frame.name +
               "@" +
@@ -140,6 +141,7 @@ class Controller {
       }
       if (!stacktrace.length) return;
       stacktrace = stacktrace.join("\n");
+      //Passes the message up to the parent
       this.actor.sendAsyncMessage("OpenWPM:Callstack", { stacktrace, channelId });
       break;
     }
@@ -150,11 +152,13 @@ class Controller {
   }
 }
 
+
 class OpenWPMStackDumpChild extends JSWindowActorChild {
   constructor() {
     super();
   }
   actorCreated() {
+    //We need the Controller because registering an observer on the child didn't work
     this.controller = new Controller(this);
   }
   willDestroy() {
