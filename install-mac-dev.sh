@@ -31,7 +31,7 @@ brew install node || true
 # Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
 brew install wget || true
 
-UNBRANDED_RELEASE_MAC_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.latest.firefox.mac64-add-on-devel/artifacts/public/build/target.dmg"
+UNBRANDED_RELEASE_MAC_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.latest.firefox.macosx64-add-on-devel/artifacts/public/build/target.dmg"
 wget "$UNBRANDED_RELEASE_MAC_BUILD"
 # Install Firefox Nightly
 rm -rf Nightly.app || true
