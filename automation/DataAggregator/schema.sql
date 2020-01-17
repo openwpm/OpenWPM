@@ -231,7 +231,8 @@ CREATE TABLE IF NOT EXISTS navigations(
  */
 CREATE TABLE IF NOT EXISTS callstacks(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id INTEGER NOT NULL,
   crawl_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
-  callstack TEXT
+  call_stack TEXT
 )
