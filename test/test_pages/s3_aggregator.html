@@ -7,6 +7,11 @@
         document.cookie = 'test_cookie='+Math.random()+'; expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/';
         console.log(window.navigator.userAgent);
      }
+     async function load_a_thing() {
+          const request  = await fetch("shared/utils.js");
+          console.log(request.ok);
+     }
+     load_a_thing();
   </script>
  </head>
  <body onload="set_cookie()">

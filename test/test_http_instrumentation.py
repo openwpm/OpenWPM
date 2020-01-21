@@ -623,21 +623,20 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add((src, dst))
         assert HTTP_CACHED_REDIRECTS == observed_records
 
-    # TODO: webext instrumentation doesn't support req_call_stack yet.
-    # def test_http_stacktrace(self):
-    #     test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
-    #     db = self.visit(test_url, sleep_after=3)
-    #     rows = db_utils.query_db(db, (
-    #         "SELECT url, req_call_stack FROM http_requests"))
-    #     observed_records = set()
-    #     for row in rows:
-    #         print(row)
-    #         url, stacktrace = row
-    #         if (url.endswith("inject_pixel.js") or
-    #                 url.endswith("test_image.png") or
-    #                 url.endswith("Blank.gif")):
-    #             observed_records.add(stacktrace)
-    #     assert HTTP_STACKTRACES == observed_records
+    def test_http_stacktrace(self):
+        test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
+        db = self.visit(test_url, sleep_after=3)
+        rows = db_utils.query_db(db, (
+            "SELECT url, req_call_stack FROM callstacks"))
+        observed_records = set()
+        for row in rows:
+            print(row)
+            url, stacktrace = row
+            if (url.endswith("inject_pixel.js") or
+                    url.endswith("test_image.png") or
+                    url.endswith("Blank.gif")):
+                observed_records.add(stacktrace)
+        assert HTTP_STACKTRACES == observed_records
 
     def test_parse_http_stack_trace_str(self):
         stacktrace = STACK_TRACE_INJECT_IMAGE
