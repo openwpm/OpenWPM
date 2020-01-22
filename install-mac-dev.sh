@@ -28,11 +28,13 @@ CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install --force
 # Make npm available (used by build-extension.sh)
 brew install node || true
 
-# Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
+# Use the Unbranded build that corresponds to a specific Firefox version 
+# To upgrade https://github.com/mozilla/OpenWPM/issues/381#issuecomment-576805132
 brew install wget || true
 
-UNBRANDED_FF71_RELEASE_MAC_BUILD="https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/LQgnuH1-R8a31vCSFufr2g/runs/0/artifacts/public/build/target.dmg"
-wget "$UNBRANDED_FF71_RELEASE_MAC_BUILD"
+TAG=25e0edbb0a613c3bf794c93ba3aa0985d29d5ef4
+UNBRANDED_RELEASE_MAC_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.revision.$TAG.firefox.macosx64-add-on-devel/artifacts/public/build/target.dmg"
+wget "$UNBRANDED_RELEASE_MAC_BUILD"
 # Install Firefox Nightly
 rm -rf Nightly.app || true
 hdiutil attach -nobrowse -mountpoint /Volumes/firefox-tmp target.dmg

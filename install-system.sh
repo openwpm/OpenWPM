@@ -49,8 +49,9 @@ if [ "$flash" = true ]; then
 fi
 
 # Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
-UNBRANDED_FF71_RELEASE_LINUX_BUILD="https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/QKKKcc7VQhq8ngUotlj6hA/runs/0/artifacts/public/build/target.tar.bz2"
-wget "$UNBRANDED_FF71_RELEASE_LINUX_BUILD"
+TAG=25e0edbb0a613c3bf794c93ba3aa0985d29d5ef4
+UNBRANDED_RELEASE_LINUX_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.revision.$TAG.firefox.linux64-add-on-devel/artifacts/public/build/target.tar.bz2"
+wget "$UNBRANDED_RELEASE_LINUX_BUILD"
 tar jxf target.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
