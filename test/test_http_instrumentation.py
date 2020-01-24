@@ -632,9 +632,9 @@ class TestHTTPInstrument(OpenWPMTest):
         for row in rows:
             print(row)
             url, stacktrace = row
-            if (url.endswith("inject_pixel.js") or
-                    url.endswith("test_image.png") or
-                    url.endswith("Blank.gif")):
+            if (url.endswith("inject_pixel.js")
+                    or url.endswith("test_image.png")  # noqa: W503
+                    or url.endswith("Blank.gif")):  # noqa: W503
                 observed_records.add(stacktrace)
         assert HTTP_STACKTRACES == observed_records
 

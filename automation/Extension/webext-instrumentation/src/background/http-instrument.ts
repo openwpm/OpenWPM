@@ -232,42 +232,6 @@ export class HttpInstrument {
    * HTTP Request Handler and Helper Functions
    */
 
-  /*
-  // TODO: Refactor to corresponding webext logic or discard
-  private get_stack_trace_str() {
-    // return the stack trace as a string
-    // TODO: check if http-on-modify-request is a good place to capture the stack
-    // In the manual tests we could capture exactly the same trace as the
-    // "Cause" column of the devtools network panel.
-    const stacktrace = [];
-    let frame = components.stack;
-    if (frame && frame.caller) {
-      // internal/chrome callers occupy the first three frames, pop them!
-      frame = frame.caller.caller.caller;
-      while (frame) {
-        // chrome scripts appear as callers in some cases, filter them out
-        const scheme = frame.filename.split("://")[0];
-        if (["resource", "chrome", "file"].indexOf(scheme) === -1) {
-          // ignore chrome scripts
-          stacktrace.push(
-            frame.name +
-              "@" +
-              frame.filename +
-              ":" +
-              frame.lineNumber +
-              ":" +
-              frame.columnNumber +
-              ";" +
-              frame.asyncCause,
-          );
-        }
-        frame = frame.caller || frame.asyncCaller;
-      }
-    }
-    return stacktrace.join("\n");
-  }
-  */
-
   private async onBeforeSendHeadersHandler(
     details: WebRequestOnBeforeSendHeadersEventDetails,
     crawlID,
@@ -298,9 +262,6 @@ export class HttpInstrument {
 
     // requestId is a unique identifier that can be used to link requests and responses
     update.request_id = details.requestId;
-
-    // const stacktrace_str = get_stack_trace_str();
-    // update.req_call_stack = escapeString(stacktrace_str);
 
     const url = details.url;
     update.url = escapeUrl(url);

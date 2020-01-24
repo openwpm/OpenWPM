@@ -124,6 +124,11 @@ class Controller {
       if (frame && frame.caller) {
         frame = frame.caller;
         while (frame) {
+          const scheme = frame.filename.split("://")[0];
+         /*  Maybe enable this later if we need to
+            if (["resource", "chrome", "file"].contains(scheme)) {
+            return;
+          } */
           // Format described here https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
           stacktrace.push(
             frame.name +
@@ -152,13 +157,13 @@ class Controller {
   }
 }
 
-
+// JSWindowActorChild (which is a WebIDL class) instances are not directly
+// usable as nsIObserver instances, so we need to use a separate object to observe requests.
 class OpenWPMStackDumpChild extends JSWindowActorChild {
   constructor() {
     super();
   }
   actorCreated() {
-    //We need the Controller because registering an observer on the child didn't work
     this.controller = new Controller(this);
   }
   willDestroy() {
