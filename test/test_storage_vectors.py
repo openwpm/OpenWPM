@@ -112,7 +112,7 @@ class TestStorageVectors(OpenWPMTest):
             manager_params['db'], (
                 "SELECT visit_id, record_type, change_cause, is_http_only, "
                 "is_host_only, is_session, host, is_secure, name, path, "
-                "value, same_site FROM javascript_cookies"),
+                "value, same_site FROM cookies"),
             as_tuple=True
         )
         assert len(qry_res) == 1  # we store only one cookie

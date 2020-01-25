@@ -169,9 +169,9 @@ CREATE TABLE IF NOT EXISTS javascript(
 );
 
 /*
-# javascript_cookies
+# cookies
  */
-CREATE TABLE IF NOT EXISTS javascript_cookies(
+CREATE TABLE IF NOT EXISTS cookies(
     id INTEGER PRIMARY KEY ASC,
     crawl_id INTEGER NOT NULL,
     visit_id INTEGER NOT NULL,
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS javascript_cookies(
 );
 
 /*
-# Navigations
+# navigations
  */
 CREATE TABLE IF NOT EXISTS navigations(
   id INTEGER,

@@ -3,10 +3,10 @@ import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
 import OnChangedCause = browser.cookies.OnChangedCause;
-import { JavascriptCookie, JavascriptCookieRecord } from "../schema";
+import { Cookie, CookieRecord } from "../schema";
 
 export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
-  const javascriptCookie = {} as JavascriptCookie;
+  const cookieData = {} as Cookie;
 
   // Expiry time (in seconds)
   // May return ~Max(int64). I believe this is a session
@@ -21,23 +21,23 @@ export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
     const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds
     expiryTimeString = expiryTimeDate.toISOString();
   }
-  javascriptCookie.expiry = expiryTimeString;
-  javascriptCookie.is_http_only = boolToInt(cookie.httpOnly);
-  javascriptCookie.is_host_only = boolToInt(cookie.hostOnly);
-  javascriptCookie.is_session = boolToInt(cookie.session);
+  cookieData.expiry = expiryTimeString;
+  cookieData.is_http_only = boolToInt(cookie.httpOnly);
+  cookieData.is_host_only = boolToInt(cookie.hostOnly);
+  cookieData.is_session = boolToInt(cookie.session);
 
-  javascriptCookie.host = escapeString(cookie.domain);
-  javascriptCookie.is_secure = boolToInt(cookie.secure);
-  javascriptCookie.name = escapeString(cookie.name);
-  javascriptCookie.path = escapeString(cookie.path);
-  javascriptCookie.value = escapeString(cookie.value);
-  javascriptCookie.same_site = escapeString(cookie.sameSite);
-  javascriptCookie.first_party_domain = escapeString(cookie.firstPartyDomain);
-  javascriptCookie.store_id = escapeString(cookie.storeId);
+  cookieData.host = escapeString(cookie.domain);
+  cookieData.is_secure = boolToInt(cookie.secure);
+  cookieData.name = escapeString(cookie.name);
+  cookieData.path = escapeString(cookie.path);
+  cookieData.value = escapeString(cookie.value);
+  cookieData.same_site = escapeString(cookie.sameSite);
+  cookieData.first_party_domain = escapeString(cookie.firstPartyDomain);
+  cookieData.store_id = escapeString(cookie.storeId);
 
-  javascriptCookie.time_stamp = new Date().toISOString();
+  cookieData.time_stamp = new Date().toISOString();
 
-  return javascriptCookie;
+  return cookieData;
 };
 
 export class CookieInstrument {
@@ -59,7 +59,7 @@ export class CookieInstrument {
       cause: OnChangedCause;
     }) => {
       const eventType = changeInfo.removed ? "deleted" : "added-or-changed";
-      const update: JavascriptCookieRecord = {
+      const update: CookieRecord = {
         record_type: eventType,
         change_cause: changeInfo.cause,
         crawl_id: crawlID,
@@ -67,7 +67,7 @@ export class CookieInstrument {
         event_ordinal: incrementedEventOrdinal(),
         ...transformCookieObjectToMatchOpenWPMSchema(changeInfo.cookie),
       };
-      this.dataReceiver.saveRecord("javascript_cookies", update);
+      this.dataReceiver.saveRecord("cookies", update);
     };
     browser.cookies.onChanged.addListener(this.onChangedListener);
   }
@@ -76,13 +76,13 @@ export class CookieInstrument {
     const allCookies = await browser.cookies.getAll({});
     await Promise.all(
       allCookies.map((cookie: Cookie) => {
-        const update: JavascriptCookieRecord = {
+        const update: CookieRecord = {
           record_type: "manual-export",
           crawl_id: crawlID,
           extension_session_uuid: extensionSessionUuid,
           ...transformCookieObjectToMatchOpenWPMSchema(cookie),
         };
-        return this.dataReceiver.saveRecord("javascript_cookies", update);
+        return this.dataReceiver.saveRecord("cookies", update);
       }),
     );
   }

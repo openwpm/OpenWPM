@@ -144,7 +144,7 @@ available [below](#output-format).
         browser is running on the machine.
 * Cookie Access
     * Set `browser_params['cookie_instrument'] = True`
-    * Data is saved to the `javascript_cookies` table.
+    * Data is saved to the `cookies` table.
     * Will record cookies set both by Javascript and via HTTP Responses
 * Log Files
     * Stored in the directory specified by `manager_params['data_directory']`.

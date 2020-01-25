@@ -146,7 +146,7 @@ fields = [
 ]
 PQ_SCHEMAS['javascript'] = pa.schema(fields)
 
-# javascript_cookies
+# cookies
 fields = [
     pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
@@ -169,7 +169,7 @@ fields = [
     pa.field('store_id', pa.string()),
     pa.field('time_stamp', pa.string())
 ]
-PQ_SCHEMAS['javascript_cookies'] = pa.schema(fields)
+PQ_SCHEMAS['cookies'] = pa.schema(fields)
 
 # navigations
 fields = [
