@@ -106,10 +106,9 @@ export interface HttpRedirect {
   incognito?: number;
   crawl_id?: number;
   visit_id?: number;
+  request_id?: string;
   old_request_url?: string;
-  old_request_id?: string;
   new_request_url?: string;
-  new_request_id?: string;
   extension_session_uuid?: string;
   event_ordinal?: number;
   window_id?: number;

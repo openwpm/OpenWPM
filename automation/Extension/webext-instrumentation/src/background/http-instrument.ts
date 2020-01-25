@@ -55,7 +55,7 @@ export class HttpInstrument {
       "object_subrequest",
       "ping",
       "script",
-      // "speculative",
+      "speculative",
       "stylesheet",
       "sub_frame",
       "web_manifest",
@@ -229,57 +229,14 @@ export class HttpInstrument {
   }
 
   /*
-   * HTTP Request Handler and Helper Functions
+   * HTTP Request Handler
    */
-
-  /*
-  // TODO: Refactor to corresponding webext logic or discard
-  private get_stack_trace_str() {
-    // return the stack trace as a string
-    // TODO: check if http-on-modify-request is a good place to capture the stack
-    // In the manual tests we could capture exactly the same trace as the
-    // "Cause" column of the devtools network panel.
-    const stacktrace = [];
-    let frame = components.stack;
-    if (frame && frame.caller) {
-      // internal/chrome callers occupy the first three frames, pop them!
-      frame = frame.caller.caller.caller;
-      while (frame) {
-        // chrome scripts appear as callers in some cases, filter them out
-        const scheme = frame.filename.split("://")[0];
-        if (["resource", "chrome", "file"].indexOf(scheme) === -1) {
-          // ignore chrome scripts
-          stacktrace.push(
-            frame.name +
-              "@" +
-              frame.filename +
-              ":" +
-              frame.lineNumber +
-              ":" +
-              frame.columnNumber +
-              ";" +
-              frame.asyncCause,
-          );
-        }
-        frame = frame.caller || frame.asyncCaller;
-      }
-    }
-    return stacktrace.join("\n");
-  }
-  */
 
   private async onBeforeSendHeadersHandler(
     details: WebRequestOnBeforeSendHeadersEventDetails,
     crawlID,
     eventOrdinal: number,
   ) {
-    /*
-    console.log(
-      "onBeforeSendHeadersHandler (previously httpRequestHandler)",
-      details,
-      crawlID,
-    );
-    */
 
     const tab =
       details.tabId > -1
@@ -296,11 +253,9 @@ export class HttpInstrument {
     update.tab_id = details.tabId;
     update.frame_id = details.frameId;
 
-    // requestId is a unique identifier that can be used to link requests and responses
+    // requestId is a monotonically increasing integer that is constant
+    // through a redirect chain. It is not unique across page visits.
     update.request_id = details.requestId;
-
-    // const stacktrace_str = get_stack_trace_str();
-    // update.req_call_stack = escapeString(stacktrace_str);
 
     const url = details.url;
     update.url = escapeUrl(url);
@@ -349,14 +304,10 @@ export class HttpInstrument {
 
         if (requestBody) {
           const postParser = new HttpPostParser(
-            // details,
             onBeforeRequestEventDetails,
             this.dataReceiver,
           );
-          const postObj: ParsedPostRequest = postParser
-            .parsePostRequest
-            /*encodingType,*/
-            ();
+          const postObj: ParsedPostRequest = postParser.parsePostRequest();
 
           // Add (POST) request headers from upload stream
           if ("post_headers" in postObj) {
@@ -425,49 +376,6 @@ export class HttpInstrument {
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType
     update.resource_type = details.type;
 
-    /*
-    // TODO: Refactor to corresponding webext logic or discard
-    const ThirdPartyUtil = Cc["@mozilla.org/thirdpartyutil;1"].getService(
-                           Ci.mozIThirdPartyUtil);
-    // Do third-party checks
-    // These specific checks are done because it's what's used in Tracking Protection
-    // See: http://searchfox.org/mozilla-central/source/netwerk/base/nsChannelClassifier.cpp#107
-    try {
-      const isThirdPartyChannel = ThirdPartyUtil.isThirdPartyChannel(details);
-      const topWindow = ThirdPartyUtil.getTopWindowForChannel(details);
-      const topURI = ThirdPartyUtil.getURIFromWindow(topWindow);
-      if (topURI) {
-        const topUrl = topURI.spec;
-        const channelURI = details.URI;
-        const isThirdPartyToTopWindow = ThirdPartyUtil.isThirdPartyURI(
-          channelURI,
-          topURI,
-        );
-        update.is_third_party_to_top_window = isThirdPartyToTopWindow;
-        update.is_third_party_channel = isThirdPartyChannel;
-      }
-    } catch (anError) {
-      // Exceptions expected for channels triggered or loading in a
-      // NullPrincipal or SystemPrincipal. They are also expected for favicon
-      // loads, which we attempt to filter. Depending on the naming, some favicons
-      // may continue to lead to error logs.
-      if (
-        update.triggering_origin !== "[System Principal]" &&
-        update.triggering_origin !== undefined &&
-        update.loading_origin !== "[System Principal]" &&
-        update.loading_origin !== undefined &&
-        !update.url.endsWith("ico")
-      ) {
-        this.dataReceiver.logError(
-          "Error while retrieving additional channel information for URL: " +
-          "\n" +
-          update.url +
-          "\n Error text:" +
-          JSON.stringify(anError),
-        );
-      }
-    }
-    */
     update.top_level_url = escapeUrl(this.getDocumentUrlForRequest(details));
     update.parent_frame_id = details.parentFrameId;
     update.frame_ancestors = escapeString(
@@ -516,77 +424,8 @@ export class HttpInstrument {
     crawlID,
     eventOrdinal: number,
   ) {
-    /*
-    console.log(
-      "onBeforeRedirectHandler (previously httpRequestHandler)",
-      details,
-      crawlID,
-    );
-    */
-
     // Save HTTP redirect events
     // Events are saved to the `http_redirects` table
-
-    /*
-    // TODO: Refactor to corresponding webext logic or discard
-    // Events are saved to the `http_redirects` table, and map the old
-    // request/response channel id to the new request/response channel id.
-    // Implementation based on: https://stackoverflow.com/a/11240627
-    const oldNotifications = details.notificationCallbacks;
-    let oldEventSink = null;
-    details.notificationCallbacks = {
-      QueryInterface: XPCOMUtils.generateQI([
-        Ci.nsIInterfaceRequestor,
-        Ci.nsIChannelEventSink,
-      ]),
-
-      getInterface(iid) {
-        // We are only interested in nsIChannelEventSink,
-        // return the old callbacks for any other interface requests.
-        if (iid.equals(Ci.nsIChannelEventSink)) {
-          try {
-            oldEventSink = oldNotifications.QueryInterface(iid);
-          } catch (anError) {
-            this.dataReceiver.logError(
-              "Error during call to custom notificationCallbacks::getInterface." +
-                JSON.stringify(anError),
-            );
-          }
-          return this;
-        }
-
-        if (oldNotifications) {
-          return oldNotifications.getInterface(iid);
-        } else {
-          throw Cr.NS_ERROR_NO_INTERFACE;
-        }
-      },
-
-      asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
-
-        newChannel.QueryInterface(Ci.nsIHttpChannel);
-
-        const httpRedirect: HttpRedirect = {
-          crawl_id: crawlID,
-          old_request_id: oldChannel.channelId,
-          new_request_id: newChannel.channelId,
-          time_stamp: new Date().toISOString(),
-        };
-        this.dataReceiver.saveRecord("http_redirects", httpRedirect);
-
-        if (oldEventSink) {
-          oldEventSink.asyncOnChannelRedirect(
-            oldChannel,
-            newChannel,
-            flags,
-            callback,
-          );
-        } else {
-          callback.onRedirectVerifyCallback(Cr.NS_OK);
-        }
-      },
-    };
-    */
 
     const responseStatus = details.statusCode;
     const responseStatusText = details.statusLine;
@@ -598,10 +437,9 @@ export class HttpInstrument {
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
+      request_id: details.requestId,
       old_request_url: escapeUrl(details.url),
-      old_request_id: details.requestId,
       new_request_url: escapeUrl(details.redirectUrl),
-      new_request_id: null, // TODO: File a bug to make redirectRequestId available
       extension_session_uuid: extensionSessionUuid,
       event_ordinal: eventOrdinal,
       window_id: tab.windowId,
@@ -632,14 +470,6 @@ export class HttpInstrument {
       update.content_hash = contentHash;
       this.dataReceiver.saveRecord("http_responses", update);
     } catch (err) {
-      /*
-      // TODO: Refactor to corresponding webext logic or discard
-      dataReceiver.logError(
-        "Unable to retrieve response body." + JSON.stringify(aReason),
-      );
-      update.content_hash = "<error>";
-      dataReceiver.saveRecord("http_responses", update);
-      */
       this.dataReceiver.logError(
         "Unable to retrieve response body." +
           "Likely caused by a programming error. Error Message:" +
@@ -660,15 +490,6 @@ export class HttpInstrument {
     eventOrdinal,
     saveContent,
   ) {
-    /*
-    console.log(
-      "onCompletedHandler (previously httpRequestHandler)",
-      details,
-      crawlID,
-      saveContent,
-    );
-    */
-
     const tab =
       details.tabId > -1
         ? await browser.tabs.get(details.tabId)
@@ -684,7 +505,8 @@ export class HttpInstrument {
     update.tab_id = details.tabId;
     update.frame_id = details.frameId;
 
-    // requestId is a unique identifier that can be used to link requests and responses
+    // requestId is a monotonically increasing integer that is constant
+    // through a redirect chain. It is not unique across page visits.
     update.request_id = details.requestId;
 
     const isCached = details.fromCache;
@@ -695,16 +517,6 @@ export class HttpInstrument {
 
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
-
-    // TODO: Refactor to corresponding webext logic or discard
-    // (request headers are not available in http response event listener object,
-    // but the referrer property of the corresponding request could be queried)
-    //
-    // let referrer = "";
-    // if (details.referrer) {
-    //   referrer = details.referrer.spec;
-    // }
-    // update.referrer = escapeString(referrer);
 
     const responseStatus = details.statusCode;
     update.response_status = responseStatus;
