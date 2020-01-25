@@ -7,6 +7,11 @@ of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
+OpenWPM was originally developed at Princeton University's
+Center for Information Technology Policy, and transitioned to Mozilla
+in April 2019. OpenWPM continues to be
+[heavily used](https://webtap.princeton.edu/software/) by academic researchers.
+
 Table of Contents
 -----------------
 
@@ -621,22 +626,6 @@ Or, run commands directly:
     ./run-on-osx-via-docker.sh python -m test.manual_test
     ./run-on-osx-via-docker.sh python -m pytest
     ./run-on-osx-via-docker.sh python -m pytest -vv -s
-
-Disclaimer
------------
-
-Note that OpenWPM is under active development, and should be considered
-experimental software. The repository may contain experimental features that
-aren't fully tested. We recommend using a [tagged
-release](https://github.com/citp/OpenWPM/releases).
-
-Although OpenWPM is actively used by our group for research studies and we
-regularly use of the data collected, it is still possible there are unknown bugs
-in the infrastructure. We are in the process of writing comprehensive tests to
-verify the integrity of all included instrumentation. Prior to using OpenWPM
-for your own research we encourage you to write tests (and submit pull
-requests!) for any instrumentation that isn't currently included in our test
-scripts.
 
 Citation
 --------
