@@ -145,7 +145,7 @@ export interface JavascriptOperation {
   time_stamp: DateTime;
 }
 
-export interface Cookie {
+export interface CookieRecord {
   expiry?: DateTime;
   is_http_only?: number;
   is_host_only?: number;
@@ -164,7 +164,7 @@ export interface Cookie {
 /**
  * Corresponds to cookies.onChanged
  */
-export interface CookieRecord extends Cookie {
+export interface CookieChangeRecord extends CookieRecord {
   id?: number;
   crawl_id?: number;
   visit_id?: number;

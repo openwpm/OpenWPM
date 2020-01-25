@@ -3,10 +3,10 @@ import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
 import OnChangedCause = browser.cookies.OnChangedCause;
-import { Cookie, CookieRecord } from "../schema";
+import { CookieRecord, CookieChangeRecord } from "../schema";
 
 export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
-  const cookieData = {} as Cookie;
+  const cookieRecord = {} as CookieRecord;
 
   // Expiry time (in seconds)
   // May return ~Max(int64). I believe this is a session
@@ -21,23 +21,23 @@ export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
     const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds
     expiryTimeString = expiryTimeDate.toISOString();
   }
-  cookieData.expiry = expiryTimeString;
-  cookieData.is_http_only = boolToInt(cookie.httpOnly);
-  cookieData.is_host_only = boolToInt(cookie.hostOnly);
-  cookieData.is_session = boolToInt(cookie.session);
+  cookieRecord.expiry = expiryTimeString;
+  cookieRecord.is_http_only = boolToInt(cookie.httpOnly);
+  cookieRecord.is_host_only = boolToInt(cookie.hostOnly);
+  cookieRecord.is_session = boolToInt(cookie.session);
 
-  cookieData.host = escapeString(cookie.domain);
-  cookieData.is_secure = boolToInt(cookie.secure);
-  cookieData.name = escapeString(cookie.name);
-  cookieData.path = escapeString(cookie.path);
-  cookieData.value = escapeString(cookie.value);
-  cookieData.same_site = escapeString(cookie.sameSite);
-  cookieData.first_party_domain = escapeString(cookie.firstPartyDomain);
-  cookieData.store_id = escapeString(cookie.storeId);
+  cookieRecord.host = escapeString(cookie.domain);
+  cookieRecord.is_secure = boolToInt(cookie.secure);
+  cookieRecord.name = escapeString(cookie.name);
+  cookieRecord.path = escapeString(cookie.path);
+  cookieRecord.value = escapeString(cookie.value);
+  cookieRecord.same_site = escapeString(cookie.sameSite);
+  cookieRecord.first_party_domain = escapeString(cookie.firstPartyDomain);
+  cookieRecord.store_id = escapeString(cookie.storeId);
 
-  cookieData.time_stamp = new Date().toISOString();
+  cookieRecord.time_stamp = new Date().toISOString();
 
-  return cookieData;
+  return cookieRecord;
 };
 
 export class CookieInstrument {
@@ -59,7 +59,7 @@ export class CookieInstrument {
       cause: OnChangedCause;
     }) => {
       const eventType = changeInfo.removed ? "deleted" : "added-or-changed";
-      const update: CookieRecord = {
+      const update: CookieChangeRecord = {
         record_type: eventType,
         change_cause: changeInfo.cause,
         crawl_id: crawlID,
@@ -76,7 +76,7 @@ export class CookieInstrument {
     const allCookies = await browser.cookies.getAll({});
     await Promise.all(
       allCookies.map((cookie: Cookie) => {
-        const update: CookieRecord = {
+        const update: CookieChangeRecord = {
           record_type: "manual-export",
           crawl_id: crawlID,
           extension_session_uuid: extensionSessionUuid,
