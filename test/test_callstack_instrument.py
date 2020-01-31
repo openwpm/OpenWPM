@@ -1,4 +1,8 @@
+
+from os.path import join
+
 from .openwpmtest import OpenWPMTest
+from ..automation import TaskManager
 from ..automation.utilities import db_utils
 from ..automation.utilities.platform_utils import parse_http_stack_trace_str
 from . import utilities
@@ -22,6 +26,12 @@ STACK_TRACE_INJECT_JS =\
     "inject_all@" + HTTP_STACKTRACE_TEST_URL + ":21:7;null\n"\
     "onload@" + HTTP_STACKTRACE_TEST_URL + ":1:1;null"
 
+ALL_THE_STUFF = "{'inject_image@http://localtest.me:8000/test_pages/http_stacktrace.html:18:7;null\n'\n
+"'inject_all@http://localtest.me:8000/test_pages/http_stacktrace.html:22:7;null\n'\n
+"'onload@http://localtest.me:8000/test_pages/http_stacktrace.html:1:1;null',\n "
+"'inject_js@http://localtest.me:8000/test_pages/http_stacktrace.html:13:28;null\n'\n
+'inject_all@http://localtest.me:8000/test_pages/http_stacktrace.html:21:7;null\n'
+"\n 'onload@http://localtest.me:8000/test_pages/http_stacktrace.html:1:1;null'}"
 HTTP_STACKTRACES = set((STACK_TRACE_INJECT_IMAGE,
                         STACK_TRACE_INJECT_PIXEL,
                         STACK_TRACE_INJECT_JS))
@@ -47,16 +57,30 @@ CALL_STACK_INJECT_IMAGE =\
 class TestCallstackInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
+        # Record HTTP Requests and Responses
         browser_params[0]['http_instrument'] = True
+        # Record cookie changes
+        browser_params[0]['cookie_instrument'] = True
+        # Record Navigations
+        browser_params[0]['navigation_instrument'] = True
+        # Record JS Web API calls
+        browser_params[0]['js_instrument'] = True
+        # Enable flash for all three browsers
+        browser_params[0]['disable_flash'] = True
+        # Record the callstack of all WebRequests made
         browser_params[0]['callstack_instrument'] = True
         browser_params[0]['headless'] = False
         return manager_params, browser_params
 
     def test_http_stacktrace(self):
         test_url = utilities.BASE_TEST_URL + '/http_stacktrace.html'
-        db = self.visit(test_url)
+        manager_params, browser_params = self.get_config()
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager.get(test_url, sleep=600)
+        db = manager_params['db']
+        manager.close()
         rows = db_utils.query_db(db, (
-            "SELECT * FROM callstacks "))
+            "SELECT * FROM callstacks;"))
         print("Printing callstacks contents")
         for row in rows:
             print(row["call_stack"])
@@ -66,7 +90,7 @@ class TestCallstackInstrument(OpenWPMTest):
             "   JOIN http_requests hr"
             "   ON c.request_id=hr.request_id"
             "      AND c.visit_id= hr.visit_id"
-            "      AND c.crawl_id = hr.crawl_id"))
+            "      AND c.crawl_id = hr.crawl_id;"))
         observed_records = set()
         for row in rows:
             print(row)
