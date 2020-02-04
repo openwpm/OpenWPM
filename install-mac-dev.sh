@@ -29,7 +29,10 @@ CFLAGS='-mmacosx-version-min=10.7 -stdlib=libc++ -std=c++11' pip install --force
 brew install node || true
 
 # Use the Unbranded build that corresponds to a specific Firefox version 
-# To upgrade https://github.com/mozilla/OpenWPM/issues/381#issuecomment-576805132
+# To upgrade:
+#    1. Go to: https://hg.mozilla.org/releases/mozilla-release/tags.
+#    2. Find the commit hash for the Firefox release version you'd like to upgrade to.
+#    3. Update the `TAG` variable below to that hash.
 brew install wget || true
 
 TAG=25e0edbb0a613c3bf794c93ba3aa0985d29d5ef4
