@@ -1,6 +1,4 @@
 
-from os.path import join
-
 from .openwpmtest import OpenWPMTest
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
