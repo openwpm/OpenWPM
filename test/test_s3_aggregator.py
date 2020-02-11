@@ -43,6 +43,7 @@ class TestS3Aggregator(OpenWPMTest):
             browser_params[i]['js_instrument'] = True
             browser_params[i]['cookie_instrument'] = True
             browser_params[i]['navigation_instrument'] = True
+            browser_params[i]['callstack_instrument'] = True
         return manager_params, browser_params
 
     def test_basic_properties(self):
@@ -52,7 +53,7 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_config(
             num_browsers=NUM_BROWSERS)
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        for i in range(NUM_VISITS):
+        for _ in range(NUM_VISITS):
             manager.get(TEST_SITE, sleep=1, index='*')
         manager.close()
 

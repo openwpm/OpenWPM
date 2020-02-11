@@ -23,6 +23,8 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Enable flash for all three browsers
     browser_params[i]['disable_flash'] = True
+    # Record the callstack of all WebRequests made
+    browser_params[i]['callstack_instrument'] = True
 browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
