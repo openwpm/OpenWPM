@@ -156,6 +156,8 @@ class TaskManager:
                 self.manager_params, browser_params, (openwpm_v, browser_v)
             )
         )
+
+        # Register signal listeners for shutdown
         for sig in [signal.SIGTERM, signal.SIGINT]:
             signal.signal(sig, lambda signal, frame: self.close())
 
@@ -259,7 +261,7 @@ class TaskManager:
         self.closing = True
 
         for browser in self.browsers:
-            browser.shutdown_browser(during_init)
+            browser.shutdown_browser(during_init, shutdown_timeout=7)
 
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
@@ -597,4 +599,7 @@ class TaskManager:
         if self.closing:
             self.logger.error("TaskManager already closed")
             return
+        start_time = time.time()
         self._shutdown_manager()
+        # We don't have a logging thread at this time anymore
+        print("Shutdown took %s seconds" % str(time.time() - start_time))
