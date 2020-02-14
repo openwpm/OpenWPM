@@ -124,7 +124,7 @@ def start_server():
     print("Starting HTTP Server in a separate thread")
     # switch to test dir, this is where the test files are
     os.chdir(dirname(realpath(__file__)))
-    server = MyTCPServer(("localhost", LOCAL_WEBSERVER_PORT), MyHandler)
+    server = MyTCPServer(("0.0.0.0", LOCAL_WEBSERVER_PORT), MyHandler)
     thread = threading.Thread(target=server.serve_forever)
     thread.daemon = True
     thread.start()

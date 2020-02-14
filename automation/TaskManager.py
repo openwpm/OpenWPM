@@ -471,6 +471,7 @@ class TaskManager:
                 if status == "OK":
                     command_status = 'ok'
                 elif status[0] == "CRITICAL":
+                    command_status = 'critical'
                     self.logger.critical(
                         "BROWSER %i: Received critical error from browser "
                         "process while executing command %s. Setting failure "

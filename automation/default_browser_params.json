@@ -6,6 +6,7 @@
     "http_instrument": false,
     "navigation_instrument": false,
     "save_content": false,
+    "callstack_instrument": false,
 
     "random_attributes": false,
     "bot_mitigation": false,

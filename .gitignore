@@ -8,6 +8,7 @@ docker-volume/
 firefox-bin/
 Firefox*.app/
 Nightly*.app/
+firefox-profile
 
 # VIM tmp files
 *~

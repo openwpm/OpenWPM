@@ -48,9 +48,14 @@ if [ "$flash" = true ]; then
     sudo apt-get install -y adobe-flashplugin
 fi
 
-# Use the Unbranded build that corresponds to a specific Firefox version (source: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
-UNBRANDED_FF70_RELEASE_LINUX_BUILD="https://queue.taskcluster.net/v1/task/S9x3bLGUQTOAUfopXQGLzg/runs/0/artifacts/public/build/target.tar.bz2"
-wget "$UNBRANDED_FF70_RELEASE_LINUX_BUILD"
+# Use the Unbranded build that corresponds to a specific Firefox version 
+# To upgrade:
+#    1. Go to: https://hg.mozilla.org/releases/mozilla-release/tags.
+#    2. Find the commit hash for the Firefox release version you'd like to upgrade to.
+#    3. Update the `TAG` variable below to that hash.
+TAG=25e0edbb0a613c3bf794c93ba3aa0985d29d5ef4
+UNBRANDED_RELEASE_LINUX_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.revision.$TAG.firefox.linux64-add-on-devel/artifacts/public/build/target.tar.bz2"
+wget "$UNBRANDED_RELEASE_LINUX_BUILD"
 tar jxf target.tar.bz2
 rm -rf firefox-bin
 mv firefox firefox-bin
@@ -58,7 +63,7 @@ rm target.tar.bz2
 
 # Selenium 3.3+ requires a 'geckodriver' helper executable, which is not yet
 # packaged.
-GECKODRIVER_VERSION=0.24.0
+GECKODRIVER_VERSION=0.26.0
 case $(uname -m) in
     (x86_64)
         GECKODRIVER_ARCH=linux64

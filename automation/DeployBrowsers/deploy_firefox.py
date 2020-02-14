@@ -117,6 +117,13 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.add_argument('--width={}'.format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
 
+    if browser_params['callstack_instrument']\
+       and not browser_params['js_instrument']:
+        raise BrowserConfigError
+        ("The callstacks instrument currently doesn't work without "
+         "the JS instrument enabled. see: "
+         "https://github.com/mozilla/OpenWPM/issues/557")
+
     if browser_params['save_content']:
         if isinstance(browser_params['save_content'], str):
             configured_types = set(browser_params['save_content'].split(','))
