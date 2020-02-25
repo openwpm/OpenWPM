@@ -9,6 +9,7 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
+from typing import Any, Dict, List
 
 import psutil
 import tblib
@@ -60,8 +61,10 @@ class TaskManager:
         - BrowserManager processes to isolate Browsers in a separate process
     """
 
-    def __init__(self, manager_params, browser_params,
-                 process_watchdog=False, logger_kwargs={}):
+    def __init__(self, manager_params: Dict[str, Any],
+                 browser_params: List[Dict[str, Any]],
+                 process_watchdog: bool = False,
+                 logger_kwargs: Dict[Any, Any] = {}):
         """Initialize the TaskManager with browser and manager config params
 
         Parameters
@@ -69,7 +72,7 @@ class TaskManager:
         manager_params : dict
             Dictionary of TaskManager configuration parameters. See the
             default in `default_manager_params.json`.
-        browser_params : list of dict or dict
+        browser_params : list of dict
             Browser configuration parameters. If this is given as a list, it
             includes individual configurations for each browser.
         process_watchdog : bool, optional
@@ -423,7 +426,8 @@ class TaskManager:
         tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
         return message, tb
 
-    def _issue_command(self, browser, command_sequence, condition=None):
+    def _issue_command(self, browser,
+                       command_sequence: CommandSequence, condition=None):
         """
         sends command tuple to the BrowserManager
         """
