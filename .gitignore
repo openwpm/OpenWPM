@@ -4,6 +4,9 @@ docker-volume/
 # pytest
 .pytest_cache/
 
+# mypy
+.mypy_cache
+
 # firefox directories
 firefox-bin/
 Firefox*.app/
