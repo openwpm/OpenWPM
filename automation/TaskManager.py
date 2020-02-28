@@ -1,4 +1,3 @@
-
 import copy
 import json
 import logging
@@ -13,12 +12,12 @@ from typing import Any, Dict, List, Optional
 import psutil
 import tblib
 
-from .CommandSequence import CommandSequence
-from .MPLogger import MPLogger
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
+from .CommandSequence import CommandSequence
 from .DataAggregator import LocalAggregator, S3Aggregator
 from .Errors import CommandExecutionError
+from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
 
@@ -149,6 +148,7 @@ class TaskManager:
         # start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
         thread.daemon = True
+        thread.name = "OpenWPM-watchdog"
         thread.start()
 
         # Save crawl config information to database
@@ -159,6 +159,12 @@ class TaskManager:
                 self.manager_params, browser_params, (openwpm_v, browser_v)
             )
         )
+        self.unsaved_command_sequences: Dict[int, CommandSequence] = dict()
+        callback_thread = threading.Thread(
+            target=self._mark_command_sequences_complete, args=())
+        callback_thread.daemon = True
+        callback_thread.name = "OpenWPM-completion_handler"
+        callback_thread.start()
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of params """
@@ -315,10 +321,12 @@ class TaskManager:
                 "Attempted to execute command on a closed TaskManager")
             return
         self._check_failure_status()
+        visit_id = self.data_aggregator.get_next_visit_id()
+        browser.set_visit_id(visit_id)
+        self.unsaved_command_sequences[visit_id] = command_sequence
 
-        browser.set_visit_id(self.data_aggregator.get_next_visit_id())
         self.sock.send(("site_visits", {
-            "visit_id": browser.curr_visit_id,
+            "visit_id": visit_id,
             "crawl_id": browser.crawl_id,
             "site_url": command_sequence.url,
             "site_rank": command_sequence.site_rank
@@ -331,6 +339,18 @@ class TaskManager:
         thread.daemon = True
         thread.start()
         return thread
+
+    def _mark_command_sequences_complete(self) -> None:
+        """ Polls the data aggregator for saved records
+            and calls their callbacks
+        """
+        while True:
+            visit_id_list = self.data_aggregator.get_saved_visit_ids()
+            if not visit_id_list:
+                time.sleep(5)
+            else:
+                for visit_id in visit_id_list:
+                    self.unsaved_command_sequences.pop(visit_id).markDone()
 
     def _unpack_picked_error(self, pickled_error):
         """Unpacks `pickled_error` into and error `message` and `tb` string."""

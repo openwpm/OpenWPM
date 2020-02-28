@@ -1,4 +1,3 @@
-
 import glob
 import gzip
 import json
