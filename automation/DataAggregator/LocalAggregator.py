@@ -19,11 +19,9 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
 LDB_NAME = 'content.ldb'
 
 
-def listener_process_runner(manager_params, status_queue,
-                            completion_queue, shutdown_queue, ldb_enabled):
+def listener_process_runner(base_params, manager_params, ldb_enabled):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(status_queue, completion_queue,
-                             shutdown_queue, manager_params, ldb_enabled)
+    listener = LocalListener(base_params, manager_params, ldb_enabled)
     listener.startup()
 
     while True:
@@ -50,8 +48,7 @@ def listener_process_runner(manager_params, status_queue,
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
 
-    def __init__(self, status_queue, completion_queue,
-                 shutdown_queue, manager_params, ldb_enabled):
+    def __init__(self, base_params, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -69,8 +66,7 @@ class LocalListener(BaseListener):
         self._sql_commit_time = 0
         self.browser_map = dict()  # maps crawl_id to visit_id
 
-        super(LocalListener, self).__init__(
-            status_queue, completion_queue, shutdown_queue, manager_params)
+        super(LocalListener, self).__init__(*base_params)
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
@@ -282,7 +278,8 @@ class LocalAggregator(BaseAggregator):
     def launch(self):
         """Launch the aggregator listener process"""
         super(LocalAggregator, self).launch(
-            listener_process_runner, self.ldb_enabled)
+            listener_process_runner, self.manager_params,
+            self.ldb_enabled)
 
     def shutdown(self):
         """ Terminates the aggregator"""

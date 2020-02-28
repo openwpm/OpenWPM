@@ -34,11 +34,9 @@ S3_CONFIG_KWARGS = {
 S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
-def listener_process_runner(manager_params, status_queue, completion_queue,
-                            shutdown_queue, instance_id):
+def listener_process_runner(base_params, manager_params, instance_id):
     """S3Listener runner. Pass to new process"""
-    listener = S3Listener(status_queue, completion_queue,
-                          shutdown_queue, manager_params, instance_id)
+    listener = S3Listener(base_params, manager_params, instance_id)
     listener.startup()
 
     while True:
@@ -65,8 +63,7 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(self, status_queue, completion_queue,
-                 shutdown_queue, manager_params, instance_id):
+    def __init__(self, base_params, manager_params, instance_id):
         self.dir = manager_params['s3_directory']
         self.browser_map = dict()  # maps crawl_id to visit_id
         self._records = dict()  # maps visit_id and table to records
@@ -83,8 +80,7 @@ class S3Listener(BaseListener):
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
         self._last_record_received = None  # time last record was received
-        super(S3Listener, self).__init__(
-            status_queue, completion_queue, shutdown_queue, manager_params)
+        super(S3Listener, self).__init__(*base_params)
 
     def _get_records(self, visit_id):
         """Get the RecordBatch corresponding to `visit_id`"""
@@ -404,4 +400,4 @@ class S3Aggregator(BaseAggregator):
     def launch(self):
         """Launch the aggregator listener process"""
         super(S3Aggregator, self).launch(
-            listener_process_runner, self._instance_id)
+            listener_process_runner, self.manager_params, self._instance_id)

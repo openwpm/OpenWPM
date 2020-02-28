@@ -3,7 +3,7 @@ import logging
 import queue
 import threading
 import time
-from typing import List
+from typing import Any, Dict, List
 
 from multiprocess import Queue
 
@@ -25,17 +25,25 @@ class BaseListener(object):
     is instantiated in the remote process, and sets up a listening socket to
     receive data. Classes which inherit from this base class define
     how that data is written to disk.
-
-    Parameters
-    ----------
-    manager_params : dict
-        TaskManager configuration parameters
-    browser_params : list of dict
-        List of browser configuration dictionaries"""
+    """
     __metaclass = abc.ABCMeta
 
-    def __init__(self, status_queue, completion_queue,
-                 shutdown_queue, manager_params):
+    def __init__(self, status_queue: Queue, completion_queue: Queue,
+                 shutdown_queue: Queue):
+        """
+        Creates a BaseListener instance
+
+        Parameters
+        ----------
+        status_queue
+            queue that the current amount of records to be processed will
+            be sent to
+            also used for initialization
+        completion_queue
+            queue containing the visitIDs of saved records
+        shutdown_queue
+            queue that the main process can use to shut down the listener
+        """
         self.status_queue = status_queue
         self.completion_queue = completion_queue
         self.shutdown_queue = shutdown_queue
@@ -197,8 +205,8 @@ class BaseAggregator(object):
 
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
-        args = (self.manager_params, self.status_queue,
-                self.completion_queue, self.shutdown_queue) + args
+        args = ((self.status_queue,
+                self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args
