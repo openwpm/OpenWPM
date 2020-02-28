@@ -53,7 +53,7 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_config(
             num_browsers=NUM_BROWSERS)
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        for _ in range(NUM_VISITS):
+        for _ in range(NUM_VISITS * NUM_BROWSERS):
             manager.get(TEST_SITE, sleep=1)
         manager.close()
 
