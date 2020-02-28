@@ -171,5 +171,6 @@ class CommandSequence:
         self.commands_with_timeout.append((command, timeout))
 
     def markDone(self):
+        print("Callback invoked")
         if self.callback is not None:
             self.callback()

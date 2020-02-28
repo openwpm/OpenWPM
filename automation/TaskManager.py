@@ -347,7 +347,7 @@ class TaskManager:
         while True:
             visit_id_list = self.data_aggregator.get_saved_visit_ids()
             if not visit_id_list:
-                time.sleep(5)
+                time.sleep(1)
             else:
                 for visit_id in visit_id_list:
                     self.unsaved_command_sequences.pop(visit_id).markDone()

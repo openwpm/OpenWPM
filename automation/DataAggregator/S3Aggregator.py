@@ -278,7 +278,6 @@ class S3Listener(BaseListener):
         elif self.browser_map[crawl_id] != visit_id:
             self._create_batch(self.browser_map[crawl_id])
             self._send_to_s3()
-            self.mark_visit_id_done(self.browser_map[crawl_id])
             self.browser_map[crawl_id] = visit_id
 
         # Convert data to text type

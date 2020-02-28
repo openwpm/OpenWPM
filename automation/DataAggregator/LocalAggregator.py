@@ -64,7 +64,6 @@ class LocalListener(BaseListener):
         self._ldb_commit_time = 0
         self._sql_counter = 0
         self._sql_commit_time = 0
-        self.browser_map = dict()  # maps crawl_id to visit_id
 
         super(LocalListener, self).__init__(*base_params)
 
@@ -98,27 +97,7 @@ class LocalListener(BaseListener):
         elif table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
-
-        # All data records should be keyed by the crawler and site visit
-        try:
-            visit_id = data['visit_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no visit id" % table)
-            self.logger.error(json.dumps(data))
-            return
-        try:
-            crawl_id = data['crawl_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no crawl id" % table)
-            self.logger.error(json.dumps(data))
-            return
-
-        # Check if the browser for this record has moved on to a new visit
-        if crawl_id not in self.browser_map:
-            self.browser_map[crawl_id] = visit_id
-        elif self.browser_map[crawl_id] != visit_id:
-            self.mark_visit_id_done(self.browser_map[crawl_id])
-            self.browser_map[crawl_id] = visit_id
+        self.update_records(table, data)
 
         statement, args = self._generate_insert(
             table=table, data=data)

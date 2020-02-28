@@ -1,4 +1,5 @@
 import abc
+import json
 import logging
 import queue
 import threading
@@ -51,6 +52,7 @@ class BaseListener(object):
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
+        self.in_progress_map = dict()  # maps crawl_id to visit_id
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -102,9 +104,42 @@ class BaseListener(object):
         )
         self._last_update = time.time()
 
+    def update_records(self, table: str, data: Dict[str, Any]):
+        """A method to keep track of which browser is working on which visit_id
+           Some data should contain a visit_id and a crawl_id, but the method
+           handles both being not set
+        """
+        visit_id = None
+        crawl_id = None
+        # All data records should be keyed by the crawler and site visit
+        try:
+            visit_id = data['visit_id']
+        except KeyError:
+            self.logger.error("Record for table %s has no visit id" % table)
+            self.logger.error(json.dumps(data))
+            pass
+
+        try:
+            crawl_id = data['crawl_id']
+        except KeyError:
+            self.logger.error("Record for table %s has no crawl id" % table)
+            self.logger.error(json.dumps(data))
+            pass
+
+        if crawl_id is not None and visit_id is not None:
+            # Check if the browser for this record has moved on to a new visit
+            if crawl_id not in self.in_progress_map:
+                self.in_progress_map[crawl_id] = visit_id
+            elif self.in_progress_map[crawl_id] != visit_id:
+                self.mark_visit_id_done(self.in_progress_map[crawl_id])
+                self.in_progress_map[crawl_id] = visit_id
+
     def mark_visit_id_done(self, visit_id: int):
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
+
+        self.logger.debug("Putting visit_id {0} into queue".format(visit_id))
+
         self.completion_queue.put(visit_id)
 
     def shutdown(self):
@@ -112,6 +147,8 @@ class BaseListener(object):
 
         Note: Child classes should call this method"""
         self.sock.close()
+        for visit_id in self.in_progress_map.values():
+            self.mark_visit_id_done(visit_id)
 
     def drain_queue(self):
         """ Ensures queue is empty before closing """
@@ -200,7 +237,7 @@ class BaseAggregator(object):
         been finished since the last time this method was called"""
         finished_visit_ids = list()
         while not self.completion_queue.empty():
-            finished_visit_ids.append(self.status_queue.get())
+            finished_visit_ids.append(self.completion_queue.get())
         return finished_visit_ids
 
     def launch(self, listener_process_runner, *args):
