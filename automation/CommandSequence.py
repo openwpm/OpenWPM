@@ -1,8 +1,8 @@
-from typing import Callable, List, NewType, Tuple
+from typing import Any, Callable, List, NewType, Tuple
 
 from .Errors import CommandExecutionError
 
-Command = NewType('Command', Tuple[str, str, int])
+Command = NewType('Command', Tuple[str, Any])
 
 
 class CommandSequence:

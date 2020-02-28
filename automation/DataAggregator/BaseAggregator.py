@@ -3,6 +3,7 @@ import logging
 import queue
 import threading
 import time
+from typing import List
 
 from multiprocess import Queue
 
@@ -33,8 +34,10 @@ class BaseListener(object):
         List of browser configuration dictionaries"""
     __metaclass = abc.ABCMeta
 
-    def __init__(self, status_queue, shutdown_queue, manager_params):
+    def __init__(self, status_queue, completion_queue,
+                 shutdown_queue, manager_params):
         self.status_queue = status_queue
+        self.completion_queue = completion_queue
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
@@ -91,6 +94,11 @@ class BaseListener(object):
         )
         self._last_update = time.time()
 
+    def mark_visit_id_done(self, visit_id: int):
+        """ This function should be called to indicate that all records
+        relating to a certain visit_id have been saved"""
+        self.completion_queue.put(visit_id)
+
     def shutdown(self):
         """Run shutdown tasks defined in the base listener
 
@@ -126,6 +134,7 @@ class BaseAggregator(object):
         self.listener_address = None
         self.listener_process = None
         self.status_queue = Queue()
+        self.completion_queue = Queue()
         self.shutdown_queue = Queue()
         self._last_status = None
         self._last_status_received = None
@@ -177,10 +186,20 @@ class BaseAggregator(object):
             )
         return self._last_status
 
+    def get_saved_visit_ids(self) -> List[int]:
+        """Returns a list of all visit ids that have been saved at the time
+        of calling this method.
+        This method will return an empty list in case no visit ids have
+        been finished since the last time this method was called"""
+        finished_visit_ids = list()
+        while not self.completion_queue.empty():
+            finished_visit_ids.append(self.status_queue.get())
+        return finished_visit_ids
+
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
         args = (self.manager_params, self.status_queue,
-                self.shutdown_queue) + args
+                self.completion_queue, self.shutdown_queue) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args

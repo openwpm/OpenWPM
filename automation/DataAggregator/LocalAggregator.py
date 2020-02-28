@@ -6,6 +6,7 @@ import sqlite3
 import time
 from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
                      ProgrammingError)
+from typing import Any, Dict, Tuple
 
 import plyvel
 
@@ -18,11 +19,11 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
 LDB_NAME = 'content.ldb'
 
 
-def listener_process_runner(
-        manager_params, status_queue, shutdown_queue, ldb_enabled):
+def listener_process_runner(manager_params, status_queue,
+                            completion_queue, shutdown_queue, ldb_enabled):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(
-        status_queue, shutdown_queue, manager_params, ldb_enabled)
+    listener = LocalListener(status_queue, completion_queue,
+                             shutdown_queue, manager_params, ldb_enabled)
     listener.startup()
 
     while True:
@@ -49,8 +50,8 @@ def listener_process_runner(
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
 
-    def __init__(
-            self, status_queue, shutdown_queue, manager_params, ldb_enabled):
+    def __init__(self, status_queue, completion_queue,
+                 shutdown_queue, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -66,8 +67,10 @@ class LocalListener(BaseListener):
         self._ldb_commit_time = 0
         self._sql_counter = 0
         self._sql_commit_time = 0
+        self.browser_map = dict()  # maps crawl_id to visit_id
+
         super(LocalListener, self).__init__(
-            status_queue, shutdown_queue, manager_params)
+            status_queue, completion_queue, shutdown_queue, manager_params)
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
@@ -84,27 +87,51 @@ class LocalListener(BaseListener):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
-    def process_record(self, record):
+    def process_record(self, record: Tuple[str, Dict[str, Any]]):
         """Add `record` to database"""
         if len(record) != 2:
             self.logger.error("Query is not the correct length")
             return
-        if record[0] == "create_table":
-            self.cur.execute(record[1])
+
+        table, data = record
+
+        if table == "create_table":
+            self.cur.execute(data)
             self.db.commit()
             return
-        elif record[0] == RECORD_TYPE_CONTENT:
+        elif table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
+
+        # All data records should be keyed by the crawler and site visit
+        try:
+            visit_id = data['visit_id']
+        except KeyError:
+            self.logger.error("Record for table %s has no visit id" % table)
+            self.logger.error(json.dumps(data))
+            return
+        try:
+            crawl_id = data['crawl_id']
+        except KeyError:
+            self.logger.error("Record for table %s has no crawl id" % table)
+            self.logger.error(json.dumps(data))
+            return
+
+        # Check if the browser for this record has moved on to a new visit
+        if crawl_id not in self.browser_map:
+            self.browser_map[crawl_id] = visit_id
+        elif self.browser_map[crawl_id] != visit_id:
+            self.mark_visit_id_done(self.browser_map[crawl_id])
+            self.browser_map[crawl_id] = visit_id
+
         statement, args = self._generate_insert(
-            table=record[0], data=record[1])
+            table=table, data=data)
         for i in range(len(args)):
             if isinstance(args[i], bytes):
                 args[i] = str(args[i], errors='ignore')
             elif callable(args[i]):
                 args[i] = str(args[i])
             elif type(args[i]) == dict:
-                print(args[i])
                 args[i] = json.dumps(args[i])
         try:
             self.cur.execute(statement, args)
@@ -117,17 +144,18 @@ class LocalListener(BaseListener):
 
     def process_content(self, record):
         """Add page content to the LevelDB database"""
-        if record[0] != RECORD_TYPE_CONTENT:
+        table, data = record
+        if table != RECORD_TYPE_CONTENT:
             raise ValueError(
                 "Incorrect record type passed to `process_content`. Expected "
                 "record of type `%s`, received `%s`." % (
-                    RECORD_TYPE_CONTENT, record[0])
+                    RECORD_TYPE_CONTENT, table)
             )
         if not self.ldb_enabled:
             raise RuntimeError(
                 "Attempted to save page content but the LevelDB content "
                 "database is not enabled.")
-        content, content_hash = record[1]
+        content, content_hash = data
         content = base64.b64decode(content)
         content_hash = str(content_hash).encode('ascii')
         if self.ldb.get(content_hash) is not None:

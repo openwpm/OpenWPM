@@ -34,11 +34,11 @@ S3_CONFIG_KWARGS = {
 S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
-def listener_process_runner(
-        manager_params, status_queue, shutdown_queue, instance_id):
+def listener_process_runner(manager_params, status_queue, completion_queue,
+                            shutdown_queue, instance_id):
     """S3Listener runner. Pass to new process"""
-    listener = S3Listener(
-        status_queue, shutdown_queue, manager_params, instance_id)
+    listener = S3Listener(status_queue, completion_queue,
+                          shutdown_queue, manager_params, instance_id)
     listener.startup()
 
     while True:
@@ -65,8 +65,8 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(
-            self, status_queue, shutdown_queue, manager_params, instance_id):
+    def __init__(self, status_queue, completion_queue,
+                 shutdown_queue, manager_params, instance_id):
         self.dir = manager_params['s3_directory']
         self.browser_map = dict()  # maps crawl_id to visit_id
         self._records = dict()  # maps visit_id and table to records
@@ -84,7 +84,7 @@ class S3Listener(BaseListener):
             self._bucket, self.dir)
         self._last_record_received = None  # time last record was received
         super(S3Listener, self).__init__(
-            status_queue, shutdown_queue, manager_params)
+            status_queue, completion_queue, shutdown_queue, manager_params)
 
     def _get_records(self, visit_id):
         """Get the RecordBatch corresponding to `visit_id`"""
@@ -282,6 +282,7 @@ class S3Listener(BaseListener):
         elif self.browser_map[crawl_id] != visit_id:
             self._create_batch(self.browser_map[crawl_id])
             self._send_to_s3()
+            self.mark_visit_id_done(self.browser_map[crawl_id])
             self.browser_map[crawl_id] = visit_id
 
         # Convert data to text type
