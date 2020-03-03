@@ -62,5 +62,7 @@ def execute_command(command, webdriver, browser_settings, browser_params,
                     "browser_settings": browser_settings,
                     "browser_params": browser_params,
                     "manager_params": manager_params,
-                    "extension_socket": extension_socket}
+                    "extension_socket": extension_socket,
+                    "visit_id": command[3],
+                    "crawl_id": command[4]}
         command[1](*command[2], **arg_dict)

@@ -378,18 +378,20 @@ class TaskManager:
                 "CommandSequence with `reset` set to `True` to use a fresh "
                 "profile for each command." % browser.crawl_id
             )
-        start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
             if command[0] in ['GET', 'BROWSE',
                               'SAVE_SCREENSHOT',
                               'SCREENSHOT_FULL_PAGE',
                               'DUMP_PAGE_SOURCE',
-                              'RECURSIVE_DUMP_PAGE_SOURCE']:
-                start_time = time.time()
+                              'RECURSIVE_DUMP_PAGE_SOURCE',
+                              'RUN_CUSTOM_FUNCTION']:
                 command += (browser.curr_visit_id,)
             elif command[0] in ['DUMP_FLASH_COOKIES', 'DUMP_PROFILE_COOKIES']:
+                start_time = time.time()
                 command += (start_time, browser.curr_visit_id,)
+            if command[0] == 'RUN_CUSTOM_FUNCTION':
+                command += (browser.crawl_id,)
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
