@@ -11,6 +11,6 @@
   
 ## What this means for a visit_id that we want to mark as saved
 
-A visit_id is only saved once all tables habe accumulated enough badges for it to be saved.
+A visit_id is only saved once all tables habe accumulated enough batches for it to be saved.
 This means we would have to have a dict from visit_id to all tables it is contained in.
 And a list of all visit_ids per batch so we know which entries in the other dict to remove.
