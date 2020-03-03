@@ -239,7 +239,8 @@ class S3Listener(BaseListener):
                         self.mark_visit_id_done(visit_id)
                         del self._tables_per_visit_id[visit_id]
                 del self._visit_id_per_batch[table_name]
-            del self._batches[table_name]
+            # can't del here because that would modify batches
+            self._batches[table_name] = list()
 
     def save_batch_if_past_timeout(self):
         """Save the current batch of records if no new data has been received.
@@ -302,7 +303,9 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
-        for visit_id in self.browser_map.values():
+        # can't directly iterate because _create_batch modifies records
+        visit_ids = list(self._records.keys())
+        for visit_id in visit_ids:
             self._create_batch(visit_id)
         self._send_to_s3(force=True)
 
