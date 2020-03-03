@@ -8,6 +8,7 @@ import queue
 import random
 import time
 from collections import defaultdict
+from typing import Any, DefaultDict, Dict, List
 
 import boto3
 import pandas as pd
@@ -65,9 +66,14 @@ class S3Listener(BaseListener):
 
     def __init__(self, base_params, manager_params, instance_id):
         self.dir = manager_params['s3_directory']
-        self.browser_map = dict()  # maps crawl_id to visit_id
-        self._records = dict()  # maps visit_id and table to records
-        self._batches = dict()  # maps table_name to a list of batches
+        self._records: Dict[int, DefaultDict[str, List[Any]]] =\
+            dict()  # maps visit_id and table to records
+        self._batches = \
+            defaultdict(list)  # maps table_name to a list of batches
+        self._visit_id_per_batch: DefaultDict[str, List[int]] = \
+            defaultdict(list)
+        self._tables_per_visit_id: DefaultDict[int, List[str]] = \
+            defaultdict(list)
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
         self._s3_content_cache = set()  # cache of filenames already uploaded
@@ -105,8 +111,6 @@ class S3Listener(BaseListener):
             # The batch for this `visit_id` was already created, skip
             return
         for table_name, data in self._records[visit_id].items():
-            if table_name not in self._batches:
-                self._batches[table_name] = list()
             try:
                 df = pd.DataFrame(data)
                 batch = pa.RecordBatch.from_pandas(
@@ -123,6 +127,8 @@ class S3Listener(BaseListener):
                     % table_name, exc_info=True
                 )
                 pass
+            self._tables_per_visit_id[visit_id].append(table_name)
+            self._visit_id_per_batch[table_name].append(visit_id)
 
             # We construct a special index file from the site_visits data
             # to make it easier to query the dataset
@@ -226,7 +232,14 @@ class S3Listener(BaseListener):
                         exc_info=True
                     )
                     pass
-            self._batches[table_name] = list()
+                for visit_id in self._visit_id_per_batch[table_name]:
+                    tables = self._tables_per_visit_id[visit_id]
+                    tables.remove(table_name)
+                    if not tables:
+                        self.mark_visit_id_done(visit_id)
+                        del self._tables_per_visit_id[visit_id]
+                del self._visit_id_per_batch[table_name]
+            del self._batches[table_name]
 
     def save_batch_if_past_timeout(self):
         """Save the current batch of records if no new data has been received.
@@ -258,27 +271,7 @@ class S3Listener(BaseListener):
             self.process_content(record)
             return
 
-        # All data records should be keyed by the crawler and site visit
-        try:
-            visit_id = data['visit_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no visit id" % table)
-            self.logger.error(json.dumps(data))
-            return
-        try:
-            crawl_id = data['crawl_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no crawl id" % table)
-            self.logger.error(json.dumps(data))
-            return
-
-        # Check if the browser for this record has moved on to a new visit
-        if crawl_id not in self.browser_map:
-            self.browser_map[crawl_id] = visit_id
-        elif self.browser_map[crawl_id] != visit_id:
-            self._create_batch(self.browser_map[crawl_id])
-            self._send_to_s3()
-            self.browser_map[crawl_id] = visit_id
+        _, visit_id = self.update_records(table, data)
 
         # Convert data to text type
         for k, v in data.items():
@@ -312,6 +305,10 @@ class S3Listener(BaseListener):
         for visit_id in self.browser_map.values():
             self._create_batch(visit_id)
         self._send_to_s3(force=True)
+
+    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+        self._create_batch(visit_id)
+        self._send_to_s3(force=is_shutdown)
 
 
 class S3Aggregator(BaseAggregator):

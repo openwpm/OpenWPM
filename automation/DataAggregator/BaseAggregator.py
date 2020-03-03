@@ -74,6 +74,17 @@ class BaseListener(object):
             2-tuple in format (table_name, data). `data` is a 2-tuple of the
             for (content, content_hash)"""
 
+    @abc.abstractmethod
+    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+        """Will be called once a visit_id will receive no new records
+
+        Parameters
+        ----------
+        visit_id
+            the id that will receive no more updates
+        is_shutdown
+            if this call is made during shutdown"""
+
     def startup(self):
         """Run listener startup tasks
 
@@ -117,29 +128,27 @@ class BaseListener(object):
         except KeyError:
             self.logger.error("Record for table %s has no visit id" % table)
             self.logger.error(json.dumps(data))
-            pass
+            raise
 
         try:
             crawl_id = data['crawl_id']
         except KeyError:
             self.logger.error("Record for table %s has no crawl id" % table)
             self.logger.error(json.dumps(data))
-            pass
+            raise
 
-        if crawl_id is not None and visit_id is not None:
-            # Check if the browser for this record has moved on to a new visit
-            if crawl_id not in self.in_progress_map:
-                self.in_progress_map[crawl_id] = visit_id
-            elif self.in_progress_map[crawl_id] != visit_id:
-                self.mark_visit_id_done(self.in_progress_map[crawl_id])
-                self.in_progress_map[crawl_id] = visit_id
+        # Check if the browser for this record has moved on to a new visit
+        if crawl_id not in self.browser_map:
+            self.browser_map[crawl_id] = visit_id
+        elif self.browser_map[crawl_id] != visit_id:
+            self.visit_done(self.browser_map[crawl_id])
+            self.browser_map[crawl_id] = visit_id
+
+        return crawl_id, visit_id
 
     def mark_visit_id_done(self, visit_id: int):
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
-
-        self.logger.debug("Putting visit_id {0} into queue".format(visit_id))
-
         self.completion_queue.put(visit_id)
 
     def shutdown(self):
@@ -147,8 +156,6 @@ class BaseListener(object):
 
         Note: Child classes should call this method"""
         self.sock.close()
-        for visit_id in self.in_progress_map.values():
-            self.mark_visit_id_done(visit_id)
 
     def drain_queue(self):
         """ Ensures queue is empty before closing """
