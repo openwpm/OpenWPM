@@ -350,7 +350,7 @@ class TaskManager:
                 time.sleep(1)
             else:
                 for visit_id in visit_id_list:
-                    self.unsaved_command_sequences.pop(visit_id).markDone()
+                    self.unsaved_command_sequences.pop(visit_id).mark_done()
 
     def _unpack_picked_error(self, pickled_error):
         """Unpacks `pickled_error` into and error `message` and `tb` string."""

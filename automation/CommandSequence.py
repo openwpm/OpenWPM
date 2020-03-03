@@ -170,7 +170,6 @@ class CommandSequence:
         command = ('RUN_CUSTOM_FUNCTION', function_handle, func_args)
         self.commands_with_timeout.append((command, timeout))
 
-    def markDone(self):
-        print("Callback invoked")
+    def mark_done(self):
         if self.callback is not None:
             self.callback()
