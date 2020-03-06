@@ -2,7 +2,6 @@
 import json
 import os
 import time
-
 from threading import Lock
 
 import boto3

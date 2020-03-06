@@ -1,10 +1,9 @@
 import hashlib
 import logging
 import uuid
+from typing import Any
 
 import redis
-
-from typing import Any
 
 
 class RedisWQ(object):
