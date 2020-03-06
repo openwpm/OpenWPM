@@ -118,7 +118,7 @@ while not job_queue.empty():
     with(unsaved_jobs_lock):
         for unsaved_job in unsaved_jobs:
             if not job_queue.renew_lease(unsaved_job,
-                                         TIMEOUT + DWELL_TIME + 30):
+                                         2 * (TIMEOUT + DWELL_TIME + 30)):
                 manager.logger.error("Unsaved job: %s timed out", unsaved_job)
 
     job = job_queue.lease(
