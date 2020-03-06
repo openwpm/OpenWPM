@@ -4,6 +4,8 @@ import uuid
 
 import redis
 
+from typing import Any
+
 
 class RedisWQ(object):
     """Simple Finite Work Queue with Redis Backend
@@ -220,6 +222,18 @@ class RedisWQ(object):
             self._db.setex(self._lease_key_prefix + itemkey,
                            lease_secs, self._session)
         return item
+
+    def renew_lease(self, job: Any, lease_secs=60) -> bool:
+        """ Checks if the item is currently leased by this client
+            and if so renews that lease by `lease_secs`
+            Return false if the lease was already expired"""
+
+        key = self._lease_key_prefix + self._itemkey(job)
+        if self._db.get(key):
+            self._db.setex(key, lease_secs, self._session)
+            return True
+        else:
+            return False
 
     def get_retry_number(self, job):
         """Return the number of retries for the given `job`.
