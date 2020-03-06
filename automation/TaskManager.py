@@ -160,11 +160,10 @@ class TaskManager:
             )
         )
         self.unsaved_command_sequences: Dict[int, CommandSequence] = dict()
-        callback_thread = threading.Thread(
+        self.callback_thread = threading.Thread(
             target=self._mark_command_sequences_complete, args=())
-        callback_thread.daemon = True
-        callback_thread.name = "OpenWPM-completion_handler"
-        callback_thread.start()
+        self.callback_thread.name = "OpenWPM-completion_handler"
+        self.callback_thread.start()
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of params """
@@ -266,11 +265,12 @@ class TaskManager:
         self.closing = True
 
         for browser in self.browsers:
-            browser.shutdown_browser(during_init, shutdown_timeout=7)
+            browser.shutdown_browser(during_init, shutdown_timeout=60)
 
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
         self.logging_server.close()
+        self.callback_thread.join()
 
     def _cleanup_before_fail(self, during_init=False):
         """
@@ -347,6 +347,9 @@ class TaskManager:
         """
         while True:
             visit_id_list = self.data_aggregator.get_saved_visit_ids()
+            if self.closing and not self.unsaved_command_sequences:
+                # we're shutting down and have no unprocessed callbacks
+                break
             if not visit_id_list:
                 time.sleep(1)
             else:

@@ -168,6 +168,8 @@ class LocalListener(BaseListener):
         self.mark_visit_id_done(visit_id)
 
     def shutdown(self):
+        for visit_id in self.browser_map.values():
+            self.mark_visit_id_done(visit_id)
         self.db.commit()
         self.db.close()
         if self.ldb_enabled:
