@@ -52,7 +52,7 @@ class BaseListener(object):
         self._last_update = time.time()  # last status update time
         self.record_queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
-        self.browser_map = dict()  # maps crawl_id to visit_id
+        self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
 
     @abc.abstractmethod
     def process_record(self, record):
