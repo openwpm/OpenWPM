@@ -2,7 +2,7 @@
 from automation import CommandSequence, TaskManager
 
 # The list of sites that we wish to crawl
-NUM_BROWSERS = 3
+NUM_BROWSERS = 1
 sites = ['http://www.example.com',
          'http://www.princeton.edu',
          'http://citp.princeton.edu/']
@@ -40,7 +40,8 @@ for site in sites:
 
     # Parallelize sites over all number of browsers set above.
     # (To have all browsers go to the same sites, add `index='**'`)
-    command_sequence = CommandSequence.CommandSequence(site, reset=True)
+    command_sequence = CommandSequence.CommandSequence(
+        site, reset=True, callback=lambda: print("CommandSequence done"))
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)

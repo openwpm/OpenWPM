@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import pickle
-import signal
 import threading
 import time
 import traceback
@@ -166,10 +165,6 @@ class TaskManager:
         callback_thread.daemon = True
         callback_thread.name = "OpenWPM-completion_handler"
         callback_thread.start()
-
-        # Register signal listeners for shutdown
-        for sig in [signal.SIGTERM, signal.SIGINT]:
-            signal.signal(sig, lambda signal, frame: self.close())
 
     def _initialize_browsers(self, browser_params):
         """ initialize the browser classes, each its unique set of params """
@@ -353,10 +348,10 @@ class TaskManager:
         while True:
             visit_id_list = self.data_aggregator.get_saved_visit_ids()
             if not visit_id_list:
-                time.sleep(5)
+                time.sleep(1)
             else:
                 for visit_id in visit_id_list:
-                    self.unsaved_command_sequences.pop(visit_id).markDone()
+                    self.unsaved_command_sequences.pop(visit_id).mark_done()
 
     def _unpack_picked_error(self, pickled_error):
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
@@ -384,18 +379,20 @@ class TaskManager:
                 "CommandSequence with `reset` set to `True` to use a fresh "
                 "profile for each command." % browser.crawl_id
             )
-        start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
             if command[0] in ['GET', 'BROWSE',
                               'SAVE_SCREENSHOT',
                               'SCREENSHOT_FULL_PAGE',
                               'DUMP_PAGE_SOURCE',
-                              'RECURSIVE_DUMP_PAGE_SOURCE']:
-                start_time = time.time()
+                              'RECURSIVE_DUMP_PAGE_SOURCE',
+                              'RUN_CUSTOM_FUNCTION']:
                 command += (browser.curr_visit_id,)
             elif command[0] in ['DUMP_FLASH_COOKIES', 'DUMP_PROFILE_COOKIES']:
+                start_time = time.time()
                 command += (start_time, browser.curr_visit_id,)
+            if command[0] == 'RUN_CUSTOM_FUNCTION':
+                command += (browser.crawl_id,)
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)

@@ -19,11 +19,9 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
 LDB_NAME = 'content.ldb'
 
 
-def listener_process_runner(manager_params, status_queue,
-                            completion_queue, shutdown_queue, ldb_enabled):
+def listener_process_runner(base_params, manager_params, ldb_enabled):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(status_queue, completion_queue,
-                             shutdown_queue, manager_params, ldb_enabled)
+    listener = LocalListener(base_params, manager_params, ldb_enabled)
     listener.startup()
 
     while True:
@@ -50,8 +48,7 @@ def listener_process_runner(manager_params, status_queue,
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
 
-    def __init__(self, status_queue, completion_queue,
-                 shutdown_queue, manager_params, ldb_enabled):
+    def __init__(self, base_params, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -67,10 +64,8 @@ class LocalListener(BaseListener):
         self._ldb_commit_time = 0
         self._sql_counter = 0
         self._sql_commit_time = 0
-        self.browser_map = dict()  # maps crawl_id to visit_id
 
-        super(LocalListener, self).__init__(
-            status_queue, completion_queue, shutdown_queue, manager_params)
+        super(LocalListener, self).__init__(*base_params)
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
@@ -102,27 +97,7 @@ class LocalListener(BaseListener):
         elif table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
-
-        # All data records should be keyed by the crawler and site visit
-        try:
-            visit_id = data['visit_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no visit id" % table)
-            self.logger.error(json.dumps(data))
-            return
-        try:
-            crawl_id = data['crawl_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no crawl id" % table)
-            self.logger.error(json.dumps(data))
-            return
-
-        # Check if the browser for this record has moved on to a new visit
-        if crawl_id not in self.browser_map:
-            self.browser_map[crawl_id] = visit_id
-        elif self.browser_map[crawl_id] != visit_id:
-            self.mark_visit_id_done(self.browser_map[crawl_id])
-            self.browser_map[crawl_id] = visit_id
+        self.update_records(table, data)
 
         statement, args = self._generate_insert(
             table=table, data=data)
@@ -188,6 +163,9 @@ class LocalListener(BaseListener):
             self._write_content_batch()
             self._ldb_counter = 0
             self._ldb_commit_time = time.time()
+
+    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+        self.mark_visit_id_done(visit_id)
 
     def shutdown(self):
         self.db.commit()
@@ -282,7 +260,8 @@ class LocalAggregator(BaseAggregator):
     def launch(self):
         """Launch the aggregator listener process"""
         super(LocalAggregator, self).launch(
-            listener_process_runner, self.ldb_enabled)
+            listener_process_runner, self.manager_params,
+            self.ldb_enabled)
 
     def shutdown(self):
         """ Terminates the aggregator"""
