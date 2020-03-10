@@ -141,7 +141,7 @@ while not job_queue.empty():
     manager.logger.info("Visiting %s..." % site)
     command_sequence = CommandSequence.CommandSequence(
         site, blocking=True, reset=True, retry_number=retry_number,
-        callback=mark_job_as_done
+        callback=mark_job_as_done, site_rank=site_rank
     )
     command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
     manager.execute_command_sequence(command_sequence)
