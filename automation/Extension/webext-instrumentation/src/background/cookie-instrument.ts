@@ -2,7 +2,7 @@ import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal"
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
-import { CookieRecord, CookieChangeRecord } from "../schema";
+import { CookieChangeRecord, CookieRecord} from "../schema";
 import OnChangedCause = browser.cookies.OnChangedCause;
 
 export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
