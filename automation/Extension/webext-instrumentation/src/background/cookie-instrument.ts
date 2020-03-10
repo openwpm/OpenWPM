@@ -2,8 +2,8 @@ import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal"
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString } from "../lib/string-utils";
 import Cookie = browser.cookies.Cookie;
-import OnChangedCause = browser.cookies.OnChangedCause;
 import { CookieRecord, CookieChangeRecord } from "../schema";
+import OnChangedCause = browser.cookies.OnChangedCause;
 
 export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
   const cookieRecord = {} as CookieRecord;

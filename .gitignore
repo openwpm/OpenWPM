@@ -83,6 +83,7 @@ docs/_build/
 
 # npm packages
 node_modules
+v8-compile-cache-0
 
 # built extension artifacts
 automation/Extension/firefox/dist
