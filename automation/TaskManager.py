@@ -1,4 +1,3 @@
-
 import copy
 import json
 import logging
@@ -8,15 +7,17 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
+from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 import tblib
 
-from . import CommandSequence, MPLogger
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
-from .DataAggregator import LocalAggregator, S3Aggregator
+from .CommandSequence import CommandSequence
+from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .Errors import CommandExecutionError
+from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
 
@@ -28,7 +29,8 @@ BROWSER_MEMORY_LIMIT = 1500  # in MB
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
 
 
-def load_default_params(num_browsers=1):
+def load_default_params(num_browsers: int = 1) \
+        -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
@@ -59,8 +61,10 @@ class TaskManager:
         - BrowserManager processes to isolate Browsers in a separate process
     """
 
-    def __init__(self, manager_params, browser_params,
-                 process_watchdog=False, logger_kwargs={}):
+    def __init__(self, manager_params: Dict[str, Any],
+                 browser_params: List[Dict[str, Any]],
+                 process_watchdog: bool = False,
+                 logger_kwargs: Dict[Any, Any] = {}) -> None:
         """Initialize the TaskManager with browser and manager config params
 
         Parameters
@@ -68,7 +72,7 @@ class TaskManager:
         manager_params : dict
             Dictionary of TaskManager configuration parameters. See the
             default in `default_manager_params.json`.
-        browser_params : list of dict or dict
+        browser_params : list of dict
             Browser configuration parameters. If this is given as a list, it
             includes individual configurations for each browser.
         process_watchdog : bool, optional
@@ -126,7 +130,7 @@ class TaskManager:
         self.process_watchdog = process_watchdog
 
         # Start logging server thread
-        self.logging_server = MPLogger.MPLogger(
+        self.logging_server = MPLogger(
             self.manager_params['log_file'],
             self.manager_params,
             **self._logger_kwargs
@@ -145,6 +149,7 @@ class TaskManager:
         # start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
         thread.daemon = True
+        thread.name = "OpenWPM-watchdog"
         thread.start()
 
         # Save crawl config information to database
@@ -156,7 +161,8 @@ class TaskManager:
             )
         )
 
-    def _initialize_browsers(self, browser_params):
+    def _initialize_browsers(self, browser_params: List[Dict[str, Any]]) \
+            -> List[Browser]:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
@@ -166,7 +172,7 @@ class TaskManager:
 
         return browsers
 
-    def _launch_browsers(self):
+    def _launch_browsers(self) -> None:
         """ launch each browser manager process / browser """
         for browser in self.browsers:
             try:
@@ -181,7 +187,7 @@ class TaskManager:
                 self.close()
                 break
 
-    def _manager_watchdog(self):
+    def _manager_watchdog(self) -> None:
         """
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
@@ -227,8 +233,9 @@ class TaskManager:
                                               process.create_time()))
                         process.kill()
 
-    def _launch_aggregators(self):
+    def _launch_aggregators(self) -> None:
         """Launch the necessary data aggregators"""
+        self.data_aggregator: BaseAggregator.BaseAggregator
         if self.manager_params["output_format"] == "local":
             self.data_aggregator = LocalAggregator.LocalAggregator(
                 self.manager_params, self.browser_params)
@@ -246,7 +253,7 @@ class TaskManager:
         self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-    def _shutdown_manager(self, during_init=False):
+    def _shutdown_manager(self, during_init: bool = False) -> None:
         """
         Wait for current commands to finish, close all child processes and
         threads
@@ -262,7 +269,7 @@ class TaskManager:
         self.data_aggregator.shutdown()
         self.logging_server.close()
 
-    def _cleanup_before_fail(self, during_init=False):
+    def _cleanup_before_fail(self, during_init: bool = False) -> None:
         """
         Execute shutdown commands before throwing an exception
         This should keep us from having a bunch of hanging processes
@@ -272,7 +279,7 @@ class TaskManager:
         """
         self._shutdown_manager(during_init=during_init)
 
-    def _check_failure_status(self):
+    def _check_failure_status(self) -> None:
         """ Check the status of command failures. Raise exceptions as necessary
 
         The failure status property is used by the various asynchronous
@@ -302,89 +309,8 @@ class TaskManager:
 
     # CRAWLER COMMAND CODE
 
-    def _distribute_command(self, command_seq, index=None):
-        """
-        parses command type and issues command(s) to the proper browser
-        <index> specifies the type of command this is:
-        = None  -> first come, first serve
-        =  #    -> index of browser to send command to
-        = *     -> sends command to all browsers
-        = **    -> sends command to all browsers (synchronized)
-        """
-
-        # Block if the aggregator queue is too large
-        agg_queue_size = self.data_aggregator.get_most_recent_status()
-        if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
-            while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
-                self.logger.info(
-                    "Blocking command submission until the DataAggregator "
-                    "is below the max queue size of %d. Current queue "
-                    "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
-                )
-                agg_queue_size = self.data_aggregator.get_status()
-
-        # Distribute command
-        if index is None:
-            # send to first browser available
-            command_executed = False
-            while True:
-                for browser in self.browsers:
-                    if browser.ready():
-                        browser.current_timeout = command_seq.total_timeout
-                        thread = self._start_thread(browser, command_seq)
-                        command_executed = True
-                        break
-                if command_executed:
-                    break
-                time.sleep(SLEEP_CONS)
-
-        elif index == '*':
-            # send the command to all browsers
-            command_executed = [False] * len(self.browsers)
-            while False in command_executed:
-                for i in range(len(self.browsers)):
-                    if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[
-                            i].current_timeout = command_seq.total_timeout
-                        thread = self._start_thread(
-                            self.browsers[i], command_seq)
-                        command_executed[i] = True
-                time.sleep(SLEEP_CONS)
-        elif index == '**':
-            # send the command to all browsers and sync it
-            condition = threading.Condition()  # block threads until ready
-            command_executed = [False] * len(self.browsers)
-            while False in command_executed:
-                for i in range(len(self.browsers)):
-                    if self.browsers[i].ready() and not command_executed[i]:
-                        self.browsers[
-                            i].current_timeout = command_seq.total_timeout
-                        thread = self._start_thread(
-                            self.browsers[i], command_seq, condition)
-                        command_executed[i] = True
-                time.sleep(SLEEP_CONS)
-            with condition:
-                condition.notifyAll()  # All browsers loaded, start
-        elif 0 <= index < len(self.browsers):
-            # send the command to this specific browser
-            while True:
-                if self.browsers[index].ready():
-                    self.browsers[
-                        index].current_timeout = command_seq.total_timeout
-                    thread = self._start_thread(
-                        self.browsers[index], command_seq)
-                    break
-                time.sleep(SLEEP_CONS)
-        else:
-            self.logger.info(
-                "Command index type is not supported or out of range")
-            return
-
-        if command_seq.blocking:
-            thread.join()
-            self._check_failure_status()
-
-    def _start_thread(self, browser, command_sequence, condition=None):
+    def _start_thread(self, browser: Browser,
+                      command_sequence: CommandSequence) -> threading.Thread:
         """  starts the command execution thread """
 
         # Check status flags before starting thread
@@ -393,40 +319,37 @@ class TaskManager:
                 "Attempted to execute command on a closed TaskManager")
             return
         self._check_failure_status()
+        visit_id = self.data_aggregator.get_next_visit_id()
+        browser.set_visit_id(visit_id)
 
-        browser.set_visit_id(self.data_aggregator.get_next_visit_id())
         self.sock.send(("site_visits", {
-            "visit_id": browser.curr_visit_id,
+            "visit_id": visit_id,
             "crawl_id": browser.crawl_id,
             "site_url": command_sequence.url,
             "site_rank": command_sequence.site_rank
         }))
 
         # Start command execution thread
-        args = (browser, command_sequence, condition)
+        args = (browser, command_sequence)
         thread = threading.Thread(target=self._issue_command, args=args)
         browser.command_thread = thread
         thread.daemon = True
         thread.start()
         return thread
 
-    def _unpack_picked_error(self, pickled_error):
+    def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
         exc = pickle.loads(pickled_error)
         message = traceback.format_exception(*exc)[-1]
         tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
         return message, tb
 
-    def _issue_command(self, browser, command_sequence, condition=None):
+    def _issue_command(self, browser: Browser,
+                       command_sequence: CommandSequence) -> None:
         """
         sends command tuple to the BrowserManager
         """
         browser.is_fresh = False
-
-        # if this is a synced call, block on condition
-        if condition is not None:
-            with condition:
-                condition.wait()
 
         reset = command_sequence.reset
         if not reset:
@@ -562,35 +485,91 @@ class TaskManager:
                 return
             browser.restart_required = False
 
-    def execute_command_sequence(self, command_sequence, index=None):
-        self._distribute_command(command_sequence, index)
+    def execute_command_sequence(self, command_sequence: CommandSequence,
+                                 index: Optional[int] = None) -> None:
+        """
+        parses command type and issues command(s) to the proper browser
+        <index> specifies the type of command this is:
+        None  -> first come, first serve
+        int  -> index of browser to send command to
+        """
+
+        # Block if the aggregator queue is too large
+        agg_queue_size = self.data_aggregator.get_most_recent_status()
+        if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+            while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+                self.logger.info(
+                    "Blocking command submission until the DataAggregator "
+                    "is below the max queue size of %d. Current queue "
+                    "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
+                )
+                agg_queue_size = self.data_aggregator.get_status()
+
+        # Distribute command
+        if index is None:
+            # send to first browser available
+            command_executed = False
+            while True:
+                for browser in self.browsers:
+                    if browser.ready():
+                        browser.current_timeout = \
+                            command_sequence.total_timeout
+                        thread = self._start_thread(browser, command_sequence)
+                        command_executed = True
+                        break
+                if command_executed:
+                    break
+                time.sleep(SLEEP_CONS)
+        elif 0 <= index < len(self.browsers):
+            # send the command to this specific browser
+            while True:
+                if self.browsers[index].ready():
+                    self.browsers[
+                        index].current_timeout = command_sequence.total_timeout
+                    thread = self._start_thread(
+                        self.browsers[index], command_sequence)
+                    break
+                time.sleep(SLEEP_CONS)
+        else:
+            self.logger.info(
+                "Command index type is not supported or out of range")
+            return
+
+        if command_sequence.blocking:
+            thread.join()
+            self._check_failure_status()
 
     # DEFINITIONS OF HIGH LEVEL COMMANDS
     # NOTE: These wrappers are provided for convenience. To issue sequential
     # commands to the same browser in a single 'visit', use the CommandSequence
     # class directly.
 
-    def get(self, url, index=None, timeout=60, sleep=0, reset=False):
+    def get(self, url: str, index: Optional[int] = None,
+            timeout: int = 60, sleep: int = 0, reset: bool = False) -> None:
         """ goes to a url """
-        command_sequence = CommandSequence.CommandSequence(url)
+        command_sequence = CommandSequence(url)
         command_sequence.get(timeout=timeout, sleep=sleep)
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def browse(self, url, num_links=2, sleep=0, index=None,
-               timeout=60, reset=False):
+    def browse(self, url: str, num_links: int = 2, sleep: int = 0,
+               index: Optional[int] = None, timeout: int = 60,
+               reset: bool = False) -> None:
         """ browse a website and visit <num_links> links on the page """
-        command_sequence = CommandSequence.CommandSequence(url)
+        command_sequence = CommandSequence(url)
         command_sequence.browse(
             num_links=num_links, sleep=sleep, timeout=timeout)
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def close(self):
+    def close(self) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
         if self.closing:
             self.logger.error("TaskManager already closed")
             return
+        start_time = time.time()
         self._shutdown_manager()
+        # We don't have a logging thread at this time anymore
+        print("Shutdown took %s seconds" % str(time.time() - start_time))
