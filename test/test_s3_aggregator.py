@@ -53,8 +53,8 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_config(
             num_browsers=NUM_BROWSERS)
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        for _ in range(NUM_VISITS):
-            manager.get(TEST_SITE, sleep=1, index='*')
+        for _ in range(NUM_VISITS * NUM_BROWSERS):
+            manager.get(TEST_SITE, sleep=1)
         manager.close()
 
         dataset = LocalS3Dataset(
@@ -93,7 +93,7 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_config(num_browsers=1)
         manager_params['s3_directory'] = 's3-aggregator-tests-2'
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        manager.get(TEST_SITE, sleep=1, index='*')
+        manager.get(TEST_SITE, sleep=1)
         dataset = LocalS3Dataset(
             manager_params['s3_bucket'],
             manager_params['s3_directory']
