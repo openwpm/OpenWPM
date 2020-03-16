@@ -75,7 +75,8 @@ class BaseListener(object):
             for (content, content_hash)"""
 
     @abc.abstractmethod
-    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
         """Will be called once a visit_id will receive no new records
 
         Parameters
@@ -117,8 +118,8 @@ class BaseListener(object):
 
     def update_records(self, table: str, data: Dict[str, Any]):
         """A method to keep track of which browser is working on which visit_id
-           If browser_id or visit_id should not be said in data this method will
-           raise an exception
+           If browser_id or visit_id should not be said in data this method
+           will raise an exception
         """
         visit_id = None
         crawl_id = None
@@ -141,7 +142,7 @@ class BaseListener(object):
         if crawl_id not in self.browser_map:
             self.browser_map[crawl_id] = visit_id
         elif self.browser_map[crawl_id] != visit_id:
-            self.visit_done(self.browser_map[crawl_id])
+            self.run_visit_completion_tasks(self.browser_map[crawl_id])
             self.browser_map[crawl_id] = visit_id
 
         return crawl_id, visit_id

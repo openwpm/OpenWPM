@@ -309,7 +309,8 @@ class S3Listener(BaseListener):
             self._create_batch(visit_id)
         self._send_to_s3(force=True)
 
-    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
         self._create_batch(visit_id)
         self._send_to_s3(force=is_shutdown)
 

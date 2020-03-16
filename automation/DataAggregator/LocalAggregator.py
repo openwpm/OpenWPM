@@ -164,7 +164,8 @@ class LocalListener(BaseListener):
             self._ldb_counter = 0
             self._ldb_commit_time = time.time()
 
-    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
         self.mark_visit_complete(visit_id)
 
     def shutdown(self):
