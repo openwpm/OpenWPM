@@ -239,7 +239,7 @@ class BaseAggregator(object):
             )
         return self._last_status
 
-    def get_saved_visit_ids(self) -> List[int]:
+    def get_new_completed_visits(self) -> List[int]:
         """Returns a list of all visit ids that have been saved at the time
         of calling this method.
         This method will return an empty list in case no visit ids have

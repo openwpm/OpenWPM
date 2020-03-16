@@ -350,7 +350,7 @@ class TaskManager:
             and calls their callbacks
         """
         while True:
-            visit_id_list = self.data_aggregator.get_saved_visit_ids()
+            visit_id_list = self.data_aggregator.get_new_completed_visits()
             if self.closing and not self.unsaved_command_sequences:
                 # we're shutting down and have no unprocessed callbacks
                 break
