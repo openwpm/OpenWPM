@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 import tblib
@@ -15,7 +15,7 @@ import tblib
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
-from .DataAggregator import LocalAggregator, S3Aggregator
+from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .Errors import CommandExecutionError
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
@@ -29,7 +29,8 @@ BROWSER_MEMORY_LIMIT = 1500  # in MB
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
 
 
-def load_default_params(num_browsers=1):
+def load_default_params(num_browsers: int = 1) \
+        -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
@@ -63,7 +64,7 @@ class TaskManager:
     def __init__(self, manager_params: Dict[str, Any],
                  browser_params: List[Dict[str, Any]],
                  process_watchdog: bool = False,
-                 logger_kwargs: Dict[Any, Any] = {}):
+                 logger_kwargs: Dict[Any, Any] = {}) -> None:
         """Initialize the TaskManager with browser and manager config params
 
         Parameters
@@ -165,7 +166,8 @@ class TaskManager:
         self.callback_thread.name = "OpenWPM-completion_handler"
         self.callback_thread.start()
 
-    def _initialize_browsers(self, browser_params):
+    def _initialize_browsers(self, browser_params: List[Dict[str, Any]]) \
+            -> List[Browser]:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
@@ -175,7 +177,7 @@ class TaskManager:
 
         return browsers
 
-    def _launch_browsers(self):
+    def _launch_browsers(self) -> None:
         """ launch each browser manager process / browser """
         for browser in self.browsers:
             try:
@@ -190,7 +192,7 @@ class TaskManager:
                 self.close()
                 break
 
-    def _manager_watchdog(self):
+    def _manager_watchdog(self) -> None:
         """
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
@@ -236,8 +238,9 @@ class TaskManager:
                                               process.create_time()))
                         process.kill()
 
-    def _launch_aggregators(self):
+    def _launch_aggregators(self) -> None:
         """Launch the necessary data aggregators"""
+        self.data_aggregator: BaseAggregator.BaseAggregator
         if self.manager_params["output_format"] == "local":
             self.data_aggregator = LocalAggregator.LocalAggregator(
                 self.manager_params, self.browser_params)
@@ -255,7 +258,7 @@ class TaskManager:
         self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-    def _shutdown_manager(self, during_init=False):
+    def _shutdown_manager(self, during_init: bool = False) -> None:
         """
         Wait for current commands to finish, close all child processes and
         threads
@@ -272,7 +275,7 @@ class TaskManager:
         self.logging_server.close()
         self.callback_thread.join()
 
-    def _cleanup_before_fail(self, during_init=False):
+    def _cleanup_before_fail(self, during_init: bool = False) -> None:
         """
         Execute shutdown commands before throwing an exception
         This should keep us from having a bunch of hanging processes
@@ -282,7 +285,7 @@ class TaskManager:
         """
         self._shutdown_manager(during_init=during_init)
 
-    def _check_failure_status(self):
+    def _check_failure_status(self) -> None:
         """ Check the status of command failures. Raise exceptions as necessary
 
         The failure status property is used by the various asynchronous
@@ -312,7 +315,8 @@ class TaskManager:
 
     # CRAWLER COMMAND CODE
 
-    def _start_thread(self, browser, command_sequence):
+    def _start_thread(self, browser: Browser,
+                      command_sequence: CommandSequence) -> threading.Thread:
         """  starts the command execution thread """
 
         # Check status flags before starting thread
@@ -356,15 +360,15 @@ class TaskManager:
                 for visit_id in visit_id_list:
                     self.unsaved_command_sequences.pop(visit_id).mark_done()
 
-    def _unpack_picked_error(self, pickled_error):
+    def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
         exc = pickle.loads(pickled_error)
         message = traceback.format_exception(*exc)[-1]
         tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
         return message, tb
 
-    def _issue_command(self, browser,
-                       command_sequence: CommandSequence):
+    def _issue_command(self, browser: Browser,
+                       command_sequence: CommandSequence) -> None:
         """
         sends command tuple to the BrowserManager
         """
@@ -507,7 +511,7 @@ class TaskManager:
             browser.restart_required = False
 
     def execute_command_sequence(self, command_sequence: CommandSequence,
-                                 index: Optional[int] = None):
+                                 index: Optional[int] = None) -> None:
         """
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
@@ -565,15 +569,17 @@ class TaskManager:
     # commands to the same browser in a single 'visit', use the CommandSequence
     # class directly.
 
-    def get(self, url, index=None, timeout=60, sleep=0, reset=False):
+    def get(self, url: str, index: Optional[int] = None,
+            timeout: int = 60, sleep: int = 0, reset: bool = False) -> None:
         """ goes to a url """
         command_sequence = CommandSequence(url)
         command_sequence.get(timeout=timeout, sleep=sleep)
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def browse(self, url, num_links=2, sleep=0, index=None,
-               timeout=60, reset=False):
+    def browse(self, url: str, num_links: int = 2, sleep: int = 0,
+               index: Optional[int] = None, timeout: int = 60,
+               reset: bool = False) -> None:
         """ browse a website and visit <num_links> links on the page """
         command_sequence = CommandSequence(url)
         command_sequence.browse(
@@ -581,7 +587,7 @@ class TaskManager:
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def close(self):
+    def close(self) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
