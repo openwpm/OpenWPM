@@ -236,7 +236,7 @@ class S3Listener(BaseListener):
                     tables = self._tables_per_visit_id[visit_id]
                     tables.remove(table_name)
                     if not tables:
-                        self.mark_visit_id_done(visit_id)
+                        self.mark_visit_complete(visit_id)
                         del self._tables_per_visit_id[visit_id]
                 del self._visit_id_per_batch[table_name]
             # can't del here because that would modify batches

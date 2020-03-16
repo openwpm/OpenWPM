@@ -117,8 +117,8 @@ class BaseListener(object):
 
     def update_records(self, table: str, data: Dict[str, Any]):
         """A method to keep track of which browser is working on which visit_id
-           Some data should contain a visit_id and a crawl_id, but the method
-           handles both being not set
+           If browser_id or visit_id should not be said in data this method will
+           raise an exception
         """
         visit_id = None
         crawl_id = None
@@ -146,7 +146,7 @@ class BaseListener(object):
 
         return crawl_id, visit_id
 
-    def mark_visit_id_done(self, visit_id: int):
+    def mark_visit_complete(self, visit_id: int):
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
         self.completion_queue.put(visit_id)

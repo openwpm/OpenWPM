@@ -165,11 +165,11 @@ class LocalListener(BaseListener):
             self._ldb_commit_time = time.time()
 
     def visit_done(self, visit_id: int, is_shutdown: bool = False):
-        self.mark_visit_id_done(visit_id)
+        self.mark_visit_complete(visit_id)
 
     def shutdown(self):
         for visit_id in self.browser_map.values():
-            self.mark_visit_id_done(visit_id)
+            self.mark_visit_complete(visit_id)
         self.db.commit()
         self.db.close()
         if self.ldb_enabled:
