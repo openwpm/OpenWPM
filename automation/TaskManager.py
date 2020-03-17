@@ -486,17 +486,18 @@ class TaskManager:
             browser.restart_required = False
 
     def execute_command_sequence(self, command_sequence: CommandSequence,
-                                 index: Optional[int] = None, index_prioritize:Optional[int] = None) -> None:
+                                 index: Optional[int] = None, label:
+                                 Optional[str] = None) -> None:
         """
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
         None  -> first come, first serve
         int  -> index of browser to send command to
-        <index_prioritize> prioritizes the browser based on browser params and
-        sends the command to the first available browser with a particular browser configuration
-        int -> index of the browser with a particular configuration to send command to
+        <label>  checks the label string in function call with label key
+        in browser params and sends the command to the first available
+        browser with that particular browser configuration
+        str -> type of the browser parameter configuration
         """
-
         # Block if the aggregator queue is too large
         agg_queue_size = self.data_aggregator.get_most_recent_status()
         if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
@@ -509,7 +510,8 @@ class TaskManager:
                 agg_queue_size = self.data_aggregator.get_status()
 
         # Distribute command
-        if index_prioritize is None and index is None:
+        if index is None and (label is None or label not in
+                              self.browser_params[0].keys()):
             # send to first browser available
             command_executed = False
             while True:
@@ -523,32 +525,35 @@ class TaskManager:
                 if command_executed:
                     break
                 time.sleep(SLEEP_CONS)
-        elif 0 <= index < len(self.browsers):
-            # send the command to this specific browser
-            while True:
-                if self.browsers[index].ready():
-                    self.browsers[
-                        index].current_timeout = command_sequence.total_timeout
-                    thread = self._start_thread(
-                        self.browsers[index], command_sequence)
-                    break
-                time.sleep(SLEEP_CONS)
-        elif 0 <= index_prioritize < len(self.browsers):
-            # send the command to a particular browser based on label priority in browser params
-            # and as index provided in index_prioritize
-            while True:
-                if self.browsers[index].ready():
-                    self.browsers[
-                        index].current_timeout = command_sequence.total_timeout
-                    thread = self._start_thread(
-                        self.browsers[index], command_sequence)
-                    break
-                time.sleep(SLEEP_CONS)
+        elif index is not None:
+            if 0 <= index < len(self.browsers):
+                # send the command to this specific browser
+                while True:
+                    if self.browsers[index].ready():
+                        self.browsers[index].current_timeout \
+                            = command_sequence.total_timeout
+                        thread = self._start_thread(
+                            self.browsers[index], command_sequence)
+                        break
+                    time.sleep(SLEEP_CONS)
+        elif index is None and label in self.browser_params[0].keys():
+            # send the command to a particular browser based on
+            # label in browser params
+            for browser in self.browsers:
+                if browser.browser_params['label'] and \
+                        browser.browser_params['label'][0] == label:
+                    while True:
+                        if browser.ready():
+                            browser.current_timeout = \
+                                command_sequence.total_timeout
+                            thread = self._start_thread(
+                                browser, command_sequence)
+                            break
+                        time.sleep(SLEEP_CONS)
         else:
             self.logger.info(
                 "Command index type is not supported or out of range")
             return
-
         if command_sequence.blocking:
             thread.join()
             self._check_failure_status()

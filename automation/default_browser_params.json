@@ -25,5 +25,5 @@
     "adblock-plus": false,
     "ublock-origin": false,
     "tracking-protection": false,
-    "prioritize-this-config": false
+    "label": []
 }
