@@ -4,7 +4,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from multiprocess import Queue
 
@@ -16,6 +16,8 @@ STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = 'SHUTDOWN'
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
+
+BaseParams = Tuple[Queue, Queue, Queue]
 
 
 class BaseListener(object):
@@ -50,7 +52,7 @@ class BaseListener(object):
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
-        self.record_queue = None  # Initialized on `startup`
+        self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
         self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
 

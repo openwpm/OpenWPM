@@ -8,7 +8,7 @@ import queue
 import random
 import time
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List
+from typing import Any, DefaultDict, Dict, List, Optional
 
 import boto3
 import pandas as pd
@@ -19,7 +19,8 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
+from .BaseAggregator import (RECORD_TYPE_CONTENT, BaseAggregator, BaseListener,
+                             BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
@@ -35,7 +36,9 @@ S3_CONFIG_KWARGS = {
 S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
-def listener_process_runner(base_params, manager_params, instance_id):
+def listener_process_runner(base_params: BaseParams,
+                            manager_params: Dict[str, Any],
+                            instance_id: int) -> None:
     """S3Listener runner. Pass to new process"""
     listener = S3Listener(base_params, manager_params, instance_id)
     listener.startup()
@@ -64,11 +67,14 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(self, base_params, manager_params, instance_id):
+    def __init__(self,
+                 base_params: BaseParams,
+                 manager_params: Dict[str, Any],
+                 instance_id: int) -> None:
         self.dir = manager_params['s3_directory']
         self._records: Dict[int, DefaultDict[str, List[Any]]] =\
             dict()  # maps visit_id and table to records
-        self._batches = \
+        self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
         self._visit_id_per_batch: DefaultDict[str, List[int]] = \
             defaultdict(list)
@@ -85,10 +91,11 @@ class S3Listener(BaseListener):
         )
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
-        self._last_record_received = None  # time last record was received
+        # time last record was received
+        self._last_record_received: Optional[float] = None
         super(S3Listener, self).__init__(*base_params)
 
-    def _get_records(self, visit_id):
+    def _get_records(self, visit_id: int) -> DefaultDict[str, List[Any]]:
         """Get the RecordBatch corresponding to `visit_id`"""
         if visit_id not in self._records:
             self._records[visit_id] = defaultdict(list)
