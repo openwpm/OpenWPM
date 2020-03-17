@@ -1,4 +1,4 @@
-{ #Akhila
+{
     "extension_enabled": true,
     "cookie_instrument": false,
     "js_instrument": false,
@@ -24,5 +24,6 @@
     "https-everywhere": false,
     "adblock-plus": false,
     "ublock-origin": false,
-    "tracking-protection": false
+    "tracking-protection": false,
+    "prioritize-this-config": false
 }

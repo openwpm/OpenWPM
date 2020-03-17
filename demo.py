@@ -25,6 +25,8 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['disable_flash'] = True
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
+#prioritizing 2nd browser
+browser_params[1]['prioritize-this-config']= True
 browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
