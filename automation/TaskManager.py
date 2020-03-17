@@ -496,7 +496,7 @@ class TaskManager:
         sends the command to the first available browser with a particular browser configuration
         int -> index of the browser with a particular configuration to send command to
         """
-
+        print(index,index_prioritize)
         # Block if the aggregator queue is too large
         agg_queue_size = self.data_aggregator.get_most_recent_status()
         if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
@@ -509,39 +509,40 @@ class TaskManager:
                 agg_queue_size = self.data_aggregator.get_status()
 
         # Distribute command
-        if index_prioritize is None and index is None:
-            # send to first browser available
-            command_executed = False
-            while True:
-                for browser in self.browsers:
-                    if browser.ready():
-                        browser.current_timeout = \
-                            command_sequence.total_timeout
-                        thread = self._start_thread(browser, command_sequence)
-                        command_executed = True
+        if index_prioritize is None:
+            if index is None:
+                # send to first browser available
+                command_executed = False
+                while True:
+                    for browser in self.browsers:
+                        if browser.ready():
+                            browser.current_timeout = \
+                                command_sequence.total_timeout
+                            thread = self._start_thread(browser, command_sequence)
+                            command_executed = True
+                            break
+                    if command_executed:
                         break
-                if command_executed:
-                    break
-                time.sleep(SLEEP_CONS)
-        elif 0 <= index < len(self.browsers):
-            # send the command to this specific browser
-            while True:
-                if self.browsers[index].ready():
-                    self.browsers[
-                        index].current_timeout = command_sequence.total_timeout
-                    thread = self._start_thread(
-                        self.browsers[index], command_sequence)
-                    break
-                time.sleep(SLEEP_CONS)
+                    time.sleep(SLEEP_CONS)
+            elif 0 <= index < len(self.browsers):
+                # send the command to this specific browser
+                while True:
+                    if self.browsers[index].ready():
+                        self.browsers[
+                            index].current_timeout = command_sequence.total_timeout
+                        thread = self._start_thread(
+                            self.browsers[index], command_sequence)
+                        break
+                    time.sleep(SLEEP_CONS)
         elif 0 <= index_prioritize < len(self.browsers):
             # send the command to a particular browser based on label priority in browser params
             # and as index provided in index_prioritize
             while True:
-                if self.browsers[index].ready():
+                if self.browsers[index_prioritize].ready():
                     self.browsers[
-                        index].current_timeout = command_sequence.total_timeout
+                        index_prioritize].current_timeout = command_sequence.total_timeout
                     thread = self._start_thread(
-                        self.browsers[index], command_sequence)
+                        self.browsers[index_prioritize], command_sequence)
                     break
                 time.sleep(SLEEP_CONS)
         else:
