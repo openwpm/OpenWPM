@@ -13,7 +13,8 @@ from .utilities import (BASE_TEST_URL, LocalS3Dataset, LocalS3Session,
 
 
 class TestCallbackCommand(OpenWPMTest):
-    """Test `custom_function` command's ability to handle inline functions"""
+    """Test test the Aggregators as well as the entire callback machinery
+       to see if all callbacks get correctly called"""
 
     @classmethod
     def setup_class(cls):
