@@ -76,10 +76,9 @@ class S3Listener(BaseListener):
             dict()  # maps visit_id and table to records
         self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
-        self._visit_id_per_batch: DefaultDict[str, List[int]] = \
-            defaultdict(list)
-        self._tables_per_visit_id: DefaultDict[int, List[str]] = \
-            defaultdict(list)
+        self._unsaved_visit_ids: List[int] = \
+            list()
+
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
         self._s3_content_cache = set()  # cache of filenames already uploaded
@@ -134,8 +133,7 @@ class S3Listener(BaseListener):
                     % table_name, exc_info=True
                 )
                 pass
-            self._tables_per_visit_id[visit_id].append(table_name)
-            self._visit_id_per_batch[table_name].append(visit_id)
+            self._unsaved_visit_ids.append(visit_id)
 
             # We construct a special index file from the site_visits data
             # to make it easier to query the dataset
@@ -209,9 +207,14 @@ class S3Listener(BaseListener):
 
     def _send_to_s3(self, force=False):
         """Copy in-memory batches to s3"""
+        should_send = force
+        for batches in self._batches.values():
+            if len(batches) > CACHE_SIZE:
+                should_send = True
+        if not should_send:
+            return
+
         for table_name, batches in self._batches.items():
-            if not force and len(batches) <= CACHE_SIZE:
-                continue
             if table_name == SITE_VISITS_INDEX:
                 out_str = '\n'.join([json.dumps(x) for x in batches])
                 if not isinstance(out_str, bytes):
@@ -239,15 +242,11 @@ class S3Listener(BaseListener):
                         exc_info=True
                     )
                     pass
-                for visit_id in self._visit_id_per_batch[table_name]:
-                    tables = self._tables_per_visit_id[visit_id]
-                    tables.remove(table_name)
-                    if not tables:
-                        self.mark_visit_complete(visit_id)
-                        del self._tables_per_visit_id[visit_id]
-                del self._visit_id_per_batch[table_name]
             # can't del here because that would modify batches
             self._batches[table_name] = list()
+        for visit_id in self._unsaved_visit_ids:
+            self.mark_visit_complete(visit_id)
+        self._unsaved_visit_ids = list()
 
     def save_batch_if_past_timeout(self):
         """Save the current batch of records if no new data has been received.
