@@ -99,7 +99,7 @@ class LocalListener(BaseListener):
             self.process_content(record)
             return
 
-        assert isinstance(data, Dict[str, Any])
+        assert isinstance(data, dict)
         self.update_records(table, data)
 
         statement, args = self._generate_insert(
