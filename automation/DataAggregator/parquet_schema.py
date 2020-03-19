@@ -59,8 +59,6 @@ fields = [
     pa.field('headers', pa.string(), nullable=False),
     pa.field('request_id', pa.string(), nullable=False),
     pa.field('is_XHR', pa.bool_()),
-    pa.field('is_frame_load', pa.bool_()),
-    pa.field('is_full_page', pa.bool_()),
     pa.field('is_third_party_channel', pa.bool_()),
     pa.field('is_third_party_to_top_window', pa.bool_()),
     pa.field('triggering_origin', pa.string()),

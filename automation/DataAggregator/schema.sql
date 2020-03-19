@@ -79,8 +79,6 @@ CREATE TABLE IF NOT EXISTS http_requests(
   headers TEXT NOT NULL,
   request_id TEXT NOT NULL,
   is_XHR INTEGER,
-  is_frame_load INTEGER,
-  is_full_page INTEGER,
   is_third_party_channel INTEGER,
   is_third_party_to_top_window INTEGER,
   triggering_origin TEXT,

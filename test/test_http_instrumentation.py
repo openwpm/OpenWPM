@@ -22,7 +22,7 @@ from .openwpmtest import OpenWPMTest
 # triggering_origin,
 # loading_origin,
 # loading_href,
-# is_XHR, is_frame_load, is_full_page, is_tp_content, is_tp_window,
+# is_XHR, is_tp_content, is_tp_window,
 #   resource_type
 HTTP_REQUESTS = {
     (
@@ -475,7 +475,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
@@ -544,7 +543,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
@@ -668,7 +666,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
@@ -694,7 +691,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
