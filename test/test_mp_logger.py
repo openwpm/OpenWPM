@@ -3,6 +3,8 @@ import logging
 import os
 import time
 
+import pytest
+
 from ..automation import MPLogger
 from ..automation.utilities.multiprocess_utils import Process
 from .openwpmtest import OpenWPMTest
@@ -143,6 +145,9 @@ class TestMPLogger(OpenWPMTest):
         os.makedirs(str(tmpdir) + '-2')
         self.test_multiprocess(str(tmpdir) + '-2')
 
+    @pytest.mark.skipif(
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason='Flaky on Travis CI')
     def test_child_process_with_exception(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
         openwpm_logger = MPLogger.MPLogger(log_file)
@@ -162,10 +167,10 @@ class TestMPLogger(OpenWPMTest):
 
         # Close the logging server
         time.sleep(2)  # give some time for logs to be sent
-        openwpm_logger.close()
         child_process_1.join()
         child_process_2.join()
         print("Child processes joined...")
+        openwpm_logger.close()
 
         log_content = self.get_logfile_contents(log_file)
         for child in range(2):
