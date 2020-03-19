@@ -16,7 +16,7 @@ RUN npm run build
 RUN cp dist/openwpm-1.0.zip openwpm.xpi
 
 # Stage 2, build the main OpenWPM image
-FROM ubuntu:18.04
+FROM krallin/ubuntu-tini:bionic
 
 WORKDIR /opt/OpenWPM
 
@@ -55,12 +55,6 @@ COPY . .
 # Optionally create an OpenWPM user. This is not strictly required since it is
 # possible to run everything as root as well.
 RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
-
-# Add Tini
-ENV TINI_VERSION v0.18.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--"]
 
 # Setting demo.py as the default command
 CMD [ "python3", "demo.py"]

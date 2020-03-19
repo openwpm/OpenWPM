@@ -4,7 +4,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from multiprocess import Queue
 
@@ -16,6 +16,8 @@ STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = 'SHUTDOWN'
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
+
+BaseParams = Tuple[Queue, Queue, Queue]
 
 
 class BaseListener(object):
@@ -50,7 +52,7 @@ class BaseListener(object):
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
-        self.record_queue = None  # Initialized on `startup`
+        self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
         self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
 
@@ -75,7 +77,8 @@ class BaseListener(object):
             for (content, content_hash)"""
 
     @abc.abstractmethod
-    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
         """Will be called once a visit_id will receive no new records
 
         Parameters
@@ -117,8 +120,8 @@ class BaseListener(object):
 
     def update_records(self, table: str, data: Dict[str, Any]):
         """A method to keep track of which browser is working on which visit_id
-           Some data should contain a visit_id and a crawl_id, but the method
-           handles both being not set
+           If browser_id or visit_id should not be said in data this method
+           will raise an exception
         """
         visit_id = None
         crawl_id = None
@@ -141,12 +144,12 @@ class BaseListener(object):
         if crawl_id not in self.browser_map:
             self.browser_map[crawl_id] = visit_id
         elif self.browser_map[crawl_id] != visit_id:
-            self.visit_done(self.browser_map[crawl_id])
+            self.run_visit_completion_tasks(self.browser_map[crawl_id])
             self.browser_map[crawl_id] = visit_id
 
         return crawl_id, visit_id
 
-    def mark_visit_id_done(self, visit_id: int):
+    def mark_visit_complete(self, visit_id: int):
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
         self.completion_queue.put(visit_id)
@@ -238,7 +241,7 @@ class BaseAggregator(object):
             )
         return self._last_status
 
-    def get_saved_visit_ids(self) -> List[int]:
+    def get_new_completed_visits(self) -> List[int]:
         """Returns a list of all visit ids that have been saved at the time
         of calling this method.
         This method will return an empty list in case no visit ids have

@@ -6,7 +6,7 @@ import sqlite3
 import time
 from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
                      ProgrammingError)
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Union
 
 import plyvel
 
@@ -82,7 +82,7 @@ class LocalListener(BaseListener):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
-    def process_record(self, record: Tuple[str, Dict[str, Any]]):
+    def process_record(self, record: Tuple[str, Union[str, Dict[str, Any]]]):
         """Add `record` to database"""
         if len(record) != 2:
             self.logger.error("Query is not the correct length")
@@ -91,12 +91,15 @@ class LocalListener(BaseListener):
         table, data = record
 
         if table == "create_table":
+            assert isinstance(data, str)
             self.cur.execute(data)
             self.db.commit()
             return
         elif table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
+
+        assert isinstance(data, dict)
         self.update_records(table, data)
 
         statement, args = self._generate_insert(
@@ -164,12 +167,13 @@ class LocalListener(BaseListener):
             self._ldb_counter = 0
             self._ldb_commit_time = time.time()
 
-    def visit_done(self, visit_id: int, is_shutdown: bool = False):
-        self.mark_visit_id_done(visit_id)
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
+        self.mark_visit_complete(visit_id)
 
     def shutdown(self):
         for visit_id in self.browser_map.values():
-            self.mark_visit_id_done(visit_id)
+            self.mark_visit_complete(visit_id)
         self.db.commit()
         self.db.close()
         if self.ldb_enabled:

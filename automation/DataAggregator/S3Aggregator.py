@@ -8,7 +8,7 @@ import queue
 import random
 import time
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List
+from typing import Any, DefaultDict, Dict, List, Optional
 
 import boto3
 import pandas as pd
@@ -19,7 +19,8 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
+from .BaseAggregator import (RECORD_TYPE_CONTENT, BaseAggregator, BaseListener,
+                             BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
@@ -35,7 +36,9 @@ S3_CONFIG_KWARGS = {
 S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
-def listener_process_runner(base_params, manager_params, instance_id):
+def listener_process_runner(base_params: BaseParams,
+                            manager_params: Dict[str, Any],
+                            instance_id: int) -> None:
     """S3Listener runner. Pass to new process"""
     listener = S3Listener(base_params, manager_params, instance_id)
     listener.startup()
@@ -64,16 +67,18 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(self, base_params, manager_params, instance_id):
+    def __init__(self,
+                 base_params: BaseParams,
+                 manager_params: Dict[str, Any],
+                 instance_id: int) -> None:
         self.dir = manager_params['s3_directory']
         self._records: Dict[int, DefaultDict[str, List[Any]]] =\
             dict()  # maps visit_id and table to records
-        self._batches = \
+        self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
-        self._visit_id_per_batch: DefaultDict[str, List[int]] = \
-            defaultdict(list)
-        self._tables_per_visit_id: DefaultDict[int, List[str]] = \
-            defaultdict(list)
+        self._unsaved_visit_ids: List[int] = \
+            list()
+
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
         self._s3_content_cache = set()  # cache of filenames already uploaded
@@ -85,10 +90,11 @@ class S3Listener(BaseListener):
         )
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
-        self._last_record_received = None  # time last record was received
+        # time last record was received
+        self._last_record_received: Optional[float] = None
         super(S3Listener, self).__init__(*base_params)
 
-    def _get_records(self, visit_id):
+    def _get_records(self, visit_id: int) -> DefaultDict[str, List[Any]]:
         """Get the RecordBatch corresponding to `visit_id`"""
         if visit_id not in self._records:
             self._records[visit_id] = defaultdict(list)
@@ -127,8 +133,7 @@ class S3Listener(BaseListener):
                     % table_name, exc_info=True
                 )
                 pass
-            self._tables_per_visit_id[visit_id].append(table_name)
-            self._visit_id_per_batch[table_name].append(visit_id)
+            self._unsaved_visit_ids.append(visit_id)
 
             # We construct a special index file from the site_visits data
             # to make it easier to query the dataset
@@ -202,9 +207,14 @@ class S3Listener(BaseListener):
 
     def _send_to_s3(self, force=False):
         """Copy in-memory batches to s3"""
+        should_send = force
+        for batches in self._batches.values():
+            if len(batches) > CACHE_SIZE:
+                should_send = True
+        if not should_send:
+            return
+
         for table_name, batches in self._batches.items():
-            if not force and len(batches) <= CACHE_SIZE:
-                continue
             if table_name == SITE_VISITS_INDEX:
                 out_str = '\n'.join([json.dumps(x) for x in batches])
                 if not isinstance(out_str, bytes):
@@ -232,15 +242,11 @@ class S3Listener(BaseListener):
                         exc_info=True
                     )
                     pass
-                for visit_id in self._visit_id_per_batch[table_name]:
-                    tables = self._tables_per_visit_id[visit_id]
-                    tables.remove(table_name)
-                    if not tables:
-                        self.mark_visit_id_done(visit_id)
-                        del self._tables_per_visit_id[visit_id]
-                del self._visit_id_per_batch[table_name]
             # can't del here because that would modify batches
             self._batches[table_name] = list()
+        for visit_id in self._unsaved_visit_ids:
+            self.mark_visit_complete(visit_id)
+        self._unsaved_visit_ids = list()
 
     def save_batch_if_past_timeout(self):
         """Save the current batch of records if no new data has been received.
@@ -309,7 +315,8 @@ class S3Listener(BaseListener):
             self._create_batch(visit_id)
         self._send_to_s3(force=True)
 
-    def visit_done(self, visit_id: int, is_shutdown: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
         self._create_batch(visit_id)
         self._send_to_s3(force=is_shutdown)
 
