@@ -26,7 +26,8 @@ for i in range(NUM_BROWSERS):
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
 #prioritizing 2nd browser
-browser_params[1]['prioritize-this-config']= True
+browser_params[1]['donottrack']=True
+browser_params[1]['label']= ['donottrack']
 browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
@@ -48,7 +49,7 @@ for site in sites:
     command_sequence.get(sleep=3, timeout=60)
 
     # Run commands across the three browsers (simple parallelization)
-    manager.execute_command_sequence(command_sequence,index_prioritize=1)
+    manager.execute_command_sequence(command_sequence,label='donottrack')
 
 # Shuts down the browsers and waits for the data to finish logging
 manager.close()
