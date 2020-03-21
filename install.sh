@@ -1,11 +1,19 @@
 #!/bin/bash
 set -e
 
-./install-system.sh "$@"
+for arg in "$@"
+do
+    if [ "$arg" == "--dev" ] || [ "$arg" == "-d" ]
+    then
+       
+    fi
+done
 
-./install-pip-and-packages.sh
+./scripts/install-system.sh "$@"
 
-./install-node.sh
+./scripts/install-pip-and-packages.sh
+
+./scripts/install-node.sh
 
 # Download and build client extension
-./build-extension.sh
+./scripts/build-extension.sh
