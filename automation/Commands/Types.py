@@ -27,14 +27,6 @@ class BrowseCommand(BaseCommand):
             self.url, self.num_links, self.sleep)
 
 
-class DumpFlashCookiesCommand(BaseCommand):
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return "DumpFlashCookiesCommand()"
-
-
 class DumpProfCommand(BaseCommand):
     def __init__(self, dump_folder, close_webdriver, compress):
         self.dump_folder = dump_folder

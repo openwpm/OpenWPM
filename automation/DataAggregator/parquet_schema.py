@@ -12,19 +12,6 @@ fields = [
 ]
 PQ_SCHEMAS['site_visits'] = pa.schema(fields)
 
-# flash_cookies
-fields = [
-    pa.field('crawl_id', pa.uint32(), nullable=False),
-    pa.field('visit_id', pa.int64(), nullable=False),
-    pa.field('instance_id', pa.uint32(), nullable=False),
-    pa.field('domain', pa.string()),
-    pa.field('filename', pa.string()),
-    pa.field('local_path', pa.string()),
-    pa.field('key', pa.string()),
-    pa.field('content', pa.string())
-]
-PQ_SCHEMAS['flash_cookies'] = pa.schema(fields)
-
 # crawl_history
 fields = [
     pa.field('crawl_id', pa.uint32(), nullable=False),

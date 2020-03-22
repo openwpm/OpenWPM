@@ -28,7 +28,7 @@ RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && ap
 
 # Install the Ubuntu packages as well as firefox and the geckodriver first
 COPY ./install-system.sh .
-RUN ./install-system.sh --no-flash
+RUN ./install-system.sh
 
 # Move the firefox binary away from the /opt/OpenWPM root so that it is available if
 # we mount a local source code directory as /opt/OpenWPM

@@ -1,8 +1,8 @@
 from typing import Any, Callable, List, NewType, Tuple
 
-from .Commands.Types import (BrowseCommand, DumpFlashCookiesCommand,
-                             DumpPageSourceCommand, DumpProfCommand,
-                             GetCommand, RecursiveDumpPageSourceCommand,
+from .Commands.Types import (BrowseCommand, DumpPageSourceCommand,
+                             DumpProfCommand, GetCommand,
+                             RecursiveDumpPageSourceCommand,
                              RunCustomFunctionCommand, SaveScreenshotCommand,
                              ScreenshotFullPageCommand)
 from .Errors import CommandExecutionError
@@ -23,11 +23,6 @@ class CommandSequence:
 
     CommandSequence guarantees that a series of commands will be performed
     by a single browser instance.
-
-    NOTE: Command dump_flash_cookies will close
-    the current tab - any command that relies on the page still being open,
-    like save_screenshot, extract_links, or dump_page_source, should be
-    called prior to that.
     """
 
     def __init__(self, url: str, reset: bool = False,
@@ -73,17 +68,6 @@ class CommandSequence:
         command = BrowseCommand(self.url, num_links, sleep)
         self.commands_with_timeout.append((command, timeout))
         self.contains_get_or_browse = True
-
-    def dump_flash_cookies(self, timeout=60):
-        """ dumps the local storage vectors (flash, localStorage, cookies) to db
-        Side effect: closes the current tab."""
-        self.total_timeout += timeout
-        if not self.contains_get_or_browse:
-            raise CommandExecutionError(
-                "No get or browse request preceding "
-                "the dump storage vectors command", self)
-        command = DumpFlashCookiesCommand()
-        self.commands_with_timeout.append((command, timeout))
 
     def dump_profile(self, dump_folder, close_webdriver=False,
                      compress=True, timeout=120):

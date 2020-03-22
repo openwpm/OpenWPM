@@ -385,8 +385,7 @@ class Browser:
                 self.browser_params['profile_archive_dir'],
                 close_webdriver=False,
                 browser_settings=self.browser_settings,
-                compress=True,
-                save_flash=self.browser_params['disable_flash'] is False
+                compress=True
             )
         """
 
