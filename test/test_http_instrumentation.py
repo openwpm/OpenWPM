@@ -87,7 +87,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 1, 0, None, None, u'sub_frame',
+        0, None, None, u'sub_frame',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_style.css',
@@ -246,7 +246,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 1, 0, None, None, u'sub_frame'
+        0, None, None, u'sub_frame'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_style.css',
@@ -479,6 +479,7 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
             )
+
             request_id_to_url[row['request_id']] = row['url']
         assert HTTP_REQUESTS == observed_records
 
