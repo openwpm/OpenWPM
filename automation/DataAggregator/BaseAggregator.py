@@ -149,10 +149,10 @@ class BaseListener(object):
 
         return crawl_id, visit_id
 
-    def mark_visit_complete(self, visit_id: int):
+    def mark_visit_complete(self, visit_id: int, interrupted: bool = False):
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
-        self.completion_queue.put(visit_id)
+        self.completion_queue.put((visit_id, interrupted))
 
     def shutdown(self):
         """Run shutdown tasks defined in the base listener

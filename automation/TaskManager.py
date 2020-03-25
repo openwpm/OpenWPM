@@ -356,9 +356,12 @@ class TaskManager:
                 break
             if not visit_id_list:
                 time.sleep(1)
-            else:
-                for visit_id in visit_id_list:
-                    self.unsaved_command_sequences.pop(visit_id).mark_done()
+                continue
+
+            for visit_id, interrupted in visit_id_list:
+                cs = self.unsaved_command_sequences.pop(visit_id)
+                if not interrupted:
+                    cs.mark_done()
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
