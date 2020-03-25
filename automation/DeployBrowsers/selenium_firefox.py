@@ -116,7 +116,7 @@ class PatchedGeckoDriverService(BaseService):
         log_file = None
         if log_path:
             try:
-                log_file = open(log_path, "a+")
+                log_file = open(log_path, "a")
             except OSError as e:
                 if e.errno != errno.ESPIPE:
                     raise
