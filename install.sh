@@ -5,7 +5,8 @@ for arg in "$@"
 do
     if [ "$arg" == "--dev" ] || [ "$arg" == "-d" ]
     then
-       
+        echo "Installing dev dependencies..."
+        ./scripts/install-dev.sh 
     fi
 done
 

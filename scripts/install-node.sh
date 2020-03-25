@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
-# Install node
-curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
-sudo apt install -y nodejs
+
+if which node > /dev/null
+    then
+        echo "Node is installed, skipping..."
+        exit 1
+    else
+        # Install node
+        curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
+        sudo apt install -y nodejs
+    fi
