@@ -268,7 +268,7 @@ class TaskManager:
         self.closing = True
 
         for browser in self.browsers:
-            browser.shutdown_browser(during_init, shutdown_timeout=60)
+            browser.shutdown_browser(during_init)
 
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
