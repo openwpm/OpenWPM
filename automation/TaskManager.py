@@ -273,7 +273,7 @@ class TaskManager:
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
         self.logging_server.close()
-        if self.callback_thread:
+        if hasattr(self, "callback_thread"):
             self.callback_thread.join()
 
     def _cleanup_before_fail(self, during_init: bool = False) -> None:
