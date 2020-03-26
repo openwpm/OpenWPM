@@ -273,7 +273,8 @@ class TaskManager:
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
         self.logging_server.close()
-        self.callback_thread.join()
+        if self.callback_thread:
+            self.callback_thread.join()
 
     def _cleanup_before_fail(self, during_init: bool = False) -> None:
         """
@@ -328,7 +329,8 @@ class TaskManager:
         self._check_failure_status()
         visit_id = self.data_aggregator.get_next_visit_id()
         browser.set_visit_id(visit_id)
-        self.unsaved_command_sequences[visit_id] = command_sequence
+        if command_sequence.callback:
+            self.unsaved_command_sequences[visit_id] = command_sequence
 
         self.sock.send(("site_visits", {
             "visit_id": visit_id,
@@ -358,7 +360,9 @@ class TaskManager:
                 time.sleep(1)
             else:
                 for visit_id in visit_id_list:
-                    self.unsaved_command_sequences.pop(visit_id).mark_done()
+                    cs = self.unsaved_command_sequences.pop(visit_id, None)
+                    if cs:
+                        cs.mark_done()
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
