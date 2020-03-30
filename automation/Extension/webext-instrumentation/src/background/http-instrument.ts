@@ -18,6 +18,7 @@ import {
 
 type SaveContentOption = boolean | string;
 type ResourceTypesOption = undefined | string;
+type UrlsOption = undefined | string;
 
 /**
  * Note: Different parts of the desired information arrives in different events as per below:
@@ -72,9 +73,10 @@ export class HttpInstrument {
     crawlID,
     saveContentOption: SaveContentOption,
     resourceTypesOption: ResourceTypesOption,
+    urlsOption: UrlsOption,
   ) {
     const filter: RequestFilter = {
-      urls: ["<all_urls>"],
+      urls: urlsOption ? urlsOption.split("|") : ["<all_urls>"],
       types: this.resourceTypesToListenFor(resourceTypesOption),
     };
 
