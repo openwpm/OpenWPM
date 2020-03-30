@@ -17,6 +17,7 @@ import {
 } from "../types/browser-web-request-event-details";
 
 type SaveContentOption = boolean | string;
+type ResourceTypesOption = undefined | string;
 
 /**
  * Note: Different parts of the desired information arrives in different events as per below:
@@ -39,36 +40,43 @@ export class HttpInstrument {
   private onBeforeRedirectListener;
   private onCompletedListener;
 
+  private allTypes: ResourceType[] = [
+    "beacon",
+    "csp_report",
+    "font",
+    "image",
+    "imageset",
+    "main_frame",
+    "media",
+    "object",
+    "object_subrequest",
+    "ping",
+    "script",
+    // "speculative",
+    "stylesheet",
+    "sub_frame",
+    "web_manifest",
+    "websocket",
+    "xbl",
+    "xml_dtd",
+    "xmlhttprequest",
+    "xslt",
+    "other",
+  ];
+
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
   }
 
-  public run(crawlID, saveContentOption: SaveContentOption) {
-    const allTypes: ResourceType[] = [
-      "beacon",
-      "csp_report",
-      "font",
-      "image",
-      "imageset",
-      "main_frame",
-      "media",
-      "object",
-      "object_subrequest",
-      "ping",
-      "script",
-      // "speculative",
-      "stylesheet",
-      "sub_frame",
-      "web_manifest",
-      "websocket",
-      "xbl",
-      "xml_dtd",
-      "xmlhttprequest",
-      "xslt",
-      "other",
-    ];
-
-    const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
+  public run(
+    crawlID,
+    saveContentOption: SaveContentOption,
+    resourceTypesOption: ResourceTypesOption,
+  ) {
+    const filter: RequestFilter = {
+      urls: ["<all_urls>"],
+      types: this.resourceTypesToListenFor(resourceTypesOption),
+    };
 
     const requestStemsFromExtension = details => {
       return (
@@ -186,10 +194,19 @@ export class HttpInstrument {
     if (saveContentOption === false) {
       return false;
     }
-    return this.saveContentResourceTypes(saveContentOption).length > 0;
+    return this.splitStringIntoResourceTypes(saveContentOption).length > 0;
   }
 
-  private saveContentResourceTypes(saveContentOption: string): ResourceType[] {
+  private resourceTypesToListenFor(resourceTypesOption: ResourceTypesOption) {
+    if (resourceTypesOption === undefined) {
+      return this.allTypes;
+    }
+    return this.splitStringIntoResourceTypes(resourceTypesOption);
+  }
+
+  private splitStringIntoResourceTypes(
+    saveContentOption: string,
+  ): ResourceType[] {
     return saveContentOption.split(",") as ResourceType[];
   }
 
@@ -210,7 +227,7 @@ export class HttpInstrument {
     if (saveContentOption === false) {
       return false;
     }
-    return this.saveContentResourceTypes(saveContentOption).includes(
+    return this.splitStringIntoResourceTypes(saveContentOption).includes(
       resourceType,
     );
   }
