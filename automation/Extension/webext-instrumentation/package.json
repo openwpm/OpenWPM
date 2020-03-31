@@ -20,7 +20,7 @@
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint -t verbose --fix --project .",
     "test": "run-s build test:*",
-    "test:lint": "tslint -t verbose --project . && prettier \"src/**/*.ts\" --list-different",
+    "test:lint": "tslint -t verbose --project . && echo \",Files that needs to be prettier-formatted:\" && prettier \"src/**/*.ts\" --list-different || true",
     "test:unit": "nyc ava",
     "test:unit:verbose": "nyc ava --verbose --serial",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
