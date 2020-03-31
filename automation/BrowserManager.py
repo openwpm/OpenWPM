@@ -45,7 +45,7 @@ class Browser:
         self.current_profile_path = None
         self.db_socket_address = manager_params['aggregator_address']
         self.crawl_id = browser_params['crawl_id']
-        self.curr_visit_id = None
+        self.curr_visit_id: int = None
         self.browser_params = browser_params
         self.manager_params = manager_params
 
@@ -221,8 +221,8 @@ class Browser:
         return self.launch_browser_manager()
 
     def close_browser_manager(self):
-        """Attempt to close the webdriver and browser manager processes.
-
+        """Attempt to close the webdriver and browser manager processes
+        from this thread.
         If the browser manager process is unresponsive, the process is killed.
         """
         self.logger.debug(

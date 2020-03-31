@@ -1,5 +1,8 @@
+from typing import Any, Callable, List, NewType, Tuple
 
 from .Errors import CommandExecutionError
+
+Command = NewType('Command', Tuple[str, Any])
 
 
 class CommandSequence:
@@ -22,8 +25,9 @@ class CommandSequence:
     called prior to that.
     """
 
-    def __init__(self, url, reset=False,
-                 blocking=False, retry_number=None, site_rank=None):
+    def __init__(self, url: str, reset: bool = False,
+                 blocking: bool = False, retry_number: int = None,
+                 site_rank: int = None, callback: Callable[[], None] = None):
         """Initialize command sequence.
 
         Parameters
@@ -45,10 +49,11 @@ class CommandSequence:
         self.reset = reset
         self.blocking = blocking
         self.retry_number = retry_number
-        self.commands_with_timeout = []
+        self.commands_with_timeout: List[Tuple[Command, int]] = []
         self.total_timeout = 0
         self.contains_get_or_browse = False
         self.site_rank = site_rank
+        self.callback = callback
 
     def get(self, sleep=0, timeout=60):
         """ goes to a url """
@@ -164,3 +169,7 @@ class CommandSequence:
                                         "the dump page source command", self)
         command = ('RUN_CUSTOM_FUNCTION', function_handle, func_args)
         self.commands_with_timeout.append((command, timeout))
+
+    def mark_done(self):
+        if self.callback is not None:
+            self.callback()

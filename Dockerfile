@@ -16,9 +16,10 @@ RUN npm run build
 RUN cp dist/openwpm-1.0.zip openwpm.xpi
 
 # Stage 2, build the main OpenWPM image
-FROM ubuntu:18.04
+FROM krallin/ubuntu-tini:bionic
 
 WORKDIR /opt/OpenWPM
+
 # This is just a performance optimization and can be skipped by non-US
 # based users
 RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
@@ -56,4 +57,4 @@ COPY . .
 RUN adduser --disabled-password --gecos "OpenWPM"  openwpm
 
 # Setting demo.py as the default command
-CMD python3 demo.py
+CMD [ "python3", "demo.py"]

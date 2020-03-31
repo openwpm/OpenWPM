@@ -160,6 +160,11 @@ class TaskManager:
                 self.manager_params, browser_params, (openwpm_v, browser_v)
             )
         )
+        self.unsaved_command_sequences: Dict[int, CommandSequence] = dict()
+        self.callback_thread = threading.Thread(
+            target=self._mark_command_sequences_complete, args=())
+        self.callback_thread.name = "OpenWPM-completion_handler"
+        self.callback_thread.start()
 
     def _initialize_browsers(self, browser_params: List[Dict[str, Any]]) \
             -> List[Browser]:
@@ -268,6 +273,8 @@ class TaskManager:
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
         self.logging_server.close()
+        if hasattr(self, "callback_thread"):
+            self.callback_thread.join()
 
     def _cleanup_before_fail(self, during_init: bool = False) -> None:
         """
@@ -317,10 +324,13 @@ class TaskManager:
         if self.closing:
             self.logger.error(
                 "Attempted to execute command on a closed TaskManager")
-            return
+            raise RuntimeError("Attempted to execute"
+                               " command on a closed TaskManager")
         self._check_failure_status()
         visit_id = self.data_aggregator.get_next_visit_id()
         browser.set_visit_id(visit_id)
+        if command_sequence.callback:
+            self.unsaved_command_sequences[visit_id] = command_sequence
 
         self.sock.send(("site_visits", {
             "visit_id": visit_id,
@@ -336,6 +346,23 @@ class TaskManager:
         thread.daemon = True
         thread.start()
         return thread
+
+    def _mark_command_sequences_complete(self) -> None:
+        """ Polls the data aggregator for saved records
+            and calls their callbacks
+        """
+        while True:
+            visit_id_list = self.data_aggregator.get_new_completed_visits()
+            if self.closing and not self.unsaved_command_sequences:
+                # we're shutting down and have no unprocessed callbacks
+                break
+            if not visit_id_list:
+                time.sleep(1)
+            else:
+                for visit_id in visit_id_list:
+                    cs = self.unsaved_command_sequences.pop(visit_id, None)
+                    if cs:
+                        cs.mark_done()
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
@@ -363,18 +390,20 @@ class TaskManager:
                 "CommandSequence with `reset` set to `True` to use a fresh "
                 "profile for each command." % browser.crawl_id
             )
-        start_time = None
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
             if command[0] in ['GET', 'BROWSE',
                               'SAVE_SCREENSHOT',
                               'SCREENSHOT_FULL_PAGE',
                               'DUMP_PAGE_SOURCE',
-                              'RECURSIVE_DUMP_PAGE_SOURCE']:
-                start_time = time.time()
+                              'RECURSIVE_DUMP_PAGE_SOURCE',
+                              'RUN_CUSTOM_FUNCTION']:
                 command += (browser.curr_visit_id,)
             elif command[0] in ['DUMP_FLASH_COOKIES', 'DUMP_PROFILE_COOKIES']:
+                start_time = time.time()
                 command += (start_time, browser.curr_visit_id,)
+            if command[0] == 'RUN_CUSTOM_FUNCTION':
+                command += (browser.crawl_id,)
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
