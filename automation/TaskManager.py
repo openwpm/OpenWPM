@@ -360,6 +360,7 @@ class TaskManager:
                 time.sleep(1)
             else:
                 for visit_id in visit_id_list:
+                    self.logger.debug("Invoking callback of visit_id %d", visit_id)
                     cs = self.unsaved_command_sequences.pop(visit_id, None)
                     if cs:
                         cs.mark_done()

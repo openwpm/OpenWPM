@@ -7,7 +7,7 @@ import json
 import queue
 import random
 import time
-from collections import defaultdict
+from collections import defaultdict, Set
 from typing import Any, DefaultDict, Dict, List, Optional
 
 import boto3
@@ -76,8 +76,8 @@ class S3Listener(BaseListener):
             dict()  # maps visit_id and table to records
         self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
-        self._unsaved_visit_ids: List[int] = \
-            list()
+        self._unsaved_visit_ids: Set[int] = \
+            set()
 
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
@@ -133,8 +133,6 @@ class S3Listener(BaseListener):
                     % table_name, exc_info=True
                 )
                 pass
-            self._unsaved_visit_ids.append(visit_id)
-
             # We construct a special index file from the site_visits data
             # to make it easier to query the dataset
             if table_name == 'site_visits':
@@ -144,6 +142,7 @@ class S3Listener(BaseListener):
                     self._batches[SITE_VISITS_INDEX].append(item)
 
         del self._records[visit_id]
+        self._unsaved_visit_ids.add(visit_id)
 
     def _exists_on_s3(self, filename):
         """Check if `filename` already exists on S3"""
