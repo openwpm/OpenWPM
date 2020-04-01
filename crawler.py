@@ -118,10 +118,9 @@ def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock,
                   job_queue: rediswq.RedisWQ, job: bytes):
     def callback():
         with unsaved_jobs_lock:
-            logger.error("Removing job %s", job)
+            logger.info("Job %r is done", job)
             job_queue.complete(job)
             unsaved_jobs.remove(job)
-            logger.error("Removed job %s", job)
     return callback
 
 
