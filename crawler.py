@@ -114,7 +114,8 @@ unsaved_jobs = list()
 unsaved_jobs_lock = Lock()
 
 
-def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock, job_queue:rediswq.RedisWQ , job: bytes):
+def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock,
+                  job_queue: rediswq.RedisWQ, job: bytes):
     def callback():
         with unsaved_jobs_lock:
             logger.error("Removing job %s", job)

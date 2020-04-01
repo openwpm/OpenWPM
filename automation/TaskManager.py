@@ -358,12 +358,13 @@ class TaskManager:
                 break
             if not visit_id_list:
                 time.sleep(1)
-            else:
-                for visit_id in visit_id_list:
-                    self.logger.debug("Invoking callback of visit_id %d", visit_id)
-                    cs = self.unsaved_command_sequences.pop(visit_id, None)
-                    if cs:
-                        cs.mark_done()
+                continue
+
+            for visit_id in visit_id_list:
+                self.logger.debug("Invoking callback of visit_id %d", visit_id)
+                cs = self.unsaved_command_sequences.pop(visit_id, None)
+                if cs:
+                    cs.mark_done()
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
