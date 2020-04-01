@@ -1,5 +1,6 @@
 
 import json
+import logging
 import os
 import time
 from threading import Lock
@@ -111,10 +112,23 @@ manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
 unsaved_jobs = list()
 unsaved_jobs_lock = Lock()
+
+
+def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock, job_queue:rediswq.RedisWQ , job: bytes):
+    def callback():
+        with unsaved_jobs_lock:
+            logger.error("Removing job %s", job)
+            job_queue.complete(job)
+            unsaved_jobs.remove(job)
+            logger.error("Removed job %s", job)
+    return callback
+
+
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job_queue.check_expired_leases()
-    with(unsaved_jobs_lock):
+    with unsaved_jobs_lock:
+        manager.logger.debug("Currently unfinished jobs are: %s", unsaved_jobs)
         for unsaved_job in unsaved_jobs:
             if not job_queue.renew_lease(unsaved_job,
                                          2 * (TIMEOUT + DWELL_TIME + 30)):
@@ -128,20 +142,15 @@ while not job_queue.empty():
         time.sleep(5)
         continue
     unsaved_jobs.append(job)
-
-    def mark_job_as_done():
-        with(unsaved_jobs_lock):
-            job_queue.complete(job)
-            unsaved_jobs.remove(job)
-
     retry_number = job_queue.get_retry_number(job)
     site_rank, site = job.decode("utf-8").split(',')
     if "://" not in site:
         site = "http://" + site
     manager.logger.info("Visiting %s..." % site)
+    callback = mark_job_done(manager.logger, unsaved_jobs_lock, job_queue, job)
     command_sequence = CommandSequence.CommandSequence(
         site, blocking=True, reset=True, retry_number=retry_number,
-        callback=mark_job_as_done, site_rank=site_rank
+        callback=callback, site_rank=site_rank
     )
     command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
     manager.execute_command_sequence(command_sequence)
