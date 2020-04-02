@@ -7,7 +7,7 @@ import json
 import queue
 import random
 import time
-from collections import defaultdict, Set
+from collections import Set, defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional
 
 import boto3
