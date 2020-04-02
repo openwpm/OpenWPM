@@ -1,4 +1,4 @@
-class Command:
+class BaseCommand:
     def set_visit_crawl_id(self, visit_id, crawl_id):
         self.visit_id = visit_id
         self.crawl_id = crawl_id
@@ -7,7 +7,7 @@ class Command:
         self.start_time = start_time
 
 
-class Get_Command(Command):
+class GetCommand(BaseCommand):
     def __init__(self, url, sleep):
         self.url = url
         self.sleep = sleep
@@ -16,7 +16,7 @@ class Get_Command(Command):
         return "Get_Command({},{})".format(self.url, self.sleep)
 
 
-class Browse_Command(Command):
+class BrowseCommand(BaseCommand):
     def __init__(self, url, num_links, sleep):
         self.url = url
         self.num_links = num_links
@@ -27,7 +27,7 @@ class Browse_Command(Command):
             self.url, self.num_links, self.sleep)
 
 
-class Dump_Flash_Cookies_Command(Command):
+class DumpFlashCookiesCommand(BaseCommand):
     def __init__(self):
         pass
 
@@ -35,7 +35,7 @@ class Dump_Flash_Cookies_Command(Command):
         return "Dump_Flash_Cookies_Command()"
 
 
-class Dump_Prof_Command(Command):
+class DumpProfCommand(BaseCommand):
     def __init__(self, dump_folder, close_webdriver, compress):
         self.dump_folder = dump_folder
         self.close_webdriver = close_webdriver
@@ -46,7 +46,7 @@ class Dump_Prof_Command(Command):
             self.dump_folder, self.close_webdriver, self.compress)
 
 
-class Dump_Page_Source_Command(Command):
+class DumpPageSourceCommand(BaseCommand):
     def __init__(self, suffix):
         self.suffix = suffix
 
@@ -54,7 +54,7 @@ class Dump_Page_Source_Command(Command):
         return "Dump_Page_Source_Command({})".format(self.suffix)
 
 
-class Recursive_Dump_Page_Source_Command(Command):
+class RecursiveDumpPageSourceCommand(BaseCommand):
     def __init__(self, suffix):
         self.suffix = suffix
 
@@ -62,7 +62,7 @@ class Recursive_Dump_Page_Source_Command(Command):
         return "Recursive_Dump_Page_Source_Command({})".format(self.suffix)
 
 
-class Save_Screenshot_Command(Command):
+class SaveScreenshotCommand(BaseCommand):
     def __init__(self, suffix):
         self.suffix = suffix
 
@@ -70,7 +70,7 @@ class Save_Screenshot_Command(Command):
         return "Save_Screenshot_Command({})".format(self.suffix)
 
 
-class Screenshot_Full_Page_Command(Command):
+class ScreenshotFullPageCommand(BaseCommand):
     def __init__(self, suffix):
         self.suffix = suffix
 
@@ -78,7 +78,7 @@ class Screenshot_Full_Page_Command(Command):
         return " Screenshot_Full_Page_Command({})".format(self.suffix)
 
 
-class Run_Custom_Function_Command(Command):
+class RunCustomFunctionCommand(BaseCommand):
     def __init__(self, function_handle, func_args):
         self.function_handle = function_handle
         self.func_args = func_args
@@ -88,7 +88,7 @@ class Run_Custom_Function_Command(Command):
             self.function_handle, self.func_args)
 
 
-class Shutdown_Command(Command):
+class ShutdownCommand(BaseCommand):
     def __init__(self):
         pass
 

@@ -17,7 +17,7 @@ from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
 from .Commands import command_executor
-from .Commands.Commands import Shutdown_Command
+from .Commands.Types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
@@ -267,7 +267,7 @@ class Browser:
             return
 
         # Send the shutdown command
-        command = Shutdown_Command()
+        command = ShutdownCommand()
         self.command_queue.put((command))
 
         # Verify that webdriver has closed (30 second timeout)
@@ -460,7 +460,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
 
             command = command_queue.get()
 
-            if type(command) is Shutdown_Command:
+            if type(command) is ShutdownCommand:
                 # Geckodriver creates a copy of the profile (and the original
                 # temp file created by FirefoxProfile() is deleted).
                 # We clear the profile attribute here to prevent prints from:
