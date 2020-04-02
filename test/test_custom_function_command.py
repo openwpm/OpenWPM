@@ -31,8 +31,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
             """ Collect links with `scheme` and save in table `table_name` """
             driver = kwargs['driver']
             manager_params = kwargs['manager_params']
-            crawl_id = kwargs['crawl_id']
-            visit_id = kwargs['visit_id']
+            crawl_id = kwargs['command'].crawl_id
+            visit_id = kwargs['command'].visit_id
             link_urls = [
                 x for x in (
                     element.get_attribute("href")
