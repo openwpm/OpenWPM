@@ -7,8 +7,8 @@ import json
 import queue
 import random
 import time
-from collections import Set, defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional
+from collections import defaultdict
+from typing import Any, DefaultDict, Dict, List, MutableSet, Optional
 
 import boto3
 import pandas as pd
@@ -76,12 +76,13 @@ class S3Listener(BaseListener):
             dict()  # maps visit_id and table to records
         self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
-        self._unsaved_visit_ids: Set[int] = \
+        self._unsaved_visit_ids: MutableSet[int] = \
             set()
 
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
-        self._s3_content_cache = set()  # cache of filenames already uploaded
+        self._s3_content_cache: MutableSet[str] = \
+            set()  # cache of filenames already uploaded
         self._s3 = boto3.client('s3', config=S3_CONFIG)
         self._s3_resource = boto3.resource('s3', config=S3_CONFIG)
         self._fs = s3fs.S3FileSystem(
@@ -111,7 +112,7 @@ class S3Listener(BaseListener):
         data['instance_id'] = self._instance_id
         records[table].append(data)
 
-    def _create_batch(self, visit_id):
+    def _create_batch(self, visit_id: int) -> None:
         """Create record batches for all records from `visit_id`"""
         if visit_id not in self._records:
             # The batch for this `visit_id` was already created, skip
@@ -144,7 +145,7 @@ class S3Listener(BaseListener):
         del self._records[visit_id]
         self._unsaved_visit_ids.add(visit_id)
 
-    def _exists_on_s3(self, filename):
+    def _exists_on_s3(self, filename: str) -> bool:
         """Check if `filename` already exists on S3"""
         # Check local filename cache
         if filename.split('/', 1)[1] in self._s3_content_cache:
