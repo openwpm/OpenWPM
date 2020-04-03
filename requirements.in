@@ -5,7 +5,6 @@ dill
 flake8
 flake8-isort
 IPython
-mini-amf
 mmh3
 multiprocess
 numpy
@@ -26,3 +25,7 @@ setuptools
 tabulate
 tblib
 tld
+
+# localstack compatibility
+more-itertools==5.0.0
+zipp==0.6.0
