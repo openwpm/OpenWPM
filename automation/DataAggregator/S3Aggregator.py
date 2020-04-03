@@ -245,7 +245,7 @@ class S3Listener(BaseListener):
             self._batches[table_name] = list()
         for visit_id in self._unsaved_visit_ids:
             self.mark_visit_complete(visit_id)
-        self._unsaved_visit_ids = list()
+        self._unsaved_visit_ids = set()
 
     def save_batch_if_past_timeout(self):
         """Save the current batch of records if no new data has been received.
