@@ -2,10 +2,8 @@ from typing import Any, Callable, List, NewType, Tuple
 
 from .Commands.Types import (BrowseCommand, DumpFlashCookiesCommand,
                              DumpPageSourceCommand, DumpProfCommand,
-                             GetCommand,
-                             RecursiveDumpPageSourceCommand,
-                             RunCustomFunctionCommand,
-                             SaveScreenshotCommand,
+                             GetCommand, RecursiveDumpPageSourceCommand,
+                             RunCustomFunctionCommand, SaveScreenshotCommand,
                              ScreenshotFullPageCommand)
 from .Errors import CommandExecutionError
 

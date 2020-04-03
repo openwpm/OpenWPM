@@ -2,10 +2,9 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
 from .Types import (BrowseCommand, DumpFlashCookiesCommand,
-                    DumpPageSourceCommand, DumpProfCommand,
-                    GetCommand, RecursiveDumpPageSourceCommand,
-                    RunCustomFunctionCommand, SaveScreenshotCommand,
-                    ScreenshotFullPageCommand)
+                    DumpPageSourceCommand, DumpProfCommand, GetCommand,
+                    RecursiveDumpPageSourceCommand, RunCustomFunctionCommand,
+                    SaveScreenshotCommand, ScreenshotFullPageCommand)
 
 
 def execute_command(command, webdriver, browser_settings, browser_params,
