@@ -13,7 +13,7 @@ class GetCommand(BaseCommand):
         self.sleep = sleep
 
     def __repr__(self):
-        return "Get_Command({},{})".format(self.url, self.sleep)
+        return "GetCommand({},{})".format(self.url, self.sleep)
 
 
 class BrowseCommand(BaseCommand):
@@ -23,7 +23,7 @@ class BrowseCommand(BaseCommand):
         self.sleep = sleep
 
     def __repr__(self):
-        return "Browse_Command({},{},{})".format(
+        return "BrowseCommand({},{},{})".format(
             self.url, self.num_links, self.sleep)
 
 
@@ -32,7 +32,7 @@ class DumpFlashCookiesCommand(BaseCommand):
         pass
 
     def __repr__(self):
-        return "Dump_Flash_Cookies_Command()"
+        return "DumpFlashCookiesCommand()"
 
 
 class DumpProfCommand(BaseCommand):
@@ -42,7 +42,7 @@ class DumpProfCommand(BaseCommand):
         self.compress = compress
 
     def __repr__(self):
-        return "Dump_Prof_Command({},{},{})".format(
+        return "DumpProfCommand({},{},{})".format(
             self.dump_folder, self.close_webdriver, self.compress)
 
 
@@ -51,7 +51,7 @@ class DumpPageSourceCommand(BaseCommand):
         self.suffix = suffix
 
     def __repr__(self):
-        return "Dump_Page_Source_Command({})".format(self.suffix)
+        return "DumpPageSourceCommand({})".format(self.suffix)
 
 
 class RecursiveDumpPageSourceCommand(BaseCommand):
@@ -59,7 +59,7 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
         self.suffix = suffix
 
     def __repr__(self):
-        return "Recursive_Dump_Page_Source_Command({})".format(self.suffix)
+        return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
 
 
 class SaveScreenshotCommand(BaseCommand):
@@ -67,7 +67,7 @@ class SaveScreenshotCommand(BaseCommand):
         self.suffix = suffix
 
     def __repr__(self):
-        return "Save_Screenshot_Command({})".format(self.suffix)
+        return "SaveScreenshotCommand({})".format(self.suffix)
 
 
 class ScreenshotFullPageCommand(BaseCommand):
@@ -75,7 +75,7 @@ class ScreenshotFullPageCommand(BaseCommand):
         self.suffix = suffix
 
     def __repr__(self):
-        return " Screenshot_Full_Page_Command({})".format(self.suffix)
+        return "ScreenshotFullPageCommand({})".format(self.suffix)
 
 
 class RunCustomFunctionCommand(BaseCommand):
@@ -84,7 +84,7 @@ class RunCustomFunctionCommand(BaseCommand):
         self.func_args = func_args
 
     def __repr__(self):
-        return "Run_Custom_Function_Command({},{})".format(
+        return "RunCustomFunctionCommand({},{})".format(
             self.function_handle, self.func_args)
 
 
@@ -93,4 +93,4 @@ class ShutdownCommand(BaseCommand):
         pass
 
     def __repr__(self):
-        return "Shutdown_Command()"
+        return "ShutdownCommand()"
