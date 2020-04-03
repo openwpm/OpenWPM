@@ -374,9 +374,8 @@ class S3Aggregator(BaseAggregator):
         out['browser_version'] = str(browser_version)
         out['browser_params'] = self.browser_params
         out_str = json.dumps(out)
-        if not isinstance(out_str, bytes):
-            out_str = out_str.encode('utf-8')
-        out_f = io.BytesIO(out_str)
+        out_bytes = out_str.encode('utf-8')
+        out_f = io.BytesIO(out_bytes)
 
         # Upload to S3 and delete local copy
         try:
