@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 
 import gzip
 import json
@@ -17,7 +16,6 @@ from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from six.moves import range
 
 from ..SocketInterface import clientsocket
 from .utils.lso import get_flash_cookies
@@ -352,9 +350,8 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
             page_source = dict()
         page_source['doc_url'] = doc_url
         source = driver.page_source
-        import six
-        if type(source) != six.text_type:
-            source = six.text_type(source, 'utf-8')
+        if type(source) != str:
+            source = str(source, 'utf-8')
         page_source['source'] = source
         page_source['iframes'] = dict()
 

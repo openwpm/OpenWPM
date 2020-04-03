@@ -1,24 +1,23 @@
-from __future__ import absolute_import
 
 import errno
 import logging
 import os
+import pickle
 import shutil
 import signal
 import sys
 import threading
 import time
 import traceback
+from queue import Empty as EmptyQueue
 
 import psutil
 from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
-from six import reraise
-from six.moves import cPickle as pickle
-from six.moves.queue import Empty as EmptyQueue
 from tblib import pickling_support
 
 from .Commands import command_executor
+from .Commands.Types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
@@ -47,7 +46,7 @@ class Browser:
         self.current_profile_path = None
         self.db_socket_address = manager_params['aggregator_address']
         self.crawl_id = browser_params['crawl_id']
-        self.curr_visit_id = None
+        self.curr_visit_id: int = None
         self.browser_params = browser_params
         self.manager_params = manager_params
 
@@ -126,7 +125,7 @@ class Browser:
                 launch_status[result[1]] = True
                 return result[2]
             elif result[0] == 'CRITICAL':
-                reraise(*pickle.loads(result[1]))
+                raise pickle.loads(result[1])
             elif result[0] == 'FAILED':
                 raise BrowserCrashError(
                     'Browser spawn returned failure status')
@@ -223,8 +222,8 @@ class Browser:
         return self.launch_browser_manager()
 
     def close_browser_manager(self):
-        """Attempt to close the webdriver and browser manager processes.
-
+        """Attempt to close the webdriver and browser manager processes
+        from this thread.
         If the browser manager process is unresponsive, the process is killed.
         """
         self.logger.debug(
@@ -268,7 +267,8 @@ class Browser:
             return
 
         # Send the shutdown command
-        self.command_queue.put(("SHUTDOWN",))
+        command = ShutdownCommand()
+        self.command_queue.put((command))
 
         # Verify that webdriver has closed (30 second timeout)
         try:
@@ -458,11 +458,9 @@ def BrowserManager(command_queue, status_queue, browser_params,
                 time.sleep(0.001)
                 continue
 
-            # reads in the command tuple of form:
-            # (command, arg0, arg1, arg2, ..., argN) where N is variable
             command = command_queue.get()
 
-            if command[0] == "SHUTDOWN":
+            if type(command) is ShutdownCommand:
                 # Geckodriver creates a copy of the profile (and the original
                 # temp file created by FirefoxProfile() is deleted).
                 # We clear the profile attribute here to prevent prints from:

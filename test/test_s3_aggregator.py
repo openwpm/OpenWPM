@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 
 import json
 import time
@@ -6,7 +5,6 @@ from collections import defaultdict
 
 import boto3
 import pytest
-import six
 from localstack.services import infra
 
 from ..automation import TaskManager
@@ -45,6 +43,7 @@ class TestS3Aggregator(OpenWPMTest):
             browser_params[i]['js_instrument'] = True
             browser_params[i]['cookie_instrument'] = True
             browser_params[i]['navigation_instrument'] = True
+            browser_params[i]['callstack_instrument'] = True
         return manager_params, browser_params
 
     def test_basic_properties(self):
@@ -54,8 +53,8 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_config(
             num_browsers=NUM_BROWSERS)
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        for i in range(NUM_VISITS):
-            manager.get(TEST_SITE, sleep=1, index='*')
+        for _ in range(NUM_VISITS * NUM_BROWSERS):
+            manager.get(TEST_SITE, sleep=1)
         manager.close()
 
         dataset = LocalS3Dataset(
@@ -72,6 +71,8 @@ class TestS3Aggregator(OpenWPMTest):
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
             assert len(visit_ids[table_name]) == NUM_VISITS * NUM_BROWSERS
+            for vid in visit_ids[table_name]:
+                assert(vid >= 0) and (vid < (1 << 53))
         for table_name, ids in visit_ids.items():
             assert set(ids) == set(visit_ids['site_visits'])
 
@@ -83,7 +84,7 @@ class TestS3Aggregator(OpenWPMTest):
         # of configuration files
         config_file = dataset.list_files('config', prepend_root=True)
         assert len(config_file) == 1  # only one instance started in test
-        config = json.loads(six.text_type(
+        config = json.loads(str(
             dataset.get_file(config_file[0]), 'utf-8'))
         assert len(config['browser_params']) == NUM_BROWSERS
 
@@ -92,7 +93,7 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_config(num_browsers=1)
         manager_params['s3_directory'] = 's3-aggregator-tests-2'
         manager = TaskManager.TaskManager(manager_params, browser_params)
-        manager.get(TEST_SITE, sleep=1, index='*')
+        manager.get(TEST_SITE, sleep=1)
         dataset = LocalS3Dataset(
             manager_params['s3_bucket'],
             manager_params['s3_directory']

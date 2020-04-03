@@ -5,17 +5,18 @@ PQ_SCHEMAS = dict()
 # site_visits
 fields = [
     pa.field('visit_id', pa.int64(), nullable=False),
-    pa.field('crawl_id', pa.int32(), nullable=False),
-    pa.field('instance_id', pa.int32(), nullable=False),
-    pa.field('site_url', pa.string(), nullable=False)
+    pa.field('crawl_id', pa.uint32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
+    pa.field('site_url', pa.string(), nullable=False),
+    pa.field('site_rank', pa.uint32())
 ]
 PQ_SCHEMAS['site_visits'] = pa.schema(fields)
 
 # flash_cookies
 fields = [
-    pa.field('crawl_id', pa.int32(), nullable=False),
+    pa.field('crawl_id', pa.uint32(), nullable=False),
     pa.field('visit_id', pa.int64(), nullable=False),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('domain', pa.string()),
     pa.field('filename', pa.string()),
     pa.field('local_path', pa.string()),
@@ -26,9 +27,9 @@ PQ_SCHEMAS['flash_cookies'] = pa.schema(fields)
 
 # crawl_history
 fields = [
-    pa.field('crawl_id', pa.int32(), nullable=False),
+    pa.field('crawl_id', pa.uint32(), nullable=False),
     pa.field('visit_id', pa.int64(), nullable=False),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('command', pa.string()),
     pa.field('arguments', pa.string()),
     pa.field('retry_number', pa.int8()),
@@ -41,9 +42,9 @@ PQ_SCHEMAS['crawl_history'] = pa.schema(fields)
 # http_requests
 fields = [
     pa.field('incognito', pa.int32()),
-    pa.field('crawl_id', pa.int32()),
+    pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('extension_session_uuid', pa.string()),
     pa.field('event_ordinal', pa.int64()),
     pa.field('window_id', pa.int64()),
@@ -76,9 +77,9 @@ PQ_SCHEMAS['http_requests'] = pa.schema(fields)
 # http_responses
 fields = [
     pa.field('incognito', pa.int32()),
-    pa.field('crawl_id', pa.int32()),
+    pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('extension_session_uuid', pa.string()),
     pa.field('event_ordinal', pa.int64()),
     pa.field('window_id', pa.int64()),
@@ -100,9 +101,9 @@ PQ_SCHEMAS['http_responses'] = pa.schema(fields)
 # http_redirects
 fields = [
     pa.field('incognito', pa.int32()),
-    pa.field('crawl_id', pa.int32()),
+    pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('old_request_url', pa.string()),
     pa.field('old_request_id', pa.string()),
     pa.field('new_request_url', pa.string()),
@@ -121,9 +122,9 @@ PQ_SCHEMAS['http_redirects'] = pa.schema(fields)
 # javascript
 fields = [
     pa.field('incognito', pa.int32()),
-    pa.field('crawl_id', pa.int32()),
+    pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('extension_session_uuid', pa.string()),
     pa.field('event_ordinal', pa.int64()),
     pa.field('page_scoped_event_ordinal', pa.int64()),
@@ -148,9 +149,9 @@ PQ_SCHEMAS['javascript'] = pa.schema(fields)
 
 # javascript_cookies
 fields = [
-    pa.field('crawl_id', pa.int32()),
+    pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('extension_session_uuid', pa.string()),
     pa.field('event_ordinal', pa.int64()),
     pa.field('record_type', pa.string()),
@@ -174,9 +175,9 @@ PQ_SCHEMAS['javascript_cookies'] = pa.schema(fields)
 # navigations
 fields = [
     pa.field('incognito', pa.int32()),
-    pa.field('crawl_id', pa.int32()),
+    pa.field('crawl_id', pa.uint32()),
     pa.field('visit_id', pa.int64()),
-    pa.field('instance_id', pa.int32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
     pa.field('extension_session_uuid', pa.string()),
     pa.field('process_id', pa.int64()),
     pa.field('window_id', pa.int64()),
@@ -200,3 +201,12 @@ fields = [
     pa.field('time_stamp', pa.string())
 ]
 PQ_SCHEMAS['navigations'] = pa.schema(fields)
+
+fields = [
+    pa.field('visit_id', pa.int64(), nullable=False),
+    pa.field('request_id', pa.int64(), nullable=False),
+    pa.field('crawl_id', pa.uint32(), nullable=False),
+    pa.field('instance_id', pa.uint32(), nullable=False),
+    pa.field('call_stack', pa.string())
+]
+PQ_SCHEMAS['callstacks'] = pa.schema(fields)

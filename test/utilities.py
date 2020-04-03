@@ -1,18 +1,17 @@
-from __future__ import absolute_import, print_function
 
 import os
+import socketserver
 import threading
+from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
 from random import choice
+from urllib.parse import parse_qs, urlparse
 
 import boto3
 import pyarrow.parquet as pq
 import s3fs
 from botocore.credentials import Credentials
 from pyarrow.filesystem import S3FSWrapper  # noqa
-from six.moves import range, socketserver
-from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.urllib.parse import parse_qs, urlparse
 
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"
@@ -125,7 +124,7 @@ def start_server():
     print("Starting HTTP Server in a separate thread")
     # switch to test dir, this is where the test files are
     os.chdir(dirname(realpath(__file__)))
-    server = MyTCPServer(("localhost", LOCAL_WEBSERVER_PORT), MyHandler)
+    server = MyTCPServer(("0.0.0.0", LOCAL_WEBSERVER_PORT), MyHandler)
     thread = threading.Thread(target=server.serve_forever)
     thread.daemon = True
     thread.start()

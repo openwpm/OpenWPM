@@ -1,8 +1,9 @@
-from __future__ import absolute_import
 
 import logging
 import os
 import time
+
+import pytest
 
 from ..automation import MPLogger
 from ..automation.utilities.multiprocess_utils import Process
@@ -65,6 +66,16 @@ def child_proc_with_exception(index):
         ('blah', 1, test_func, test_class, test_subclass,
          TestClass, TestSubClass)
     )
+
+
+def child_proc_logging_exception():
+    logger = logging.getLogger('openwpm')
+    try:
+        raise Exception("This is my generic Test Exception")
+    except Exception:
+        logger.error(
+            "I'm logging an exception", exc_info=True,
+        )
 
 
 class TestMPLogger(OpenWPMTest):
@@ -134,6 +145,9 @@ class TestMPLogger(OpenWPMTest):
         os.makedirs(str(tmpdir) + '-2')
         self.test_multiprocess(str(tmpdir) + '-2')
 
+    @pytest.mark.skipif(
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason='Flaky on Travis CI')
     def test_child_process_with_exception(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
         openwpm_logger = MPLogger.MPLogger(log_file)
@@ -153,13 +167,27 @@ class TestMPLogger(OpenWPMTest):
 
         # Close the logging server
         time.sleep(2)  # give some time for logs to be sent
-        openwpm_logger.close()
         child_process_1.join()
         child_process_2.join()
         print("Child processes joined...")
+        openwpm_logger.close()
 
         log_content = self.get_logfile_contents(log_file)
         for child in range(2):
             assert(log_content.count(CHILD_INFO_STR_1 % child) == 1)
             assert(log_content.count(CHILD_INFO_STR_2 % child) == 1)
             assert(log_content.count(CHILD_EXCEPTION_STR % child) == 1)
+
+    @pytest.mark.skipif(
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason='Flaky on Travis CI')
+    def test_child_process_logging(self, tmpdir):
+        log_file = self.get_logfile_path(str(tmpdir))
+        openwpm_logger = MPLogger.MPLogger(log_file)
+        child_process = Process(target=child_proc_logging_exception())
+        child_process.daemon = True
+        child_process.start()
+        openwpm_logger.close()
+        child_process.join()
+        log_content = self.get_logfile_contents(log_file)
+        assert ("I'm logging an exception" in log_content)

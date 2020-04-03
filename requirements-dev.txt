@@ -7,87 +7,85 @@
 airspeed==0.5.10          # via localstack
 amazon_kclpy-ext==1.5.1   # via localstack
 argparse==1.4.0           # via amazon-kclpy-ext
-asn1crypto==1.0.1         # via cryptography
-attrs==19.2.0             # via jsonschema
-autopep8==1.4.4
-aws-sam-translator==1.15.0  # via cfn-lint
-aws-xray-sdk==2.4.2       # via moto-ext
-awscli==1.16.254          # via localstack
-boto3==1.9.244            # via aws-sam-translator, localstack, localstack-client, moto-ext
+attrs==19.3.0             # via -c requirements.txt, jsonschema
+autopep8==1.5             # via -r requirements-dev.in
+aws-sam-translator==1.21.0  # via cfn-lint, localstack
+aws-xray-sdk==2.4.3       # via moto-ext
+awscli==1.18.20           # via localstack
+boto3==1.12.20            # via -c requirements.txt, aws-sam-translator, localstack, localstack-client, moto-ext
 boto==2.49.0              # via amazon-kclpy-ext, localstack, moto-ext
-botocore==1.12.244        # via aws-xray-sdk, awscli, boto3, localstack, moto-ext, s3transfer
-cachetools==3.1.1         # via airspeed
-certifi==2019.9.11        # via requests
-cffi==1.12.3              # via cryptography
-cfn-lint==0.24.4          # via moto-ext
+botocore==1.15.20         # via -c requirements.txt, aws-xray-sdk, awscli, boto3, localstack, moto-ext, s3transfer
+cachetools==3.1.1         # via airspeed, localstack
+certifi==2019.11.28       # via -c requirements.txt, requests
+cffi==1.14.0              # via cryptography
+cfn-lint==0.28.4          # via moto-ext
 chardet==3.0.4            # via requests
-click==7.0                # via flask
-colorama==0.4.1           # via awscli
+click==7.1.1              # via flask
+colorama==0.4.3           # via awscli
 coverage==4.5.4           # via localstack, python-coveralls
-cryptography==2.7         # via moto-ext, pyopenssl, sshpubkeys
-decorator==4.4.0          # via jsonpath-rw
-dnslib==0.9.10            # via localstack-ext
+cryptography==2.8         # via moto-ext, pyopenssl, sshpubkeys
+decorator==4.4.2          # via -c requirements.txt, jsonpath-rw
+dnslib==0.9.12            # via localstack-ext
 dnspython==1.16.0         # via localstack, localstack-ext
-docker==4.1.0             # via moto-ext
+docker==4.2.0             # via moto-ext
 docopt==0.6.2             # via localstack
-docutils==0.15.2          # via awscli, botocore
-ecdsa==0.13.3             # via python-jose, sshpubkeys
-elasticsearch==6.4.0      # via localstack
-entrypoints==0.3          # via flake8
-flake8-quotes==2.1.0      # via localstack
-flake8==3.7.8             # via flake8-quotes, localstack
+docutils==0.15.2          # via -c requirements.txt, awscli, botocore
+ecdsa==0.15               # via python-jose, sshpubkeys
+elasticsearch==6.8.0      # via localstack
 flask-cors==3.0.3         # via localstack
 flask==1.0.2              # via flask-cors, flask-swagger, localstack
 flask_swagger==0.2.12     # via localstack
 forbiddenfruit==0.1.3     # via localstack
-future==0.17.1            # via aws-xray-sdk, python-jose
+future==0.18.2            # via aws-xray-sdk
 idna==2.8                 # via moto-ext, requests
+importlib-metadata==1.5.0  # via -c requirements.txt, jsonschema
+importlib-resources==1.0.2  # via cfn-lint
 itsdangerous==1.1.0       # via flask
-jinja2==2.10.3            # via flask, moto-ext
-jmespath==0.9.4           # via boto3, botocore
-jsondiff==1.1.2           # via moto-ext
-jsonpatch==1.24           # via cfn-lint
+jinja2==2.11.1            # via flask, moto-ext
+jmespath==0.9.5           # via -c requirements.txt, boto3, botocore
+jsondiff==1.2.0           # via moto-ext
+jsonpatch==1.24           # via cfn-lint, localstack
 jsonpath-rw==1.4.0        # via localstack
-jsonpickle==1.2           # via aws-xray-sdk
+jsonpickle==1.3           # via aws-xray-sdk
 jsonpointer==2.0          # via jsonpatch
-jsonschema==3.0.2         # via aws-sam-translator, cfn-lint
-localstack-client==0.14   # via localstack
-localstack-ext==0.10.41   # via localstack
-localstack[full]==0.10.4.2
+jsonschema==3.2.0         # via aws-sam-translator, cfn-lint
+localstack-client==0.21   # via localstack
+localstack-ext==0.10.124  # via localstack
+localstack[full]==0.10.8  # via -r requirements-dev.in
 markupsafe==1.1.1         # via jinja2
-mccabe==0.6.1             # via flake8
-mock==3.0.5               # via amazon-kclpy-ext, moto-ext
-moto-ext==1.3.14.1        # via localstack
+mock==4.0.2               # via amazon-kclpy-ext, moto-ext
+moto-ext==1.3.15.7        # via localstack
 nose-timer==0.7.5         # via localstack
 nose==1.3.7               # via localstack, nose-timer
 ply==3.11                 # via jsonpath-rw
-psutil==5.4.8             # via localstack
-pyaes==1.6.0              # via localstack-ext
-pyasn1==0.4.7             # via rsa
-pycodestyle==2.5.0        # via autopep8, flake8
-pycparser==2.19           # via cffi
-pyflakes==2.1.1           # via flake8
-pympler==0.7              # via localstack
+psutil==5.4.8             # via -c requirements.txt, localstack
+pyaes==1.6.1              # via localstack-ext
+pyasn1==0.4.8             # via -c requirements.txt, python-jose, rsa
+pycodestyle==2.5.0        # via -c requirements.txt, autopep8
+pycparser==2.20           # via cffi
+pympler==0.8              # via localstack
 pyopenssl==17.5.0         # via localstack
-pyrsistent==0.15.4        # via jsonschema
+pyrsistent==0.15.7        # via jsonschema
 python-coveralls==2.9.3   # via localstack
-python-dateutil==2.8.0    # via botocore, moto-ext
-python-jose==3.0.1        # via moto-ext
-pytz==2019.3              # via moto-ext
+python-dateutil==2.8.1    # via -c requirements.txt, botocore, moto-ext
+python-jose==3.1.0        # via moto-ext
+pytz==2019.3              # via -c requirements.txt, moto-ext
 pyyaml==5.1               # via awscli, cfn-lint, flask-swagger, localstack, moto-ext, python-coveralls
 requests-aws4auth==0.9    # via localstack
-requests==2.22.0          # via docker, localstack, moto-ext, python-coveralls, requests-aws4auth, responses
-responses==0.10.6         # via moto-ext
+requests==2.23.0          # via docker, localstack, localstack-ext, moto-ext, python-coveralls, requests-aws4auth, responses
+responses==0.10.12        # via moto-ext
 rsa==3.4.2                # via awscli, python-jose
-s3transfer==0.2.1         # via awscli, boto3
-six==1.12.0               # via airspeed, aws-sam-translator, cfn-lint, cryptography, docker, flask-cors, jsonpath-rw, jsonschema, localstack, mock, moto-ext, pyopenssl, pyrsistent, python-coveralls, python-dateutil, python-jose, responses, websocket-client
+s3transfer==0.3.3         # via -c requirements.txt, awscli, boto3
+sasl==0.2.1               # via localstack
+six==1.14.0               # via -c requirements.txt, airspeed, aws-sam-translator, cfn-lint, cryptography, docker, ecdsa, flask-cors, jsonpath-rw, jsonschema, localstack, moto-ext, pyopenssl, pyrsistent, python-coveralls, python-dateutil, python-jose, responses, sasl, websocket-client
 sshpubkeys==3.1.0         # via moto-ext
 subprocess32==3.5.4       # via localstack
-urllib3==1.25.6           # via botocore, elasticsearch, requests
-websocket-client==0.56.0  # via docker
-werkzeug==0.16.0          # via flask, moto-ext
-wrapt==1.11.2             # via aws-xray-sdk
+urllib3==1.25.8           # via -c requirements.txt, botocore, elasticsearch, requests
+websocket-client==0.57.0  # via docker
+werkzeug==1.0.0           # via flask, moto-ext
+wrapt==1.12.1             # via aws-xray-sdk
 xmltodict==0.12.0         # via localstack, moto-ext
+zipp==3.1.0               # via -c requirements.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.4.0        # via cfn-lint, jsonschema
+# setuptools

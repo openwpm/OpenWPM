@@ -589,9 +589,13 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
 
+    // Property descriptor must exist unless we are instrumenting a
+    // non-existing property
     if (
       !propDesc &&
-      logSettings.nonExistingPropertiesToInstrument.indexOf(propertyName) == -1
+      (!logSettings.nonExistingPropertiesToInstrument ||
+        logSettings.nonExistingPropertiesToInstrument.indexOf(propertyName) ==
+          -1)
     ) {
       console.error(
         "Property descriptor not found for",

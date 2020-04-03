@@ -1,4 +1,7 @@
-OpenWPM [![Build Status](https://travis-ci.org/mozilla/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
+
+OpenWPM
+[![Build Status](https://travis-ci.org/mozilla/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
+[![OpenWPM Matrix Channel](https://img.shields.io/matrix/OpenWPM:mozilla.org?label=Join%20us%20on%20matrix&server_fqdn=mozilla.modular.im)](https://matrix.to/#/!pFJihVSEWzcMCcOzSH:mozilla.org?via=mozilla.org) <!-- omit in toc -->
 =======
 
 OpenWPM is a web privacy measurement framework which makes it easy to
@@ -7,10 +10,45 @@ of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
+Table of Contents <!-- omit in toc -->
+------------------
+
+* [Installation](#installation)
+* [Quick Start](#quick-start)
+* [Instrumentation and Data Access](#instrumentation-and-data-access)
+* [Output Format](#output-format)
+    * [Local Databases](#local-databases)
+    * [Parquet on Amazon S3 **Experimental**](#parquet-on-amazon-s3-experimental)
+* [Browser and Platform Configuration](#browser-and-platform-configuration)
+  * [Platform Configuration Options](#platform-configuration-options)
+  * [Browser Configuration Options](#browser-configuration-options)
+* [Browser Profile Support](#browser-profile-support)
+  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+    * [Save a profile](#save-a-profile)
+    * [Load a profile](#load-a-profile)
+* [Development pointers](#development-pointers)
+  * [Types Annotations in Python](#types-annotations-in-python)
+  * [Editing instrumentation](#editing-instrumentation)
+  * [Debugging the platform](#debugging-the-platform)
+  * [Managing requirements](#managing-requirements)
+  * [Running tests](#running-tests)
+  * [Mac OSX (Limited support for developers)](#mac-osx-limited-support-for-developers)
+* [Troubleshooting](#troubleshooting)
+* [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+  * [Building the Docker Container](#building-the-docker-container)
+  * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+  * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+* [Disclaimer](#disclaimer)
+* [Citation](#citation)
+* [License](#license)
+
+
 Installation
 ------------
 
-OpenWPM has been developed and tested on Ubuntu 14.04/16.04. An installation
+OpenWPM is a Python >3.6 application developed and tested for Ubuntu 18.04.
+Python 2 is not supported. An installation
 script, `install.sh` is included to install both the system and python
 dependencies automatically. A few of the python dependencies require specific
 versions, so you should install the dependencies in a virtual environment if
@@ -96,9 +134,9 @@ available [below](#output-format).
         LevelDB content database.
     * NOTE: this instrumentation may lead to performance issues when a large
         number of browsers are in use.
-    * Set `browser_params['save_content']` to a comma-separated list of 
+    * Set `browser_params['save_content']` to a comma-separated list of
         [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
-        to save only specific types of files, for instance 
+        to save only specific types of files, for instance
         `browser_params['save_content'] = "script"` to save only Javascript
         files. This will lessen the performance impact of this instrumentation
         when a large number of browsers are used in parallel.
@@ -181,14 +219,14 @@ bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
 the hash of the content. In addition, the browser commands that dump page
 source and save screenshots save them in the `sources` and `screenshots`
 subdirectories of the main output directory. The SQLite schema
-specified by: `automation/schema.sql`. You can specify additional tables
+specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
 inline by sending a `create_table` message to the data aggregator.
 
 #### Parquet on Amazon S3 **Experimental**
 As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
 Parquet Dataset. This is currently experimental and hasn't been thoroughly
-tested. Screenshots, and page source saving is not currently supported and 
-will still be stored in local databases and directories. To enable S3 
+tested. Screenshots, and page source saving is not currently supported and
+will still be stored in local databases and directories. To enable S3
 saving specify the following configuration parameters in `manager_params`:
 * Output format: `manager_params['output_format'] = 's3'`
 * S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
@@ -201,7 +239,7 @@ location.
 **NOTE:** The schemas should be kept in sync with the exception of
 output-specific columns (e.g., `instance_id` in the S3 output). You can compare
 the two schemas by running
-`diff -y automation/schema.sql automation/DataAggregator/parquet_schema.py`.
+`diff -y automation/DataAggregator/schema.sql automation/DataAggregator/parquet_schema.py`.
 
 Browser and Platform Configuration
 ----------------------------------
@@ -380,12 +418,20 @@ Much of OpenWPM's instrumentation is included in a Firefox add-on SDK extension.
 Thus, in order to add or change instrumentation you will need a few additional
 dependencies, which can be installed with `install-dev.sh`.
 
+### Types Annotations in Python
+
+We as maintainers have decided it would be helpful to have Python3 type annotations
+for the python part of this project to catch errors earlier, get better
+code completion and allow bigger changes down the line with more confidence.
+As such you should strive to add type annotations to all new code you add to
+the project as well as the one you plan to change fundamentally.
+
 ### Editing instrumentation
 
 The instrumentation extension is included in `/automation/Extension/firefox/`.
-The instrumentation itself (used by the above extension) is included in 
+The instrumentation itself (used by the above extension) is included in
 `/automation/Extension/webext-instrumentation/`.
-Any edits within these directories will require the extension to be re-built to produce 
+Any edits within these directories will require the extension to be re-built to produce
 a new `openwpm.xpi` with your updates. You can use `build_extension.sh` to do this.
 
 ### Debugging the platform
@@ -398,10 +444,11 @@ continuing the crawl). We recommend using
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
-* `python -m test.manual_test` uses `jpm` to build the current extension directory
-  and launch a Firefox instance with it.
+* `build-extension.sh`
+* `python -m test.manual_test` builds the current extension directory
+  and launches a Firefox instance with it.
 * `python -m test.manual_test --selenium` launches a Firefox Selenium instance
-  after using `jpm` to automatically rebuild `openwpm.xpi`. The script then
+  after automatically rebuilding `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
 * `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
@@ -420,8 +467,8 @@ OpenWPM should be placed in the former, while those only required to run the
 tests (or perform other development tasks) should be placed in the latter.
 
 To update dependencies, run the following two commands **in order**:
-* `pip-compile --upgrade requirements.txt`
-* `pip-compile --upgrade requirements-dev.txt`
+* `pip-compile --upgrade requirements.in`
+* `pip-compile --upgrade requirements-dev.in`
 
 It's important that these are run in order, as we layer the dev
 dependencies on the output of the pinned production dependencies as per

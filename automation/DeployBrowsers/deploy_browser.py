@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 
 from ..Errors import BrowserConfigError
 from . import deploy_firefox

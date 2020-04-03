@@ -3,10 +3,11 @@ import {
   JavascriptInstrument,
   HttpInstrument,
   NavigationInstrument,
-  HideWebdriver,
+  HideWebdriver
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
+import { CallstackInstrument } from "./callstack-instrument.js";
 
 async function main() {
   // Read the browser configuration from file
@@ -22,6 +23,7 @@ async function main() {
       js_instrument:true,
       js_instrument_modules:"fingerprinting",
       http_instrument:true,
+      callstack_instrument:true,
       hide_webdriver:false,
       save_content:false,
       testing:true,
@@ -61,6 +63,12 @@ async function main() {
                        config['save_content']);
   }
 
+  if (config['callstack_instrument']) {
+    loggingDB.logDebug("Callstack Instrumentation enabled");
+    let callstackInstrument = new CallstackInstrument(loggingDB);
+    callstackInstrument.run(config['crawl_id']);
+  }
+  
   if (config['hide_webdriver']) {
     loggingDB.logDebug("Hide webdriver enabled");
     let hideWebdriver = new HideWebdriver();
@@ -69,3 +77,4 @@ async function main() {
 }
 
 main();
+

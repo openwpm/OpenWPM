@@ -1,11 +1,11 @@
-from __future__ import absolute_import
 
+import json
 import os
 import time
+from threading import Lock
 
 import boto3
 import sentry_sdk
-from six.moves import range
 
 from automation import CommandSequence, MPLogger, TaskManager
 from automation.utilities import rediswq
@@ -23,6 +23,7 @@ JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
 HIDE_WEBDRIVER = os.getenv('HIDE_WEBDRIVER', '1') == '1'
 JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
+PREFS = os.getenv('PREFS', None)
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
 TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
@@ -51,6 +52,8 @@ for i in range(NUM_BROWSERS):
         browser_params[i]['save_content'] = False
     else:
         browser_params[i]['save_content'] = SAVE_CONTENT
+    if PREFS:
+        browser_params[i]['prefs'] = json.loads(PREFS)
     browser_params[i]['headless'] = True
 
 # Manager configuration
@@ -92,6 +95,7 @@ if SENTRY_DSN:
         scope.set_tag('CRAWL_REFERENCE', '%s/%s' %
                       (S3_BUCKET, CRAWL_DIRECTORY))
         # context adds addition information that may be of interest
+        scope.set_context("PREFS", PREFS)
         scope.set_context("crawl_config", {
             'REDIS_QUEUE_NAME': REDIS_QUEUE_NAME,
         })
@@ -108,17 +112,30 @@ job_queue = rediswq.RedisWQ(
 manager.logger.info("Worker with sessionID: %s" % job_queue.sessionID())
 manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
+unsaved_jobs = list()
+unsaved_jobs_lock = Lock()
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job_queue.check_expired_leases()
+    with(unsaved_jobs_lock):
+        for unsaved_job in unsaved_jobs:
+            if not job_queue.renew_lease(unsaved_job,
+                                         2 * (TIMEOUT + DWELL_TIME + 30)):
+                manager.logger.error("Unsaved job: %s timed out", unsaved_job)
+
     job = job_queue.lease(
         lease_secs=TIMEOUT + DWELL_TIME + 30, block=True, timeout=5
     )
-
     if job is None:
         manager.logger.info("Waiting for work")
         time.sleep(5)
         continue
+    unsaved_jobs.append(job)
+
+    def mark_job_as_done():
+        with(unsaved_jobs_lock):
+            job_queue.complete(job)
+            unsaved_jobs.remove(job)
 
     retry_number = job_queue.get_retry_number(job)
     site_rank, site = job.decode("utf-8").split(',')
@@ -126,12 +143,11 @@ while not job_queue.empty():
         site = "http://" + site
     manager.logger.info("Visiting %s..." % site)
     command_sequence = CommandSequence.CommandSequence(
-        site, blocking=True, reset=True, retry_number=retry_number
+        site, blocking=True, reset=True, retry_number=retry_number,
+        callback=mark_job_as_done, site_rank=site_rank
     )
     command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
     manager.execute_command_sequence(command_sequence)
-    job_queue.complete(job)
-
 manager.logger.info("Job queue finished, exiting.")
 manager.close()
 
