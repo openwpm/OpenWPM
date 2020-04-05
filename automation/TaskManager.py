@@ -486,16 +486,25 @@ class TaskManager:
             browser.restart_required = False
 
     def execute_command_sequence(self, command_sequence: CommandSequence,
+<<<<<<< HEAD
                                  index: Optional[int] = None, label:
                                  Optional[str] = None) -> None:
+=======
+                                 index: Optional[int] = None, label:Optional[str] = None) -> None:
+>>>>>>> 3818ec213515a8434ea8b90be1ae18048ebd0099
         """
         parses command type and issues command(s) to the proper browser
         <index> specifies the type of command this is:
         None  -> first come, first serve
         int  -> index of browser to send command to
+<<<<<<< HEAD
         <label>  checks the label string in function call with label key
         in browser params and sends the command to the first available
         browser with that particular browser configuration
+=======
+        <label>  checks the label string in function call with label key in browser params and
+        sends the command to the first available browser with that particular browser configuration
+>>>>>>> 3818ec213515a8434ea8b90be1ae18048ebd0099
         str -> type of the browser parameter configuration
         """
         # Block if the aggregator queue is too large
@@ -510,6 +519,7 @@ class TaskManager:
                 agg_queue_size = self.data_aggregator.get_status()
 
         # Distribute command
+<<<<<<< HEAD
         if index is None and (label is None or label not in
                               self.browser_params[0].keys()):
             # send to first browser available
@@ -532,10 +542,34 @@ class TaskManager:
                     if self.browsers[index].ready():
                         self.browsers[index].current_timeout \
                             = command_sequence.total_timeout
+=======
+        if label is None:
+            if index is None:
+                # send to first browser available
+                command_executed = False
+                while True:
+                    for browser in self.browsers:
+                        if browser.ready():
+                            browser.current_timeout = \
+                                command_sequence.total_timeout
+                            thread = self._start_thread(browser, command_sequence)
+                            command_executed = True
+                            break
+                    if command_executed:
+                        break
+                    time.sleep(SLEEP_CONS)
+            elif 0 <= index < len(self.browsers):
+                # send the command to this specific browser
+                while True:
+                    if self.browsers[index].ready():
+                        self.browsers[
+                            index].current_timeout = command_sequence.total_timeout
+>>>>>>> 3818ec213515a8434ea8b90be1ae18048ebd0099
                         thread = self._start_thread(
                             self.browsers[index], command_sequence)
                         break
                     time.sleep(SLEEP_CONS)
+<<<<<<< HEAD
         elif index is None and label in self.browser_params[0].keys():
             # send the command to a particular browser based on
             # label in browser params
@@ -546,6 +580,15 @@ class TaskManager:
                         if browser.ready():
                             browser.current_timeout = \
                                 command_sequence.total_timeout
+=======
+        elif label is not None:
+            # send the command to a particular browser based on label in browser params
+            for browser in self.browsers:
+                if browser.browser_params['label'] and browser.browser_params['label'][0]==label:
+                    while True:
+                        if browser.ready():
+                            browser.current_timeout = command_sequence.total_timeout
+>>>>>>> 3818ec213515a8434ea8b90be1ae18048ebd0099
                             thread = self._start_thread(
                                 browser, command_sequence)
                             break
