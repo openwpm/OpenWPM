@@ -380,7 +380,7 @@ class TaskManager:
 
         reset = command_sequence.reset
         if not reset:
-            self.logger.warn(
+            self.logger.warning(
                 "BROWSER %i: Browser will not reset after CommandSequence "
                 "executes. OpenWPM does not currently support stateful crawls "
                 "(see: https://github.com/mozilla/OpenWPM/projects/2). "
