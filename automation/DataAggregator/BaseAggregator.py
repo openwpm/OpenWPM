@@ -1,8 +1,10 @@
 import abc
+import json
 import logging
 import queue
 import threading
 import time
+from typing import Any, Dict, List, Tuple
 
 from multiprocess import Queue
 
@@ -15,6 +17,8 @@ SHUTDOWN_SIGNAL = 'SHUTDOWN'
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 
+BaseParams = Tuple[Queue, Queue, Queue]
+
 
 class BaseListener(object):
     """Base class for the data aggregator listener process. This class is used
@@ -24,22 +28,33 @@ class BaseListener(object):
     is instantiated in the remote process, and sets up a listening socket to
     receive data. Classes which inherit from this base class define
     how that data is written to disk.
-
-    Parameters
-    ----------
-    manager_params : dict
-        TaskManager configuration parameters
-    browser_params : list of dict
-        List of browser configuration dictionaries"""
+    """
     __metaclass = abc.ABCMeta
 
-    def __init__(self, status_queue, shutdown_queue, manager_params):
+    def __init__(self, status_queue: Queue, completion_queue: Queue,
+                 shutdown_queue: Queue):
+        """
+        Creates a BaseListener instance
+
+        Parameters
+        ----------
+        status_queue
+            queue that the current amount of records to be processed will
+            be sent to
+            also used for initialization
+        completion_queue
+            queue containing the visitIDs of saved records
+        shutdown_queue
+            queue that the main process can use to shut down the listener
+        """
         self.status_queue = status_queue
+        self.completion_queue = completion_queue
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
-        self.record_queue = None  # Initialized on `startup`
+        self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
+        self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -60,6 +75,18 @@ class BaseListener(object):
         record : tuple
             2-tuple in format (table_name, data). `data` is a 2-tuple of the
             for (content, content_hash)"""
+
+    @abc.abstractmethod
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
+        """Will be called once a visit_id will receive no new records
+
+        Parameters
+        ----------
+        visit_id
+            the id that will receive no more updates
+        is_shutdown
+            if this call is made during shutdown"""
 
     def startup(self):
         """Run listener startup tasks
@@ -91,6 +118,42 @@ class BaseListener(object):
         )
         self._last_update = time.time()
 
+    def update_records(self, table: str, data: Dict[str, Any]):
+        """A method to keep track of which browser is working on which visit_id
+           If browser_id or visit_id should not be said in data this method
+           will raise an exception
+        """
+        visit_id = None
+        crawl_id = None
+        # All data records should be keyed by the crawler and site visit
+        try:
+            visit_id = data['visit_id']
+        except KeyError:
+            self.logger.error("Record for table %s has no visit id" % table)
+            self.logger.error(json.dumps(data))
+            raise
+
+        try:
+            crawl_id = data['crawl_id']
+        except KeyError:
+            self.logger.error("Record for table %s has no crawl id" % table)
+            self.logger.error(json.dumps(data))
+            raise
+
+        # Check if the browser for this record has moved on to a new visit
+        if crawl_id not in self.browser_map:
+            self.browser_map[crawl_id] = visit_id
+        elif self.browser_map[crawl_id] != visit_id:
+            self.run_visit_completion_tasks(self.browser_map[crawl_id])
+            self.browser_map[crawl_id] = visit_id
+
+        return crawl_id, visit_id
+
+    def mark_visit_complete(self, visit_id: int):
+        """ This function should be called to indicate that all records
+        relating to a certain visit_id have been saved"""
+        self.completion_queue.put(visit_id)
+
     def shutdown(self):
         """Run shutdown tasks defined in the base listener
 
@@ -103,6 +166,7 @@ class BaseListener(object):
         while not self.record_queue.empty():
             record = self.record_queue.get()
             self.process_record(record)
+        self.logger.info("Queue was flushed completely")
 
 
 class BaseAggregator(object):
@@ -125,6 +189,7 @@ class BaseAggregator(object):
         self.listener_address = None
         self.listener_process = None
         self.status_queue = Queue()
+        self.completion_queue = Queue()
         self.shutdown_queue = Queue()
         self._last_status = None
         self._last_status_received = None
@@ -176,10 +241,20 @@ class BaseAggregator(object):
             )
         return self._last_status
 
+    def get_new_completed_visits(self) -> List[int]:
+        """Returns a list of all visit ids that have been saved at the time
+        of calling this method.
+        This method will return an empty list in case no visit ids have
+        been finished since the last time this method was called"""
+        finished_visit_ids = list()
+        while not self.completion_queue.empty():
+            finished_visit_ids.append(self.completion_queue.get())
+        return finished_visit_ids
+
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
-        args = (self.manager_params, self.status_queue,
-                self.shutdown_queue) + args
+        args = ((self.status_queue,
+                self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args

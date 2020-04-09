@@ -31,6 +31,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
             """ Collect links with `scheme` and save in table `table_name` """
             driver = kwargs['driver']
             manager_params = kwargs['manager_params']
+            crawl_id = kwargs['command'].crawl_id
+            visit_id = kwargs['command'].visit_id
             link_urls = [
                 x for x in (
                     element.get_attribute("href")
@@ -44,13 +46,16 @@ class TestCustomFunctionCommand(OpenWPMTest):
             sock.connect(*manager_params['aggregator_address'])
 
             query = ("CREATE TABLE IF NOT EXISTS %s ("
-                     "top_url TEXT, link TEXT);" % table_name)
+                     "top_url TEXT, link TEXT, "
+                     "visit_id INTEGER, crawl_id INTEGER);" % table_name)
             sock.send(("create_table", query))
 
             for link in link_urls:
                 query = (table_name, {
                     "top_url": current_url,
-                    "link": link
+                    "link": link,
+                    "visit_id": visit_id,
+                    "crawl_id": crawl_id
                 })
                 sock.send(query)
             sock.close()
