@@ -392,6 +392,9 @@ class TaskManager:
                 "CommandSequence with `reset` set to `True` to use a fresh "
                 "profile for each command." % browser.crawl_id
             )
+        self.logger.info("Starting to work on CommandSequence with "
+                         " visit_id %d on browser with id %d",
+                         browser.curr_visit_id, browser.crawl_id)
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
             command.set_visit_crawl_id(browser.curr_visit_id, browser.crawl_id)
