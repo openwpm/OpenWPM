@@ -207,6 +207,6 @@ def optimize_prefs(fo):
     fo.set_preference("app.shield.optoutstudies.enabled", False)
     fo.set_preference("extensions.shield-recipe-client.enabled", False)
 
-    # Enable legacy extensions and disable extension signing
-    fo.set_preference("extensions.legacy.enabled", True)
+    # Enable extensions and disable extension signing
+    fo.set_preference("extensions.experiments.enabled", True)
     fo.set_preference("xpinstall.signatures.required", False)
