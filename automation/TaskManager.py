@@ -286,7 +286,7 @@ class TaskManager:
             browser.shutdown_browser(during_init)
 
         self.sock.close()  # close socket to data aggregator
-        self.data_aggregator.shutdown()
+        self.data_aggregator.shutdown(relaxed=relaxed)
         self.logging_server.close()
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()

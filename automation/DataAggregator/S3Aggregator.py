@@ -309,9 +309,6 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
-        # Not batching the last visit to not send out
-        for visit_id in self._records.keys():
-            self.mark_visit_complete(visit_id, True)
         self._send_to_s3(force=True)
 
     def run_visit_completion_tasks(self, visit_id: int,
