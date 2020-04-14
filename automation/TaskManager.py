@@ -258,16 +258,31 @@ class TaskManager:
         self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-    def _shutdown_manager(self, during_init: bool = False) -> None:
+    def _shutdown_manager(self, during_init: bool = False,
+                          relaxed: bool = False) -> None:
         """
         Wait for current commands to finish, close all child processes and
         threads
-        <during_init> flag to indicator if this shutdown is occuring during
+
+        Parameters
+        ----------
+        during_init :
+            flag to indicator if this shutdown is occuring during
                       the TaskManager initialization
+        relaxed :
+            If `True` the function will wait for all active
+            `CommandSequences` to finish
         """
+        if self.closing:
+            return
         self.closing = True
 
         for browser in self.browsers:
+            if relaxed is True and \
+               browser.command_thread and \
+               browser.command_thread.is_alive():
+                # Waiting for the command_sequence to be finished
+                browser.command_thread.join()
             browser.shutdown_browser(during_init)
 
         self.sock.close()  # close socket to data aggregator
