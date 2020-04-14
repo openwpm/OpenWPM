@@ -14,12 +14,13 @@ class CommandSequence:
     """A CommandSequence wraps a series of commands to be performed
     on a visit to one top-level site into one logical
     "site visit," keyed by a visit id. An example of a CommandSequence
-    that visits a page and dumps cookies modified on that visit would be:
+    that visits a page and dumps cookies modified on that visit would be::
 
-    sequence = CommandSequence(url)
-    sequence.get()
-    sequence.save_screenshot()
-    task_manager.execute_command_sequence(sequence)
+
+        sequence = CommandSequence(url)
+        sequence.get()
+        sequence.save_screenshot()
+        task_manager.execute_command_sequence(sequence)
 
     CommandSequence guarantees that a series of commands will be performed
     by a single browser instance.
@@ -144,20 +145,20 @@ class CommandSequence:
         Unlike `dump_page_source`, this includes iframe sources. Archive is
         stored in `manager_params['source_dump_path']` and is keyed by the
         current `visit_id` and top-level url. The source dump is a gzipped json
-        file with the following structure:
-        {
-            'document_url': "http://example.com",
-            'source': "<html> ... </html>",
-            'iframes': {
-                'frame_1': {'document_url': ...,
-                            'source': ...,
-                            'iframes: { ... }},
-                'frame_2': {'document_url': ...,
-                            'source': ...,
-                            'iframes: { ... }},
-                'frame_3': { ... }
+        file with the following structure::
+            {
+                'document_url': "http://example.com",
+                'source': "<html> ... </html>",
+                'iframes': {
+                    'frame_1': {'document_url': ...,
+                                'source': ...,
+                                'iframes: { ... }},
+                    'frame_2': {'document_url': ...,
+                                'source': ...,
+                                'iframes: { ... }},
+                    'frame_3': { ... }
+                }
             }
-        }
         """
         self.total_timeout += timeout
         if not self.contains_get_or_browse:

@@ -33,7 +33,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon'
 ]
-
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
