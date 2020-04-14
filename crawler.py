@@ -1,10 +1,11 @@
 
 import json
+import logging
 import os
 import signal
 import time
-from functools import partial
 from threading import Lock
+from typing import Callable
 
 import boto3
 import sentry_sdk
@@ -113,6 +114,7 @@ manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
 unsaved_jobs = list()
 unsaved_jobs_lock = Lock()
+
 shutting_down = False
 
 
@@ -130,22 +132,22 @@ for sig in [signal.SIGTERM, signal.SIGINT]:
     signal.signal(sig, on_shutdown(manager, unsaved_jobs_lock))
 
 
-def mark_job_as_done(unsaved_jobs_lock, job_queue, unsaved_jobs):
-    def actual_callback(job):
-        global shutting_down
+def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock,
+                  job_queue: rediswq.RedisWQ, job: bytes) \
+        -> Callable[[], None]:
+    def callback() -> None:
         with unsaved_jobs_lock:
-            if not shutting_down:
-                # only mark jobs as complete if they didn't run during shutdown
-                job_queue.complete(job)
+            logger.info("Job %r is done", job)
+            job_queue.complete(job)
             unsaved_jobs.remove(job)
-    return actual_callback
+    return callback
 
 
-callback_per_job = mark_job_as_done(unsaved_jobs_lock, job_queue, unsaved_jobs)
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job_queue.check_expired_leases()
     with unsaved_jobs_lock:
+        manager.logger.debug("Currently unfinished jobs are: %s", unsaved_jobs)
         for unsaved_job in unsaved_jobs:
             if not job_queue.renew_lease(unsaved_job,
                                          2 * (TIMEOUT + DWELL_TIME + 30)):
@@ -158,15 +160,13 @@ while not job_queue.empty():
         manager.logger.info("Waiting for work")
         time.sleep(5)
         continue
-
     unsaved_jobs.append(job)
-    callback = partial(callback_per_job, job)
-
     retry_number = job_queue.get_retry_number(job)
     site_rank, site = job.decode("utf-8").split(',')
     if "://" not in site:
         site = "http://" + site
     manager.logger.info("Visiting %s..." % site)
+    callback = mark_job_done(manager.logger, unsaved_jobs_lock, job_queue, job)
     command_sequence = CommandSequence.CommandSequence(
         site, blocking=True, reset=True, retry_number=retry_number,
         callback=callback, site_rank=site_rank
