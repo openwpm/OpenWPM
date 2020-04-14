@@ -273,7 +273,8 @@ class TaskManager:
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown()
         self.logging_server.close()
-        self.callback_thread.join()
+        if hasattr(self, "callback_thread"):
+            self.callback_thread.join()
 
     def _cleanup_before_fail(self, during_init: bool = False) -> None:
         """
@@ -328,7 +329,8 @@ class TaskManager:
         self._check_failure_status()
         visit_id = self.data_aggregator.get_next_visit_id()
         browser.set_visit_id(visit_id)
-        self.unsaved_command_sequences[visit_id] = command_sequence
+        if command_sequence.callback:
+            self.unsaved_command_sequences[visit_id] = command_sequence
 
         self.sock.send(("site_visits", {
             "visit_id": visit_id,
@@ -360,7 +362,7 @@ class TaskManager:
 
             for visit_id, interrupted in visit_id_list:
                 cs = self.unsaved_command_sequences.pop(visit_id)
-                if not interrupted:
+                if cs and not interrupted:
                     cs.mark_done()
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
@@ -379,7 +381,7 @@ class TaskManager:
 
         reset = command_sequence.reset
         if not reset:
-            self.logger.warn(
+            self.logger.warning(
                 "BROWSER %i: Browser will not reset after CommandSequence "
                 "executes. OpenWPM does not currently support stateful crawls "
                 "(see: https://github.com/mozilla/OpenWPM/projects/2). "
@@ -391,22 +393,11 @@ class TaskManager:
             )
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
-            if command[0] in ['GET', 'BROWSE',
-                              'SAVE_SCREENSHOT',
-                              'SCREENSHOT_FULL_PAGE',
-                              'DUMP_PAGE_SOURCE',
-                              'RECURSIVE_DUMP_PAGE_SOURCE',
-                              'RUN_CUSTOM_FUNCTION']:
-                command += (browser.curr_visit_id,)
-            elif command[0] in ['DUMP_FLASH_COOKIES', 'DUMP_PROFILE_COOKIES']:
-                start_time = time.time()
-                command += (start_time, browser.curr_visit_id,)
-            if command[0] == 'RUN_CUSTOM_FUNCTION':
-                command += (browser.crawl_id,)
+            command.set_visit_crawl_id(browser.curr_visit_id, browser.crawl_id)
+            command.set_start_time(time.time())
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
-            command_arguments = command[1] if len(command) > 1 else None
 
             # received reply from BrowserManager, either success or failure
             critical_failure = False
@@ -435,7 +426,7 @@ class TaskManager:
                     error_text, tb = self._unpack_picked_error(status[1])
                     self.logger.info(
                         "BROWSER %i: Received failure status while executing "
-                        "command: %s" % (browser.crawl_id, command[0]))
+                        "command: %s" % (browser.crawl_id, repr(command)))
                 elif status[0] == 'NETERROR':
                     command_status = 'neterror'
                     error_text, tb = self._unpack_picked_error(status[1])
@@ -443,7 +434,7 @@ class TaskManager:
                     self.logger.info(
                         "BROWSER %i: Received neterror %s while executing "
                         "command: %s" %
-                        (browser.crawl_id, error_text, command[0])
+                        (browser.crawl_id, error_text, repr(command))
                     )
                 else:
                     raise ValueError(
@@ -453,13 +444,13 @@ class TaskManager:
                 command_status = 'timeout'
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
-                    "browser manager" % (browser.crawl_id, command[0]))
+                    "browser manager" % (browser.crawl_id, repr(command)))
 
             self.sock.send(("crawl_history", {
                 "crawl_id": browser.crawl_id,
                 "visit_id": browser.curr_visit_id,
-                "command": command[0],
-                "arguments": str(command_arguments),
+                "command": type(command),
+                "arguments": json.dumps(command.__dict__).encode('utf-8'),
                 "retry_number": command_sequence.retry_number,
                 "command_status": command_status,
                 "error": error_text,

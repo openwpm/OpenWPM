@@ -276,7 +276,7 @@ class TestExtension(OpenWPMTest):
 
     def test_js_time_stamp(self):
         # Check that timestamp is recorded correctly for the javascript table
-        MAX_TIMEDELTA = 30  # max time diff in seconds
+        MAX_TIMEDELTA = 60  # max time diff in seconds
         db = self.visit('/js_call_stack.html')
         utc_now = datetime.utcnow()  # OpenWPM stores timestamp in UTC time
         rows = db_utils.get_javascript_entries(db, all_columns=True)
