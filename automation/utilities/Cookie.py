@@ -316,7 +316,7 @@ _idmap = ''.join(chr(x) for x in range(256))
 
 
 def _quote(s, LegalChars=_LegalChars,
-           idmap=_idmap, translate=string.translate):
+           idmap=_idmap, translate=str.translate):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
@@ -462,7 +462,7 @@ class Morsel(dict):
 
     def set(self, key, val, coded_val,
             LegalChars=_LegalChars,
-            idmap=_idmap, translate=string.translate):
+            idmap=_idmap, translate=str.translate):
         # First we verify that the key isn't a reserved word
         # Second we make sure it only contains legal characters
         if key.lower() in self._reserved:
