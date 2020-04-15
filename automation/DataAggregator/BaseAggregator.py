@@ -20,7 +20,7 @@ STATUS_UPDATE_INTERVAL = 5  # seconds
 BaseParams = Tuple[Queue, Queue, Queue]
 
 
-class BaseListener(object):
+class BaseListener:
     """Base class for the data aggregator listener process. This class is used
     alongside the BaseAggregator class to spawn an aggregator process that
     combines data collected in multiple crawl processes and stores it
@@ -55,6 +55,7 @@ class BaseListener(object):
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
         self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
+        self.sock: serversocket = None
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -100,7 +101,9 @@ class BaseListener(object):
     def should_shutdown(self):
         """Return `True` if the listener has received a shutdown signal"""
         if not self.shutdown_queue.empty():
-            self.shutdown_queue.get()
+            _, relaxed = self.shutdown_queue.get()
+            self._relaxed = relaxed
+            self._shutdown_flag = True
             self.logger.info("Received shutdown signal!")
             return True
         return False
@@ -149,10 +152,10 @@ class BaseListener(object):
 
         return crawl_id, visit_id
 
-    def mark_visit_complete(self, visit_id: int, interrupted: bool = False):
+    def mark_visit_complete(self, visit_id: int):
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
-        self.completion_queue.put((visit_id, interrupted))
+        self.completion_queue.put((visit_id, False))
 
     def shutdown(self):
         """Run shutdown tasks defined in the base listener
@@ -169,7 +172,7 @@ class BaseListener(object):
         self.logger.info("Queue was flushed completely")
 
 
-class BaseAggregator(object):
+class BaseAggregator:
     """Base class for the data aggregator interface. This class is used
     alongside the BaseListener class to spawn an aggregator process that
     combines data from multiple crawl processes. The BaseAggregator class
@@ -254,7 +257,7 @@ class BaseAggregator(object):
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
         args = ((self.status_queue,
-                self.completion_queue, self.shutdown_queue),) + args
+                 self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args
@@ -263,13 +266,13 @@ class BaseAggregator(object):
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
 
-    def shutdown(self):
+    def shutdown(self, relaxed: bool = False):
         """ Terminate the aggregator listener process"""
         self.logger.debug(
             "Sending the shutdown signal to the %s listener process..." %
             type(self).__name__
         )
-        self.shutdown_queue.put(SHUTDOWN_SIGNAL)
+        self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
         start_time = time.time()
         self.listener_process.join(300)
         self.logger.debug(
