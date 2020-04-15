@@ -312,9 +312,13 @@ class S3Listener(BaseListener):
         self._send_to_s3(force=True)
 
     def run_visit_completion_tasks(self, visit_id: int,
-                                   is_shutdown: bool = False):
+                                   interrupted: bool = False):
+        if interrupted:
+            # We don't want to save out interrupted visits
+            self.mark_visit_incomplete(visit_id)
+            return
         self._create_batch(visit_id)
-        self._send_to_s3(force=is_shutdown)
+        self._send_to_s3()
 
 
 class S3Aggregator(BaseAggregator):

@@ -10,6 +10,9 @@ Welcome to OpenWPM's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   CommandSequence
+   MarkAsIncomplete
+
 
 
 

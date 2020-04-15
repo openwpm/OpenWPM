@@ -168,8 +168,11 @@ class LocalListener(BaseListener):
             self._ldb_commit_time = time.time()
 
     def run_visit_completion_tasks(self, visit_id: int,
-                                   is_shutdown: bool = False):
-        self.mark_visit_complete(visit_id)
+                                   interrupted: bool = False):
+        if interrupted:
+            self.mark_visit_incomplete(visit_id)
+        else:
+            self.mark_visit_complete(visit_id)
 
     def shutdown(self):
         for visit_id in self.browser_map.values():
@@ -269,7 +272,7 @@ class LocalAggregator(BaseAggregator):
             listener_process_runner, self.manager_params,
             self.ldb_enabled)
 
-    def shutdown(self):
+    def shutdown(self, relaxed: bool = False) -> None:
         """ Terminates the aggregator"""
+        super(LocalAggregator, self).shutdown(relaxed)
         self.db.close()
-        super(LocalAggregator, self).shutdown()

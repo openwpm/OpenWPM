@@ -123,7 +123,7 @@ def on_shutdown(manager, unsaved_jobs_lock):
         global shutting_down
         with unsaved_jobs_lock:
             shutting_down = True
-        manager.close()
+        manager.close(relaxed=False)
     return actual_callback
 
 

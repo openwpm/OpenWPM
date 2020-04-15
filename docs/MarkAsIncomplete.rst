@@ -1,0 +1,58 @@
+Shutdown and Saving
+===================
+
+Abstract
+---------
+I can't quite wrap my head around how shutdown, relaxed shutdown, saving and callbacks should interact.
+
+Context
+-------
+
+The current given are:
+
+-   The :class:`~automation.DataAggregator.BaseAggregator.BaseListener`
+    provides the method :meth:`~automation.DataAggregator.BaseAggregator.BaseListener.should_shutdown`
+    which sets flags on the :class:`~automation.DataAggregator.BaseAggregator.BaseListener`
+    and returns ``True``, when a shutdown signal was sent
+-   The :meth:`~automation.TaskManager.TaskManager._mark_command_sequences_complete` which is running
+    on a Thread in the main process and calls
+    :meth:`~automation.DataAggregator.BaseAggregator.BaseAggregator.get_new_completed_visits` to get a
+    list of `visit_id`s and whether their visit was interrupted
+
+
+The Happy Path
+--------------
+During normal operations the process goes like this:
+
+-   The specialized listener has their :meth:`~automation.DataAggregator.BaseAggregator.BaseListener.process_record`
+    which calls :meth:`~automation.DataAggregator.BaseAggregator.BaseListener.update_records` on the BaseListener
+    which updates the ``browser_map``
+-   If the ``browser_map`` has detected a new ``visit_id`` the specialized listeners
+    :meth:`~automation.DataAggregator.BaseAggregator.BaseListener.run_visit_completion_tasks`
+    is called with the old ``visit_id``
+-   In the S3 case we then convert the old visits data into a :class:`pyarrow.RecordBatch` and cache that for later saving
+    and then call :meth:`~automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3` which does nothing if the cache
+    isn't full
+-   Once the above steps have repeated often enough that the cache is full,
+    :meth:`~automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3` sends out all files and invokes
+    :meth:`~automation.DataAggregator.BaseAggregator.BaseListener.mark_visit_complete` for all ``visit_ids`` that have been
+    sent out
+-   This then puts the the tuple of ``(visit_id, false)`` into the ``completion_queue`` between
+    :class:`~automation.DataAggregator.BaseAggregator.BaseListener` and 
+    :class:`~automation.DataAggregator.BaseAggregator.BaseAggregator` which in turn makes it available
+    to :meth:`~automation.DataAggregator.BaseAggregator.BaseAggregator.get_new_completed_visits`
+
+
+
+Problem
+--------
+
+(From now on I'm only talking about the S3 case as the LocalAggregator can just use a simplified version of whatever
+the solution is going to be)
+Both the BaseAggregator as well as the specialized Aggregators have their part to play while shutting down
+and I can't figure out who should handling the "Bad" path.
+What definitely needs to happen is that the S3Aggregator shouldn't create a batch for these records.
+But that also means it's currently undefined who puts the interrupted ``visit_ids`` into the ``completion_queue``.
+
+
+
