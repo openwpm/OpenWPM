@@ -377,7 +377,7 @@ class TaskManager:
 
             for visit_id, interrupted in visit_id_list:
                 self.logger.debug("Invoking callback of visit_id %d", visit_id)
-                cs = self.unsaved_command_sequences.pop(visit_id)
+                cs = self.unsaved_command_sequences.pop(visit_id, None)
                 if cs and not interrupted:
                     cs.mark_done()
 
@@ -600,7 +600,7 @@ class TaskManager:
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def close(self) -> None:
+    def close(self, relaxed=True) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
@@ -608,6 +608,6 @@ class TaskManager:
             self.logger.error("TaskManager already closed")
             return
         start_time = time.time()
-        self._shutdown_manager()
+        self._shutdown_manager(relaxed=relaxed)
         # We don't have a logging thread at this time anymore
         print("Shutdown took %s seconds" % str(time.time() - start_time))

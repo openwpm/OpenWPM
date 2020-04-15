@@ -25,7 +25,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['disable_flash'] = True
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
-browser_params[0]['headless'] = True  # Launch only browser 0 headless
+# browser_params[0]['headless'] = True  # Launch only browser 0 headless
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params['data_directory'] = '~/Desktop/'
@@ -36,12 +36,12 @@ manager_params['log_directory'] = '~/Desktop/'
 manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites
-for site in sites:
+for i, site in enumerate(sites):
 
     # Parallelize sites over all number of browsers set above.
     # (To have all browsers go to the same sites, add `index='**'`)
     command_sequence = CommandSequence.CommandSequence(
-        site, reset=True, callback=lambda: print("CommandSequence done"))
+        site, reset=True, blocking=True, callback=lambda: print("CommandSequence {} done".format(i)))
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
@@ -50,4 +50,4 @@ for site in sites:
     manager.execute_command_sequence(command_sequence)
 
 # Shuts down the browsers and waits for the data to finish logging
-manager.close()
+manager.close(relaxed=False)

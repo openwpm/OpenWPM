@@ -79,15 +79,15 @@ class BaseListener:
 
     @abc.abstractmethod
     def run_visit_completion_tasks(self, visit_id: int,
-                                   is_shutdown: bool = False):
+                                   interrupted: bool = False):
         """Will be called once a visit_id will receive no new records
 
         Parameters
         ----------
         visit_id
             the id that will receive no more updates
-        is_shutdown
-            if this call is made during shutdown"""
+        interrupted
+           whether a visit is unfinished"""
 
     def startup(self):
         """Run listener startup tasks
@@ -99,7 +99,9 @@ class BaseListener:
         self.record_queue = self.sock.queue
 
     def should_shutdown(self):
-        """Return `True` if the listener has received a shutdown signal"""
+        """Return `True` if the listener has received a shutdown signal
+        Sets `self._relaxed` and `self.shutdown_flag`
+        """
         if not self.shutdown_queue.empty():
             _, relaxed = self.shutdown_queue.get()
             self._relaxed = relaxed
@@ -157,11 +159,20 @@ class BaseListener:
         relating to a certain visit_id have been saved"""
         self.completion_queue.put((visit_id, False))
 
+    def mark_visit_incomplete(self, visit_id: int):
+        """ This function should be called to indicate that a certain visit
+        has been interrupted and will forever be incomplete
+        """
+        self.completion_queue.put((visit_id, True))
+
     def shutdown(self):
         """Run shutdown tasks defined in the base listener
 
         Note: Child classes should call this method"""
         self.sock.close()
+        for visit_id in self.browser_map.values():
+            self.run_visit_completion_tasks(visit_id,
+                                            interrupted=self._relaxed)
 
     def drain_queue(self):
         """ Ensures queue is empty before closing """
@@ -244,7 +255,7 @@ class BaseAggregator:
             )
         return self._last_status
 
-    def get_new_completed_visits(self) -> List[int]:
+    def get_new_completed_visits(self) -> List[Tuple[int, bool]]:
         """Returns a list of all visit ids that have been saved at the time
         of calling this method.
         This method will return an empty list in case no visit ids have
