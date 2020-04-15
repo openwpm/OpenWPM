@@ -1,0 +1,54 @@
+OpenWPM.automation.Commands package
+===================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   OpenWPM.automation.Commands.utils
+
+Submodules
+----------
+
+OpenWPM.automation.Commands.Types module
+----------------------------------------
+
+.. automodule:: OpenWPM.automation.Commands.Types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.Commands.browser\_commands module
+----------------------------------------------------
+
+.. automodule:: OpenWPM.automation.Commands.browser_commands
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.Commands.command\_executor module
+----------------------------------------------------
+
+.. automodule:: OpenWPM.automation.Commands.command_executor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.Commands.profile\_commands module
+----------------------------------------------------
+
+.. automodule:: OpenWPM.automation.Commands.profile_commands
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: OpenWPM.automation.Commands
+   :members:
+   :undoc-members:
+   :show-inheritance:

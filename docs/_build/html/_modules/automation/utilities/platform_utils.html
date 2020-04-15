@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.utilities.platform_utils &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.utilities.platform_utils</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">platform</span>
+
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+
+
+<div class="viewcode-block" id="parse_http_stack_trace_str"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.platform_utils.parse_http_stack_trace_str">[docs]</a><span class="k">def</span> <span class="nf">parse_http_stack_trace_str</span><span class="p">(</span><span class="n">trace_str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parse a stacktrace string and return an array of dict.&quot;&quot;&quot;</span>
+    <span class="n">stack_trace</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">frames</span> <span class="o">=</span> <span class="n">trace_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">func_name</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">rest</span><span class="p">,</span> <span class="n">async_cause</span> <span class="o">=</span> <span class="n">rest</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">filename</span><span class="p">,</span> <span class="n">line_no</span><span class="p">,</span> <span class="n">col_no</span> <span class="o">=</span> <span class="n">rest</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">stack_trace</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                               <span class="s2">&quot;func_name&quot;</span><span class="p">:</span> <span class="n">func_name</span><span class="p">,</span>
+                               <span class="s2">&quot;filename&quot;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+                               <span class="s2">&quot;line_no&quot;</span><span class="p">:</span> <span class="n">line_no</span><span class="p">,</span>
+                               <span class="s2">&quot;col_no&quot;</span><span class="p">:</span> <span class="n">col_no</span><span class="p">,</span>
+                               <span class="s2">&quot;async_cause&quot;</span><span class="p">:</span> <span class="n">async_cause</span><span class="p">,</span>
+                               <span class="p">})</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exception parsing the stack frame </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">exc</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">stack_trace</span></div>
+
+
+<div class="viewcode-block" id="get_firefox_binary_path"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.platform_utils.get_firefox_binary_path">[docs]</a><span class="k">def</span> <span class="nf">get_firefox_binary_path</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    If ../../firefox-bin/firefox-bin or os.environ[&quot;FIREFOX_BINARY&quot;] exists,</span>
+<span class="sd">    return it. Else, throw a RuntimeError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;FIREFOX_BINARY&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+        <span class="n">firefox_binary_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;FIREFOX_BINARY&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">firefox_binary_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;No file found at the path specified in &quot;</span>
+                <span class="s2">&quot;environment variable `FIREFOX_BINARY`.&quot;</span>
+                <span class="s2">&quot;Current `FIREFOX_BINARY`: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">firefox_binary_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">firefox_binary_path</span>
+
+    <span class="n">root_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/../..&quot;</span>
+    <span class="k">if</span> <span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;darwin&#39;</span><span class="p">:</span>
+        <span class="n">firefox_binary_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+            <span class="n">root_dir</span> <span class="o">+</span> <span class="s2">&quot;/Nightly.app/Contents/MacOS/firefox-bin&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">firefox_binary_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+            <span class="n">root_dir</span> <span class="o">+</span> <span class="s2">&quot;/firefox-bin/firefox-bin&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">firefox_binary_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;The `firefox-bin/firefox-bin` binary is not found in the root &quot;</span>
+            <span class="s2">&quot;of the  OpenWPM directory (did you run the install script &quot;</span>
+            <span class="s2">&quot;(`install.sh`)?). Alternatively, you can specify a binary &quot;</span>
+            <span class="s2">&quot;location using the OS environment variable FIREFOX_BINARY.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">firefox_binary_path</span></div>
+
+
+<div class="viewcode-block" id="get_geckodriver_exec_path"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.platform_utils.get_geckodriver_exec_path">[docs]</a><span class="k">def</span> <span class="nf">get_geckodriver_exec_path</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    If the geckodriver executable does not exist next to the Firefox binary,</span>
+<span class="sd">    we throw a RuntimeError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">firefox_binary_path</span> <span class="o">=</span> <span class="n">get_firefox_binary_path</span><span class="p">()</span>
+    <span class="n">geckodriver_executable_path</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">firefox_binary_path</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/geckodriver&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">geckodriver_executable_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;The `geckodriver` executable is not found next to the &quot;</span>
+            <span class="s2">&quot;Firefox binary. Did you run the install script (`install.sh`)?&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">geckodriver_executable_path</span></div>
+
+
+<div class="viewcode-block" id="get_version"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.platform_utils.get_version">[docs]</a><span class="k">def</span> <span class="nf">get_version</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Return OpenWPM version tag/current commit and Firefox version &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">openwpm</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;describe&quot;</span><span class="p">,</span> <span class="s2">&quot;--tags&quot;</span><span class="p">,</span> <span class="s2">&quot;--always&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">:</span>
+        <span class="n">ver</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;../../VERSION&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ver</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">openwpm</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="n">firefox_binary_path</span> <span class="o">=</span> <span class="n">get_firefox_binary_path</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">firefox</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="n">firefox_binary_path</span><span class="p">,</span> <span class="s2">&quot;--version&quot;</span><span class="p">])</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Firefox not found. &quot;</span>
+                           <span class="s2">&quot; Did you run `./install.sh`?&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+    <span class="n">ff</span> <span class="o">=</span> <span class="n">firefox</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">openwpm</span><span class="p">,</span> <span class="n">ff</span></div>
+
+
+<div class="viewcode-block" id="get_configuration_string"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.platform_utils.get_configuration_string">[docs]</a><span class="k">def</span> <span class="nf">get_configuration_string</span><span class="p">(</span><span class="n">manager_params</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">,</span> <span class="n">versions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Construct a well-formatted string for {manager,browser}params</span>
+
+<span class="sd">    Constructs a pretty printed string of all parameters. The config</span>
+<span class="sd">    dictionaries are split to try to avoid line wrapping for reasonably</span>
+<span class="sd">    size terminal windows.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">OpenWPM Version: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">Firefox Version: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">versions</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">========== Manager Configuration ==========</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">manager_params</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                             <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">))</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">========== Browser Configuration ==========</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">print_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">browser_params</span><span class="p">]</span>
+    <span class="n">table_input</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">profile_dirs</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">archive_dirs</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">profile_all_none</span> <span class="o">=</span> <span class="n">archive_all_none</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">print_params</span><span class="p">:</span>
+        <span class="n">crawl_id</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Update print flags</span>
+        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;profile_tar&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">profile_all_none</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;profile_archive_dir&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">archive_all_none</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Separate out long profile directory strings</span>
+        <span class="n">profile_dirs</span><span class="p">[</span><span class="n">crawl_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;profile_tar&#39;</span><span class="p">)</span>
+        <span class="n">archive_dirs</span><span class="p">[</span><span class="n">crawl_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;profile_archive_dir&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Copy items in sorted order</span>
+        <span class="n">dct</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">dct</span><span class="p">[</span><span class="sa">u</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">crawl_id</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">dct</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">table_input</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dct</span><span class="p">)</span>
+
+    <span class="n">key_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">table_input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">key_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">counter</span>
+        <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;Keys:</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">key_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                             <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">))</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">table_input</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">key_dict</span><span class="p">)</span>
+
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">========== Input profile tar files ==========</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">profile_all_none</span><span class="p">:</span>
+        <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;  No profile tar files specified&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config_str</span> <span class="o">+=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">profile_dirs</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                 <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">))</span>
+
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">========== Output (archive) profile dirs ==========</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">archive_all_none</span><span class="p">:</span>
+        <span class="n">config_str</span> <span class="o">+=</span> <span class="s2">&quot;  No profile archive directories specified&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config_str</span> <span class="o">+=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">archive_dirs</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                 <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">))</span>
+
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="n">config_str</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.Commands.utils.lso &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.Commands.utils.lso</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This is code adapted from KU Leuven crawler code written by</span>
+<span class="c1"># Gunes Acar and Marc Juarez</span>
+
+
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">from</span> <span class="nn">miniamf</span> <span class="kn">import</span> <span class="n">sol</span>
+
+
+<div class="viewcode-block" id="ensure_unicode"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.lso.ensure_unicode">[docs]</a><span class="k">def</span> <span class="nf">ensure_unicode</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Coerce VAL to a Unicode string by any means necessary.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">val</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">val</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="s2">&quot;backslashescape&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="c1"># Backslash escaping on decode doesn&#39;t work in Python 2.</span>
+        <span class="c1"># This does approximately the same thing.</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;latin1&quot;</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">,</span> <span class="s2">&quot;backslashreplace&quot;</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span></div>
+
+<span class="c1"># TODO: Linux only</span>
+
+
+<span class="n">FLASH_DIRS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;~/.macromedia/Flash_Player/#SharedObjects/&#39;</span><span class="p">]</span>
+
+
+<span class="n">_BaseFlashCookie</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s1">&#39;_BaseFlashCookie&#39;</span><span class="p">,</span>
+    <span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="s1">&#39;domain&#39;</span><span class="p">,</span> <span class="s1">&#39;local_path&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="FlashCookie"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.lso.FlashCookie">[docs]</a><span class="k">class</span> <span class="nc">FlashCookie</span><span class="p">(</span><span class="n">_BaseFlashCookie</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="n">local_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;#SharedObjects/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">local_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">ensure_unicode</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">ensure_unicode</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_BaseFlashCookie</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="parse_flash_cookies"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.lso.parse_flash_cookies">[docs]</a><span class="k">def</span> <span class="nf">parse_flash_cookies</span><span class="p">(</span><span class="n">lso_file</span><span class="p">):</span>
+    <span class="n">lso_dict</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">lso_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">FlashCookie</span><span class="p">(</span><span class="n">lso_file</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">lso_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span></div>
+
+
+<div class="viewcode-block" id="gen_find_files"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.lso.gen_find_files">[docs]</a><span class="k">def</span> <span class="nf">gen_find_files</span><span class="p">(</span><span class="n">filepat</span><span class="p">,</span> <span class="n">top</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    http://www.dabeaz.com/generators/</span>
+<span class="sd">    returns filenames that matches the given pattern under() a given dir</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">filelist</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">top</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">filepat</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_flash_cookies"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.lso.get_flash_cookies">[docs]</a><span class="k">def</span> <span class="nf">get_flash_cookies</span><span class="p">(</span><span class="n">mod_since</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a list of Flash cookies (Local Shared Objects).&quot;&quot;&quot;</span>
+    <span class="n">flash_cookies</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">top_dir</span> <span class="ow">in</span> <span class="n">FLASH_DIRS</span><span class="p">:</span>
+        <span class="n">top_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">top_dir</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lso_file</span> <span class="ow">in</span> <span class="n">gen_find_files</span><span class="p">(</span><span class="s2">&quot;*.sol&quot;</span><span class="p">,</span> <span class="n">top_dir</span><span class="p">):</span>
+            <span class="n">mtime</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">lso_file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mtime</span> <span class="o">&gt;</span> <span class="n">mod_since</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">flash_cookies</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parse_flash_cookies</span><span class="p">(</span><span class="n">lso_file</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Exception reading </span><span class="si">{!r}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                     <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lso_file</span><span class="p">))</span>
+                    <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">flash_cookies</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

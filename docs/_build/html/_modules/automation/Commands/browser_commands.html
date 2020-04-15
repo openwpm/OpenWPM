@@ -1,0 +1,473 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.Commands.browser_commands &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.Commands.browser_commands</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">md5</span>
+
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">selenium.common.exceptions</span> <span class="kn">import</span> <span class="p">(</span><span class="n">MoveTargetOutOfBoundsException</span><span class="p">,</span>
+                                        <span class="n">TimeoutException</span><span class="p">,</span> <span class="n">WebDriverException</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.action_chains</span> <span class="kn">import</span> <span class="n">ActionChains</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support</span> <span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support.ui</span> <span class="kn">import</span> <span class="n">WebDriverWait</span>
+
+<span class="kn">from</span> <span class="nn">..SocketInterface</span> <span class="kn">import</span> <span class="n">clientsocket</span>
+<span class="kn">from</span> <span class="nn">.utils.lso</span> <span class="kn">import</span> <span class="n">get_flash_cookies</span>
+<span class="kn">from</span> <span class="nn">.utils.webdriver_utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">execute_in_all_frames</span><span class="p">,</span>
+                                    <span class="n">execute_script_with_retry</span><span class="p">,</span> <span class="n">get_intra_links</span><span class="p">,</span>
+                                    <span class="n">is_displayed</span><span class="p">,</span> <span class="n">scroll_down</span><span class="p">,</span>
+                                    <span class="n">wait_until_loaded</span><span class="p">)</span>
+
+<span class="c1"># Constants for bot mitigation</span>
+<span class="n">NUM_MOUSE_MOVES</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># Times to randomly move the mouse</span>
+<span class="n">RANDOM_SLEEP_LOW</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># low (in sec) for random sleep between page loads</span>
+<span class="n">RANDOM_SLEEP_HIGH</span> <span class="o">=</span> <span class="mi">7</span>  <span class="c1"># high (in sec) for random sleep between page loads</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;openwpm&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="bot_mitigation"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.bot_mitigation">[docs]</a><span class="k">def</span> <span class="nf">bot_mitigation</span><span class="p">(</span><span class="n">webdriver</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; performs three optional commands for bot-detection</span>
+<span class="sd">    mitigation when getting a site &quot;&quot;&quot;</span>
+
+    <span class="c1"># bot mitigation 1: move the randomly around a number of times</span>
+    <span class="n">window_size</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">get_window_size</span><span class="p">()</span>
+    <span class="n">num_moves</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">num_fails</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">num_moves</span> <span class="o">&lt;</span> <span class="n">NUM_MOUSE_MOVES</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">num_fails</span> <span class="o">&lt;</span> <span class="n">NUM_MOUSE_MOVES</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_moves</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># move to the center of the screen</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># move a random amount in some direction</span>
+                <span class="n">move_max</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">move_max</span><span class="p">,</span> <span class="n">move_max</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">move_max</span><span class="p">,</span> <span class="n">move_max</span><span class="p">)</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">move_by_offset</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+            <span class="n">num_moves</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="n">MoveTargetOutOfBoundsException</span><span class="p">:</span>
+            <span class="n">num_fails</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">pass</span>
+
+    <span class="c1"># bot mitigation 2: scroll in random intervals down page</span>
+    <span class="n">scroll_down</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
+
+    <span class="c1"># bot mitigation 3: randomly wait so page visits happen with irregularity</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span><span class="n">RANDOM_SLEEP_LOW</span><span class="p">,</span> <span class="n">RANDOM_SLEEP_HIGH</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="close_other_windows"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.close_other_windows">[docs]</a><span class="k">def</span> <span class="nf">close_other_windows</span><span class="p">(</span><span class="n">webdriver</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    close all open pop-up windows and tabs other than the current one</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">main_handle</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">current_window_handle</span>
+    <span class="n">windows</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">window_handles</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">window</span> <span class="o">!=</span> <span class="n">main_handle</span><span class="p">:</span>
+                <span class="n">webdriver</span><span class="o">.</span><span class="n">switch_to_window</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+                <span class="n">webdriver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">webdriver</span><span class="o">.</span><span class="n">switch_to_window</span><span class="p">(</span><span class="n">main_handle</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="tab_restart_browser"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.tab_restart_browser">[docs]</a><span class="k">def</span> <span class="nf">tab_restart_browser</span><span class="p">(</span><span class="n">webdriver</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    kills the current tab and creates a new one to stop traffic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># note: this technically uses windows, not tabs, due to problems with</span>
+    <span class="c1"># chrome-targeted keyboard commands in Selenium 3 (intermittent</span>
+    <span class="c1"># nonsense WebDriverExceptions are thrown). windows can be reliably</span>
+    <span class="c1"># created, although we do have to detour into JS to do it.</span>
+    <span class="n">close_other_windows</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">current_url</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;about:blank&#39;</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Create a new window.  Note that it is not practical to use</span>
+    <span class="c1"># noopener here, as we would then be forced to specify a bunch of</span>
+    <span class="c1"># other &quot;features&quot; that we don&#39;t know whether they are on or off.</span>
+    <span class="c1"># Closing the old window will kill the opener anyway.</span>
+    <span class="n">webdriver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;window.open(&#39;&#39;)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># This closes the _old_ window, and does _not_ switch to the new one.</span>
+    <span class="n">webdriver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># The only remaining window handle will be for the new window;</span>
+    <span class="c1"># switch to it.</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">webdriver</span><span class="o">.</span><span class="n">window_handles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">webdriver</span><span class="o">.</span><span class="n">switch_to_window</span><span class="p">(</span><span class="n">webdriver</span><span class="o">.</span><span class="n">window_handles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="get_website"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.get_website">[docs]</a><span class="k">def</span> <span class="nf">get_website</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">,</span> <span class="n">webdriver</span><span class="p">,</span>
+                <span class="n">browser_params</span><span class="p">,</span> <span class="n">extension_socket</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    goes to &lt;url&gt; using the given &lt;webdriver&gt; instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tab_restart_browser</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">extension_socket</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">extension_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">visit_id</span><span class="p">)</span>
+
+    <span class="c1"># Execute a get through selenium</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">webdriver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># Sleep after get returns</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep</span><span class="p">)</span>
+
+    <span class="c1"># Close modal dialog if exists</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">webdriver</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">alert_is_present</span><span class="p">())</span>
+        <span class="n">alert</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">switch_to_alert</span><span class="p">()</span>
+        <span class="n">alert</span><span class="o">.</span><span class="n">dismiss</span><span class="p">()</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">TimeoutException</span><span class="p">,</span> <span class="n">WebDriverException</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="n">close_other_windows</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;bot_mitigation&#39;</span><span class="p">]:</span>
+        <span class="n">bot_mitigation</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="browse_website"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.browse_website">[docs]</a><span class="k">def</span> <span class="nf">browse_website</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">num_links</span><span class="p">,</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">,</span> <span class="n">webdriver</span><span class="p">,</span>
+                   <span class="n">browser_params</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">extension_socket</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calls get_website before visiting &lt;num_links&gt; present on the page.</span>
+
+<span class="sd">    Note: the site_url in the site_visits table for the links visited will</span>
+<span class="sd">    be the site_url of the original page and NOT the url of the links visited.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># First get the site</span>
+    <span class="n">get_website</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">,</span> <span class="n">webdriver</span><span class="p">,</span>
+                <span class="n">browser_params</span><span class="p">,</span> <span class="n">extension_socket</span><span class="p">)</span>
+
+    <span class="c1"># Then visit a few subpages</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_links</span><span class="p">):</span>
+        <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">get_intra_links</span><span class="p">(</span><span class="n">webdriver</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+                 <span class="k">if</span> <span class="n">is_displayed</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">links</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">links</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: visiting internal link </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="n">links</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">)))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">links</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+            <span class="n">wait_until_loaded</span><span class="p">(</span><span class="n">webdriver</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sleep</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;bot_mitigation&#39;</span><span class="p">]:</span>
+                <span class="n">bot_mitigation</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
+            <span class="n">webdriver</span><span class="o">.</span><span class="n">back</span><span class="p">()</span>
+            <span class="n">wait_until_loaded</span><span class="p">(</span><span class="n">webdriver</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dump_flash_cookies"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.dump_flash_cookies">[docs]</a><span class="k">def</span> <span class="nf">dump_flash_cookies</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">,</span> <span class="n">webdriver</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">,</span>
+                       <span class="n">manager_params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Save newly changed Flash LSOs to database</span>
+
+<span class="sd">    We determine which LSOs to save by the `start_time` timestamp.</span>
+<span class="sd">    This timestamp should be taken prior to calling the `get` for</span>
+<span class="sd">    which creates these changes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set up a connection to DataAggregator</span>
+    <span class="n">tab_restart_browser</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>  <span class="c1"># kills window to avoid stray requests</span>
+    <span class="n">sock</span> <span class="o">=</span> <span class="n">clientsocket</span><span class="p">()</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="o">*</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;aggregator_address&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Flash cookies</span>
+    <span class="n">flash_cookies</span> <span class="o">=</span> <span class="n">get_flash_cookies</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cookie</span> <span class="ow">in</span> <span class="n">flash_cookies</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">cookie</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;crawl_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">browser_params</span><span class="p">[</span><span class="s2">&quot;crawl_id&quot;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;visit_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">visit_id</span>
+        <span class="n">sock</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="s2">&quot;flash_cookies&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+
+    <span class="c1"># Close connection to db</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="save_screenshot"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.save_screenshot">[docs]</a><span class="k">def</span> <span class="nf">save_screenshot</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">crawl_id</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Save a screenshot of the current viewport&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">suffix</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+
+    <span class="n">urlhash</span> <span class="o">=</span> <span class="n">md5</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">current_url</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;screenshot_path&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">-</span><span class="si">%s%s</span><span class="s1">.png&#39;</span> <span class="o">%</span>
+                           <span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">urlhash</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">save_screenshot</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_stitch_screenshot_parts</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">crawl_id</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">):</span>
+    <span class="c1"># Read image parts and compute dimensions of output image</span>
+    <span class="n">total_height</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">max_scroll</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">max_width</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">images</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;screenshot_path&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;parts&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">*-part-*.png&#39;</span> <span class="o">%</span> <span class="n">visit_id</span><span class="p">)):</span>
+
+        <span class="c1"># Load image from disk and parse params out of filename</span>
+        <span class="n">img_obj</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">img_obj</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">f</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">))</span>
+        <span class="n">outname</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">curr_scroll</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">curr_scroll</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">curr_scroll</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="c1"># Update output image size</span>
+        <span class="k">if</span> <span class="n">curr_scroll</span> <span class="o">&gt;</span> <span class="n">max_scroll</span><span class="p">:</span>
+            <span class="n">max_scroll</span> <span class="o">=</span> <span class="n">curr_scroll</span>
+            <span class="n">total_height</span> <span class="o">=</span> <span class="n">max_scroll</span> <span class="o">+</span> <span class="n">height</span>
+
+        <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="n">max_width</span><span class="p">:</span>
+            <span class="n">max_width</span> <span class="o">=</span> <span class="n">width</span>
+
+        <span class="c1"># Save image parameters</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">img</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img_obj</span>
+        <span class="n">img</span><span class="p">[</span><span class="s1">&#39;scroll&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_scroll</span>
+        <span class="n">images</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">img</span>
+
+    <span class="c1"># Output filename same for all parts, so we can just use last filename</span>
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">outname</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span>
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;screenshot_path&#39;</span><span class="p">],</span> <span class="n">outname</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;RGB&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">max_width</span><span class="p">,</span> <span class="n">total_height</span><span class="p">))</span>
+
+    <span class="c1"># Compute dimensions for output image</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">images</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">paste</span><span class="p">(</span><span class="n">im</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="n">box</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">img</span><span class="p">[</span><span class="s1">&#39;scroll&#39;</span><span class="p">]))</span>
+        <span class="n">img</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">SystemError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: SystemError while trying to save screenshot </span><span class="si">%s</span><span class="s2">. </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Slices of image </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> Final size </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">crawl_id</span><span class="p">,</span> <span class="n">outname</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">]),</span>
+             <span class="n">max_width</span><span class="p">,</span> <span class="n">total_height</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="screenshot_full_page"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.screenshot_full_page">[docs]</a><span class="k">def</span> <span class="nf">screenshot_full_page</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">crawl_id</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span>
+                         <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+
+    <span class="n">outdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;screenshot_path&#39;</span><span class="p">],</span> <span class="s1">&#39;parts&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">suffix</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+    <span class="n">urlhash</span> <span class="o">=</span> <span class="n">md5</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">current_url</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">-</span><span class="si">%s%s</span><span class="s1">-part-</span><span class="si">%%</span><span class="s1">i-</span><span class="si">%%</span><span class="s1">i.png&#39;</span> <span class="o">%</span>
+                           <span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">urlhash</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">part</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">max_height</span> <span class="o">=</span> <span class="n">execute_script_with_retry</span><span class="p">(</span>
+            <span class="n">driver</span><span class="p">,</span> <span class="s1">&#39;return document.body.scrollHeight;&#39;</span><span class="p">)</span>
+        <span class="n">inner_height</span> <span class="o">=</span> <span class="n">execute_script_with_retry</span><span class="p">(</span>
+            <span class="n">driver</span><span class="p">,</span> <span class="s1">&#39;return window.innerHeight;&#39;</span><span class="p">)</span>
+        <span class="n">curr_scrollY</span> <span class="o">=</span> <span class="n">execute_script_with_retry</span><span class="p">(</span>
+            <span class="n">driver</span><span class="p">,</span> <span class="s1">&#39;return window.scrollY;&#39;</span><span class="p">)</span>
+        <span class="n">prev_scrollY</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">save_screenshot</span><span class="p">(</span><span class="n">outname</span> <span class="o">%</span> <span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">curr_scrollY</span><span class="p">))</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">curr_scrollY</span> <span class="o">+</span> <span class="n">inner_height</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_height</span> <span class="ow">and</span> \
+                <span class="n">curr_scrollY</span> <span class="o">!=</span> <span class="n">prev_scrollY</span><span class="p">:</span>
+
+            <span class="c1"># Scroll down to bottom of previous viewport</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s1">&#39;window.scrollBy(0, window.innerHeight)&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: WebDriverException while scrolling, &quot;</span>
+                    <span class="s2">&quot;screenshot may be misaligned!&quot;</span> <span class="o">%</span> <span class="n">crawl_id</span><span class="p">)</span>
+                <span class="k">pass</span>
+
+            <span class="c1"># Update control variables</span>
+            <span class="n">part</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">prev_scrollY</span> <span class="o">=</span> <span class="n">curr_scrollY</span>
+            <span class="n">curr_scrollY</span> <span class="o">=</span> <span class="n">execute_script_with_retry</span><span class="p">(</span>
+                <span class="n">driver</span><span class="p">,</span> <span class="s1">&#39;return window.scrollY;&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Save screenshot</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">save_screenshot</span><span class="p">(</span><span class="n">outname</span> <span class="o">%</span> <span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">curr_scrollY</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="n">excp</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Exception while taking full page screenshot </span><span class="se">\n</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">crawl_id</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">excp</span><span class="p">)))</span>
+        <span class="k">return</span>
+
+    <span class="n">_stitch_screenshot_parts</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">crawl_id</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dump_page_source"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.dump_page_source">[docs]</a><span class="k">def</span> <span class="nf">dump_page_source</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">suffix</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">md5</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">current_url</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;source_dump_path&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">-</span><span class="si">%s%s</span><span class="s1">.html&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">outname</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">page_source</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="recursive_dump_page_source"><a class="viewcode-back" href="../../../source/automation.Commands.html#automation.Commands.browser_commands.recursive_dump_page_source">[docs]</a><span class="k">def</span> <span class="nf">recursive_dump_page_source</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Dump a compressed html tree for the current page visit&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">suffix</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">md5</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">current_url</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;source_dump_path&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">-</span><span class="si">%s%s</span><span class="s1">.json.gz&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="n">outname</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">collect_source</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">frame_stack</span><span class="p">,</span> <span class="n">rv</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="n">is_top_frame</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+        <span class="c1"># Gather frame information</span>
+        <span class="n">doc_url</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.document.URL;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_top_frame</span><span class="p">:</span>
+            <span class="n">page_source</span> <span class="o">=</span> <span class="n">rv</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">page_source</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">page_source</span><span class="p">[</span><span class="s1">&#39;doc_url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc_url</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">page_source</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">page_source</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="n">page_source</span><span class="p">[</span><span class="s1">&#39;iframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># Store frame info in correct area of return value</span>
+        <span class="k">if</span> <span class="n">is_top_frame</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">out_dict</span> <span class="o">=</span> <span class="n">rv</span><span class="p">[</span><span class="s1">&#39;iframes&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frame_stack</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">out_dict</span> <span class="o">=</span> <span class="n">out_dict</span><span class="p">[</span><span class="n">frame</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;iframes&#39;</span><span class="p">]</span>
+        <span class="n">out_dict</span><span class="p">[</span><span class="n">frame_stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">page_source</span>
+
+    <span class="n">page_source</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">execute_in_all_frames</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">collect_source</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;rv&#39;</span><span class="p">:</span> <span class="n">page_source</span><span class="p">})</span>
+
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">GzipFile</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">page_source</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,46 @@
+automation.DataAggregator package
+=================================
+
+Submodules
+----------
+
+automation.DataAggregator.BaseAggregator module
+-----------------------------------------------
+
+.. automodule:: automation.DataAggregator.BaseAggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.DataAggregator.LocalAggregator module
+------------------------------------------------
+
+.. automodule:: automation.DataAggregator.LocalAggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.DataAggregator.S3Aggregator module
+---------------------------------------------
+
+.. automodule:: automation.DataAggregator.S3Aggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.DataAggregator.parquet\_schema module
+------------------------------------------------
+
+.. automodule:: automation.DataAggregator.parquet_schema
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: automation.DataAggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:

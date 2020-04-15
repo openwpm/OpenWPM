@@ -1,0 +1,620 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.BrowserManager &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.BrowserManager</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Empty</span> <span class="k">as</span> <span class="n">EmptyQueue</span>
+
+<span class="kn">import</span> <span class="nn">psutil</span>
+<span class="kn">from</span> <span class="nn">multiprocess</span> <span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">from</span> <span class="nn">selenium.common.exceptions</span> <span class="kn">import</span> <span class="n">WebDriverException</span>
+<span class="kn">from</span> <span class="nn">tblib</span> <span class="kn">import</span> <span class="n">pickling_support</span>
+
+<span class="kn">from</span> <span class="nn">.Commands</span> <span class="kn">import</span> <span class="n">command_executor</span>
+<span class="kn">from</span> <span class="nn">.Commands.Types</span> <span class="kn">import</span> <span class="n">ShutdownCommand</span>
+<span class="kn">from</span> <span class="nn">.DeployBrowsers</span> <span class="kn">import</span> <span class="n">deploy_browser</span>
+<span class="kn">from</span> <span class="nn">.Errors</span> <span class="kn">import</span> <span class="n">BrowserConfigError</span><span class="p">,</span> <span class="n">BrowserCrashError</span><span class="p">,</span> <span class="n">ProfileLoadError</span>
+<span class="kn">from</span> <span class="nn">.SocketInterface</span> <span class="kn">import</span> <span class="n">clientsocket</span>
+<span class="kn">from</span> <span class="nn">.utilities.multiprocess_utils</span> <span class="kn">import</span> <span class="n">Process</span><span class="p">,</span> <span class="n">parse_traceback_for_sentry</span>
+
+<span class="n">pickling_support</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="Browser"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser">[docs]</a><span class="k">class</span> <span class="nc">Browser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     The Browser class is responsbile for holding all of the</span>
+<span class="sd">     configuration and status information on BrowserManager process</span>
+<span class="sd">     it corresponds to. It also includes a set of methods for managing</span>
+<span class="sd">     the BrowserManager process and its child processes/threads.</span>
+<span class="sd">     &lt;manager_params&gt; are the TaskManager configuration settings.</span>
+<span class="sd">     &lt;browser_params&gt; are per-browser parameter settings (e.g. whether</span>
+<span class="sd">                      this browser is headless, etc.)</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">):</span>
+        <span class="c1"># Constants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SPAWN_TIMEOUT</span> <span class="o">=</span> <span class="mi">120</span>  <span class="c1"># seconds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_UNSUCCESSFUL_SPAWN_LIMIT</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="c1"># manager parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_socket_address</span> <span class="o">=</span> <span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;aggregator_address&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span> <span class="o">=</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr_visit_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">browser_params</span> <span class="o">=</span> <span class="n">browser_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager_params</span> <span class="o">=</span> <span class="n">manager_params</span>
+
+        <span class="c1"># Queues and process IDs for BrowserManager</span>
+
+        <span class="c1"># thread to run commands issues from TaskManager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># queue for passing command tuples to BrowserManager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># queue for receiving command execution status from BrowserManager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_queue</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># pid for browser instance controlled by BrowserManager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">browser_pid</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># boolean that says if the BrowserManager new (to optimize restarts)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fresh</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># boolean indicating if the browser should be restarted</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">restart_required</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_timeout</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># timeout of the current command</span>
+        <span class="c1"># dict of additional browser profile settings (e.g. screen_res)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">browser_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># process that controls browser</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;openwpm&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Browser.ready"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.ready">[docs]</a>    <span class="k">def</span> <span class="nf">ready</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return if the browser is ready to accept a command &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> \
+            <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Browser.set_visit_id"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.set_visit_id">[docs]</a>    <span class="k">def</span> <span class="nf">set_visit_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr_visit_id</span> <span class="o">=</span> <span class="n">visit_id</span></div>
+
+<div class="viewcode-block" id="Browser.launch_browser_manager"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.launch_browser_manager">[docs]</a>    <span class="k">def</span> <span class="nf">launch_browser_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets up the BrowserManager and gets the process id, browser pid and,</span>
+<span class="sd">        if applicable, screen pid. loads associated user profile if necessary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Unsupported. See https://github.com/mozilla/OpenWPM/projects/2</span>
+        <span class="c1"># if this is restarting from a crash, update the tar location</span>
+        <span class="c1"># to be a tar of the crashed browser&#39;s history</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        if self.current_profile_path is not None:</span>
+<span class="sd">            # tar contents of crashed profile to a temp dir</span>
+<span class="sd">            tempdir = tempfile.mkdtemp(prefix=&quot;owpm_profile_archive_&quot;) + &quot;/&quot;</span>
+<span class="sd">            profile_commands.dump_profile(</span>
+<span class="sd">                self.current_profile_path,</span>
+<span class="sd">                self.manager_params,</span>
+<span class="sd">                self.browser_params,</span>
+<span class="sd">                tempdir,</span>
+<span class="sd">                close_webdriver=False,</span>
+<span class="sd">                browser_settings=self.browser_settings</span>
+<span class="sd">            )</span>
+<span class="sd">            # make sure browser loads crashed profile</span>
+<span class="sd">            self.browser_params[&#39;profile_tar&#39;] = tempdir</span>
+<span class="sd">            # don&#39;t re-randomize attributes</span>
+<span class="sd">            self.browser_params[&#39;random_attributes&#39;] = False</span>
+<span class="sd">            crash_recovery = True</span>
+<span class="sd">        else:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Launching browser...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+        <span class="p">)</span>
+        <span class="n">tempdir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">crash_recovery</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fresh</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">crash_recovery</span>
+
+        <span class="c1"># Try to spawn the browser within the timelimit</span>
+        <span class="n">unsuccessful_spawns</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">def</span> <span class="nf">check_queue</span><span class="p">(</span><span class="n">launch_status</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SPAWN_TIMEOUT</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;STATUS&#39;</span><span class="p">:</span>
+                <span class="n">launch_status</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CRITICAL&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;FAILED&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BrowserCrashError</span><span class="p">(</span>
+                    <span class="s1">&#39;Browser spawn returned failure status&#39;</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">success</span> <span class="ow">and</span> \
+                <span class="n">unsuccessful_spawns</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UNSUCCESSFUL_SPAWN_LIMIT</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Spawn attempt </span><span class="si">%i</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">,</span> <span class="n">unsuccessful_spawns</span><span class="p">))</span>
+            <span class="c1"># Resets the command/status queues</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_queue</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">Queue</span><span class="p">(),</span> <span class="n">Queue</span><span class="p">())</span>
+
+            <span class="c1"># builds and launches the browser_manager</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_params</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">manager_params</span><span class="p">,</span> <span class="n">crash_recovery</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">BrowserManager</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+            <span class="c1"># Read success status of browser manager</span>
+            <span class="n">launch_status</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># 1. Selenium profile created</span>
+                <span class="n">spawned_profile_path</span> <span class="o">=</span> <span class="n">check_queue</span><span class="p">(</span><span class="n">launch_status</span><span class="p">)</span>
+                <span class="c1"># 2. Profile tar loaded (if necessary)</span>
+                <span class="n">check_queue</span><span class="p">(</span><span class="n">launch_status</span><span class="p">)</span>
+                <span class="c1"># 3. Browser launch attempted</span>
+                <span class="n">check_queue</span><span class="p">(</span><span class="n">launch_status</span><span class="p">)</span>
+                <span class="c1"># 4. Browser launched</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">browser_pid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_settings</span><span class="p">)</span> <span class="o">=</span> <span class="n">check_queue</span><span class="p">(</span>
+                    <span class="n">launch_status</span><span class="p">)</span>
+
+                <span class="p">(</span><span class="n">driver_profile_path</span><span class="p">,</span> <span class="n">ready</span><span class="p">)</span> <span class="o">=</span> <span class="n">check_queue</span><span class="p">(</span><span class="n">launch_status</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ready</span> <span class="o">!=</span> <span class="s1">&#39;READY&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Mismatch of status queue return values, &quot;</span>
+                        <span class="s2">&quot;trying again...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+                    <span class="p">)</span>
+                    <span class="n">unsuccessful_spawns</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">continue</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">EmptyQueue</span><span class="p">,</span> <span class="n">BrowserCrashError</span><span class="p">):</span>
+                <span class="n">unsuccessful_spawns</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">error_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="n">status_strings</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s1">&#39;Proxy Ready&#39;</span><span class="p">,</span> <span class="s1">&#39;Profile Created&#39;</span><span class="p">,</span> <span class="s1">&#39;Profile Tar&#39;</span><span class="p">,</span> <span class="s1">&#39;Display&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;Launch Attempted&#39;</span><span class="p">,</span> <span class="s1">&#39;Browser Launched&#39;</span><span class="p">,</span> <span class="s1">&#39;Browser Ready&#39;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">status_strings</span><span class="p">:</span>
+                    <span class="n">error_string</span> <span class="o">+=</span> <span class="s2">&quot; | </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">string</span><span class="p">,</span> <span class="n">launch_status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Spawn unsuccessful </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">,</span>
+                                                           <span class="n">error_string</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">close_browser_manager</span><span class="p">()</span>
+                <span class="k">if</span> <span class="s1">&#39;Profile Created&#39;</span> <span class="ow">in</span> <span class="n">launch_status</span><span class="p">:</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">spawned_profile_path</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># If the browser spawned successfully, we should update the</span>
+        <span class="c1"># current profile path class variable and clean up the tempdir</span>
+        <span class="c1"># and previous profile path.</span>
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Browser spawn sucessful!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+            <span class="n">previous_profile_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span> <span class="o">=</span> <span class="n">driver_profile_path</span>
+            <span class="k">if</span> <span class="n">driver_profile_path</span> <span class="o">!=</span> <span class="n">spawned_profile_path</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">spawned_profile_path</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">previous_profile_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">previous_profile_path</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tempdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">tempdir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">success</span></div>
+
+<div class="viewcode-block" id="Browser.restart_browser_manager"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.restart_browser_manager">[docs]</a>    <span class="k">def</span> <span class="nf">restart_browser_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clear_profile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        kill and restart the two worker processes</span>
+<span class="sd">        &lt;clear_profile&gt; marks whether we want to wipe the old profile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: BrowserManager restart initiated. &quot;</span>
+                         <span class="s2">&quot;Clear profile? </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">,</span> <span class="n">clear_profile</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fresh</span><span class="p">:</span>  <span class="c1"># Return success if browser is fresh</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Skipping restart since the browser &quot;</span>
+                             <span class="s2">&quot;is a fresh instance already&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_browser_manager</span><span class="p">()</span>
+
+        <span class="c1"># if crawl should be stateless we can clear profile</span>
+        <span class="k">if</span> <span class="n">clear_profile</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;profile_tar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">launch_browser_manager</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Browser.close_browser_manager"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.close_browser_manager">[docs]</a>    <span class="k">def</span> <span class="nf">close_browser_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Attempt to close the webdriver and browser manager processes</span>
+<span class="sd">        from this thread.</span>
+<span class="sd">        If the browser manager process is unresponsive, the process is killed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Closing browser...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Join current command thread (if it exists)</span>
+        <span class="n">in_command_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">in_command_thread</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Joining command thread&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_timeout</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+
+            <span class="c1"># If command thread is still alive, process is locked</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: command thread failed to join during close. &quot;</span>
+                    <span class="s2">&quot;Assuming the browser process is locked...&quot;</span> <span class="o">%</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kill_browser_manager</span><span class="p">()</span>
+                <span class="k">return</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: </span><span class="si">%f</span><span class="s2"> seconds to join command thread&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">))</span>
+
+        <span class="c1"># If command queue doesn&#39;t exist, this likely means the browser</span>
+        <span class="c1"># failed to launch properly. Let&#39;s kill any child processes that</span>
+        <span class="c1"># we can find.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Command queue not found while closing.&quot;</span> <span class="o">%</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kill_browser_manager</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Send the shutdown command</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">ShutdownCommand</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">command</span><span class="p">))</span>
+
+        <span class="c1"># Verify that webdriver has closed (30 second timeout)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">EmptyQueue</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Status queue timeout while closing browser.&quot;</span> <span class="o">%</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kill_browser_manager</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;OK&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Command failure while closing browser.&quot;</span> <span class="o">%</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kill_browser_manager</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Verify that the browser process has closed (30 second timeout)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Browser manager process still alive 30 seconds &quot;</span>
+                <span class="s2">&quot;after executing shutdown command.&quot;</span> <span class="o">%</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kill_browser_manager</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Browser manager closed successfully.&quot;</span> <span class="o">%</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Browser.kill_browser_manager"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.kill_browser_manager">[docs]</a>    <span class="k">def</span> <span class="nf">kill_browser_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Kill the BrowserManager process and all of its children&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Attempting to kill BrowserManager with pid </span><span class="si">%i</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Browser PID: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">browser_pid</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">pid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">browser_manager</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Browser manager process does &quot;</span>
+                                  <span class="s2">&quot;not exist&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_pid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="sd">&quot;&quot;&quot;`browser_pid` is the geckodriver process. We first kill</span>
+<span class="sd">            the child processes (i.e. firefox) and then kill the geckodriver</span>
+<span class="sd">            process.&quot;&quot;&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">geckodriver</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">pid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">browser_pid</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">geckodriver</span><span class="o">.</span><span class="n">children</span><span class="p">():</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">child</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Geckodriver child process already &quot;</span>
+                            <span class="s2">&quot;killed (pid=</span><span class="si">%i</span><span class="s2">).&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">pid</span><span class="p">))</span>
+                        <span class="k">pass</span>
+                <span class="n">geckodriver</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+                <span class="n">geckodriver</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">geckodriver</span><span class="o">.</span><span class="n">children</span><span class="p">():</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Geckodriver process already &quot;</span>
+                                  <span class="s2">&quot;killed.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="k">except</span> <span class="n">psutil</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Timeout while waiting for &quot;</span>
+                                  <span class="s2">&quot;geckodriver or browser process to close &quot;</span> <span class="o">%</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+                <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Browser.shutdown_browser"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.Browser.shutdown_browser">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown_browser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">during_init</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Runs the closing tasks for this Browser/BrowserManager &quot;&quot;&quot;</span>
+        <span class="c1"># Close BrowserManager process and children</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Closing browser manager...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_browser_manager</span><span class="p">()</span>
+
+        <span class="c1"># Archive browser profile (if requested)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">during_init</span> <span class="ow">and</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;profile_archive_dir&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Archiving the browser profile directory is &quot;</span>
+                <span class="s2">&quot;currently unsupported. &quot;</span>
+                <span class="s2">&quot;See: https://github.com/mozilla/OpenWPM/projects/2&quot;</span> <span class="o">%</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crawl_id</span>
+            <span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        self.logger.debug(</span>
+<span class="sd">            &quot;BROWSER %i: during_init=%s | profile_archive_dir=%s&quot; % (</span>
+<span class="sd">                self.crawl_id, str(during_init),</span>
+<span class="sd">                self.browser_params[&#39;profile_archive_dir&#39;])</span>
+<span class="sd">        )</span>
+<span class="sd">        if (not during_init and</span>
+<span class="sd">                self.browser_params[&#39;profile_archive_dir&#39;] is not None):</span>
+<span class="sd">            self.logger.debug(</span>
+<span class="sd">                &quot;BROWSER %i: Archiving browser profile directory to %s&quot; % (</span>
+<span class="sd">                    self.crawl_id, self.browser_params[&#39;profile_archive_dir&#39;]))</span>
+<span class="sd">            profile_commands.dump_profile(</span>
+<span class="sd">                self.current_profile_path,</span>
+<span class="sd">                self.manager_params,</span>
+<span class="sd">                self.browser_params,</span>
+<span class="sd">                self.browser_params[&#39;profile_archive_dir&#39;],</span>
+<span class="sd">                close_webdriver=False,</span>
+<span class="sd">                browser_settings=self.browser_settings,</span>
+<span class="sd">                compress=True,</span>
+<span class="sd">                save_flash=self.browser_params[&#39;disable_flash&#39;] is False</span>
+<span class="sd">            )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Clean up temporary files</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_profile_path</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BrowserManager"><a class="viewcode-back" href="../../source/automation.html#automation.BrowserManager.BrowserManager">[docs]</a><span class="k">def</span> <span class="nf">BrowserManager</span><span class="p">(</span><span class="n">command_queue</span><span class="p">,</span> <span class="n">status_queue</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">,</span>
+                   <span class="n">manager_params</span><span class="p">,</span> <span class="n">crash_recovery</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The BrowserManager function runs in each new browser process.</span>
+<span class="sd">    It is responsible for listening to command instructions from</span>
+<span class="sd">    the Task Manager and passing them to the command module to execute</span>
+<span class="sd">    and interface with Selenium. Command execution status is sent back</span>
+<span class="sd">    to the TaskManager.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;openwpm&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Start webdriver and browser</span>
+        <span class="n">driver</span><span class="p">,</span> <span class="n">prof_folder</span><span class="p">,</span> <span class="n">browser_settings</span> <span class="o">=</span> <span class="n">deploy_browser</span><span class="o">.</span><span class="n">deploy_browser</span><span class="p">(</span>
+            <span class="n">status_queue</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">crash_recovery</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prof_folder</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">prof_folder</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span>
+
+        <span class="c1"># Read the extension port -- if extension is enabled</span>
+        <span class="c1"># TODO: Initial communication from extension to TM should use sockets</span>
+        <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;browser&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;firefox&#39;</span> <span class="ow">and</span> \
+                <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;extension_enabled&#39;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Looking for extension port information &quot;</span>
+                         <span class="s2">&quot;in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="n">prof_folder</span><span class="p">))</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">ep_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">prof_folder</span><span class="p">,</span> <span class="s1">&#39;extension_port.txt&#39;</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ep_filename</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                        <span class="k">break</span>
+                <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">:</span>
+                        <span class="k">raise</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="n">elapsed</span> <span class="o">+=</span> <span class="mf">0.1</span>
+            <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># try one last time, allowing all exceptions to propagate</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ep_filename</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Connecting to extension on port </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="n">port</span><span class="p">))</span>
+            <span class="n">extension_socket</span> <span class="o">=</span> <span class="n">clientsocket</span><span class="p">(</span><span class="n">serialization</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+            <span class="n">extension_socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">extension_socket</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: BrowserManager ready.&quot;</span> <span class="o">%</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">])</span>
+
+        <span class="c1"># passes the profile folder, WebDriver pid back to the</span>
+        <span class="c1"># TaskManager to signal a successful startup</span>
+        <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s1">&#39;STATUS&#39;</span><span class="p">,</span> <span class="s1">&#39;Browser Ready&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">prof_folder</span><span class="p">,</span> <span class="s1">&#39;READY&#39;</span><span class="p">)))</span>
+        <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;profile_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prof_folder</span>
+
+        <span class="c1"># starts accepting arguments until told to die</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># no command for now -&gt; sleep to avoid pegging CPU on blocking get</span>
+            <span class="k">if</span> <span class="n">command_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">command</span> <span class="o">=</span> <span class="n">command_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="ow">is</span> <span class="n">ShutdownCommand</span><span class="p">:</span>
+                <span class="c1"># Geckodriver creates a copy of the profile (and the original</span>
+                <span class="c1"># temp file created by FirefoxProfile() is deleted).</span>
+                <span class="c1"># We clear the profile attribute here to prevent prints from:</span>
+                <span class="c1"># https://github.com/SeleniumHQ/selenium/blob/4e4160dd3d2f93757cafb87e2a1c20d6266f5554/py/selenium/webdriver/firefox/webdriver.py#L193-L199</span>
+                <span class="k">if</span> <span class="n">driver</span><span class="o">.</span><span class="n">profile</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">path</span><span class="p">):</span>
+                    <span class="n">driver</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+                <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;OK&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: EXECUTING COMMAND: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">command</span><span class="p">)))</span>
+
+            <span class="c1"># attempts to perform an action and return an OK signal</span>
+            <span class="c1"># if command fails for whatever reason, tell the TaskManager to</span>
+            <span class="c1"># kill and restart its worker processes</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">command_executor</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span>
+                    <span class="n">command</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">browser_settings</span><span class="p">,</span>
+                    <span class="n">browser_params</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">extension_socket</span><span class="p">)</span>
+                <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;OK&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+                <span class="c1"># We handle WebDriverExceptions separately here because they</span>
+                <span class="c1"># are quite common, and we often still have a handle to the</span>
+                <span class="c1"># browser, allowing us to run the SHUTDOWN command.</span>
+                <span class="n">tb</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+                <span class="k">if</span> <span class="s1">&#39;about:neterror&#39;</span> <span class="ow">in</span> <span class="n">tb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+                        <span class="p">(</span><span class="s1">&#39;NETERROR&#39;</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()))</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">extra</span> <span class="o">=</span> <span class="n">parse_traceback_for_sentry</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+                <span class="n">extra</span><span class="p">[</span><span class="s1">&#39;exception&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: WebDriverException while executing command&quot;</span> <span class="o">%</span>
+                    <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="n">extra</span>
+                <span class="p">)</span>
+                <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s1">&#39;FAILED&#39;</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())))</span>
+
+    <span class="k">except</span> <span class="p">(</span><span class="n">ProfileLoadError</span><span class="p">,</span> <span class="n">BrowserConfigError</span><span class="p">,</span> <span class="ne">AssertionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> thrown, informing parent and raising&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="n">e</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+        <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s1">&#39;CRITICAL&#39;</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())))</span>
+        <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">parse_traceback_for_sentry</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+        <span class="n">extra</span><span class="p">[</span><span class="s1">&#39;exception&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s2">&quot;BROWSER </span><span class="si">%i</span><span class="s2">: Crash in driver, restarting browser manager&quot;</span> <span class="o">%</span>
+            <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;crawl_id&#39;</span><span class="p">],</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="n">extra</span>
+        <span class="p">)</span>
+        <span class="n">status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s1">&#39;FAILED&#39;</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())))</span>
+        <span class="k">return</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

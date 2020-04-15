@@ -1,0 +1,54 @@
+automation.Commands.utils package
+=================================
+
+Submodules
+----------
+
+automation.Commands.utils.XPathUtil module
+------------------------------------------
+
+.. automodule:: automation.Commands.utils.XPathUtil
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.utils.file\_utils module
+--------------------------------------------
+
+.. automodule:: automation.Commands.utils.file_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.utils.firefox\_profile module
+-------------------------------------------------
+
+.. automodule:: automation.Commands.utils.firefox_profile
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.utils.lso module
+------------------------------------
+
+.. automodule:: automation.Commands.utils.lso
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.utils.webdriver\_utils module
+-------------------------------------------------
+
+.. automodule:: automation.Commands.utils.webdriver_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: automation.Commands.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:

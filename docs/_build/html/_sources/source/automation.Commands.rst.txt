@@ -1,0 +1,54 @@
+automation.Commands package
+===========================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   automation.Commands.utils
+
+Submodules
+----------
+
+automation.Commands.Types module
+--------------------------------
+
+.. automodule:: automation.Commands.Types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.browser\_commands module
+--------------------------------------------
+
+.. automodule:: automation.Commands.browser_commands
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.command\_executor module
+--------------------------------------------
+
+.. automodule:: automation.Commands.command_executor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Commands.profile\_commands module
+--------------------------------------------
+
+.. automodule:: automation.Commands.profile_commands
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: automation.Commands
+   :members:
+   :undoc-members:
+   :show-inheritance:

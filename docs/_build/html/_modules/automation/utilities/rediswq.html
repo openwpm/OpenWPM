@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.utilities.rediswq &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.utilities.rediswq</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">redis</span>
+
+
+<div class="viewcode-block" id="RedisWQ"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ">[docs]</a><span class="k">class</span> <span class="nc">RedisWQ</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple Finite Work Queue with Redis Backend</span>
+
+<span class="sd">    This work queue is finite: as long as no more work is added</span>
+<span class="sd">    after workers start, the workers can detect when the queue</span>
+<span class="sd">    is completely empty.</span>
+
+<span class="sd">    The items in the work queue are assumed to have unique values.</span>
+
+<span class="sd">    This object is not intended to be used by multiple threads</span>
+<span class="sd">    concurrently.</span>
+
+<span class="sd">    From:</span>
+<span class="sd">    https://kubernetes.io/docs/tasks/job/fine-parallel-processing-work-queue</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RedisWQ.__init__"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">redis_kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Redis worker queue instance</span>
+
+<span class="sd">        The default connection parameters are:</span>
+<span class="sd">            * host=&#39;localhost&#39;</span>
+<span class="sd">            * port=6379</span>
+<span class="sd">            * db=0</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : string</span>
+<span class="sd">            A prefix that identified all of the objects associated with this</span>
+<span class="sd">            worker queue. e.g., the main work queue is identified by `name`,</span>
+<span class="sd">            and the processesing queue is identified by `name`:processing.</span>
+<span class="sd">        max_retries : int, optional</span>
+<span class="sd">            Number of times to retry a job before removing it from the queue.</span>
+<span class="sd">            If you don&#39;t wish to retry jobs, set the limit to 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">Redis</span><span class="p">(</span><span class="o">**</span><span class="n">redis_kwargs</span><span class="p">)</span>
+        <span class="c1"># The session ID will uniquely identify this &quot;worker&quot;.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="c1"># Work queue is implemented as two queues: main, and processing.</span>
+        <span class="c1"># Work is initially in main, and moved to processing when a client</span>
+        <span class="c1"># picks it up.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_main_q_key</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span> <span class="o">=</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;:processing&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_retry_hash_map_key</span> <span class="o">=</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;:retries&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lease_key_prefix</span> <span class="o">=</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;:leased_by_session:&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;openwpm&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_retries</span> <span class="o">=</span> <span class="n">max_retries</span></div>
+
+<div class="viewcode-block" id="RedisWQ.sessionID"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.sessionID">[docs]</a>    <span class="k">def</span> <span class="nf">sessionID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the ID for this session.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span></div>
+
+<div class="viewcode-block" id="RedisWQ._main_qsize"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ._main_qsize">[docs]</a>    <span class="k">def</span> <span class="nf">_main_qsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the size of the main queue.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_main_q_key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RedisWQ._processing_qsize"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ._processing_qsize">[docs]</a>    <span class="k">def</span> <span class="nf">_processing_qsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the size of the main queue.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RedisWQ.empty"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.empty">[docs]</a>    <span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the queue is empty, including work being done,</span>
+<span class="sd">        False otherwise.</span>
+
+<span class="sd">        False does not necessarily mean that there is work available to work</span>
+<span class="sd">        on right now,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_main_qsize</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processing_qsize</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="RedisWQ._maybe_renew_job"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ._maybe_renew_job">[docs]</a>    <span class="k">def</span> <span class="nf">_maybe_renew_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Transactionally move job from the processing to the work queue.</span>
+
+<span class="sd">        A job will not be renewed if it appears that another worker is</span>
+<span class="sd">        changing the processing queue or if the job has exceeded the</span>
+<span class="sd">        maximum number of retries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;Lease expired for job </span><span class="si">%s</span><span class="s2">. Attempting to move from processing &quot;</span>
+            <span class="s2">&quot;queue to work queue...[session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+        <span class="p">)</span>
+        <span class="c1"># A pipeline executes a set of commands as a transaction, but</span>
+        <span class="c1"># does not support rollback in the event any individual</span>
+        <span class="c1"># command fails.</span>
+        <span class="n">pipe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">transaction</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># First, watch the processing queue and retry count hash map for</span>
+        <span class="c1"># changes. The pipeline transaction won&#39;t execute if changes occur</span>
+        <span class="c1"># after this point. This allows us to prevent duplicate updates from</span>
+        <span class="c1"># different workers.</span>
+        <span class="n">pipe</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">)</span>
+        <span class="n">pipe</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_hash_map_key</span><span class="p">)</span>
+
+        <span class="c1"># Next, ensure that the job is still in the processing queue.</span>
+        <span class="c1"># The processing queue is relatively small, so this shouldn&#39;t</span>
+        <span class="c1"># be an expensive operation.</span>
+        <span class="k">if</span> <span class="n">job</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Job </span><span class="si">%s</span><span class="s2"> no longer in the processing queue, there is no need &quot;</span>
+                <span class="s2">&quot;to renew...&quot;</span> <span class="o">%</span> <span class="n">job</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Next, check that we haven&#39;t exceeded the retry limit for this job</span>
+        <span class="c1"># If we have, remove the job from the queue entirely and don&#39;t add it</span>
+        <span class="c1"># back to the main work queue</span>
+        <span class="n">retry_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_retry_number</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">retry_count</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_retries</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Job </span><span class="si">%s</span><span class="s2"> exceeded maximum retry count, attempting to remove &quot;</span>
+                <span class="s2">&quot;from the processing queue. [session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+            <span class="p">)</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">multi</span><span class="p">()</span>
+            <span class="n">pipe</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">lrem</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">job</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_retry_hash_map_key</span><span class="p">,</span> <span class="n">job</span>
+            <span class="p">)</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;Job </span><span class="si">%s</span><span class="s2"> successfully removed from the processing &quot;</span>
+                    <span class="s2">&quot;queue due to too many retries. [session </span><span class="si">%s</span><span class="s2">]&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;Removing job </span><span class="si">%s</span><span class="s2"> was interrupted due to a change by a &quot;</span>
+                    <span class="s2">&quot;concurrent worker. [session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+                <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Finally, execute the transaction to move the expired job</span>
+        <span class="c1"># back to the main queue and increment the retry counter by 1</span>
+        <span class="n">pipe</span><span class="o">.</span><span class="n">multi</span><span class="p">()</span>
+        <span class="n">pipe</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">lrem</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">job</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_main_q_key</span><span class="p">,</span> <span class="n">job</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">hincrby</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_retry_hash_map_key</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Job </span><span class="si">%s</span><span class="s2"> successfully moved from processing queue to &quot;</span>
+                <span class="s2">&quot;work queue for retry attempt </span><span class="si">%d</span><span class="s2">. [session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">retry_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Moving job </span><span class="si">%s</span><span class="s2"> was interrupted due to a change by a &quot;</span>
+                <span class="s2">&quot;concurrent worker. [session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+            <span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="RedisWQ.check_expired_leases"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.check_expired_leases">[docs]</a>    <span class="k">def</span> <span class="nf">check_expired_leases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return to the work queue</span>
+
+<span class="sd">        If the lease key is not present for an item (it expired or was</span>
+<span class="sd">        never created because the client crashed before creating it)</span>
+<span class="sd">        then move the item back to the main queue so others can work on</span>
+<span class="sd">        it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">processing</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lease_exists</span><span class="p">(</span><span class="n">job</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_renew_job</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">redis</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">WatchError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;Watched variable changed while trying to renew lease &quot;</span>
+                        <span class="s2">&quot;for job </span><span class="si">%s</span><span class="s2">. Skipping lease renew for now... &quot;</span>
+                        <span class="s2">&quot;[session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">())</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Exception while renewing job </span><span class="si">%s</span><span class="s2">. [session </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessionID</span><span class="p">()),</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="RedisWQ._itemkey"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ._itemkey">[docs]</a>    <span class="k">def</span> <span class="nf">_itemkey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a string that uniquely identifies an item (bytes).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha224</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RedisWQ._lease_exists"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ._lease_exists">[docs]</a>    <span class="k">def</span> <span class="nf">_lease_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if a lease on &#39;item&#39; exists.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lease_key_prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemkey</span><span class="p">(</span><span class="n">item</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="RedisWQ.lease"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.lease">[docs]</a>    <span class="k">def</span> <span class="nf">lease</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lease_secs</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Begin working on an item the work queue.</span>
+
+<span class="sd">        Lease the item for lease_secs.  After that time, other</span>
+<span class="sd">        workers may consider this client to have crashed or stalled</span>
+<span class="sd">        and pick up the item instead.</span>
+
+<span class="sd">        If optional args block is true and timeout is None (the default), block</span>
+<span class="sd">        if necessary until an item is available.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">block</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">brpoplpush</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_main_q_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">rpoplpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_main_q_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">item</span><span class="p">:</span>
+            <span class="c1"># Record that we (this session id) are working on a key. Expire</span>
+            <span class="c1"># that note after the lease timeout.</span>
+            <span class="c1"># Note: if we crash at this line of the program, then GC will see</span>
+            <span class="c1"># no lease for this item a later return it to the main queue.</span>
+            <span class="n">itemkey</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemkey</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">setex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lease_key_prefix</span> <span class="o">+</span> <span class="n">itemkey</span><span class="p">,</span>
+                           <span class="n">lease_secs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span></div>
+
+<div class="viewcode-block" id="RedisWQ.renew_lease"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.renew_lease">[docs]</a>    <span class="k">def</span> <span class="nf">renew_lease</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">lease_secs</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Checks if the item is currently leased by this client</span>
+<span class="sd">            and if so renews that lease by `lease_secs`</span>
+<span class="sd">            Return false if the lease was already expired&quot;&quot;&quot;</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lease_key_prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemkey</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">setex</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">lease_secs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="RedisWQ.get_retry_number"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.get_retry_number">[docs]</a>    <span class="k">def</span> <span class="nf">get_retry_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of retries for the given `job`.</span>
+
+<span class="sd">        This returns 0 if the job has never been retried. We do not attempt</span>
+<span class="sd">        to verify that the job is valid, is currently leased by the worker, etc</span>
+<span class="sd">        The caller is responsible for ensuring that there is currently a</span>
+<span class="sd">        lease on this job (thus ensuring the retry count reflects the current</span>
+<span class="sd">        state).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_retries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_hash_map_key</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_retries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">num_retries</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_retries</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">num_retries</span></div>
+
+<div class="viewcode-block" id="RedisWQ.complete"><a class="viewcode-back" href="../../../source/automation.utilities.html#automation.utilities.rediswq.RedisWQ.complete">[docs]</a>    <span class="k">def</span> <span class="nf">complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Complete working on the `job`.</span>
+
+<span class="sd">        If the lease expired, the item may not have completed, and some</span>
+<span class="sd">        other worker may have picked it up.  There is no indication</span>
+<span class="sd">        of what happened.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">lrem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processing_q_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_hash_map_key</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
+        <span class="c1"># If we crash here, then the GC code will try to move the value, but</span>
+        <span class="c1"># it will not be here, which is fine.  So this does not need to be a</span>
+        <span class="c1"># transaction.</span>
+        <span class="n">itemkey</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemkey</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lease_key_prefix</span> <span class="o">+</span> <span class="n">itemkey</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

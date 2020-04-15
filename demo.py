@@ -41,7 +41,7 @@ for i, site in enumerate(sites):
     # Parallelize sites over all number of browsers set above.
     # (To have all browsers go to the same sites, add `index='**'`)
     command_sequence = CommandSequence.CommandSequence(
-        site, reset=True, blocking=True, callback=lambda: print("CommandSequence {} done".format(i)))
+        site, reset=True, blocking=True, callback=lambda val=i: print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)

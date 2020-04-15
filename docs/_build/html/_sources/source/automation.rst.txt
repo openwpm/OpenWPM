@@ -1,0 +1,73 @@
+automation package
+==================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   automation.Commands
+   automation.DataAggregator
+   automation.DeployBrowsers
+   automation.utilities
+
+Submodules
+----------
+
+automation.BrowserManager module
+--------------------------------
+
+.. automodule:: automation.BrowserManager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.CommandSequence module
+---------------------------------
+
+.. automodule:: automation.CommandSequence
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.Errors module
+------------------------
+
+.. automodule:: automation.Errors
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.MPLogger module
+--------------------------
+
+.. automodule:: automation.MPLogger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.SocketInterface module
+---------------------------------
+
+.. automodule:: automation.SocketInterface
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+automation.TaskManager module
+-----------------------------
+
+.. automodule:: automation.TaskManager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: automation
+   :members:
+   :undoc-members:
+   :show-inheritance:

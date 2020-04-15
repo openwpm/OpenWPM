@@ -1,0 +1,284 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.CommandSequence &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.CommandSequence</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NewType</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">.Commands.Types</span> <span class="kn">import</span> <span class="p">(</span><span class="n">BrowseCommand</span><span class="p">,</span> <span class="n">DumpFlashCookiesCommand</span><span class="p">,</span>
+                             <span class="n">DumpPageSourceCommand</span><span class="p">,</span> <span class="n">DumpProfCommand</span><span class="p">,</span>
+                             <span class="n">GetCommand</span><span class="p">,</span> <span class="n">RecursiveDumpPageSourceCommand</span><span class="p">,</span>
+                             <span class="n">RunCustomFunctionCommand</span><span class="p">,</span> <span class="n">SaveScreenshotCommand</span><span class="p">,</span>
+                             <span class="n">ScreenshotFullPageCommand</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.Errors</span> <span class="kn">import</span> <span class="n">CommandExecutionError</span>
+
+<span class="n">Command</span> <span class="o">=</span> <span class="n">NewType</span><span class="p">(</span><span class="s1">&#39;Command&#39;</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="CommandSequence"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence">[docs]</a><span class="k">class</span> <span class="nc">CommandSequence</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A CommandSequence wraps a series of commands to be performed</span>
+<span class="sd">    on a visit to one top-level site into one logical</span>
+<span class="sd">    &quot;site visit,&quot; keyed by a visit id. An example of a CommandSequence</span>
+<span class="sd">    that visits a page and dumps cookies modified on that visit would be::</span>
+
+
+<span class="sd">        sequence = CommandSequence(url)</span>
+<span class="sd">        sequence.get()</span>
+<span class="sd">        sequence.save_screenshot()</span>
+<span class="sd">        task_manager.execute_command_sequence(sequence)</span>
+
+<span class="sd">    CommandSequence guarantees that a series of commands will be performed</span>
+<span class="sd">    by a single browser instance.</span>
+
+<span class="sd">    NOTE: Command dump_flash_cookies will close</span>
+<span class="sd">    the current tab - any command that relies on the page still being open,</span>
+<span class="sd">    like save_screenshot, extract_links, or dump_page_source, should be</span>
+<span class="sd">    called prior to that.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CommandSequence.__init__"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">blocking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">retry_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">site_rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize command sequence.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        url : string</span>
+<span class="sd">            url of page visit the command sequence should execute on</span>
+<span class="sd">        reset : bool, optional</span>
+<span class="sd">            True if browser should clear state and restart after sequence</span>
+<span class="sd">        blocking : bool, optional</span>
+<span class="sd">            True if sequence should block parent process during execution</span>
+<span class="sd">        retry_number : int, optional</span>
+<span class="sd">            Integer denoting the number of attempts that have been made to</span>
+<span class="sd">            execute this command. Will be saved in `crawl_history`.</span>
+<span class="sd">        site_rank : int, optional</span>
+<span class="sd">            Integer indicating the ranking of the page to visit, saved</span>
+<span class="sd">            to `site_visits`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span> <span class="o">=</span> <span class="n">reset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocking</span> <span class="o">=</span> <span class="n">blocking</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retry_number</span> <span class="o">=</span> <span class="n">retry_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Command</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">site_rank</span> <span class="o">=</span> <span class="n">site_rank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span></div>
+
+<div class="viewcode-block" id="CommandSequence.get"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sleep</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; goes to a url &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">GetCommand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">sleep</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="CommandSequence.browse"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_links</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sleep</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; browse a website and visit &lt;num_links&gt; links on the page &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">BrowseCommand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">num_links</span><span class="p">,</span> <span class="n">sleep</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="CommandSequence.dump_flash_cookies"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.dump_flash_cookies">[docs]</a>    <span class="k">def</span> <span class="nf">dump_flash_cookies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; dumps the local storage vectors (flash, localStorage, cookies) to db</span>
+<span class="sd">        Side effect: closes the current tab.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandExecutionError</span><span class="p">(</span>
+                <span class="s2">&quot;No get or browse request preceding &quot;</span>
+                <span class="s2">&quot;the dump storage vectors command&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">DumpFlashCookiesCommand</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.dump_profile"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.dump_profile">[docs]</a>    <span class="k">def</span> <span class="nf">dump_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dump_folder</span><span class="p">,</span> <span class="n">close_webdriver</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">compress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">120</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; dumps from the profile path to a given file (absolute path) &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Profile saving is currently unsupported. &quot;</span>
+            <span class="s2">&quot;See: https://github.com/mozilla/OpenWPM/projects/2.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">DumpProfCommand</span><span class="p">(</span><span class="n">dump_folder</span><span class="p">,</span> <span class="n">close_webdriver</span><span class="p">,</span> <span class="n">compress</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.save_screenshot"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.save_screenshot">[docs]</a>    <span class="k">def</span> <span class="nf">save_screenshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save a screenshot of the current viewport.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandExecutionError</span><span class="p">(</span><span class="s2">&quot;No get or browse request preceding &quot;</span>
+                                        <span class="s2">&quot;the save screenshot command&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">SaveScreenshotCommand</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.screenshot_full_page"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.screenshot_full_page">[docs]</a>    <span class="k">def</span> <span class="nf">screenshot_full_page</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save a screenshot of the entire page.</span>
+
+<span class="sd">        NOTE: geckodriver v0.15 only supports viewport screenshots. To</span>
+<span class="sd">        screenshot the entire page we scroll the page using javascript and take</span>
+<span class="sd">        a viewport screenshot at each location. This method will save the</span>
+<span class="sd">        parts and a stitched version in the `screenshot_path`. We only scroll</span>
+<span class="sd">        vertically, so pages that are wider than the viewport will be clipped.</span>
+<span class="sd">        See: https://github.com/mozilla/geckodriver/issues/570</span>
+
+<span class="sd">        The screenshot produced will only include the area originally</span>
+<span class="sd">        loaded at the start of the command. Sites which dynamically expand as</span>
+<span class="sd">        the page is scrolled (i.e. infinite scroll) will only go as far as the</span>
+<span class="sd">        original height.</span>
+
+<span class="sd">        NOTE: In geckodriver v0.15 doing any scrolling (or having devtools</span>
+<span class="sd">        open) seems to break element-only screenshots. So using this command</span>
+<span class="sd">        will cause any future element-only screenshots to be mis-aligned</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandExecutionError</span><span class="p">(</span><span class="s2">&quot;No get or browse request preceding &quot;</span>
+                                        <span class="s2">&quot;the dump page source command&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">ScreenshotFullPageCommand</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.dump_page_source"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.dump_page_source">[docs]</a>    <span class="k">def</span> <span class="nf">dump_page_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dumps rendered source of current page to &#39;sources&#39; directory.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandExecutionError</span><span class="p">(</span><span class="s2">&quot;No get or browse request preceding &quot;</span>
+                                        <span class="s2">&quot;the dump page source command&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">DumpPageSourceCommand</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.recursive_dump_page_source"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.recursive_dump_page_source">[docs]</a>    <span class="k">def</span> <span class="nf">recursive_dump_page_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dumps rendered source of current page visit to &#39;sources&#39; dir.</span>
+<span class="sd">        Unlike `dump_page_source`, this includes iframe sources. Archive is</span>
+<span class="sd">        stored in `manager_params[&#39;source_dump_path&#39;]` and is keyed by the</span>
+<span class="sd">        current `visit_id` and top-level url. The source dump is a gzipped json</span>
+<span class="sd">        file with the following structure::</span>
+<span class="sd">            {</span>
+<span class="sd">                &#39;document_url&#39;: &quot;http://example.com&quot;,</span>
+<span class="sd">                &#39;source&#39;: &quot;&lt;html&gt; ... &lt;/html&gt;&quot;,</span>
+<span class="sd">                &#39;iframes&#39;: {</span>
+<span class="sd">                    &#39;frame_1&#39;: {&#39;document_url&#39;: ...,</span>
+<span class="sd">                                &#39;source&#39;: ...,</span>
+<span class="sd">                                &#39;iframes: { ... }},</span>
+<span class="sd">                    &#39;frame_2&#39;: {&#39;document_url&#39;: ...,</span>
+<span class="sd">                                &#39;source&#39;: ...,</span>
+<span class="sd">                                &#39;iframes: { ... }},</span>
+<span class="sd">                    &#39;frame_3&#39;: { ... }</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandExecutionError</span><span class="p">(</span><span class="s2">&quot;No get or browse request preceding &quot;</span>
+                                        <span class="s2">&quot;the dump page source command&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">RecursiveDumpPageSourceCommand</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.run_custom_function"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.run_custom_function">[docs]</a>    <span class="k">def</span> <span class="nf">run_custom_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function_handle</span><span class="p">,</span> <span class="n">func_args</span><span class="o">=</span><span class="p">(),</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run a custom by passing the function handle&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_timeout</span> <span class="o">+=</span> <span class="n">timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_get_or_browse</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandExecutionError</span><span class="p">(</span><span class="s2">&quot;No get or browse request preceding &quot;</span>
+                                        <span class="s2">&quot;the dump page source command&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">RunCustomFunctionCommand</span><span class="p">(</span><span class="n">function_handle</span><span class="p">,</span> <span class="n">func_args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands_with_timeout</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CommandSequence.mark_done"><a class="viewcode-back" href="../../source/automation.html#automation.CommandSequence.CommandSequence.mark_done">[docs]</a>    <span class="k">def</span> <span class="nf">mark_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

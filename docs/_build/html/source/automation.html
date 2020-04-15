@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation package &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="automation-package">
+<h1>automation package<a class="headerlink" href="#automation-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="automation.Commands.html">automation.Commands package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="automation.Commands.utils.html">automation.Commands.utils package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#module-automation.Commands.utils.XPathUtil">automation.Commands.utils.XPathUtil module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#module-automation.Commands.utils.file_utils">automation.Commands.utils.file_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#module-automation.Commands.utils.firefox_profile">automation.Commands.utils.firefox_profile module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#module-automation.Commands.utils.lso">automation.Commands.utils.lso module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#module-automation.Commands.utils.webdriver_utils">automation.Commands.utils.webdriver_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="automation.Commands.utils.html#module-automation.Commands.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#module-automation.Commands.Types">automation.Commands.Types module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#module-automation.Commands.browser_commands">automation.Commands.browser_commands module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#module-automation.Commands.command_executor">automation.Commands.command_executor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#module-automation.Commands.profile_commands">automation.Commands.profile_commands module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.Commands.html#module-automation.Commands">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="automation.DataAggregator.html">automation.DataAggregator package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="automation.DataAggregator.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DataAggregator.html#module-automation.DataAggregator.BaseAggregator">automation.DataAggregator.BaseAggregator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DataAggregator.html#module-automation.DataAggregator.LocalAggregator">automation.DataAggregator.LocalAggregator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DataAggregator.html#module-automation.DataAggregator.S3Aggregator">automation.DataAggregator.S3Aggregator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DataAggregator.html#module-automation.DataAggregator.parquet_schema">automation.DataAggregator.parquet_schema module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DataAggregator.html#module-automation.DataAggregator">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="automation.DeployBrowsers.html">automation.DeployBrowsers package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="automation.DeployBrowsers.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DeployBrowsers.html#module-automation.DeployBrowsers.configure_firefox">automation.DeployBrowsers.configure_firefox module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DeployBrowsers.html#module-automation.DeployBrowsers.deploy_browser">automation.DeployBrowsers.deploy_browser module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DeployBrowsers.html#module-automation.DeployBrowsers.deploy_firefox">automation.DeployBrowsers.deploy_firefox module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DeployBrowsers.html#module-automation.DeployBrowsers.selenium_firefox">automation.DeployBrowsers.selenium_firefox module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.DeployBrowsers.html#module-automation.DeployBrowsers">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="automation.utilities.html">automation.utilities package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities.Cookie">automation.utilities.Cookie module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="automation.utilities.html#the-basics">The Basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="automation.utilities.html#a-bit-more-advanced">A Bit More Advanced</a></li>
+<li class="toctree-l3"><a class="reference internal" href="automation.utilities.html#backwards-compatibility">Backwards Compatibility</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#automation-utilities-build-cookie-table-module">automation.utilities.build_cookie_table module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities.db_utils">automation.utilities.db_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities.domain_utils">automation.utilities.domain_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities.multiprocess_utils">automation.utilities.multiprocess_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities.platform_utils">automation.utilities.platform_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities.rediswq">automation.utilities.rediswq module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.utilities.html#module-automation.utilities">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-automation.BrowserManager">
+<span id="automation-browsermanager-module"></span><h2>automation.BrowserManager module<a class="headerlink" href="#module-automation.BrowserManager" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.BrowserManager.Browser">
+<em class="property">class </em><code class="sig-prename descclassname">automation.BrowserManager.</code><code class="sig-name descname">Browser</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">manager_params</span></em>, <em class="sig-param"><span class="n">browser_params</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The Browser class is responsbile for holding all of the
+configuration and status information on BrowserManager process
+it corresponds to. It also includes a set of methods for managing
+the BrowserManager process and its child processes/threads.
+&lt;manager_params&gt; are the TaskManager configuration settings.
+&lt;browser_params&gt; are per-browser parameter settings (e.g. whether</p>
+<blockquote>
+<div><p>this browser is headless, etc.)</p>
+</div></blockquote>
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.close_browser_manager">
+<code class="sig-name descname">close_browser_manager</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.close_browser_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.close_browser_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to close the webdriver and browser manager processes
+from this thread.
+If the browser manager process is unresponsive, the process is killed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.kill_browser_manager">
+<code class="sig-name descname">kill_browser_manager</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.kill_browser_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.kill_browser_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kill the BrowserManager process and all of its children</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.launch_browser_manager">
+<code class="sig-name descname">launch_browser_manager</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.launch_browser_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.launch_browser_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets up the BrowserManager and gets the process id, browser pid and,
+if applicable, screen pid. loads associated user profile if necessary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.ready">
+<code class="sig-name descname">ready</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.ready"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>return if the browser is ready to accept a command</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.restart_browser_manager">
+<code class="sig-name descname">restart_browser_manager</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">clear_profile</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.restart_browser_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.restart_browser_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>kill and restart the two worker processes
+&lt;clear_profile&gt; marks whether we want to wipe the old profile</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.set_visit_id">
+<code class="sig-name descname">set_visit_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">visit_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.set_visit_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.set_visit_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.BrowserManager.Browser.shutdown_browser">
+<code class="sig-name descname">shutdown_browser</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">during_init</span><span class="p">:</span> <span class="n">bool</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/BrowserManager.html#Browser.shutdown_browser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.Browser.shutdown_browser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the closing tasks for this Browser/BrowserManager</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.BrowserManager.BrowserManager">
+<code class="sig-prename descclassname">automation.BrowserManager.</code><code class="sig-name descname">BrowserManager</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">command_queue</span></em>, <em class="sig-param"><span class="n">status_queue</span></em>, <em class="sig-param"><span class="n">browser_params</span></em>, <em class="sig-param"><span class="n">manager_params</span></em>, <em class="sig-param"><span class="n">crash_recovery</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/BrowserManager.html#BrowserManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.BrowserManager.BrowserManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>The BrowserManager function runs in each new browser process.
+It is responsible for listening to command instructions from
+the Task Manager and passing them to the command module to execute
+and interface with Selenium. Command execution status is sent back
+to the TaskManager.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.CommandSequence">
+<span id="automation-commandsequence-module"></span><h2>automation.CommandSequence module<a class="headerlink" href="#module-automation.CommandSequence" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.CommandSequence.CommandSequence">
+<em class="property">class </em><code class="sig-prename descclassname">automation.CommandSequence.</code><code class="sig-name descname">CommandSequence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">reset</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">blocking</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">retry_number</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">site_rank</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Callable[[], None]</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A CommandSequence wraps a series of commands to be performed
+on a visit to one top-level site into one logical
+“site visit,” keyed by a visit id. An example of a CommandSequence
+that visits a page and dumps cookies modified on that visit would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sequence</span> <span class="o">=</span> <span class="n">CommandSequence</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="n">sequence</span><span class="o">.</span><span class="n">save_screenshot</span><span class="p">()</span>
+<span class="n">task_manager</span><span class="o">.</span><span class="n">execute_command_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>CommandSequence guarantees that a series of commands will be performed
+by a single browser instance.</p>
+<p>NOTE: Command dump_flash_cookies will close
+the current tab - any command that relies on the page still being open,
+like save_screenshot, extract_links, or dump_page_source, should be
+called prior to that.</p>
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">reset</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">blocking</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">retry_number</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">site_rank</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Callable[[], None]</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize command sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>string</em>) – url of page visit the command sequence should execute on</p></li>
+<li><p><strong>reset</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if browser should clear state and restart after sequence</p></li>
+<li><p><strong>blocking</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if sequence should block parent process during execution</p></li>
+<li><p><strong>retry_number</strong> (<em>int</em><em>, </em><em>optional</em>) – Integer denoting the number of attempts that have been made to
+execute this command. Will be saved in <cite>crawl_history</cite>.</p></li>
+<li><p><strong>site_rank</strong> (<em>int</em><em>, </em><em>optional</em>) – Integer indicating the ranking of the page to visit, saved
+to <cite>site_visits</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.browse">
+<code class="sig-name descname">browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_links</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">sleep</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.browse" title="Permalink to this definition">¶</a></dt>
+<dd><p>browse a website and visit &lt;num_links&gt; links on the page</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.dump_flash_cookies">
+<code class="sig-name descname">dump_flash_cookies</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.dump_flash_cookies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.dump_flash_cookies" title="Permalink to this definition">¶</a></dt>
+<dd><p>dumps the local storage vectors (flash, localStorage, cookies) to db
+Side effect: closes the current tab.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.dump_page_source">
+<code class="sig-name descname">dump_page_source</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.dump_page_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.dump_page_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dumps rendered source of current page to ‘sources’ directory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.dump_profile">
+<code class="sig-name descname">dump_profile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dump_folder</span></em>, <em class="sig-param"><span class="n">close_webdriver</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">compress</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">120</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.dump_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.dump_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>dumps from the profile path to a given file (absolute path)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sleep</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>goes to a url</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.mark_done">
+<code class="sig-name descname">mark_done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.mark_done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.mark_done" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.recursive_dump_page_source">
+<code class="sig-name descname">recursive_dump_page_source</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.recursive_dump_page_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.recursive_dump_page_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dumps rendered source of current page visit to ‘sources’ dir.
+Unlike <cite>dump_page_source</cite>, this includes iframe sources. Archive is
+stored in <cite>manager_params[‘source_dump_path’]</cite> and is keyed by the
+current <cite>visit_id</cite> and top-level url. The source dump is a gzipped json
+file with the following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;document_url&#39;</span><span class="p">:</span> <span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s2">&quot;&lt;html&gt; ... &lt;/html&gt;&quot;</span><span class="p">,</span>
+    <span class="s1">&#39;iframes&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;frame_1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;document_url&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                    <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                    <span class="s1">&#39;iframes: { ... }},</span>
+        <span class="s1">&#39;frame_2&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;document_url&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                    <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                    <span class="s1">&#39;iframes: { ... }},</span>
+        <span class="s1">&#39;frame_3&#39;</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.run_custom_function">
+<code class="sig-name descname">run_custom_function</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function_handle</span></em>, <em class="sig-param"><span class="n">func_args</span><span class="o">=</span><span class="default_value"></span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.run_custom_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.run_custom_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a custom by passing the function handle</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.save_screenshot">
+<code class="sig-name descname">save_screenshot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.save_screenshot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.save_screenshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a screenshot of the current viewport.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.CommandSequence.CommandSequence.screenshot_full_page">
+<code class="sig-name descname">screenshot_full_page</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/CommandSequence.html#CommandSequence.screenshot_full_page"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.CommandSequence.CommandSequence.screenshot_full_page" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a screenshot of the entire page.</p>
+<p>NOTE: geckodriver v0.15 only supports viewport screenshots. To
+screenshot the entire page we scroll the page using javascript and take
+a viewport screenshot at each location. This method will save the
+parts and a stitched version in the <cite>screenshot_path</cite>. We only scroll
+vertically, so pages that are wider than the viewport will be clipped.
+See: <a class="reference external" href="https://github.com/mozilla/geckodriver/issues/570">https://github.com/mozilla/geckodriver/issues/570</a></p>
+<p>The screenshot produced will only include the area originally
+loaded at the start of the command. Sites which dynamically expand as
+the page is scrolled (i.e. infinite scroll) will only go as far as the
+original height.</p>
+<p>NOTE: In geckodriver v0.15 doing any scrolling (or having devtools
+open) seems to break element-only screenshots. So using this command
+will cause any future element-only screenshots to be mis-aligned</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.Errors">
+<span id="automation-errors-module"></span><h2>automation.Errors module<a class="headerlink" href="#module-automation.Errors" title="Permalink to this headline">¶</a></h2>
+<p>OpenWPM Custom Errors</p>
+<dl class="py exception">
+<dt id="automation.Errors.BrowserConfigError">
+<em class="property">exception </em><code class="sig-prename descclassname">automation.Errors.</code><code class="sig-name descname">BrowserConfigError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/Errors.html#BrowserConfigError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.Errors.BrowserConfigError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raise for errors that occur from a misconfiguration of the browser</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="automation.Errors.BrowserCrashError">
+<em class="property">exception </em><code class="sig-prename descclassname">automation.Errors.</code><code class="sig-name descname">BrowserCrashError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/Errors.html#BrowserCrashError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.Errors.BrowserCrashError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raise for non-critical crashes within the BrowserManager process</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="automation.Errors.CommandExecutionError">
+<em class="property">exception </em><code class="sig-prename descclassname">automation.Errors.</code><code class="sig-name descname">CommandExecutionError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">command</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/Errors.html#CommandExecutionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.Errors.CommandExecutionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raise for errors related to executing commands</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="automation.Errors.ProfileLoadError">
+<em class="property">exception </em><code class="sig-prename descclassname">automation.Errors.</code><code class="sig-name descname">ProfileLoadError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/Errors.html#ProfileLoadError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.Errors.ProfileLoadError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raise for errors that occur while loading profile</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.MPLogger">
+<span id="automation-mplogger-module"></span><h2>automation.MPLogger module<a class="headerlink" href="#module-automation.MPLogger" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.MPLogger.ClientSocketHandler">
+<em class="property">class </em><code class="sig-prename descclassname">automation.MPLogger.</code><code class="sig-name descname">ClientSocketHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span></em>, <em class="sig-param"><span class="n">port</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#ClientSocketHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.ClientSocketHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">logging.handlers.SocketHandler</span></code></p>
+<p>Make SocketHandler compatible with SocketInterface.py</p>
+<dl class="py method">
+<dt id="automation.MPLogger.ClientSocketHandler.makePickle">
+<code class="sig-name descname">makePickle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">record</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#ClientSocketHandler.makePickle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.ClientSocketHandler.makePickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes the record via json and prepends a length/serialization
+flag. Returns it ready for transmission across the socket.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.MPLogger.MPLogger">
+<em class="property">class </em><code class="sig-prename descclassname">automation.MPLogger.</code><code class="sig-name descname">MPLogger</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">log_file</span></em>, <em class="sig-param"><span class="n">crawl_context</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_level_console</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">log_level_file</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">log_level_sentry_breadcrumb</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">log_level_sentry_event</span><span class="o">=</span><span class="default_value">40</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Configure OpenWPM logging across processes</p>
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger._handle_extension_log">
+<code class="sig-name descname">_handle_extension_log</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger._handle_extension_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger._handle_extension_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass messages received from the extension to logger</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger._handle_serialized_writes">
+<code class="sig-name descname">_handle_serialized_writes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger._handle_serialized_writes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger._handle_serialized_writes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle records that must be serialized to the main process</p>
+<p>This is currently records that are written to a file on disk
+and those sent to Sentry.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger._initialize_loggers">
+<code class="sig-name descname">_initialize_loggers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger._initialize_loggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger._initialize_loggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up console logging and serialized file logging.</p>
+<p>The logger and socket handler are set to log at the logging.DEBUG level
+and filtering happens at the outputs (console, file, and sentry).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger._initialize_sentry">
+<code class="sig-name descname">_initialize_sentry</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger._initialize_sentry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger._initialize_sentry" title="Permalink to this definition">¶</a></dt>
+<dd><p>If running a cloud crawl, we can pull the sentry endpoint
+and related config varibles from the environment</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger._sentry_before_send">
+<code class="sig-name descname">_sentry_before_send</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">event</span></em>, <em class="sig-param"><span class="n">hint</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger._sentry_before_send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger._sentry_before_send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update sentry events before they are sent</p>
+<p>Note: we want to be very conservative in handling errors here. If this
+method throws an error, Sentry silently discards it and no record is
+sent. It’s much better to have Sentry send an unparsed error then no
+error.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger._start_listener">
+<code class="sig-name descname">_start_listener</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger._start_listener"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger._start_listener" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start listening socket for remote logs from extension</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.MPLogger.MPLogger.close">
+<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#MPLogger.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.MPLogger.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.MPLogger._retrive_log_level_from_env">
+<code class="sig-prename descclassname">automation.MPLogger.</code><code class="sig-name descname">_retrive_log_level_from_env</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">env_var_name</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#_retrive_log_level_from_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger._retrive_log_level_from_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve log level from <cite>env_var_name</cite></p>
+<p>Levels from: <a class="reference external" href="https://docs.python.org/3/library/logging.html#levels">https://docs.python.org/3/library/logging.html#levels</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.MPLogger.parse_config_from_env">
+<code class="sig-prename descclassname">automation.MPLogger.</code><code class="sig-name descname">parse_config_from_env</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/MPLogger.html#parse_config_from_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.MPLogger.parse_config_from_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the logger config from environment variables</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.SocketInterface">
+<span id="automation-socketinterface-module"></span><h2>automation.SocketInterface module<a class="headerlink" href="#module-automation.SocketInterface" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.SocketInterface.clientsocket">
+<em class="property">class </em><code class="sig-prename descclassname">automation.SocketInterface.</code><code class="sig-name descname">clientsocket</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">serialization</span><span class="o">=</span><span class="default_value">'json'</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#clientsocket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.clientsocket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A client socket for sending messages</p>
+<dl class="py method">
+<dt id="automation.SocketInterface.clientsocket.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">serialization</span><span class="o">=</span><span class="default_value">'json'</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#clientsocket.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.clientsocket.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>serialization</cite> specifies the type of serialization to use for
+non-string messages. Supported formats:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>‘json’ uses the json module. Cross-language support. (default)</p></li>
+<li><p>‘dill’ uses the dill pickle module. Python only.</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.clientsocket.close">
+<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#clientsocket.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.clientsocket.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.clientsocket.connect">
+<code class="sig-name descname">connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span></em>, <em class="sig-param"><span class="n">port</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#clientsocket.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.clientsocket.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.clientsocket.send">
+<code class="sig-name descname">send</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#clientsocket.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.clientsocket.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends an arbitrary python object to the connected socket. Serializes
+using dill if not string, and prepends msg len (4-bytes) and
+serialization type (1-byte).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.SocketInterface.main">
+<code class="sig-prename descclassname">automation.SocketInterface.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="automation.SocketInterface.serversocket">
+<em class="property">class </em><code class="sig-prename descclassname">automation.SocketInterface.</code><code class="sig-name descname">serversocket</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#serversocket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.serversocket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A server socket to receive and process string messages
+from client sockets to a central queue</p>
+<dl class="py method">
+<dt id="automation.SocketInterface.serversocket._accept">
+<code class="sig-name descname">_accept</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#serversocket._accept"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.serversocket._accept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Listen for connections and pass handling to a new thread</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.serversocket._handle_conn">
+<code class="sig-name descname">_handle_conn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">address</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#serversocket._handle_conn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.serversocket._handle_conn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive messages and pass to queue. Messages are prefixed with
+a 4-byte integer to specify the message length and 1-byte character
+to indicate the type of serialization applied to the message.</p>
+<dl class="simple">
+<dt>Supported serialization formats:</dt><dd><p>‘n’ : no serialization
+‘u’ : Unicode string in UTF-8
+‘d’ : dill pickle
+‘j’ : json</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.serversocket.close">
+<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#serversocket.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.serversocket.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.serversocket.receive_msg">
+<code class="sig-name descname">receive_msg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">msglen</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#serversocket.receive_msg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.serversocket.receive_msg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.SocketInterface.serversocket.start_accepting">
+<code class="sig-name descname">start_accepting</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/SocketInterface.html#serversocket.start_accepting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.SocketInterface.serversocket.start_accepting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the listener thread</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.TaskManager">
+<span id="automation-taskmanager-module"></span><h2>automation.TaskManager module<a class="headerlink" href="#module-automation.TaskManager" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.TaskManager.TaskManager">
+<em class="property">class </em><code class="sig-prename descclassname">automation.TaskManager.</code><code class="sig-name descname">TaskManager</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">manager_params</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">browser_params</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">process_watchdog</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">logger_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>Any<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>User-facing Class for interfacing with OpenWPM</p>
+<dl class="simple">
+<dt>The TaskManager spawns several child processes to run the automation tasks.</dt><dd><ul class="simple">
+<li><p>DataAggregator to aggregate data across browsers and save to the
+database.</p></li>
+<li><p>MPLogger to aggregate logs across processes</p></li>
+<li><p>BrowserManager processes to isolate Browsers in a separate process</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">manager_params</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">browser_params</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">process_watchdog</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">logger_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>Any<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the TaskManager with browser and manager config params</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>manager_params</strong> (<em>dict</em>) – Dictionary of TaskManager configuration parameters. See the
+default in <cite>default_manager_params.json</cite>.</p></li>
+<li><p><strong>browser_params</strong> (<em>list of dict</em>) – Browser configuration parameters. If this is given as a list, it
+includes individual configurations for each browser.</p></li>
+<li><p><strong>process_watchdog</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set to True to monitor Firefox processes for zombie instances or
+instances that exceed a reasonable amount of memory. Any process
+found and not indexed by the TaskManager will be killed.
+(Currently broken: <a class="reference external" href="https://github.com/mozilla/OpenWPM/issues/174">https://github.com/mozilla/OpenWPM/issues/174</a>)</p></li>
+<li><p><strong>logger_kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keyword arguments to pass to MPLogger on initialization.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._check_failure_status">
+<code class="sig-name descname">_check_failure_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._check_failure_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._check_failure_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the status of command failures. Raise exceptions as necessary</p>
+<p>The failure status property is used by the various asynchronous
+command execution threads which interface with the
+remote browser manager processes. If a failure status is found, the
+appropriate steps are taken to gracefully close the infrastructure</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._cleanup_before_fail">
+<code class="sig-name descname">_cleanup_before_fail</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">during_init</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._cleanup_before_fail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._cleanup_before_fail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute shutdown commands before throwing an exception
+This should keep us from having a bunch of hanging processes
+and incomplete data.
+&lt;during_init&gt; flag to indicator if this shutdown is occuring during</p>
+<blockquote>
+<div><p>the TaskManager initialization</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._initialize_browsers">
+<code class="sig-name descname">_initialize_browsers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">browser_params</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#automation.BrowserManager.Browser" title="automation.BrowserManager.Browser">automation.BrowserManager.Browser</a><span class="p">]</span><a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._initialize_browsers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._initialize_browsers" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize the browser classes, each its unique set of params</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._issue_command">
+<code class="sig-name descname">_issue_command</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">browser</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#automation.BrowserManager.Browser" title="automation.BrowserManager.Browser">automation.BrowserManager.Browser</a></span></em>, <em class="sig-param"><span class="n">command_sequence</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#automation.CommandSequence.CommandSequence" title="automation.CommandSequence.CommandSequence">automation.CommandSequence.CommandSequence</a></span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._issue_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._issue_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>sends command tuple to the BrowserManager</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._launch_aggregators">
+<code class="sig-name descname">_launch_aggregators</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._launch_aggregators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._launch_aggregators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launch the necessary data aggregators</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._launch_browsers">
+<code class="sig-name descname">_launch_browsers</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._launch_browsers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._launch_browsers" title="Permalink to this definition">¶</a></dt>
+<dd><p>launch each browser manager process / browser</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._manager_watchdog">
+<code class="sig-name descname">_manager_watchdog</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._manager_watchdog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._manager_watchdog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Periodically checks the following:
+- memory consumption of all browsers every 10 seconds
+- presence of processes that are no longer in use</p>
+<dl class="simple">
+<dt>TODO: process watchdog needs to be updated since <cite>psutil</cite> won’t</dt><dd><p>kill browser processes started by Selenium 3 (with <cite>subprocess</cite>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._mark_command_sequences_complete">
+<code class="sig-name descname">_mark_command_sequences_complete</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._mark_command_sequences_complete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._mark_command_sequences_complete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Polls the data aggregator for saved records
+and calls their callbacks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._shutdown_manager">
+<code class="sig-name descname">_shutdown_manager</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">during_init</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">relaxed</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._shutdown_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._shutdown_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for current commands to finish, close all child processes and
+threads</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>during_init</strong> – <dl class="simple">
+<dt>flag to indicator if this shutdown is occuring during</dt><dd><p>the TaskManager initialization</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>relaxed</strong> – If <cite>True</cite> the function will wait for all active
+<cite>CommandSequences</cite> to finish</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._start_thread">
+<code class="sig-name descname">_start_thread</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">browser</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#automation.BrowserManager.Browser" title="automation.BrowserManager.Browser">automation.BrowserManager.Browser</a></span></em>, <em class="sig-param"><span class="n">command_sequence</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#automation.CommandSequence.CommandSequence" title="automation.CommandSequence.CommandSequence">automation.CommandSequence.CommandSequence</a></span></em><span class="sig-paren">)</span> &#x2192; threading.Thread<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._start_thread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._start_thread" title="Permalink to this definition">¶</a></dt>
+<dd><p>starts the command execution thread</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager._unpack_picked_error">
+<code class="sig-name descname">_unpack_picked_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pickled_error</span><span class="p">:</span> <span class="n">bytes</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span><a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager._unpack_picked_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager._unpack_picked_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unpacks <cite>pickled_error</cite> into and error <cite>message</cite> and <cite>tb</cite> string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager.browse">
+<code class="sig-name descname">browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">num_links</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2</span></em>, <em class="sig-param"><span class="n">sleep</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">index</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">60</span></em>, <em class="sig-param"><span class="n">reset</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager.browse" title="Permalink to this definition">¶</a></dt>
+<dd><p>browse a website and visit &lt;num_links&gt; links on the page</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager.close">
+<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute shutdown procedure for TaskManager</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager.execute_command_sequence">
+<code class="sig-name descname">execute_command_sequence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">command_sequence</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#automation.CommandSequence.CommandSequence" title="automation.CommandSequence.CommandSequence">automation.CommandSequence.CommandSequence</a></span></em>, <em class="sig-param"><span class="n">index</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager.execute_command_sequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager.execute_command_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>parses command type and issues command(s) to the proper browser
+&lt;index&gt; specifies the type of command this is:
+None  -&gt; first come, first serve
+int  -&gt; index of browser to send command to</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.TaskManager.TaskManager.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">index</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">60</span></em>, <em class="sig-param"><span class="n">sleep</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">reset</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/automation/TaskManager.html#TaskManager.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.TaskManager.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>goes to a url</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.TaskManager.load_default_params">
+<code class="sig-prename descclassname">automation.TaskManager.</code><code class="sig-name descname">load_default_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_browsers</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/automation/TaskManager.html#load_default_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.TaskManager.load_default_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads num_browsers copies of the default browser_params dictionary.
+Also loads a single copy of the default TaskManager params dictionary.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-automation" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/automation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

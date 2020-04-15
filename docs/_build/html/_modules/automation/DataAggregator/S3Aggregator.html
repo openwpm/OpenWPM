@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.DataAggregator.S3Aggregator &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.DataAggregator.S3Aggregator</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">DefaultDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">MutableSet</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">boto3</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyarrow</span> <span class="k">as</span> <span class="nn">pa</span>
+<span class="kn">import</span> <span class="nn">pyarrow.parquet</span> <span class="k">as</span> <span class="nn">pq</span>
+<span class="kn">import</span> <span class="nn">s3fs</span>
+<span class="kn">from</span> <span class="nn">botocore.client</span> <span class="kn">import</span> <span class="n">Config</span>
+<span class="kn">from</span> <span class="nn">botocore.exceptions</span> <span class="kn">import</span> <span class="n">ClientError</span><span class="p">,</span> <span class="n">EndpointConnectionError</span>
+<span class="kn">from</span> <span class="nn">pyarrow.filesystem</span> <span class="kn">import</span> <span class="n">S3FSWrapper</span>  <span class="c1"># noqa</span>
+
+<span class="kn">from</span> <span class="nn">.BaseAggregator</span> <span class="kn">import</span> <span class="p">(</span><span class="n">RECORD_TYPE_CONTENT</span><span class="p">,</span> <span class="n">BaseAggregator</span><span class="p">,</span> <span class="n">BaseListener</span><span class="p">,</span>
+                             <span class="n">BaseParams</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.parquet_schema</span> <span class="kn">import</span> <span class="n">PQ_SCHEMAS</span>
+
+<span class="n">CACHE_SIZE</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">SITE_VISITS_INDEX</span> <span class="o">=</span> <span class="s1">&#39;_site_visits_index&#39;</span>
+<span class="n">CONTENT_DIRECTORY</span> <span class="o">=</span> <span class="s1">&#39;content&#39;</span>
+<span class="n">CONFIG_DIR</span> <span class="o">=</span> <span class="s1">&#39;config&#39;</span>
+<span class="n">BATCH_COMMIT_TIMEOUT</span> <span class="o">=</span> <span class="mi">30</span>  <span class="c1"># commit a batch if no new records for N seconds</span>
+<span class="n">S3_CONFIG_KWARGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;retries&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;max_attempts&#39;</span><span class="p">:</span> <span class="mi">20</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">S3_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="o">**</span><span class="n">S3_CONFIG_KWARGS</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="listener_process_runner"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.listener_process_runner">[docs]</a><span class="k">def</span> <span class="nf">listener_process_runner</span><span class="p">(</span><span class="n">base_params</span><span class="p">:</span> <span class="n">BaseParams</span><span class="p">,</span>
+                            <span class="n">manager_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                            <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;S3Listener runner. Pass to new process&quot;&quot;&quot;</span>
+    <span class="n">listener</span> <span class="o">=</span> <span class="n">S3Listener</span><span class="p">(</span><span class="n">base_params</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+    <span class="n">listener</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">listener</span><span class="o">.</span><span class="n">update_status_queue</span><span class="p">()</span>
+        <span class="n">listener</span><span class="o">.</span><span class="n">save_batch_if_past_timeout</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">listener</span><span class="o">.</span><span class="n">should_shutdown</span><span class="p">():</span>
+            <span class="k">break</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="n">listener</span><span class="o">.</span><span class="n">record_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+            <span class="n">listener</span><span class="o">.</span><span class="n">process_record</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="n">listener</span><span class="o">.</span><span class="n">drain_queue</span><span class="p">()</span>
+    <span class="n">listener</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="S3Listener"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener">[docs]</a><span class="k">class</span> <span class="nc">S3Listener</span><span class="p">(</span><span class="n">BaseListener</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Listener that pushes aggregated records to S3.</span>
+
+<span class="sd">    Records for each page visit are stored in memory during a page visit. Once</span>
+<span class="sd">    the browser moves to another page, the data is written to S3 as part of</span>
+<span class="sd">    a parquet dataset. The schema for this dataset is given in</span>
+<span class="sd">    ./parquet_schema.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">base_params</span><span class="p">:</span> <span class="n">BaseParams</span><span class="p">,</span>
+                 <span class="n">manager_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                 <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">=</span> <span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;s3_directory&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span>\
+            <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># maps visit_id and table to records</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="p">:</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">pa</span><span class="o">.</span><span class="n">RecordBatch</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># maps table_name to a list of batches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_visit_ids</span><span class="p">:</span> <span class="n">MutableSet</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="nb">set</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span> <span class="o">=</span> <span class="n">instance_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bucket</span> <span class="o">=</span> <span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;s3_bucket&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s3_content_cache</span><span class="p">:</span> <span class="n">MutableSet</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="nb">set</span><span class="p">()</span>  <span class="c1"># cache of filenames already uploaded</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">S3_CONFIG</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s3_resource</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">S3_CONFIG</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fs</span> <span class="o">=</span> <span class="n">s3fs</span><span class="o">.</span><span class="n">S3FileSystem</span><span class="p">(</span>
+            <span class="n">session</span><span class="o">=</span><span class="n">boto3</span><span class="o">.</span><span class="n">DEFAULT_SESSION</span><span class="p">,</span>
+            <span class="n">config_kwargs</span><span class="o">=</span><span class="n">S3_CONFIG_KWARGS</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s3_bucket_uri</span> <span class="o">=</span> <span class="s1">&#39;s3://</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">/visits/</span><span class="si">%%</span><span class="s1">s&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">)</span>
+        <span class="c1"># time last record was received</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_record_received</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3Listener</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">base_params</span><span class="p">)</span>
+
+<div class="viewcode-block" id="S3Listener._get_records"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._get_records">[docs]</a>    <span class="k">def</span> <span class="nf">_get_records</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the RecordBatch corresponding to `visit_id`&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">visit_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">[</span><span class="n">visit_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">[</span><span class="n">visit_id</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="S3Listener._write_record"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._write_record">[docs]</a>    <span class="k">def</span> <span class="nf">_write_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert data into a RecordBatch&quot;&quot;&quot;</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_records</span><span class="p">(</span><span class="n">visit_id</span><span class="p">)</span>
+        <span class="c1"># Add nulls</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">PQ_SCHEMAS</span><span class="p">[</span><span class="n">table</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Add instance_id (for partitioning)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;instance_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span>
+        <span class="n">records</span><span class="p">[</span><span class="n">table</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Listener._create_batch"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._create_batch">[docs]</a>    <span class="k">def</span> <span class="nf">_create_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create record batches for all records from `visit_id`&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">visit_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">:</span>
+            <span class="c1"># The batch for this `visit_id` was already created, skip</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">[</span><span class="n">visit_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">batch</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">RecordBatch</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span>
+                    <span class="n">df</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">PQ_SCHEMAS</span><span class="p">[</span><span class="n">table_name</span><span class="p">],</span> <span class="n">preserve_index</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="p">[</span><span class="n">table_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;Successfully created batch for table </span><span class="si">%s</span><span class="s2"> and &quot;</span>
+                    <span class="s2">&quot;visit_id </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">pa</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">ArrowInvalid</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Error while creating record batch for table </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="c1"># We construct a special index file from the site_visits data</span>
+            <span class="c1"># to make it easier to query the dataset</span>
+            <span class="k">if</span> <span class="n">table_name</span> <span class="o">==</span> <span class="s1">&#39;site_visits&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">SITE_VISITS_INDEX</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="p">[</span><span class="n">SITE_VISITS_INDEX</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="p">[</span><span class="n">SITE_VISITS_INDEX</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">[</span><span class="n">visit_id</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_visit_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">visit_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Listener._exists_on_s3"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._exists_on_s3">[docs]</a>    <span class="k">def</span> <span class="nf">_exists_on_s3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Check if `filename` already exists on S3&quot;&quot;&quot;</span>
+        <span class="c1"># Check local filename cache</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_content_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;File `</span><span class="si">%s</span><span class="s2">` found in content cache.&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># Check S3</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_s3_resource</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bucket</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">][</span><span class="s1">&#39;Code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;404&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">EndpointConnectionError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Exception while checking if file exists </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Add filename to local cache to avoid remote lookups on next request</span>
+        <span class="c1"># We strip the bucket name as its the same for all files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s3_content_cache</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="S3Listener._write_str_to_s3"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._write_str_to_s3">[docs]</a>    <span class="k">def</span> <span class="nf">_write_str_to_s3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span>
+                         <span class="n">compressed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_if_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write `string` data to S3 with name `filename`&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">skip_if_exists</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_on_s3</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;File `</span><span class="si">%s</span><span class="s2">` already exists on s3, skipping...&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">compressed</span><span class="p">:</span>
+            <span class="n">out_f</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+            <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">GzipFile</span><span class="p">(</span><span class="n">fileobj</span><span class="o">=</span><span class="n">out_f</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+            <span class="n">out_f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out_f</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+        <span class="c1"># Upload to S3</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_s3</span><span class="o">.</span><span class="n">upload_fileobj</span><span class="p">(</span><span class="n">out_f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bucket</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Successfully uploaded file `</span><span class="si">%s</span><span class="s2">` to S3.&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="c1"># Cache the filenames that are already on S3</span>
+            <span class="c1"># We strip the bucket name as its the same for all files</span>
+            <span class="k">if</span> <span class="n">skip_if_exists</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_s3_content_cache</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Exception while uploading </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="S3Listener._send_to_s3"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3">[docs]</a>    <span class="k">def</span> <span class="nf">_send_to_s3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy in-memory batches to s3&quot;&quot;&quot;</span>
+        <span class="n">should_send</span> <span class="o">=</span> <span class="n">force</span>
+        <span class="k">for</span> <span class="n">batches</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">CACHE_SIZE</span><span class="p">:</span>
+                <span class="n">should_send</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">should_send</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">batches</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">table_name</span> <span class="o">==</span> <span class="n">SITE_VISITS_INDEX</span><span class="p">:</span>
+                <span class="n">out_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">batches</span><span class="p">])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                    <span class="n">out_str</span> <span class="o">=</span> <span class="n">out_str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/site_index/instance-</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">.json.gz&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span><span class="p">,</span>
+                    <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">out_str</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_str_to_s3</span><span class="p">(</span><span class="n">out_str</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span>
+                    <span class="n">pq</span><span class="o">.</span><span class="n">write_to_dataset</span><span class="p">(</span>
+                        <span class="n">table</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_bucket_uri</span> <span class="o">%</span> <span class="n">table_name</span><span class="p">,</span>
+                        <span class="n">filesystem</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fs</span><span class="p">,</span>
+                        <span class="n">partition_cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;instance_id&#39;</span><span class="p">],</span>
+                        <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;snappy&#39;</span><span class="p">,</span>
+                        <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;spark&#39;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="n">pa</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">ArrowInvalid</span><span class="p">,</span> <span class="n">EndpointConnectionError</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Error while sending records for: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">table_name</span><span class="p">,</span>
+                        <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="k">pass</span>
+            <span class="c1"># can&#39;t del here because that would modify batches</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_batches</span><span class="p">[</span><span class="n">table_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">visit_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_visit_ids</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mark_visit_complete</span><span class="p">(</span><span class="n">visit_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_visit_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="S3Listener.save_batch_if_past_timeout"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener.save_batch_if_past_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">save_batch_if_past_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save the current batch of records if no new data has been received.</span>
+
+<span class="sd">        If we aren&#39;t receiving new data for this batch we commit early</span>
+<span class="sd">        regardless of the current batch size.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_record_received</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_record_received</span> <span class="o">&lt;</span> <span class="n">BATCH_COMMIT_TIMEOUT</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;Saving current record batches to S3 since no new data has &quot;</span>
+            <span class="s2">&quot;been written for </span><span class="si">%d</span><span class="s2"> seconds.&quot;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_record_received</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drain_queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_record_received</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="S3Listener.process_record"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener.process_record">[docs]</a>    <span class="k">def</span> <span class="nf">process_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add `record` to database&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">record</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Query is not the correct length&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_record_received</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">table</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">record</span>
+        <span class="k">if</span> <span class="n">table</span> <span class="o">==</span> <span class="s2">&quot;create_table&quot;</span><span class="p">:</span>  <span class="c1"># drop these statements</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="n">table</span> <span class="o">==</span> <span class="n">RECORD_TYPE_CONTENT</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process_content</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">visit_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_records</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Convert data to text type</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="c1"># TODO: Can we fix this in the extension?</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="c1"># Save record to disk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_record</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Listener.process_content"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener.process_content">[docs]</a>    <span class="k">def</span> <span class="nf">process_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Upload page content `record` to S3&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">RECORD_TYPE_CONTENT</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Incorrect record type passed to `process_content`. Expected &quot;</span>
+                <span class="s2">&quot;record of type `</span><span class="si">%s</span><span class="s2">`, received `</span><span class="si">%s</span><span class="s2">`.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">RECORD_TYPE_CONTENT</span><span class="p">,</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="n">content</span><span class="p">,</span> <span class="n">content_hash</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">.gz&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="n">CONTENT_DIRECTORY</span><span class="p">,</span> <span class="n">content_hash</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_str_to_s3</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Listener.drain_queue"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener.drain_queue">[docs]</a>    <span class="k">def</span> <span class="nf">drain_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process remaining records in queue and sync final files to S3&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3Listener</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">drain_queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_to_s3</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Listener.run_visit_completion_tasks"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener.run_visit_completion_tasks">[docs]</a>    <span class="k">def</span> <span class="nf">run_visit_completion_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                                   <span class="n">interrupted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">interrupted</span><span class="p">:</span>
+            <span class="c1"># We don&#39;t want to save out interrupted visits</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_batch</span><span class="p">(</span><span class="n">visit_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_to_s3</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="S3Aggregator"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Aggregator">[docs]</a><span class="k">class</span> <span class="nc">S3Aggregator</span><span class="p">(</span><span class="n">BaseAggregator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Receives data records from other processes and aggregates them locally</span>
+<span class="sd">    per-site before pushing them to a remote S3 bucket. The remote files are</span>
+<span class="sd">    saved in a Paquet Dataset partitioned by the crawl_id and visit_id of</span>
+<span class="sd">    each record.</span>
+
+<span class="sd">    The visit and task ids are randomly generated to allow multiple writers</span>
+<span class="sd">    to write to the same S3 bucket. Every record should have a `visit_id`</span>
+<span class="sd">    (which identifies the site visit) and a `crawl_id` (which identifies the</span>
+<span class="sd">    browser instance) so we can associate records with the appropriate meta</span>
+<span class="sd">    data. Any records which lack this information will be dropped by the</span>
+<span class="sd">    writer.</span>
+
+<span class="sd">    Note: Parquet&#39;s partitioned dataset reader only supports integer partition</span>
+<span class="sd">    columns up to 32 bits. Currently, `instance_id` is the only partition</span>
+<span class="sd">    column, and thus can be no larger than 32 bits.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager_params</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3Aggregator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">manager_params</span><span class="p">,</span> <span class="n">browser_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">=</span> <span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;s3_directory&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">manager_params</span><span class="p">[</span><span class="s1">&#39;s3_bucket&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_bucket</span><span class="p">()</span>
+
+<div class="viewcode-block" id="S3Aggregator._create_bucket"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Aggregator._create_bucket">[docs]</a>    <span class="k">def</span> <span class="nf">_create_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create remote S3 bucket if it doesn&#39;t exist&quot;&quot;&quot;</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resource</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">head_bucket</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">error_code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">][</span><span class="s1">&#39;Code&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+                <span class="n">resource</span><span class="o">.</span><span class="n">create_bucket</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span></div>
+
+<div class="viewcode-block" id="S3Aggregator.save_configuration"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Aggregator.save_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">save_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">openwpm_version</span><span class="p">,</span> <span class="n">browser_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save configuration details for this crawl to the database&quot;&quot;&quot;</span>
+
+        <span class="c1"># Save config keyed by task id</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">/instance-</span><span class="si">%s</span><span class="s2">_configuration.json&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="n">CONFIG_DIR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span><span class="p">)</span>
+
+        <span class="c1"># Config parameters for update</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">[</span><span class="s1">&#39;manager_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager_params</span>
+        <span class="n">out</span><span class="p">[</span><span class="s1">&#39;openwpm_version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">openwpm_version</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="s1">&#39;browser_version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">browser_version</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="s1">&#39;browser_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browser_params</span>
+        <span class="n">out_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">out_bytes</span> <span class="o">=</span> <span class="n">out_str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">out_f</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">out_bytes</span><span class="p">)</span>
+
+        <span class="c1"># Upload to S3 and delete local copy</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">upload_fileobj</span><span class="p">(</span><span class="n">out_f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Exception while uploading </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+<div class="viewcode-block" id="S3Aggregator.get_next_visit_id"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Aggregator.get_next_visit_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_visit_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate visit id as randomly generated positive integer less than 2^53.</span>
+
+<span class="sd">        Parquet can support integers up to 64 bits, but Javascript can only</span>
+<span class="sd">        represent integers up to 53 bits:</span>
+<span class="sd">        https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER</span>
+<span class="sd">        Thus, we cap these values at 53 bits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">53</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Aggregator.get_next_crawl_id"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Aggregator.get_next_crawl_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_crawl_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate crawl id as randomly generated positive 32bit integer</span>
+
+<span class="sd">        Note: Parquet&#39;s partitioned dataset reader only supports integer</span>
+<span class="sd">        partition columns up to 32 bits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Aggregator.launch"><a class="viewcode-back" href="../../../source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Aggregator.launch">[docs]</a>    <span class="k">def</span> <span class="nf">launch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Launch the aggregator listener process&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3Aggregator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span>
+            <span class="n">listener_process_runner</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

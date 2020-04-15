@@ -1,0 +1,385 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.MPLogger &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.MPLogger</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">logging.handlers</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Empty</span> <span class="k">as</span> <span class="n">EmptyQueue</span>
+
+<span class="kn">import</span> <span class="nn">dill</span>
+<span class="kn">import</span> <span class="nn">sentry_sdk</span>
+<span class="kn">from</span> <span class="nn">multiprocess</span> <span class="kn">import</span> <span class="n">JoinableQueue</span>
+<span class="kn">from</span> <span class="nn">sentry_sdk.integrations.logging</span> <span class="kn">import</span> <span class="n">BreadcrumbHandler</span><span class="p">,</span> <span class="n">EventHandler</span>
+<span class="kn">from</span> <span class="nn">tblib</span> <span class="kn">import</span> <span class="n">pickling_support</span>
+
+<span class="kn">from</span> <span class="nn">.Commands.utils.webdriver_utils</span> <span class="kn">import</span> <span class="n">parse_neterror</span>
+<span class="kn">from</span> <span class="nn">.SocketInterface</span> <span class="kn">import</span> <span class="n">serversocket</span>
+
+<span class="n">pickling_support</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
+
+<span class="n">BROWSER_PREFIX</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^BROWSER (-)?\d+:\s*&quot;</span><span class="p">)</span>
+<span class="c1"># These config variable names should name to lowercase kwargs for MPLogger</span>
+<span class="n">ENV_CONFIG_VARS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;LOG_LEVEL_CONSOLE&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LOG_LEVEL_FILE&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LOG_LEVEL_SENTRY_BREADCRUMB&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LOG_LEVEL_SENTRY_EVENT&#39;</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="_retrive_log_level_from_env"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger._retrive_log_level_from_env">[docs]</a><span class="k">def</span> <span class="nf">_retrive_log_level_from_env</span><span class="p">(</span><span class="n">env_var_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve log level from `env_var_name`</span>
+
+<span class="sd">    Levels from: https://docs.python.org/3/library/logging.html#levels&quot;&quot;&quot;</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">env_var_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s1">&#39;CRITICAL&#39;</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="s1">&#39;ERROR&#39;</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="s1">&#39;WARNING&#39;</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="s1">&#39;INFO&#39;</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="s1">&#39;NOTSET&#39;</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span>
+    <span class="k">return</span> <span class="n">level</span></div>
+
+
+<div class="viewcode-block" id="parse_config_from_env"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.parse_config_from_env">[docs]</a><span class="k">def</span> <span class="nf">parse_config_from_env</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Parse the logger config from environment variables&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">env_var_name</span> <span class="ow">in</span> <span class="n">ENV_CONFIG_VARS</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">_retrive_log_level_from_env</span><span class="p">(</span><span class="n">env_var_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">level</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">env_var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">level</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="ClientSocketHandler"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.ClientSocketHandler">[docs]</a><span class="k">class</span> <span class="nc">ClientSocketHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">SocketHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make SocketHandler compatible with SocketInterface.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ClientSocketHandler.makePickle"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.ClientSocketHandler.makePickle">[docs]</a>    <span class="k">def</span> <span class="nf">makePickle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Serializes the record via json and prepends a length/serialization</span>
+<span class="sd">        flag. Returns it ready for transmission across the socket.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+
+        <span class="c1"># Pickle fields to so record is safe to send across socket</span>
+        <span class="k">if</span> <span class="s1">&#39;exc_info&#39;</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dill</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="n">dill</span><span class="o">.</span><span class="n">PicklingError</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;args&#39;</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dill</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="n">dill</span><span class="o">.</span><span class="n">PicklingError</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">getMessage</span><span class="p">()</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Serialize logging record so it can be sent to MPLogger</span>
+        <span class="c1"># s = json.dumps(d).encode(&#39;utf-8&#39;)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">dill</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;Lc&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="sa">b</span><span class="s1">&#39;d&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">s</span></div></div>
+
+
+<div class="viewcode-block" id="MPLogger"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger">[docs]</a><span class="k">class</span> <span class="nc">MPLogger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Configure OpenWPM logging across processes&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_file</span><span class="p">,</span> <span class="n">crawl_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">log_level_console</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                 <span class="n">log_level_file</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                 <span class="n">log_level_sentry_breadcrumb</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                 <span class="n">log_level_sentry_event</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_crawl_context</span> <span class="o">=</span> <span class="n">crawl_context</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_level_console</span> <span class="o">=</span> <span class="n">log_level_console</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_level_file</span> <span class="o">=</span> <span class="n">log_level_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_level_sentry_breadcrumb</span> <span class="o">=</span> <span class="n">log_level_sentry_breadcrumb</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_level_sentry_event</span> <span class="o">=</span> <span class="n">log_level_sentry_event</span>
+        <span class="c1"># Configure log handlers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span> <span class="o">=</span> <span class="n">JoinableQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">log_file</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_loggers</span><span class="p">()</span>
+
+        <span class="c1"># Configure sentry (if available)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sentry_dsn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;SENTRY_DSN&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sentry_dsn</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_sentry</span><span class="p">()</span>
+
+<div class="viewcode-block" id="MPLogger._initialize_loggers"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger._initialize_loggers">[docs]</a>    <span class="k">def</span> <span class="nf">_initialize_loggers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set up console logging and serialized file logging.</span>
+
+<span class="sd">        The logger and socket handler are set to log at the logging.DEBUG level</span>
+<span class="sd">        and filtering happens at the outputs (console, file, and sentry).&quot;&quot;&quot;</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;openwpm&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+        <span class="c1"># Remove any previous handlers to avoid registering duplicates</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="c1"># Start file handler and listener thread (for serialization)</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_file</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(processName)-11s</span><span class="s2">[</span><span class="si">%(threadName)-10s</span><span class="s2">]&quot;</span>
+            <span class="s2">&quot;- </span><span class="si">%(module)-20s</span><span class="s2"> - </span><span class="si">%(levelname)-8s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_level_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_handler</span> <span class="o">=</span> <span class="n">handler</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_listener</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_start_listener</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_listener</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_listener</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger_address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
+
+        <span class="c1"># Attach console handler to log to console</span>
+        <span class="n">consoleHandler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="n">consoleHandler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_level_console</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">%(module)-20s</span><span class="s1"> - </span><span class="si">%(levelname)-8s</span><span class="s1"> - </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">consoleHandler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">consoleHandler</span><span class="p">)</span>
+
+        <span class="c1"># Attach socket handler to logger to serialize writes to file</span>
+        <span class="n">socketHandler</span> <span class="o">=</span> <span class="n">ClientSocketHandler</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">logger_address</span><span class="p">)</span>
+        <span class="n">socketHandler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">socketHandler</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MPLogger._sentry_before_send"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger._sentry_before_send">[docs]</a>    <span class="k">def</span> <span class="nf">_sentry_before_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">hint</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update sentry events before they are sent</span>
+
+<span class="sd">        Note: we want to be very conservative in handling errors here. If this</span>
+<span class="sd">        method throws an error, Sentry silently discards it and no record is</span>
+<span class="sd">        sent. It&#39;s much better to have Sentry send an unparsed error then no</span>
+<span class="sd">        error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Strip &quot;BROWSER X: &quot; prefix to clean up logs</span>
+        <span class="k">if</span> <span class="s1">&#39;logentry&#39;</span> <span class="ow">in</span> <span class="n">event</span> <span class="ow">and</span> <span class="s1">&#39;message&#39;</span> <span class="ow">in</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;logentry&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">BROWSER_PREFIX</span><span class="p">,</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;logentry&#39;</span><span class="p">][</span><span class="s1">&#39;message&#39;</span><span class="p">]):</span>
+                <span class="n">event</span><span class="p">[</span><span class="s1">&#39;logentry&#39;</span><span class="p">][</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                    <span class="n">BROWSER_PREFIX</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;logentry&#39;</span><span class="p">][</span><span class="s1">&#39;message&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Add traceback info to fingerprint for logs that contain a traceback</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">event</span><span class="p">[</span><span class="s1">&#39;logentry&#39;</span><span class="p">][</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;extra&#39;</span><span class="p">][</span><span class="s1">&#39;exception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Combine neterrors of the same type</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;about:neterror&#39;</span> <span class="ow">in</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;extra&#39;</span><span class="p">][</span><span class="s1">&#39;exception&#39;</span><span class="p">]:</span>
+                <span class="n">error_text</span> <span class="o">=</span> <span class="n">parse_neterror</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;extra&#39;</span><span class="p">][</span><span class="s1">&#39;exception&#39;</span><span class="p">])</span>
+                <span class="n">event</span><span class="p">[</span><span class="s1">&#39;fingerprint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;neterror-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">error_text</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">event</span></div>
+
+<div class="viewcode-block" id="MPLogger._initialize_sentry"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger._initialize_sentry">[docs]</a>    <span class="k">def</span> <span class="nf">_initialize_sentry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;If running a cloud crawl, we can pull the sentry endpoint</span>
+<span class="sd">        and related config varibles from the environment&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_breadcrumb_handler</span> <span class="o">=</span> <span class="n">BreadcrumbHandler</span><span class="p">(</span>
+            <span class="n">level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_level_sentry_breadcrumb</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_event_handler</span> <span class="o">=</span> <span class="n">EventHandler</span><span class="p">(</span>
+            <span class="n">level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_level_sentry_event</span><span class="p">)</span>
+        <span class="n">sentry_sdk</span><span class="o">.</span><span class="n">init</span><span class="p">(</span>
+            <span class="n">dsn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sentry_dsn</span><span class="p">,</span>
+            <span class="n">before_send</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sentry_before_send</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">sentry_sdk</span><span class="o">.</span><span class="n">configure_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">scope</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_crawl_context</span><span class="p">:</span>
+                <span class="n">scope</span><span class="o">.</span><span class="n">set_tag</span><span class="p">(</span>
+                    <span class="s1">&#39;CRAWL_REFERENCE&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_crawl_context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s3_bucket&#39;</span><span class="p">,</span> <span class="s1">&#39;UNKNOWN&#39;</span><span class="p">),</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">_crawl_context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s3_directory&#39;</span><span class="p">,</span> <span class="s1">&#39;UNKNOWN&#39;</span><span class="p">))</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="MPLogger._start_listener"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger._start_listener">[docs]</a>    <span class="k">def</span> <span class="nf">_start_listener</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Start listening socket for remote logs from extension&quot;&quot;&quot;</span>
+        <span class="n">socket</span> <span class="o">=</span> <span class="n">serversocket</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;loggingserver&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">getsockname</span><span class="p">())</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">start_accepting</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>  <span class="c1"># block to allow parent to retrieve address</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Check for shutdown</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="n">socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># TODO: the socket needs a better way of closing</span>
+                <span class="k">while</span> <span class="ow">not</span> <span class="n">socket</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_process_record</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
+                <span class="k">break</span>
+
+            <span class="c1"># Process logs</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_process_record</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">EmptyQueue</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;EXT&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_handle_extension_log</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_handle_serialized_writes</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MPLogger._handle_extension_log"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger._handle_extension_log">[docs]</a>    <span class="k">def</span> <span class="nf">_handle_extension_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pass messages received from the extension to logger&quot;&quot;&quot;</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;level&#39;</span><span class="p">],</span>
+            <span class="n">pathname</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;pathname&#39;</span><span class="p">],</span>
+            <span class="n">lineno</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;lineno&#39;</span><span class="p">],</span>
+            <span class="n">msg</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">],</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">],</span>
+            <span class="n">exc_info</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">],</span>
+            <span class="n">func</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;func&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;openwpm&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MPLogger._handle_serialized_writes"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger._handle_serialized_writes">[docs]</a>    <span class="k">def</span> <span class="nf">_handle_serialized_writes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle records that must be serialized to the main process</span>
+
+<span class="sd">        This is currently records that are written to a file on disk</span>
+<span class="sd">        and those sent to Sentry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">]:</span>
+            <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dill</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;exc_info&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]:</span>
+            <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dill</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">])</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">makeLogRecord</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_handler</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sentry_dsn</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">levelno</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breadcrumb_handler</span><span class="o">.</span><span class="n">level</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_breadcrumb_handler</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">levelno</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_handler</span><span class="o">.</span><span class="n">level</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_event_handler</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MPLogger.close"><a class="viewcode-back" href="../../source/automation.html#automation.MPLogger.MPLogger.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;SHUTDOWN&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_queue</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_listener</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

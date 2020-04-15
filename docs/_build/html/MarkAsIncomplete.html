@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Shutdown and Saving &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="The Lifetime of a CommandSequence" href="CommandSequence.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="shutdown-and-saving">
+<h1>Shutdown and Saving<a class="headerlink" href="#shutdown-and-saving" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="abstract">
+<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this headline">¶</a></h2>
+<p>I can’t quite wrap my head around how shutdown, relaxed shutdown, saving and callbacks should interact.</p>
+</div>
+<div class="section" id="context">
+<h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
+<p>The current given are:</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener" title="automation.DataAggregator.BaseAggregator.BaseListener"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseListener</span></code></a>
+provides the method <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener.should_shutdown" title="automation.DataAggregator.BaseAggregator.BaseListener.should_shutdown"><code class="xref py py-meth docutils literal notranslate"><span class="pre">should_shutdown()</span></code></a>
+which sets flags on the <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener" title="automation.DataAggregator.BaseAggregator.BaseListener"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseListener</span></code></a>
+and returns <code class="docutils literal notranslate"><span class="pre">True</span></code>, when a shutdown signal was sent</p></li>
+<li><p>The <a class="reference internal" href="source/automation.html#automation.TaskManager.TaskManager._mark_command_sequences_complete" title="automation.TaskManager.TaskManager._mark_command_sequences_complete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_mark_command_sequences_complete()</span></code></a> which is running
+on a Thread in the main process and calls
+<a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseAggregator.get_new_completed_visits" title="automation.DataAggregator.BaseAggregator.BaseAggregator.get_new_completed_visits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_new_completed_visits()</span></code></a> to get a
+list of <a href="#id1"><span class="problematic" id="id2">`</span></a>visit_id`s and whether their visit was interrupted</p></li>
+</ul>
+</div>
+<div class="section" id="the-happy-path">
+<h2>The Happy Path<a class="headerlink" href="#the-happy-path" title="Permalink to this headline">¶</a></h2>
+<p>During normal operations the process goes like this:</p>
+<ul class="simple">
+<li><p>The specialized listener has their <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener.process_record" title="automation.DataAggregator.BaseAggregator.BaseListener.process_record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">process_record()</span></code></a>
+which calls <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener.update_records" title="automation.DataAggregator.BaseAggregator.BaseListener.update_records"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update_records()</span></code></a> on the BaseListener
+which updates the <code class="docutils literal notranslate"><span class="pre">browser_map</span></code></p></li>
+<li><p>If the <code class="docutils literal notranslate"><span class="pre">browser_map</span></code> has detected a new <code class="docutils literal notranslate"><span class="pre">visit_id</span></code> the specialized listeners
+<a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener.run_visit_completion_tasks" title="automation.DataAggregator.BaseAggregator.BaseListener.run_visit_completion_tasks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_visit_completion_tasks()</span></code></a>
+is called with the old <code class="docutils literal notranslate"><span class="pre">visit_id</span></code></p></li>
+<li><p>In the S3 case we then convert the old visits data into a <code class="xref py py-class docutils literal notranslate"><span class="pre">pyarrow.RecordBatch</span></code> and cache that for later saving
+and then call <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3" title="automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_send_to_s3()</span></code></a> which does nothing if the cache
+isn’t full</p></li>
+<li><p>Once the above steps have repeated often enough that the cache is full,
+<a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3" title="automation.DataAggregator.S3Aggregator.S3Listener._send_to_s3"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_send_to_s3()</span></code></a> sends out all files and invokes
+<a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener.mark_visit_complete" title="automation.DataAggregator.BaseAggregator.BaseListener.mark_visit_complete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mark_visit_complete()</span></code></a> for all <code class="docutils literal notranslate"><span class="pre">visit_ids</span></code> that have been
+sent out</p></li>
+<li><p>This then puts the the tuple of <code class="docutils literal notranslate"><span class="pre">(visit_id,</span> <span class="pre">false)</span></code> into the <code class="docutils literal notranslate"><span class="pre">ompletion_queue</span></code> between
+<a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseListener" title="automation.DataAggregator.BaseAggregator.BaseListener"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseListener</span></code></a> and
+<a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseAggregator" title="automation.DataAggregator.BaseAggregator.BaseAggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAggregator</span></code></a> which in turn makes it available
+to <a class="reference internal" href="source/automation.DataAggregator.html#automation.DataAggregator.BaseAggregator.BaseAggregator.get_new_completed_visits" title="automation.DataAggregator.BaseAggregator.BaseAggregator.get_new_completed_visits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_new_completed_visits()</span></code></a></p></li>
+</ul>
+</div>
+<div class="section" id="problem">
+<h2>Problem<a class="headerlink" href="#problem" title="Permalink to this headline">¶</a></h2>
+<p>Both the BaseAggregator as well as the specialized Aggregators have their part to play while shutting down
+and I can’t figure out</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Shutdown and Saving</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#abstract">Abstract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#context">Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-happy-path">The Happy Path</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#problem">Problem</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="CommandSequence.html" title="previous chapter">The Lifetime of a CommandSequence</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/MarkAsIncomplete.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

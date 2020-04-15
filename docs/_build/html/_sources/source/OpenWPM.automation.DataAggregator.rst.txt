@@ -1,0 +1,46 @@
+OpenWPM.automation.DataAggregator package
+=========================================
+
+Submodules
+----------
+
+OpenWPM.automation.DataAggregator.BaseAggregator module
+-------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DataAggregator.BaseAggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.DataAggregator.LocalAggregator module
+--------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DataAggregator.LocalAggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.DataAggregator.S3Aggregator module
+-----------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DataAggregator.S3Aggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.DataAggregator.parquet\_schema module
+--------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DataAggregator.parquet_schema
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: OpenWPM.automation.DataAggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:

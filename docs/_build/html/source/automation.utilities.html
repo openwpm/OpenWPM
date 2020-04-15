@@ -1,0 +1,729 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.utilities package &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="automation-utilities-package">
+<h1>automation.utilities package<a class="headerlink" href="#automation-utilities-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-automation.utilities.Cookie">
+<span id="automation-utilities-cookie-module"></span><h2>automation.utilities.Cookie module<a class="headerlink" href="#module-automation.utilities.Cookie" title="Permalink to this headline">¶</a></h2>
+<p>Here’s a sample session to show how to use this module.
+At the moment, this is the only documentation.</p>
+<div class="section" id="the-basics">
+<h3>The Basics<a class="headerlink" href="#the-basics" title="Permalink to this headline">¶</a></h3>
+<p>Importing is easy..</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">Cookie</span>
+</pre></div>
+</div>
+<p>Most of the time you start by creating a cookie.  Cookies come in
+three flavors, each with slightly different encoding semantics, but
+more on that later.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SimpleCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SerialCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>[Note: Long-time users of Cookie.py will remember using
+Cookie.Cookie() to create a Cookie object.  Although deprecated, it
+is still supported by the code.  See the Backward Compatibility notes
+for more information.]</p>
+<p>Once you’ve created your Cookie, you can add values just as if it were
+a dictionary.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;fig&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;newton&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;sugar&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;wafer&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>
+<span class="go">&#39;Set-Cookie: fig=newton\r\nSet-Cookie: sugar=wafer&#39;</span>
+</pre></div>
+</div>
+<p>Notice that the printable representation of a Cookie is the
+appropriate format for a Set-Cookie: header.  This is the
+default behavior.  You can change the header and printed
+attributes by using the .output() function</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;rocky&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;road&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;rocky&quot;</span><span class="p">][</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/cookie&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;Cookie:&quot;</span><span class="p">)</span>
+<span class="go">Cookie: rocky=road; Path=/cookie</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[],</span> <span class="n">header</span><span class="o">=</span><span class="s2">&quot;Cookie:&quot;</span><span class="p">)</span>
+<span class="go">Cookie: rocky=road</span>
+</pre></div>
+</div>
+<p>The load() method of a Cookie extracts cookies from a string.  In a
+CGI script, you would use this method to extract the cookies from the
+HTTP_COOKIE environment variable.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;chips=ahoy; vienna=finger&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>
+<span class="go">&#39;Set-Cookie: chips=ahoy\r\nSet-Cookie: vienna=finger&#39;</span>
+</pre></div>
+</div>
+<p>The load() method is darn-tootin smart about identifying cookies
+within a string.  Escaped quotation marks, nested semicolons, and other
+such trickeries do not confuse it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;keebler=&quot;E=everybody; L=</span><span class="se">\\</span><span class="s1">&quot;Loves</span><span class="se">\\</span><span class="s1">&quot;; fudge=</span><span class="se">\\</span><span class="s1">012;&quot;;&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">C</span>
+<span class="go">Set-Cookie: keebler=&quot;E=everybody; L=\&quot;Loves\&quot;; fudge=\012;&quot;</span>
+</pre></div>
+</div>
+<p>Each element of the Cookie also supports all of the RFC 2109
+Cookie attributes.  Here’s an example which sets the Path
+attribute.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;oreo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;doublestuff&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;oreo&quot;</span><span class="p">][</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">C</span>
+<span class="go">Set-Cookie: oreo=doublestuff; Path=/</span>
+</pre></div>
+</div>
+<p>Each dictionary element has a ‘value’ attribute, which gives you
+back the value associated with the key.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;twix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none for you&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;twix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">&#39;none for you&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-bit-more-advanced">
+<h3>A Bit More Advanced<a class="headerlink" href="#a-bit-more-advanced" title="Permalink to this headline">¶</a></h3>
+<p>As mentioned before, there are three different flavors of Cookie
+objects, each with different encoding/decoding semantics.  This
+section briefly discusses the differences.</p>
+<p>SimpleCookie</p>
+<p>The SimpleCookie expects that all values should be standard strings.
+Just to be sure, SimpleCookie invokes the str() builtin to convert
+the value to a string, when the values are set dictionary-style.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SimpleCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seven&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">&#39;7&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">&#39;seven&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>
+<span class="go">&#39;Set-Cookie: number=7\r\nSet-Cookie: string=seven&#39;</span>
+</pre></div>
+</div>
+<p>SerialCookie</p>
+<p>The SerialCookie expects that all values should be serialized using
+cPickle (or pickle, if cPickle isn’t available).  As a result of
+serializing, SerialCookie can save almost any Python object to a
+value, and recover the exact same object when the cookie has been
+returned.  (SerialCookie can yield some strange-looking cookie
+values, however.)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SerialCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seven&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">7</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">&#39;seven&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>
+<span class="go">&#39;Set-Cookie: number=&quot;I7\\012.&quot;\r\nSet-Cookie: string=&quot;S\&#39;seven\&#39;\\012p1\\012.&quot;&#39;  # noqa</span>
+</pre></div>
+</div>
+<p>Be warned, however, if SerialCookie cannot de-serialize a value (because
+it isn’t a valid pickle’d object), IT WILL RAISE AN EXCEPTION.</p>
+<p>SmartCookie</p>
+<p>The SmartCookie combines aspects of each of the other two flavors.
+When setting a value in a dictionary-fashion, the SmartCookie will
+serialize (ala cPickle) the value <em>if and only if</em> it isn’t a
+Python string.  String objects are <em>not</em> serialized.  Similarly,
+when the load() method parses out values, it attempts to de-serialize
+the value.  If it fails, then it fallsback to treating the value
+as a string.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">SmartCookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seven&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">7</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+<span class="go">&#39;seven&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>
+<span class="go">&#39;Set-Cookie: number=&quot;I7\\012.&quot;\r\nSet-Cookie: string=seven&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="backwards-compatibility">
+<h3>Backwards Compatibility<a class="headerlink" href="#backwards-compatibility" title="Permalink to this headline">¶</a></h3>
+<p>In order to keep compatibilty with earlier versions of Cookie.py,
+it is still possible to use Cookie.Cookie() to create a Cookie.  In
+fact, this simply returns a SmartCookie.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cookie</span><span class="o">.</span><span class="n">Cookie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">C</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+<span class="go">SmartCookie</span>
+</pre></div>
+</div>
+<p>Finis.</p>
+<dl class="py exception">
+<dt id="automation.utilities.Cookie.CookieError">
+<em class="property">exception </em><code class="sig-prename descclassname">automation.utilities.Cookie.</code><code class="sig-name descname">CookieError</code><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#CookieError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.CookieError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.utilities.Cookie.BaseCookie">
+<em class="property">class </em><code class="sig-prename descclassname">automation.utilities.Cookie.</code><code class="sig-name descname">BaseCookie</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#BaseCookie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<dl class="py method">
+<dt id="automation.utilities.Cookie.BaseCookie._BaseCookie__set">
+<code class="sig-name descname">_BaseCookie__set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">real_value</span></em>, <em class="sig-param"><span class="n">coded_value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie._BaseCookie__set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Private method for setting a cookie’s value</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.BaseCookie.js_output">
+<code class="sig-name descname">js_output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attrs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#BaseCookie.js_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie.js_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string suitable for JavaScript.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.BaseCookie.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rawdata</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#BaseCookie.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load cookies from a string (presumably HTTP_COOKIE) or
+from a dictionary.  Loading cookies from a dictionary ‘d’
+is equivalent to calling:</p>
+<blockquote>
+<div><p>map(Cookie.__setitem__, d.keys(), d.values())</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.BaseCookie.output">
+<code class="sig-name descname">output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attrs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">'Set-Cookie:'</span></em>, <em class="sig-param"><span class="n">sep</span><span class="o">=</span><span class="default_value">'\r\n'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#BaseCookie.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string suitable for HTTP.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.BaseCookie.value_decode">
+<code class="sig-name descname">value_decode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#BaseCookie.value_decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie.value_decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_decode(STRING)
+Called prior to setting a cookie’s value from the network
+representation.  The VALUE is the value read from HTTP
+header.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.BaseCookie.value_encode">
+<code class="sig-name descname">value_encode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#BaseCookie.value_encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.BaseCookie.value_encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_encode(VALUE)
+Called prior to setting a cookie’s value from the dictionary
+representation.  The VALUE is the value being assigned.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.utilities.Cookie.SimpleCookie">
+<em class="property">class </em><code class="sig-prename descclassname">automation.utilities.Cookie.</code><code class="sig-name descname">SimpleCookie</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SimpleCookie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SimpleCookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#automation.utilities.Cookie.BaseCookie" title="automation.utilities.Cookie.BaseCookie"><code class="xref py py-class docutils literal notranslate"><span class="pre">automation.utilities.Cookie.BaseCookie</span></code></a></p>
+<p>SimpleCookie supports strings as cookie values.  When setting
+the value using the dictionary assignment notation, SimpleCookie
+calls the builtin str() to convert the value to a string.  Values
+received from HTTP are kept as strings.</p>
+<dl class="py method">
+<dt id="automation.utilities.Cookie.SimpleCookie.value_decode">
+<code class="sig-name descname">value_decode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SimpleCookie.value_decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SimpleCookie.value_decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_decode(STRING)
+Called prior to setting a cookie’s value from the network
+representation.  The VALUE is the value read from HTTP
+header.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.SimpleCookie.value_encode">
+<code class="sig-name descname">value_encode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SimpleCookie.value_encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SimpleCookie.value_encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_encode(VALUE)
+Called prior to setting a cookie’s value from the dictionary
+representation.  The VALUE is the value being assigned.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.utilities.Cookie.SerialCookie">
+<em class="property">class </em><code class="sig-prename descclassname">automation.utilities.Cookie.</code><code class="sig-name descname">SerialCookie</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SerialCookie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SerialCookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#automation.utilities.Cookie.BaseCookie" title="automation.utilities.Cookie.BaseCookie"><code class="xref py py-class docutils literal notranslate"><span class="pre">automation.utilities.Cookie.BaseCookie</span></code></a></p>
+<p>SerialCookie supports arbitrary objects as cookie values. All
+values are serialized (using cPickle) before being sent to the
+client.  All incoming values are assumed to be valid Pickle
+representations.  IF AN INCOMING VALUE IS NOT IN A VALID PICKLE
+FORMAT, THEN AN EXCEPTION WILL BE RAISED.</p>
+<p>Note: Large cookie values add overhead because they must be
+retransmitted on every HTTP transaction.</p>
+<p>Note: HTTP has a 2k limit on the size of a cookie.  This class
+does not check for this limit, so be careful!!!</p>
+<dl class="py method">
+<dt id="automation.utilities.Cookie.SerialCookie.value_decode">
+<code class="sig-name descname">value_decode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SerialCookie.value_decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SerialCookie.value_decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_decode(STRING)
+Called prior to setting a cookie’s value from the network
+representation.  The VALUE is the value read from HTTP
+header.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.SerialCookie.value_encode">
+<code class="sig-name descname">value_encode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SerialCookie.value_encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SerialCookie.value_encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_encode(VALUE)
+Called prior to setting a cookie’s value from the dictionary
+representation.  The VALUE is the value being assigned.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.utilities.Cookie.SmartCookie">
+<em class="property">class </em><code class="sig-prename descclassname">automation.utilities.Cookie.</code><code class="sig-name descname">SmartCookie</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SmartCookie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SmartCookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#automation.utilities.Cookie.BaseCookie" title="automation.utilities.Cookie.BaseCookie"><code class="xref py py-class docutils literal notranslate"><span class="pre">automation.utilities.Cookie.BaseCookie</span></code></a></p>
+<p>SmartCookie supports arbitrary objects as cookie values.  If the
+object is a string, then it is quoted.  If the object is not a
+string, however, then SmartCookie will use cPickle to serialize
+the object into a string representation.</p>
+<p>Note: Large cookie values add overhead because they must be
+retransmitted on every HTTP transaction.</p>
+<p>Note: HTTP has a 2k limit on the size of a cookie.  This class
+does not check for this limit, so be careful!!!</p>
+<dl class="py method">
+<dt id="automation.utilities.Cookie.SmartCookie.value_decode">
+<code class="sig-name descname">value_decode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SmartCookie.value_decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SmartCookie.value_decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_decode(STRING)
+Called prior to setting a cookie’s value from the network
+representation.  The VALUE is the value read from HTTP
+header.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.Cookie.SmartCookie.value_encode">
+<code class="sig-name descname">value_encode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/Cookie.html#SmartCookie.value_encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.Cookie.SmartCookie.value_encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>real_value, coded_value = value_encode(VALUE)
+Called prior to setting a cookie’s value from the dictionary
+representation.  The VALUE is the value being assigned.
+Override this function to modify the behavior of cookies.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="automation.utilities.Cookie.Cookie">
+<code class="sig-prename descclassname">automation.utilities.Cookie.</code><code class="sig-name descname">Cookie</code><a class="headerlink" href="#automation.utilities.Cookie.Cookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#automation.utilities.Cookie.SmartCookie" title="automation.utilities.Cookie.SmartCookie"><code class="xref py py-class docutils literal notranslate"><span class="pre">automation.utilities.Cookie.SmartCookie</span></code></a></p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="automation-utilities-build-cookie-table-module">
+<h2>automation.utilities.build_cookie_table module<a class="headerlink" href="#automation-utilities-build-cookie-table-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-automation.utilities.db_utils">
+<span id="automation-utilities-db-utils-module"></span><h2>automation.utilities.db_utils module<a class="headerlink" href="#module-automation.utilities.db_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="automation.utilities.db_utils.any_command_failed">
+<code class="sig-prename descclassname">automation.utilities.db_utils.</code><code class="sig-name descname">any_command_failed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/db_utils.html#any_command_failed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.db_utils.any_command_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if any command in a given database failed</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.db_utils.get_content">
+<code class="sig-prename descclassname">automation.utilities.db_utils.</code><code class="sig-name descname">get_content</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_directory</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/db_utils.html#get_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.db_utils.get_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yield key, value pairs from the deduplicated leveldb content database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_directory</strong> (<em>string</em>) – root directory of the crawl files containing the content database</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.db_utils.get_javascript_entries">
+<code class="sig-prename descclassname">automation.utilities.db_utils.</code><code class="sig-name descname">get_javascript_entries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">all_columns</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">as_tuple</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/db_utils.html#get_javascript_entries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.db_utils.get_javascript_entries" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.db_utils.query_db">
+<code class="sig-prename descclassname">automation.utilities.db_utils.</code><code class="sig-name descname">query_db</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">query</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_tuple</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/db_utils.html#query_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.db_utils.query_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a query against the given db.</p>
+<p>If params is not None, securely construct a query from the given
+query string and params.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.utilities.domain_utils">
+<span id="automation-utilities-domain-utils-module"></span><h2>automation.utilities.domain_utils module<a class="headerlink" href="#module-automation.utilities.domain_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.get_ps_plus_1">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">get_ps_plus_1</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#get_ps_plus_1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.get_ps_plus_1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the PS+1 of the url. This will also return
+an IP address if the hostname of the url is a valid
+IP address.</p>
+<p>An (optional) PublicSuffixList object can be passed with keyword arg ‘psl’,
+otherwise a version cached in the system temp directory is used.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.get_psl">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">get_psl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#get_psl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.get_psl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grabs an updated public suffix list.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.get_stripped_url">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">get_stripped_url</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span></em>, <em class="sig-param"><span class="n">scheme</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#get_stripped_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.get_stripped_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a url stripped to (scheme)?+hostname+path</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.get_stripped_urls">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">get_stripped_urls</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">urls</span></em>, <em class="sig-param"><span class="n">scheme</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#get_stripped_urls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.get_stripped_urls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a set (or list) of urls stripped to (scheme)?+hostname+path</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.hostname_subparts">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">hostname_subparts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span></em>, <em class="sig-param"><span class="n">include_ps</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#hostname_subparts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.hostname_subparts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of slices of a url’s hostname down to the PS+1
+(or PS if include_ps)</p>
+<dl class="simple">
+<dt>For example: <a class="reference external" href="http://a.b.c.d.com/path?query#frag">http://a.b.c.d.com/path?query#frag</a> would yield:</dt><dd><p>[a.b.c.d.com, b.c.d.com, c.d.com, d.com] if include_ps == False
+[a.b.c.d.com, b.c.d.com, c.d.com, d.com, com] if include_ps == True</p>
+</dd>
+</dl>
+<p>An (optional) PublicSuffixList object can be passed with keyword arg ‘psl’.
+otherwise a version cached in the system temp directory is used.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.is_ip_address">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">is_ip_address</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hostname</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#is_ip_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.is_ip_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the given string is a valid IP address</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.domain_utils.load_psl">
+<code class="sig-prename descclassname">automation.utilities.domain_utils.</code><code class="sig-name descname">load_psl</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/domain_utils.html#load_psl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.domain_utils.load_psl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-automation.utilities.multiprocess_utils">
+<span id="automation-utilities-multiprocess-utils-module"></span><h2>automation.utilities.multiprocess_utils module<a class="headerlink" href="#module-automation.utilities.multiprocess_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.utilities.multiprocess_utils.Process">
+<em class="property">class </em><code class="sig-prename descclassname">automation.utilities.multiprocess_utils.</code><code class="sig-name descname">Process</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/multiprocess_utils.html#Process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.multiprocess_utils.Process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">multiprocess.context.Process</span></code></p>
+<p>Wrapper Process class that includes exception logging</p>
+<dl class="py method">
+<dt id="automation.utilities.multiprocess_utils.Process.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/multiprocess_utils.html#Process.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.multiprocess_utils.Process.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to be run in sub-process; can be overridden in sub-class</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.multiprocess_utils.parse_traceback_for_sentry">
+<code class="sig-prename descclassname">automation.utilities.multiprocess_utils.</code><code class="sig-name descname">parse_traceback_for_sentry</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tb</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/multiprocess_utils.html#parse_traceback_for_sentry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.multiprocess_utils.parse_traceback_for_sentry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse traceback to send Sentry-compatible strings</p>
+<p>Sentry appears to limit each <cite>extra</cite> string to 500 characters. This splits
+the traceback string across N chunks of at most 500 characters each.
+Chunks are split at newlines for readability. Traceback lines over 500
+characters are still truncated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tb</strong> (<em>list of strings</em>) – Traceback formatted such that each list item is a new line.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.utilities.platform_utils">
+<span id="automation-utilities-platform-utils-module"></span><h2>automation.utilities.platform_utils module<a class="headerlink" href="#module-automation.utilities.platform_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="automation.utilities.platform_utils.get_configuration_string">
+<code class="sig-prename descclassname">automation.utilities.platform_utils.</code><code class="sig-name descname">get_configuration_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">manager_params</span></em>, <em class="sig-param"><span class="n">browser_params</span></em>, <em class="sig-param"><span class="n">versions</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/platform_utils.html#get_configuration_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.platform_utils.get_configuration_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a well-formatted string for {manager,browser}params</p>
+<p>Constructs a pretty printed string of all parameters. The config
+dictionaries are split to try to avoid line wrapping for reasonably
+size terminal windows.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.platform_utils.get_firefox_binary_path">
+<code class="sig-prename descclassname">automation.utilities.platform_utils.</code><code class="sig-name descname">get_firefox_binary_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/platform_utils.html#get_firefox_binary_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.platform_utils.get_firefox_binary_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>If ../../firefox-bin/firefox-bin or os.environ[“FIREFOX_BINARY”] exists,
+return it. Else, throw a RuntimeError.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.platform_utils.get_geckodriver_exec_path">
+<code class="sig-prename descclassname">automation.utilities.platform_utils.</code><code class="sig-name descname">get_geckodriver_exec_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/platform_utils.html#get_geckodriver_exec_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.platform_utils.get_geckodriver_exec_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the geckodriver executable does not exist next to the Firefox binary,
+we throw a RuntimeError.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.platform_utils.get_version">
+<code class="sig-prename descclassname">automation.utilities.platform_utils.</code><code class="sig-name descname">get_version</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/platform_utils.html#get_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.platform_utils.get_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return OpenWPM version tag/current commit and Firefox version</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.utilities.platform_utils.parse_http_stack_trace_str">
+<code class="sig-prename descclassname">automation.utilities.platform_utils.</code><code class="sig-name descname">parse_http_stack_trace_str</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">trace_str</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/platform_utils.html#parse_http_stack_trace_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.platform_utils.parse_http_stack_trace_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a stacktrace string and return an array of dict.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.utilities.rediswq">
+<span id="automation-utilities-rediswq-module"></span><h2>automation.utilities.rediswq module<a class="headerlink" href="#module-automation.utilities.rediswq" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="automation.utilities.rediswq.RedisWQ">
+<em class="property">class </em><code class="sig-prename descclassname">automation.utilities.rediswq.</code><code class="sig-name descname">RedisWQ</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">max_retries</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">redis_kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simple Finite Work Queue with Redis Backend</p>
+<p>This work queue is finite: as long as no more work is added
+after workers start, the workers can detect when the queue
+is completely empty.</p>
+<p>The items in the work queue are assumed to have unique values.</p>
+<p>This object is not intended to be used by multiple threads
+concurrently.</p>
+<p>From:
+<a class="reference external" href="https://kubernetes.io/docs/tasks/job/fine-parallel-processing-work-queue">https://kubernetes.io/docs/tasks/job/fine-parallel-processing-work-queue</a></p>
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">max_retries</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">redis_kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redis worker queue instance</p>
+<dl class="simple">
+<dt>The default connection parameters are:</dt><dd><ul class="simple">
+<li><p>host=’localhost’</p></li>
+<li><p>port=6379</p></li>
+<li><p>db=0</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – A prefix that identified all of the objects associated with this
+worker queue. e.g., the main work queue is identified by <cite>name</cite>,
+and the processesing queue is identified by <cite>name</cite>:processing.</p></li>
+<li><p><strong>max_retries</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of times to retry a job before removing it from the queue.
+If you don’t wish to retry jobs, set the limit to 0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ._itemkey">
+<code class="sig-name descname">_itemkey</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">item</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ._itemkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ._itemkey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string that uniquely identifies an item (bytes).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ._lease_exists">
+<code class="sig-name descname">_lease_exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">item</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ._lease_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ._lease_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if a lease on ‘item’ exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ._main_qsize">
+<code class="sig-name descname">_main_qsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ._main_qsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ._main_qsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the size of the main queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ._maybe_renew_job">
+<code class="sig-name descname">_maybe_renew_job</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">job</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ._maybe_renew_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ._maybe_renew_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transactionally move job from the processing to the work queue.</p>
+<p>A job will not be renewed if it appears that another worker is
+changing the processing queue or if the job has exceeded the
+maximum number of retries.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ._processing_qsize">
+<code class="sig-name descname">_processing_qsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ._processing_qsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ._processing_qsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the size of the main queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.check_expired_leases">
+<code class="sig-name descname">check_expired_leases</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.check_expired_leases"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.check_expired_leases" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return to the work queue</p>
+<p>If the lease key is not present for an item (it expired or was
+never created because the client crashed before creating it)
+then move the item back to the main queue so others can work on
+it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.complete">
+<code class="sig-name descname">complete</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">job</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.complete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.complete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complete working on the <cite>job</cite>.</p>
+<p>If the lease expired, the item may not have completed, and some
+other worker may have picked it up.  There is no indication
+of what happened.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.empty">
+<code class="sig-name descname">empty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.empty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the queue is empty, including work being done,
+False otherwise.</p>
+<p>False does not necessarily mean that there is work available to work
+on right now,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.get_retry_number">
+<code class="sig-name descname">get_retry_number</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">job</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.get_retry_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.get_retry_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of retries for the given <cite>job</cite>.</p>
+<p>This returns 0 if the job has never been retried. We do not attempt
+to verify that the job is valid, is currently leased by the worker, etc
+The caller is responsible for ensuring that there is currently a
+lease on this job (thus ensuring the retry count reflects the current
+state).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.lease">
+<code class="sig-name descname">lease</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lease_secs</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">block</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.lease"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.lease" title="Permalink to this definition">¶</a></dt>
+<dd><p>Begin working on an item the work queue.</p>
+<p>Lease the item for lease_secs.  After that time, other
+workers may consider this client to have crashed or stalled
+and pick up the item instead.</p>
+<p>If optional args block is true and timeout is None (the default), block
+if necessary until an item is available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.renew_lease">
+<code class="sig-name descname">renew_lease</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">job</span><span class="p">:</span> <span class="n">Any</span></em>, <em class="sig-param"><span class="n">lease_secs</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.renew_lease"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.renew_lease" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the item is currently leased by this client
+and if so renews that lease by <cite>lease_secs</cite>
+Return false if the lease was already expired</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.utilities.rediswq.RedisWQ.sessionID">
+<code class="sig-name descname">sessionID</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/utilities/rediswq.html#RedisWQ.sessionID"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.utilities.rediswq.RedisWQ.sessionID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the ID for this session.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.utilities">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-automation.utilities" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/automation.utilities.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

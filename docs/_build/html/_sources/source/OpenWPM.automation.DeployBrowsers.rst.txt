@@ -1,0 +1,46 @@
+OpenWPM.automation.DeployBrowsers package
+=========================================
+
+Submodules
+----------
+
+OpenWPM.automation.DeployBrowsers.configure\_firefox module
+-----------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DeployBrowsers.configure_firefox
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.DeployBrowsers.deploy\_browser module
+--------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DeployBrowsers.deploy_browser
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.DeployBrowsers.deploy\_firefox module
+--------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DeployBrowsers.deploy_firefox
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.automation.DeployBrowsers.selenium\_firefox module
+----------------------------------------------------------
+
+.. automodule:: OpenWPM.automation.DeployBrowsers.selenium_firefox
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: OpenWPM.automation.DeployBrowsers
+   :members:
+   :undoc-members:
+   :show-inheritance:

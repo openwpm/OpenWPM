@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.DeployBrowsers.configure_firefox &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.DeployBrowsers.configure_firefox</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Set prefs and load extensions in Firefox &quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<span class="n">EXT_STORAGE_DIR</span> <span class="o">=</span> <span class="s1">&#39;browser-extension-data&#39;</span>
+
+
+<div class="viewcode-block" id="privacy"><a class="viewcode-back" href="../../../source/automation.DeployBrowsers.html#automation.DeployBrowsers.configure_firefox.privacy">[docs]</a><span class="k">def</span> <span class="nf">privacy</span><span class="p">(</span><span class="n">browser_params</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">,</span> <span class="n">browser_profile_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configure the privacy settings in Firefox. This includes:</span>
+<span class="sd">    * DNT</span>
+<span class="sd">    * Third-part cookie blocking</span>
+<span class="sd">    * Tracking protection</span>
+<span class="sd">    * Privacy extensions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Make extension storage directory</span>
+    <span class="n">storage_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">browser_profile_path</span><span class="p">,</span> <span class="n">EXT_STORAGE_DIR</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">storage_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">storage_dir</span><span class="p">)</span>
+
+    <span class="c1"># Turns on Do Not Track</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;donottrack&#39;</span><span class="p">]:</span>
+        <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;privacy.donottrackheader.enabled&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Sets the third party cookie setting</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;tp_cookies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;never&#39;</span><span class="p">:</span>
+        <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.cookie.cookieBehavior&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;tp_cookies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;from_visited&#39;</span><span class="p">:</span>
+        <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.cookie.cookieBehavior&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># always allow third party cookies</span>
+        <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.cookie.cookieBehavior&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Tracking Protection</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;tracking-protection&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Firefox Tracking Protection is not currently &quot;</span>
+                           <span class="s2">&quot;supported. See: &quot;</span>
+                           <span class="s2">&quot;https://github.com/citp/OpenWPM/issues/101&quot;</span><span class="p">)</span>
+
+    <span class="c1"># AbBlock Plus</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;adblock-plus&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;AdBlock Plus is not currently supported. See: &quot;</span>
+                           <span class="s2">&quot;https://github.com/citp/OpenWPM/issues/35&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Ghostery</span>
+    <span class="c1"># Updated: 2017-10-7</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;ghostery&#39;</span><span class="p">]:</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">add_extension</span><span class="p">(</span><span class="n">extension</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;firefox_extensions&#39;</span><span class="p">,</span> <span class="s1">&#39;ghostery&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;ghostery-7.3.3.7.xpi&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">ghostery_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">storage_dir</span><span class="p">,</span> <span class="s1">&#39;firefox@ghostery.com&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ghostery_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">ghostery_dir</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;firefox_extensions&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;ghostery&#39;</span><span class="p">,</span> <span class="s1">&#39;storage.js&#39;</span><span class="p">),</span> <span class="n">ghostery_dir</span><span class="p">)</span>
+
+    <span class="c1"># Disconnect</span>
+    <span class="c1"># Updated: 2017-10-7</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;disconnect&#39;</span><span class="p">]:</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">add_extension</span><span class="p">(</span><span class="n">extension</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;firefox_extensions&#39;</span><span class="p">,</span> <span class="s1">&#39;disconnect-5.18.21.xpi&#39;</span><span class="p">))</span>
+
+    <span class="c1"># Enable HTTPS Everywhere</span>
+    <span class="c1"># Updated: 2017-10-7</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;https-everywhere&#39;</span><span class="p">]:</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">add_extension</span><span class="p">(</span><span class="n">extension</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;firefox_extensions&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;https_everywhere-2017.10.4.xpi&#39;</span><span class="p">))</span>
+
+    <span class="c1"># uBlock Origin</span>
+    <span class="c1"># Updated: 2017-10-7</span>
+    <span class="c1"># Uses the default blocklists that ship with the XPI.</span>
+    <span class="k">if</span> <span class="n">browser_params</span><span class="p">[</span><span class="s1">&#39;ublock-origin&#39;</span><span class="p">]:</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">add_extension</span><span class="p">(</span><span class="n">extension</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;firefox_extensions&#39;</span><span class="p">,</span> <span class="s1">&#39;ublock_origin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;ublock_origin-1.14.10.xpi&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">ublock_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">storage_dir</span><span class="p">,</span> <span class="s1">&#39;uBlock0@raymondhill.net&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ublock_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">ublock_dir</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;firefox_extensions&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;ublock_origin&#39;</span><span class="p">,</span> <span class="s1">&#39;storage.js&#39;</span><span class="p">),</span> <span class="n">ublock_dir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="optimize_prefs"><a class="viewcode-back" href="../../../source/automation.DeployBrowsers.html#automation.DeployBrowsers.configure_firefox.optimize_prefs">[docs]</a><span class="k">def</span> <span class="nf">optimize_prefs</span><span class="p">(</span><span class="n">fo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Disable various features and checks the browser will do on startup.</span>
+<span class="sd">    Some of these (e.g. disabling the newtab page) are required to prevent</span>
+<span class="sd">    extraneous data in the proxy.</span>
+
+<span class="sd">    Source of prefs:</span>
+<span class="sd">    * https://support.mozilla.org/en-US/kb/how-stop-firefox-making-automatic-connections</span>
+<span class="sd">    * https://github.com/pyllyukko/user.js/blob/master/user.js</span>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+    <span class="c1"># Startup / Speed</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;browser.shell.checkDefaultBrowser&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.slowStartup.notificationDisabled&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.slowStartup.maxSamples&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.slowStartup.samples&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;extensions.checkCompatibility.nightly&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;browser.rights.3.shown&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;reader.parse-on-load.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;browser.pagethumbnails.capturing_disabled&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.uitour.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;dom.flyweb.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Disable health reports / telemetry / crash reports</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;datareporting.policy.dataSubmissionEnabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;datareporting.healthreport.uploadEnabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;datareporting.healthreport.service.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;toolkit.telemetry.archive.enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;toolkit.telemetry.enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;toolkit.telemetry.unified&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;breakpad.reportURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;dom.ipc.plugins.reportCrashURL&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.selfsupport.url&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.tabs.crashReporting.sendReport&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.crashReports.unsubmittedCheck.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;dom.ipc.plugins.flash.subprocess.crashreporter.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Predictive Actions / Prefetch</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.predictor.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.dns.disablePrefetch&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.prefetch-next&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.search.suggest.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.http.speculative-parallel-limit&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;keyword.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># location bar using search</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.urlbar.userMadeSearchSuggestionsChoice&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.casting.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Disable pinging Mozilla for geoip</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;browser.search.geoip.url&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.search.countryCode&quot;</span><span class="p">,</span> <span class="s2">&quot;US&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.search.region&quot;</span><span class="p">,</span> <span class="s2">&quot;US&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Disable pinging Mozilla for geo-specific search</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.search.geoSpecificDefaults&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.search.geoSpecificDefaults.url&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Disable auto-updating</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;app.update.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># browser</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;app.update.url&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># browser</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.search.update&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># search</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.update.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># extensions</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.update.autoUpdateDefault&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.getAddons.cache.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;lightweightThemes.update.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># Personas</span>
+
+    <span class="c1"># Disable Safebrowsing and other security features</span>
+    <span class="c1"># that require on remote content</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.safebrowsing.phising.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.safebrowsing.malware.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.safebrowsing.downloads.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.safebrowsing.downloads.remote.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.safebrowsing.blockedURIs.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.mozilla.gethashURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.google.gethashURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.google4.gethashURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.mozilla.updateURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.google.updateURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.google4.updateURL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.mozilla.lists&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># TP</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.google.lists&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># TP</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span>
+        <span class="s2">&quot;browser.safebrowsing.provider.google4.lists&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># TP</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.blocklist.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># extensions</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s1">&#39;security.OCSP.enabled&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Disable Content Decryption Module and OpenH264 related downloads</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;media.gmp-manager.url&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;media.gmp-provider.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;media.gmp-widevinecdm.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;media.gmp-widevinecdm.visible&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;media.gmp-gmpopenh264.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Disable Experiments</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;experiments.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;experiments.manifest.uri&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;experiments.supported&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;experiments.activeExperiment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;network.allow-experiments&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Disable pinging Mozilla for newtab</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.newtabpage.directory.ping&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.newtabpage.directory.source&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.newtabpage.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.newtabpage.enhanced&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.newtabpage.introShown&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;browser.aboutHomeSnippets.updateUrl&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Disable Pocket</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.pocket.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Disable Shield</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;app.shield.optoutstudies.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.shield-recipe-client.enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Enable legacy extensions and disable extension signing</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;extensions.legacy.enabled&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">fo</span><span class="o">.</span><span class="n">set_preference</span><span class="p">(</span><span class="s2">&quot;xpinstall.signatures.required&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

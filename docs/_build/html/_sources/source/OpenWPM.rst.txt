@@ -1,0 +1,39 @@
+OpenWPM package
+===============
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   OpenWPM.automation
+   OpenWPM.test
+
+Submodules
+----------
+
+OpenWPM.crawler module
+----------------------
+
+.. automodule:: OpenWPM.crawler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OpenWPM.demo module
+-------------------
+
+.. automodule:: OpenWPM.demo
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: OpenWPM
+   :members:
+   :undoc-members:
+   :show-inheritance:

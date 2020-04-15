@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.DeployBrowsers package &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="automation-deploybrowsers-package">
+<h1>automation.DeployBrowsers package<a class="headerlink" href="#automation-deploybrowsers-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-automation.DeployBrowsers.configure_firefox">
+<span id="automation-deploybrowsers-configure-firefox-module"></span><h2>automation.DeployBrowsers.configure_firefox module<a class="headerlink" href="#module-automation.DeployBrowsers.configure_firefox" title="Permalink to this headline">¶</a></h2>
+<p>Set prefs and load extensions in Firefox</p>
+<dl class="py function">
+<dt id="automation.DeployBrowsers.configure_firefox.optimize_prefs">
+<code class="sig-prename descclassname">automation.DeployBrowsers.configure_firefox.</code><code class="sig-name descname">optimize_prefs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fo</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/configure_firefox.html#optimize_prefs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.configure_firefox.optimize_prefs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable various features and checks the browser will do on startup.
+Some of these (e.g. disabling the newtab page) are required to prevent
+extraneous data in the proxy.</p>
+<p>Source of prefs:
+* <a class="reference external" href="https://support.mozilla.org/en-US/kb/how-stop-firefox-making-automatic-connections">https://support.mozilla.org/en-US/kb/how-stop-firefox-making-automatic-connections</a>
+* <a class="reference external" href="https://github.com/pyllyukko/user.js/blob/master/user.js">https://github.com/pyllyukko/user.js/blob/master/user.js</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="automation.DeployBrowsers.configure_firefox.privacy">
+<code class="sig-prename descclassname">automation.DeployBrowsers.configure_firefox.</code><code class="sig-name descname">privacy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">browser_params</span></em>, <em class="sig-param"><span class="n">fp</span></em>, <em class="sig-param"><span class="n">fo</span></em>, <em class="sig-param"><span class="n">root_dir</span></em>, <em class="sig-param"><span class="n">browser_profile_path</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/configure_firefox.html#privacy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.configure_firefox.privacy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure the privacy settings in Firefox. This includes:
+* DNT
+* Third-part cookie blocking
+* Tracking protection
+* Privacy extensions</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.DeployBrowsers.deploy_browser">
+<span id="automation-deploybrowsers-deploy-browser-module"></span><h2>automation.DeployBrowsers.deploy_browser module<a class="headerlink" href="#module-automation.DeployBrowsers.deploy_browser" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="automation.DeployBrowsers.deploy_browser.deploy_browser">
+<code class="sig-prename descclassname">automation.DeployBrowsers.deploy_browser.</code><code class="sig-name descname">deploy_browser</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">status_queue</span></em>, <em class="sig-param"><span class="n">browser_params</span></em>, <em class="sig-param"><span class="n">manager_params</span></em>, <em class="sig-param"><span class="n">crash_recovery</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/deploy_browser.html#deploy_browser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.deploy_browser.deploy_browser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deploy Firefox browser (Chrome no longer supported)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.DeployBrowsers.deploy_firefox">
+<span id="automation-deploybrowsers-deploy-firefox-module"></span><h2>automation.DeployBrowsers.deploy_firefox module<a class="headerlink" href="#module-automation.DeployBrowsers.deploy_firefox" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="automation.DeployBrowsers.deploy_firefox.deploy_firefox">
+<code class="sig-prename descclassname">automation.DeployBrowsers.deploy_firefox.</code><code class="sig-name descname">deploy_firefox</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">status_queue</span></em>, <em class="sig-param"><span class="n">browser_params</span></em>, <em class="sig-param"><span class="n">manager_params</span></em>, <em class="sig-param"><span class="n">crash_recovery</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/deploy_firefox.html#deploy_firefox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.deploy_firefox.deploy_firefox" title="Permalink to this definition">¶</a></dt>
+<dd><p>launches a firefox instance with parameters set by the input dictionary</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.DeployBrowsers.selenium_firefox">
+<span id="automation-deploybrowsers-selenium-firefox-module"></span><h2>automation.DeployBrowsers.selenium_firefox module<a class="headerlink" href="#module-automation.DeployBrowsers.selenium_firefox" title="Permalink to this headline">¶</a></h2>
+<p>Workarounds for Selenium headaches.</p>
+<dl class="py class">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary">
+<em class="property">class </em><code class="sig-prename descclassname">automation.DeployBrowsers.selenium_firefox.</code><code class="sig-name descname">FirefoxBinary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">firefox_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_file</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary.NO_FOCUS_LIBRARY_NAME">
+<code class="sig-name descname">NO_FOCUS_LIBRARY_NAME</code><em class="property"> = 'x_ignore_nofocus.so'</em><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary.NO_FOCUS_LIBRARY_NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">firefox_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_file</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new instance of Firefox binary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Args</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>firefox_path - Path to the Firefox executable. By default, it will be detected from the standard locations.</p></li>
+<li><dl class="simple">
+<dt>log_file - A file object to redirect the firefox process output to. It can be sys.stdout.</dt><dd><p>Please note that with parallel run the output won’t be synchronous.
+By default, it will be redirected to /dev/null.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary._get_firefox_start_cmd">
+<code class="sig-name descname">_get_firefox_start_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary._get_firefox_start_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary._get_firefox_start_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the command to start firefox.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary._wait_until_connectable">
+<code class="sig-name descname">_wait_until_connectable</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary._wait_until_connectable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary._wait_until_connectable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the extension is connectable in the firefox.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary.add_command_line_options">
+<code class="sig-name descname">add_command_line_options</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary.add_command_line_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary.add_command_line_options" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary.kill">
+<code class="sig-name descname">kill</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary.kill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary.kill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kill the browser.</p>
+<p>This is useful when the browser is stuck.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary.launch_browser">
+<code class="sig-name descname">launch_browser</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">profile</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary.launch_browser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary.launch_browser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launches the browser for the given profile name.
+It is assumed the profile already exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxBinary.which">
+<code class="sig-name descname">which</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/firefox_binary.html#FirefoxBinary.which"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxBinary.which" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the fully qualified path by searching Path of the given
+name</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxProfile">
+<em class="property">class </em><code class="sig-prename descclassname">automation.DeployBrowsers.selenium_firefox.</code><code class="sig-name descname">FirefoxProfile</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/selenium_firefox.html#FirefoxProfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxProfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">selenium.webdriver.firefox.firefox_profile.FirefoxProfile</span></code></p>
+<p>Hook class for patching bugs in Selenium’s FirefoxProfile class</p>
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxProfile._addon_details">
+<code class="sig-name descname">_addon_details</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">addon_path</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/selenium_firefox.html#FirefoxProfile._addon_details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxProfile._addon_details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selenium 3.4.0 doesn’t support loading WebExtensions. See bug:
+<a class="reference external" href="https://github.com/SeleniumHQ/selenium/issues/4093">https://github.com/SeleniumHQ/selenium/issues/4093</a>. This patch uses
+code from PR: <a class="reference external" href="https://github.com/SeleniumHQ/selenium/pull/4790">https://github.com/SeleniumHQ/selenium/pull/4790</a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxLogInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">automation.DeployBrowsers.selenium_firefox.</code><code class="sig-name descname">FirefoxLogInterceptor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">crawl_id</span></em>, <em class="sig-param"><span class="n">profile_path</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/selenium_firefox.html#FirefoxLogInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxLogInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">threading.Thread</span></code></p>
+<p>Intercept logs from Selenium and/or geckodriver, using a named pipe
+and a detached thread, and feed them to the primary logger for this
+instance.  Also responsible for extracting the _real_ profile location
+from geckodriver’s log output (geckodriver copies the profile).</p>
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.FirefoxLogInterceptor.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/automation/DeployBrowsers/selenium_firefox.html#FirefoxLogInterceptor.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.FirefoxLogInterceptor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method representing the thread’s activity.</p>
+<p>You may override this method in a subclass. The standard run() method
+invokes the callable object passed to the object’s constructor as the
+target argument, if any, with sequential and keyword arguments taken
+from the args and kwargs arguments, respectively.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options">
+<em class="property">class </em><code class="sig-prename descclassname">automation.DeployBrowsers.selenium_firefox.</code><code class="sig-name descname">Options</code><a class="reference internal" href="../_modules/selenium/webdriver/firefox/options.html#Options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.KEY">
+<code class="sig-name descname">KEY</code><em class="property"> = 'moz:firefoxOptions'</em><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.accept_insecure_certs">
+<em class="property">property </em><code class="sig-name descname">accept_insecure_certs</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.accept_insecure_certs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.add_argument">
+<code class="sig-name descname">add_argument</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">argument</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/options.html#Options.add_argument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.add_argument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add argument to be used for the browser process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.arguments">
+<em class="property">property </em><code class="sig-name descname">arguments</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of browser process arguments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.binary">
+<em class="property">property </em><code class="sig-name descname">binary</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the FirefoxBinary instance</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.binary_location">
+<em class="property">property </em><code class="sig-name descname">binary_location</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.binary_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the location of the binary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.capabilities">
+<em class="property">property </em><code class="sig-name descname">capabilities</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.capabilities" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.headless">
+<em class="property">property </em><code class="sig-name descname">headless</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.headless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not the headless argument is set</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.preferences">
+<em class="property">property </em><code class="sig-name descname">preferences</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.preferences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict of preferences.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.profile">
+<em class="property">property </em><code class="sig-name descname">profile</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Firefox profile to use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.proxy">
+<em class="property">property </em><code class="sig-name descname">proxy</code><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns Proxy if set otherwise None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.set_capability">
+<code class="sig-name descname">set_capability</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/options.html#Options.set_capability"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.set_capability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a capability.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.set_headless">
+<code class="sig-name descname">set_headless</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">headless</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/options.html#Options.set_headless"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.set_headless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated, options.headless = True</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.set_preference">
+<code class="sig-name descname">set_preference</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/options.html#Options.set_preference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.set_preference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a preference.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="automation.DeployBrowsers.selenium_firefox.Options.to_capabilities">
+<code class="sig-name descname">to_capabilities</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/selenium/webdriver/firefox/options.html#Options.to_capabilities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#automation.DeployBrowsers.selenium_firefox.Options.to_capabilities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marshals the Firefox options to a <cite>moz:firefoxOptions</cite>
+object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-automation.DeployBrowsers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-automation.DeployBrowsers" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/automation.DeployBrowsers.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

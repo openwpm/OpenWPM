@@ -1,0 +1,476 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>automation.Commands.utils.webdriver_utils &#8212; OpenWPM  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for automation.Commands.utils.webdriver_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># A set of extensions to the functions normally provided by the selenium</span>
+<span class="c1"># webdriver. These are primarily for parsing and searching.</span>
+
+
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">urlparse</span>
+
+<span class="kn">from</span> <span class="nn">selenium.common.exceptions</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ElementNotVisibleException</span><span class="p">,</span>
+                                        <span class="n">NoSuchElementException</span><span class="p">,</span>
+                                        <span class="n">StaleElementReferenceException</span><span class="p">,</span>
+                                        <span class="n">TimeoutException</span><span class="p">,</span> <span class="n">WebDriverException</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.action_chains</span> <span class="kn">import</span> <span class="n">ActionChains</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support</span> <span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support.ui</span> <span class="kn">import</span> <span class="n">WebDriverWait</span>
+
+<span class="kn">from</span> <span class="nn">...utilities</span> <span class="kn">import</span> <span class="n">domain_utils</span> <span class="k">as</span> <span class="n">du</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">XPathUtil</span>
+
+<span class="n">NETERROR_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">&quot;WebDriverException: Message: Reached error page: about:neterror\?(.*)\.&quot;</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="parse_neterror"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.parse_neterror">[docs]</a><span class="k">def</span> <span class="nf">parse_neterror</span><span class="p">(</span><span class="n">error_message</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Attempt to parse the about:neterror message.</span>
+
+<span class="sd">    If any errors occur while parsing, we fall back to the unparsed message</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">NETERROR_RE</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">parse_qs</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;&amp;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">error_message</span></div>
+
+
+<div class="viewcode-block" id="scroll_down"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.scroll_down">[docs]</a><span class="k">def</span> <span class="nf">scroll_down</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+    <span class="n">at_bottom</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">while</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="o">.</span><span class="mi">20</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">at_bottom</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;window.scrollBy(0,</span><span class="si">%d</span><span class="s2">)&quot;</span>
+                              <span class="o">%</span> <span class="p">(</span><span class="mi">10</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">200</span> <span class="o">*</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())))</span>
+        <span class="n">at_bottom</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span>
+            <span class="s2">&quot;return (((window.scrollY + window.innerHeight ) + 100 &quot;</span>
+            <span class="s2">&quot;&gt; document.body.clientHeight ))&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="scroll_to_bottom"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.scroll_to_bottom">[docs]</a><span class="k">def</span> <span class="nf">scroll_to_bottom</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span>
+            <span class="s2">&quot;window.scrollTo(0, document.body.scrollHeight);&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="is_loaded"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.is_loaded">[docs]</a><span class="k">def</span> <span class="nf">is_loaded</span><span class="p">(</span><span class="n">webdriver</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">webdriver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span>
+        <span class="s2">&quot;return document.readyState&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;complete&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="wait_until_loaded"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.wait_until_loaded">[docs]</a><span class="k">def</span> <span class="nf">wait_until_loaded</span><span class="p">(</span><span class="n">webdriver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">mustend</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+    <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mustend</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_loaded</span><span class="p">(</span><span class="n">webdriver</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">min_time</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">min_time</span> <span class="o">+</span> <span class="n">start_time</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">period</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="get_intra_links"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.get_intra_links">[docs]</a><span class="k">def</span> <span class="nf">get_intra_links</span><span class="p">(</span><span class="n">webdriver</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+    <span class="n">ps1</span> <span class="o">=</span> <span class="n">du</span><span class="o">.</span><span class="n">get_ps_plus_1</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">links</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">find_elements_by_tag_name</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">href</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s1">&#39;href&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">StaleElementReferenceException</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">href</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">full_href</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urljoin</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">href</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">full_href</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">du</span><span class="o">.</span><span class="n">get_ps_plus_1</span><span class="p">(</span><span class="n">full_href</span><span class="p">)</span> <span class="o">==</span> <span class="n">ps1</span><span class="p">:</span>
+            <span class="n">links</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">links</span></div>
+
+
+<div class="viewcode-block" id="execute_script_with_retry"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.execute_script_with_retry">[docs]</a><span class="k">def</span> <span class="nf">execute_script_with_retry</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">script</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Execute script, retrying if a WebDriverException is thrown</span>
+
+<span class="sd">    See:</span>
+<span class="sd">    https://github.com/seleniumhq/selenium-google-code-issue-archive/issues/7931#issuecomment-192191013</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="n">script</span><span class="p">)</span></div>
+
+
+<span class="c1"># ####### Search Helpers ########</span>
+<div class="viewcode-block" id="wait_and_find"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.wait_and_find">[docs]</a><span class="k">def</span> <span class="nf">wait_and_find</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">,</span>
+                  <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">check_iframes</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Search for element with `locator` and block if not found</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    driver : selenium.webdriver.firefox.webdriver.WebDriver</span>
+<span class="sd">        An instance of the Firefox webdriver</span>
+<span class="sd">    locator_type : string</span>
+<span class="sd">        A text representation of the attribute to search by, e.g. searching</span>
+<span class="sd">        by `id`, `class name`, and so on. For a list of supported types,</span>
+<span class="sd">        `import selenium.webdriver.common.by.By` and use `By.LINK_TEXT`,</span>
+<span class="sd">        `By.ID`, and so on.</span>
+<span class="sd">    locator : string</span>
+<span class="sd">        The search string used to identify the candidate element.</span>
+<span class="sd">    timeout : int, optional</span>
+<span class="sd">        Time in seconds to block before throwing `NoSuchElementException`. The</span>
+<span class="sd">        default is 3 seconds.</span>
+<span class="sd">    check_iframes : bool, optional</span>
+<span class="sd">        Set to `True` to also check all iframes contained directly in the</span>
+<span class="sd">        current frame.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    selenium.webdriver.firefox.webelement.FirefoxWebElement</span>
+<span class="sd">        Matching element (if any is found before `timeout`).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NoSuchElementException</span>
+<span class="sd">        Raised if no element is located with `locator` before `timeout`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_found</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">check_iframes</span><span class="p">:</span>  <span class="c1"># this may return the browser with an iframe active</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>
+            <span class="n">iframes</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements_by_tag_name</span><span class="p">(</span><span class="s1">&#39;iframe&#39;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">iframe</span> <span class="ow">in</span> <span class="n">iframes</span><span class="p">:</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_frame</span><span class="p">(</span><span class="n">iframe</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">is_found</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">)</span>
+
+            <span class="c1"># If we get here, search also fails in iframes</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="n">NoSuchElementException</span><span class="p">(</span><span class="s2">&quot;Element not found during wait_and_find&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_found"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.is_found">[docs]</a><span class="k">def</span> <span class="nf">is_found</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="is_visible"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.is_visible">[docs]</a><span class="k">def</span> <span class="nf">is_visible</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">visibility_of_element_located</span><span class="p">((</span><span class="n">locator_type</span><span class="p">,</span> <span class="n">locator</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="title_is"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.title_is">[docs]</a><span class="k">def</span> <span class="nf">title_is</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">title_is</span><span class="p">(</span><span class="n">title</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="title_contains"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.title_contains">[docs]</a><span class="k">def</span> <span class="nf">title_contains</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">title_contains</span><span class="p">(</span><span class="n">title</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="is_clickable"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.is_clickable">[docs]</a><span class="k">def</span> <span class="nf">is_clickable</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">full_xpath</span><span class="p">,</span> <span class="n">xpath</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if an element is visible and enabled.</span>
+
+<span class="sd">    Selenium requires an element to be visible and enabled to be</span>
+<span class="sd">    clickable. We extend that to require it to have a tag capable</span>
+<span class="sd">    of containing a link. NOTE: doesn&#39;t work 100%</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="s1">&#39;xpath&#39;</span><span class="p">,</span> <span class="n">xpath</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">XPathUtil</span><span class="o">.</span><span class="n">is_clickable</span><span class="p">(</span><span class="n">full_xpath</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">TimeoutException</span><span class="p">,</span> <span class="n">ElementNotVisibleException</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="click_to_element"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.click_to_element">[docs]</a><span class="k">def</span> <span class="nf">click_to_element</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">sleep_after</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Click to element and handle WebDriverException.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">element</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep_after</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="move_to_element"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.move_to_element">[docs]</a><span class="k">def</span> <span class="nf">move_to_element</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span><span class="o">.</span><span class="n">move_to_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="scroll_to_element"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.scroll_to_element">[docs]</a><span class="k">def</span> <span class="nf">scroll_to_element</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;window.scrollTo(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">);&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">element</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]))</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="move_to_and_click"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.move_to_and_click">[docs]</a><span class="k">def</span> <span class="nf">move_to_and_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="n">sleep_after</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Scroll to the element, hover over it, and click it&quot;&quot;&quot;</span>
+    <span class="n">scroll_to_element</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+    <span class="n">move_to_element</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+    <span class="n">click_to_element</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">sleep_after</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="is_displayed"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.is_displayed">[docs]</a><span class="k">def</span> <span class="nf">is_displayed</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">()</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">StaleElementReferenceException</span><span class="p">,</span> <span class="n">WebDriverException</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="is_active"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.is_active">[docs]</a><span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="n">input_element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if we can interact with the given element.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">is_displayed</span><span class="p">(</span><span class="n">input_element</span><span class="p">)</span> <span class="ow">and</span> <span class="n">input_element</span><span class="o">.</span><span class="n">is_enabled</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">WebDriverException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="get_button_text"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.get_button_text">[docs]</a><span class="k">def</span> <span class="nf">get_button_text</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the text either via `value` attribute or using (inner) `text`.</span>
+
+<span class="sd">    `value` attribute works for &lt;input type=&quot;button&quot;...&gt; or</span>
+<span class="sd">    &lt;input type=&quot;submit&quot;.</span>
+
+<span class="sd">    `text` works for &lt;button&gt;elements, e.g. &lt;button&gt;text&lt;/button&gt;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">button_text</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span>
+    <span class="k">return</span> <span class="n">button_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="iter_frames"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.iter_frames">[docs]</a><span class="k">def</span> <span class="nf">iter_frames</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a generator for iframes.&quot;&quot;&quot;</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>
+    <span class="n">iframes</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements_by_tag_name</span><span class="p">(</span><span class="s1">&#39;iframe&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">iframe</span> <span class="ow">in</span> <span class="n">iframes</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>
+        <span class="k">yield</span> <span class="n">iframe</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="switch_to_parent_frame"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.switch_to_parent_frame">[docs]</a><span class="k">def</span> <span class="nf">switch_to_parent_frame</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">frame_stack</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Switch driver to parent frame</span>
+
+<span class="sd">    Selenium doesn&#39;t provide a method to switch up to a parent frame.</span>
+<span class="sd">    Any frame handles collected in a parent frame can&#39;t be used in the</span>
+<span class="sd">    child frame, so the only way to switch to a parent frame is to</span>
+<span class="sd">    switch back to the top-level frame and then switch back down to the</span>
+<span class="sd">    parent through all iframes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    driver : selenium.webdriver</span>
+<span class="sd">        A Selenium webdriver instance.</span>
+<span class="sd">    frame_stack : list of selenium.webdriver.remote.webelement.WebElement</span>
+<span class="sd">        list of parent frame handles (including current frame)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>  <span class="c1"># start at top frame</span>
+    <span class="c1"># First item is &#39;default&#39;, last item is current frame</span>
+    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frame_stack</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="execute_in_all_frames"><a class="viewcode-back" href="../../../../source/automation.Commands.utils.html#automation.Commands.utils.webdriver_utils.execute_in_all_frames">[docs]</a><span class="k">def</span> <span class="nf">execute_in_all_frames</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">frame_stack</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">],</span>
+                          <span class="n">max_depth</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">visit_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recursively apply `func` within each iframe</span>
+
+<span class="sd">    When called at each level, `func` will be passed the webdriver instance</span>
+<span class="sd">    as an argument as well as any named arguments given in `kwargs`. If you</span>
+<span class="sd">    require a return value from `func` it should be stored in a mutable</span>
+<span class="sd">    argument. Function returns and positional arguments are not supported.</span>
+<span class="sd">    `func` should be defined with the following structure:</span>
+
+<span class="sd">    &gt;&gt;&gt; def print_and_gather_links(driver, frame_stack,</span>
+<span class="sd">    &gt;&gt;&gt;                            print_prefix=&#39;&#39;, links=[]):</span>
+<span class="sd">    &gt;&gt;&gt;     elems = driver.find_elements_by_tag_name(&#39;a&#39;)</span>
+<span class="sd">    &gt;&gt;&gt;     for elem in elems:</span>
+<span class="sd">    &gt;&gt;&gt;         link = elem.get_attribute(&#39;href&#39;)</span>
+<span class="sd">    &gt;&gt;&gt;         print print_prefix + link</span>
+<span class="sd">    &gt;&gt;&gt;         links.append(link)</span>
+
+<span class="sd">    `execute_in_all_frames` should then be called as follows:</span>
+
+<span class="sd">    &gt;&gt;&gt; all_links = list()</span>
+<span class="sd">    &gt;&gt;&gt; execute_in_all_frames(driver, print_and_gather_links,</span>
+<span class="sd">    &gt;&gt;&gt;                       {&#39;prefix&#39;: &#39;Link &#39;, &#39;links&#39;: all_links})</span>
+<span class="sd">    &gt;&gt;&gt; print &quot;All links on page (including all iframes):&quot;</span>
+<span class="sd">    &gt;&gt;&gt; print all_links</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    driver : selenium.webdriver</span>
+<span class="sd">        A Selenium webdriver instance.</span>
+<span class="sd">    func : function</span>
+<span class="sd">        A function handle to apply to the webdriver instance within each frame</span>
+<span class="sd">    max_depth : int</span>
+<span class="sd">        Maximum depth to recurse into</span>
+<span class="sd">    frame_stack : list of selenium.webdriver.remote.webelement.WebElement</span>
+<span class="sd">        list of parent frame handles (including current frame)</span>
+<span class="sd">    logger : logger</span>
+<span class="sd">        logging module&#39;s logger</span>
+<span class="sd">    visit_id : int</span>
+<span class="sd">        ID of the visit</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure we start at the top level frame</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_default_content</span><span class="p">()</span>
+
+    <span class="c1"># Bail if past depth cutoff</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">max_depth</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Execute function in this frame</span>
+    <span class="n">func</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">frame_stack</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Grab all iframes in the current frame</span>
+    <span class="n">frames</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements_by_tag_name</span><span class="p">(</span><span class="s1">&#39;iframe&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Recurse through frames</span>
+    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+        <span class="n">frame_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">switch_to_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">StaleElementReferenceException</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error while switching to frame </span><span class="si">%s</span><span class="s2"> (visit: </span><span class="si">%d</span><span class="s2">))&quot;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="p">),</span> <span class="n">visit_id</span><span class="p">))</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">doc_url</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.document.URL;&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Switched to frame: </span><span class="si">%s</span><span class="s2"> (visit: </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="n">doc_url</span><span class="p">,</span> <span class="n">visit_id</span><span class="p">))</span>
+            <span class="c1"># Search within child frame</span>
+            <span class="n">execute_in_all_frames</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">frame_stack</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">)</span>
+            <span class="n">switch_to_parent_frame</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">frame_stack</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">frame_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">OpenWPM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../CommandSequence.html">The Lifetime of a CommandSequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../MarkAsIncomplete.html">Shutdown and Saving</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mozilla.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
