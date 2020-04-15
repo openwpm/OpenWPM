@@ -120,7 +120,7 @@ export class JavascriptInstrument {
       await browser.contentScripts.register({
         js: [
           {
-            code: `window.openWpmContentScriptConfig = ${JSON.stringify(
+            code: `window.openWpmJsInstrumentContentScriptConfig = ${JSON.stringify(
               contentScriptConfig,
             )};`,
           },
