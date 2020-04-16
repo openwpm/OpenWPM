@@ -320,6 +320,10 @@ class S3Listener(BaseListener):
         self._create_batch(visit_id)
         self._send_to_s3()
 
+    def shutdown(self):
+        super(S3Listener, self).shutdown()
+        self._send_to_s3(force=True)
+
 
 class S3Aggregator(BaseAggregator):
     """
