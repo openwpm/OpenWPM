@@ -72,8 +72,12 @@ class S3Listener(BaseListener):
                  manager_params: Dict[str, Any],
                  instance_id: int) -> None:
         self.dir = manager_params['s3_directory']
+
+        def factory_function():
+            return defaultdict(list)
+
         self._records: Dict[int, DefaultDict[str, List[Any]]] =\
-            dict()  # maps visit_id and table to records
+            defaultdict(factory_function)  # maps visit_id and table to records
         self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
         self._unsaved_visit_ids: MutableSet[int] = \
@@ -95,15 +99,9 @@ class S3Listener(BaseListener):
         self._last_record_received: Optional[float] = None
         super(S3Listener, self).__init__(*base_params)
 
-    def _get_records(self, visit_id: int) -> DefaultDict[str, List[Any]]:
-        """Get the RecordBatch corresponding to `visit_id`"""
-        if visit_id not in self._records:
-            self._records[visit_id] = defaultdict(list)
-        return self._records[visit_id]
-
     def _write_record(self, table, data, visit_id):
         """Insert data into a RecordBatch"""
-        records = self._get_records(visit_id)
+        records = self._records[visit_id]
         # Add nulls
         for item in PQ_SCHEMAS[table].names:
             if item not in data:
@@ -314,7 +312,12 @@ class S3Listener(BaseListener):
     def run_visit_completion_tasks(self, visit_id: int,
                                    interrupted: bool = False):
         if interrupted:
-            # We don't want to save out interrupted visits
+            # We drop all data for that visit and then mark it as
+            # interrupted. So just in case there has been some data
+            # saved already we can find it
+            del self._records[visit_id]
+            self._write_record("incomplete", {"visit_id": visit_id}, visit_id)
+            self._create_batch(visit_id)
             self.mark_visit_incomplete(visit_id)
             return
         self._create_batch(visit_id)

@@ -172,7 +172,7 @@ while not job_queue.empty():
                                 "Closing to resolve this deadlock")
             break
 
-        manager.logger.info("Waiting for work since %d seconds", time.time() - no_job_since)
+        manager.logger.debug("Waiting for work since %d seconds", time.time() - no_job_since)
         time.sleep(5)
         continue
     no_job_since = None

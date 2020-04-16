@@ -170,6 +170,7 @@ class LocalListener(BaseListener):
     def run_visit_completion_tasks(self, visit_id: int,
                                    interrupted: bool = False):
         if interrupted:
+            self.cur.execute("INSERT INTO interrupted VALUES (?)", (visit_id,))
             self.mark_visit_incomplete(visit_id)
         else:
             self.mark_visit_complete(visit_id)

@@ -210,3 +210,9 @@ fields = [
     pa.field('call_stack', pa.string())
 ]
 PQ_SCHEMAS['callstacks'] = pa.schema(fields)
+
+fields = [
+    pa.field('visit_id', pa.int64(), nullable=False)
+]
+
+PQ_SCHEMAS['interrupted'] = fields
