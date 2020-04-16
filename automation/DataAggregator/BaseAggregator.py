@@ -4,7 +4,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from multiprocess import Queue
 
@@ -32,7 +32,7 @@ class BaseListener:
     __metaclass = abc.ABCMeta
 
     def __init__(self, status_queue: Queue, completion_queue: Queue,
-                 shutdown_queue: Queue):
+                 shutdown_queue: Queue) -> None:
         """
         Creates a BaseListener instance
 
@@ -55,7 +55,7 @@ class BaseListener:
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
         self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
-        self.sock: serversocket = None
+        self.sock: Optional[serversocket] = None
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -256,10 +256,12 @@ class BaseAggregator:
         return self._last_status
 
     def get_new_completed_visits(self) -> List[Tuple[int, bool]]:
-        """Returns a list of all visit ids that have been saved at the time
+        """
+        Returns a list of all visit ids that have been saved at the time
         of calling this method.
         This method will return an empty list in case no visit ids have
-        been finished since the last time this method was called"""
+        been finished since the last time this method was called
+        """
         finished_visit_ids = list()
         while not self.completion_queue.empty():
             finished_visit_ids.append(self.completion_queue.get())

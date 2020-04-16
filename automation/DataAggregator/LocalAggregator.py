@@ -95,7 +95,7 @@ class LocalListener(BaseListener):
             self.cur.execute(data)
             self.db.commit()
             return
-        elif table == RECORD_TYPE_CONTENT:
+        if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
 
