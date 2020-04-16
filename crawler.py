@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import signal
+import sys
 import time
 from threading import Lock
 from typing import Callable
@@ -128,6 +129,7 @@ def on_shutdown(manager, unsaved_jobs_lock):
         with unsaved_jobs_lock:
             shutting_down = True
         manager.close(relaxed=False)
+        sys.exit(1)
     return actual_callback
 
 
@@ -164,13 +166,13 @@ while not job_queue.empty():
     if job is None:
         if no_job_since is None:
             no_job_since = time.time()
-        elif no_job_since - time.time() > EXTENDED_LEASE_TIME:
+        elif  time.time() - no_job_since > EXTENDED_LEASE_TIME:
             manager.logger.info("All unfinished jobs are being held "
-                                "by other worker instance or ourselves."
+                                "by other worker instance or ourselves. "
                                 "Closing to resolve this deadlock")
             break
 
-        manager.logger.info("Waiting for work")
+        manager.logger.info("Waiting for work since %d seconds", time.time() - no_job_since)
         time.sleep(5)
         continue
     no_job_since = None
