@@ -51,6 +51,7 @@ class BaseListener:
         self.completion_queue = completion_queue
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
+        self._relaxed = False
         self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
@@ -172,7 +173,7 @@ class BaseListener:
         self.sock.close()
         for visit_id in self.browser_map.values():
             self.run_visit_completion_tasks(visit_id,
-                                            interrupted=self._relaxed)
+                                            interrupted=not self._relaxed)
 
     def drain_queue(self):
         """ Ensures queue is empty before closing """

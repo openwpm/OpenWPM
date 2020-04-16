@@ -175,14 +175,12 @@ class LocalListener(BaseListener):
             self.mark_visit_complete(visit_id)
 
     def shutdown(self):
-        for visit_id in self.browser_map.values():
-            self.mark_visit_complete(visit_id)
+        super(LocalListener, self).shutdown()
         self.db.commit()
         self.db.close()
         if self.ldb_enabled:
             self._write_content_batch()
             self.ldb.close()
-        super(LocalListener, self).shutdown()
 
 
 class LocalAggregator(BaseAggregator):
