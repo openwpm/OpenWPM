@@ -119,8 +119,9 @@ shutting_down = False
 
 
 def on_shutdown(manager, unsaved_jobs_lock):
-    def actual_callback(signal, frame):
+    def actual_callback(s: signal.Signals, __):
         global shutting_down
+        manager.logger.error("Got interupted by %r, shutting down", s)
         with unsaved_jobs_lock:
             shutting_down = True
         manager.close(relaxed=False)

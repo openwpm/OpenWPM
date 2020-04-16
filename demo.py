@@ -36,12 +36,12 @@ manager_params['log_directory'] = '~/Desktop/'
 manager = TaskManager.TaskManager(manager_params, browser_params)
 
 # Visits the sites
-for i, site in enumerate(sites):
+for site in sites:
 
     # Parallelize sites over all number of browsers set above.
     # (To have all browsers go to the same sites, add `index='**'`)
     command_sequence = CommandSequence.CommandSequence(
-        site, reset=True, blocking=True, callback=lambda: print("CommandSequence {} done".format(i)))
+        site, reset=True, blocking=True, callback=lambda val=site: print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
@@ -50,4 +50,4 @@ for i, site in enumerate(sites):
     manager.execute_command_sequence(command_sequence)
 
 # Shuts down the browsers and waits for the data to finish logging
-manager.close(relaxed=False)
+manager.close()

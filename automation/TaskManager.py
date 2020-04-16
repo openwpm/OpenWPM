@@ -409,7 +409,7 @@ class TaskManager:
                 "profile for each command." % browser.crawl_id
             )
         self.logger.info("Starting to work on CommandSequence with "
-                         " visit_id %d on browser with id %d",
+                         "visit_id %d on browser with id %d",
                          browser.curr_visit_id, browser.crawl_id)
         for command_and_timeout in command_sequence.commands_with_timeout:
             command, timeout = command_and_timeout
@@ -476,7 +476,9 @@ class TaskManager:
                 "error": error_text,
                 "traceback": tb
             }))
-
+            self.logger.info("Finished working on CommandSequence with "
+                             "visit_id %d on browser with id %d",
+                             browser.curr_visit_id, browser.crawl_id)
             if critical_failure:
                 return
 
