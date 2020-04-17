@@ -166,13 +166,14 @@ while not job_queue.empty():
     if job is None:
         if no_job_since is None:
             no_job_since = time.time()
-        elif  time.time() - no_job_since > EXTENDED_LEASE_TIME:
+        elif time.time() - no_job_since > EXTENDED_LEASE_TIME:
             manager.logger.info("All unfinished jobs are being held "
                                 "by other worker instance or ourselves. "
                                 "Closing to resolve this deadlock")
             break
 
-        manager.logger.debug("Waiting for work since %d seconds", time.time() - no_job_since)
+        manager.logger.debug("Waiting for work since %d "
+                             "seconds", time.time() - no_job_since)
         time.sleep(5)
         continue
     no_job_since = None
