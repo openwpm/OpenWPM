@@ -1,52 +1,17 @@
 #!/bin/bash
 set -e
 
-if [[ $# -gt 1 ]]; then
-    echo "Usage: install.sh [--flash | --no-flash]" >&2
+if [[ $# -gt 0 ]]; then
+    echo "Usage: install.sh" >&2
     exit 1
 fi
 
-if [[ $# -gt 0 ]]; then
-    case "$1" in
-        "--flash")
-            flash=true
-            ;;
-        "--no-flash")
-            flash=false
-            ;;
-        *)
-            echo "Usage: install.sh [--flash | --no-flash]" >&2
-            exit 1
-            ;;
-    esac
-else
-    echo "Would you like to install Adobe Flash Player? (Only required for crawls with Flash) [y,N]"
-    read -s -n 1 response
-    if [[ $response = "" ]] || [ $response == 'n' ] || [ $response == 'N' ]; then
-        flash=false
-        echo Not installing Adobe Flash Plugin
-    elif [ $response == 'y' ] || [ $response == 'Y' ]; then
-        flash=true
-        echo Installing Adobe Flash Plugin
-    else
-        echo Unrecognized response, exiting
-        exit 1
-    fi
-fi
-
-if [ "$flash" = true ]; then
-    sudo add-apt-repository "deb http://archive.canonical.com/ $(lsb_release -sc) partner"
-fi
 sudo apt-get update
 
 sudo apt-get install -y firefox htop git libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential libboost-python-dev libleveldb-dev libjpeg-dev curl wget git bash vim
 
 # For some versions of ubuntu, the package libleveldb1v5 isn't available. Use libleveldb1 instead.
 sudo apt-get install -y libleveldb1v5 || sudo apt-get install -y libleveldb1
-
-if [ "$flash" = true ]; then
-    sudo apt-get install -y adobe-flashplugin
-fi
 
 # Use the Unbranded build that corresponds to a specific Firefox version 
 # To upgrade:

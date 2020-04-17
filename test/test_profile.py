@@ -8,7 +8,6 @@ from ..automation.Errors import CommandExecutionError, ProfileLoadError
 from .openwpmtest import OpenWPMTest
 
 # TODO update these tests to make use of blocking commands
-# TODO Check flash cookies
 
 
 class TestProfile(OpenWPMTest):

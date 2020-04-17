@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-./install-system.sh "$@"
+./install-system.sh
 
 ./install-pip-and-packages.sh
 

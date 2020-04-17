@@ -22,7 +22,7 @@ from .openwpmtest import OpenWPMTest
 # triggering_origin,
 # loading_origin,
 # loading_href,
-# is_XHR, is_frame_load, is_full_page, is_tp_content, is_tp_window,
+# is_XHR, is_tp_content, is_tp_window,
 #   resource_type
 HTTP_REQUESTS = {
     (
@@ -31,7 +31,7 @@ HTTP_REQUESTS = {
         u'undefined',
         u'undefined',
         u'undefined',
-        0, 0, 1, None, None, u'main_frame',
+        0, None, None, u'main_frame',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
@@ -39,7 +39,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image',
+        0, None, None, u'image',
     ),
     # (
     #     u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
@@ -47,7 +47,7 @@ HTTP_REQUESTS = {
     #     u'http://localtest.me:8000',
     #     u'http://localtest.me:8000',
     #     u'http://localtest.me:8000/test_pages/http_test_page.html',
-    #     0, 0, 1, None, None, u'image',
+    #     0, None, None, u'image',
     #  ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
@@ -55,7 +55,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image',
+        0, None, None, u'image',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
@@ -63,7 +63,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'script',
+        0, None, None, u'script',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script.js',
@@ -71,7 +71,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'script',
+        0, None, None, u'script',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image.png',
@@ -79,7 +79,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image',
+        0, None, None, u'image',
     ),
     (
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
@@ -87,7 +87,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 1, 0, None, None, u'sub_frame',
+        0, None, None, u'sub_frame',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_style.css',
@@ -95,7 +95,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'stylesheet',
+        0, None, None, u'stylesheet',
     ),
     (
         u'http://localtest.me:8000/404.png',
@@ -103,7 +103,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
@@ -111,7 +111,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
@@ -119,7 +119,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
@@ -127,7 +127,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
@@ -135,7 +135,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
@@ -143,7 +143,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
@@ -151,7 +151,7 @@ HTTP_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
 }
 
@@ -222,7 +222,7 @@ HTTP_CACHED_REQUESTS = {
         u'undefined',
         u'undefined',
         u'undefined',
-        0, 0, 1, None, None, u'main_frame'
+        0, None, None, u'main_frame'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script_2.js',
@@ -230,7 +230,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'script'
+        0, None, None, u'script'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script.js',
@@ -238,7 +238,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'script',
+        0, None, None, u'script',
     ),
     (
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
@@ -246,7 +246,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 1, 0, None, None, u'sub_frame'
+        0, None, None, u'sub_frame'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_style.css',
@@ -254,7 +254,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'stylesheet'
+        0, None, None, u'stylesheet'
     ),
     (
         u'http://localtest.me:8000/404.png',
@@ -262,7 +262,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
@@ -270,7 +270,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
@@ -278,7 +278,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page_2.html',
-        0, 0, 0, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
@@ -286,7 +286,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
@@ -294,7 +294,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
@@ -302,7 +302,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
@@ -310,7 +310,7 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, 0, 1, None, None, u'image'
+        0, None, None, u'image'
     ),
 }
 
@@ -368,7 +368,7 @@ HTTP_WORKER_SCRIPT_REQUESTS = {
         u'undefined',
         u'undefined',
         u'undefined',
-        0, 0, 1, None, None, u'main_frame',
+        0, None, None, u'main_frame',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_favicon.ico',
@@ -376,7 +376,7 @@ HTTP_WORKER_SCRIPT_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_worker_page.html',
-        0, 0, 1, None, None, u'image',
+        0, None, None, u'image',
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/worker.js',
@@ -384,23 +384,23 @@ HTTP_WORKER_SCRIPT_REQUESTS = {
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/http_worker_page.html',
-        0, 0, 1, None, None, u'script'
-    ),
-    (
-        u'http://localtest.me:8000/test_pages/shared/test_image.png',
-        u'http://localtest.me:8000/test_pages/http_worker_page.html',
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000/test_pages/http_worker_page.html',
-        1, 0, 1, None, None, u'xmlhttprequest'
+        0, None, None, u'script'
     ),
     (
         u'http://localtest.me:8000/test_pages/shared/test_image.png',
+        u'http://localtest.me:8000/test_pages/http_worker_page.html',
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000',
+        u'http://localtest.me:8000/test_pages/http_worker_page.html',
+        1, None, None, u'xmlhttprequest'
+    ),
+    (
+        u'http://localtest.me:8000/test_pages/shared/test_image.png',
         u'http://localtest.me:8000/test_pages/shared/worker.js',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000',
         u'http://localtest.me:8000/test_pages/shared/worker.js',
-        1, 0, 1, None, None, u'xmlhttprequest'
+        1, None, None, u'xmlhttprequest'
     ),
 }
 
@@ -414,7 +414,7 @@ HTTP_SERVICE_WORKER_REQUESTS = {
         u'undefined',
         u'undefined',
         u'undefined',
-        0, 0, 1, None, None, u'main_frame',
+        0, None, None, u'main_frame',
     ),
     (
         u'http://localhost:8000/test_pages/shared/test_favicon.ico',
@@ -422,7 +422,7 @@ HTTP_SERVICE_WORKER_REQUESTS = {
         u'http://localhost:8000',
         u'http://localhost:8000',
         u'http://localhost:8000/test_pages/http_service_worker_page.html',
-        0, 0, 1, None, None, u'image',
+        0, None, None, u'image',
     ),
     (
         u'http://localhost:8000/test_pages/shared/service_worker.js',
@@ -430,7 +430,7 @@ HTTP_SERVICE_WORKER_REQUESTS = {
         u'http://localhost:8000',
         u'http://localhost:8000',
         u'http://localhost:8000/test_pages/http_service_worker_page.html',
-        0, 0, 1, None, None, u'script'
+        0, None, None, u'script'
     ),
     (
         u'http://localhost:8000/test_pages/shared/test_image.png',
@@ -438,7 +438,7 @@ HTTP_SERVICE_WORKER_REQUESTS = {
         u'http://localhost:8000',
         u'http://localhost:8000',
         u'http://localhost:8000/test_pages/http_service_worker_page.html',
-        1, 0, 1, None, None, u'xmlhttprequest'
+        1, None, None, u'xmlhttprequest'
     ),
     (
         u'http://localhost:8000/test_pages/shared/test_image_2.png',
@@ -446,7 +446,7 @@ HTTP_SERVICE_WORKER_REQUESTS = {
         u'http://localhost:8000',
         u'http://localhost:8000',
         u'http://localhost:8000/test_pages/shared/service_worker.js',
-        1, 0, 1, None, None, u'xmlhttprequest'
+        1, None, None, u'xmlhttprequest'
     ),
 }
 
@@ -475,11 +475,11 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
             )
+
             request_id_to_url[row['request_id']] = row['url']
         assert HTTP_REQUESTS == observed_records
 
@@ -544,7 +544,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
@@ -668,7 +667,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
@@ -694,7 +692,6 @@ class TestHTTPInstrument(OpenWPMTest):
                 row['top_level_url'],
                 row['triggering_origin'], row['loading_origin'],
                 row['loading_href'], row['is_XHR'],
-                row['is_frame_load'], row['is_full_page'],
                 row['is_third_party_channel'],
                 row['is_third_party_to_top_window'],
                 row['resource_type'])
