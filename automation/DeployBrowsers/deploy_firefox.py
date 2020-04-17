@@ -64,12 +64,10 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         logger.debug("BROWSER %i: Loading initial browser profile from: %s"
                      % (browser_params['crawl_id'],
                          browser_params['profile_tar']))
-        load_flash = browser_params['disable_flash'] is False
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
                                         browser_params,
-                                        browser_params['profile_tar'],
-                                        load_flash=load_flash)
+                                        browser_params['profile_tar'])
     elif browser_params['profile_tar']:
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s"
                      % (browser_params['crawl_id'],
@@ -153,13 +151,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
 
         # TODO restore detailed logging
         # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-
-    # Disable flash
-    if browser_params['disable_flash']:
-        fo.set_preference('plugin.state.flash', 0)
-    else:
-        fo.set_preference('plugin.state.flash', 2)
-        fo.set_preference('plugins.click_to_play', False)
 
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fp, fo, root_dir,

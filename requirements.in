@@ -5,7 +5,6 @@ dill
 flake8
 flake8-isort
 IPython
-mini-amf
 mmh3
 multiprocess
 numpy

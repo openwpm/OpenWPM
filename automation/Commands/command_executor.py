@@ -1,10 +1,10 @@
 
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .Types import (BrowseCommand, DumpFlashCookiesCommand,
-                    DumpPageSourceCommand, DumpProfCommand, GetCommand,
-                    RecursiveDumpPageSourceCommand, RunCustomFunctionCommand,
-                    SaveScreenshotCommand, ScreenshotFullPageCommand)
+from .Types import (BrowseCommand, DumpPageSourceCommand, DumpProfCommand,
+                    GetCommand, RecursiveDumpPageSourceCommand,
+                    RunCustomFunctionCommand, SaveScreenshotCommand,
+                    ScreenshotFullPageCommand)
 
 
 def execute_command(command, webdriver, browser_settings, browser_params,
@@ -25,12 +25,6 @@ def execute_command(command, webdriver, browser_settings, browser_params,
             browser_params=browser_params, manager_params=manager_params,
             extension_socket=extension_socket)
 
-    elif type(command) is DumpFlashCookiesCommand:
-        browser_commands.dump_flash_cookies(
-            start_time=command.start_time, visit_id=command.visit_id,
-            webdriver=webdriver, browser_params=browser_params,
-            manager_params=manager_params)
-
     elif type(command) is DumpProfCommand:
         profile_commands.dump_profile(
             browser_profile_folder=browser_params['profile_path'],
@@ -39,8 +33,7 @@ def execute_command(command, webdriver, browser_settings, browser_params,
             tar_location=command.dump_folder,
             close_webdriver=command.close_webdriver,
             webdriver=webdriver, browser_settings=browser_settings,
-            compress=command.compress,
-            save_flash=browser_params['disable_flash'] is False)
+            compress=command.compress)
 
     elif type(command) is DumpPageSourceCommand:
         browser_commands.dump_page_source(

@@ -140,15 +140,6 @@ available [below](#output-format).
         `browser_params['save_content'] = "script"` to save only Javascript
         files. This will lessen the performance impact of this instrumentation
         when a large number of browsers are used in parallel.
-* Flash Cookies
-    * Recorded by scanning the respective Flash directories after each page visit.
-    * To enable: call the `CommandSequence::dump_flash_cookies` command after
-        a page visit. Note that calling this command will close the current tab
-        before recording the cookie changes.
-    * Data is saved to the `flash_cookies` table.
-    * NOTE: Flash cookies are shared across browsers, so this instrumentation
-        will not correctly attribute flash cookie changes if more than 1
-        browser is running on the machine.
 * Cookie Access
     * Set `browser_params['cookie_instrument'] = True`
     * Data is saved to the `javascript_cookies` table.
@@ -297,9 +288,6 @@ left out of this section.
   * Performs some actions to prevent the platform from being detected as a bot.
   * Note, these aren't comprehensive and automated interaction with the site
     will still appear very bot-like.
-* `disable_flash`
-  * Flash is disabled by default. Set this to `False` to re-enable. Note that
-    flash cookies are shared between browsers.
 * `headless`
   * Launch the browser in headless mode (supported as of Firefox 56),
     no GUI will be visible.
@@ -361,7 +349,6 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 for site in sites:
     command_sequence = CommandSequence.CommandSequence(site, reset=True)
     command_sequence.get(sleep=30, timeout=60)
-    command_sequence.dump_flash_cookies(120)
     manager.execute_command_sequence(command_sequence)
 ```
 
