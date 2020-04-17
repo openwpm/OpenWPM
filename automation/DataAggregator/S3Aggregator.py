@@ -316,7 +316,7 @@ class S3Listener(BaseListener):
             # interrupted. So just in case there has been some data
             # saved already we can find it
             del self._records[visit_id]
-            self._write_record("incomplete", {"visit_id": visit_id}, visit_id)
+            self._write_record("interrupted", {"visit_id": visit_id}, visit_id)
             self._create_batch(visit_id)
             self.mark_visit_incomplete(visit_id)
             return
