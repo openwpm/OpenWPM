@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from threading import Lock
+from typing import Callable
 
 import boto3
 import sentry_sdk
@@ -114,8 +115,10 @@ unsaved_jobs = list()
 unsaved_jobs_lock = Lock()
 
 
-def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock,
-                  job_queue: rediswq.RedisWQ, job: bytes):
+def get_job_completion_callback(logger: logging.Logger,
+                                unsaved_jobs_lock: Lock,
+                                job_queue: rediswq.RedisWQ,
+                                job: bytes) -> Callable[[], None]:
     def callback():
         with unsaved_jobs_lock:
             logger.info("Job %r is done", job)
@@ -147,7 +150,8 @@ while not job_queue.empty():
     if "://" not in site:
         site = "http://" + site
     manager.logger.info("Visiting %s..." % site)
-    callback = mark_job_done(manager.logger, unsaved_jobs_lock, job_queue, job)
+    callback = get_job_completion_callback(
+        manager.logger, unsaved_jobs_lock, job_queue, job)
     command_sequence = CommandSequence.CommandSequence(
         site, blocking=True, reset=True, retry_number=retry_number,
         callback=callback, site_rank=site_rank
