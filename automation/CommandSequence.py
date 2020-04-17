@@ -1,11 +1,13 @@
-from typing import Any, Callable, List, NewType, Tuple, Type
+from typing import Callable, List, Tuple
 
-from .Commands.Types import (BrowseCommand, DumpFlashCookiesCommand,
-                             DumpPageSourceCommand, DumpProfCommand,
-                             GetCommand, RecursiveDumpPageSourceCommand,
+from .Commands.Types import (BaseCommand, BrowseCommand,
+                             DumpFlashCookiesCommand, DumpPageSourceCommand,
+                             DumpProfCommand, GetCommand,
+                             RecursiveDumpPageSourceCommand,
                              RunCustomFunctionCommand, SaveScreenshotCommand,
-                             ScreenshotFullPageCommand, BaseCommand)
+                             ScreenshotFullPageCommand)
 from .Errors import CommandExecutionError
+
 
 class CommandSequence:
     """A CommandSequence wraps a series of commands to be performed

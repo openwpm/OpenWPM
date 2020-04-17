@@ -4,7 +4,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
 
