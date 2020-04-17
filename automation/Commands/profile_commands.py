@@ -8,12 +8,6 @@ import tarfile
 from ..Errors import ProfileLoadError
 from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 
-# Flash Plugin Storage Location -- Linux ONLY
-HOME = os.path.expanduser('~')
-FLASH_LOCS = [
-    HOME + '/.macromedia/Flash_Player/#SharedObjects',
-    HOME + '/.macromedia/Flash_Player/macromedia.com/support/flashplayer/sys'
-]
 logger = logging.getLogger('openwpm')
 
 
