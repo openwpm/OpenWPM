@@ -11,10 +11,10 @@ attrs==19.3.0             # via -c requirements.txt, jsonschema
 autopep8==1.5.1           # via -r requirements-dev.in
 aws-sam-translator==1.22.0  # via cfn-lint, localstack
 aws-xray-sdk==2.5.0       # via moto-ext
-awscli==1.18.40           # via localstack
-boto3==1.12.40            # via -c requirements.txt, aws-sam-translator, localstack, localstack-client, moto-ext
+awscli==1.18.41           # via localstack
+boto3==1.12.41            # via -c requirements.txt, aws-sam-translator, localstack, localstack-client, moto-ext
 boto==2.49.0              # via amazon-kclpy-ext, localstack, moto-ext
-botocore==1.15.40         # via -c requirements.txt, aws-xray-sdk, awscli, boto3, localstack, moto-ext, s3transfer
+botocore==1.15.41         # via -c requirements.txt, aws-xray-sdk, awscli, boto3, localstack, moto-ext, s3transfer
 cachetools==3.1.1         # via airspeed, localstack
 certifi==2020.4.5.1       # via -c requirements.txt, requests
 cffi==1.14.0              # via cryptography

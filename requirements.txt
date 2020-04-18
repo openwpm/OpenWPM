@@ -7,8 +7,8 @@
 attrs==19.3.0             # via pytest
 backcall==0.1.0           # via ipython
 beautifulsoup4==4.9.0     # via -r requirements.in
-boto3==1.12.40            # via -r requirements.in
-botocore==1.15.40         # via boto3, s3fs, s3transfer
+boto3==1.12.41            # via -r requirements.in, s3fs
+botocore==1.15.41         # via boto3, s3fs, s3transfer
 certifi==2020.4.5.1       # via sentry-sdk
 cython==0.29.16           # via -r requirements.in
 decorator==4.4.2          # via ipython, traitlets
@@ -52,7 +52,7 @@ pytest==5.4.1             # via -r requirements.in
 python-dateutil==2.8.1    # via -r requirements.in, botocore, pandas
 pytz==2019.3              # via pandas
 redis==3.4.1              # via -r requirements.in
-s3fs==0.4.2               # via -r requirements.in
+s3fs==0.4.0               # via -r requirements.in
 s3transfer==0.3.3         # via boto3
 selenium==3.141.0         # via -r requirements.in
 sentry-sdk==0.14.3        # via -r requirements.in
