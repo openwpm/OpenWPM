@@ -31,6 +31,8 @@ SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 LOGGER_SETTINGS = MPLogger.parse_config_from_env()
 MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '2'))
 
+EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
+
 # Loads the default manager params
 # We can't use more than one browser per instance because the job management
 # code below requires blocking commands. For more context see:
@@ -127,6 +129,7 @@ def get_job_completion_callback(logger: logging.Logger,
     return callback
 
 
+no_job_since = None
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job_queue.check_expired_leases()
@@ -134,16 +137,27 @@ while not job_queue.empty():
         manager.logger.debug("Currently unfinished jobs are: %s", unsaved_jobs)
         for unsaved_job in unsaved_jobs:
             if not job_queue.renew_lease(unsaved_job,
-                                         2 * (TIMEOUT + DWELL_TIME + 30)):
+                                         EXTENDED_LEASE_TIME):
                 manager.logger.error("Unsaved job: %s timed out", unsaved_job)
 
     job = job_queue.lease(
         lease_secs=TIMEOUT + DWELL_TIME + 30, block=True, timeout=5
     )
     if job is None:
-        manager.logger.info("Waiting for work")
+        if no_job_since is None:
+            no_job_since = time.time()
+        elif time.time() - no_job_since > EXTENDED_LEASE_TIME:
+            manager.logger.info("All unfinished jobs are being held "
+                                "by other worker instance or ourselves. "
+                                "Closing to resolve this deadlock")
+            break
+
+        manager.logger.info("Waiting for work since %d "
+                            "seconds", time.time() - no_job_since)
         time.sleep(5)
         continue
+    no_job_since = None
+
     unsaved_jobs.append(job)
     retry_number = job_queue.get_retry_number(job)
     site_rank, site = job.decode("utf-8").split(',')
