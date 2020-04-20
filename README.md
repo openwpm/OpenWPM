@@ -322,6 +322,8 @@ left out of this section.
   * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
+* `hide_webdriver`
+  * Set to `True` to hide that OpenWPM uses webdriver. This option spoofs the JavaScript DOM attribute `navigator.webdriver` to be `false`.
 
 Browser Profile Support
 -----------------------

@@ -210,3 +210,6 @@ def optimize_prefs(fo):
     # Enable legacy extensions and disable extension signing
     fo.set_preference("extensions.legacy.enabled", True)
     fo.set_preference("xpinstall.signatures.required", False)
+
+    # Enable prevention against pop-up windows/tabs (`window.open('')`)
+    fo.set_preference("dom.disable_open_during_load", True)

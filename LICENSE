@@ -41,6 +41,11 @@ https://github.com/redline13/selenium-jmeter
 By Richard Friedman
 Licensed GPLv3+
 
+Incorporating code from User Agent Switcher
+https://gitlab.com/ntninja/user-agent-switcher/
+Copyright © 2017 – 2019  Alexander Schlarb
+Licensed GPLv3+
+
 Text of GPLv3 License:
 ======================
                     GNU GENERAL PUBLIC LICENSE

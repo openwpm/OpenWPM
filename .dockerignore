@@ -26,3 +26,4 @@ automation/Extension/firefox/dist
 automation/Extension/firefox/openwpm.xpi
 automation/Extension/firefox/src/content.js
 automation/Extension/firefox/src/feature.js
+automation/Extension/firefox/src/spoof.js
