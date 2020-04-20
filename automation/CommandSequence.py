@@ -1,7 +1,6 @@
 from typing import Callable, List, Tuple
 
-from .Commands.Types import (BaseCommand, BrowseCommand,
-                             DumpFlashCookiesCommand, DumpPageSourceCommand,
+from .Commands.Types import (BaseCommand, BrowseCommand, DumpPageSourceCommand,
                              DumpProfCommand, GetCommand,
                              RecursiveDumpPageSourceCommand,
                              RunCustomFunctionCommand, SaveScreenshotCommand,
