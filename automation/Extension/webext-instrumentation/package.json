@@ -61,7 +61,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@types/firefox-webext-browser": "^63.0.0",
+    "@types/firefox-webext-browser": "^70.0.1",
     "ava": "1.0.0-beta.7",
     "codecov": "^3.6.1",
     "commitizen": "^4.0.4",
