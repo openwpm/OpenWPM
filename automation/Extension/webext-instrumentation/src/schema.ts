@@ -58,8 +58,6 @@ export interface HttpRequest {
   headers: string;
   request_id: string;
   is_XHR?: number;
-  is_frame_load?: number;
-  is_full_page?: number;
   is_third_party_channel?: number;
   is_third_party_to_top_window?: number;
   triggering_origin?: string;

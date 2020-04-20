@@ -28,21 +28,6 @@ CREATE TABLE IF NOT EXISTS site_visits (
     FOREIGN KEY(crawl_id) REFERENCES crawl(id));
 
 /*
-# flash_cookies
- */
-CREATE TABLE IF NOT EXISTS flash_cookies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crawl_id INTEGER NOT NULL,
-    visit_id INTEGER NOT NULL,
-    domain VARCHAR(500),
-    filename VARCHAR(500),
-    local_path VARCHAR(1000),
-    key TEXT,
-    content TEXT,
-    FOREIGN KEY(crawl_id) REFERENCES crawl(id),
-    FOREIGN KEY(visit_id) REFERENCES site_visits(id));
-
-/*
 # crawl_history
  */
 CREATE TABLE IF NOT EXISTS crawl_history (
@@ -79,8 +64,6 @@ CREATE TABLE IF NOT EXISTS http_requests(
   headers TEXT NOT NULL,
   request_id TEXT NOT NULL,
   is_XHR INTEGER,
-  is_frame_load INTEGER,
-  is_full_page INTEGER,
   is_third_party_channel INTEGER,
   is_third_party_to_top_window INTEGER,
   triggering_origin TEXT,
