@@ -207,8 +207,17 @@ class TaskManager:
             # Check browser memory usage
             for browser in self.browsers:
                 try:
-                    process = psutil.Process(browser.browser_pid)
-                    mem = process.memory_info()[0] / float(2 ** 20)
+                    # Sum the memory used by the geckodriver process, the
+                    # main Firefox process and all its child processes.
+                    # Use the USS metric for child processes, to avoid
+                    # double-counting memory shared with their parent.
+                    geckodriver = psutil.Process(browser.browser_pid)
+                    firefox = geckodriver.children()[0]
+                    mem_bytes = (geckodriver.memory_info().rss
+                                 + firefox.memory_info().rss)
+                    for child in firefox.children():
+                        mem_bytes += child.memory_full_info().uss
+                    mem = mem_bytes / 2 ** 20
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB"
                                          ", exceeding limit of %iMB" %

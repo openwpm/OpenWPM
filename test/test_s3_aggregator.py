@@ -65,9 +65,6 @@ class TestS3Aggregator(OpenWPMTest):
         # Test visit_id consistency
         visit_ids = defaultdict(set)
         for table_name in PQ_SCHEMAS:
-            # flash cookie instrumentation not enabled
-            if table_name == 'flash_cookies':
-                continue
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
             assert len(visit_ids[table_name]) == NUM_VISITS * NUM_BROWSERS
