@@ -217,8 +217,7 @@ class S3Listener(BaseListener):
         for table_name, batches in self._batches.items():
             if table_name == SITE_VISITS_INDEX:
                 out_str = '\n'.join([json.dumps(x) for x in batches])
-                if not isinstance(out_str, bytes):
-                    out_str = out_str.encode('utf-8')
+                out_str = out_str.encode('utf-8')
                 fname = '%s/site_index/instance-%s-%s.json.gz' % (
                     self.dir, self._instance_id,
                     hashlib.md5(out_str).hexdigest()

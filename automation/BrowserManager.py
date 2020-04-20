@@ -53,7 +53,7 @@ class Browser:
         # Queues and process IDs for BrowserManager
 
         # thread to run commands issues from TaskManager
-        self.command_thread = None
+        self.command_thread: threading.Thread = None
         # queue for passing command tuples to BrowserManager
         self.command_queue = None
         # queue for receiving command execution status from BrowserManager
@@ -351,7 +351,7 @@ class Browser:
                                   self.crawl_id)
                 pass
 
-    def shutdown_browser(self, during_init):
+    def shutdown_browser(self, during_init: bool) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """
         # Close BrowserManager process and children
         self.logger.debug(

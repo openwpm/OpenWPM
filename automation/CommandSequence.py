@@ -1,13 +1,11 @@
-from typing import Any, Callable, List, NewType, Tuple
+from typing import Callable, List, Tuple
 
-from .Commands.Types import (BrowseCommand, DumpPageSourceCommand,
+from .Commands.Types import (BaseCommand, BrowseCommand, DumpPageSourceCommand,
                              DumpProfCommand, GetCommand,
                              RecursiveDumpPageSourceCommand,
                              RunCustomFunctionCommand, SaveScreenshotCommand,
                              ScreenshotFullPageCommand)
 from .Errors import CommandExecutionError
-
-Command = NewType('Command', Tuple[str, Any])
 
 
 class CommandSequence:
@@ -49,7 +47,7 @@ class CommandSequence:
         self.reset = reset
         self.blocking = blocking
         self.retry_number = retry_number
-        self.commands_with_timeout: List[Tuple[Command, int]] = []
+        self.commands_with_timeout: List[Tuple[BaseCommand, int]] = []
         self.total_timeout = 0
         self.contains_get_or_browse = False
         self.site_rank = site_rank
