@@ -19,8 +19,8 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import (RECORD_TYPE_CONTENT, BaseAggregator, BaseListener,
-                             BaseParams)
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_SPECIAL,
+                             BaseAggregator, BaseListener, BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
@@ -273,11 +273,12 @@ class S3Listener(BaseListener):
         table, data = record
         if table == "create_table":  # drop these statements
             return
-        elif table == RECORD_TYPE_CONTENT:
+        if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
-
-        _, visit_id = self.update_records(table, data)
+        if table == RECORD_TYPE_SPECIAL:
+            self.handle_special(table, data)
+            return
 
         # Convert data to text type
         for k, v in data.items():
@@ -290,7 +291,7 @@ class S3Listener(BaseListener):
                 data[k] = json.dumps(v)
 
         # Save record to disk
-        self._write_record(table, data, visit_id)
+        self._write_record(table, data, data["visit_id"])
 
     def process_content(self, record):
         """Upload page content `record` to S3"""

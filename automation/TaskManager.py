@@ -13,6 +13,7 @@ import psutil
 import tblib
 
 from .BrowserManager import Browser
+from .Commands.Types import FinalizeCommand
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
@@ -350,6 +351,8 @@ class TaskManager:
             "site_rank": command_sequence.site_rank
         }))
 
+        # FIXME:this doesn't belong here but it has to be here for now
+        command_sequence.commands_with_timeout.append((FinalizeCommand(), 10))
         # Start command execution thread
         args = (browser, command_sequence)
         thread = threading.Thread(target=self._issue_command, args=args)
