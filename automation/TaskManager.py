@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import psutil
 import tblib
@@ -114,7 +114,7 @@ class TaskManager:
 
         # Flow control
         self.closing = False
-        self.failure_status = None
+        self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
         if manager_params['failure_limit'] is not None:
@@ -231,7 +231,7 @@ class TaskManager:
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:
-                browser_pids = set()
+                browser_pids: Set[int] = set()
                 check_time = time.time()
                 for browser in self.browsers:
                     if browser.browser_pid is not None:
@@ -304,24 +304,26 @@ class TaskManager:
         appropriate steps are taken to gracefully close the infrastructure
         """
         self.logger.debug("Checking command failure status indicator...")
-        if self.failure_status:
-            self.logger.debug(
-                "TaskManager failure status set, halting command execution.")
-            self._cleanup_before_fail()
-            if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
-                raise CommandExecutionError(
-                    "TaskManager exceeded maximum consecutive command "
-                    "execution failures.",
-                    self.failure_status['CommandSequence']
-                )
-            elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
-                                                       "FailureLimit")):
-                raise CommandExecutionError(
-                    "TaskManager failed to launch browser within allowable "
-                    "failure limit.", self.failure_status['CommandSequence']
-                )
-            if self.failure_status['ErrorType'] == 'CriticalChildException':
-                raise pickle.loads(self.failure_status['Exception'])
+        if not self.failure_status:
+            return
+
+        self.logger.debug(
+            "TaskManager failure status set, halting command execution.")
+        self._cleanup_before_fail()
+        if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
+            raise CommandExecutionError(
+                "TaskManager exceeded maximum consecutive command "
+                "execution failures.",
+                self.failure_status['CommandSequence']
+            )
+        elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
+                                                   "FailureLimit")):
+            raise CommandExecutionError(
+                "TaskManager failed to launch browser within allowable "
+                "failure limit.", self.failure_status['CommandSequence']
+            )
+        if self.failure_status['ErrorType'] == 'CriticalChildException':
+            raise pickle.loads(self.failure_status['Exception'])
 
     # CRAWLER COMMAND CODE
 
@@ -413,7 +415,6 @@ class TaskManager:
             browser.command_queue.put(command)
 
             # received reply from BrowserManager, either success or failure
-            critical_failure = False
             error_text = None
             tb = None
             try:
@@ -433,7 +434,6 @@ class TaskManager:
                         'Exception': status[1]
                     }
                     error_text, tb = self._unpack_picked_error(status[1])
-                    critical_failure = True
                 elif status[0] == "FAILED":
                     command_status = 'error'
                     error_text, tb = self._unpack_picked_error(status[1])
@@ -472,7 +472,8 @@ class TaskManager:
             self.logger.info("Finished working on CommandSequence with "
                              "visit_id %d on browser with id %d",
                              browser.curr_visit_id, browser.crawl_id)
-            if critical_failure:
+
+            if command_status == 'critical':
                 return
 
             if command_status != 'ok':

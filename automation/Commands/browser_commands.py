@@ -17,6 +17,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from ..SocketInterface import clientsocket
 from .utils.webdriver_utils import (execute_in_all_frames,
                                     execute_script_with_retry, get_intra_links,
                                     is_displayed, scroll_down,
@@ -104,7 +105,7 @@ def tab_restart_browser(webdriver):
 
 
 def get_website(url, sleep, visit_id, webdriver,
-                browser_params, extension_socket):
+                browser_params, extension_socket: clientsocket):
     """
     goes to <url> using the given <webdriver> instance
     """
