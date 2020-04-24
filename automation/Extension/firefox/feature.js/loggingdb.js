@@ -10,8 +10,8 @@ let listeningSocket = null;
 
 let listeningSocketCallback =  async (data) => {
     //This works even if data is an int
-    action = data["action"];
-    _visitID = data["visit_id"]
+    let action = data["action"];
+    let _visitID = data["visit_id"]
     switch (action) {
         case "Initialize":
             if (visitID) {
@@ -28,7 +28,8 @@ let listeningSocketCallback =  async (data) => {
                 `Current visit_id ${visit_id}, sent visit_id ${_visit_id}.`);
             }
             data["crawl_id"] = crawlID;
-            dataAggregator.send(JSON.stringify(data));
+            data["success"] = true
+            dataAggregator.send(JSON.stringify(["meta_information", data]));
             visitID = null;
             break;
         default:
