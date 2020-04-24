@@ -144,19 +144,9 @@ while not job_queue.empty():
         lease_secs=TIMEOUT + DWELL_TIME + 30, block=True, timeout=5
     )
     if job is None:
-        if no_job_since is None:
-            no_job_since = time.time()
-        elif time.time() - no_job_since > EXTENDED_LEASE_TIME:
-            manager.logger.info("All unfinished jobs are being held "
-                                "by other worker instance or ourselves. "
-                                "Closing to resolve this deadlock")
-            break
-
-        manager.logger.info("Waiting for work since %d "
-                            "seconds", time.time() - no_job_since)
+        manager.logger.info("Waiting for work")
         time.sleep(5)
         continue
-    no_job_since = None
 
     unsaved_jobs.append(job)
     retry_number = job_queue.get_retry_number(job)
