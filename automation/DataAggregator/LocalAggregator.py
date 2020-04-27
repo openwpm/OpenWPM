@@ -96,14 +96,15 @@ class LocalListener(BaseListener):
             self.cur.execute(data)
             self.db.commit()
             return
-        elif table == RECORD_TYPE_CONTENT:
+        if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
-            return
-        elif table == RECORD_TYPE_SPECIAL:
-            self.handle_special(table, data)
             return
 
         assert isinstance(data, dict)
+
+        if table == RECORD_TYPE_SPECIAL:
+            self.handle_special(table, data)
+            return
 
         statement, args = self._generate_insert(
             table=table, data=data)
