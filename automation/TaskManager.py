@@ -472,9 +472,6 @@ class TaskManager:
                 "error": error_text,
                 "traceback": tb
             }))
-            self.logger.info("Finished working on CommandSequence with "
-                             "visit_id %d on browser with id %d",
-                             browser.curr_visit_id, browser.crawl_id)
 
             if command_status == 'critical':
                 return
@@ -502,6 +499,9 @@ class TaskManager:
             if browser.restart_required:
                 break
 
+        self.logger.info("Finished working on CommandSequence with "
+                         "visit_id %d on browser with id %d",
+                         browser.curr_visit_id, browser.crawl_id)
         # Sleep after executing CommandSequence to provide extra time for
         # internal buffers to drain. Stopgap in support of #135
         time.sleep(2)
