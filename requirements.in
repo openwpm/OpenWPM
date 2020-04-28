@@ -17,6 +17,7 @@ pyarrow
 pyasn1
 pytest
 python-dateutil
+pyvirtualdisplay
 redis
 s3fs
 selenium
