@@ -127,9 +127,10 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         )
         display.start()
         display_pid, display_port = display.pid, display.cmd_param[-1][1:]
-    # Must do this for all display modes, because status_queue reads off no matter what.
+    # Must do this for all display modes,
+    # because status_queue is read off no matter what.
     status_queue.put(
-        ('STATUS', 'Display', (display_pid, display_port)
+        ('STATUS', 'Display', (display_pid, display_port))
     )
 
     if browser_params['callstack_instrument']\

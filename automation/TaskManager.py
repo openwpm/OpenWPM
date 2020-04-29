@@ -245,11 +245,12 @@ class TaskManager:
                                 process.pid not in browser_pids)) or (
                             process.name() == 'Xvfb' and (
                                 process.pid not in browser_pids))):
-                                    self.logger.debug("Process: %s (pid: %i) with start "
-                                          "time %s found running but not in "
-                                          "browser process list. Killing." % (
-                                              process.name(), process.pid,
-                                              process.create_time()))
+                        self.logger.debug(
+                            "Process: %s (pid: %i) with start "
+                            "time %s found running but not in "
+                            "browser process list. Killing." % (
+                                process.name(), process.pid,
+                                process.create_time()))
                         process.kill()
 
     def _launch_aggregators(self) -> None:

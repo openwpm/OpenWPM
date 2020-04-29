@@ -1,4 +1,3 @@
-
 import errno
 import logging
 import os
@@ -156,11 +155,13 @@ class Browser:
                 # 2. Profile tar loaded (if necessary)
                 check_queue(launch_status)
                 # 3. Display launched (if necessary)
-                self.display_pid, self.display_port = check_queue(launch_status)
+                self.display_pid, self.display_port = check_queue(
+                        launch_status)
                 # 4. Browser launch attempted
                 check_queue(launch_status)
                 # 5. Browser launched
-                (self.browser_pid, self.browser_settings) = check_queue(launch_status)
+                (self.browser_pid, self.browser_settings) = check_queue(
+                        launch_status)
 
                 (driver_profile_path, ready) = check_queue(launch_status)
                 if ready != 'READY':
