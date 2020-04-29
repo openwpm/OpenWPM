@@ -61,6 +61,7 @@ EXPECTED_PARENTS = {
                                D4_BASE + 'child4a.html']
 }
 
+
 def pytest_generate_tests(metafunc):
     # Source: https://docs.pytest.org/en/latest/example/parametrize.html#a-quick-port-of-testscenarios  # noqa
     idlist = []
@@ -71,8 +72,6 @@ def pytest_generate_tests(metafunc):
         argnames = [x[0] for x in items]
         argvalues.append([x[1] for x in items])
     metafunc.parametrize(argnames, argvalues, ids=idlist, scope="class")
-
-
 
 
 class TestSimpleCommands(OpenWPMTest):
@@ -98,7 +97,7 @@ class TestSimpleCommands(OpenWPMTest):
     def test_get_site_visits_table_valid(self, display_mode):
         """Check that get works and populates db correctly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
@@ -124,7 +123,7 @@ class TestSimpleCommands(OpenWPMTest):
     def test_get_http_tables_valid(self, display_mode):
         """Check that get works and populates http tables correctly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
@@ -169,7 +168,7 @@ class TestSimpleCommands(OpenWPMTest):
     def test_browse_site_visits_table_valid(self, display_mode):
         """Check that CommandSequence.browse() populates db correctly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
@@ -202,7 +201,7 @@ class TestSimpleCommands(OpenWPMTest):
               code.
         """
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
@@ -277,7 +276,7 @@ class TestSimpleCommands(OpenWPMTest):
               code.
         """
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
@@ -341,7 +340,7 @@ class TestSimpleCommands(OpenWPMTest):
     def test_save_screenshot_valid(self, display_mode):
         """Check that 'save_screenshot' works"""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
@@ -359,7 +358,8 @@ class TestSimpleCommands(OpenWPMTest):
         assert not is_blank
 
         # Check that full page screenshot is not blank
-        pattern = os.path.join(str(self.tmpdir), 'screenshots', '1-*-test_full.png')
+        pattern = os.path.join(
+                str(self.tmpdir), 'screenshots', '1-*-test_full.png')
         screenshot = glob.glob(pattern)[0]
         im = Image.open(screenshot)
         bands = im.split()
@@ -369,7 +369,7 @@ class TestSimpleCommands(OpenWPMTest):
     def test_dump_page_source_valid(self, display_mode):
         """Check that 'dump_page_source' works and source is saved properly."""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
@@ -392,7 +392,7 @@ class TestSimpleCommands(OpenWPMTest):
     def test_recursive_dump_page_source_valid(self, display_mode):
         """Check that 'recursive_dump_page_source' works"""
         # Run the test crawl
-        manager_params, browser_params = self.get_config(display_mode=display_mode)
+        manager_params, browser_params = self.get_config(display_mode)
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(NESTED_FRAMES_URL)
         cs.get(sleep=1)
