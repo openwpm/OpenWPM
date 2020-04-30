@@ -16,6 +16,7 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis-box')
 REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
 CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
 S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
+DISPLAY_MODE = os.getenv('DISPLAY_MODE', 'headless')
 HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT', '1') == '1'
 COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
@@ -38,6 +39,7 @@ manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
+    browser_params[i]['display_mode'] = DISPLAY_MODE
     browser_params[i]['http_instrument'] = HTTP_INSTRUMENT
     browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
@@ -52,7 +54,6 @@ for i in range(NUM_BROWSERS):
         browser_params[i]['save_content'] = SAVE_CONTENT
     if PREFS:
         browser_params[i]['prefs'] = json.loads(PREFS)
-    browser_params[i]['headless'] = True
 
 # Manager configuration
 manager_params['data_directory'] = '~/Desktop/%s/' % CRAWL_DIRECTORY
