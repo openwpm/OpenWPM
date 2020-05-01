@@ -81,6 +81,7 @@ if SENTRY_DSN:
         # tags generate breakdown charts and search filters
         scope.set_tag('CRAWL_DIRECTORY', CRAWL_DIRECTORY)
         scope.set_tag('S3_BUCKET', S3_BUCKET)
+        scope.set_tag('DISPLAY_MODE', DISPLAY_MODE)
         scope.set_tag('HTTP_INSTRUMENT', HTTP_INSTRUMENT)
         scope.set_tag('COOKIE_INSTRUMENT', COOKIE_INSTRUMENT)
         scope.set_tag('NAVIGATION_INSTRUMENT', NAVIGATION_INSTRUMENT)
