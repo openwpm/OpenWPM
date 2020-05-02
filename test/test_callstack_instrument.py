@@ -64,24 +64,24 @@ class TestCallstackInstrument(OpenWPMTest):
         db = manager_params['db']
         manager.close()
         rows = db_utils.query_db(db, (
-            "SELECT * FROM callstacks;"))
-        print("Printing callstacks contents")
-        for row in rows:
-            print(row["call_stack"])
-        rows = db_utils.query_db(db, (
             "SELECT hr.url, c.call_stack"
             "   FROM callstacks c"
             "   JOIN http_requests hr"
             "   ON c.request_id=hr.request_id"
             "      AND c.visit_id= hr.visit_id"
             "      AND c.crawl_id = hr.crawl_id;"))
+        print("Printing callstacks contents")
         observed_records = set()
         for row in rows:
-            url, stacktrace = row
-            if (url.endswith("inject_pixel.js")
-                    or url.endswith("test_image.png")  # noqa: W503
-                    or url.endswith("Blank.gif")):  # noqa: W503
-                observed_records.add(stacktrace)
+            print(row["call_stack"])
+            url, call_stack = row
+            test_urls = (
+                "inject_pixel.js",
+                "test_image.png",
+                "Blank.gif",
+            )
+            if url.endswith(test_urls):
+                observed_records.add(call_stack)
         assert HTTP_STACKTRACES == observed_records
 
     def test_parse_http_stack_trace_str(self):
