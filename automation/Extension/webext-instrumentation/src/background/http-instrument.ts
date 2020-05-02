@@ -354,12 +354,6 @@ export class HttpInstrument {
     const isXHR = details.type === "xmlhttprequest";
     update.is_XHR = boolToInt(isXHR);
 
-    // Check if frame OR full page load
-    const isFullPageLoad = details.frameId === 0;
-    const isFrameLoad = details.type === "sub_frame";
-    update.is_full_page = boolToInt(isFullPageLoad);
-    update.is_frame_load = boolToInt(isFrameLoad);
-
     // Grab the triggering and loading Principals
     let triggeringOrigin;
     let loadingOrigin;
