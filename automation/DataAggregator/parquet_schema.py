@@ -100,6 +100,7 @@ fields = [
     pa.field('frame_id', pa.int64()),
     pa.field('response_status', pa.int64()),
     pa.field('response_status_text', pa.string(), nullable=False),
+    pa.field('headers', pa.string()),
     pa.field('time_stamp', pa.string(), nullable=False)
 ]
 PQ_SCHEMAS['http_redirects'] = pa.schema(fields)
