@@ -171,9 +171,15 @@ export let saveRecord = function(instrument, record) {
     record["visit_id"] = visitID;
 
     if (!visitID && !debugging) {
+        // We navigate to about blank between visits and it screws with our data
+        if(instrument === 'navigations' && record['url'] === 'about:blank') {
+            logDebug('Extension-' + crawlID + ' : Dropping navigation to about:blank in intermediate period');
+            return;
+        }
         logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(record));
+                    JSON.stringify(record) + ' into table ' + instrument);
         record["visit_id"] = -1;
+        
     }
 
     // send to console if debugging

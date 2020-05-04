@@ -67,7 +67,11 @@ class TestS3Aggregator(OpenWPMTest):
         for table_name in PQ_SCHEMAS:
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
-            assert len(visit_ids[table_name]) == NUM_VISITS * NUM_BROWSERS
+            actual = len(visit_ids[table_name])
+            expected = NUM_VISITS * NUM_BROWSERS
+            assert actual == expected, \
+                (f"Table {table_name} had {actual} "
+                    f"visit_ids, we expected {expected}")
             for vid in visit_ids[table_name]:
                 assert(vid >= 0) and (vid < (1 << 53))
         for table_name, ids in visit_ids.items():
