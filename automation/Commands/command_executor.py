@@ -2,9 +2,9 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
 from .Types import (BrowseCommand, DumpPageSourceCommand, DumpProfCommand,
-                    GetCommand, RecursiveDumpPageSourceCommand,
-                    RunCustomFunctionCommand, SaveScreenshotCommand,
-                    ScreenshotFullPageCommand)
+                    FinalizeCommand, GetCommand,
+                    RecursiveDumpPageSourceCommand, RunCustomFunctionCommand,
+                    SaveScreenshotCommand, ScreenshotFullPageCommand)
 
 
 def execute_command(command, webdriver, browser_settings, browser_params,
@@ -65,6 +65,9 @@ def execute_command(command, webdriver, browser_settings, browser_params,
                     "manager_params": manager_params,
                     "extension_socket": extension_socket}
         command.function_handle(*command.func_args, **arg_dict)
+
+    elif type(command) is FinalizeCommand:
+        browser_commands.finalize(command.visit_id, extension_socket)
 
     else:
         raise CommandExecutionError("Invalid Command", command)

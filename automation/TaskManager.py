@@ -7,12 +7,13 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import psutil
 import tblib
 
 from .BrowserManager import Browser
+from .Commands.Types import FinalizeCommand
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
@@ -114,7 +115,7 @@ class TaskManager:
 
         # Flow control
         self.closing = False
-        self.failure_status = None
+        self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
         if manager_params['failure_limit'] is not None:
@@ -212,11 +213,13 @@ class TaskManager:
                     # Use the USS metric for child processes, to avoid
                     # double-counting memory shared with their parent.
                     geckodriver = psutil.Process(browser.browser_pid)
-                    firefox = geckodriver.children()[0]
-                    mem_bytes = (geckodriver.memory_info().rss
-                                 + firefox.memory_info().rss)
-                    for child in firefox.children():
-                        mem_bytes += child.memory_full_info().uss
+                    mem_bytes = geckodriver.memory_info().rss
+                    children = geckodriver.children()
+                    if children:
+                        firefox = children[0]
+                        mem_bytes += firefox.memory_info().rss
+                        for child in firefox.children():
+                            mem_bytes += child.memory_full_info().uss
                     mem = mem_bytes / 2 ** 20
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB"
@@ -231,7 +234,7 @@ class TaskManager:
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:
-                browser_pids = set()
+                browser_pids: Set[int] = set()
                 check_time = time.time()
                 for browser in self.browsers:
                     if browser.browser_pid is not None:
@@ -319,24 +322,26 @@ class TaskManager:
         appropriate steps are taken to gracefully close the infrastructure
         """
         self.logger.debug("Checking command failure status indicator...")
-        if self.failure_status:
-            self.logger.debug(
-                "TaskManager failure status set, halting command execution.")
-            self._cleanup_before_fail()
-            if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
-                raise CommandExecutionError(
-                    "TaskManager exceeded maximum consecutive command "
-                    "execution failures.",
-                    self.failure_status['CommandSequence']
-                )
-            elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
-                                                       "FailureLimit")):
-                raise CommandExecutionError(
-                    "TaskManager failed to launch browser within allowable "
-                    "failure limit.", self.failure_status['CommandSequence']
-                )
-            if self.failure_status['ErrorType'] == 'CriticalChildException':
-                raise pickle.loads(self.failure_status['Exception'])
+        if not self.failure_status:
+            return
+
+        self.logger.debug(
+            "TaskManager failure status set, halting command execution.")
+        self._cleanup_before_fail()
+        if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
+            raise CommandExecutionError(
+                "TaskManager exceeded maximum consecutive command "
+                "execution failures.",
+                self.failure_status['CommandSequence']
+            )
+        elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
+                                                   "FailureLimit")):
+            raise CommandExecutionError(
+                "TaskManager failed to launch browser within allowable "
+                "failure limit.", self.failure_status['CommandSequence']
+            )
+        if self.failure_status['ErrorType'] == 'CriticalChildException':
+            raise pickle.loads(self.failure_status['Exception'])
 
     # CRAWLER COMMAND CODE
 
@@ -363,6 +368,8 @@ class TaskManager:
             "site_rank": command_sequence.site_rank
         }))
 
+        # FIXME:this doesn't belong here but it has to be here for now
+        command_sequence.commands_with_timeout.append((FinalizeCommand(), 10))
         # Start command execution thread
         args = (browser, command_sequence)
         thread = threading.Thread(target=self._issue_command, args=args)
@@ -429,7 +436,6 @@ class TaskManager:
             browser.command_queue.put(command)
 
             # received reply from BrowserManager, either success or failure
-            critical_failure = False
             error_text = None
             tb = None
             try:
@@ -449,7 +455,6 @@ class TaskManager:
                         'Exception': status[1]
                     }
                     error_text, tb = self._unpack_picked_error(status[1])
-                    critical_failure = True
                 elif status[0] == "FAILED":
                     command_status = 'error'
                     error_text, tb = self._unpack_picked_error(status[1])
@@ -488,7 +493,7 @@ class TaskManager:
             self.logger.info("Finished working on CommandSequence with "
                              "visit_id %d on browser with id %d",
                              browser.curr_visit_id, browser.crawl_id)
-            if critical_failure:
+            if command_status == 'critical':
                 return
 
             if command_status != 'ok':
@@ -514,6 +519,9 @@ class TaskManager:
             if browser.restart_required:
                 break
 
+        self.logger.info("Finished working on CommandSequence with "
+                         "visit_id %d on browser with id %d",
+                         browser.curr_visit_id, browser.crawl_id)
         # Sleep after executing CommandSequence to provide extra time for
         # internal buffers to drain. Stopgap in support of #135
         time.sleep(2)

@@ -148,7 +148,6 @@ class clientsocket:
         else:
             raise ValueError("Unsupported serialization type set: %s"
                              % serialization)
-
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
 

@@ -24,6 +24,7 @@ HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT', '1') == '1'
 COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
+CALLSTACK_INSTRUMENT = os.getenv('CALLSTACK_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 PREFS = os.getenv('PREFS', None)
@@ -33,8 +34,12 @@ SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 LOGGER_SETTINGS = MPLogger.parse_config_from_env()
 MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '2'))
 
-EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 
+if CALLSTACK_INSTRUMENT is True:
+    # Must have JS_INSTRUMENT True for CALLSTACK_INSTRUMENT to work
+    JS_INSTRUMENT = True
+
+EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 
 # Loads the default manager params
 # We can't use more than one browser per instance because the job management
@@ -48,6 +53,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['http_instrument'] = HTTP_INSTRUMENT
     browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
+    browser_params[i]['callstack_instrument'] = CALLSTACK_INSTRUMENT
     browser_params[i]['js_instrument'] = JS_INSTRUMENT
     if JS_INSTRUMENT_MODULES:
         browser_params[i]['js_instrument_modules'] = JS_INSTRUMENT_MODULES
@@ -138,9 +144,10 @@ for sig in [signal.SIGTERM, signal.SIGINT]:
     signal.signal(sig, on_shutdown(manager, unsaved_jobs_lock))
 
 
-def mark_job_done(logger: logging.Logger, unsaved_jobs_lock: Lock,
-                  job_queue: rediswq.RedisWQ, job: bytes) \
-        -> Callable[[], None]:
+def get_job_completion_callback(logger: logging.Logger,
+                                unsaved_jobs_lock: Lock,
+                                job_queue: rediswq.RedisWQ,
+                                job: bytes) -> Callable[[], None]:
     def callback() -> None:
         with unsaved_jobs_lock:
             logger.info("Job %r is done", job)
@@ -176,14 +183,14 @@ while not job_queue.empty():
                              "seconds", time.time() - no_job_since)
         time.sleep(5)
         continue
-    no_job_since = None
     unsaved_jobs.append(job)
     retry_number = job_queue.get_retry_number(job)
     site_rank, site = job.decode("utf-8").split(',')
     if "://" not in site:
         site = "http://" + site
-    manager.logger.info("Visiting %s...", site)
-    callback = mark_job_done(manager.logger, unsaved_jobs_lock, job_queue, job)
+    manager.logger.info("Visiting %s..." % site)
+    callback = get_job_completion_callback(
+        manager.logger, unsaved_jobs_lock, job_queue, job)
     command_sequence = CommandSequence.CommandSequence(
         site, blocking=True, reset=True, retry_number=retry_number,
         callback=callback, site_rank=site_rank
