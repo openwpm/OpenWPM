@@ -28,7 +28,8 @@ let listeningSocketCallback =  async (data) => {
                 `Current visit_id ${visit_id}, sent visit_id ${_visit_id}.`);
             }
             data["crawl_id"] = crawlID;
-            data["success"] = true
+            data["success"] = true;
+            data["meta_type"] = "finalize";
             dataAggregator.send(JSON.stringify(["meta_information", data]));
             visitID = null;
             break;

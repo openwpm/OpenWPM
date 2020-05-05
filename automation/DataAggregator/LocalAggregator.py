@@ -10,8 +10,8 @@ from typing import Any, Dict, Tuple, Union
 
 import plyvel
 
-from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_SPECIAL,
-                             BaseAggregator, BaseListener)
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener)
 
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100
@@ -91,7 +91,7 @@ class LocalListener(BaseListener):
             return
 
         table, data = record
-        if table == "create_table":
+        if table == RECORD_TYPE_CREATE:
             assert isinstance(data, str)
             self.cur.execute(data)
             self.db.commit()
@@ -103,7 +103,7 @@ class LocalListener(BaseListener):
         assert isinstance(data, dict)
 
         if table == RECORD_TYPE_SPECIAL:
-            self.handle_special(table, data)
+            self.handle_special(data)
             return
 
         statement, args = self._generate_insert(

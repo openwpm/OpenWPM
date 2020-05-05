@@ -408,7 +408,8 @@ class TaskManager:
         self.logger.info("Starting to work on CommandSequence with "
                          " visit_id %d on browser with id %d",
                          browser.curr_visit_id, browser.crawl_id)
-        for command_and_timeout in command_sequence.get_commands_with_timeout():
+        for command_and_timeout in command_sequence \
+                .get_commands_with_timeout():
             command, timeout = command_and_timeout
             command.set_visit_crawl_id(browser.curr_visit_id, browser.crawl_id)
             command.set_start_time(time.time())

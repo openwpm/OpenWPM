@@ -19,8 +19,9 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_SPECIAL,
-                             BaseAggregator, BaseListener, BaseParams)
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener,
+                             BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
@@ -271,13 +272,13 @@ class S3Listener(BaseListener):
             return
         self._last_record_received = time.time()
         table, data = record
-        if table == "create_table":  # drop these statements
+        if table == RECORD_TYPE_CREATE:  # drop these statements
             return
         if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
         if table == RECORD_TYPE_SPECIAL:
-            self.handle_special(table, data)
+            self.handle_special(data)
             return
 
         # Convert data to text type
