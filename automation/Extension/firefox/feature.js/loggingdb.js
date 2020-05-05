@@ -7,6 +7,41 @@ let dataAggregator = null;
 let logAggregator = null;
 let listeningSocket = null;
 
+
+let listeningSocketCallback =  async (data) => {
+    //This works even if data is an int
+    let action = data["action"];
+    let _visitID = data["visit_id"]
+    switch (action) {
+        case "Initialize":
+            if (visitID) {
+                logWarn("Set visit_id while another visit_id was set")
+            }
+            visitID = parseInt(_visitID, 10);
+            break;
+        case "Finalize":
+            if (!visitID) {
+                logWarn("Send Finalize while no visit_id was set")
+            }
+            if (_visitID != visitID ) {
+                logError("Send Finalize but visit_id didn't match. " +
+                `Current visit_id ${visit_id}, sent visit_id ${_visit_id}.`);
+            }
+            data["crawl_id"] = crawlID;
+            data["success"] = true;
+            data["meta_type"] = "finalize";
+            dataAggregator.send(JSON.stringify(["meta_information", data]));
+            visitID = null;
+            break;
+        default:
+            // Just making sure that it's a valid number before logging
+            _visitID = parseInt(data, 10);
+            logDebug("Setting visit_id the legacy way");
+            visitID = _visitID
+
+    }
+
+}
 export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
         console.log("Debugging, everything will output to console");
@@ -32,7 +67,7 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     }
 
     // Listen for incoming urls as visit ids
-    listeningSocket = new socket.ListeningSocket();
+    listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
     console.log("Starting socket listening for incoming connections.");
     listeningSocket.startListening().then(() => {
         browser.profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
@@ -134,18 +169,18 @@ export let dataReceiver = {
 };
 
 export let saveRecord = function(instrument, record) {
-    // Add visit id if changed
-    while (!debugging && listeningSocket.queue.length != 0) {
-        visitID = listeningSocket.queue.shift();
-        logDebug("Visit Id: " + visitID);
-    }
-    record["visit_id"] = parseInt(visitID, 10);
-
+    record["visit_id"] = visitID;
 
     if (!visitID && !debugging) {
+        // Navigations to about:blank can be triggered by OpenWPM. We drop those.
+        if(instrument === 'navigations' && record['url'] === 'about:blank') {
+            logDebug('Extension-' + crawlID + ' : Dropping navigation to about:blank in intermediate period');
+            return;
+        }
         logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(record));
+                    JSON.stringify(record) + ' into table ' + instrument);
         record["visit_id"] = -1;
+        
     }
 
     // send to console if debugging

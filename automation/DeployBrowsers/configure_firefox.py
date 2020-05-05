@@ -207,6 +207,12 @@ def optimize_prefs(fo):
     fo.set_preference("app.shield.optoutstudies.enabled", False)
     fo.set_preference("extensions.shield-recipe-client.enabled", False)
 
-    # Enable legacy extensions and disable extension signing
-    fo.set_preference("extensions.legacy.enabled", True)
+    # Disable Source Pragams
+    # As per https://bugzilla.mozilla.org/show_bug.cgi?id=1628853
+    # sourceURL can be used to obfuscate the original origin of
+    # a script, we disable it.
+    fo.set_preference("javascript.options.source_pragmas", False)
+
+    # Enable extensions and disable extension signing
+    fo.set_preference("extensions.experiments.enabled", True)
     fo.set_preference("xpinstall.signatures.required", False)
