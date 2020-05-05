@@ -172,7 +172,7 @@ export let saveRecord = function(instrument, record) {
     record["visit_id"] = visitID;
 
     if (!visitID && !debugging) {
-        // We navigate to about blank between visits and it screws with our data
+        // Navigations to about:blank can be triggered by OpenWPM. We drop those.
         if(instrument === 'navigations' && record['url'] === 'about:blank') {
             logDebug('Extension-' + crawlID + ' : Dropping navigation to about:blank in intermediate period');
             return;
