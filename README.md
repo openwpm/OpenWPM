@@ -300,6 +300,12 @@ left out of this section.
     * Launch the browser using the X virtual frame buffer. In this mode, Firefox
       is not running in it's own headless mode, but no GUI will be displayed.
     * This mode only works on Linux.
+  * `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
+    "headless" browsing because you do not need to be in a full X environment e.g. on a
+    server. `headless` mode is supported on all platforms and is implemented by the browser
+    but has some differences. For example webGL is not supported in headless mode.
+    https://github.com/mozilla/OpenWPM/issues/448 discusses additional factors to consider
+    when picking a `display_mode`.
 * `browser`
   * Used to specify which browser to launch. Currently only `firefox` is
     supported.
