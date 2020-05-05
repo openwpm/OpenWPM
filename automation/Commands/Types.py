@@ -86,7 +86,7 @@ class ShutdownCommand(BaseCommand):
 
 
 class FinalizeCommand(BaseCommand):
-    """ This command should be a the end of any given command_sequence
+    """ This is automatically appended to the end of a command_sequence
         It's apperance means there won't be any more commands for this
         visit_id
     """
