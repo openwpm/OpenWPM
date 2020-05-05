@@ -200,18 +200,23 @@ HTTP_RESPONSES = {
         u''),
 }
 
-# format: (source_url, destination_url)
+# format: (source_url, destination_url, location header)
 HTTP_REDIRECTS = {
     (u'http://localtest.me:8000/MAGIC_REDIRECT/req1.png',
-     u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png'),
+     u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
+     u'req2.png?dst=req3.png&dst=/test_pages/shared/test_image_2.png'),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/req2.png',
-     u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png'),
+     u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
+     u'req3.png?dst=/test_pages/shared/test_image_2.png'),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/req3.png',
-     u'http://localtest.me:8000/test_pages/shared/test_image_2.png'),
+     u'http://localtest.me:8000/test_pages/shared/test_image_2.png',
+     u'/test_pages/shared/test_image_2.png'),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/frame1.png',
-     u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png'),
+     u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
+     u'frame2.png?dst=/404.png'),
     (u'http://localtest.me:8000/MAGIC_REDIRECT/frame2.png',
-     u'http://localtest.me:8000/404.png')
+     u'http://localtest.me:8000/404.png',
+     u'/404.png')
 }
 
 # Data for test_cache_hits_recorded
@@ -505,7 +510,13 @@ class TestHTTPInstrument(OpenWPMTest):
             # dst = request_id_to_url[row['new_request_id']].split('?')[0]
             src = row['old_request_url'].split('?')[0]
             dst = row['new_request_url'].split('?')[0]
-            observed_records.add((src, dst))
+            headers = json.loads(row['headers'])
+            location = None
+            for header, value in headers:
+                if header.lower() == 'location':
+                    location = value
+                    break
+            observed_records.add((src, dst, location))
         assert HTTP_REDIRECTS == observed_records
 
     def test_cache_hits_recorded(self):
