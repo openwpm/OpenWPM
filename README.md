@@ -531,6 +531,11 @@ Troubleshooting
     an overtaxed system, either memory or CPU usage. Try lowering the number of
     concurrent browsers.
 
+2. In older versions of firefox (pre 74) the setting to enable extensions was called
+   `extensions.legacy.enabled`. If you need to work with earlier firefox, update the
+   setting name `extensions.experiments.enabled` in
+   `automation/DeployBrowsers/configure_firefox.py`.
+
 Docker Deployment for OpenWPM
 -----------------------------
 
