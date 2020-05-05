@@ -10,6 +10,7 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
+from typing import Optional
 
 import psutil
 from multiprocess import Queue
@@ -37,7 +38,7 @@ class Browser:
                       this browser is headless, etc.)
      """
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(self, manager_params, browser_params) -> None:
         # Constants
         self._SPAWN_TIMEOUT = 120  # seconds
         self._UNSUCCESSFUL_SPAWN_LIMIT = 4
@@ -53,20 +54,21 @@ class Browser:
         # Queues and process IDs for BrowserManager
 
         # thread to run commands issues from TaskManager
-        self.command_thread = None
+        self.command_thread: threading.Thread = None
         # queue for passing command tuples to BrowserManager
-        self.command_queue = None
+        self.command_queue: Optional[Queue] = None
         # queue for receiving command execution status from BrowserManager
-        self.status_queue = None
+        self.status_queue: Optional[Queue] = None
         # pid for browser instance controlled by BrowserManager
-        self.browser_pid = None
+        self.browser_pid: Optional[int] = None
 
         # boolean that says if the BrowserManager new (to optimize restarts)
         self.is_fresh = True
         # boolean indicating if the browser should be restarted
         self.restart_required = False
 
-        self.current_timeout = None  # timeout of the current command
+        self.current_timeout: Optional[int] = \
+            None  # timeout of the current command
         # dict of additional browser profile settings (e.g. screen_res)
         self.browser_settings = None
         self.browser_manager = None  # process that controls browser
@@ -351,7 +353,7 @@ class Browser:
                                   self.crawl_id)
                 pass
 
-    def shutdown_browser(self, during_init):
+    def shutdown_browser(self, during_init: bool) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """
         # Close BrowserManager process and children
         self.logger.debug(

@@ -10,7 +10,8 @@ from typing import Any, Dict, Tuple, Union
 
 import plyvel
 
-from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener)
 
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100
@@ -84,23 +85,26 @@ class LocalListener(BaseListener):
 
     def process_record(self, record: Tuple[str, Union[str, Dict[str, Any]]]):
         """Add `record` to database"""
+
         if len(record) != 2:
             self.logger.error("Query is not the correct length")
             return
 
         table, data = record
-
-        if table == "create_table":
+        if table == RECORD_TYPE_CREATE:
             assert isinstance(data, str)
             self.cur.execute(data)
             self.db.commit()
             return
-        elif table == RECORD_TYPE_CONTENT:
+        if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
 
         assert isinstance(data, dict)
-        self.update_records(table, data)
+
+        if table == RECORD_TYPE_SPECIAL:
+            self.handle_special(data)
+            return
 
         statement, args = self._generate_insert(
             table=table, data=data)

@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import psutil
 import tblib
@@ -114,7 +114,7 @@ class TaskManager:
 
         # Flow control
         self.closing = False
-        self.failure_status = None
+        self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
         if manager_params['failure_limit'] is not None:
@@ -233,7 +233,7 @@ class TaskManager:
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:
-                browser_pids = set()
+                browser_pids: Set[int] = set()
                 check_time = time.time()
                 for browser in self.browsers:
                     if browser.browser_pid is not None:
@@ -306,24 +306,26 @@ class TaskManager:
         appropriate steps are taken to gracefully close the infrastructure
         """
         self.logger.debug("Checking command failure status indicator...")
-        if self.failure_status:
-            self.logger.debug(
-                "TaskManager failure status set, halting command execution.")
-            self._cleanup_before_fail()
-            if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
-                raise CommandExecutionError(
-                    "TaskManager exceeded maximum consecutive command "
-                    "execution failures.",
-                    self.failure_status['CommandSequence']
-                )
-            elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
-                                                       "FailureLimit")):
-                raise CommandExecutionError(
-                    "TaskManager failed to launch browser within allowable "
-                    "failure limit.", self.failure_status['CommandSequence']
-                )
-            if self.failure_status['ErrorType'] == 'CriticalChildException':
-                raise pickle.loads(self.failure_status['Exception'])
+        if not self.failure_status:
+            return
+
+        self.logger.debug(
+            "TaskManager failure status set, halting command execution.")
+        self._cleanup_before_fail()
+        if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
+            raise CommandExecutionError(
+                "TaskManager exceeded maximum consecutive command "
+                "execution failures.",
+                self.failure_status['CommandSequence']
+            )
+        elif (self.failure_status['ErrorType'] == ("ExceedLaunch"
+                                                   "FailureLimit")):
+            raise CommandExecutionError(
+                "TaskManager failed to launch browser within allowable "
+                "failure limit.", self.failure_status['CommandSequence']
+            )
+        if self.failure_status['ErrorType'] == 'CriticalChildException':
+            raise pickle.loads(self.failure_status['Exception'])
 
     # CRAWLER COMMAND CODE
 
@@ -369,11 +371,13 @@ class TaskManager:
                 break
             if not visit_id_list:
                 time.sleep(1)
-            else:
-                for visit_id in visit_id_list:
-                    cs = self.unsaved_command_sequences.pop(visit_id, None)
-                    if cs:
-                        cs.mark_done()
+                continue
+
+            for visit_id in visit_id_list:
+                self.logger.debug("Invoking callback of visit_id %d", visit_id)
+                cs = self.unsaved_command_sequences.pop(visit_id, None)
+                if cs:
+                    cs.mark_done()
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
@@ -401,7 +405,11 @@ class TaskManager:
                 "CommandSequence with `reset` set to `True` to use a fresh "
                 "profile for each command." % browser.crawl_id
             )
-        for command_and_timeout in command_sequence.commands_with_timeout:
+        self.logger.info("Starting to work on CommandSequence with "
+                         " visit_id %d on browser with id %d",
+                         browser.curr_visit_id, browser.crawl_id)
+        for command_and_timeout in command_sequence \
+                .get_commands_with_timeout():
             command, timeout = command_and_timeout
             command.set_visit_crawl_id(browser.curr_visit_id, browser.crawl_id)
             command.set_start_time(time.time())
@@ -410,7 +418,6 @@ class TaskManager:
             browser.command_queue.put(command)
 
             # received reply from BrowserManager, either success or failure
-            critical_failure = False
             error_text = None
             tb = None
             try:
@@ -430,7 +437,6 @@ class TaskManager:
                         'Exception': status[1]
                     }
                     error_text, tb = self._unpack_picked_error(status[1])
-                    critical_failure = True
                 elif status[0] == "FAILED":
                     command_status = 'error'
                     error_text, tb = self._unpack_picked_error(status[1])
@@ -467,7 +473,7 @@ class TaskManager:
                 "traceback": tb
             }))
 
-            if critical_failure:
+            if command_status == 'critical':
                 return
 
             if command_status != 'ok':
@@ -493,6 +499,9 @@ class TaskManager:
             if browser.restart_required:
                 break
 
+        self.logger.info("Finished working on CommandSequence with "
+                         "visit_id %d on browser with id %d",
+                         browser.curr_visit_id, browser.crawl_id)
         # Sleep after executing CommandSequence to provide extra time for
         # internal buffers to drain. Stopgap in support of #135
         time.sleep(2)
