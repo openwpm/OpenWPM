@@ -12,7 +12,7 @@
     "bot_mitigation": false,
     "profile_tar": null,
     "profile_archive_dir": null,
-    "headless": false,
+    "display_mode": "native",
     "browser": "firefox",
     "prefs": {},
 

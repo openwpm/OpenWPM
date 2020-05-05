@@ -23,7 +23,8 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
-browser_params[0]['headless'] = True  # Launch only browser 0 headless
+# Launch only browser 0 headless
+browser_params[0]['display_mode'] = 'headless'
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params['data_directory'] = '~/Desktop/'

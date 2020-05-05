@@ -288,11 +288,24 @@ left out of this section.
   * Performs some actions to prevent the platform from being detected as a bot.
   * Note, these aren't comprehensive and automated interaction with the site
     will still appear very bot-like.
-* `headless`
-  * Launch the browser in headless mode (supported as of Firefox 56),
-    no GUI will be visible.
-  * Use this when running browsers on a remote machine or to run crawls in the
-      background on a local machine.
+* `display_mode`:
+  * `native`:
+    * Launch the browser normally - GUI will be visible
+  * `headless`:
+    * Launch the browser in headless mode (supported as of Firefox 56),
+        no GUI will be visible.
+    * Use this when running browsers on a remote machine or to run crawls in the
+        background on a local machine.
+  * `xvfb`:
+    * Launch the browser using the X virtual frame buffer. In this mode, Firefox
+      is not running in it's own headless mode, but no GUI will be displayed.
+    * This mode only works on Linux.
+  * `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
+    "headless" browsing because you do not need to be in a full X environment e.g. on a
+    server. `headless` mode is supported on all platforms and is implemented by the browser
+    but has some differences. For example webGL is not supported in headless mode.
+    https://github.com/mozilla/OpenWPM/issues/448 discusses additional factors to consider
+    when picking a `display_mode`.
 * `browser`
   * Used to specify which browser to launch. Currently only `firefox` is
     supported.
