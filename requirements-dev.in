@@ -1,3 +1,4 @@
 -c requirements.txt
 autopep8
 localstack[full]
+pre-commit
