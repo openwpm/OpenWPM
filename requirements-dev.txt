@@ -7,11 +7,12 @@
 airspeed==0.5.14          # via localstack
 amazon_kclpy-ext==1.5.1   # via localstack
 argparse==1.4.0           # via amazon-kclpy-ext
-attrs==19.3.0             # via -c requirements.txt, jsonschema
+attrs==19.3.0             # via jsonschema, pytest
 autopep8==1.5.1           # via -r requirements-dev.in
 aws-sam-translator==1.22.0  # via cfn-lint, localstack
 aws-xray-sdk==2.5.0       # via moto-ext
 awscli==1.18.41           # via localstack
+backcall==0.1.0           # via ipython
 boto3==1.12.41            # via -c requirements.txt, aws-sam-translator, localstack, localstack-client, moto-ext
 boto==2.49.0              # via amazon-kclpy-ext, localstack, moto-ext
 botocore==1.15.41         # via -c requirements.txt, aws-xray-sdk, awscli, boto3, localstack, moto-ext, s3transfer
@@ -24,7 +25,7 @@ click==7.1.1              # via flask
 colorama==0.4.3           # via awscli
 coverage==4.5.4           # via localstack, python-coveralls
 cryptography==2.9         # via moto-ext, pyopenssl, sshpubkeys
-decorator==4.4.2          # via -c requirements.txt, jsonpath-rw, networkx
+decorator==4.4.2          # via ipython, jsonpath-rw, networkx, traitlets
 dnslib==0.9.12            # via localstack-ext
 dnspython==1.16.0         # via localstack, localstack-ext
 docker==4.2.0             # via moto-ext
@@ -32,15 +33,21 @@ docopt==0.6.2             # via localstack
 docutils==0.15.2          # via -c requirements.txt, awscli, botocore
 ecdsa==0.15               # via python-jose, sshpubkeys
 elasticsearch==7.6.0      # via localstack
+entrypoints==0.3          # via flake8
+flake8-isort==3.0.0       # via -r requirements-dev.in
+flake8==3.7.9             # via -r requirements-dev.in, flake8-isort
 flask-cors==3.0.8         # via localstack
 flask==1.1.2              # via flask-cors, flask-swagger, localstack
 flask_swagger==0.2.12     # via localstack
 forbiddenfruit==0.1.3     # via localstack
 future==0.18.2            # via aws-xray-sdk
 idna==2.9                 # via moto-ext, requests
-importlib-metadata==1.6.0  # via -c requirements.txt, jsonpickle, jsonschema
-importlib-resources==1.0.2  # via cfn-lint
+importlib-metadata==1.6.0  # via jsonpickle
+ipython-genutils==0.2.0   # via traitlets
+ipython==7.14.0           # via -r requirements-dev.in
+isort[pyproject]==4.3.21  # via flake8-isort
 itsdangerous==1.1.0       # via flask
+jedi==0.17.0              # via ipython
 jinja2==2.11.2            # via flask, moto-ext
 jmespath==0.9.5           # via -c requirements.txt, boto3, botocore
 jsondiff==1.2.0           # via moto-ext
@@ -53,21 +60,34 @@ localstack-client==0.23   # via localstack
 localstack-ext==0.11.4    # via localstack
 localstack[full]==0.11.0.5  # via -r requirements-dev.in
 markupsafe==1.1.1         # via jinja2
+mccabe==0.6.1             # via flake8
 mock==3.0.5               # via amazon-kclpy-ext, moto-ext
-more-itertools==5.0.0     # via -c requirements.txt, moto-ext, zipp
+more-itertools==5.0.0     # via -c requirements.txt, moto-ext, pytest, zipp
 moto-ext==1.3.15.12       # via localstack
 networkx==2.4             # via cfn-lint
 nose-timer==1.0.0         # via localstack
 nose==1.3.7               # via localstack, nose-timer
+packaging==20.3           # via pytest
+parso==0.7.0              # via jedi
+pexpect==4.8.0            # via ipython
+pickleshare==0.7.5        # via ipython
+pluggy==0.13.1            # via pytest
 ply==3.11                 # via jsonpath-rw
+prompt-toolkit==3.0.5     # via ipython
 psutil==5.7.0             # via -c requirements.txt, localstack
+ptyprocess==0.6.0         # via pexpect
+py==1.8.1                 # via pytest
 pyaes==1.6.1              # via localstack-ext
 pyasn1==0.4.8             # via -c requirements.txt, python-jose, rsa
-pycodestyle==2.5.0        # via -c requirements.txt, autopep8
+pycodestyle==2.5.0        # via autopep8, flake8
 pycparser==2.20           # via cffi
+pyflakes==2.1.1           # via flake8
+pygments==2.6.1           # via ipython
 pympler==0.8              # via localstack
 pyopenssl==17.5.0         # via localstack
+pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via jsonschema
+pytest==5.4.1             # via -r requirements-dev.in
 python-coveralls==2.9.3   # via localstack
 python-dateutil==2.8.1    # via -c requirements.txt, botocore, moto-ext
 python-jose==3.1.0        # via moto-ext
@@ -79,10 +99,14 @@ responses==0.10.12        # via moto-ext
 rsa==3.4.2                # via awscli, python-jose
 s3transfer==0.3.3         # via -c requirements.txt, awscli, boto3
 sasl==0.2.1               # via localstack
-six==1.14.0               # via -c requirements.txt, airspeed, aws-sam-translator, cfn-lint, cryptography, docker, ecdsa, flask-cors, jsonpath-rw, jsonschema, localstack, mock, more-itertools, moto-ext, pyopenssl, pyrsistent, python-coveralls, python-dateutil, python-jose, responses, sasl, websocket-client
+six==1.14.0               # via -c requirements.txt, airspeed, aws-sam-translator, cfn-lint, cryptography, docker, ecdsa, flask-cors, jsonpath-rw, jsonschema, localstack, mock, more-itertools, moto-ext, packaging, pyopenssl, pyrsistent, python-coveralls, python-dateutil, python-jose, responses, sasl, traitlets, websocket-client
 sshpubkeys==3.1.0         # via moto-ext
 subprocess32==3.5.4       # via localstack
+testfixtures==6.14.1      # via flake8-isort
+toml==0.10.0              # via isort
+traitlets==4.3.3          # via ipython
 urllib3==1.25.9           # via -c requirements.txt, botocore, elasticsearch, requests
+wcwidth==0.1.9            # via prompt-toolkit, pytest
 websocket-client==0.57.0  # via docker
 werkzeug==1.0.1           # via flask, moto-ext
 wrapt==1.12.1             # via aws-xray-sdk
