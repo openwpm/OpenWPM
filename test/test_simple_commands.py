@@ -359,7 +359,7 @@ class TestSimpleCommands(OpenWPMTest):
 
         # Check that full page screenshot is not blank
         pattern = os.path.join(
-                str(self.tmpdir), 'screenshots', '1-*-test_full.png')
+            str(self.tmpdir), 'screenshots', '1-*-test_full.png')
         screenshot = glob.glob(pattern)[0]
         im = Image.open(screenshot)
         bands = im.split()

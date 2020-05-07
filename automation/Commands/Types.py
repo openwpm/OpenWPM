@@ -90,5 +90,6 @@ class FinalizeCommand(BaseCommand):
         It's apperance means there won't be any more commands for this
         visit_id
     """
+
     def __repr__(self):
         return "FinalizeCommand()"

@@ -158,12 +158,12 @@ class Browser:
                 check_queue(launch_status)
                 # 3. Display launched (if necessary)
                 self.display_pid, self.display_port = check_queue(
-                        launch_status)
+                    launch_status)
                 # 4. Browser launch attempted
                 check_queue(launch_status)
                 # 5. Browser launched
                 (self.browser_pid, self.browser_settings) = check_queue(
-                        launch_status)
+                    launch_status)
 
                 (driver_profile_path, ready) = check_queue(launch_status)
                 if ready != 'READY':
