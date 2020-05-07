@@ -238,7 +238,7 @@ class BaseAggregator(object):
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
         args = ((self.status_queue,
-                self.completion_queue, self.shutdown_queue),) + args
+                 self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args

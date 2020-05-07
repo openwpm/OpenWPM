@@ -1,6 +1,7 @@
 -c requirements.txt
 autopep8
 localstack[full]
+pre-commit
 flake8
 flake8-isort
 pytest

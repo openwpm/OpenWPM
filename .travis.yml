@@ -26,7 +26,7 @@ install:
   - echo "y" | ./install.sh
   - pip3 install --upgrade -r requirements.txt -r requirements-dev.txt
 before_script:
-  - flake8
+  - pre-commit run --all
 script:
   - cd test
   - python3 -m pytest -s -v --durations=10 $TESTS
