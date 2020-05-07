@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/hhatto/autopep8
-    rev: 1.5.2
+    rev: v1.5.2
     hooks:
       - id: autopep8
   - repo: https://gitlab.com/pycqa/flake8
