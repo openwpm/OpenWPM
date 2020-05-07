@@ -1,8 +1,12 @@
 repos:
-  - repo: https://github.com/hhatto/autopep8
+  - repo: https://github.com/pre-commit/mirrors-autopep8
     rev: v1.5.2
     hooks:
       - id: autopep8
+  - repo: https://github.com/timothycrosley/isort
+    rev: 4.3.21
+    hooks:
+    -   id: isort
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.9
     hooks:
@@ -11,7 +15,4 @@ repos:
     rev: v0.7.0.1-1
     hooks:
       - id: shellcheck
-  - repo: https://github.com/timothycrosley/isort
-    rev: 4.3.21
-    hooks:
-    -   id: isort
+
