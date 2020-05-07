@@ -55,6 +55,9 @@ versions, so you should install the dependencies in a virtual environment if
 you're installing a shared machine. If you plan to develop OpenWPM's
 instrumentation extension or run tests you will also need to install the
 development dependencies included in `install-dev.sh`.
+In order to install pre-commit hooks install the hooks by running
+```pre-commit install```
+This will lint all the changes before you make a commit!
 
 It is likely that OpenWPM will work on platforms other than Ubuntu, however
 we do not officially support anything else. For pointers on alternative
