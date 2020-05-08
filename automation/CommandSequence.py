@@ -25,7 +25,8 @@ class CommandSequence:
 
     def __init__(self, url: str, reset: bool = False,
                  blocking: bool = False, retry_number: int = None,
-                 site_rank: int = None, callback: Callable[[], None] = None):
+                 site_rank: int = None,
+                 callback: Callable[[bool], None] = None):
         """Initialize command sequence.
 
         Parameters
@@ -42,6 +43,12 @@ class CommandSequence:
         site_rank : int, optional
             Integer indicating the ranking of the page to visit, saved
             to `site_visits`
+        callable :
+            A callback to be invoked once all data regarding this
+            CommandSequence has been saved out or it has been interrupted
+            The function will be passed a bool that's true if everything has
+            been successfully saved out if it's false something bad happened
+            and no or only incomplete data may have been saved out
         """
         self.url = url
         self.reset = reset
@@ -157,9 +164,9 @@ class CommandSequence:
         command = RunCustomFunctionCommand(function_handle, func_args)
         self._commands_with_timeout.append((command, timeout))
 
-    def mark_done(self):
+    def mark_done(self, success: bool):
         if self.callback is not None:
-            self.callback()
+            self.callback(success)
 
     def get_commands_with_timeout(self) -> List[Tuple[BaseCommand, int]]:
         """ Returns a list of all commands in the command_sequence

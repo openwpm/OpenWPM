@@ -6,7 +6,7 @@ import signal
 import sys
 import time
 from threading import Lock
-from typing import Callable
+from typing import Any, Callable, List
 
 import boto3
 import sentry_sdk
@@ -124,14 +124,15 @@ job_queue = rediswq.RedisWQ(
 manager.logger.info("Worker with sessionID: %s" % job_queue.sessionID())
 manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
-unsaved_jobs = list()
+unsaved_jobs: List[bytes] = list()
 unsaved_jobs_lock = Lock()
 
 shutting_down = False
 
 
-def on_shutdown(manager, unsaved_jobs_lock):
-    def actual_callback(s: signal.Signals, __):
+def on_shutdown(manager: TaskManager.TaskManager, unsaved_jobs_lock: Lock) \
+        -> Callable[[signal.Signals, Any], None]:
+    def actual_callback(s: signal.Signals, __: Any) -> None:
         global shutting_down
         manager.logger.error("Got interupted by %r, shutting down", s)
         with unsaved_jobs_lock:
@@ -149,11 +150,14 @@ for sig in [signal.SIGTERM, signal.SIGINT]:
 def get_job_completion_callback(logger: logging.Logger,
                                 unsaved_jobs_lock: Lock,
                                 job_queue: rediswq.RedisWQ,
-                                job: bytes) -> Callable[[], None]:
-    def callback() -> None:
+                                job: bytes) -> Callable[[bool], None]:
+    def callback(sucess: bool) -> None:
         with unsaved_jobs_lock:
-            logger.info("Job %r is done", job)
-            job_queue.complete(job)
+            if sucess:
+                logger.info("Job %r is done", job)
+                job_queue.complete(job)
+            else:
+                logger.warn("Job %r got interrupted", job)
             unsaved_jobs.remove(job)
     return callback
 
