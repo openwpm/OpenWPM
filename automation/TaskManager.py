@@ -494,14 +494,13 @@ class TaskManager:
             if command_status != 'ok':
                 # Need to check here because we also want to mark
                 # critical failures as incomplete
-                interrupted_message = {
-                    "crawl_id": browser.crawl_id,
-                    "success": False,
-                    "meta_type": "finalize",
-                    "visit_id": browser.curr_visit_id
-                }
-                self.sock.send(json.dumps(
-                    (RECORD_TYPE_SPECIAL, interrupted_message)))
+                self.sock.send(
+                    (RECORD_TYPE_SPECIAL, {
+                        "crawl_id": browser.crawl_id,
+                        "success": False,
+                        "meta_type": "finalize",
+                        "visit_id": browser.curr_visit_id
+                    }))
 
             if command_status == 'critical':
                 return
