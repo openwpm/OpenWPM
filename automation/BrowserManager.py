@@ -229,7 +229,7 @@ class Browser:
 
         return self.launch_browser_manager()
 
-    def close_browser_manager(self):
+    def close_browser_manager(self, force: bool = False):
         """Attempt to close the webdriver and browser manager processes
         from this thread.
         If the browser manager process is unresponsive, the process is killed.
@@ -237,6 +237,9 @@ class Browser:
         self.logger.debug(
             "BROWSER %i: Closing browser..." % self.crawl_id
         )
+        if force:
+            self.kill_browser_manager()
+            return
 
         # Join current command thread (if it exists)
         in_command_thread = threading.current_thread() == self.command_thread
@@ -388,12 +391,12 @@ class Browser:
                                   self.crawl_id)
                 pass
 
-    def shutdown_browser(self, during_init: bool) -> None:
+    def shutdown_browser(self, during_init: bool, force: bool = False) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """
         # Close BrowserManager process and children
         self.logger.debug(
             "BROWSER %i: Closing browser manager..." % self.crawl_id)
-        self.close_browser_manager()
+        self.close_browser_manager(force=force)
 
         # Archive browser profile (if requested)
         if not during_init and \

@@ -264,7 +264,7 @@ class BaseAggregator:
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
 
-    def shutdown(self, relaxed: bool = False):
+    def shutdown(self, relaxed: bool = True):
         """ Terminate the aggregator listener process"""
         self.logger.debug(
             "Sending the shutdown signal to the %s listener process..." %

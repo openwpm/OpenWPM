@@ -276,7 +276,7 @@ class TaskManager:
         self.sock.connect(*self.manager_params['aggregator_address'])
 
     def _shutdown_manager(self, during_init: bool = False,
-                          relaxed: bool = False) -> None:
+                          relaxed: bool = True) -> None:
         """
         Wait for current commands to finish, close all child processes and
         threads
@@ -300,7 +300,7 @@ class TaskManager:
                browser.command_thread.is_alive():
                 # Waiting for the command_sequence to be finished
                 browser.command_thread.join()
-            browser.shutdown_browser(during_init)
+            browser.shutdown_browser(during_init, force=not relaxed)
 
         self.sock.close()  # close socket to data aggregator
         self.data_aggregator.shutdown(relaxed=relaxed)
