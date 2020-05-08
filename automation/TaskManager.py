@@ -432,47 +432,53 @@ class TaskManager:
             # received reply from BrowserManager, either success or failure
             error_text = None
             tb = None
+            status = None
             try:
                 status = browser.status_queue.get(
                     True, browser.current_timeout)
-                if status == "OK":
-                    command_status = 'ok'
-                elif status[0] == "CRITICAL":
-                    command_status = 'critical'
-                    self.logger.critical(
-                        "BROWSER %i: Received critical error from browser "
-                        "process while executing command %s. Setting failure "
-                        "status." % (browser.crawl_id, str(command)))
-                    self.failure_status = {
-                        'ErrorType': 'CriticalChildException',
-                        'CommandSequence': command_sequence,
-                        'Exception': status[1]
-                    }
-                    error_text, tb = self._unpack_picked_error(status[1])
-                elif status[0] == "FAILED":
-                    command_status = 'error'
-                    error_text, tb = self._unpack_picked_error(status[1])
-                    self.logger.info(
-                        "BROWSER %i: Received failure status while executing "
-                        "command: %s" % (browser.crawl_id, repr(command)))
-                elif status[0] == 'NETERROR':
-                    command_status = 'neterror'
-                    error_text, tb = self._unpack_picked_error(status[1])
-                    error_text = parse_neterror(error_text)
-                    self.logger.info(
-                        "BROWSER %i: Received neterror %s while executing "
-                        "command: %s" %
-                        (browser.crawl_id, error_text, repr(command))
-                    )
-                else:
-                    raise ValueError(
-                        "Unknown browser status message %s" % status
-                    )
             except EmptyQueue:
                 command_status = 'timeout'
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.crawl_id, repr(command)))
+
+            if status is None:
+                # allows us to skip this entire block without having to bloat
+                # every if statement
+                pass
+            elif status == "OK":
+                command_status = 'ok'
+            elif status[0] == "CRITICAL":
+                command_status = 'critical'
+                self.logger.critical(
+                    "BROWSER %i: Received critical error from browser "
+                    "process while executing command %s. Setting failure "
+                    "status." % (browser.crawl_id, str(command)))
+                self.failure_status = {
+                    'ErrorType': 'CriticalChildException',
+                    'CommandSequence': command_sequence,
+                    'Exception': status[1]
+                }
+                error_text, tb = self._unpack_picked_error(status[1])
+            elif status[0] == "FAILED":
+                command_status = 'error'
+                error_text, tb = self._unpack_picked_error(status[1])
+                self.logger.info(
+                    "BROWSER %i: Received failure status while executing "
+                    "command: %s" % (browser.crawl_id, repr(command)))
+            elif status[0] == 'NETERROR':
+                command_status = 'neterror'
+                error_text, tb = self._unpack_picked_error(status[1])
+                error_text = parse_neterror(error_text)
+                self.logger.info(
+                    "BROWSER %i: Received neterror %s while executing "
+                    "command: %s" %
+                    (browser.crawl_id, error_text, repr(command))
+                )
+            else:
+                raise ValueError(
+                    "Unknown browser status message %s" % status
+                )
 
             self.sock.send(("crawl_history", {
                 "crawl_id": browser.crawl_id,
@@ -484,9 +490,7 @@ class TaskManager:
                 "error": error_text,
                 "traceback": tb
             }))
-            self.logger.info("Finished working on CommandSequence with "
-                             "visit_id %d on browser with id %d",
-                             browser.curr_visit_id, browser.crawl_id)
+
             if command_status == 'critical':
                 return
 
