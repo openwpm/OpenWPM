@@ -2,9 +2,6 @@ beautifulsoup4
 boto3
 Cython
 dill
-flake8
-flake8-isort
-IPython
 mmh3
 multiprocess
 numpy
@@ -15,8 +12,8 @@ psutil
 publicsuffix
 pyarrow
 pyasn1
-pytest
 python-dateutil
+pyvirtualdisplay
 redis
 s3fs==0.4.0 # See https://github.com/mozilla/OpenWPM/issues/614
 selenium

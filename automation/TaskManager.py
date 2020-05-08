@@ -13,7 +13,6 @@ import psutil
 import tblib
 
 from .BrowserManager import Browser
-from .Commands.Types import FinalizeCommand
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
@@ -230,24 +229,30 @@ class TaskManager:
                 except psutil.NoSuchProcess:
                     pass
 
-            # Check for browsers that were not closed correctly
+            # Check for browsers or displays that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:
                 browser_pids: Set[int] = set()
+                display_pids: Set[int] = set()
                 check_time = time.time()
                 for browser in self.browsers:
                     if browser.browser_pid is not None:
                         browser_pids.add(browser.browser_pid)
+                    if browser.display_pid is not None:
+                        display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
                     if process.create_time() + 300 < check_time and (
                             (process.name() == 'firefox' and (
+                                process.pid not in browser_pids)) or (
+                            process.name() == 'Xvfb' and (
                                 process.pid not in browser_pids))):
-                        self.logger.debug("Process: %s (pid: %i) with start "
-                                          "time %s found running but not in "
-                                          "browser process list. Killing." % (
-                                              process.name(), process.pid,
-                                              process.create_time()))
+                        self.logger.debug(
+                            "Process: %s (pid: %i) with start "
+                            "time %s found running but not in "
+                            "browser process list. Killing." % (
+                                process.name(), process.pid,
+                                process.create_time()))
                         process.kill()
 
     def _launch_aggregators(self) -> None:
@@ -368,8 +373,6 @@ class TaskManager:
             "site_rank": command_sequence.site_rank
         }))
 
-        # FIXME:this doesn't belong here but it has to be here for now
-        command_sequence.commands_with_timeout.append((FinalizeCommand(), 10))
         # Start command execution thread
         args = (browser, command_sequence)
         thread = threading.Thread(target=self._issue_command, args=args)
@@ -427,7 +430,8 @@ class TaskManager:
         self.logger.info("Starting to work on CommandSequence with "
                          "visit_id %d on browser with id %d",
                          browser.curr_visit_id, browser.crawl_id)
-        for command_and_timeout in command_sequence.commands_with_timeout:
+        for command_and_timeout in command_sequence \
+                .get_commands_with_timeout():
             command, timeout = command_and_timeout
             command.set_visit_crawl_id(browser.curr_visit_id, browser.crawl_id)
             command.set_start_time(time.time())

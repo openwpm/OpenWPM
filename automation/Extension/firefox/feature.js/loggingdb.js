@@ -28,7 +28,8 @@ let listeningSocketCallback =  async (data) => {
                 `Current visit_id ${visit_id}, sent visit_id ${_visit_id}.`);
             }
             data["crawl_id"] = crawlID;
-            data["success"] = true
+            data["success"] = true;
+            data["meta_type"] = "finalize";
             dataAggregator.send(JSON.stringify(["meta_information", data]));
             visitID = null;
             break;
@@ -171,7 +172,7 @@ export let saveRecord = function(instrument, record) {
     record["visit_id"] = visitID;
 
     if (!visitID && !debugging) {
-        // We navigate to about blank between visits and it screws with our data
+        // Navigations to about:blank can be triggered by OpenWPM. We drop those.
         if(instrument === 'navigations' && record['url'] === 'about:blank') {
             logDebug('Extension-' + crawlID + ' : Dropping navigation to about:blank in intermediate period');
             return;

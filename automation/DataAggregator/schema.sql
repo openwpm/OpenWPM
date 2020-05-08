@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS http_redirects(
   frame_id INTEGER,
   response_status INTEGER NOT NULL,
   response_status_text TEXT NOT NULL,
+  headers TEXT NOT NULL,
   time_stamp DATETIME NOT NULL
 );
 

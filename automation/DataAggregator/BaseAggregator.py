@@ -12,6 +12,7 @@ from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = 'page_content'
 RECORD_TYPE_SPECIAL = 'meta_information'
+RECORD_TYPE_CREATE = 'create_table'
 STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = 'SHUTDOWN'
 
@@ -124,13 +125,19 @@ class BaseListener:
         )
         self._last_update = time.time()
 
-    def handle_special(self, table: str, data: Dict[str, Any]) -> None:
+    def handle_special(self, data: Dict[str, Any]) -> None:
         """
-            Messages for the table SPECIAL_CONTENT are metainformation
+            Messages for the table RECORD_TYPE_SPECIAL are metainformation
             communicated to the aggregator
-            This currently means a given visit_id is finished
+            Supported message types:
+            - finalize: A message sent by the extension to
+                        signal that a visit_id is complete.
         """
-        self.run_visit_completion_tasks(data["visit_id"])
+        if data["meta_type"] == "finalize":
+            self.run_visit_completion_tasks(data["visit_id"])
+        else:
+            raise ValueError("Unexpected meta "
+                             "information type: %s" % data["meta_type"])
 
     def mark_visit_complete(self, visit_id: int) -> None:
         """ This function should be called to indicate that all records

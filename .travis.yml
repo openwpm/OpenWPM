@@ -12,11 +12,11 @@ env:
 # Once we add and remove tests, this distribution may become unbalanced.
 # Feel free to move tests around to make the running time of the jobs
 # as close as possible.
-  - TESTS=test_[a-b,d-e]*
-# test_crawl.py is the longest running test.
-  - TESTS=test_c*
+  - TESTS=test_[a-e]*
   - TESTS=test_[f-h]*
-  - TESTS=test_[i-z]*
+  - TESTS=test_[i-r,t-z]*
+# test_simple_commands.py is slow due to parametrization.
+  - TESTS=test_[s]*
 git:
   depth: 3
 before_install:
@@ -26,7 +26,7 @@ install:
   - echo "y" | ./install.sh
   - pip3 install --upgrade -r requirements.txt -r requirements-dev.txt
 before_script:
-  - flake8
+  - pre-commit run --all
 script:
   - cd test
   - python3 -m pytest -s -v --durations=10 $TESTS
