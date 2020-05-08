@@ -173,5 +173,5 @@ class CommandSequence:
             appended by a finalize command
         """
         commands = list(self._commands_with_timeout)
-        commands.append((FinalizeCommand(), 10))
+        commands.append((FinalizeCommand(sleep=5), 10))
         return commands

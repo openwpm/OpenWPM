@@ -68,7 +68,8 @@ def execute_command(command, webdriver, browser_settings, browser_params,
 
     elif type(command) is FinalizeCommand:
         browser_commands.finalize(
-            command.visit_id, webdriver, extension_socket)
+            visit_id=command.visit_id, sleep=command.sleep,
+            webdriver=webdriver, extension_socket=extension_socket)
 
     else:
         raise CommandExecutionError("Invalid Command", command)

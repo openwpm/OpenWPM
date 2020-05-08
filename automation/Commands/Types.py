@@ -91,5 +91,8 @@ class FinalizeCommand(BaseCommand):
         visit_id
     """
 
+    def __init__(self, sleep):
+        self.sleep = sleep
+
     def __repr__(self):
-        return "FinalizeCommand()"
+        return f"FinalizeCommand({self.sleep})"
