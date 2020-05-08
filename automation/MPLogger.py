@@ -22,7 +22,8 @@ from .SocketInterface import serversocket
 
 pickling_support.install()
 
-BROWSER_PREFIX = re.compile(r"^BROWSER (-)?\d+:\s*")
+BROWSER_PREFIX = re.compile(r"^BROWSER -?\d+:\s*")
+EXTENSION_PREFIX = re.compile(r"^Extension-\d+ :\s*")
 # These config variable names should name to lowercase kwargs for MPLogger
 ENV_CONFIG_VARS = [
     'LOG_LEVEL_CONSOLE',
@@ -169,11 +170,14 @@ class MPLogger(object):
         error.
         """
 
-        # Strip "BROWSER X: " prefix to clean up logs
+        # Strip "BROWSER X: " and `Extension-X: ` prefix to clean up logs
         if 'logentry' in event and 'message' in event['logentry']:
             if re.match(BROWSER_PREFIX, event['logentry']['message']):
                 event['logentry']['message'] = re.sub(
                     BROWSER_PREFIX, '', event['logentry']['message'])
+            if re.match(EXTENSION_PREFIX, event['logentry']['message']):
+                event['logentry']['message'] = re.sub(
+                    EXTENSION_PREFIX, '', event['logentry']['message'])
 
         # Add traceback info to fingerprint for logs that contain a traceback
         try:
