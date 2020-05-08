@@ -266,7 +266,8 @@ class S3Listener(BaseListener):
     def process_record(self, record):
         """Add `record` to database"""
         if len(record) != 2:
-            self.logger.error("Query is not the correct length")
+            self.logger.error("Query is not the correct length %s",
+                              repr(record))
             return
         self._last_record_received = time.time()
         table, data = record

@@ -87,7 +87,8 @@ class LocalListener(BaseListener):
         """Add `record` to database"""
 
         if len(record) != 2:
-            self.logger.error("Query is not the correct length")
+            self.logger.error("Query is not the correct length %s",
+                              repr(record))
             return
 
         table, data = record
