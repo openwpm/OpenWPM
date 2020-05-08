@@ -134,7 +134,8 @@ class BaseListener:
                         signal that a visit_id is complete.
         """
         if data["meta_type"] == "finalize":
-            self.run_visit_completion_tasks(data["visit_id"])
+            self.run_visit_completion_tasks(
+                data["visit_id"], interrupted=not data["success"])
         else:
             raise ValueError("Unexpected meta "
                              "information type: %s" % data["meta_type"])

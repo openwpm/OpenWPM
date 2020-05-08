@@ -16,6 +16,7 @@ from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
+from .DataAggregator.BaseAggregator import RECORD_TYPE_SPECIAL
 from .Errors import CommandExecutionError
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
@@ -490,6 +491,17 @@ class TaskManager:
                 "error": error_text,
                 "traceback": tb
             }))
+            if command_status != 'ok':
+                # Need to check here because we also want to mark
+                # critical failures as incomplete
+                interrupted_message = {
+                    "crawl_id": browser.crawl_id,
+                    "success": False,
+                    "meta_type": "finalize",
+                    "visit_id": browser.curr_visit_id
+                }
+                self.sock.send(json.dumps(
+                    [RECORD_TYPE_SPECIAL, interrupted_message]))
 
             if command_status == 'critical':
                 return
