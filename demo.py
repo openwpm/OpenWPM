@@ -40,7 +40,6 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 for site in sites:
 
     # Parallelize sites over all number of browsers set above.
-    # (To have all browsers go to the same sites, add `index='**'`)
     command_sequence = CommandSequence.CommandSequence(
         site, reset=True,
         callback=lambda val=site: print("CommandSequence {} done".format(val)))

@@ -183,7 +183,7 @@ class TaskManager:
             try:
                 success = browser.launch_browser_manager()
             except Exception:
-                self._cleanup_before_fail(during_init=True)
+                self._shutdown_manager(during_init=True)
                 raise
 
             if not success:
@@ -308,16 +308,6 @@ class TaskManager:
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
 
-    def _cleanup_before_fail(self, during_init: bool = False) -> None:
-        """
-        Execute shutdown commands before throwing an exception
-        This should keep us from having a bunch of hanging processes
-        and incomplete data.
-        <during_init> flag to indicator if this shutdown is occuring during
-                      the TaskManager initialization
-        """
-        self._shutdown_manager(during_init=during_init)
-
     def _check_failure_status(self) -> None:
         """ Check the status of command failures. Raise exceptions as necessary
 
@@ -332,7 +322,7 @@ class TaskManager:
 
         self.logger.debug(
             "TaskManager failure status set, halting command execution.")
-        self._cleanup_before_fail()
+        self._shutdown_manager()
         if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
             raise CommandExecutionError(
                 "TaskManager exceeded maximum consecutive command "
