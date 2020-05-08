@@ -177,8 +177,8 @@ export let saveRecord = function(instrument, record) {
             logDebug('Extension-' + crawlID + ' : Dropping navigation to about:blank in intermediate period');
             return;
         }
-        logCritical('Extension-' + crawlID + ' : visitID is null while attempting to insert ' +
-                    JSON.stringify(record) + ' into table ' + instrument);
+        logWarn(`Extension-${crawlID} : visitID is null while attempting to insert into table ${instrument}\n` +
+                    JSON.stringify(record));
         record["visit_id"] = -1;
         
     }
