@@ -24,7 +24,7 @@ COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
 CALLSTACK_INSTRUMENT = os.getenv('CALLSTACK_INSTRUMENT', '1') == '1'
-JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
+JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', [])
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 PREFS = os.getenv('PREFS', None)
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
@@ -55,8 +55,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
     browser_params[i]['callstack_instrument'] = CALLSTACK_INSTRUMENT
     browser_params[i]['js_instrument'] = JS_INSTRUMENT
-    if JS_INSTRUMENT_MODULES:
-        browser_params[i]['js_instrument_modules'] = JS_INSTRUMENT_MODULES
+    browser_params[i]['js_instrument_modules'] = JS_INSTRUMENT_MODULES
     if SAVE_CONTENT == '1':
         browser_params[i]['save_content'] = True
     elif SAVE_CONTENT == '0':

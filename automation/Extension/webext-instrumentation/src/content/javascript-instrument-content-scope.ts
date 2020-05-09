@@ -2,16 +2,22 @@ import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-a
 import { jsInstruments } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
-function getPageScriptAsString() {
-  return (
-    jsInstruments +
-    "\n" +
-    instrumentFingerprintingApis +
-    "\n" +
-    "(" +
-    pageScript +
-    "({jsInstruments, instrumentFingerprintingApis}));"
+function getPageScriptAsString(jsModuleRequests: string[]): string {
+  const pageScriptStrings: string[] = [String(jsInstruments)];
+  const moduleNames: string[] = ["jsInstruments"];
+
+  if (jsModuleRequests.includes("fingerprinting")) {
+    pageScriptStrings.push(String(instrumentFingerprintingApis));
+    moduleNames.push("instrumentFingerprintingApis");
+  }
+
+  pageScriptStrings.push(
+    "(",
+    String(pageScript),
+    `({${moduleNames.join(",")}}));`,
   );
+
+  return pageScriptStrings.join("\n");
 }
 
 function insertScript(text, data) {
@@ -53,7 +59,8 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
 });
 
 export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
-  insertScript(getPageScriptAsString(), {
+  const jsModules: string[] = contentScriptConfig.modules;
+  insertScript(getPageScriptAsString(jsModules), {
     event_id,
     ...contentScriptConfig,
   });

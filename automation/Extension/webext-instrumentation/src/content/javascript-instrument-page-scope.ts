@@ -33,7 +33,7 @@ export const pageScript = function({
    * Start Instrumentation
    */
   const modules = document.currentScript.getAttribute("data-modules")
-    ? document.currentScript.getAttribute("data-modules").split(",")
+    ? document.currentScript.getAttribute("data-modules")
     : [];
 
   if (modules.includes("fingerprinting")) {
@@ -46,7 +46,7 @@ export const pageScript = function({
   if (testing) {
     console.log(
       "OpenWPM: Content-side javascript instrumentation started",
-      { modules },
+      modules,
       new Date().toISOString(),
     );
   }
