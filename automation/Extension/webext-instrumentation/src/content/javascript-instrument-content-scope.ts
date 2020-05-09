@@ -1,5 +1,6 @@
 import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
 import { jsInstruments } from "../lib/js-instruments";
+import { api } from "../lib/mdn-browser-compat-data";
 import { pageScript } from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString(jsModuleRequests: string[]): string {
@@ -7,17 +8,35 @@ function getPageScriptAsString(jsModuleRequests: string[]): string {
 
   jsModuleRequests.forEach(requestedModule => {
     if (requestedModule == "fingerprinting") {
+      // Special case collection of fingerprinting
       instrumentedApis.push(String(instrumentFingerprintingApis));
+    } else {
+      // Note: We only do whole modules for now
+      // Check requestedModule is a member of api
+      if (api.includes(requestedModule)) {
+        // Then add functions that do the instrumentation
+        instrumentedApis.push(`
+        function instrument${requestedModule}({
+          instrumentObjectProperty,
+          instrumentObject,
+        }) {
+          instrumentObject(window.${requestedModule}.prototype, "${requestedModule}");
+        }
+        `);
+      } else {
+        // Is this the right way to do logging?
+        console.error(
+          `The requested module ${requestedModule} does not appear to be part of browser api.`,
+        );
+      }
     }
   });
 
   const pageScriptString = `
     ${jsInstruments}
-    const instrumentedApis = [${instrumentedApis.join("\n")}];
+    const instrumentedApis = [${instrumentedApis.join(",\n")}];
     (${String(pageScript)}({jsInstruments, instrumentedApis}));
   `;
-
-  console.log(pageScriptString);
   return pageScriptString;
 }
 

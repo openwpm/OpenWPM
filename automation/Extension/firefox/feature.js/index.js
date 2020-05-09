@@ -20,7 +20,10 @@ async function main() {
       navigation_instrument:true,
       cookie_instrument:true,
       js_instrument:true,
-      js_instrument_modules: ["fingerprinting"],
+      js_instrument_modules: [
+        "fingerprinting",
+        "XMLHttpRequest",
+      ],
       http_instrument:true,
       callstack_instrument:true,
       save_content:false,

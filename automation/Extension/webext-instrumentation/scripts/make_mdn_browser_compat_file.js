@@ -4,10 +4,18 @@ const fs = require('fs')
 const BROWSER = 'firefox'
 const VERSION = 75
 
+const api = [];
+Object.keys(bcd.api).forEach(item => {
+    if (item !== '__compat') {
+        api.push(`"${item}"`);
+    }
+});
+
 const output = `
-// This file is generated from mdn-browser-compat-data....AASADFA.
+// This file is generated from mdn-browser-compat-data by running
+// "npm run make-compat"
 const api = [
-    'XMLHttpRequest'
+  ${api.join(',\n  ')}
 ];
 export {api};
 `
@@ -18,6 +26,5 @@ fs.writeFile(
     if(err) {
         return console.log(err);
     }
-
-    console.log("The file was saved!");
+    console.log("src/lib/mdn-browser-compat-data.ts regenerated.");
 });
