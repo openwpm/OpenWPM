@@ -3,21 +3,22 @@ import { jsInstruments } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString(jsModuleRequests: string[]): string {
-  const pageScriptStrings: string[] = [String(jsInstruments)];
-  const moduleNames: string[] = ["jsInstruments"];
+  const instrumentedApis: string[] = [];
 
-  if (jsModuleRequests.includes("fingerprinting")) {
-    pageScriptStrings.push(String(instrumentFingerprintingApis));
-    moduleNames.push("instrumentFingerprintingApis");
-  }
+  jsModuleRequests.forEach(requestedModule => {
+    if (requestedModule == "fingerprinting") {
+      instrumentedApis.push(String(instrumentFingerprintingApis));
+    }
+  });
 
-  pageScriptStrings.push(
-    "(",
-    String(pageScript),
-    `({${moduleNames.join(",")}}));`,
-  );
+  const pageScriptString = `
+    ${jsInstruments}
+    const instrumentedApis = [${instrumentedApis.join("\n")}];
+    (${String(pageScript)}({jsInstruments, instrumentedApis}));
+  `;
 
-  return pageScriptStrings.join("\n");
+  console.log(pageScriptString);
+  return pageScriptString;
 }
 
 function insertScript(text, data) {

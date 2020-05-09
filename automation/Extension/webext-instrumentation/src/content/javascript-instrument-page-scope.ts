@@ -4,7 +4,7 @@
 
 export const pageScript = function({
   jsInstruments,
-  instrumentFingerprintingApis,
+  instrumentedApis, // A list of functions that accept {instrumentObjectProperty, instrumentObject}
 }) {
   // messages the injected script
   function sendMessagesToLogger($event_id, messages) {
@@ -22,28 +22,27 @@ export const pageScript = function({
     sendMessagesToLogger,
   );
 
+  /*
+   * Start Instrumentation
+   */
+  instrumentedApis.forEach(func =>
+    func({
+      instrumentObjectProperty,
+      instrumentObject,
+    }),
+  );
+
+  /*
+   * Log if testing
+   */
   const testing =
     document.currentScript.getAttribute("data-testing") === "true";
   if (testing) {
     console.log("OpenWPM: Currently testing");
     (window as any).instrumentObject = instrumentObject;
-  }
-
-  /*
-   * Start Instrumentation
-   */
-  const modules = document.currentScript.getAttribute("data-modules")
-    ? document.currentScript.getAttribute("data-modules")
-    : [];
-
-  if (modules.includes("fingerprinting")) {
-    instrumentFingerprintingApis({
-      instrumentObjectProperty,
-      instrumentObject,
-    });
-  }
-
-  if (testing) {
+    const modules = document.currentScript.getAttribute("data-modules")
+      ? document.currentScript.getAttribute("data-modules")
+      : [];
     console.log(
       "OpenWPM: Content-side javascript instrumentation started",
       modules,
