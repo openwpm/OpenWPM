@@ -41,7 +41,8 @@
     "prepare": "run-s build test",
     "prepare-release": "run-s all version doc:publish",
     "publish-please": "publish-please",
-    "prepublishOnly": "publish-please guard"
+    "prepublishOnly": "publish-please guard",
+    "make-compat": "node scripts/make_mdn_browser_compat_file.js"
   },
   "scripts-info": {
     "info": "Display information about the package scripts",
@@ -54,13 +55,11 @@
     "doc:json": "Generate API documentation in typedoc JSON format",
     "version": "Bump package.json version, update CHANGELOG.md, tag release",
     "reset": "Delete all untracked files and reset the repo to the last commit",
-    "prepare-release": "One-step: clean, build, test, publish docs, and prep a release"
+    "prepare-release": "One-step: clean, build, test, publish docs, and prep a release",
+    "make-compat": "Script that makes src/lib/mdn-browser-compat-data.ts"
   },
   "engines": {
     "node": ">=8.9"
-  },
-  "dependencies": {
-    "mdn-browser-compat-data": "^1.0.20"
   },
   "devDependencies": {
     "@types/firefox-webext-browser": "^70.0.1",
@@ -69,6 +68,7 @@
     "commitizen": "^4.0.4",
     "cz-conventional-changelog": "^2.1.0",
     "gh-pages": "^2.1.1",
+    "mdn-browser-compat-data": "^1.0.20",
     "npm-run-all": "^4.1.5",
     "nyc": "^14.1.1",
     "opn-cli": "^3.1.0",
