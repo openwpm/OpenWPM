@@ -59,7 +59,9 @@
   "engines": {
     "node": ">=8.9"
   },
-  "dependencies": {},
+  "dependencies": {
+    "mdn-browser-compat-data": "^1.0.20"
+  },
   "devDependencies": {
     "@types/firefox-webext-browser": "^70.0.1",
     "ava": "^3.7.1",
