@@ -243,10 +243,12 @@ class BaseAggregator:
 
     def get_new_completed_visits(self) -> List[Tuple[int, bool]]:
         """
-        Returns a list of all visit ids that have been saved at the time
-        of calling this method.
+        Returns a list of all visit ids that have been processed since
+        the last time the method was called and whether or not they
+        have been interrupted.
+
         This method will return an empty list in case no visit ids have
-        been finished since the last time this method was called
+        been processed since the last time this method was called
         """
         finished_visit_ids = list()
         while not self.completion_queue.empty():
