@@ -73,7 +73,7 @@ def execute_command(command, webdriver, browser_settings, browser_params,
 
     elif type(command) is InitializeCommand:
         browser_commands.initialize(
-            visit_id=command.visit_id, webdriver=webdriver,
+            visit_id=command.visit_id,
             extension_socket=extension_socket)
 
     else:

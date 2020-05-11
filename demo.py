@@ -42,7 +42,8 @@ for site in sites:
     # Parallelize sites over all number of browsers set above.
     command_sequence = CommandSequence.CommandSequence(
         site, reset=True,
-        callback=lambda val=site: print("CommandSequence {} done".format(val)))
+        callback=lambda success, val=site:
+        print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)

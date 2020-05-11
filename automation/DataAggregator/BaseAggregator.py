@@ -133,13 +133,13 @@ class BaseListener:
             - finalize: A message sent by the extension to
                         signal that a visit_id is complete.
         """
+
         if data["action"] == "Initialize":
             self.curent_visit_ids.append(data["visit_id"])
-        if data["action"] == "Finalize":
+        elif data["action"] == "Finalize":
             self.curent_visit_ids.remove(data["visit_id"])
             self.run_visit_completion_tasks(
                 data["visit_id"], interrupted=not data["success"])
-
         else:
             raise ValueError("Unexpected meta "
                              "information type: %s" % data["meta_type"])
