@@ -491,18 +491,14 @@ class TaskManager:
                 "error": error_text,
                 "traceback": tb
             }))
-            if command_status != 'ok':
-                # Need to check here because we also want to mark
-                # critical failures as incomplete
-                self.sock.send(
-                    (RECORD_TYPE_SPECIAL, {
-                        "crawl_id": browser.crawl_id,
-                        "success": False,
-                        "meta_type": "finalize",
-                        "visit_id": browser.curr_visit_id
-                    }))
 
             if command_status == 'critical':
+                self.sock.send((RECORD_TYPE_SPECIAL, {
+                    "crawl_id": browser.crawl_id,
+                    "success": False,
+                    "meta_type": "finalize",
+                    "visit_id": browser.curr_visit_id
+                }))
                 return
 
             if command_status != 'ok':
@@ -517,6 +513,12 @@ class TaskManager:
                         'ErrorType': 'ExceedCommandFailureLimit',
                         'CommandSequence': command_sequence
                     }
+                    self.sock.send((RECORD_TYPE_SPECIAL, {
+                        "crawl_id": browser.crawl_id,
+                        "success": False,
+                        "meta_type": "finalize",
+                        "visit_id": browser.curr_visit_id
+                    }))
                     return
                 browser.restart_required = True
                 self.logger.debug("BROWSER %i: Browser restart required" % (
