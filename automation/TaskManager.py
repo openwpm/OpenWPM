@@ -16,7 +16,8 @@ from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
-from .DataAggregator.BaseAggregator import RECORD_TYPE_SPECIAL
+from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
+                                            RECORD_TYPE_SPECIAL)
 from .Errors import CommandExecutionError
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
@@ -496,7 +497,7 @@ class TaskManager:
                 self.sock.send((RECORD_TYPE_SPECIAL, {
                     "crawl_id": browser.crawl_id,
                     "success": False,
-                    "meta_type": "finalize",
+                    "action": ACTION_TYPE_FINALIZE,
                     "visit_id": browser.curr_visit_id
                 }))
                 return
@@ -513,21 +514,22 @@ class TaskManager:
                         'ErrorType': 'ExceedCommandFailureLimit',
                         'CommandSequence': command_sequence
                     }
-                    self.sock.send((RECORD_TYPE_SPECIAL, {
-                        "crawl_id": browser.crawl_id,
-                        "success": False,
-                        "meta_type": "finalize",
-                        "visit_id": browser.curr_visit_id
-                    }))
                     return
                 browser.restart_required = True
                 self.logger.debug("BROWSER %i: Browser restart required" % (
                     browser.crawl_id))
+
             else:
                 with self.threadlock:
                     self.failurecount = 0
 
             if browser.restart_required:
+                self.sock.send((RECORD_TYPE_SPECIAL, {
+                    "crawl_id": browser.crawl_id,
+                    "success": False,
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": browser.curr_visit_id
+                }))
                 break
 
         self.logger.info("Finished working on CommandSequence with "

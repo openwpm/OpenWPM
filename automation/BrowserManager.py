@@ -237,6 +237,7 @@ class Browser:
         self.logger.debug(
             "BROWSER %i: Closing browser..." % self.crawl_id
         )
+
         if force:
             self.kill_browser_manager()
             return

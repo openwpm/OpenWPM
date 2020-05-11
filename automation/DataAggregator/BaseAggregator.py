@@ -12,6 +12,8 @@ from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = 'page_content'
 RECORD_TYPE_SPECIAL = 'meta_information'
+ACTION_TYPE_FINALIZE = 'Finalize'
+ACTION_TYPE_INITIALIZE = 'Initialize'
 RECORD_TYPE_CREATE = 'create_table'
 STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = 'SHUTDOWN'
@@ -133,10 +135,9 @@ class BaseListener:
             - finalize: A message sent by the extension to
                         signal that a visit_id is complete.
         """
-
-        if data["action"] == "Initialize":
+        if data["action"] == ACTION_TYPE_INITIALIZE:
             self.curent_visit_ids.append(data["visit_id"])
-        elif data["action"] == "Finalize":
+        elif data["action"] == ACTION_TYPE_FINALIZE:
             self.curent_visit_ids.remove(data["visit_id"])
             self.run_visit_completion_tasks(
                 data["visit_id"], interrupted=not data["success"])
