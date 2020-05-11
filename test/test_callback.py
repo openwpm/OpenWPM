@@ -46,7 +46,7 @@ class TestCallbackCommand(OpenWPMTest):
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
         manager = TaskManager(manager_params, browser_params)
 
-        def callback(argument: List[int]):
+        def callback(argument: List[int], success: bool):
             argument.extend([1, 2, 3])
 
         my_list = []
@@ -69,7 +69,7 @@ class TestCallbackCommand(OpenWPMTest):
         manager = TaskManager(manager_params, browser_params)
         queue = Queue()
 
-        def ensure_site_in_s3():
+        def ensure_site_in_s3(success: bool):
             # Ensure http table is created
             queue.put(TEST_SITE in dataset.load_table(
                 'http_requests').top_level_url.unique())
