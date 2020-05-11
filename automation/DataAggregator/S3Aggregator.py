@@ -324,6 +324,9 @@ class S3Listener(BaseListener):
         self._send_to_s3()
 
     def shutdown(self):
+        # We should only have unsaved records if we are in forced shutdown
+        if self._relaxed and self._records:
+            self.logger.error("Had unfinished records during relaxed shutdown")
         super(S3Listener, self).shutdown()
         self._send_to_s3(force=True)
 

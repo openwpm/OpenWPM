@@ -354,3 +354,10 @@ def finalize(visit_id: int, webdriver: WebDriver,
     time.sleep(sleep)
     msg = {"action": "Finalize", "visit_id": visit_id}
     extension_socket.send(msg)
+
+
+def initialize(visit_id: int,
+               extension_socket: clientsocket, sleep: int) -> None:
+    msg = {"action": "Initialize", "visit_id": visit_id}
+    extension_socket.send(msg)
+    pass

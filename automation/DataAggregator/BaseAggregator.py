@@ -56,7 +56,7 @@ class BaseListener:
         self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
-        self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
+        self.curent_visit_ids: List[int] = list()  # All visit_ids in flight
         self.sock: Optional[serversocket] = None
 
     @abc.abstractmethod
@@ -133,9 +133,13 @@ class BaseListener:
             - finalize: A message sent by the extension to
                         signal that a visit_id is complete.
         """
-        if data["meta_type"] == "finalize":
+        if data["action"] == "Initialize":
+            self.curent_visit_ids.append(data["visit_id"])
+        if data["action"] == "Finalize":
+            self.curent_visit_ids.remove(data["visit_id"])
             self.run_visit_completion_tasks(
                 data["visit_id"], interrupted=not data["success"])
+
         else:
             raise ValueError("Unexpected meta "
                              "information type: %s" % data["meta_type"])
@@ -156,7 +160,7 @@ class BaseListener:
 
         Note: Child classes should call this method"""
         self.sock.close()
-        for visit_id in self.browser_map.values():
+        for visit_id in self.curent_visit_ids:
             self.run_visit_completion_tasks(visit_id,
                                             interrupted=not self._relaxed)
 

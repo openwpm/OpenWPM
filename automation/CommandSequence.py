@@ -2,7 +2,7 @@ from typing import Callable, List, Tuple
 
 from .Commands.Types import (BaseCommand, BrowseCommand, DumpPageSourceCommand,
                              DumpProfCommand, FinalizeCommand, GetCommand,
-                             RecursiveDumpPageSourceCommand,
+                             InitializeCommand, RecursiveDumpPageSourceCommand,
                              RunCustomFunctionCommand, SaveScreenshotCommand,
                              ScreenshotFullPageCommand)
 from .Errors import CommandExecutionError
@@ -172,6 +172,8 @@ class CommandSequence:
         """ Returns a list of all commands in the command_sequence
             appended by a finalize command
         """
+
         commands = list(self._commands_with_timeout)
+        commands.insert(0, (InitializeCommand(), 10))
         commands.append((FinalizeCommand(sleep=5), 10))
         return commands

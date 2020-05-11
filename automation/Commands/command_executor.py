@@ -2,7 +2,7 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
 from .Types import (BrowseCommand, DumpPageSourceCommand, DumpProfCommand,
-                    FinalizeCommand, GetCommand,
+                    FinalizeCommand, GetCommand, InitializeCommand,
                     RecursiveDumpPageSourceCommand, RunCustomFunctionCommand,
                     SaveScreenshotCommand, ScreenshotFullPageCommand)
 
@@ -70,6 +70,11 @@ def execute_command(command, webdriver, browser_settings, browser_params,
         browser_commands.finalize(
             visit_id=command.visit_id, sleep=command.sleep,
             webdriver=webdriver, extension_socket=extension_socket)
+
+    elif type(command) is InitializeCommand:
+        browser_commands.initialize(
+            visit_id=command.visit_id, webdriver=webdriver,
+            extension_socket=extension_socket)
 
     else:
         raise CommandExecutionError("Invalid Command", command)

@@ -17,7 +17,9 @@ let listeningSocketCallback =  async (data) => {
             if (visitID) {
                 logWarn("Set visit_id while another visit_id was set")
             }
-            visitID = parseInt(_visitID, 10);
+            visitID = _visitID;
+            data["crawl_id"] = crawlID;
+            dataAggregator.send(JSON.stringify(["meta_information", data]));
             break;
         case "Finalize":
             if (!visitID) {
@@ -29,7 +31,6 @@ let listeningSocketCallback =  async (data) => {
             }
             data["crawl_id"] = crawlID;
             data["success"] = true;
-            data["meta_type"] = "finalize";
             dataAggregator.send(JSON.stringify(["meta_information", data]));
             visitID = null;
             break;
