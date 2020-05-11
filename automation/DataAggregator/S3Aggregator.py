@@ -314,10 +314,8 @@ class S3Listener(BaseListener):
     def run_visit_completion_tasks(self, visit_id: int,
                                    interrupted: bool = False):
         if interrupted:
-            # We drop all data for that visit and then mark it as
-            # interrupted. So just in case there has been some data
-            # saved already we can find it
-            del self._records[visit_id]
+            self.logger.error(
+                "Visit with visit_id %d got interrupted", visit_id)
             self._write_record("interrupted", {"visit_id": visit_id}, visit_id)
             self._create_batch(visit_id)
             self.mark_visit_incomplete(visit_id)
