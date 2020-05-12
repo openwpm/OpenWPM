@@ -292,13 +292,13 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   function logErrorToConsole(error, context: any = false) {
-    console.log("OpenWPM: Error name: " + error.name);
-    console.log("OpenWPM: Error message: " + error.message);
-    console.log("OpenWPM: Error filename: " + error.fileName);
-    console.log("OpenWPM: Error line number: " + error.lineNumber);
-    console.log("OpenWPM: Error stack: " + error.stack);
+    console.error("OpenWPM: Error name: " + error.name);
+    console.error("OpenWPM: Error message: " + error.message);
+    console.error("OpenWPM: Error filename: " + error.fileName);
+    console.error("OpenWPM: Error line number: " + error.lineNumber);
+    console.error("OpenWPM: Error stack: " + error.stack);
     if (context) {
-      console.log("OpenWPM: Error context: " + JSON.stringify(context));
+      console.error("OpenWPM: Error context: " + JSON.stringify(context));
     }
   }
 
@@ -524,7 +524,13 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       try {
         instrumentObjectProperty(object, objectName, propertyName, logSettings);
       } catch (error) {
-        logErrorToConsole(error, { objectName, propertyName });
+        if (
+          (error instanceof TypeError) &&
+          (error.message.includes("can't redefine non-configurable property"))) {
+          console.warn(`Cannot instrument non-configurable property: ${objectName}:${propertyName}`);
+        } else {
+          logErrorToConsole(error, { objectName, propertyName });
+        }
       }
     }
     const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
