@@ -525,9 +525,12 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
         instrumentObjectProperty(object, objectName, propertyName, logSettings);
       } catch (error) {
         if (
-          (error instanceof TypeError) &&
-          (error.message.includes("can't redefine non-configurable property"))) {
-          console.warn(`Cannot instrument non-configurable property: ${objectName}:${propertyName}`);
+          error instanceof TypeError &&
+          error.message.includes("can't redefine non-configurable property")
+        ) {
+          console.warn(
+            `Cannot instrument non-configurable property: ${objectName}:${propertyName}`,
+          );
         } else {
           logErrorToConsole(error, { objectName, propertyName });
         }

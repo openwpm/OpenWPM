@@ -47,6 +47,6 @@ export const pageScript = function({
         modules,
         new Date().toISOString(),
       );
-    };
+    }
   }
 };
