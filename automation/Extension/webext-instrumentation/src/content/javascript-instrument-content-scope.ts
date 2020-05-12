@@ -4,18 +4,18 @@ import { api } from "../lib/mdn-browser-compat-data";
 import { pageScript } from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString(jsModuleRequests: string[]): string {
-  const instrumentedApis: string[] = [];
+  const instrumentedApiFuncs: string[] = [];
 
   jsModuleRequests.forEach(requestedModule => {
     if (requestedModule == "fingerprinting") {
       // Special case collection of fingerprinting
-      instrumentedApis.push(String(instrumentFingerprintingApis));
+      instrumentedApiFuncs.push(String(instrumentFingerprintingApis));
     } else {
       // Note: We only do whole modules for now
       // Check requestedModule is a member of api
       if (api.includes(requestedModule)) {
         // Then add functions that do the instrumentation
-        instrumentedApis.push(`
+        instrumentedApiFuncs.push(`
         function instrument${requestedModule}({
           instrumentObjectProperty,
           instrumentObject,
@@ -24,7 +24,6 @@ function getPageScriptAsString(jsModuleRequests: string[]): string {
         }
         `);
       } else {
-        // Is this the right way to do logging?
         console.error(
           `The requested module ${requestedModule} does not appear to be part of browser api.`,
         );
@@ -34,8 +33,8 @@ function getPageScriptAsString(jsModuleRequests: string[]): string {
 
   const pageScriptString = `
     ${jsInstruments}
-    const instrumentedApis = [${instrumentedApis.join(",\n")}];
-    (${String(pageScript)}({jsInstruments, instrumentedApis}));
+    const instrumentedApiFuncs = [${instrumentedApiFuncs.join(",\n")}];
+    (${String(pageScript)}({jsInstruments, instrumentedApiFuncs}));
   `;
   return pageScriptString;
 }
