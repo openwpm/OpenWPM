@@ -623,7 +623,7 @@ it's being run from the root OpenWPM directory):
     `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
 Alternatively, it is possible to run jobs as the user _openwpm_ in the container
-too, but this might cause problems with none headless browers. It is therefore
+too, but this might cause problems with the none headless browser. It is therefore
 only recommended for headless crawls.
 
 ### MacOS GUI applications in Docker
@@ -654,10 +654,10 @@ aren't fully tested. We recommend using a [tagged
 release](https://github.com/citp/OpenWPM/releases).
 
 Although OpenWPM is actively used by our group for research studies and we
-regularly use of the data collected, it is still possible there are unknown bugs
+regularly use the data collected, it is still possible there are unknown bugs
 in the infrastructure. We are in the process of writing comprehensive tests to
 verify the integrity of all included instrumentation. Prior to using OpenWPM
-for your own research we encourage you to write tests (and submit pull
+for your own research, we encourage you to write tests (and submit pull
 requests!) for any instrumentation that isn't currently included in our test
 scripts.
 
