@@ -25,11 +25,13 @@ before_install:
 install:
   - echo "y" | ./install.sh
   - pip3 install --upgrade -r requirements.txt -r requirements-dev.txt
+  - pip install codecov
 before_script:
   - pre-commit run --all
 script:
   - cd test
-  - python3 -m pytest -s -v --durations=10 $TESTS
+  - python3 -m pytest --cov --cov-report=xml -s -v --durations=10 $TESTS
+  - codecov -f coverage.xml
 
 jobs:
   include:
@@ -42,6 +44,7 @@ jobs:
       before_install:
       before_script:
       install:
+      - pip install codecov
       script:
         - docker build -f Dockerfile -t openwpm .
         - ./.deploy-to-dockerhub.sh
@@ -54,6 +57,7 @@ jobs:
       before_script:
       install:
         - npm install
+        - npm install codecov
       script:
         - npm test
       sudo: false
@@ -65,6 +69,7 @@ jobs:
       after_success:
         - # npx nyc report --reporter=lcov | npx codecov
         - npm run cov:check
+        - npm codecov
     # jobs defined in jobs.include does not automatically expand,
     # so instead of being able to supply an extra entry to "node_js",
     # we need to duplicate the above entry below with new values
@@ -78,6 +83,7 @@ jobs:
       before_script:
       install:
         - npm install
+        - npm install codecov
       script:
         - npm test
       sudo: false
@@ -89,6 +95,7 @@ jobs:
       after_success:
         - # npx nyc report --reporter=lcov | npx codecov
         - npm run cov:check
+        - npm codecov
     - language: node_js
       python:
       env:
@@ -98,6 +105,7 @@ jobs:
       before_script:
       install:
         - npm install
+        - npm install codecov
       script:
         - npm test
       sudo: false
@@ -109,3 +117,4 @@ jobs:
       after_success:
         - # npx nyc report --reporter=lcov | npx codecov
         - npm run cov:check
+        -npm codecov
