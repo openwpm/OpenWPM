@@ -8,8 +8,7 @@ from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
 from ..Errors import BrowserConfigError
-from ..utilities.platform_utils import (get_firefox_binary_path,
-                                        get_geckodriver_exec_path)
+from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
                                FirefoxProfile, Options)
@@ -46,7 +45,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     launches a firefox instance with parameters set by the input dictionary
     """
     firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = get_geckodriver_exec_path()
 
     root_dir = os.path.dirname(__file__)  # directory of this file
 
@@ -178,7 +176,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     status_queue.put(('STATUS', 'Launch Attempted', None))
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb,
-                               executable_path=geckodriver_executable_path,
                                firefox_options=fo, log_path=interceptor.fifo)
 
     # Add extension
