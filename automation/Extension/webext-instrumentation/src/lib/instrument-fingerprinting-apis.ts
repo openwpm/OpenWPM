@@ -1,7 +1,7 @@
-export function instrumentFingerprintingApis({
+export const instrumentFingerprintingApis = ({
   instrumentObjectProperty,
   instrumentObject,
-}) {
+}) => {
   // Access to navigator properties
   const navigatorProperties = [
     "appCodeName",
@@ -22,7 +22,7 @@ export function instrumentFingerprintingApis({
     "vendorSub",
     "vendor",
   ];
-  navigatorProperties.forEach(function(property) {
+  navigatorProperties.forEach(property => {
     instrumentObjectProperty(window.navigator, "window.navigator", property);
   });
 
@@ -30,7 +30,7 @@ export function instrumentFingerprintingApis({
   // instrumentObject(window.screen, "window.screen");
   // TODO: why do we instrument only two screen properties
   const screenProperties = ["pixelDepth", "colorDepth"];
-  screenProperties.forEach(function(property) {
+  screenProperties.forEach(property => {
     instrumentObjectProperty(window.screen, "window.screen", property);
   });
 
@@ -42,9 +42,9 @@ export function instrumentFingerprintingApis({
     "version",
     "length",
   ];
-  for (let i = 0; i < window.navigator.plugins.length; i++) {
-    const pluginName = window.navigator.plugins[i].name;
-    pluginProperties.forEach(function(property) {
+  for (const plugin of window.navigator.plugins) {
+    const pluginName = plugin.name;
+    pluginProperties.forEach(property => {
       instrumentObjectProperty(
         window.navigator.plugins[pluginName],
         "window.navigator.plugins[" + pluginName + "]",
@@ -55,14 +55,12 @@ export function instrumentFingerprintingApis({
 
   // Access to MIMETypes
   const mimeTypeProperties = ["description", "suffixes", "type"];
-  for (let i = 0; i < window.navigator.mimeTypes.length; i++) {
-    const mimeTypeName = ((window.navigator.mimeTypes[
-      i
-    ] as unknown) as MimeType).type; // note: upstream typings seems to be incorrect
-    mimeTypeProperties.forEach(function(property) {
+  for (const mimeTypeObj of window.navigator.mimeTypes) {
+    const mimeType = mimeTypeObj.type;
+    mimeTypeProperties.forEach(property => {
       instrumentObjectProperty(
-        window.navigator.mimeTypes[mimeTypeName],
-        "window.navigator.mimeTypes[" + mimeTypeName + "]",
+        window.navigator.mimeTypes[mimeType],
+        "window.navigator.mimeTypes[" + mimeType + "]",
         property,
       );
     });
@@ -73,7 +71,7 @@ export function instrumentFingerprintingApis({
   // between sessionStorage and localStorage. Instead, you'll have to look for a sequence
   // of a get for the localStorage object followed by a getItem/setItem for the Storage object.
   const windowProperties = ["name", "localStorage", "sessionStorage"];
-  windowProperties.forEach(function(property) {
+  windowProperties.forEach(property => {
     instrumentObjectProperty(window, "window", property);
   });
   instrumentObject(window.Storage.prototype, "window.Storage");
@@ -121,4 +119,4 @@ export function instrumentFingerprintingApis({
   instrumentObject(window.AnalyserNode.prototype, "AnalyserNode");
   instrumentObject(window.GainNode.prototype, "GainNode");
   instrumentObject(window.ScriptProcessorNode.prototype, "ScriptProcessorNode");
-}
+};

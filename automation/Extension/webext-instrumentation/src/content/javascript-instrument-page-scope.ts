@@ -2,23 +2,20 @@
 // Also, no webpack/es6 imports may be used in this file since the script
 // is exported as a page script as a string
 
-export const pageScript = function({
-  jsInstruments,
-  instrumentFingerprintingApis,
-}) {
+export const pageScript = ({ jsInstruments, instrumentFingerprintingApis }) => {
   // messages the injected script
-  function sendMessagesToLogger($event_id, messages) {
+  const sendMessagesToLogger = ($eventId, messages) => {
     document.dispatchEvent(
-      new CustomEvent($event_id, {
+      new CustomEvent($eventId, {
         detail: messages,
       }),
     );
-  }
+  };
 
-  const event_id = document.currentScript.getAttribute("data-event-id");
+  const eventId = document.currentScript.getAttribute("data-event-id");
 
   const { instrumentObject, instrumentObjectProperty } = jsInstruments(
-    event_id,
+    eventId,
     sendMessagesToLogger,
   );
 
@@ -38,8 +35,8 @@ export const pageScript = function({
 
   if (modules.includes("fingerprinting")) {
     instrumentFingerprintingApis({
-      instrumentObjectProperty,
       instrumentObject,
+      instrumentObjectProperty,
     });
   }
 

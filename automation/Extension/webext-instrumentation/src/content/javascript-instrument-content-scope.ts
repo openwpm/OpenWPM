@@ -2,7 +2,7 @@ import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-a
 import { jsInstruments } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
-function getPageScriptAsString() {
+const getPageScriptAsString = () => {
   return (
     jsInstruments +
     "\n" +
@@ -12,39 +12,41 @@ function getPageScriptAsString() {
     pageScript +
     "({jsInstruments, instrumentFingerprintingApis}));"
   );
-}
+};
 
-function insertScript(text, data) {
-  const parent = document.documentElement,
-    script = document.createElement("script");
+const insertScript = (text, data) => {
+  const parent = document.documentElement;
+  const script = document.createElement("script");
   script.text = text;
   script.async = false;
 
   for (const key in data) {
-    script.setAttribute("data-" + key.replace("_", "-"), data[key]);
+    if (data.hasOwnProperty(key)) {
+      script.setAttribute("data-" + key.replace("_", "-"), data[key]);
+    }
   }
 
   parent.insertBefore(script, parent.firstChild);
   parent.removeChild(script);
-}
+};
 
-function emitMsg(type, msg) {
+const emitMsg = (type, msg) => {
   msg.timeStamp = new Date().toISOString();
   browser.runtime.sendMessage({
+    data: msg,
     namespace: "javascript-instrumentation",
     type,
-    data: msg,
   });
-}
+};
 
-const event_id = Math.random();
+const eventId = Math.random();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(event_id.toString(), function(e: CustomEvent) {
+document.addEventListener(eventId.toString(), (e: CustomEvent) => {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
-    msgs.forEach(function(msg) {
+    msgs.forEach(msg => {
       emitMsg(msg.type, msg.content);
     });
   } else {
@@ -52,9 +54,9 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   }
 });
 
-export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
+export const injectJavascriptInstrumentPageScript = contentScriptConfig => {
   insertScript(getPageScriptAsString(), {
-    event_id,
+    event_id: eventId,
     ...contentScriptConfig,
   });
-}
+};

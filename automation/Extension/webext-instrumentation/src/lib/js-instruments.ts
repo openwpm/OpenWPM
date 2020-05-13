@@ -23,7 +23,7 @@ interface LogSettings {
   depth?: number;
 }
 
-export function jsInstruments(event_id, sendMessagesToLogger) {
+export function jsInstruments(eventId, sendMessagesToLogger) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -158,11 +158,11 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
    * Direct instrumentation of javascript objects
    */
 
-  const sendFactory = function($event_id, $sendMessagesToLogger) {
+  const sendFactory = function($eventId, $sendMessagesToLogger) {
     let messages = [];
     // debounce sending queued messages
     const _send = debounce(function() {
-      $sendMessagesToLogger($event_id, messages);
+      $sendMessagesToLogger($eventId, messages);
 
       // clear the queue
       messages = [];
@@ -175,7 +175,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     };
   };
 
-  const send = sendFactory(event_id, sendMessagesToLogger);
+  const send = sendFactory(eventId, sendMessagesToLogger);
 
   // Counter to cap # of calls logged for each script/api combination
   const maxLogCount = 500;
