@@ -21,8 +21,14 @@ async function main() {
       cookie_instrument:true,
       js_instrument:true,
       js_instrument_modules: [
+        // Shortcut
         "fingerprinting",
-        "XMLHttpRequest",
+        // APIs
+        "Storage",
+        {"XMLHttpRequest": ["send"]},
+        // Specific instances on window
+        {"window.document": ["cookie", "referrer"]},
+        {"window": ["name", "localStorage", "sessionStorage"]}
       ],
       http_instrument:true,
       callstack_instrument:true,
