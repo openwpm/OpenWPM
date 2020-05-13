@@ -1,12 +1,24 @@
 name: openwpm
 channels:
-    - anaconda
     - conda-forge
 dependencies:
     - python
+    - beautifulsoup4
+    - dill
     # - firefox-unbranded - when it's available
-    - leveldb
     - geckodriver
+    - leveldb
+    - multiprocess
+    - nodejs
+    - pandas
+    - pyarrow
+    - redis-py
+    - s3fs
+    - selenium
+    - sentry-sdk
+    - tabulate
+    - tblib
+    - wget
     - pip
       - plyvel
       - domain_utils

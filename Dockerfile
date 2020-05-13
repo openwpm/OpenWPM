@@ -37,6 +37,7 @@ ENV FIREFOX_BINARY /opt/firefox-bin/firefox-bin
 
 # For some reasons, python3-publicsuffix doesn't work with pip3 at the moment,
 # so install it from the ubuntu repository
+# This is unecessary now domain_utils is being used
 RUN apt-get -y install python3-publicsuffix
 
 COPY requirements.txt .
