@@ -40,7 +40,7 @@ export const double = (value: number): number => {
  * // => 8
  * ```
  */
-const power = (base: number, exponent: number): number => {
+export const power = (base: number, exponent: number): number => {
   // This is a proposed es7 operator, which should be transpiled by Typescript
   return base ** exponent;
 };

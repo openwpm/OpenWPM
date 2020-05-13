@@ -50,7 +50,7 @@ export const jsInstruments = (eventId, sendMessagesToLogger) => {
       }
     };
 
-    return () => {
+    return function() {
       context = this;
       args = arguments;
       timestamp = Date.now();
@@ -565,7 +565,12 @@ export const jsInstruments = (eventId, sendMessagesToLogger) => {
   // This helper function returns a wrapper around `func` which logs calls
   // to `func`. `objectName` and `methodName` are used strictly to identify
   // which object method `func` is coming from in the logs
-  const instrumentFunction = (objectName, methodName, func, logSettings) => {
+  const instrumentFunction = function(
+    objectName,
+    methodName,
+    func,
+    logSettings,
+  ) {
     return () => {
       const callContext = getOriginatingScriptContext(
         !!logSettings.logCallStack,
