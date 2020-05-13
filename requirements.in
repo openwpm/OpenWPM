@@ -10,8 +10,6 @@ multiprocess
 numpy
 pandas
 pillow
-plyvel
-psutil==5.4.8     # for compatibility when layered with requirements-dev.in
 publicsuffix
 pyarrow
 pyasn1
