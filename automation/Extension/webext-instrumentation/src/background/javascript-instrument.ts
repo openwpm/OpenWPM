@@ -112,12 +112,13 @@ export class JavascriptInstrument {
 
   public async registerContentScript(testing, modules) {
     const contentScriptConfig = {
-      testing,
       modules,
+      testing,
     };
     if (contentScriptConfig) {
       // TODO: Avoid using window to pass the content script config
       await browser.contentScripts.register({
+        allFrames: true,
         js: [
           {
             code: `window.openWpmContentScriptConfig = ${JSON.stringify(
@@ -125,18 +126,17 @@ export class JavascriptInstrument {
             )};`,
           },
         ],
-        matches: ["<all_urls>"],
-        allFrames: true,
-        runAt: "document_start",
         matchAboutBlank: true,
+        matches: ["<all_urls>"],
+        runAt: "document_start",
       });
     }
     return browser.contentScripts.register({
-      js: [{ file: "/content.js" }],
-      matches: ["<all_urls>"],
       allFrames: true,
-      runAt: "document_start",
+      js: [{ file: "/content.js" }],
       matchAboutBlank: true,
+      matches: ["<all_urls>"],
+      runAt: "document_start",
     });
   }
 

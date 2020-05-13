@@ -270,8 +270,8 @@ export class HttpInstrument {
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
 
-    const current_time = new Date(details.timeStamp);
-    update.time_stamp = current_time.toISOString();
+    const currentTime = new Date(details.timeStamp);
+    update.time_stamp = currentTime.toISOString();
 
     let encodingType = "";
     let referrer = "";
@@ -280,10 +280,10 @@ export class HttpInstrument {
     if (details.requestHeaders) {
       details.requestHeaders.map(requestHeader => {
         const { name, value } = requestHeader;
-        const header_pair = [];
-        header_pair.push(escapeString(name));
-        header_pair.push(escapeString(value));
-        headers.push(header_pair);
+        const headerPair = [];
+        headerPair.push(escapeString(name));
+        headerPair.push(escapeString(value));
+        headers.push(headerPair);
         if (name === "Content-Type") {
           encodingType = value;
           if (encodingType.indexOf("application/ocsp-request") !== -1) {
@@ -331,10 +331,10 @@ export class HttpInstrument {
             ];
             for (const name in postObj.post_headers) {
               if (contentHeaders.includes(name)) {
-                const header_pair = [];
-                header_pair.push(escapeString(name));
-                header_pair.push(escapeString(postObj.post_headers[name]));
-                headers.push(header_pair);
+                const headerPair = [];
+                headerPair.push(escapeString(name));
+                headerPair.push(escapeString(postObj.post_headers[name]));
+                headers.push(headerPair);
               }
             }
           }
@@ -552,21 +552,21 @@ export class HttpInstrument {
         ? await browser.tabs.get(details.tabId)
         : { windowId: undefined, incognito: undefined };
     const httpRedirect: HttpRedirect = {
-      incognito: boolToInt(tab.incognito),
       crawl_id: crawlID,
-      old_request_url: escapeUrl(details.url),
-      old_request_id: details.requestId,
-      new_request_url: escapeUrl(details.redirectUrl),
-      new_request_id: null, // TODO: File a bug to make redirectRequestId available
-      extension_session_uuid: extensionSessionUuid,
       event_ordinal: eventOrdinal,
-      window_id: tab.windowId,
-      tab_id: details.tabId,
+      extension_session_uuid: extensionSessionUuid,
       frame_id: details.frameId,
+      headers: this.jsonifyHeaders(details.responseHeaders).headers,
+      incognito: boolToInt(tab.incognito),
+      new_request_id: null, // TODO: File a bug to make redirectRequestId available
+      new_request_url: escapeUrl(details.redirectUrl),
+      old_request_id: details.requestId,
+      old_request_url: escapeUrl(details.url),
       response_status: responseStatus,
       response_status_text: escapeString(responseStatusText),
-      headers: this.jsonifyHeaders(details.responseHeaders).headers,
+      tab_id: details.tabId,
       time_stamp: new Date(details.timeStamp).toISOString(),
+      window_id: tab.windowId,
     };
 
     this.dataReceiver.saveRecord("http_redirects", httpRedirect);
@@ -669,8 +669,8 @@ export class HttpInstrument {
     const responseStatusText = details.statusLine;
     update.response_status_text = escapeString(responseStatusText);
 
-    const current_time = new Date(details.timeStamp);
-    update.time_stamp = current_time.toISOString();
+    const currentTime = new Date(details.timeStamp);
+    update.time_stamp = currentTime.toISOString();
 
     const parsedHeaders = this.jsonifyHeaders(details.responseHeaders);
     update.headers = parsedHeaders.headers;
@@ -689,10 +689,10 @@ export class HttpInstrument {
     if (headers) {
       headers.map(responseHeader => {
         const { name, value } = responseHeader;
-        const header_pair = [];
-        header_pair.push(escapeString(name));
-        header_pair.push(escapeString(value));
-        resultHeaders.push(header_pair);
+        const headerPair = [];
+        headerPair.push(escapeString(name));
+        headerPair.push(escapeString(value));
+        resultHeaders.push(headerPair);
         if (name.toLowerCase() === "location") {
           location = value;
         }

@@ -60,11 +60,11 @@ export class CookieInstrument {
     }) => {
       const eventType = changeInfo.removed ? "deleted" : "added-or-changed";
       const update: JavascriptCookieRecord = {
-        record_type: eventType,
         change_cause: changeInfo.cause,
         crawl_id: crawlID,
-        extension_session_uuid: extensionSessionUuid,
         event_ordinal: incrementedEventOrdinal(),
+        extension_session_uuid: extensionSessionUuid,
+        record_type: eventType,
         ...transformCookieObjectToMatchOpenWPMSchema(changeInfo.cookie),
       };
       this.dataReceiver.saveRecord("javascript_cookies", update);
@@ -77,9 +77,9 @@ export class CookieInstrument {
     await Promise.all(
       allCookies.map((cookie: Cookie) => {
         const update: JavascriptCookieRecord = {
-          record_type: "manual-export",
           crawl_id: crawlID,
           extension_session_uuid: extensionSessionUuid,
+          record_type: "manual-export",
           ...transformCookieObjectToMatchOpenWPMSchema(cookie),
         };
         return this.dataReceiver.saveRecord("javascript_cookies", update);
