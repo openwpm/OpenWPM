@@ -7,6 +7,7 @@ import re
 import time
 from urllib import parse as urlparse
 
+import domain_utils as du
 from selenium.common.exceptions import (ElementNotVisibleException,
                                         NoSuchElementException,
                                         StaleElementReferenceException,
@@ -15,7 +16,6 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ...utilities import domain_utils as du
 from . import XPathUtil
 
 NETERROR_RE = re.compile(

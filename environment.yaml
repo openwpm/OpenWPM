@@ -9,3 +9,4 @@ dependencies:
     - geckodriver
     - pip
       - plyvel
+      - domain_utils

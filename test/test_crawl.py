@@ -1,12 +1,12 @@
 
 import os
 import tarfile
-from urllib.parse import urlparse
 
+import domain_utils as du
 import pytest
 
 from ..automation import TaskManager
-from ..automation.utilities import db_utils, domain_utils
+from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 TEST_SITES = [
@@ -32,7 +32,10 @@ TEST_SITES = [
     'http://yahoo.co.jp'
 ]
 
-psl = domain_utils.get_psl()
+
+def get_public_suffix(url):
+    url_parts = du.hostname_subparts(url, include_ps=True)
+    return url_parts[-1]
 
 
 class TestCrawl(OpenWPMTest):
@@ -82,14 +85,14 @@ class TestCrawl(OpenWPMTest):
         rows = db_utils.query_db(crawl_db, "SELECT url FROM http_requests")
         req_ps = set()  # visited domains from http_requests table
         for url, in rows:
-            req_ps.add(psl.get_public_suffix(urlparse(url).hostname))
+            req_ps.add(get_public_suffix(url))
 
         hist_ps = set()  # visited domains from crawl_history Table
         statuses = dict()
         rows = db_utils.query_db(crawl_db, "SELECT arguments, command_status "
                                  "FROM crawl_history WHERE command='GET'")
         for url, command_status in rows:
-            ps = psl.get_public_suffix(urlparse(url).hostname)
+            ps = get_public_suffix(url)
             hist_ps.add(ps)
             statuses[ps] = command_status
 
@@ -98,7 +101,7 @@ class TestCrawl(OpenWPMTest):
         rows = db_utils.query_db(ff_db, "SELECT url FROM moz_places")
         for host, in rows:
             try:
-                profile_ps.add(psl.get_public_suffix(urlparse(host).hostname))
+                profile_ps.add(get_public_suffix(host))
             except AttributeError:
                 pass
 
