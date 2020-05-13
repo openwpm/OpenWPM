@@ -33,7 +33,7 @@ export class ResponseBodyListener {
       filter.write(event.data);
     };
 
-    filter.onstop = _event => {
+    filter.onstop = event => {
       this.resolveResponseBody(responseBody);
       filter.disconnect();
     };

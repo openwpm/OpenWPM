@@ -19,9 +19,9 @@
  * @returns       Comment describing the return type.
  * @anotherNote   Some other value.
  */
-export function double(value: number): number {
+export const double = (value: number): number => {
   return value * 2;
-}
+};
 
 /**
  * Raise the value of the first parameter to the power of the second using the es7 `**` operator.
@@ -40,7 +40,7 @@ export function double(value: number): number {
  * // => 8
  * ```
  */
-export function power(base: number, exponent: number): number {
+const power = (base: number, exponent: number): number => {
   // This is a proposed es7 operator, which should be transpiled by Typescript
   return base ** exponent;
-}
+};

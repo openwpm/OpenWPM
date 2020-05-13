@@ -10,19 +10,19 @@
  * has been broken and should be avoided for cryptographic applications.
  */
 
-export function sha256(str) {
+export const sha256 = str => {
   // We transform the string into an arraybuffer.
   const buffer = new TextEncoder().encode(str);
   return sha256Buffer(buffer);
-}
+};
 
-export function sha256Buffer(buffer) {
-  return crypto.subtle.digest("SHA-256", buffer).then(function(hash) {
+export const sha256Buffer = buffer => {
+  return crypto.subtle.digest("SHA-256", buffer).then(hash => {
     return hex(hash);
   });
-}
+};
 
-function hex(buffer) {
+const hex = buffer => {
   const hexCodes = [];
   const view = new DataView(buffer);
   for (let i = 0; i < view.byteLength; i += 4) {
@@ -38,4 +38,4 @@ function hex(buffer) {
 
   // Join all the hex strings into one
   return hexCodes.join("");
-}
+};

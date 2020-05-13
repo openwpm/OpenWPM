@@ -17,7 +17,7 @@
       "severity": "warning"
     },
     "no-console": {
-      "severity": "warning"
+      "severity": "none"
     },
     "no-bitwise": {
       "severity": "warning"
