@@ -81,8 +81,15 @@ class RunCustomFunctionCommand(BaseCommand):
 
 
 class ShutdownCommand(BaseCommand):
-    def __init__(self):
-        pass
-
     def __repr__(self):
         return "ShutdownCommand()"
+
+
+class FinalizeCommand(BaseCommand):
+    """ This is automatically appended to the end of a command_sequence
+        It's apperance means there won't be any more commands for this
+        visit_id
+    """
+
+    def __repr__(self):
+        return "FinalizeCommand()"

@@ -31,7 +31,8 @@ class OpenWPMTest(object):
         return manager_params['db']
 
     def get_test_config(self, data_dir="",
-                        num_browsers=NUM_BROWSERS):
+                        num_browsers=NUM_BROWSERS,
+                        display_mode="headless"):
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
@@ -40,7 +41,7 @@ class OpenWPMTest(object):
         manager_params['data_directory'] = data_dir
         manager_params['log_directory'] = data_dir
         for i in range(num_browsers):
-            browser_params[i]['headless'] = True
+            browser_params[i]['display_mode'] = display_mode
         manager_params['db'] = join(manager_params['data_directory'],
                                     manager_params['database_name'])
         return manager_params, browser_params

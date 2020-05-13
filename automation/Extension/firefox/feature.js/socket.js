@@ -7,7 +7,7 @@ let DataReceiver = {
     if (aJSON) {
       aData = JSON.parse(aData);
     }
-    DataReceiver.callbacks.get(aSocketId)._updateQueue(aData);
+    DataReceiver.callbacks.get(aSocketId)(aData);
   },
 };
 
@@ -16,19 +16,15 @@ browser.sockets.onDataReceived.addListener(DataReceiver.onDataReceived);
 let ListeningSockets = new Map();
 
 export class ListeningSocket {
-  constructor() {
-    this.queue = []; // stores messages sent to socket
+  constructor(callback) {
+    this.callback = callback
   }
 
   async startListening() {
     this.port = await browser.sockets.createServerSocket();
-    DataReceiver.callbacks.set(this.port, this);
+    DataReceiver.callbacks.set(this.port, this.callback);
     browser.sockets.startListening(this.port);
     console.log('Listening on port ' + this.port);
-  }
-
-  _updateQueue(data) {
-    this.queue.push(data);
   }
 }
 

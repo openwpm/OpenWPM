@@ -55,6 +55,9 @@ versions, so you should install the dependencies in a virtual environment if
 you're installing a shared machine. If you plan to develop OpenWPM's
 instrumentation extension or run tests you will also need to install the
 development dependencies included in `install-dev.sh`.
+In order to install pre-commit hooks install the hooks by running
+```pre-commit install```
+This will lint all the changes before you make a commit!
 
 It is likely that OpenWPM will work on platforms other than Ubuntu, however
 we do not officially support anything else. For pointers on alternative
@@ -288,11 +291,24 @@ left out of this section.
   * Performs some actions to prevent the platform from being detected as a bot.
   * Note, these aren't comprehensive and automated interaction with the site
     will still appear very bot-like.
-* `headless`
-  * Launch the browser in headless mode (supported as of Firefox 56),
-    no GUI will be visible.
-  * Use this when running browsers on a remote machine or to run crawls in the
-      background on a local machine.
+* `display_mode`:
+  * `native`:
+    * Launch the browser normally - GUI will be visible
+  * `headless`:
+    * Launch the browser in headless mode (supported as of Firefox 56),
+        no GUI will be visible.
+    * Use this when running browsers on a remote machine or to run crawls in the
+        background on a local machine.
+  * `xvfb`:
+    * Launch the browser using the X virtual frame buffer. In this mode, Firefox
+      is not running in it's own headless mode, but no GUI will be displayed.
+    * This mode only works on Linux.
+  * `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
+    "headless" browsing because you do not need to be in a full X environment e.g. on a
+    server. `headless` mode is supported on all platforms and is implemented by the browser
+    but has some differences. For example webGL is not supported in headless mode.
+    https://github.com/mozilla/OpenWPM/issues/448 discusses additional factors to consider
+    when picking a `display_mode`.
 * `browser`
   * Used to specify which browser to launch. Currently only `firefox` is
     supported.
@@ -530,6 +546,11 @@ Troubleshooting
   * If you are seeing this error randomly during crawls it can be caused by
     an overtaxed system, either memory or CPU usage. Try lowering the number of
     concurrent browsers.
+
+2. In older versions of firefox (pre 74) the setting to enable extensions was called
+   `extensions.legacy.enabled`. If you need to work with earlier firefox, update the
+   setting name `extensions.experiments.enabled` in
+   `automation/DeployBrowsers/configure_firefox.py`.
 
 Docker Deployment for OpenWPM
 -----------------------------

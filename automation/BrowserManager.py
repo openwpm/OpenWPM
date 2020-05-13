@@ -1,4 +1,3 @@
-
 import errno
 import logging
 import os
@@ -10,6 +9,7 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
+from typing import Optional
 
 import psutil
 from multiprocess import Queue
@@ -37,7 +37,7 @@ class Browser:
                       this browser is headless, etc.)
      """
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(self, manager_params, browser_params) -> None:
         # Constants
         self._SPAWN_TIMEOUT = 120  # seconds
         self._UNSUCCESSFUL_SPAWN_LIMIT = 4
@@ -53,20 +53,25 @@ class Browser:
         # Queues and process IDs for BrowserManager
 
         # thread to run commands issues from TaskManager
-        self.command_thread = None
+        self.command_thread: threading.Thread = None
         # queue for passing command tuples to BrowserManager
-        self.command_queue = None
+        self.command_queue: Optional[Queue] = None
         # queue for receiving command execution status from BrowserManager
-        self.status_queue = None
+        self.status_queue: Optional[Queue] = None
         # pid for browser instance controlled by BrowserManager
-        self.browser_pid = None
+        self.browser_pid: Optional[int] = None
+        # the pid of the display for the Xvfb display (if it exists)
+        self.display_pid: Optional[int] = None
+        # the port of the display for the Xvfb display (if it exists)
+        self.display_port: Optional[int] = None
 
         # boolean that says if the BrowserManager new (to optimize restarts)
         self.is_fresh = True
         # boolean indicating if the browser should be restarted
         self.restart_required = False
 
-        self.current_timeout = None  # timeout of the current command
+        self.current_timeout: Optional[int] = \
+            None  # timeout of the current command
         # dict of additional browser profile settings (e.g. screen_res)
         self.browser_settings = None
         self.browser_manager = None  # process that controls browser
@@ -151,9 +156,12 @@ class Browser:
                 spawned_profile_path = check_queue(launch_status)
                 # 2. Profile tar loaded (if necessary)
                 check_queue(launch_status)
-                # 3. Browser launch attempted
+                # 3. Display launched (if necessary)
+                self.display_pid, self.display_port = check_queue(
+                    launch_status)
+                # 4. Browser launch attempted
                 check_queue(launch_status)
-                # 4. Browser launched
+                # 5. Browser launched
                 (self.browser_pid, self.browser_settings) = check_queue(
                     launch_status)
 
@@ -313,6 +321,15 @@ class Browser:
                 self.crawl_id, self.browser_manager.pid,
                 self.browser_pid)
         )
+        if self.display_pid is not None:
+            self.logger.debug(
+                "BROWSER {crawl_id}: Attempting to kill display "
+                "with pid {display_pid}, port {display_port}".format(
+                    crawl_id=self.crawl_id,
+                    display_pid=self.display_pid,
+                    display_port=self.display_port
+                )
+            )
 
         if self.browser_manager is not None and \
                 self.browser_manager.pid is not None:
@@ -321,6 +338,26 @@ class Browser:
             except OSError:
                 self.logger.debug("BROWSER %i: Browser manager process does "
                                   "not exist" % self.crawl_id)
+                pass
+
+        if self.display_pid is not None:
+            try:
+                os.kill(self.display_pid, signal.SIGKILL)
+            except OSError:
+                self.logger.debug("BROWSER %i: Display process does not "
+                                  "exit" % self.crawl_id)
+                pass
+            except TypeError:
+                self.logger.error("BROWSER %i: PID may not be the correct "
+                                  "type %s" % (self.crawl_id,
+                                               str(self.display_pid)))
+        if self.display_port is not None:  # xvfb diplay lock
+            lockfile = "/tmp/.X%s-lock" % self.display_port
+            try:
+                os.remove(lockfile)
+            except OSError:
+                self.logger.debug("BROWSER %i: Screen lockfile (%s) already "
+                                  "removed" % (self.crawl_id, lockfile))
                 pass
 
         if self.browser_pid is not None:
@@ -351,7 +388,7 @@ class Browser:
                                   self.crawl_id)
                 pass
 
-    def shutdown_browser(self, during_init):
+    def shutdown_browser(self, during_init: bool) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """
         # Close BrowserManager process and children
         self.logger.debug(
@@ -405,7 +442,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
     """
     logger = logging.getLogger('openwpm')
     try:
-        # Start webdriver and browser
+        # Start Xvfb (if necessary), webdriver, and browser
         driver, prof_folder, browser_settings = deploy_browser.deploy_browser(
             status_queue, browser_params, manager_params, crash_recovery)
         if prof_folder[-1] != '/':
@@ -445,7 +482,7 @@ def BrowserManager(command_queue, status_queue, browser_params,
         logger.debug(
             "BROWSER %i: BrowserManager ready." % browser_params['crawl_id'])
 
-        # passes the profile folder, WebDriver pid back to the
+        # passes the profile folder back to the
         # TaskManager to signal a successful startup
         status_queue.put(('STATUS', 'Browser Ready', (prof_folder, 'READY')))
         browser_params['profile_path'] = prof_folder

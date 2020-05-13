@@ -115,6 +115,7 @@ export interface HttpRedirect {
   frame_id?: number;
   response_status?: number;
   response_status_text?: string;
+  headers?: string;
   time_stamp: DateTime;
 }
 

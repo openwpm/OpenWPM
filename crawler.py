@@ -1,8 +1,10 @@
 
 import json
+import logging
 import os
 import time
 from threading import Lock
+from typing import Callable
 
 import boto3
 import sentry_sdk
@@ -16,10 +18,12 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis-box')
 REDIS_QUEUE_NAME = os.getenv('REDIS_QUEUE_NAME', 'crawl-queue')
 CRAWL_DIRECTORY = os.getenv('CRAWL_DIRECTORY', 'crawl-data')
 S3_BUCKET = os.getenv('S3_BUCKET', 'openwpm-crawls')
+DISPLAY_MODE = os.getenv('DISPLAY_MODE', 'headless')
 HTTP_INSTRUMENT = os.getenv('HTTP_INSTRUMENT', '1') == '1'
 COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
+CALLSTACK_INSTRUMENT = os.getenv('CALLSTACK_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 PREFS = os.getenv('PREFS', None)
@@ -28,6 +32,13 @@ TIMEOUT = int(os.getenv('TIMEOUT', '60'))
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 LOGGER_SETTINGS = MPLogger.parse_config_from_env()
 MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '2'))
+
+
+if CALLSTACK_INSTRUMENT is True:
+    # Must have JS_INSTRUMENT True for CALLSTACK_INSTRUMENT to work
+    JS_INSTRUMENT = True
+
+EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 
 # Loads the default manager params
 # We can't use more than one browser per instance because the job management
@@ -38,9 +49,11 @@ manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
+    browser_params[i]['display_mode'] = DISPLAY_MODE
     browser_params[i]['http_instrument'] = HTTP_INSTRUMENT
     browser_params[i]['cookie_instrument'] = COOKIE_INSTRUMENT
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
+    browser_params[i]['callstack_instrument'] = CALLSTACK_INSTRUMENT
     browser_params[i]['js_instrument'] = JS_INSTRUMENT
     if JS_INSTRUMENT_MODULES:
         browser_params[i]['js_instrument_modules'] = JS_INSTRUMENT_MODULES
@@ -52,7 +65,6 @@ for i in range(NUM_BROWSERS):
         browser_params[i]['save_content'] = SAVE_CONTENT
     if PREFS:
         browser_params[i]['prefs'] = json.loads(PREFS)
-    browser_params[i]['headless'] = True
 
 # Manager configuration
 manager_params['data_directory'] = '~/Desktop/%s/' % CRAWL_DIRECTORY
@@ -80,6 +92,7 @@ if SENTRY_DSN:
         # tags generate breakdown charts and search filters
         scope.set_tag('CRAWL_DIRECTORY', CRAWL_DIRECTORY)
         scope.set_tag('S3_BUCKET', S3_BUCKET)
+        scope.set_tag('DISPLAY_MODE', DISPLAY_MODE)
         scope.set_tag('HTTP_INSTRUMENT', HTTP_INSTRUMENT)
         scope.set_tag('COOKIE_INSTRUMENT', COOKIE_INSTRUMENT)
         scope.set_tag('NAVIGATION_INSTRUMENT', NAVIGATION_INSTRUMENT)
@@ -111,13 +124,29 @@ manager.logger.info("Initial queue state: empty=%s" % job_queue.empty())
 
 unsaved_jobs = list()
 unsaved_jobs_lock = Lock()
+
+
+def get_job_completion_callback(logger: logging.Logger,
+                                unsaved_jobs_lock: Lock,
+                                job_queue: rediswq.RedisWQ,
+                                job: bytes) -> Callable[[], None]:
+    def callback():
+        with unsaved_jobs_lock:
+            logger.info("Job %r is done", job)
+            job_queue.complete(job)
+            unsaved_jobs.remove(job)
+    return callback
+
+
+no_job_since = None
 # Crawl sites specified in job queue until empty
 while not job_queue.empty():
     job_queue.check_expired_leases()
-    with(unsaved_jobs_lock):
+    with unsaved_jobs_lock:
+        manager.logger.debug("Currently unfinished jobs are: %s", unsaved_jobs)
         for unsaved_job in unsaved_jobs:
             if not job_queue.renew_lease(unsaved_job,
-                                         2 * (TIMEOUT + DWELL_TIME + 30)):
+                                         EXTENDED_LEASE_TIME):
                 manager.logger.error("Unsaved job: %s timed out", unsaved_job)
 
     job = job_queue.lease(
@@ -127,21 +156,18 @@ while not job_queue.empty():
         manager.logger.info("Waiting for work")
         time.sleep(5)
         continue
+
     unsaved_jobs.append(job)
-
-    def mark_job_as_done():
-        with(unsaved_jobs_lock):
-            job_queue.complete(job)
-            unsaved_jobs.remove(job)
-
     retry_number = job_queue.get_retry_number(job)
     site_rank, site = job.decode("utf-8").split(',')
     if "://" not in site:
         site = "http://" + site
     manager.logger.info("Visiting %s..." % site)
+    callback = get_job_completion_callback(
+        manager.logger, unsaved_jobs_lock, job_queue, job)
     command_sequence = CommandSequence.CommandSequence(
         site, blocking=True, reset=True, retry_number=retry_number,
-        callback=mark_job_as_done, site_rank=site_rank
+        callback=callback, site_rank=site_rank
     )
     command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
     manager.execute_command_sequence(command_sequence)

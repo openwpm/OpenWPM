@@ -83,8 +83,8 @@ this.sockets = class extends ExtensionAPI {
           context: context,
           name: "sockets.onDataReceived",
           register: (fire) => {
-            let listener = (id, data) => {
-              fire.async(id, data);
+            let listener = (id, data, is_json) => {
+              fire.async(id, data, is_json);
             };
             gManager.onDataReceivedListeners.add(listener);
             return () => {

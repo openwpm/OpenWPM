@@ -3,9 +3,11 @@ from automation import CommandSequence, TaskManager
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
-sites = ['http://www.example.com',
-         'http://www.princeton.edu',
-         'http://citp.princeton.edu/']
+sites = [
+    'http://www.example.com',
+    'http://www.princeton.edu',
+    'http://citp.princeton.edu/'
+]
 
 # Loads the default manager params
 # and NUM_BROWSERS copies of the default browser params
@@ -23,7 +25,8 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
-browser_params[0]['headless'] = True  # Launch only browser 0 headless
+# Launch only browser 0 headless
+browser_params[0]['display_mode'] = 'headless'
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params['data_directory'] = '~/Desktop/'
@@ -39,7 +42,8 @@ for site in sites:
     # Parallelize sites over all number of browsers set above.
     # (To have all browsers go to the same sites, add `index='**'`)
     command_sequence = CommandSequence.CommandSequence(
-        site, reset=True, callback=lambda: print("CommandSequence done"))
+        site, reset=True,
+        callback=lambda val=site: print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)

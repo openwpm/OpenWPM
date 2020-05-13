@@ -6,6 +6,7 @@ import { PendingResponse } from "../lib/pending-response";
 import ResourceType = browser.webRequest.ResourceType;
 import RequestFilter = browser.webRequest.RequestFilter;
 import BlockingResponse = browser.webRequest.BlockingResponse;
+import HttpHeaders = browser.webRequest.HttpHeaders;
 import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { HttpRedirect, HttpRequest, HttpResponse } from "../schema";
 import {
@@ -564,6 +565,7 @@ export class HttpInstrument {
       frame_id: details.frameId,
       response_status: responseStatus,
       response_status_text: escapeString(responseStatusText),
+      headers: this.jsonifyHeaders(details.responseHeaders).headers,
       time_stamp: new Date(details.timeStamp).toISOString(),
     };
 
@@ -670,27 +672,35 @@ export class HttpInstrument {
     const current_time = new Date(details.timeStamp);
     update.time_stamp = current_time.toISOString();
 
-    const headers = [];
-    let location = "";
-    if (details.responseHeaders) {
-      details.responseHeaders.map(responseHeader => {
-        const { name, value } = responseHeader;
-        const header_pair = [];
-        header_pair.push(escapeString(name));
-        header_pair.push(escapeString(value));
-        headers.push(header_pair);
-        if (name.toLowerCase() === "location") {
-          location = value;
-        }
-      });
-    }
-    update.headers = JSON.stringify(headers);
-    update.location = escapeString(location);
+    const parsedHeaders = this.jsonifyHeaders(details.responseHeaders);
+    update.headers = parsedHeaders.headers;
+    update.location = parsedHeaders.location;
 
     if (this.shouldSaveContent(saveContent, details.type)) {
       this.logWithResponseBody(details, update);
     } else {
       this.dataReceiver.saveRecord("http_responses", update);
     }
+  }
+
+  private jsonifyHeaders(headers: HttpHeaders) {
+    const resultHeaders = [];
+    let location = "";
+    if (headers) {
+      headers.map(responseHeader => {
+        const { name, value } = responseHeader;
+        const header_pair = [];
+        header_pair.push(escapeString(name));
+        header_pair.push(escapeString(value));
+        resultHeaders.push(header_pair);
+        if (name.toLowerCase() === "location") {
+          location = value;
+        }
+      });
+    }
+    return {
+      headers: JSON.stringify(resultHeaders),
+      location: escapeString(location),
+    };
   }
 }

@@ -1,6 +1,7 @@
 name: openwpm
 channels:
     - conda-forge
+    - main
 dependencies:
     - python
     - beautifulsoup4
@@ -12,13 +13,15 @@ dependencies:
     - nodejs
     - pandas
     - pyarrow
+    - pyvirtualdisplay
     - redis-py
-    - s3fs
+    - s3fs==0.4.0
     - selenium
     - sentry-sdk
     - tabulate
     - tblib
     - wget
+    - xorg-x11-server-xvfb-cos6-x86_64
     - pip
       - plyvel
       - domain_utils

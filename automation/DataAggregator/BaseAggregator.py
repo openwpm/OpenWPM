@@ -1,5 +1,4 @@
 import abc
-import json
 import logging
 import queue
 import threading
@@ -12,6 +11,8 @@ from ..SocketInterface import serversocket
 from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = 'page_content'
+RECORD_TYPE_SPECIAL = 'meta_information'
+RECORD_TYPE_CREATE = 'create_table'
 STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = 'SHUTDOWN'
 
@@ -118,38 +119,21 @@ class BaseListener(object):
         )
         self._last_update = time.time()
 
-    def update_records(self, table: str, data: Dict[str, Any]):
-        """A method to keep track of which browser is working on which visit_id
-           If browser_id or visit_id should not be said in data this method
-           will raise an exception
+    def handle_special(self, data: Dict[str, Any]) -> None:
         """
-        visit_id = None
-        crawl_id = None
-        # All data records should be keyed by the crawler and site visit
-        try:
-            visit_id = data['visit_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no visit id" % table)
-            self.logger.error(json.dumps(data))
-            raise
+            Messages for the table RECORD_TYPE_SPECIAL are metainformation
+            communicated to the aggregator
+            Supported message types:
+            - finalize: A message sent by the extension to
+                        signal that a visit_id is complete.
+        """
+        if data["meta_type"] == "finalize":
+            self.run_visit_completion_tasks(data["visit_id"])
+        else:
+            raise ValueError("Unexpected meta "
+                             "information type: %s" % data["meta_type"])
 
-        try:
-            crawl_id = data['crawl_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no crawl id" % table)
-            self.logger.error(json.dumps(data))
-            raise
-
-        # Check if the browser for this record has moved on to a new visit
-        if crawl_id not in self.browser_map:
-            self.browser_map[crawl_id] = visit_id
-        elif self.browser_map[crawl_id] != visit_id:
-            self.run_visit_completion_tasks(self.browser_map[crawl_id])
-            self.browser_map[crawl_id] = visit_id
-
-        return crawl_id, visit_id
-
-    def mark_visit_complete(self, visit_id: int):
+    def mark_visit_complete(self, visit_id: int) -> None:
         """ This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
         self.completion_queue.put(visit_id)
@@ -254,7 +238,7 @@ class BaseAggregator(object):
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
         args = ((self.status_queue,
-                self.completion_queue, self.shutdown_queue),) + args
+                 self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args

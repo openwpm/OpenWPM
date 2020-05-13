@@ -1,9 +1,10 @@
-
 import json
 import logging
 import os.path
 import random
+import sys
 
+from pyvirtualdisplay import Display
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
@@ -108,10 +109,27 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.set_preference("general.useragent.override",
                           profile_settings['ua_string'])
 
-    if browser_params['headless']:
+    display_mode = browser_params['display_mode']
+    display_pid = None
+    display_port = None
+    if display_mode == 'headless':
         fo.set_headless(True)
         fo.add_argument('--width={}'.format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
+    if display_mode == 'xvfb':
+        if sys.platform == 'darwin':
+            raise RuntimeError('display_mode==xvfb mode not supported on OSX')
+        display = Display(
+            visible=0,
+            size=profile_settings['screen_res']
+        )
+        display.start()
+        display_pid, display_port = display.pid, display.cmd_param[-1][1:]
+    # Must do this for all display modes,
+    # because status_queue is read off no matter what.
+    status_queue.put(
+        ('STATUS', 'Display', (display_pid, display_port))
+    )
 
     if browser_params['callstack_instrument']\
        and not browser_params['js_instrument']:
