@@ -13,7 +13,7 @@
 rm -rf .pytest_cache/
 rm -rf test/__pycache__/
 
-# allow access to XQuarts for the current IP
+# Allow access to XQuartz for the current IP
 export IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
 xhost + $IP
 export DISPLAY=$IP:0
