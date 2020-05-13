@@ -30,5 +30,5 @@ echo 'Installing firefox.'
 echo 'Building extension.'
 ./build-extension.sh
 
-echo 'Installation complete, activate your new environment by running \n'
+echo 'Installation complete, activate your new environment by running:'
 echo 'conda activate openwpm'
