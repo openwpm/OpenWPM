@@ -18,15 +18,7 @@ before_install:
   - "export DISPLAY=:99.0"
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
-  # Ref: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/use-conda-with-travis-ci.html
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - source "$HOME/miniconda/etc/profile.d/conda.sh"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-  # Now OpenWPM installation
+  - ./install-miniconda.sh
   - ./install.sh
   - conda activate openwpm
 before_script:
@@ -39,7 +31,7 @@ script:
       npm test;
     else
       cd test;
-      python -m pytest -s -v --durations=10 -k $TESTS;
+      python -m pytest -s -v --durations=10 $TESTS;
     fi
 after_success:
   - if [[ "$TESTS" == "webextension" ]]; then
