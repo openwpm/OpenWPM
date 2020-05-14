@@ -5,13 +5,15 @@ SHELL ["/bin/bash", "-c"]
 # Update ubuntu and setup conda
 # adapted from: https://hub.docker.com/r/conda/miniconda3/dockerfile
 RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
-RUN apt-get clean -y \
+RUN apt-get clean -qq \
     && rm -r /var/lib/apt/lists/* -vf \
     && apt-get clean -qq \
     && apt-get update -qq \
     && apt-get upgrade -qq \
     # git and make for `npm install`, wget for `install-miniconda`
-    && apt-get install wget git make -qq
+    && apt-get install wget git make -qq \
+    # deps to run firefox
+    && apt-get install libgtk-3-0 libx11-xcb1 libdbus-glib-1-2 libxt6 -qq
 
 WORKDIR /opt/OpenWPM
 ENV HOME /opt
