@@ -15,14 +15,13 @@ RUN apt-get clean -qq \
     # deps to run firefox
     && apt-get install libgtk-3-0 libx11-xcb1 libdbus-glib-1-2 libxt6 -qq
 
-WORKDIR /opt/OpenWPM
 ENV HOME /opt
-
-COPY install-miniconda.sh .
+COPY scripts/install-miniconda.sh .
 RUN ./install-miniconda.sh
 ENV PATH $HOME/miniconda/bin:$PATH
 
 # Install OpenWPM
+WORKDIR /opt/OpenWPM
 COPY . .
 RUN ./install.sh
 ENV PATH $HOME/miniconda/envs/openwpm/bin:$PATH

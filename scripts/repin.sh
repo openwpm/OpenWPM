@@ -19,7 +19,7 @@ conda activate openwpm
 conda env update -f environment-unpinned-dev.yaml
 
 # Export the environment including manually specify channels
-conda env export --no-builds --override-channels -c conda-forge -c main -f environment.yaml
+conda env export --no-builds --override-channels -c conda-forge -c main -f ../environment.yaml
 
 # Prune environment file to only things we want to pin
 python prune-environment.py

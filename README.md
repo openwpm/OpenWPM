@@ -460,7 +460,7 @@ The instrumentation extension is included in `/automation/Extension/firefox/`.
 The instrumentation itself (used by the above extension) is included in
 `/automation/Extension/webext-instrumentation/`.
 Any edits within these directories will require the extension to be re-built to produce
-a new `openwpm.xpi` with your updates. You can use `build_extension.sh` to do this,
+a new `openwpm.xpi` with your updates. You can use `./scripts/build-extension.sh` to do this,
 or you can run `npm run build` from `automation/Extension/firefox/`.
 
 ### Debugging the platform
@@ -473,7 +473,7 @@ continuing the crawl). We recommend using
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
-* `build-extension.sh`
+* `./scripts/build-extension.sh`
 * `python -m test.manual_test` builds the current extension directory
   and launches a Firefox instance with it.
 * `python -m test.manual_test --selenium` launches a Firefox Selenium instance
@@ -487,14 +487,17 @@ instance (without any instrumentation)
 
 ### Managing requirements
 
-We use a script to pin dependencies `repin.sh`.
+We use a script to pin dependencies `scripts/repin.sh`.
 
 This means that `environment.yaml` should not be edited directly.
 
-Instead, place new requirements in `environment-unpinned.yaml` or `environment-unpinned-dev.yaml`
-and then run `./repin.sh`.
+Instead, place new requirements in `scripts/environment-unpinned.yaml` or `scripts/environment-unpinned-dev.yaml`
+and then run repin:
 
-To update the version of firefox, the TAG variable must be updated in the `./install-firefox.sh`
+    $ cd scripts
+    $ ./repin.sh
+
+To update the version of firefox, the TAG variable must be updated in the `./scripts/install-firefox.sh`
 script. This script contains further information about finding the right TAG.
 
 ### Running tests
@@ -533,7 +536,7 @@ Troubleshooting
   * If you are seeing this error for all browser spawn attempts check that:
     * Both selenium and Firefox are the appropriate versions. Run the following
       commands and check that the versions output match the required versions in
-      `install.sh` and `requirements.txt`. If not, re-run the install script.
+      `install.sh` and `environment.yaml`. If not, re-run the install script.
       ```sh
       cd firefox-bin/
       firefox --version
@@ -542,7 +545,7 @@ Troubleshooting
       and
 
       ```sh
-        pip show selenium
+        conda list selenium
       ```
     * If you are running in a headless environment (e.g. a remote server), ensure
       that all browsers have the `headless` browser parameter set to `True` before
@@ -555,6 +558,10 @@ Troubleshooting
    `extensions.legacy.enabled`. If you need to work with earlier firefox, update the
    setting name `extensions.experiments.enabled` in
    `automation/DeployBrowsers/configure_firefox.py`.
+
+3. Make sure you're conda environment is activated (`conda activate openwpm`). You can see
+   you environments and the activate one by running `conda env list` the active environment
+   will have a `*` by it. 
 
 Docker Deployment for OpenWPM
 -----------------------------

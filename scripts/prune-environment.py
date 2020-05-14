@@ -9,7 +9,7 @@ env_unpinned_dev = yaml.load(
     Loader=yaml.SafeLoader,
 )
 env_pinned = yaml.load(
-    open('environment.yaml').read(),
+    open('../environment.yaml').read(),
     Loader=yaml.SafeLoader,
 )
 
@@ -46,5 +46,5 @@ env_pinned['dependencies'] = pruned_dependencies
 # We don't want the prefix line
 env_pinned.pop('prefix')
 
-with open('environment.yaml', 'w') as f:
+with open('../environment.yaml', 'w') as f:
     f.write(yaml.dump(env_pinned))
