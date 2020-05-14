@@ -31,6 +31,7 @@ dependencies:
 - wget=1.20.1
 - xorg-x11-server-xvfb-cos6-x86_64=1.17.4
 - pip:
+  - amazon-kclpy==2.0.1
   - crontab==0.22.6
   - domain-utils==0.7.1
   - flask-cors==3.0.8

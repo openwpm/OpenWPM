@@ -11,7 +11,7 @@ dependencies:
     - pytest
     - pip:
         # Select depenedencies from localstack[full] that we need
-        - amazon_kclpy
+        - amazon-kclpy
         - crontab
         - flask-cors
         - moto-ext

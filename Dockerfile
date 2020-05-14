@@ -10,7 +10,8 @@ RUN apt-get clean -y \
     && apt-get clean -qq \
     && apt-get update -qq \
     && apt-get upgrade -qq \
-    && apt-get install wget make -qq
+    # git and make for `npm install`, wget for `install-miniconda`
+    && apt-get install wget git make -qq
 
 WORKDIR /opt/OpenWPM
 ENV HOME /opt
@@ -22,6 +23,7 @@ ENV PATH $HOME/miniconda/bin:$PATH
 # Install OpenWPM
 COPY . .
 RUN ./install.sh
+ENV PATH $HOME/miniconda/envs/openwpm/bin:$PATH
 
 # Move the firefox binary away from the /opt/OpenWPM root so that it is available if
 # we mount a local source code directory as /opt/OpenWPM
