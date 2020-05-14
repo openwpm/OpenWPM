@@ -9,11 +9,11 @@ set -e
 eval "$(conda shell.bash hook)"
 conda activate openwpm
 
-echo '**********************xxxxxxxxxxxxxxx'
-node --version
-
 pushd automation/Extension/firefox
 npm install
+pushd ../webext-instrumentation
+npm install
+popd
 npm run build
 cp dist/*.zip ./openwpm.xpi
 popd

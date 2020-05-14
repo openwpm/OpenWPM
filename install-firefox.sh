@@ -29,7 +29,7 @@ case "$(uname -s)" in
 esac
 
 UNBRANDED_RELEASE_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.revision.${TAG}.firefox.${OS}64-add-on-devel/artifacts/public/build/target${TARGET_SUFFIX}"
-wget "$UNBRANDED_RELEASE_BUILD"
+wget -q "$UNBRANDED_RELEASE_BUILD"
 
 case "$(uname -s)" in
    Darwin)
