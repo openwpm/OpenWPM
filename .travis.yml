@@ -30,7 +30,9 @@ install:
   - ./install.sh
   - conda activate openwpm
 before_script:
-  - pre-commit run --all
+  - if [[ "$TESTS" != "webextension" ]]; then
+      pre-commit run --all;
+    fi
 script:
   - if [[ "$TESTS" == "webextension" ]]; then
       cd automation/Extension/webext-instrumentation;
