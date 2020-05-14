@@ -95,6 +95,7 @@ dependencies:
   - pluggy=0.13.1=py38h32f6830_1
   - pre-commit=2.4.0=py38h32f6830_0
   - prompt-toolkit=3.0.5=py_0
+  - psutil=5.7.0=py38h1e0a361_1
   - ptyprocess=0.6.0=py_1001
   - py=1.8.1=py_0
   - pyaes=1.6.1=py_0

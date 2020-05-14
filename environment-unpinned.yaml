@@ -12,6 +12,7 @@ dependencies:
     - nodejs
     - pandas
     - pip
+    - psutil
     - pyarrow
     - python
     - pyvirtualdisplay
