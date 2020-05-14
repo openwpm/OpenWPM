@@ -47,22 +47,53 @@ Table of Contents <!-- omit in toc -->
 Installation
 ------------
 
-OpenWPM is a Python >3.6 application developed and tested for Ubuntu 18.04.
-Python 2 is not supported. An installation
-script, `install.sh` is included to install both the system and python
-dependencies automatically. A few of the python dependencies require specific
-versions, so you should install the dependencies in a virtual environment if
-you're installing a shared machine. If you plan to develop OpenWPM's
-instrumentation extension or run tests you will also need to install the
-development dependencies included in `install-dev.sh`.
-In order to install pre-commit hooks install the hooks by running
-```pre-commit install```
-This will lint all the changes before you make a commit!
+OpenWPM is tested on Ubuntu 18.04 via TravisCI and is commonly used via the docker container
+that this repo builds, which is also based on Ubuntu. Although we don't officially support
+other platforms, conda is a cross platform utility and the install script can be expected
+to work on OSX and other linux distributions.
 
-It is likely that OpenWPM will work on platforms other than Ubuntu, however
-we do not officially support anything else. For pointers on alternative
-platform support see
-[the wiki](https://github.com/citp/OpenWPM/wiki/OpenWPM-on-Alternate-Platforms).
+OpenWPM does not support windows: https://github.com/mozilla/OpenWPM/issues/503
+
+
+### Pre-requisites
+
+The main pre-requisite for OpenWPM is conda, a cross-platform package management tool.
+
+Conda is open-source, and can be installed from https://docs.conda.io/en/latest/miniconda.html.
+
+### Install
+
+An installation script, `install.sh` is included to: install the conda environment,
+install unbranded firefox, and build the instrumentation extension.
+
+All installation is confined to your conda environment and should not affect your machine.
+The installation script will, however, override any existing conda environment named openwpm.
+
+To run the install script, run
+
+    $ ./install.sh
+
+After running the install script, activate your conda environment by running:
+
+    $ conda activate openwpm
+
+### Developer instructions
+
+Dev dependencies are installed by using the main `environment.yaml` (which
+is used by `./install.sh` script.
+
+You can install pre-commit hooks install the hooks by running `pre-commit install` to 
+lint all the changes before you make a commit.
+
+### Troubleshooting
+
+`make` / `gcc` may need to be installed in order to build the web extension. On Ubuntu, 
+this is achieved with `apt-get install make` on OSX the necessary packages are part of xcode
+`xcode-select --install`
+
+On a very sparse operating system additional dependencies may need to be installed. See
+the Dockerfile for more inspiration, or open an issue if you are still having problems.
+
 
 Quick Start
 -----------
@@ -415,10 +446,6 @@ instance for which the configuration parameter was set.
 Development pointers
 --------------------
 
-Much of OpenWPM's instrumentation is included in a Firefox add-on SDK extension.
-Thus, in order to add or change instrumentation you will need a few additional
-dependencies, which can be installed with `install-dev.sh`.
-
 ### Types Annotations in Python
 
 We as maintainers have decided it would be helpful to have Python3 type annotations
@@ -433,14 +460,15 @@ The instrumentation extension is included in `/automation/Extension/firefox/`.
 The instrumentation itself (used by the above extension) is included in
 `/automation/Extension/webext-instrumentation/`.
 Any edits within these directories will require the extension to be re-built to produce
-a new `openwpm.xpi` with your updates. You can use `build_extension.sh` to do this.
+a new `openwpm.xpi` with your updates. You can use `build_extension.sh` to do this,
+or you can run `npm run build` from `automation/Extension/firefox/`.
 
 ### Debugging the platform
 
 Manual debugging with OpenWPM can be difficult. By design the platform runs all
 browsers in separate processes and swallows all exceptions (with the intent of
 continuing the crawl). We recommend using
-[manual_test.py](https://github.com/citp/OpenWPM/blob/master/test/manual_test.py).
+[manual_test.py](https://github.com/mozilla/OpenWPM/blob/master/test/manual_test.py).
 
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
@@ -457,66 +485,42 @@ instance (without any instrumentation)
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
 
-
 ### Managing requirements
 
-We use [`pip-tools`](https://github.com/jazzband/pip-tools) to pin
-requirements. This means that the `requirements.txt` and `requirements-dev.txt`
-files should not be edited directly. Instead, place new requirements in
-`requirements.in` or `requirements-dev.in`. Requirements necessary to run
-OpenWPM should be placed in the former, while those only required to run the
-tests (or perform other development tasks) should be placed in the latter.
+We use a script to pin dependencies `repin.sh`.
 
-To update dependencies, run the following two commands **in order**:
-* `pip-compile --upgrade requirements.in`
-* `pip-compile --upgrade requirements-dev.in`
+This means that `environment.yaml` should not be edited directly.
 
-It's important that these are run in order, as we layer the dev
-dependencies on the output of the pinned production dependencies as per
-[the official documentation](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements).
-This means you may need to manually pin some versions of a dependency in
-`requirements.in` so there exists a compatible version for a dependency in
-`requirements-dev.in`. Before you run an upgrade, check if the previous pins
-that are related to layering in `requirements.in` are still necessary by
-removing them and attempting an upgrade without the pins.
+Instead, place new requirements in `environment-unpinned.yaml` or `environment-unpinned-dev.yaml`
+and then run `./repin.sh`.
+
+To update the version of firefox, the TAG variable must be updated in the `./install-firefox.sh`
+script. This script contains further information about finding the right TAG.
 
 ### Running tests
 
-OpenWPM's tests are build on `py.test`. To run the tests you will need a few
-additional dependencies, which can be installed by running `install-dev.sh`.
+OpenWPM's tests are build on [pytest](https://docs.pytest.org/en/latest/). Execute `py.test -vv`
+in the test directory to run all tests:
 
-Once installed, execute `py.test -vv` in the test directory to run all tests.
+    $ conda activate openwpm
+    $ cd test
+    $ py.test -vv
 
+See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting 
+specific tests and various pytest options.
 
-### Mac OSX (Limited support for developers)
+### Mac OSX
 
-We've added an installation file to make it easier to run tests and develop on
-Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
-instead of `install.sh` and `install-dev.sh` in [the official getting started
-instructions](https://github.com/mozilla/OpenWPM/wiki/Setting-Up-OpenWPM).
-
-This will install Python packages in a local Python 3 virtualenv,
-download the latest Unbranded Firefox Release into the current folder,
-move geckodriver next to the Firefox binary and install development dependencies.
-For the OpenWPM to be aware of which Firefox installation to run, set the
-FIREFOX_BINARY environment variable before running any commands.
-
-Example, running a demo crawl on Mac OSX:
-
-    source venv/bin/activate
-    export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
-    python demo.py
-
-Running the OpenWPM tests on Mac OSX:
-
-    source venv/bin/activate
-    export FIREFOX_BINARY="$(PWD)/Nightly.app/Contents/MacOS/firefox-bin"
-    python -m pytest -vv
-
-For more detailed setup instructions for Mac, see [Running OpenWPM natively on macOS](https://github.com/mozilla/OpenWPM/wiki/Running-OpenWPM-natively-on-macOS).
+You may need to install `make` / `gcc` in order to build the extension.
+The necessary packages are part of xcode: `xcode-select --install`
 
 We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
-these issues and add full support and CI testing for Mac.
+these issues and add full CI testing for Mac.
+
+Running Firefox with xvfb on OSX is untested and will require the user to install
+an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
+been tested, we welcome feedback as to whether this is working.
+
 
 Troubleshooting
 ---------------
