@@ -11,7 +11,7 @@ env:
   - TESTS=test_[i-r,t-z]*
 # test_simple_commands.py is slow due to parametrization.
   - TESTS=test_[s]*
-  - TESTS=node
+  - TESTS=webextension
 git:
   depth: 3
 before_install:
@@ -33,7 +33,7 @@ install:
 before_script:
   - pre-commit run --all
 script:
-  - if [[ "$TESTS" == "node" ]]; then
+  - if [[ "$TESTS" == "webextension" ]]; then
       cd automation/Extension/webext-instrumentation;
       npm test;
     else
@@ -41,7 +41,7 @@ script:
       python -m pytest -s -v --durations=10 -k $TESTS;
     fi
 after_success:
-  - if [[ "$TESTS" == "node" ]]; then
+  - if [[ "$TESTS" == "webextension" ]]; then
       npm run cov:check;
     fi
 
