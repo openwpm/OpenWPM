@@ -12,6 +12,7 @@ dependencies:
     - nodejs
     - pandas
     - pip
+    - pillow
     - psutil
     - pyarrow
     - python
