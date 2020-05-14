@@ -154,9 +154,44 @@ dependencies:
   - zlib=1.2.11=h516909a_1006
   - zstd=1.4.4=h6597ccf_3
   - pip:
+    - amazon-kclpy==2.0.1
+    - argparse==1.4.0
+    - aws-sam-translator==1.23.0
+    - aws-xray-sdk==2.5.0
+    - boto==2.49.0
+    - cfn-lint==0.31.1
     - chardet==3.0.4
+    - click==7.1.2
+    - crontab==0.22.6
+    - docker==4.2.0
     - domain-utils==0.7.1
+    - flask==1.1.2
+    - flask-cors==3.0.8
+    - future==0.18.2
+    - itsdangerous==1.1.0
+    - jinja2==2.11.2
+    - jsondiff==1.2.0
+    - jsonpatch==1.25
+    - jsonpickle==1.4.1
+    - jsonpointer==2.0
+    - jsonschema==3.2.0
+    - junit-xml==1.9
+    - markupsafe==1.1.1
+    - mock==4.0.2
+    - moto-ext==1.3.15.15
+    - networkx==2.4
     - plyvel==1.2.0
+    - pyasn1==0.4.8
+    - pyrsistent==0.16.0
+    - python-jose==3.1.0
     - requests==2.23.0
     - requests-file==1.5.1
+    - responses==0.10.14
+    - rsa==4.0
+    - sshpubkeys==3.1.0
+    - subprocess32==3.5.4
     - tldextract==2.2.2
+    - websocket-client==0.57.0
+    - werkzeug==1.0.1
+    - wrapt==1.12.1
+    - xmltodict==0.12.0
