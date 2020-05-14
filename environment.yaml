@@ -1,197 +1,38 @@
-name: openwpm
 channels:
-  - conda-forge
-  - main
+- conda-forge
+- main
 dependencies:
-  - _libgcc_mutex=0.1
-  - _openmp_mutex=4.5
-  - abseil-cpp=20200225.2
-  - arrow-cpp=0.17.0
-  - attrs=19.3.0
-  - autopep8=1.5.2
-  - aws-sdk-cpp=1.7.164
-  - backcall=0.1.0
-  - beautifulsoup4=4.9.0
-  - boost-cpp=1.72.0
-  - boto3=1.13.9
-  - botocore=1.16.9
-  - brotli=1.0.7
-  - brotlipy=0.7.0
-  - bzip2=1.0.8
-  - c-ares=1.15.0
-  - ca-certificates=2020.4.5.1
-  - certifi=2020.4.5.1
-  - cffi=1.14.0
-  - cfgv=3.1.0
-  - cryptography=2.9.2
-  - curl=7.69.1
-  - decorator=4.4.2
-  - dill=0.3.1.1
-  - dnslib=0.9.12
-  - dnspython=1.16.0
-  - docopt=0.6.2
-  - docutils=0.15.2
-  - easyprocess=0.2.10
-  - ecdsa=0.13
-  - editdistance=0.5.3
-  - flake8=3.8.1
-  - flake8-isort=3.0.0
-  - freetype=2.10.2
-  - fsspec=0.7.3
-  - geckodriver=0.26.0
-  - gettext=0.19.8.1
-  - gflags=2.2.2
-  - glog=0.4.0
-  - gmp=6.2.0
-  - grpc-cpp=1.28.1
-  - icu=64.2
-  - identify=1.4.15
-  - idna=2.9
-  - importlib-metadata=1.6.0
-  - ipython=7.14.0
-  - ipython_genutils=0.2.0
-  - isort=4.3.21
-  - jedi=0.17.0
-  - jmespath=0.10.0
-  - jpeg=9c
-  - krb5=1.17.1
-  - ld_impl_linux-64=2.34
-  - leveldb=1.22
-  - libblas=3.8.0
-  - libcblas=3.8.0
-  - libcurl=7.69.1
-  - libedit=3.1.20170329
-  - libevent=2.1.10
-  - libffi=3.2.1
-  - libgcc-ng=9.2.0
-  - libgfortran-ng=7.3.0
-  - libidn2=2.3.0
-  - liblapack=3.8.0
-  - libopenblas=0.3.9
-  - libpng=1.6.37
-  - libprotobuf=3.11.4
-  - libssh2=1.8.2
-  - libstdcxx-ng=9.2.0
-  - libtiff=4.1.0
-  - libunistring=0.9.10
-  - libuv=1.34.0
-  - libwebp-base=1.1.0
-  - llvm-openmp=10.0.0
-  - localstack=0.11.1.1
-  - localstack-client=0.24
-  - localstack-ext=0.11.13
-  - lz4-c=1.9.2
-  - mccabe=0.6.1
-  - more-itertools=8.2.0
-  - multiprocess=0.70.9
-  - ncurses=6.1
-  - nodeenv=1.3.5
-  - nodejs=13.13.0
-  - numpy=1.18.4
-  - olefile=0.46
-  - openssl=1.1.1g
-  - packaging=20.1
-  - pandas=1.0.3
-  - parquet-cpp=1.5.1
-  - parso=0.7.0
-  - pexpect=4.8.0
-  - pickleshare=0.7.5
-  - pillow=7.1.2
-  - pip=20.1
-  - pixman-cos6-x86_64=0.32.8
-  - pluggy=0.13.1
-  - pre-commit=2.4.0
-  - prompt-toolkit=3.0.5
-  - psutil=5.7.0
-  - ptyprocess=0.6.0
-  - py=1.8.1
-  - pyaes=1.6.1
-  - pyarrow=0.17.0
-  - pycodestyle=2.6.0
-  - pycparser=2.20
-  - pycryptodome=3.9.7
-  - pyflakes=2.2.0
-  - pygments=2.6.1
-  - pyopenssl=19.1.0
-  - pyparsing=2.4.7
-  - pysocks=1.7.1
-  - pytest=5.4.2
-  - python=3.8.2
-  - python-dateutil=2.8.1
-  - python_abi=3.8
-  - pytz=2020.1
-  - pyvirtualdisplay=0.2.5
-  - pyyaml=5.3.1
-  - re2=2020.05.01
-  - readline=8.0
-  - redis-py=3.5.1
-  - s3fs=0.4.0
-  - s3transfer=0.3.3
-  - selenium=3.141.0
-  - sentry-sdk=0.14.4
-  - setuptools=46.3.0
-  - six=1.14.0
-  - snappy=1.1.8
-  - soupsieve=1.9.4
-  - sqlite=3.30.1
-  - tabulate=0.8.7
-  - tblib=1.6.0
-  - testfixtures=6.14.1
-  - thrift-cpp=0.13.0
-  - tk=8.6.10
-  - toml=0.10.0
-  - traitlets=4.3.3
-  - urllib3=1.25.9
-  - virtualenv=16.7.5
-  - wcwidth=0.1.9
-  - wget=1.20.1
-  - wheel=0.34.2
-  - xorg-x11-server-common-cos6-x86_64=1.17.4
-  - xorg-x11-server-xvfb-cos6-x86_64=1.17.4
-  - xz=5.2.5
-  - yaml=0.2.4
-  - zipp=3.1.0
-  - zlib=1.2.11
-  - zstd=1.4.4
-  - pip:
-    - amazon-kclpy==2.0.1
-    - argparse==1.4.0
-    - aws-sam-translator==1.23.0
-    - aws-xray-sdk==2.5.0
-    - boto==2.49.0
-    - cfn-lint==0.31.1
-    - chardet==3.0.4
-    - click==7.1.2
-    - crontab==0.22.6
-    - docker==4.2.0
-    - domain-utils==0.7.1
-    - flask==1.1.2
-    - flask-cors==3.0.8
-    - future==0.18.2
-    - itsdangerous==1.1.0
-    - jinja2==2.11.2
-    - jsondiff==1.2.0
-    - jsonpatch==1.25
-    - jsonpickle==1.4.1
-    - jsonpointer==2.0
-    - jsonschema==3.2.0
-    - junit-xml==1.9
-    - markupsafe==1.1.1
-    - mock==4.0.2
-    - moto-ext==1.3.15.15
-    - networkx==2.4
-    - plyvel==1.2.0
-    - pyasn1==0.4.8
-    - pyrsistent==0.16.0
-    - python-jose==3.1.0
-    - requests==2.23.0
-    - requests-file==1.5.1
-    - responses==0.10.14
-    - rsa==4.0
-    - sshpubkeys==3.1.0
-    - subprocess32==3.5.4
-    - tldextract==2.2.2
-    - websocket-client==0.57.0
-    - werkzeug==1.0.1
-    - wrapt==1.12.1
-    - xmltodict==0.12.0
+- autopep8=1.5.2
+- beautifulsoup4=4.9.0
+- dill=0.3.1.1
+- flake8-isort=3.0.0
+- flake8=3.8.1
+- geckodriver=0.26.0
+- ipython=7.14.0
+- leveldb=1.22
+- localstack=0.11.1.1
+- multiprocess=0.70.9
+- nodejs=13.13.0
+- pandas=1.0.3
+- pillow=7.1.2
+- pip=20.1
+- pre-commit=2.4.0
+- psutil=5.7.0
+- pyarrow=0.17.0
+- pytest=5.4.2
+- python=3.8.2
+- pyvirtualdisplay=0.2.5
+- redis-py=3.5.1
+- selenium=3.141.0
+- sentry-sdk=0.14.4
+- tabulate=0.8.7
+- tblib=1.6.0
+- wget=1.20.1
+- xorg-x11-server-xvfb-cos6-x86_64=1.17.4
+- pip:
+  - crontab==0.22.6
+  - flask-cors==3.0.8
+  - moto-ext==1.3.15.15
+  - plyvel==1.2.0
+  - subprocess32==3.5.4
+name: openwpm
