@@ -202,4 +202,4 @@ fields = [
     pa.field('instance_id', pa.uint32(), nullable=False)
 ]
 
-PQ_SCHEMAS['interrupted'] = pa.schema(fields)
+PQ_SCHEMAS['incomplete_visits'] = pa.schema(fields)

@@ -316,7 +316,8 @@ class S3Listener(BaseListener):
         if interrupted:
             self.logger.error(
                 "Visit with visit_id %d got interrupted", visit_id)
-            self._write_record("interrupted", {"visit_id": visit_id}, visit_id)
+            self._write_record("incomplete_visits",
+                               {"visit_id": visit_id}, visit_id)
             self._create_batch(visit_id)
             self.mark_visit_incomplete(visit_id)
             return

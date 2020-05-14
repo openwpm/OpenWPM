@@ -177,7 +177,8 @@ class LocalListener(BaseListener):
         if interrupted:
             self.logger.error(
                 "Visit with visit_id %d got interrupted", visit_id)
-            self.cur.execute("INSERT INTO interrupted VALUES (?)", (visit_id,))
+            self.cur.execute("INSERT INTO incomplete_visits VALUES (?)",
+                             (visit_id,))
             self.mark_visit_incomplete(visit_id)
         else:
             self.mark_visit_complete(visit_id)

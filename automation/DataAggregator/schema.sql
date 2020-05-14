@@ -224,6 +224,6 @@ CREATE TABLE IF NOT EXISTS callstacks(
 /*
  # Logging all interrupted visits
  */
-CREATE TABLE IF NOT EXISTS interrupted (
+CREATE TABLE IF NOT EXISTS incomplete_visits (
    visit_id INTEGER NOT NULL
 );
