@@ -19,6 +19,7 @@ before_install:
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
   - ./install-miniconda.sh
+  - source "$HOME/miniconda/etc/profile.d/conda.sh"
   - ./install.sh
   - conda activate openwpm
 before_script:
