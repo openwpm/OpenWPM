@@ -17,7 +17,7 @@ env_pinned = yaml.load(
 def iterate_deps(xs, ys, accumulator):
     for x in xs:
         for y in ys:
-            if x.split('=')[0] == y:
+            if x.split('=')[0] == y.split('=')[0]:
                 accumulator.append(x)
 deps_not_pip = []
 deps_pip = []
