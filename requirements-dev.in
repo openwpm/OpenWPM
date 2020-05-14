@@ -1,7 +1,0 @@
-autopep8
-pytest
-IPython
-flake8
-flake8-isort
-localstack[full]
-pre-commit

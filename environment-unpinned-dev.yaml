@@ -1,0 +1,10 @@
+channels:
+    - conda-forge
+dependencies:
+    - autopep8
+    - flake8
+    - flake8-isort
+    - ipython
+    - localstack
+    - pre-commit
+    - pytest
