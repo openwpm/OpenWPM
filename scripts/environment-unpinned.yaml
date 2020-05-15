@@ -24,7 +24,6 @@ dependencies:
     - tabulate
     - tblib
     - wget
-    - xorg-x11-server-xvfb-cos6-x86_64
     - pip:
       - plyvel
       - domain-utils
