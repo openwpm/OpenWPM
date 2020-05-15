@@ -333,7 +333,8 @@ left out of this section.
   * `xvfb`:
     * Launch the browser using the X virtual frame buffer. In this mode, Firefox
       is not running in it's own headless mode, but no GUI will be displayed.
-    * This mode only works on Linux.
+    * This mode requires `Xvfb` to be on your path. On Ubuntu that is achieved by running
+      `sudo apt-get install xvfb`. For other platforms check [www.X.org](http://www.X.org).
   * `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
     "headless" browsing because you do not need to be in a full X environment e.g. on a
     server. `headless` mode is supported on all platforms and is implemented by the browser
