@@ -64,7 +64,11 @@ class TestS3Aggregator(OpenWPMTest):
 
         # Test visit_id consistency
         visit_ids = defaultdict(set)
-        for table_name in PQ_SCHEMAS:
+        useful_schemas = dict(PQ_SCHEMAS)
+        # We don't expect incomplete visits to exist
+        # since the visit shouldn't be interrupted
+        useful_schemas.pop["incomplete_visits"]
+        for table_name in useful_schemas:
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
             actual = len(visit_ids[table_name])
