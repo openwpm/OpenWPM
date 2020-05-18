@@ -2,15 +2,14 @@ import json
 import logging
 import os.path
 import random
-import sys
 
+from easyprocess import EasyProcessError
 from pyvirtualdisplay import Display
 from selenium import webdriver
 
 from ..Commands.profile_commands import load_profile
 from ..Errors import BrowserConfigError
-from ..utilities.platform_utils import (get_firefox_binary_path,
-                                        get_geckodriver_exec_path)
+from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import (FirefoxBinary, FirefoxLogInterceptor,
                                FirefoxProfile, Options)
@@ -47,7 +46,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     launches a firefox instance with parameters set by the input dictionary
     """
     firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = get_geckodriver_exec_path()
 
     root_dir = os.path.dirname(__file__)  # directory of this file
 
@@ -119,14 +117,20 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         fo.add_argument('--width={}'.format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument('--height={}'.format(DEFAULT_SCREEN_RES[1]))
     if display_mode == 'xvfb':
-        if sys.platform == 'darwin':
-            raise RuntimeError('display_mode==xvfb mode not supported on OSX')
-        display = Display(
-            visible=0,
-            size=profile_settings['screen_res']
-        )
-        display.start()
-        display_pid, display_port = display.pid, display.cmd_param[-1][1:]
+        try:
+            display = Display(
+                visible=0,
+                size=profile_settings['screen_res']
+            )
+            display.start()
+            display_pid, display_port = display.pid, display.cmd_param[-1][1:]
+        except EasyProcessError:
+            raise RuntimeError(
+                "Xvfb could not be started. \
+                Please ensure it's on your path. \
+                See www.X.org for full details. \
+                Commonly solved on ubuntu with `sudo apt install xvfb`"
+            )
     # Must do this for all display modes,
     # because status_queue is read off no matter what.
     status_queue.put(
@@ -196,7 +200,6 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     status_queue.put(('STATUS', 'Launch Attempted', None))
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
     driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=fb,
-                               executable_path=geckodriver_executable_path,
                                firefox_options=fo, log_path=interceptor.fifo)
 
     # Add extension
