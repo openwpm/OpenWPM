@@ -67,7 +67,7 @@ class TestS3Aggregator(OpenWPMTest):
         useful_schemas = dict(PQ_SCHEMAS)
         # We don't expect incomplete visits to exist
         # since the visit shouldn't be interrupted
-        useful_schemas.pop["incomplete_visits"]
+        useful_schemas.pop("incomplete_visits")
         for table_name in useful_schemas:
             table = dataset.load_table(table_name)
             visit_ids[table_name] = table.visit_id.unique()
