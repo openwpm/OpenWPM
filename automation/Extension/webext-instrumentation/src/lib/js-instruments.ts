@@ -5,6 +5,9 @@ import {
   ILogSettings,
   JSInstrumentRequest,
 } from "../types/js-instrumentation";
+import {
+  JSOperation
+} from "../schema";
 
 declare global {
   interface Object {
@@ -65,8 +68,47 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
    * (Inlined in order for jsInstruments to be easily exportable as a string)
    */
 
+  // Counter to cap # of calls logged for each script/api combination
+  const maxLogCount = 500;
+  // logCounter
+  const logCounter = new Object();
+  // Prevent logging of gets arising from logging
+  let inLog = false;
+  // To keep track of the original order of events
+  let ordinal = 0;
+
+
+  // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
+  // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
+  Object.getPropertyDescriptor = function(subject, name) {
+    if (subject === undefined) {
+      throw new Error("Can't get property descriptor for undefined");
+    }
+    let pd = Object.getOwnPropertyDescriptor(subject, name);
+    let proto = Object.getPrototypeOf(subject);
+    while (pd === undefined && proto !== null) {
+      pd = Object.getOwnPropertyDescriptor(proto, name);
+      proto = Object.getPrototypeOf(proto);
+    }
+    return pd;
+  };
+
+  Object.getPropertyNames = function(subject) {
+    if (subject === undefined) {
+      throw new Error("Can't get property names for undefined");
+    }
+    let props = Object.getOwnPropertyNames(subject);
+    let proto = Object.getPrototypeOf(subject);
+    while (proto !== null) {
+      props = props.concat(Object.getOwnPropertyNames(proto));
+      proto = Object.getPrototypeOf(proto);
+    }
+    // FIXME: remove duplicate property names from props
+    return props;
+  };
+
   // debounce - from Underscore v1.6.0
-  function debounce(func, wait, immediate = false) {
+  function debounce(func, wait, immediate:boolean = false) {
     let timeout, args, context, timestamp, result;
 
     const later = function() {
@@ -100,7 +142,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
   }
 
   // Recursively generates a path for an element
-  function getPathToDomElement(element, visibilityAttr = false) {
+  function getPathToDomElement(element:any, visibilityAttr:boolean = false) {
     if (element === document.body) {
       return element.tagName;
     }
@@ -135,7 +177,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
   }
 
   // Helper for JSONifying objects
-  function serializeObject(object, stringifyFunctions = false) {
+  function serializeObject(object, stringifyFunctions:boolean = false): string {
     // Handle permissions errors
     try {
       if (object === null) {
@@ -190,32 +232,6 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
     }
   }
 
-  /*
-   * Direct instrumentation of javascript objects
-   */
-
-  const sendFactory = function($event_id, $sendMessagesToLogger) {
-    let messages = [];
-    // debounce sending queued messages
-    const _send = debounce(function() {
-      $sendMessagesToLogger($event_id, messages);
-
-      // clear the queue
-      messages = [];
-    }, 100);
-
-    return function(msgType, msg) {
-      // queue the message
-      messages.push({ type: msgType, content: msg });
-      _send();
-    };
-  };
-
-  const send = sendFactory(event_id, sendMessagesToLogger);
-
-  // Counter to cap # of calls logged for each script/api combination
-  const maxLogCount = 500;
-  const logCounter = new Object();
 
   function updateCounterAndCheckIfOver(scriptUrl, symbol) {
     const key = scriptUrl + "|" + symbol;
@@ -229,18 +245,12 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
     return false;
   }
 
-  // Prevent logging of gets arising from logging
-  let inLog = false;
-
-  // To keep track of the original order of events
-  let ordinal = 0;
-
   // For gets, sets, etc. on a single value
   function logValue(
-    instrumentedVariableName,
-    value,
-    operation,
-    callContext,
+    instrumentedVariableName: string,
+    value: any,
+    operation: JSOperation,
+    callContext: any,
     logSettings: LogSettings,
   ) {
     if (inLog) {
@@ -260,7 +270,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
     const msg = {
       operation,
       symbol: instrumentedVariableName,
-      value: serializeObject(value, !!logSettings.logFunctionsAsStrings),
+      value: serializeObject(value, logSettings.logFunctionsAsStrings),
       scriptUrl: callContext.scriptUrl,
       scriptLine: callContext.scriptLine,
       scriptCol: callContext.scriptCol,
@@ -281,7 +291,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
   }
 
   // For functions
-  function logCall(instrumentedFunctionName, args, callContext, logSettings: LogSettings) {
+  function logCall(instrumentedFunctionName: string, args: IArguments, callContext: any, logSettings: LogSettings) {
     if (inLog) {
       return;
     }
@@ -298,14 +308,14 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
 
     try {
       // Convert special arguments array to a standard array for JSONifying
-      const serialArgs = [];
-      for (let i = 0; i < args.length; i++) {
+      const serialArgs: string[] = [];
+      for (let arg of args) {
         serialArgs.push(
-          serializeObject(args[i], !!logSettings.logFunctionsAsStrings),
+          serializeObject(arg, logSettings.logFunctionsAsStrings),
         );
       }
       const msg = {
-        operation: "call",
+        operation: JSOperation.call,
         symbol: instrumentedFunctionName,
         args: serialArgs,
         value: "",
@@ -337,35 +347,6 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
       console.error("OpenWPM: Error context: " + JSON.stringify(context));
     }
   }
-
-  // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
-  // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-  Object.getPropertyDescriptor = function(subject, name) {
-    if (subject === undefined) {
-      throw new Error("Can't get property descriptor for undefined");
-    }
-    let pd = Object.getOwnPropertyDescriptor(subject, name);
-    let proto = Object.getPrototypeOf(subject);
-    while (pd === undefined && proto !== null) {
-      pd = Object.getOwnPropertyDescriptor(proto, name);
-      proto = Object.getPrototypeOf(proto);
-    }
-    return pd;
-  };
-
-  Object.getPropertyNames = function(subject) {
-    if (subject === undefined) {
-      throw new Error("Can't get property names for undefined");
-    }
-    let props = Object.getOwnPropertyNames(subject);
-    let proto = Object.getPrototypeOf(subject);
-    while (proto !== null) {
-      props = props.concat(Object.getOwnPropertyNames(proto));
-      proto = Object.getPrototypeOf(proto);
-    }
-    // FIXME: remove duplicate property names from props
-    return props;
-  };
 
   // Helper to get originating script urls
   function getStackTrace() {
@@ -481,9 +462,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
   // which object method `func` is coming from in the logs
   function instrumentFunction(objectName: string, methodName: string, func: any, logSettings: LogSettings) {
     return function() {
-      const callContext = getOriginatingScriptContext(
-        !!logSettings.logCallStack,
-      );
+      const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
         arguments,
@@ -516,11 +495,10 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
 
     // Property descriptor must exist unless we are instrumenting a
     // non-existing property
+
     if (
       !propDesc &&
-      (!logSettings.nonExistingPropertiesToInstrument ||
-        logSettings.nonExistingPropertiesToInstrument.indexOf(propertyName) ==
-          -1)
+      !logSettings.nonExistingPropertiesToInstrument.includes(propertyName)
     ) {
       console.error(
         "Property descriptor not found for",
@@ -555,9 +533,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
       get: (function() {
         return function() {
           let origProperty;
-          const callContext = getOriginatingScriptContext(
-            !!logSettings.logCallStack,
-          );
+          const callContext = getOriginatingScriptContext(logSettings.logCallStack);
 
           // get original value
           if (!propDesc) {
@@ -578,7 +554,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             logValue(
               objectName + "." + propertyName,
               "",
-              "get(failed)",
+              JSOperation.get_failed,
               callContext,
               logSettings,
             );
@@ -594,7 +570,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
               logValue(
                 objectName + "." + propertyName,
                 origProperty,
-                "get(function)",
+                JSOperation.get_function,
                 callContext,
                 logSettings,
               );
@@ -625,7 +601,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             logValue(
               objectName + "." + propertyName,
               origProperty,
-              "get",
+              JSOperation.get,
               callContext,
               logSettings,
             );
@@ -635,21 +611,18 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
       })(),
       set: (function() {
         return function(value) {
-          const callContext = getOriginatingScriptContext(
-            !!logSettings.logCallStack,
-          );
+          const callContext = getOriginatingScriptContext(logSettings.logCallStack);
           let returnValue;
 
           // Prevent sets for functions and objects if enabled
           if (
-            !!logSettings.preventSets &&
-            (typeof originalValue === "function" ||
-              typeof originalValue === "object")
+            logSettings.preventSets &&
+            (typeof originalValue === "function" || typeof originalValue === "object")
           ) {
             logValue(
               objectName + "." + propertyName,
               value,
-              "set(prevented)",
+              JSOperation.set_prevented,
               callContext,
               logSettings,
             );
@@ -672,31 +645,24 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             returnValue = value;
             inLog = false;
           } else {
-            console.error(
-              "Property descriptor for",
-              objectName + "." + propertyName,
-              "doesn't have setter or value?",
-            );
+            let instrumentedVariableName = `${objectName}.${propertyName}`;
+            console.error(`Property descriptor for ${instrumentedVariableName} doesn't have setter or value?`);
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               value,
-              "set(failed)",
+              JSOperation.set_failed,
               callContext,
               logSettings,
             );
             return value;
           }
-
-          // log set
           logValue(
             objectName + "." + propertyName,
             value,
-            "set",
+            JSOperation.set,
             callContext,
             logSettings,
           );
-
-          // return new value
           return returnValue;
         };
       })(),
@@ -758,6 +724,25 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
       }
     }
   }
+
+  const sendFactory = function($event_id, $sendMessagesToLogger) {
+    let messages = [];
+    // debounce sending queued messages
+    const _send = debounce(function() {
+      $sendMessagesToLogger($event_id, messages);
+
+      // clear the queue
+      messages = [];
+    }, 100);
+
+    return function(msgType, msg) {
+      // queue the message
+      messages.push({ type: msgType, content: msg });
+      _send();
+    };
+  };
+
+  const send = sendFactory(event_id, sendMessagesToLogger);
 
   function instrumentJS(spec: JSInstrumentRequest[]) {
     spec.forEach(function(item) {

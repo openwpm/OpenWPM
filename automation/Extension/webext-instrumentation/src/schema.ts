@@ -119,6 +119,17 @@ export interface HttpRedirect {
   time_stamp: DateTime;
 }
 
+
+export enum JSOperation {
+  call = 'call',
+  get = 'get',
+  get_failed = 'get(failed)',
+  get_function = 'get(function)',
+  set = 'set',
+  set_failed = 'set(failed)',
+  set_prevented = 'set(prevented)',
+}
+
 export interface JavascriptOperation {
   id?: number;
   incognito?: number;
@@ -139,7 +150,7 @@ export interface JavascriptOperation {
   top_level_url?: string;
   call_stack?: string;
   symbol?: string;
-  operation?: string;
+  operation?: JSOperation;
   value?: string;
   arguments?: string;
   time_stamp: DateTime;
