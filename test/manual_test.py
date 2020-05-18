@@ -7,8 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from automation.DeployBrowsers import configure_firefox
-from automation.utilities.platform_utils import (get_firefox_binary_path,
-                                                 get_geckodriver_exec_path)
+from automation.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import create_xpi
 from .utilities import BASE_TEST_URL, start_server
@@ -16,7 +15,7 @@ from .utilities import BASE_TEST_URL, start_server
 # import commonly used modules and utilities so they can be easily accessed
 # in the interactive session
 from automation.Commands.utils import webdriver_utils as wd_util  # noqa isort:skip
-from automation.utilities import domain_utils as du  # noqa isort:skip
+import domain_utils as du  # noqa isort:skip
 from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 from selenium.common.exceptions import *  # noqa isort:skip
 
@@ -87,7 +86,6 @@ def start_webdriver(with_extension=False):
         A selenium webdriver instance.
     """
     firefox_binary_path = get_firefox_binary_path()
-    geckodriver_executable_path = get_geckodriver_exec_path()
 
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
     server, thread = start_server()
@@ -113,7 +111,6 @@ def start_webdriver(with_extension=False):
         configure_firefox.optimize_prefs(fp)
     driver = webdriver.Firefox(
         firefox_binary=fb, firefox_profile=fp,
-        executable_path=geckodriver_executable_path
     )
     if with_extension:
         # add openwpm extension to profile

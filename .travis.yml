@@ -1,11 +1,5 @@
-sudo: required
-language: python
 os: linux
-dist: xenial
-python:
- - "3.6"
- - "3.7"
- - "3.8"
+dist: bionic
 env:
 # See, https://docs.travis-ci.com/user/speeding-up-the-build/
 # We need a balanced distribution of the tests
@@ -17,19 +11,33 @@ env:
   - TESTS=test_[i-r,t-z]*
 # test_simple_commands.py is slow due to parametrization.
   - TESTS=test_[s]*
+  - TESTS=webextension
 git:
   depth: 3
 before_install:
   - "export DISPLAY=:99.0"
   - "export BOTO_CONFIG=/dev/null" # https://github.com/travis-ci/travis-ci/issues/7940
 install:
-  - echo "y" | ./install.sh
-  - pip3 install --upgrade -r requirements.txt -r requirements-dev.txt
+  - ./scripts/install-miniconda.sh
+  - source "$HOME/miniconda/etc/profile.d/conda.sh"
+  - ./install.sh
+  - conda activate openwpm
 before_script:
-  - pre-commit run --all
+  - if [[ "$TESTS" != "webextension" ]]; then
+      pre-commit run --all;
+    fi
 script:
-  - cd test
-  - python3 -m pytest -s -v --durations=10 $TESTS
+  - if [[ "$TESTS" == "webextension" ]]; then
+      cd automation/Extension/webext-instrumentation;
+      npm test;
+    else
+      cd test;
+      python -m pytest -s -v --durations=10 $TESTS;
+    fi
+after_success:
+  - if [[ "$TESTS" == "webextension" ]]; then
+      npm run cov:check;
+    fi
 
 jobs:
   include:
@@ -44,68 +52,4 @@ jobs:
       install:
       script:
         - docker build -f Dockerfile -t openwpm .
-        - ./.deploy-to-dockerhub.sh
-    - language: node_js
-      python:
-      env:
-        - TESTS="webext-instrumentation-node-8"
-      before_install:
-      - cd automation/Extension/webext-instrumentation
-      before_script:
-      install:
-        - npm install
-      script:
-        - npm test
-      sudo: false
-      node_js: "8"
-      # keep the npm cache to speed up installs
-      cache:
-        directories:
-        - "$HOME/.npm"
-      after_success:
-        - # npx nyc report --reporter=lcov | npx codecov
-        - npm run cov:check
-    # jobs defined in jobs.include does not automatically expand,
-    # so instead of being able to supply an extra entry to "node_js",
-    # we need to duplicate the above entry below with new values
-    # for "node_js"
-    - language: node_js
-      python:
-      env:
-        - TESTS="webext-instrumentation-node-10"
-      before_install:
-      - cd automation/Extension/webext-instrumentation
-      before_script:
-      install:
-        - npm install
-      script:
-        - npm test
-      sudo: false
-      node_js: "10"
-      # keep the npm cache to speed up installs
-      cache:
-        directories:
-        - "$HOME/.npm"
-      after_success:
-        - # npx nyc report --reporter=lcov | npx codecov
-        - npm run cov:check
-    - language: node_js
-      python:
-      env:
-        - TESTS="webext-instrumentation-node-12"
-      before_install:
-      - cd automation/Extension/webext-instrumentation
-      before_script:
-      install:
-        - npm install
-      script:
-        - npm test
-      sudo: false
-      node_js: "12"
-      # keep the npm cache to speed up installs
-      cache:
-        directories:
-        - "$HOME/.npm"
-      after_success:
-        - # npx nyc report --reporter=lcov | npx codecov
-        - npm run cov:check
+        - ./scripts/deploy-to-dockerhub.sh
