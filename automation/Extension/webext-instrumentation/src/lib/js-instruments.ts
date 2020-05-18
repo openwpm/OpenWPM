@@ -1,6 +1,11 @@
 // Intrumentation injection code is based on privacybadgerfirefox
 // https://github.com/EFForg/privacybadgerfirefox/blob/master/data/fingerprinting.js
 
+import {
+  ILogSettings,
+  JSInstrumentRequest,
+} from "../types/js-instrumentation";
+
 declare global {
   interface Object {
     getPropertyDescriptor(subject: any, name: any): PropertyDescriptor;
@@ -11,19 +16,50 @@ declare global {
   }
 }
 
-interface LogSettings {
-  propertiesToInstrument?: string[];
-  nonExistingPropertiesToInstrument?: string[];
-  excludedProperties?: string[];
-  logCallStack?: boolean;
-  logFunctionsAsStrings?: boolean;
-  logFunctionGets?: boolean;
-  preventSets?: boolean;
-  recursive?: boolean;
-  depth?: number;
+// Implements ILogSettings and sets defaults
+export class LogSettings implements ILogSettings {
+    //   propertiesToInstrument : Array
+    //     An array of properties to instrument on this object.
+    //     If array is empty, then all properties are instrumented.
+    //   nonExistingPropertiesToInstrument : Array
+    //     An array of non-existing properties to instrument on this object.
+    //   excludedProperties : Array
+    //     Properties excluded from instrumentation.
+    //   logCallStack : boolean
+    //     Set to true save the call stack info with each property call.
+    //   logFunctionsAsStrings : boolean
+    //     Set to true to save functional arguments as strings during
+    //     argument serialization.
+    //   logFunctionGets: boolean
+    //     ....
+    //   preventSets : boolean
+    //     Set to true to prevent nested objects and functions from being
+    //     overwritten (and thus having their instrumentation removed).
+    //     Other properties (static values) can still be set with this is
+    //     enabled.
+    //   recursive : boolean
+    //     Set to `true` to recursively instrument all object properties of
+    //     the given `object`.
+    //     NOTE:
+    //       (1)`logSettings['propertiesToInstrument']` does not propagate
+    //           to sub-objects.
+    //       (2) Sub-objects of prototypes can not be instrumented
+    //           recursively as these properties can not be accessed
+    //           until an instance of the prototype is created.
+    //   depth : integer
+    //     Recursion limit when instrumenting object recursively.
+  propertiesToInstrument: string[] = [];
+  nonExistingPropertiesToInstrument: string[] = [];
+  excludedProperties: string[] = [];
+  logCallStack: boolean = false;
+  logFunctionsAsStrings: boolean = false;
+  logFunctionGets: boolean = false;
+  preventSets: boolean = false;
+  recursive: boolean = false;
+  depth: number = 5;
 }
 
-export function jsInstruments(event_id, sendMessagesToLogger) {
+export function getInstrumentJS(event_id, sendMessagesToLogger) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -205,7 +241,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     value,
     operation,
     callContext,
-    logSettings,
+    logSettings: LogSettings,
   ) {
     if (inLog) {
       return;
@@ -245,7 +281,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // For functions
-  function logCall(instrumentedFunctionName, args, callContext, logSettings) {
+  function logCall(instrumentedFunctionName, args, callContext, logSettings: LogSettings) {
     if (inLog) {
       return;
     }
@@ -439,131 +475,11 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     return typeof property === "object";
   }
 
-  function instrumentObject(object, objectName, logSettings: LogSettings = {}) {
-    // Use for objects or object prototypes
-    //
-    // Parameters
-    // ----------
-    //   object : Object
-    //     Object to instrument
-    //   objectName : String
-    //     Name of the object to be instrumented (saved to database)
-    //   logSettings : Object
-    //     (optional) object that can be used to specify additional logging
-    //     configurations. See available options below.
-    //
-    // logSettings options (all optional)
-    // -------------------
-    //   propertiesToInstrument : Array
-    //     An array of properties to instrument on this object. Default is
-    //     all properties.
-    //   nonExistingPropertiesToInstrument : Array
-    //     An array of non-existing properties to instrument on this object.
-    //   excludedProperties : Array
-    //     Properties excluded from instrumentation. Default is an empty
-    //     array.
-    //   logCallStack : boolean
-    //     Set to true save the call stack info with each property call.
-    //     Default is `false`.
-    //   logFunctionsAsStrings : boolean
-    //     Set to true to save functional arguments as strings during
-    //     argument serialization. Default is `false`.
-    //   preventSets : boolean
-    //     Set to true to prevent nested objects and functions from being
-    //     overwritten (and thus having their instrumentation removed).
-    //     Other properties (static values) can still be set with this is
-    //     enabled. Default is `false`.
-    //   recursive : boolean
-    //     Set to `true` to recursively instrument all object properties of
-    //     the given `object`. Default is `false`
-    //     NOTE:
-    //       (1)`logSettings['propertiesToInstrument']` does not propagate
-    //           to sub-objects.
-    //       (2) Sub-objects of prototypes can not be instrumented
-    //           recursively as these properties can not be accessed
-    //           until an instance of the prototype is created.
-    //   depth : integer
-    //     Recursion limit when instrumenting object recursively.
-    //     Default is `5`.
-    const properties = logSettings.propertiesToInstrument
-      ? logSettings.propertiesToInstrument
-      : Object.getPropertyNames(object);
-    for (const propertyName of properties) {
-      if (
-        logSettings.excludedProperties &&
-        logSettings.excludedProperties.indexOf(propertyName) > -1
-      ) {
-        continue;
-      }
-      // If `recursive` flag set we want to recursively instrument any
-      // object properties that aren't the prototype object. Only recurse if
-      // depth not set (at which point its set to default) or not at limit.
-      if (
-        !!logSettings.recursive &&
-        propertyName !== "__proto__" &&
-        isObject(object, propertyName) &&
-        (!("depth" in logSettings) || logSettings.depth > 0)
-      ) {
-        // set recursion limit to default if not specified
-        if (!("depth" in logSettings)) {
-          logSettings.depth = 5;
-        }
-        instrumentObject(
-          object[propertyName],
-          objectName + "." + propertyName,
-          {
-            excludedProperties: logSettings.excludedProperties,
-            logCallStack: logSettings.logCallStack,
-            logFunctionsAsStrings: logSettings.logFunctionsAsStrings,
-            preventSets: logSettings.preventSets,
-            recursive: logSettings.recursive,
-            depth: logSettings.depth - 1,
-          },
-        );
-      }
-      try {
-        instrumentObjectProperty(object, objectName, propertyName, logSettings);
-      } catch (error) {
-        if (
-          error instanceof TypeError &&
-          error.message.includes("can't redefine non-configurable property")
-        ) {
-          console.warn(
-            `Cannot instrument non-configurable property: ${objectName}:${propertyName}`,
-          );
-        } else {
-          logErrorToConsole(error, { objectName, propertyName });
-        }
-      }
-    }
-    const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
-    if (nonExistingProperties) {
-      for (const propertyName of nonExistingProperties) {
-        if (
-          logSettings.excludedProperties &&
-          logSettings.excludedProperties.indexOf(propertyName) > -1
-        ) {
-          continue;
-        }
-        try {
-          instrumentObjectProperty(
-            object,
-            objectName,
-            propertyName,
-            logSettings,
-          );
-        } catch (error) {
-          logErrorToConsole(error, { objectName, propertyName });
-        }
-      }
-    }
-  }
-
   // Log calls to a given function
   // This helper function returns a wrapper around `func` which logs calls
   // to `func`. `objectName` and `methodName` are used strictly to identify
   // which object method `func` is coming from in the logs
-  function instrumentFunction(objectName, methodName, func, logSettings) {
+  function instrumentFunction(objectName: string, methodName: string, func: any, logSettings: LogSettings) {
     return function() {
       const callContext = getOriginatingScriptContext(
         !!logSettings.logCallStack,
@@ -579,20 +495,20 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // Log properties of prototypes and objects
-  function instrumentObjectProperty(
-    object,
-    objectName,
-    propertyName,
-    logSettings: LogSettings = {},
-  ) {
-    if (!object) {
-      throw new Error("Invalid object: " + propertyName);
-    }
-    if (!objectName) {
-      throw new Error("Invalid object name: " + propertyName);
-    }
-    if (!propertyName || propertyName === "undefined") {
-      throw new Error("Invalid object property name: " + propertyName);
+  function instrumentObjectProperty(object, objectName: string, propertyName:string, logSettings: LogSettings) {
+    if (
+      !object ||
+      !objectName ||
+      !propertyName ||
+      propertyName === "undefined"
+    ) {
+      throw new Error(
+        `Invalid request to instrumentObjectProperty.
+        Object: ${object}
+        objectName: ${objectName}
+        propertyName: ${propertyName}
+        `
+      );
     }
 
     // Store original descriptor in closure
@@ -787,5 +703,67 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     });
   }
 
-  return { instrumentObject, instrumentObjectProperty };
+  function instrumentObject(object: any, objectName: string, logSettings: LogSettings) {
+    if (logSettings.propertiesToInstrument.length === 0) {
+      logSettings.propertiesToInstrument = Object.getPropertyNames(object);
+    }
+    for (const propertyName of logSettings.propertiesToInstrument) {
+      if (logSettings.excludedProperties.includes(propertyName)) {
+        continue;
+      }
+      // If `recursive` flag set we want to recursively instrument any
+      // object properties that aren't the prototype object.
+      if (
+        logSettings.recursive &&
+        logSettings.depth > 0 &&
+        isObject(object, propertyName) &&
+        propertyName !== "__proto__"
+      ) {
+        let newDepth = logSettings.depth - 1;
+        logSettings.depth = newDepth
+        instrumentObject(
+          object[propertyName],
+          objectName + "." + propertyName,
+          logSettings,
+        );
+      }
+      try {
+        instrumentObjectProperty(object, objectName, propertyName, logSettings);
+      } catch (error) {
+        if (
+          error instanceof TypeError &&
+          error.message.includes("can't redefine non-configurable property")
+        ) {
+          console.warn(
+            `Cannot instrument non-configurable property: ${objectName}:${propertyName}`,
+          );
+        } else {
+          logErrorToConsole(error, { objectName, propertyName });
+        }
+      }
+    }
+    for (const propertyName of logSettings.nonExistingPropertiesToInstrument) {
+      if (logSettings.excludedProperties.includes(propertyName)) {
+        continue;
+      }
+      try {
+        instrumentObjectProperty(
+          object,
+          objectName,
+          propertyName,
+          logSettings,
+        );
+      } catch (error) {
+        logErrorToConsole(error, { objectName, propertyName });
+      }
+    }
+  }
+
+  function instrumentJS(spec: JSInstrumentRequest[]) {
+    spec.forEach(function(item) {
+      instrumentObject(item.object, item.objectName, item.logSettings)
+    })
+  }
+
+  return { instrumentJS };
 }

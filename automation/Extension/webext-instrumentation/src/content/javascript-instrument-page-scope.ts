@@ -3,9 +3,10 @@
 // is exported as a page script as a string
 
 export const pageScript = function({
-  jsInstruments,
-  instrumentedApiFuncs, // A list of functions that accept {instrumentObjectProperty, instrumentObject}
+  getInstrumentJS,
+  instrumentionRequests, // Spec to pass to instrumentJS function
 }) {
+
   // messages the injected script
   function sendMessagesToLogger($event_id, messages) {
     document.dispatchEvent(
@@ -16,21 +17,11 @@ export const pageScript = function({
   }
 
   const event_id = document.currentScript.getAttribute("data-event-id");
-
-  const { instrumentObject, instrumentObjectProperty } = jsInstruments(
+  const instrumentJS = getInstrumentJS(
     event_id,
     sendMessagesToLogger,
   );
-
-  /*
-   * Start Instrumentation
-   */
-  instrumentedApiFuncs.forEach(instrumentedApiFunc =>
-    instrumentedApiFunc({
-      instrumentObjectProperty,
-      instrumentObject,
-    }),
-  );
+  instrumentJS(instrumentionRequests);
 
   /*
    * Log if testing
@@ -39,14 +30,11 @@ export const pageScript = function({
     document.currentScript.getAttribute("data-testing") === "true";
   if (testing) {
     console.log("OpenWPM: Currently testing");
-    (window as any).instrumentObject = instrumentObject;
-    const modules = document.currentScript.getAttribute("data-modules");
-    if (modules) {
-      console.log(
-        "OpenWPM: Content-side javascript instrumentation started",
-        modules,
-        new Date().toISOString(),
-      );
-    }
+    (window as any).instrumentJS = instrumentJS;
+    console.log(
+      "OpenWPM: Content-side javascript instrumentation started with spec:",
+      instrumentionRequests,
+      new Date().toISOString(),
+    );
   }
 };

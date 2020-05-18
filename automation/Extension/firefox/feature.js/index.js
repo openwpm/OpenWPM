@@ -26,6 +26,7 @@ async function main() {
         // APIs
         "Storage",
         {"XMLHttpRequest": ["send"]},
+        {"XMLHttpRequest": ["send"]},
         // Specific instances on window
         {"window.document": ["cookie", "referrer"]},
         {"window": ["name", "localStorage", "sessionStorage"]}

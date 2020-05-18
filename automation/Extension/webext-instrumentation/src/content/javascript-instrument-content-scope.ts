@@ -1,9 +1,34 @@
 import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
-import { jsInstruments } from "../lib/js-instruments";
+import { getInstrumentJS, LogSettings } from "../lib/js-instruments";
 import { api } from "../lib/mdn-browser-compat-data";
 import { pageScript } from "./javascript-instrument-page-scope";
+import { JSInstrumentRequest } from "../types/js-instrumentation";
 
-function getPageScriptAsString(jsModuleRequests: string[]): string {
+function getPageScriptAsString(jsModuleRequests: any[]): string {
+  // The new goal of this function will be to collect together a de-duped
+  // list of JSInstrumentRequests from the input request which may include
+  // short hand.
+
+  /*
+  We accept a list. From the list we need to parse each item.
+  The item may be a string or an object with one key.
+  If the item is a string:
+    - Is it a shortcut e.g. "fingerprinting"
+    - Is it an object (verified by mdn-browser-compat)
+    - If neither, reject
+  If the item is an object:
+    - Must only have one property
+    - The value may be a list or a LogSettings object
+    - If the value is a list, it is transformed into the propertiesToInstrument
+      property of a new LogSettings object.
+
+
+  */
+
+
+  const instrumentationRequests: JSInstrumentRequest[] = [];
+
+  /*
   const instrumentedApiFuncs: string[] = [];
 
   jsModuleRequests.forEach(requestedModule => {
@@ -30,11 +55,12 @@ function getPageScriptAsString(jsModuleRequests: string[]): string {
       }
     }
   });
-
+  */
+  // Build script as string
   const pageScriptString = `
-    ${jsInstruments}
-    const instrumentedApiFuncs = [${instrumentedApiFuncs.join(",\n")}];
-    (${String(pageScript)}({jsInstruments, instrumentedApiFuncs}));
+    ${getInstrumentJS}
+    const instrumentationRequests = [${instrumentationRequests.join(",\n")}];
+    (${String(pageScript)}({getInstrumentJS, instrumentationRequests}));
   `;
   return pageScriptString;
 }
