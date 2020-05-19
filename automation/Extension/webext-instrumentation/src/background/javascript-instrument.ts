@@ -110,7 +110,10 @@ export class JavascriptInstrument {
     });
   }
 
-  public async registerContentScript(testing: boolean, jsInstrumentationRequestsString: string) {
+  public async registerContentScript(
+    testing: boolean,
+    jsInstrumentationRequestsString: string,
+  ) {
     const contentScriptConfig = {
       testing,
       jsInstrumentationRequestsString,

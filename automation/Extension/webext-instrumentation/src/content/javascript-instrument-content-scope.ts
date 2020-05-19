@@ -1,7 +1,9 @@
 import { getInstrumentJS } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
-function getPageScriptAsString(jsInstrumentationRequestsString: string): string {
+function getPageScriptAsString(
+  jsInstrumentationRequestsString: string,
+): string {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
 
@@ -26,10 +28,14 @@ const instrumentationRequests = ${jsInstrumentationRequestsString};
   return pageScriptString;
 }
 
-function insertScript(pageScript: string, event_id: string, testing: boolean = false) {
+function insertScript(
+  pageScriptString: string,
+  event_id: string,
+  testing: boolean = false,
+) {
   const parent = document.documentElement,
     script = document.createElement("script");
-  script.text = pageScript;
+  script.text = pageScriptString;
   script.async = false;
   script.setAttribute("data-event-id", event_id);
   script.setAttribute("data-testing", `${testing}`);
@@ -46,10 +52,10 @@ function emitMsg(type, msg) {
   });
 }
 
-const event_id = Math.random().toString();
+const $event_id = Math.random().toString();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(event_id, function(e: CustomEvent) {
+document.addEventListener($event_id, function(e: CustomEvent) {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
@@ -64,7 +70,7 @@ document.addEventListener(event_id, function(e: CustomEvent) {
 export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
   insertScript(
     getPageScriptAsString(contentScriptConfig.jsInstrumentationRequestsString),
-    event_id,
+    $event_id,
     contentScriptConfig.testing,
   );
 }

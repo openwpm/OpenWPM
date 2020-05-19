@@ -1,13 +1,23 @@
 // Intrumentation injection code is based on privacybadgerfirefox
 // https://github.com/EFForg/privacybadgerfirefox/blob/master/data/fingerprinting.js
 
-import {
-  LogSettings,
-  JSInstrumentRequest,
-} from "../types/js-instrumentation";
-import {
-  JSOperation
-} from "../schema";
+interface LogSettings {
+  propertiesToInstrument: string[];
+  nonExistingPropertiesToInstrument: string[];
+  excludedProperties: string[];
+  logCallStack: boolean;
+  logFunctionsAsStrings: boolean;
+  logFunctionGets: boolean;
+  preventSets: boolean;
+  recursive: boolean;
+  depth: number;
+}
+
+interface JSInstrumentRequest {
+  object: string;
+  instrumentedName: string;
+  logSettings: LogSettings;
+}
 
 declare global {
   interface Object {
@@ -34,6 +44,16 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   // To keep track of the original order of events
   let ordinal = 0;
 
+  // Options for JSOperation
+  const JSOperation = {
+    call: "call",
+    get: "get",
+    get_failed: "get(failed)",
+    get_function: "get(function)",
+    set: "set",
+    set_failed: "set(failed)",
+    set_prevented: "set(prevented)",
+  };
 
   // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
   // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
@@ -65,7 +85,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   };
 
   // debounce - from Underscore v1.6.0
-  function debounce(func, wait, immediate:boolean = false) {
+  function debounce(func, wait, immediate: boolean = false) {
     let timeout, args, context, timestamp, result;
 
     const later = function() {
@@ -99,7 +119,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   }
 
   // Recursively generates a path for an element
-  function getPathToDomElement(element:any, visibilityAttr:boolean = false) {
+  function getPathToDomElement(element: any, visibilityAttr: boolean = false) {
     if (element === document.body) {
       return element.tagName;
     }
@@ -134,7 +154,10 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   }
 
   // Helper for JSONifying objects
-  function serializeObject(object, stringifyFunctions:boolean = false): string {
+  function serializeObject(
+    object,
+    stringifyFunctions: boolean = false,
+  ): string {
     // Handle permissions errors
     try {
       if (object === null) {
@@ -189,7 +212,6 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
     }
   }
 
-
   function updateCounterAndCheckIfOver(scriptUrl, symbol) {
     const key = scriptUrl + "|" + symbol;
     if (key in logCounter && logCounter[key] >= maxLogCount) {
@@ -206,7 +228,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   function logValue(
     instrumentedVariableName: string,
     value: any,
-    operation: JSOperation,
+    operation: string, // from JSOperation object please
     callContext: any,
     logSettings: LogSettings,
   ) {
@@ -248,7 +270,12 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   }
 
   // For functions
-  function logCall(instrumentedFunctionName: string, args: IArguments, callContext: any, logSettings: LogSettings) {
+  function logCall(
+    instrumentedFunctionName: string,
+    args: IArguments,
+    callContext: any,
+    logSettings: LogSettings,
+  ) {
     if (inLog) {
       return;
     }
@@ -266,7 +293,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
     try {
       // Convert special arguments array to a standard array for JSONifying
       const serialArgs: string[] = [];
-      for (let arg of args) {
+      for (const arg of args) {
         serialArgs.push(
           serializeObject(arg, logSettings.logFunctionsAsStrings),
         );
@@ -417,7 +444,12 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   // This helper function returns a wrapper around `func` which logs calls
   // to `func`. `objectName` and `methodName` are used strictly to identify
   // which object method `func` is coming from in the logs
-  function instrumentFunction(objectName: string, methodName: string, func: any, logSettings: LogSettings) {
+  function instrumentFunction(
+    objectName: string,
+    methodName: string,
+    func: any,
+    logSettings: LogSettings,
+  ) {
     return function() {
       const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
@@ -431,7 +463,12 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   }
 
   // Log properties of prototypes and objects
-  function instrumentObjectProperty(object, objectName: string, propertyName:string, logSettings: LogSettings) {
+  function instrumentObjectProperty(
+    object,
+    objectName: string,
+    propertyName: string,
+    logSettings: LogSettings,
+  ) {
     if (
       !object ||
       !objectName ||
@@ -443,7 +480,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
         Object: ${object}
         objectName: ${objectName}
         propertyName: ${propertyName}
-        `
+        `,
       );
     }
 
@@ -488,8 +525,10 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
       get: (function() {
         return function() {
           let origProperty;
-          const callContext = getOriginatingScriptContext(logSettings.logCallStack);
-          let instrumentedVariableName = `${objectName}.${propertyName}`;
+          const callContext = getOriginatingScriptContext(
+            logSettings.logCallStack,
+          );
+          const instrumentedVariableName = `${objectName}.${propertyName}`;
 
           // get original value
           if (!propDesc) {
@@ -502,7 +541,9 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
             // if data property
             origProperty = originalValue;
           } else {
-            console.error( `Property descriptor for ${instrumentedVariableName} doesn't have getter or value?`);
+            console.error(
+              `Property descriptor for ${instrumentedVariableName} doesn't have getter or value?`,
+            );
             logValue(
               instrumentedVariableName,
               "",
@@ -563,14 +604,17 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
       })(),
       set: (function() {
         return function(value) {
-          const callContext = getOriginatingScriptContext(logSettings.logCallStack);
-          let instrumentedVariableName = `${objectName}.${propertyName}`;
+          const callContext = getOriginatingScriptContext(
+            logSettings.logCallStack,
+          );
+          const instrumentedVariableName = `${objectName}.${propertyName}`;
           let returnValue;
 
           // Prevent sets for functions and objects if enabled
           if (
             logSettings.preventSets &&
-            (typeof originalValue === "function" || typeof originalValue === "object")
+            (typeof originalValue === "function" ||
+              typeof originalValue === "object")
           ) {
             logValue(
               instrumentedVariableName,
@@ -598,7 +642,9 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
             returnValue = value;
             inLog = false;
           } else {
-            console.error(`Property descriptor for ${instrumentedVariableName} doesn't have setter or value?`);
+            console.error(
+              `Property descriptor for ${instrumentedVariableName} doesn't have setter or value?`,
+            );
             logValue(
               instrumentedVariableName,
               value,
@@ -621,7 +667,11 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
     });
   }
 
-  function instrumentObject(object: any, instrumentedName: string, logSettings: LogSettings) {
+  function instrumentObject(
+    object: any,
+    instrumentedName: string,
+    logSettings: LogSettings,
+  ) {
     if (logSettings.propertiesToInstrument.length === 0) {
       logSettings.propertiesToInstrument = Object.getPropertyNames(object);
     }
@@ -637,9 +687,9 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
         isObject(object, propertyName) &&
         propertyName !== "__proto__"
       ) {
-        let newInstrumentedName = `${instrumentedName}.${propertyName}`;
-        let newDepth = logSettings.depth - 1;
-        logSettings.depth = newDepth
+        const newInstrumentedName = `${instrumentedName}.${propertyName}`;
+        const newDepth = logSettings.depth - 1;
+        logSettings.depth = newDepth;
         instrumentObject(
           object[propertyName],
           newInstrumentedName,
@@ -647,7 +697,12 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
         );
       }
       try {
-        instrumentObjectProperty(object, instrumentedName, propertyName, logSettings);
+        instrumentObjectProperty(
+          object,
+          instrumentedName,
+          propertyName,
+          logSettings,
+        );
       } catch (error) {
         if (
           error instanceof TypeError &&
@@ -657,7 +712,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
             `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
           );
         } else {
-          logErrorToConsole(error, {instrumentedName, propertyName });
+          logErrorToConsole(error, { instrumentedName, propertyName });
         }
       }
     }
@@ -673,7 +728,7 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
           logSettings,
         );
       } catch (error) {
-        logErrorToConsole(error, {instrumentedName, propertyName });
+        logErrorToConsole(error, { instrumentedName, propertyName });
       }
     }
   }
@@ -704,8 +759,8 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
     // More details about how this function is invoked are in
     // content/javascript-instrument-content-scope.ts
     JSInstrumentRequests.forEach(function(item) {
-      instrumentObject(item.object, item.instrumentedName, item.logSettings)
-    })
+      instrumentObject(item.object, item.instrumentedName, item.logSettings);
+    });
   }
 
   // This whole function getInstrumentJS returns just the function `instrumentJS`.

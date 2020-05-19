@@ -3,7 +3,6 @@
 // is exported as a page script as a string
 
 export const pageScript = function($getInstrumentJS, $instrumentionRequests) {
-
   // messages the injected script
   function sendMessagesToLogger($event_id, messages) {
     document.dispatchEvent(
@@ -25,7 +24,7 @@ export const pageScript = function($getInstrumentJS, $instrumentionRequests) {
       "OpenWPM: Content-side javascript instrumentation started with spec:",
       $instrumentionRequests,
       new Date().toISOString(),
-      "(if <unavailable> check web console.)"
+      "(if spec is '<unavailable>' check web console.)",
     );
   }
 };
