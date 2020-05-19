@@ -19,7 +19,7 @@ declare global {
   }
 }
 
-export function getInstrumentJS(event_id, sendMessagesToLogger) {
+export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -708,5 +708,6 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
     })
   }
 
-  return { instrumentJS };
+  // This whole function getInstrumentJS returns just the function `instrumentJS`.
+  return instrumentJS;
 }

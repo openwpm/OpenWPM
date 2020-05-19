@@ -20,19 +20,38 @@ async function main() {
       navigation_instrument:true,
       cookie_instrument:true,
       js_instrument:true,
-      js_instrument_modules: [
-        // Shortcut
-        //"fingerprinting",
-        // APIs
-        {"XMLHttpRequest": {"badSetting": 1}},
-        {"XMLHttpRequest": {"excludedProperties": ["send"]}},
-        {"Prop1": ["hi"], "Prop2": ["hi2"]},
-        {"XMLHttpRequest": ["send"]},
-        "Storage",
-        // Specific instances on window
-        //{"window.document": ["cookie", "referrer"]},
-        //{"window": ["name", "localStorage", "sessionStorage"]}
-      ],
+      js_instrument_modules: `
+      [
+        {
+          object: window.CanvasRenderingContext2D.prototype,
+          instrumentedName: "CanvasRenderingContext2D",
+          logSettings: {
+            propertiesToInstrument: [],
+            nonExistingPropertiesToInstrument: [],
+            excludedProperties: [],
+            excludedProperties: [
+              "quadraticCurveTo",
+              "lineTo",
+              "transform",
+              "globalAlpha",
+              "moveTo",
+              "drawImage",
+              "setTransform",
+              "clearRect",
+              "closePath",
+              "beginPath",
+              "canvas",
+              "translate",
+            ],
+            logCallStack: false,
+            logFunctionsAsStrings: false,
+            logFunctionGets: false,
+            preventSets: false,
+            recursive: false,
+            depth: 5,
+          }
+        },
+      ]`,
       http_instrument:true,
       callstack_instrument:true,
       save_content:false,
