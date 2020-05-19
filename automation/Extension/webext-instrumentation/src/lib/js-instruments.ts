@@ -674,49 +674,52 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
   ) {
     // Set propertiesToInstrument to null to force no properties to be instrumented.
     // (this is used in testing for example)
-    if (logSettings.propertiesToInstrument !== null) {
-      if (logSettings.propertiesToInstrument.length === 0) {
-        logSettings.propertiesToInstrument = Object.getPropertyNames(object);
+    let propertiesToInstrument: string[];
+    if (logSettings.propertiesToInstrument === null) {
+      propertiesToInstrument = [];
+    } else if (logSettings.propertiesToInstrument.length === 0) {
+      propertiesToInstrument = Object.getPropertyNames(object);
+    } else {
+      propertiesToInstrument = logSettings.propertiesToInstrument;
+    }
+    for (const propertyName of propertiesToInstrument) {
+      if (logSettings.excludedProperties.includes(propertyName)) {
+        continue;
       }
-      for (const propertyName of logSettings.propertiesToInstrument) {
-        if (logSettings.excludedProperties.includes(propertyName)) {
-          continue;
-        }
-        // If `recursive` flag set we want to recursively instrument any
-        // object properties that aren't the prototype object.
+      // If `recursive` flag set we want to recursively instrument any
+      // object properties that aren't the prototype object.
+      if (
+        logSettings.recursive &&
+        logSettings.depth > 0 &&
+        isObject(object, propertyName) &&
+        propertyName !== "__proto__"
+      ) {
+        const newInstrumentedName = `${instrumentedName}.${propertyName}`;
+        const newDepth = logSettings.depth - 1;
+        logSettings.depth = newDepth;
+        instrumentObject(
+          object[propertyName],
+          newInstrumentedName,
+          logSettings,
+        );
+      }
+      try {
+        instrumentObjectProperty(
+          object,
+          instrumentedName,
+          propertyName,
+          logSettings,
+        );
+      } catch (error) {
         if (
-          logSettings.recursive &&
-          logSettings.depth > 0 &&
-          isObject(object, propertyName) &&
-          propertyName !== "__proto__"
+          error instanceof TypeError &&
+          error.message.includes("can't redefine non-configurable property")
         ) {
-          const newInstrumentedName = `${instrumentedName}.${propertyName}`;
-          const newDepth = logSettings.depth - 1;
-          logSettings.depth = newDepth;
-          instrumentObject(
-            object[propertyName],
-            newInstrumentedName,
-            logSettings,
+          console.warn(
+            `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
           );
-        }
-        try {
-          instrumentObjectProperty(
-            object,
-            instrumentedName,
-            propertyName,
-            logSettings,
-          );
-        } catch (error) {
-          if (
-            error instanceof TypeError &&
-            error.message.includes("can't redefine non-configurable property")
-          ) {
-            console.warn(
-              `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
-            );
-          } else {
-            logErrorToConsole(error, { instrumentedName, propertyName });
-          }
+        } else {
+          logErrorToConsole(error, { instrumentedName, propertyName });
         }
       }
     }
