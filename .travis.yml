@@ -32,7 +32,7 @@ script:
       npm test;
     else
       cd test;
-      python -m pytest --cov --cov-report=xml -s -v --durations=10 $TESTS;
+      python -m pytest --cov-report=xml --cov -s -v --durations=10 $TESTS;
       codecov -f coverage.xml;
     fi
 after_success:
