@@ -33,7 +33,7 @@ script:
     else
       cd test;
       python -m pytest --cov --cov-report=xml -s -v --durations=10 $TESTS;
-      codecov -f coverage.xml
+      codecov -f coverage.xml;
     fi
 after_success:
   - if [[ "$TESTS" == "webextension" ]]; then
