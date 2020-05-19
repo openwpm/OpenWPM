@@ -675,10 +675,10 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
     // Set propertiesToInstrument to null to force no properties to be instrumented.
     // (this is used in testing for example)
     if (logSettings.propertiesToInstrument !== null) {
-      if (logSettings.propertiesToInstrument.length === 0) {
-        logSettings.propertiesToInstrument = Object.getPropertyNames(object);
-      }
-      for (const propertyName of logSettings.propertiesToInstrument) {
+      const properties = logSettings.propertiesToInstrument
+        ? logSettings.propertiesToInstrument
+        : Object.getOwnPropertyNames(object);
+      for (const propertyName of properties) {
         if (logSettings.excludedProperties.includes(propertyName)) {
           continue;
         }
