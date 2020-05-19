@@ -69,7 +69,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMTest):
 
     def test_instrument_object(self):
         """ Ensure instrumentObject logs all property gets, sets, and calls """
-        db = self.visit('/js_instrument/%s' % TEST_PAGE, sleep_after=0)
+        db = self.visit('/js_instrument/%s' % TEST_PAGE)
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
