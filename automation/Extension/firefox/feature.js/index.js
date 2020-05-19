@@ -22,14 +22,16 @@ async function main() {
       js_instrument:true,
       js_instrument_modules: [
         // Shortcut
-        "fingerprinting",
+        //"fingerprinting",
         // APIs
+        {"XMLHttpRequest": {"badSetting": 1}},
+        {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+        {"Prop1": ["hi"], "Prop2": ["hi2"]},
+        {"XMLHttpRequest": ["send"]},
         "Storage",
-        {"XMLHttpRequest": ["send"]},
-        {"XMLHttpRequest": ["send"]},
         // Specific instances on window
-        {"window.document": ["cookie", "referrer"]},
-        {"window": ["name", "localStorage", "sessionStorage"]}
+        //{"window.document": ["cookie", "referrer"]},
+        //{"window": ["name", "localStorage", "sessionStorage"]}
       ],
       http_instrument:true,
       callstack_instrument:true,

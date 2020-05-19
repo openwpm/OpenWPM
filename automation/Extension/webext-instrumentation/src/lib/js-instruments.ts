@@ -493,9 +493,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
 
-    // Property descriptor must exist unless we are instrumenting a
-    // non-existing property
-
+    // Property descriptor must exist unless we are instrumenting a nonExisting property
     if (
       !propDesc &&
       !logSettings.nonExistingPropertiesToInstrument.includes(propertyName)
@@ -534,6 +532,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
         return function() {
           let origProperty;
           const callContext = getOriginatingScriptContext(logSettings.logCallStack);
+          let instrumentedVariableName = `${objectName}.${propertyName}`;
 
           // get original value
           if (!propDesc) {
@@ -546,13 +545,9 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             // if data property
             origProperty = originalValue;
           } else {
-            console.error(
-              "Property descriptor for",
-              objectName + "." + propertyName,
-              "doesn't have getter or value?",
-            );
+            console.error( `Property descriptor for ${instrumentedVariableName} doesn't have getter or value?`);
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               "",
               JSOperation.get_failed,
               callContext,
@@ -568,7 +563,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
           if (typeof origProperty === "function") {
             if (logSettings.logFunctionGets) {
               logValue(
-                objectName + "." + propertyName,
+                instrumentedVariableName,
                 origProperty,
                 JSOperation.get_function,
                 callContext,
@@ -599,7 +594,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             return origProperty;
           } else {
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               origProperty,
               JSOperation.get,
               callContext,
@@ -612,6 +607,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
       set: (function() {
         return function(value) {
           const callContext = getOriginatingScriptContext(logSettings.logCallStack);
+          let instrumentedVariableName = `${objectName}.${propertyName}`;
           let returnValue;
 
           // Prevent sets for functions and objects if enabled
@@ -620,7 +616,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             (typeof originalValue === "function" || typeof originalValue === "object")
           ) {
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               value,
               JSOperation.set_prevented,
               callContext,
@@ -645,7 +641,6 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             returnValue = value;
             inLog = false;
           } else {
-            let instrumentedVariableName = `${objectName}.${propertyName}`;
             console.error(`Property descriptor for ${instrumentedVariableName} doesn't have setter or value?`);
             logValue(
               instrumentedVariableName,
@@ -657,7 +652,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
             return value;
           }
           logValue(
-            objectName + "." + propertyName,
+            instrumentedVariableName,
             value,
             JSOperation.set,
             callContext,
@@ -669,7 +664,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
     });
   }
 
-  function instrumentObject(object: any, objectName: string, logSettings: LogSettings) {
+  function instrumentObject(object: any, instrumentedName: string, logSettings: LogSettings) {
     if (logSettings.propertiesToInstrument.length === 0) {
       logSettings.propertiesToInstrument = Object.getPropertyNames(object);
     }
@@ -685,26 +680,27 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
         isObject(object, propertyName) &&
         propertyName !== "__proto__"
       ) {
+        let newInstrumentedName = `${instrumentedName}.${propertyName}`;
         let newDepth = logSettings.depth - 1;
         logSettings.depth = newDepth
         instrumentObject(
           object[propertyName],
-          objectName + "." + propertyName,
+          newInstrumentedName,
           logSettings,
         );
       }
       try {
-        instrumentObjectProperty(object, objectName, propertyName, logSettings);
+        instrumentObjectProperty(object, instrumentedName, propertyName, logSettings);
       } catch (error) {
         if (
           error instanceof TypeError &&
           error.message.includes("can't redefine non-configurable property")
         ) {
           console.warn(
-            `Cannot instrument non-configurable property: ${objectName}:${propertyName}`,
+            `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
           );
         } else {
-          logErrorToConsole(error, { objectName, propertyName });
+          logErrorToConsole(error, {instrumentedName, propertyName });
         }
       }
     }
@@ -715,12 +711,12 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
       try {
         instrumentObjectProperty(
           object,
-          objectName,
+          instrumentedName,
           propertyName,
           logSettings,
         );
       } catch (error) {
-        logErrorToConsole(error, { objectName, propertyName });
+        logErrorToConsole(error, {instrumentedName, propertyName });
       }
     }
   }
@@ -746,7 +742,7 @@ export function getInstrumentJS(event_id, sendMessagesToLogger) {
 
   function instrumentJS(spec: JSInstrumentRequest[]) {
     spec.forEach(function(item) {
-      instrumentObject(item.object, item.objectName, item.logSettings)
+      instrumentObject(item.object, item.instrumentedName, item.logSettings)
     })
   }
 

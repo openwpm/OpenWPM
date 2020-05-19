@@ -12,6 +12,6 @@ export interface ILogSettings {
 
 export interface JSInstrumentRequest {
   object: string,
-  objectName: string,
+  instrumentedName: string,
   logSettings: ILogSettings,
 }

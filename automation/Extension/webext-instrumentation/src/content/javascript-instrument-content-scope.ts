@@ -1,13 +1,37 @@
-import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
+//import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
 import { getInstrumentJS, LogSettings } from "../lib/js-instruments";
 import { api } from "../lib/mdn-browser-compat-data";
 import { pageScript } from "./javascript-instrument-page-scope";
 import { JSInstrumentRequest } from "../types/js-instrumentation";
 
+const presetMap = {
+  'fingerprinting': '../js-instrumentation-presets/fingerprinting.json',
+};
+
+function validateJsModuleRequest(jsModuleRequest: any) {
+  if (typeof jsModuleRequest === 'string') {
+    const isPreset = Object.keys(presetMap).includes(jsModuleRequest);
+    const isAPI = api.includes(jsModuleRequest);
+    if (!isPreset && !isAPI) {
+      throw new Error(`String jsModuleRequest ${jsModuleRequest} is not a preset or a recognized API.`);
+    }
+  } else if (typeof jsModuleRequest === 'object') {
+    const properties = Object.keys(jsModuleRequest);
+    if (properties.length !== 1) {
+      throw new Error(`Object jsModuleRequest must only have one property.`);
+    }
+
+
+  } else {
+    throw new Error(`Invalid jsModuleRequest: ${jsModuleRequest}. Must be string or object.`)
+  }
+  console.debug(`Validation successful for`, jsModuleRequest);
+}
+
 function getPageScriptAsString(jsModuleRequests: any[]): string {
-  // The new goal of this function will be to collect together a de-duped
-  // list of JSInstrumentRequests from the input request which may include
-  // short hand.
+  // The new goal of this function is to collect together a de-duped
+  // list of JSInstrumentRequests from the input request (which allows
+  // shorthand for various things).
 
   /*
   We accept a list. From the list we need to parse each item.
@@ -22,11 +46,31 @@ function getPageScriptAsString(jsModuleRequests: any[]): string {
     - If the value is a list, it is transformed into the propertiesToInstrument
       property of a new LogSettings object.
 
-
+  We must also create the instrumentedName value.
   */
 
 
   const instrumentationRequests: JSInstrumentRequest[] = [];
+
+  if (!Array.isArray(jsModuleRequests)) {
+    throw new Error(`jsModuleRequests, must be an Array. Received: ${jsModuleRequests}`);
+  }
+
+  for (let jsModuleRequest of jsModuleRequests) {
+
+    validateJsModuleRequest(jsModuleRequest);
+
+    console.log(presetMap);
+    let logSettings = new LogSettings();
+    let requestedModule = jsModuleRequest.object;
+    console.log(logSettings);
+    console.log(requestedModule);
+    instrumentationRequests.push({
+      object: requestedModule,
+      instrumentedName: 'name',
+      logSettings: logSettings,
+    });
+  }
 
   /*
   const instrumentedApiFuncs: string[] = [];
