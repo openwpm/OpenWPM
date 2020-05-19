@@ -43,6 +43,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0]['js_instrument'] = True
+        browser_params[0]['display_mode'] = 'native'
         manager_params['testing'] = True
         return manager_params, browser_params
 
@@ -69,7 +70,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMTest):
 
     def test_instrument_object(self):
         """ Ensure instrumentObject logs all property gets, sets, and calls """
-        db = self.visit('/js_instrument/%s' % TEST_PAGE)
+        db = self.visit('/js_instrument/%s' % TEST_PAGE, sleep_after=0)
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
