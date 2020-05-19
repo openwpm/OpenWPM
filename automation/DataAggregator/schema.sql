@@ -219,4 +219,11 @@ CREATE TABLE IF NOT EXISTS callstacks(
   crawl_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   call_stack TEXT
-)
+);
+
+/*
+ # Logging all interrupted visits
+ */
+CREATE TABLE IF NOT EXISTS incomplete_visits (
+   visit_id INTEGER NOT NULL
+);
