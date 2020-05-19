@@ -156,4 +156,4 @@ export class LogSettings implements ILogSettings {
         //{"window": ["name", "localStorage", "sessionStorage"]}
 
 
-"""
+"""  # noqa
