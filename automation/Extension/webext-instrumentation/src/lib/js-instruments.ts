@@ -2,7 +2,7 @@
 // https://github.com/EFForg/privacybadgerfirefox/blob/master/data/fingerprinting.js
 
 interface LogSettings {
-  propertiesToInstrument: string[];
+  propertiesToInstrument: string[] | null;
   nonExistingPropertiesToInstrument: string[];
   excludedProperties: string[];
   logCallStack: boolean;
@@ -672,47 +672,51 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
     instrumentedName: string,
     logSettings: LogSettings,
   ) {
-    if (logSettings.propertiesToInstrument.length === 0) {
-      logSettings.propertiesToInstrument = Object.getPropertyNames(object);
-    }
-    for (const propertyName of logSettings.propertiesToInstrument) {
-      if (logSettings.excludedProperties.includes(propertyName)) {
-        continue;
+    // Set propertiesToInstrument to null to force no properties to be instrumented.
+    // (this is used in testing for example)
+    if (logSettings.propertiesToInstrument !== null) {
+      if (logSettings.propertiesToInstrument.length === 0) {
+        logSettings.propertiesToInstrument = Object.getPropertyNames(object);
       }
-      // If `recursive` flag set we want to recursively instrument any
-      // object properties that aren't the prototype object.
-      if (
-        logSettings.recursive &&
-        logSettings.depth > 0 &&
-        isObject(object, propertyName) &&
-        propertyName !== "__proto__"
-      ) {
-        const newInstrumentedName = `${instrumentedName}.${propertyName}`;
-        const newDepth = logSettings.depth - 1;
-        logSettings.depth = newDepth;
-        instrumentObject(
-          object[propertyName],
-          newInstrumentedName,
-          logSettings,
-        );
-      }
-      try {
-        instrumentObjectProperty(
-          object,
-          instrumentedName,
-          propertyName,
-          logSettings,
-        );
-      } catch (error) {
+      for (const propertyName of logSettings.propertiesToInstrument) {
+        if (logSettings.excludedProperties.includes(propertyName)) {
+          continue;
+        }
+        // If `recursive` flag set we want to recursively instrument any
+        // object properties that aren't the prototype object.
         if (
-          error instanceof TypeError &&
-          error.message.includes("can't redefine non-configurable property")
+          logSettings.recursive &&
+          logSettings.depth > 0 &&
+          isObject(object, propertyName) &&
+          propertyName !== "__proto__"
         ) {
-          console.warn(
-            `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
+          const newInstrumentedName = `${instrumentedName}.${propertyName}`;
+          const newDepth = logSettings.depth - 1;
+          logSettings.depth = newDepth;
+          instrumentObject(
+            object[propertyName],
+            newInstrumentedName,
+            logSettings,
           );
-        } else {
-          logErrorToConsole(error, { instrumentedName, propertyName });
+        }
+        try {
+          instrumentObjectProperty(
+            object,
+            instrumentedName,
+            propertyName,
+            logSettings,
+          );
+        } catch (error) {
+          if (
+            error instanceof TypeError &&
+            error.message.includes("can't redefine non-configurable property")
+          ) {
+            console.warn(
+              `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
+            );
+          } else {
+            logErrorToConsole(error, { instrumentedName, propertyName });
+          }
         }
       }
     }
