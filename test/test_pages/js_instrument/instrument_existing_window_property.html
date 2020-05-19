@@ -63,11 +63,10 @@
 
       // Instrument partially existing object non-recursively
       console.log("Instrumenting window.partiallyExisting!");
-
       window.instrumentJS([
         {
           object: window,
-          instrumentName: "window",
+          instrumentedName: "window",
           logSettings: getLogSettings(
             propertiesToInstrument=[
               "partiallyExisting",
@@ -76,7 +75,7 @@
         },
         {
           object: window.partiallyExisting,
-          instrumentName: "window.partiallyExisting",
+          instrumentedName: "window.partiallyExisting",
           logSettings: getLogSettings(
             propertiesToInstrument=[
               "existingProp",
