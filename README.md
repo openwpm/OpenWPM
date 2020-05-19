@@ -92,7 +92,7 @@ this is achieved with `apt-get install make` on OSX the necessary packages are p
 `xcode-select --install`
 
 On a very sparse operating system additional dependencies may need to be installed. See
-the Dockerfile for more inspiration, or open an issue if you are still having problems.
+the [Dockerfile](Dockerfile) for more inspiration, or open an issue if you are still having problems.
 
 
 Quick Start
