@@ -2,6 +2,7 @@ channels:
     - conda-forge
 dependencies:
     - autopep8
+    - codecov
     - flake8
     - flake8-isort
     - ipython
