@@ -5,6 +5,7 @@
   </head>
   <body>
     <h3>Test page frame for JS Instrument's instrumentObject method</h3>
+    <script type="text/javascript", src="./utils.js"></script>
     <script type="text/javascript">
       function interactWithTestObjects() {
 
@@ -96,7 +97,13 @@
       }
       // Instrument object non-recursively
       console.log("Instrumenting window.frame1Test!");
-      window.instrumentObject(window.frame1Test, "window.frame1Test");
+      window.instrumentJS([
+        {
+          object: window.frame1Test,
+          instrumentedName: "window.frame1Test",
+          logSettings: getLogSettings()
+        }
+      ]);
       interactWithTestObjects();
     </script>
     <iframe src="framed2.html"></iframe>

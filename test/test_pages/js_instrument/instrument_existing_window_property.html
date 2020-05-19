@@ -67,24 +67,20 @@
         {
           object: window,
           instrumentedName: "window",
-          logSettings: getLogSettings(
-            propertiesToInstrument=[
-              "partiallyExisting",
-            ]
-          ),
+          logSettings: getLogSettings({
+            propertiesToInstrument: ["partiallyExisting",]
+          }),
         },
         {
           object: window.partiallyExisting,
           instrumentedName: "window.partiallyExisting",
-          logSettings: getLogSettings(
-            propertiesToInstrument=[
-              "existingProp",
-            ],
-            nonExistingPropertiesToInstrument=[
+          logSettings: getLogSettings({
+            propertiesToInstrument: ["existingProp",],
+            nonExistingPropertiesToInstrument: [
               "nonExistingProp1",
               "nonExistingMethod1",
             ],
-          ),
+          }),
         },
       ]);
 

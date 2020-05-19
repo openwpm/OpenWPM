@@ -15,10 +15,11 @@
   }
   const instrumentObjectAvailable = new Promise(function(resolve) {
     function check() {
-      if (typeof window.instrumentObject !== "undefined") {
+      if (typeof window.instrumentJS !== "undefined") {
         resolve();
       } else {
-        setTimeout(check, 250);
+        console.log('RECHECK');
+        setTimeout(check, 10);
       }
     }
     check();
