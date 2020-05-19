@@ -17,18 +17,11 @@ export const pageScript = function({
   }
 
   const event_id = document.currentScript.getAttribute("data-event-id");
-  const instrumentJS = getInstrumentJS(
-    event_id,
-    sendMessagesToLogger,
-  );
+  const testing = document.currentScript.getAttribute("data-testing");
+  const instrumentJS = getInstrumentJS(event_id, sendMessagesToLogger);
   instrumentJS(instrumentionRequests);
 
-  /*
-   * Log if testing
-   */
-  const testing =
-    document.currentScript.getAttribute("data-testing") === "true";
-  if (testing) {
+  if (testing === "true") {
     console.log("OpenWPM: Currently testing");
     (window as any).instrumentJS = instrumentJS;
     console.log(

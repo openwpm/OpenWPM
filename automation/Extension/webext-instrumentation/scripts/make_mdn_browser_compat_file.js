@@ -13,7 +13,8 @@ Object.keys(bcd.api).forEach(item => {
 
 const output = `
 // This file is generated from mdn-browser-compat-data by running
-// "npm run make-compat"
+// "npm run make-compat" in the Extension/webext-instrumentation
+// directory.
 const api = [
   ${api.join(',\n  ')}
 ];

@@ -1,4 +1,4 @@
-export interface ILogSettings {
+export interface LogSettings {
   propertiesToInstrument: string[];
   nonExistingPropertiesToInstrument: string[];
   excludedProperties: string[];
@@ -13,5 +13,5 @@ export interface ILogSettings {
 export interface JSInstrumentRequest {
   object: string,
   instrumentedName: string,
-  logSettings: ILogSettings,
+  logSettings: LogSettings,
 }
