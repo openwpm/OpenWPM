@@ -1,4 +1,4 @@
-function getLogSettings(requestedLogSettings) {
+function getLogSettings(requestedLogSettings={}) {
     const {
         propertiesToInstrument=[],
         nonExistingPropertiesToInstrument=[],
