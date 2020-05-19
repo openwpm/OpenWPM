@@ -56,7 +56,7 @@
     "version": "Bump package.json version, update CHANGELOG.md, tag release",
     "reset": "Delete all untracked files and reset the repo to the last commit",
     "prepare-release": "One-step: clean, build, test, publish docs, and prep a release",
-    "make-compat": "Script that makes src/lib/mdn-browser-compat-data.ts"
+    "make-compat": "Script that makes XXX TODO: ...../mdn-browser-compat-data.py"
   },
   "engines": {
     "node": ">=8.9"

@@ -26,7 +26,7 @@ export class JavascriptInstrument {
     update.script_loc_eval = escapeString(data.scriptLocEval);
     update.call_stack = escapeString(data.callStack);
     update.symbol = escapeString(data.symbol);
-    update.operation = data.operation;
+    update.operation = escapeString(data.operation);
     update.value = escapeString(data.value);
     update.time_stamp = data.timeStamp;
     update.incognito = boolToInt(sender.tab.incognito);
