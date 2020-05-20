@@ -20,6 +20,7 @@ dependencies:
 - pre-commit=2.4.0
 - psutil=5.7.0
 - pyarrow=0.17.1
+- pytest-cov=2.8.1
 - pytest=5.4.2
 - python=3.8.2
 - pyvirtualdisplay=0.2.5
