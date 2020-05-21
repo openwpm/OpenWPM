@@ -1,16 +1,9 @@
 import { getInstrumentJS } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
-function getPageScriptAsString(
-  jsInstrumentationRequestsString: string,
-): string {
+function getPageScriptAsString(jsInstrumentationRequestsString: string): string {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
-
-  // The string jsInstrumentationRequestsString should be a string of a JS list.
-  // If testing, use this carefully as no validation happens JS side.
-  // You can use the JSInstrumentation.py as a standalone module to validate input.
-  // We do this to help the JS instrumentation code load as fast as possible.
   const pageScriptString = `
 // Start of js-instruments.
 ${getInstrumentJS}
@@ -24,7 +17,6 @@ const instrumentationRequests = ${jsInstrumentationRequestsString};
 (${pageScript}(getInstrumentJS, instrumentationRequests));
 // End.
   `;
-
   return pageScriptString;
 }
 
