@@ -25,17 +25,17 @@
         ]
     }},
     {"window": {
-        "propertiesToInclude": ["name", "localStorage", "sessionStorage"]
+        "propertiesToInstrument": ["name", "localStorage", "sessionStorage"]
     }},
     {"window.document": {
-        "propertiesToInclude": ["cookie", "referrer"],
+        "propertiesToInstrument": ["cookie", "referrer"],
         "logCallStack": true
     }},
     {"window.screen": {
-        "propertiesToInclude": ["pixelDepth", "colorDepth"]
+        "propertiesToInstrument": ["pixelDepth", "colorDepth"]
     }},
     {"window.navigator": {
-        "propertiesToInclude": [
+        "propertiesToInstrument": [
             "appCodeName",
             "appName",
             "appVersion",
