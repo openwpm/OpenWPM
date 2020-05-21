@@ -12,20 +12,18 @@ Object.keys(bcd.api).forEach(item => {
 });
 
 const output = `
-// This file is generated from mdn-browser-compat-data by running
-// "npm run make-compat" in the Extension/webext-instrumentation
-// directory.
-const api = [
+# This file is generated from mdn-browser-compat-data by running
+# "npm run make-compat" in the Extension/webext-instrumentation
+# directory.
+api = [
   ${api.join(',\n  ')}
-];
-export {api};
-`
+]`
 fs.writeFile(
-    'src/lib/mdn-browser-compat-data.ts',
+    '../../js_instrumentation/mdn-browser-compat-data.py',
     output,
     (err) => {
     if(err) {
         return console.log(err);
     }
-    console.log("src/lib/mdn-browser-compat-data.ts regenerated.");
+    console.log("../../js_instrumentation/mdn-browser-compat-data.py regenerated.");
 });

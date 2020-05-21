@@ -1,7 +1,8 @@
 
-// This file is generated from mdn-browser-compat-data by running
-// "npm run make-compat"
-const api = [
+# This file is generated from mdn-browser-compat-data by running
+# "npm run make-compat" in the Extension/webext-instrumentation
+# directory.
+api = [
   "ANGLE_instanced_arrays",
   "AbortController",
   "AbortPaymentEvent",
@@ -923,5 +924,4 @@ const api = [
   "XRWebGLLayer",
   "XRWebGLLayerInit",
   "XSLTProcessor"
-];
-export {api};
+]
