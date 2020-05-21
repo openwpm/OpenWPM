@@ -1,4 +1,5 @@
 {
+    "crawl_id": 0,
     "testing": true,
-    "log_to_console": true
+    "js_instrument": true
 }

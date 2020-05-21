@@ -54,7 +54,5 @@
             "vendorSub",
             "vendor"
         ]
-    }},
-    {"window.navigator.mimeTypes": {"recursive": true}},
-    {"window.navigator.plugins": {"recursive": true}}
+    }}
 ]

@@ -117,17 +117,11 @@ def start_webdriver(
         return driver
 
     fp = webdriver.FirefoxProfile()
-    fo = webdriver.FirefoxOptions()
-    fo.add_argument('-jsconsole')
     if with_extension:
         # TODO: Restore preference for log level in a way that works in Fx 57+
         # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         configure_firefox.optimize_prefs(fp)
-    driver = webdriver.Firefox(
-        firefox_binary=fb,
-        firefox_profile=fp,
-        options=fo
-    )
+    driver = webdriver.Firefox(firefox_binary=fb, firefox_profile=fp)
     if load_browser_params is True:
         # There's probably more we could do here
         # to set more preferences and better emulate
