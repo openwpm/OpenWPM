@@ -1,5 +1,6 @@
 import pytest
 from jsonschema.exceptions import ValidationError
+
 from ..automation import JSInstrumentation as jsi
 
 pytestmark = pytest.mark.pyonly
@@ -10,6 +11,7 @@ def _no_whitespace(x):
 
 # Test function that converts our python
 # objects to our JS string
+
 
 def test_python_to_js_lower_true_false():
     inpy = [{
@@ -97,6 +99,7 @@ def test_validate_bad__log_settings_missing(default_log_settings):
         with pytest.raises(ValidationError):
             jsi.validate(bad_input),
 
+
 def test_validate_bad__log_settings_invalid(default_log_settings):
     log_settings = default_log_settings.copy()
     log_settings['recursive'] = 'yes, please'
@@ -110,6 +113,7 @@ def test_validate_bad__log_settings_invalid(default_log_settings):
     with pytest.raises(ValidationError):
         assert jsi.validate(bad_input)
 
+
 def test_validate_bad__not_a_list(default_log_settings):
     bad_input = {
         'object': 'window',
@@ -119,6 +123,7 @@ def test_validate_bad__not_a_list(default_log_settings):
     with pytest.raises(ValidationError):
         assert jsi.validate(bad_input)
 
+
 def test_validate_bad__missing_object(default_log_settings):
     bad_input = [{
         'instrumentedName': "window",
@@ -127,7 +132,8 @@ def test_validate_bad__missing_object(default_log_settings):
     with pytest.raises(ValidationError):
         assert jsi.validate(bad_input)
 
-def test_validated_bad__missing_instrumentedName():
+
+def test_validated_bad__missing_instrumentedName(default_log_settings):
     bad_input = [{
         'object': 'window',
         'logSettings': default_log_settings
@@ -135,29 +141,57 @@ def test_validated_bad__missing_instrumentedName():
     with pytest.raises(ValidationError):
         assert jsi.validate(bad_input)
 
-def test_deduplication_multiple_duped_properties():
-    assert False
+
+def test_deduplication_multiple_duped_properties(default_log_settings):
+    dupe_input = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': default_log_settings
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': default_log_settings
+        },
+    ]
+    expected_de_dupe_output = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': default_log_settings
+        },
+    ]
+    assert jsi.dedupe(dupe_input) == expected_de_dupe_output
+
 
 def test_deduplication_multiple_duped_properties_different_log_settings():
     assert False
 
+
 def test_api_shortcut_fingerprinting():
     assert False
+
 
 def test_api_whole_module():
     assert False
 
+
 def test_api_whole_module_invalid():
     assert False
+
 
 def test_api_module_specific_properties():
     assert False
 
+
 def test_api_instances_on_window():
     assert False
 
+
 def test_api_properties_on_window_instance():
     assert False
+
 
 def test_assert_passing_partial_log_settings():
     assert False

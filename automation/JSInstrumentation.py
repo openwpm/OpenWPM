@@ -26,15 +26,19 @@
   {"window.document": ["cookie", "referrer"]},
   {"window": ["name", "localStorage", "sessionStorage"]}
 """
-import os
 import json
+import os
+
 import jsonschema
+
 from .js_instrumentation.python_to_js_string import python_to_js_string
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 
+
 def validate(python_list_to_validate):
-    schema_path = os.path.join(curdir, 'js_instrumentation', 'js_instrument_modules.schema')
+    schema_path = os.path.join(
+        curdir, 'js_instrumentation', 'js_instrument_modules.schema')
     schema = json.loads(open(schema_path).read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     return True

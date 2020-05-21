@@ -1,5 +1,5 @@
 import json
-import textwrap
+
 
 def python_to_js_string(py_in):
     """Takes python in and converts it to a string
@@ -13,6 +13,6 @@ def python_to_js_string(py_in):
     out = json.dumps(py_in)
     for o in objects:
         obj_str_before = f'"object": "{o}",'
-        obj_str_after  = f'"object": {o},'
+        obj_str_after = f'"object": {o},'
         out = out.replace(obj_str_before, obj_str_after)
     return out

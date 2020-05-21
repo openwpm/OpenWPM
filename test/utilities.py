@@ -1,10 +1,8 @@
-
 import os
 import socketserver
 import threading
 from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
-from random import choice
 from urllib.parse import parse_qs, urlparse
 
 import boto3
