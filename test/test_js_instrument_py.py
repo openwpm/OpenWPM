@@ -132,7 +132,47 @@ def test_validated_bad__missing_instrumentedName(default_log_settings):
         assert jsi.validate(bad_input)
 
 
-def test_deduplication_multiple_duped_properties(default_log_settings):
+def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties_to_exclude(default_log_settings):
+    log_settings_1 = default_log_settings.copy()
+    log_settings_2 = default_log_settings.copy()
+    log_settings_1['propertiesToInstrument'] = ['name', 'place']
+    log_settings_2['excludedProperties'] = ['name']
+    dupe_input = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_1
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_2
+        },
+    ]
+    merged = jsi.merge_object_requests(dupe_input)
+    with pytest.raises(AssertionError) as error:
+        jsi.validate(dupe_input)
+
+
+def test_merge_diff_instrumented_names(default_log_settings):
+    dupe_input = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window1',
+            'logSettings': default_log_settings
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window2',
+            'logSettings': default_log_settings
+        },
+    ]
+    with pytest.raises(RuntimeError) as error:
+        jsi.merge_object_requests(dupe_input)
+    assert 'Mismatching instrumentedNames' in str(error.value)
+
+
+def test_merge_multiple_duped_properties(default_log_settings):
     dupe_input = [
         {
             'object': 'window',
@@ -152,11 +192,29 @@ def test_deduplication_multiple_duped_properties(default_log_settings):
             'logSettings': default_log_settings
         },
     ]
-    assert jsi.dedupe(dupe_input) == expected_de_dupe_output
+    assert jsi.merge_object_requests(dupe_input) == expected_de_dupe_output
 
 
-def test_deduplication_multiple_duped_properties_different_log_settings():
-    assert False
+def test_merge_multiple_duped_properties_different_log_settings(default_log_settings):
+    log_settings_1 = default_log_settings.copy()
+    log_settings_2 = default_log_settings.copy()
+    log_settings_1['depth'] = 3
+    log_settings_2['depth'] = 4
+    dupe_input = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_1
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_2
+        },
+    ]
+    with pytest.raises(RuntimeError) as error:
+        jsi.merge_object_requests(dupe_input)
+    assert 'Mismatching logSettings for object' in str(error.value)
 
 
 def test_api_shortcut_fingerprinting():
