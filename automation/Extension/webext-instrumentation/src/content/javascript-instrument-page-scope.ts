@@ -15,10 +15,16 @@ export const pageScript = function($getInstrumentJS, $instrumentionRequests) {
   const event_id = document.currentScript.getAttribute("data-event-id");
   const testing = document.currentScript.getAttribute("data-testing");
   const instrumentJS = $getInstrumentJS(event_id, sendMessagesToLogger);
-  instrumentJS($instrumentionRequests);
-
+  let t0: number;
   if (testing === "true") {
     console.log("OpenWPM: Currently testing");
+    t0 = performance.now();
+    console.log("Begin loading JS instrumentation.");
+  }
+  instrumentJS($instrumentionRequests);
+  if (testing === "true") {
+    const t1 = performance.now();
+    console.log(`Call to instrumentJS took ${t1 - t0} milliseconds.`);
     (window as any).instrumentJS = instrumentJS;
     console.log(
       "OpenWPM: Content-side javascript instrumentation started with spec:",
