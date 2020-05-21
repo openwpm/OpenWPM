@@ -84,7 +84,8 @@
           "preventSets",
           "recursive",
           "depth"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     "required": [
