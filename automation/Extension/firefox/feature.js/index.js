@@ -43,7 +43,6 @@ async function main() {
       callstack_instrument:true,
       save_content:false,
       testing:true,
-      log_to_console:true,
       crawl_id:0
     };
     console.log("WARNING: config not found. Assuming this is a test run of",
@@ -52,8 +51,7 @@ async function main() {
 
   await loggingDB.open(config['aggregator_address'],
                        config['logger_address'],
-                       config['crawl_id'],
-                       config['log_to_console']);
+                       config['crawl_id']);
 
   if (config["navigation_instrument"]) {
     loggingDB.logDebug("Navigation instrumentation enabled");
