@@ -695,7 +695,7 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
         propertyName !== "__proto__"
       ) {
         const newInstrumentedName = `${instrumentedName}.${propertyName}`;
-        const newLogSettings = {...logSettings};
+        const newLogSettings = { ...logSettings };
         newLogSettings.depth = logSettings.depth - 1;
         instrumentObject(
           object[propertyName],
@@ -704,7 +704,12 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
         );
       }
       try {
-        instrumentObjectProperty(object, instrumentedName, propertyName, logSettings);
+        instrumentObjectProperty(
+          object,
+          instrumentedName,
+          propertyName,
+          logSettings,
+        );
       } catch (error) {
         if (
           error instanceof TypeError &&

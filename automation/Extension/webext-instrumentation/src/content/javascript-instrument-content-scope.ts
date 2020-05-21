@@ -1,7 +1,9 @@
 import { getInstrumentJS } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 
-function getPageScriptAsString(jsInstrumentationRequestsString: string): string {
+function getPageScriptAsString(
+  jsInstrumentationRequestsString: string,
+): string {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
   const pageScriptString = `
