@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
+export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -690,26 +690,21 @@ export function getInstrumentJS(event_id: number, sendMessagesToLogger) {
       // object properties that aren't the prototype object.
       if (
         logSettings.recursive &&
-        logSettings.depth > 0 &&
+        (!("depth" in logSettings) || logSettings.depth > 0) &&
         isObject(object, propertyName) &&
         propertyName !== "__proto__"
       ) {
         const newInstrumentedName = `${instrumentedName}.${propertyName}`;
-        const newDepth = logSettings.depth - 1;
-        logSettings.depth = newDepth;
+        const newLogSettings = {...logSettings};
+        newLogSettings.depth = logSettings.depth - 1;
         instrumentObject(
           object[propertyName],
           newInstrumentedName,
-          logSettings,
+          newLogSettings,
         );
       }
       try {
-        instrumentObjectProperty(
-          object,
-          instrumentedName,
-          propertyName,
-          logSettings,
-        );
+        instrumentObjectProperty(object, instrumentedName, propertyName, logSettings);
       } catch (error) {
         if (
           error instanceof TypeError &&
