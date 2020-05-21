@@ -1,9 +1,22 @@
 import json
 import os
-
 import jsonschema
+from .js_instrumentation.mdn_browser_compat_data import api as mdn
+
 
 curdir = os.path.dirname(os.path.realpath(__file__))
+schema_path = os.path.join(
+    curdir, 'js_instrumentation', 'js_instrument_modules.schema'
+)
+
+list_log_settings = [
+    'propertiesToInstrument',
+    'nonExistingPropertiesToInstrument',
+    'excludedProperties'
+]
+shortcut_specs = {
+    'fingerprinting': os.path.join(curdir, 'js_instrumentation', 'fingerprinting.json')
+}
 
 
 def get_default_log_settings():
@@ -18,13 +31,6 @@ def get_default_log_settings():
         'recursive': False,
         'depth': 5,
     }
-
-
-list_log_settings = [
-    'propertiesToInstrument',
-    'nonExistingPropertiesToInstrument',
-    'excludedProperties'
-]
 
 
 def python_to_js_string(py_in):
@@ -45,9 +51,6 @@ def python_to_js_string(py_in):
 
 
 def validate(python_list_to_validate):
-    schema_path = os.path.join(
-        curdir, 'js_instrumentation', 'js_instrument_modules.schema'
-    )
     schema = json.loads(open(schema_path).read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
@@ -101,8 +104,17 @@ def merge_object_requests(python_list):
     return merged_list
 
 
-def get_instrumented_name(object):
-    pass
+def _handle_obj_string(obj_string):
+    if obj_string in mdn:
+        obj = f'window.{obj_string}.prototype'
+        instrumentedName = obj_string
+    elif obj_string.startswith('window'):
+        obj = obj_string
+        instrumentedName = obj_string
+    else:
+        raise RuntimeError(
+            'Requested API not listed in MDN Browser Compat Data')
+    return obj, instrumentedName
 
 
 def build_object_from_request(request):
@@ -121,7 +133,30 @@ def build_object_from_request(request):
         propertiesToInstrument property of a new LogSettings object.
     We must also create the instrumentedName value.
     """
-    return {}
+    obj = None
+    instrumentedName = None
+    logSettings = get_default_log_settings()
+    if isinstance(request, str):
+        obj, instrumentedName = _handle_obj_string(request)
+    elif isinstance(request, dict):
+        assert len(request.keys()) == 1
+        req = list(request.keys())[0]
+        props = request[req]
+        obj, instrumentedName = _handle_obj_string(req)
+        if isinstance(props, list):
+            logSettings['propertiesToInstrument'] = props
+        elif isinstance(props, dict):
+            for k, v in props.items():
+                logSettings[k] = v
+        else:
+            raise RuntimeError('Invalid settings for object')
+    else:
+        raise RuntimeError('Invalid input')
+    return {
+        'object': obj,
+        'instrumentedName': instrumentedName,
+        'logSettings': logSettings
+    }
 
 
 def convert_browser_params_to_js_string(js_instrument_modules):
@@ -141,9 +176,14 @@ def convert_browser_params_to_js_string(js_instrument_modules):
     {"window": ["name", "localStorage", "sessionStorage"]}
     """
     assert isinstance(js_instrument_modules, list)
-    requests = [
-        build_object_from_request(request) for request in js_instrument_modules
-    ]
+    requests = []
+    for request in js_instrument_modules:
+        if request in shortcut_specs:
+            shortcut_spec = json.loads(open(shortcut_specs[request]).read())
+            for sub_request in shortcut_spec:
+                requests.append(build_object_from_request(sub_request))
+        else:
+            requests.append(build_object_from_request(request))
     requests = merge_object_requests(requests)
     validate(requests)
     return python_to_js_string(requests)

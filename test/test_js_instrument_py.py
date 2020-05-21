@@ -218,31 +218,89 @@ def test_merge_multiple_duped_properties_different_log_settings(default_log_sett
 
 
 def test_api_whole_module(default_log_settings):
-    shortcut_input = ["XMLHttpRequest"]
-    expected_output = [{
-
-    }]
+    shortcut_input = "XMLHttpRequest"
+    expected_output = {
+        'object': 'window.XMLHttpRequest.prototype',
+        'instrumentedName': 'XMLHttpRequest',
+        'logSettings': default_log_settings,
+    }
+    actual_output = jsi.build_object_from_request(shortcut_input)
+    assert actual_output == expected_output
 
 
 def test_api_whole_module_invalid():
-    assert False
+    shortcut_input = "xxxxxxx"
+    with pytest.raises(RuntimeError) as error:
+        jsi.build_object_from_request(shortcut_input)
 
 
-def test_api_module_specific_properties():
-    assert False
+def test_api_two_keys_in_shortcut():
+    shortcut_input = {'k1': [], 'k2': []}
+    with pytest.raises(AssertionError) as error:
+        jsi.build_object_from_request(shortcut_input)
 
 
-def test_api_instances_on_window():
-    assert False
+def test_api_instances_on_window(default_log_settings):
+    shortcut_input = "window.navigator"
+    expected_output = {
+        'object': 'window.navigator',
+        'instrumentedName': 'window.navigator',
+        'logSettings': default_log_settings,
+    }
+    actual_output = jsi.build_object_from_request(shortcut_input)
+    assert actual_output == expected_output
 
 
-def test_api_properties_on_window_instance():
-    assert False
+def test_api_instances_on_window_with_properties(default_log_settings):
+    log_settings = default_log_settings.copy()
+    log_settings['propertiesToInstrument'] = ['name', 'localStorage']
+    shortcut_input = {"window": ["name", "localStorage"]}
+    expected_output = {
+        'object': 'window',
+        'instrumentedName': 'window',
+        'logSettings': log_settings,
+    }
+    actual_output = jsi.build_object_from_request(shortcut_input)
+    assert actual_output == expected_output
 
 
-def test_assert_passing_partial_log_settings():
-    assert False
+def test_api_module_specific_properties(default_log_settings):
+    log_settings = default_log_settings.copy()
+    log_settings['propertiesToInstrument'] = ['send']
+    shortcut_input = {"XMLHttpRequest": ['send']}
+    expected_output = {
+        'object': 'window.XMLHttpRequest.prototype',
+        'instrumentedName': 'XMLHttpRequest',
+        'logSettings': log_settings,
+    }
+    actual_output = jsi.build_object_from_request(shortcut_input)
+    assert actual_output == expected_output
+
+
+def test_api_passing_partial_log_settings(default_log_settings):
+    log_settings = default_log_settings.copy()
+    log_settings['excludedProperties'] = ['send']
+    log_settings['recursive'] = True
+    log_settings['depth'] = 2
+    shortcut_input = {"XMLHttpRequest": {
+        'excludedProperties': ['send'],
+        'recursive': True,
+        'depth': 2
+    }
+    }
+    expected_output = {
+        'object': 'window.XMLHttpRequest.prototype',
+        'instrumentedName': 'XMLHttpRequest',
+        'logSettings': log_settings,
+    }
+    actual_output = jsi.build_object_from_request(shortcut_input)
+    assert actual_output == expected_output
 
 
 def test_api_shortcut_fingerprinting():
-    assert False
+    # This is a very crude test, there are other tests to
+    # check fingeprinting instrumentation in more detail
+    shortcut_input = ['fingerprinting']
+    output = jsi.convert_browser_params_to_js_string(shortcut_input)
+    assert 'window.document' in output
+    assert '["name", "localStorage", "sessionStorage"]' in output
