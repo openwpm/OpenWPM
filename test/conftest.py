@@ -14,6 +14,11 @@ EXTENSION_DIR = os.path.join(
     'Extension',
     'firefox')
 
+def create_xpi():
+    # Creates a new xpi using npm run build.
+    print("Building new xpi")
+    subprocess.check_call(["npm", "run", "build"], cwd=EXTENSION_DIR)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def prepare_test_setup(request):
@@ -22,9 +27,7 @@ def prepare_test_setup(request):
     if 'pyonly' in request.config.invocation_params.args:
         return
 
-    # Creates a new xpi using npm run build.
-    print("Building new xpi")
-    subprocess.check_call(["npm", "run", "build"], cwd=EXTENSION_DIR)
+    create_xpi()
 
     print("Starting local_http_server")
     server, server_thread = utilities.start_server()
