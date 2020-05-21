@@ -59,9 +59,9 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
         ("window.partiallyExisting", "get", "{\"existingProp\":\"blah1\"}"),
         ("window.partiallyExisting.nonExistingProp1", "get", "blah1"),
         ("window.partiallyExisting", "get",
-        "{\"existingProp\":\"blah1\"}"),  # Note 1
+         "{\"existingProp\":\"blah1\"}"),  # Note 1
         ("window.partiallyExisting.nonExistingMethod1",
-        "get", "undefined"),  # Note 2
+         "get", "undefined"),  # Note 2
     }
 
     # Note 1: nonExistingProp1 is not enumerable even after being set
@@ -87,7 +87,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
         )
 
 
-class TestJSInstrumentExistingWindowPropertyByPython(TestJSInstrumentExistingWindowProperty):
+class TestJSInstrumentExistingWindowPropertyByPython(TestJSInstrumentExistingWindowProperty):  # noqa
     # This test is a repeat of above test, but as an integration test
     # to test correct setting of instrumentaiton via browser params.
 
@@ -133,6 +133,7 @@ class TestJSInstrumentExistingWindowPropertyByPython(TestJSInstrumentExistingWin
         """
         return manager_params, browser_params
 
+
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
 
     GETS_AND_SETS = {
@@ -142,19 +143,19 @@ class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
         ("window.MockClass.nonExistingProp1", "get", "undefined"),
         ("window.alreadyInstantiatedMockClassInstance.nonExistingProp1",
-        "get", "undefined"),
+         "get", "undefined"),
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
         ("window.MockClass.nonExistingProp1", "set", "blah1"),
         ("window.alreadyInstantiatedMockClassInstance.nonExistingProp1",
-        "set", "blah1"),
+         "set", "blah1"),
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
         ("window.MockClass.nonExistingProp1", "get", "blah1"),
         ("window.alreadyInstantiatedMockClassInstance.nonExistingProp1",
-        "get", "blah1"),
+         "get", "blah1"),
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
         ("window.MockClass.nonExistingMethod1", "get", "undefined"),  # Note 1
         ("window.alreadyInstantiatedMockClassInstance.nonExistingMethod1",
-        "get", "undefined"),  # Note 1
+         "get", "undefined"),  # Note 1
         ("window.newMockClassInstance", "get", "{}"),
         ("window.newMockClassInstance", "get", "{}"),
         ("window.newMockClassInstance", "get", "{}"),
@@ -214,7 +215,7 @@ class TestJSInstrument(OpenWPMJSTest):
         ('method1', 'get', 'now static'),
         ('prop1', 'set', 'FUNCTION'),
         ('nestedObj', 'get',
-        '{"prop1":"default1","prop2":"default2","method1":"FUNCTION"}')
+         '{"prop1":"default1","prop2":"default2","method1":"FUNCTION"}')
     }
 
     METHOD_CALLS = {
