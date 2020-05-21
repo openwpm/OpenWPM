@@ -1,9 +1,6 @@
-
-import re
-
 from ..automation.utilities import db_utils
 from . import utilities as util
-from .openwpmtest import OpenWPMTest
+from .openwpm_jstest import OpenWPMJSTest
 
 GETS_AND_SETS = {
     ("prop1", "get", "prop1"),
@@ -77,34 +74,7 @@ FRAME1_URL = u"%s/js_instrument/framed1.html" % util.BASE_TEST_URL
 FRAME2_URL = u"%s/js_instrument/framed2.html" % util.BASE_TEST_URL
 
 
-class TestJSInstrument(OpenWPMTest):
-
-    def get_config(self, data_dir=""):
-        manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]['js_instrument'] = True
-        manager_params['testing'] = True
-        return manager_params, browser_params
-
-    def _check_calls(self, rows, symbol_prefix, doc_url, top_url):
-        """Helper to check method calls and accesses in each frame"""
-        observed_gets_and_sets = set()
-        observed_calls = set()
-        for row in rows:
-            if not row['symbol'].startswith(symbol_prefix):
-                continue
-            symbol = re.sub(symbol_prefix, '', row['symbol'])
-            assert row['document_url'] == doc_url
-            assert row['top_level_url'] == top_url
-            if row['operation'] == 'get' or row['operation'] == 'set':
-                observed_gets_and_sets.add(
-                    (symbol, row['operation'], row['value'])
-                )
-            else:
-                observed_calls.add(
-                    (symbol, row['operation'], row['arguments'])
-                )
-        assert observed_calls == METHOD_CALLS
-        assert observed_gets_and_sets == GETS_AND_SETS
+class TestJSInstrument(OpenWPMJSTest):
 
     def test_instrument_object(self):
         """ Ensure instrumentObject logs all property gets, sets, and calls """
@@ -112,9 +82,30 @@ class TestJSInstrument(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db, all_columns=True)
 
         # Check calls of non-recursive instrumentation
-        self._check_calls(rows, 'window.test.', TOP_URL, TOP_URL)
-        self._check_calls(rows, 'window.frame1Test.', FRAME1_URL, TOP_URL)
-        self._check_calls(rows, 'window.frame2Test.', FRAME2_URL, TOP_URL)
+        self._check_calls(
+            rows=rows,
+            symbol_prefix='window.test.',
+            doc_url=TOP_URL,
+            top_url=TOP_URL,
+            expected_method_calls=METHOD_CALLS,
+            expected_gets_and_sets=GETS_AND_SETS,
+        )
+        self._check_calls(
+            rows=rows,
+            symbol_prefix='window.frame1Test.',
+            doc_url=FRAME1_URL,
+            top_url=TOP_URL,
+            expected_method_calls=METHOD_CALLS,
+            expected_gets_and_sets=GETS_AND_SETS,
+        )
+        self._check_calls(
+            rows=rows,
+            symbol_prefix='window.frame2Test.',
+            doc_url=FRAME2_URL,
+            top_url=TOP_URL,
+            expected_method_calls=METHOD_CALLS,
+            expected_gets_and_sets=GETS_AND_SETS,
+        )
 
         # Check calls of recursive instrumentation
         observed_gets_and_sets = set()
