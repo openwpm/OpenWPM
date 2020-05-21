@@ -1,3 +1,4 @@
+from ..automation.utilities import db_utils
 from . import utilities as util
 from .openwpm_jstest import OpenWPMJSTest
 
@@ -85,6 +86,52 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
             expected_gets_and_sets=self.GETS_AND_SETS,
         )
 
+
+class TestJSInstrumentExistingWindowPropertyByPython(TestJSInstrumentExistingWindowProperty):
+    # This test is a repeat of above test, but as an integration test
+    # to test correct setting of instrumentaiton via browser params.
+
+    def get_config(self, data_dir=""):
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0]['js_insrument_modules'] = """
+        [
+            {
+                object: window,
+                instrumentedName: "window",
+                logSettings: {
+                    propertiesToInstrument: ["partiallyExisting",]
+                    nonExistingPropertiesToInstrument: [],
+                    excludedProperties: [],
+                    logCallStack: false,
+                    logFunctionsAsStrings: false,
+                    logFunctionGets: false,
+                    preventSets: false,
+                    recursive: false,
+                    depth: 5,
+                },
+            },
+            {
+                object: window.partiallyExisting,
+                instrumentedName: "window.partiallyExisting",
+                logSettings: {
+                    propertiesToInstrument: ["existingProp",],
+                    nonExistingPropertiesToInstrument: [
+                        "nonExistingProp1",
+                        "nonExistingMethod1",
+                    ],
+                    nonExistingPropertiesToInstrument: [],
+                    excludedProperties: [],
+                    logCallStack: false,
+                    logFunctionsAsStrings: false,
+                    logFunctionGets: false,
+                    preventSets: false,
+                    recursive: false,
+                    depth: 5,
+                },
+            },
+        ]
+        """
+        return manager_params, browser_params
 
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
 
@@ -223,8 +270,6 @@ class TestJSInstrument(OpenWPMJSTest):
     def test_instrument_object(self):
         """ Ensure instrumentObject logs all property gets, sets, and calls """
         db = self.visit('/js_instrument/instrument_object.html')
-
-        # Check calls of non-recursive instrumentation
         self._check_calls(
             db=db,
             symbol_prefix='window.test.',
@@ -253,6 +298,7 @@ class TestJSInstrument(OpenWPMJSTest):
         # Check calls of recursive instrumentation
         observed_gets_and_sets = set()
         observed_calls = set()
+        rows = db_utils.get_javascript_entries(db, all_columns=True)
         for row in rows:
             if not row['symbol'].startswith('window.test2.nestedObj'):
                 continue

@@ -13,7 +13,7 @@
     container.appendChild(canvas);
     return canvas;
   }
-  const instrumentObjectAvailable = new Promise(function(resolve) {
+  const instrumentJSAvailable = new Promise(function(resolve) {
     function check() {
       if (typeof window.instrumentJS !== "undefined") {
         resolve();
@@ -24,7 +24,7 @@
     }
     check();
   });
-  instrumentObjectAvailable.then(function () {
+  instrumentJSAvailable.then(function () {
     var originalCanvas = createCanvas('canvas1');
     var originalContext = originalCanvas.getContext("2d");
     var originalLength = originalContext.measureText('test_text');

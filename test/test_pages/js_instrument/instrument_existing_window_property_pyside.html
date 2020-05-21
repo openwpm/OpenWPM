@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument's instrumentJS method - specifically instrumenting existing window property with partially existing attributes</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrument's instrumentJS method - specifically instrumenting existing window property with partially existing attributes</h3>
+    <p> This page defines several types of objects and tests the js
+    instrumentation by setting python side method. <br/>
+    </p>
+    <script type="text/javascript", src="./utils.js"></script>
+    <script type="text/javascript", src="./instrument_existing_window_property_interact.js"></script>
+    <script type="text/javascript">
+      // Build partiallyExisting object
+      window.partiallyExisting = {
+        "existingProp": "foo",
+      };
+      interactWithTestObjects();
+    </script>
+  </body>
+</html>
