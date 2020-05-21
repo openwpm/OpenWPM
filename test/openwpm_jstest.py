@@ -1,4 +1,5 @@
 import re
+from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 class OpenWPMJSTest(OpenWPMTest):
@@ -9,8 +10,9 @@ class OpenWPMJSTest(OpenWPMTest):
         manager_params['testing'] = True
         return manager_params, browser_params
 
-    def _check_calls(self, rows, symbol_prefix, doc_url, top_url, expected_method_calls, expected_gets_and_sets):
+    def _check_calls(self, db, symbol_prefix, doc_url, top_url, expected_method_calls, expected_gets_and_sets):
         """Helper to check method calls and accesses in each frame"""
+        rows = db_utils.get_javascript_entries(db, all_columns=True)
         observed_gets_and_sets = set()
         observed_calls = set()
         for row in rows:
