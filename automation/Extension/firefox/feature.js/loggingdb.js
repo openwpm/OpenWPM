@@ -43,9 +43,9 @@ let listeningSocketCallback =  async (data) => {
     }
 
 }
-export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
-    if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
-        console.log("Debugging, everything will output to console");
+export let open = async function(aggregatorAddress, logAddress, curr_crawlID, logToConsole=false) {
+    if (logToConsole === true) {
+        console.log("Logger in debug mode, everything will output to console");
         debugging = true;
         return;
     }

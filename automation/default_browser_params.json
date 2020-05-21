@@ -8,6 +8,9 @@
     "save_content": false,
     "callstack_instrument": false,
 
+    "testing": false,
+    "log_to_console": false,
+
     "random_attributes": false,
     "bot_mitigation": false,
     "profile_tar": null,
