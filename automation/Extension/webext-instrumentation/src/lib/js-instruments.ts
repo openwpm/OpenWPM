@@ -690,7 +690,7 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
       // object properties that aren't the prototype object.
       if (
         logSettings.recursive &&
-        (!("depth" in logSettings) || logSettings.depth > 0) &&
+        logSettings.depth > 0 &&
         isObject(object, propertyName) &&
         propertyName !== "__proto__"
       ) {
