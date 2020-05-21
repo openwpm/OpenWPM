@@ -303,4 +303,4 @@ def test_api_shortcut_fingerprinting():
     shortcut_input = ['fingerprinting']
     output = jsi.convert_browser_params_to_js_string(shortcut_input)
     assert 'window.document' in output
-    assert '["name", "localStorage", "sessionStorage"]' in output
+    assert 'window.AudioContext.prototype' in output
