@@ -1,5 +1,10 @@
 {
     "crawl_id": 0,
     "testing": true,
-    "js_instrument": true
+    "js_instrument": true,
+    "js_instrument_modules": [
+        {
+            "window": {"recursive": true}
+        }
+    ]
 }
