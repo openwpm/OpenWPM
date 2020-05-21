@@ -586,8 +586,8 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
             return instrumentedFunctionWrapper;
           } else if (
             typeof origProperty === "object" &&
-            !!logSettings.recursive &&
-            (!("depth" in logSettings) || logSettings.depth > 0)
+            logSettings.recursive &&
+            logSettings.depth > 0
           ) {
             return origProperty;
           } else {
