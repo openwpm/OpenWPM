@@ -145,7 +145,7 @@ def start_webdriver(
     if with_extension:
         # add openwpm extension to profile
         create_xpi()
-        ext_xpi = join(EXT_PATH, 'openwpm.xpi')
+        ext_xpi = join(EXT_PATH, 'dist', 'openwpm-1.0.zip')
         driver.install_addon(ext_xpi, temporary=True)
 
     return register_cleanup(driver)
