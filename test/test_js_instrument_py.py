@@ -59,17 +59,7 @@ def test_python_to_js_no_quote_object_two_matching_objects():
 # Test our validation
 @pytest.fixture
 def default_log_settings():
-    return {
-        'propertiesToInstrument': [],
-        'nonExistingPropertiesToInstrument': [],
-        'excludedProperties': [],
-        'logCallStack': False,
-        'logFunctionsAsStrings': False,
-        'logFunctionGets': False,
-        'preventSets': False,
-        'recursive': False,
-        'depth': 5,
-    }
+    return jsi.get_default_log_settings()
 
 
 def test_validate_good(default_log_settings):

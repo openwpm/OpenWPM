@@ -93,44 +93,20 @@ class TestJSInstrumentExistingWindowPropertyByPython(TestJSInstrumentExistingWin
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = super().get_config(data_dir)
-        browser_params[0]['js_insrument_modules'] = """
-        [
+        browser_params[0]['js_insrument_modules'] = [
+            {"window": ["partiallyExisting", ]},
             {
-                object: window,
-                instrumentedName: "window",
-                logSettings: {
-                    propertiesToInstrument: ["partiallyExisting",]
-                    nonExistingPropertiesToInstrument: [],
-                    excludedProperties: [],
-                    logCallStack: false,
-                    logFunctionsAsStrings: false,
-                    logFunctionGets: false,
-                    preventSets: false,
-                    recursive: false,
-                    depth: 5,
-                },
-            },
-            {
-                object: window.partiallyExisting,
-                instrumentedName: "window.partiallyExisting",
-                logSettings: {
-                    propertiesToInstrument: ["existingProp",],
-                    nonExistingPropertiesToInstrument: [
+                "object": "window.partiallyExisting",
+                "instrumentedName": "window.partiallyExisting",
+                "logSettings": {
+                    "propertiesToInstrument": ["existingProp", ],
+                    "nonExistingPropertiesToInstrument": [
                         "nonExistingProp1",
                         "nonExistingMethod1",
                     ],
-                    nonExistingPropertiesToInstrument: [],
-                    excludedProperties: [],
-                    logCallStack: false,
-                    logFunctionsAsStrings: false,
-                    logFunctionGets: false,
-                    preventSets: false,
-                    recursive: false,
-                    depth: 5,
                 },
             },
         ]
-        """
         return manager_params, browser_params
 
 
