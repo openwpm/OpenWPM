@@ -132,7 +132,7 @@ def test_validated_bad__missing_instrumentedName(default_log_settings):
         assert jsi.validate(bad_input)
 
 
-def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties_to_exclude(default_log_settings):
+def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties_to_exclude(default_log_settings):  # noqa
     log_settings_1 = default_log_settings.copy()
     log_settings_2 = default_log_settings.copy()
     log_settings_1['propertiesToInstrument'] = ['name', 'place']
@@ -150,8 +150,8 @@ def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties
         },
     ]
     merged = jsi.merge_object_requests(dupe_input)
-    with pytest.raises(AssertionError) as error:
-        jsi.validate(dupe_input)
+    with pytest.raises(AssertionError):
+        jsi.validate(merged)
 
 
 def test_merge_diff_instrumented_names(default_log_settings):
@@ -195,7 +195,7 @@ def test_merge_multiple_duped_properties(default_log_settings):
     assert jsi.merge_object_requests(dupe_input) == expected_de_dupe_output
 
 
-def test_merge_multiple_duped_properties_different_log_settings(default_log_settings):
+def test_merge_multiple_duped_properties_different_log_settings(default_log_settings):  # noqa
     log_settings_1 = default_log_settings.copy()
     log_settings_2 = default_log_settings.copy()
     log_settings_1['depth'] = 3
@@ -217,12 +217,11 @@ def test_merge_multiple_duped_properties_different_log_settings(default_log_sett
     assert 'Mismatching logSettings for object' in str(error.value)
 
 
-def test_api_shortcut_fingerprinting():
-    assert False
+def test_api_whole_module(default_log_settings):
+    shortcut_input = ["XMLHttpRequest"]
+    expected_output = [{
 
-
-def test_api_whole_module():
-    assert False
+    }]
 
 
 def test_api_whole_module_invalid():
@@ -242,4 +241,8 @@ def test_api_properties_on_window_instance():
 
 
 def test_assert_passing_partial_log_settings():
+    assert False
+
+
+def test_api_shortcut_fingerprinting():
     assert False

@@ -1,6 +1,6 @@
-import collections
 import json
 import os
+
 import jsonschema
 
 curdir = os.path.dirname(os.path.realpath(__file__))
@@ -18,9 +18,11 @@ def get_default_log_settings():
         'recursive': False,
         'depth': 5,
     }
+
+
 list_log_settings = [
-    'propertiesToInstrument', 
-    'nonExistingPropertiesToInstrument', 
+    'propertiesToInstrument',
+    'nonExistingPropertiesToInstrument',
     'excludedProperties'
 ]
 
@@ -50,47 +52,53 @@ def validate(python_list_to_validate):
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
     for request in python_list_to_validate:
-        propertiesToInstrument = set(request['logSettings']['propertiesToInstrument'])
+        propertiesToInstrument = set(
+            request['logSettings']['propertiesToInstrument'])
         excludedProperties = set(request['logSettings']['excludedProperties'])
-        assert len(propertiesToInstrument.intersection(excludedProperties)) == 0
+        assert len(propertiesToInstrument.intersection(
+            excludedProperties)) == 0
     return True
 
 
 def merge_object_requests(python_list):
-  """
-  Try to merge requests for the same object. Note that
-  this isn't that smart and you could still
-  end up instrumenting a property twice if you're
-  not careful.
-  """
-  merged_map = {}
-  for request in python_list:
-    obj = request['object']
-    if obj not in merged_map:
-        merged_map[obj] = request
-    else:
-        existing_request = merged_map[obj]
-        new_request = request
-        if new_request['instrumentedName'] != existing_request['instrumentedName']:
-            raise RuntimeError(f'Mismatching instrumentedNames found for object {obj}')
-        existing_logSettings = existing_request['logSettings']
-        new_logSettings = new_request['logSettings']
-        for k, v in existing_logSettings.items():
-            # Special case for lists
-            if k in list_log_settings:
-                v.extend(new_logSettings[k])
-            else:
-                if v != new_logSettings[k]:
-                    print(v)
-                    print(new_logSettings[k])
-                    raise RuntimeError(f'Mismatching logSettings for object {obj}')
+    """
+    Try to merge requests for the same object. Note that
+    this isn't that smart and you could still
+    end up instrumenting a property twice if you're
+    not careful.
+    """
+    merged_map = {}
+    for request in python_list:
+        obj = request['object']
+        if obj not in merged_map:
+            merged_map[obj] = request
+        else:
+            existing_request = merged_map[obj]
+            new_request = request
+            if (new_request['instrumentedName']
+                    != existing_request['instrumentedName']):
+                raise RuntimeError(
+                    f'Mismatching instrumentedNames found for object {obj}')
+            existing_logSettings = existing_request['logSettings']
+            new_logSettings = new_request['logSettings']
+            for k, v in existing_logSettings.items():
+                # Special case for lists
+                if k in list_log_settings:
+                    v.extend(new_logSettings[k])
+                else:
+                    if v != new_logSettings[k]:
+                        print(v)
+                        print(new_logSettings[k])
+                        raise RuntimeError(
+                            f'Mismatching logSettings for object {obj}')
 
-  merged_list = list(merged_map.values())
-  # Make sure list logSettings are unique
-  for request in merged_list:
-      for logSetting in list_log_settings:
-        request['logSettings'][logSetting] = list(set(request['logSettings'][logSetting]))
-  return merged_list
+    merged_list = list(merged_map.values())
+    # Make sure list logSettings are unique
+    for request in merged_list:
+        for logSetting in list_log_settings:
+            request['logSettings'][logSetting] = list(
+                set(request['logSettings'][logSetting]))
+    return merged_list
 
 
 def get_instrumented_name(object):
@@ -136,6 +144,6 @@ def convert_browser_params_to_js_string(js_instrument_modules):
     requests = [
         build_object_from_request(request) for request in js_instrument_modules
     ]
-    requests = dedupe(requests)
+    requests = merge_object_requests(requests)
     validate(requests)
     return python_to_js_string(requests)
