@@ -19,11 +19,11 @@ api = [
   ${api.join(',\n  ')}
 ]`
 fs.writeFile(
-    '../../js_instrumentation/mdn-browser-compat-data.py',
+    '../../js_instrumentation/mdn_browser_compat_data.py',
     output,
     (err) => {
     if(err) {
         return console.log(err);
     }
-    console.log("../../js_instrumentation/mdn-browser-compat-data.py regenerated.");
+    console.log("../../js_instrumentation/mdn_browser_compat_data.py regenerated.");
 });
