@@ -304,3 +304,14 @@ def test_api_shortcut_fingerprinting():
     output = jsi.convert_browser_params_to_js_string(shortcut_input)
     assert 'window.document' in output
     assert 'window.AudioContext.prototype' in output
+
+
+def test_complete_pass():
+    shortcut_input = [
+        {
+            'window': {'recursive': True}
+        }
+    ]
+    output = jsi.convert_browser_params_to_js_string(shortcut_input)
+    assert '"recursive": true' in output
+    assert '"instrumentedName": "window"' in output

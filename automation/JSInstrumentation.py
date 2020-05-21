@@ -180,7 +180,7 @@ def convert_browser_params_to_js_string(js_instrument_modules):
     assert isinstance(js_instrument_modules, list)
     requests = []
     for request in js_instrument_modules:
-        if request in shortcut_specs:
+        if isinstance(request, str) and (request in shortcut_specs):
             shortcut_spec = json.loads(open(shortcut_specs[request]).read())
             for sub_request in shortcut_spec:
                 requests.append(build_object_from_request(sub_request))
