@@ -14,6 +14,7 @@ EXTENSION_DIR = os.path.join(
     'Extension',
     'firefox')
 
+
 def create_xpi():
     # Creates a new xpi using npm run build.
     print("Building new xpi")

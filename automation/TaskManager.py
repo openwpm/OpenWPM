@@ -117,8 +117,9 @@ class TaskManager:
 
         # Parse and flesh out js_instrument_modules
         for a_browsers_params in self.browser_params:
-            js_request = a_browser_params['js_instrument_modules']
-            js_request_as_string = convert_browser_params_to_js_string(js_request)
+            js_request = a_browsers_params['js_instrument_modules']
+            js_request_as_string = convert_browser_params_to_js_string(
+                js_request)
             a_browsers_params['js_instrument_modules'] = js_request_as_string
 
         # Flow control
