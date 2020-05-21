@@ -230,13 +230,13 @@ def test_api_whole_module(default_log_settings):
 
 def test_api_whole_module_invalid():
     shortcut_input = "xxxxxxx"
-    with pytest.raises(RuntimeError) as error:
+    with pytest.raises(RuntimeError):
         jsi.build_object_from_request(shortcut_input)
 
 
 def test_api_two_keys_in_shortcut():
     shortcut_input = {'k1': [], 'k2': []}
-    with pytest.raises(AssertionError) as error:
+    with pytest.raises(AssertionError):
         jsi.build_object_from_request(shortcut_input)
 
 

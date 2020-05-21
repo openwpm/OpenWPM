@@ -1,8 +1,9 @@
 import json
 import os
-import jsonschema
-from .js_instrumentation.mdn_browser_compat_data import api as mdn
 
+import jsonschema
+
+from .js_instrumentation.mdn_browser_compat_data import api as mdn
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
@@ -15,7 +16,8 @@ list_log_settings = [
     'excludedProperties'
 ]
 shortcut_specs = {
-    'fingerprinting': os.path.join(curdir, 'js_instrumentation', 'fingerprinting.json')
+    'fingerprinting':
+    os.path.join(curdir, 'js_instrumentation', 'fingerprinting.json')
 }
 
 
