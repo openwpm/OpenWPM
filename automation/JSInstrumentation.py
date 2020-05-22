@@ -55,11 +55,12 @@ def validate(python_list_to_validate):
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
     for request in python_list_to_validate:
-        propertiesToInstrument = set(
-            request['logSettings']['propertiesToInstrument'])
-        excludedProperties = set(request['logSettings']['excludedProperties'])
-        assert len(propertiesToInstrument.intersection(
-            excludedProperties)) == 0
+        propertiesToInstrument = request['logSettings']['propertiesToInstrument']
+        if propertiesToInstrument is not None:
+            propertiesToInstrument = set(propertiesToInstrument)
+            excludedProperties = set(request['logSettings']['excludedProperties'])
+            assert len(propertiesToInstrument.intersection(
+                excludedProperties)) == 0
     return True
 
 
@@ -87,7 +88,12 @@ def merge_object_requests(python_list):
             for k, v in existing_logSettings.items():
                 # Special case for lists
                 if k in list_log_settings:
-                    v.extend(new_logSettings[k])
+                    new_val = new_logSettings[k]
+                    if (v is None) or (new_val is None):
+                        raise RuntimeError(
+                            f'Mismatching logSettings for object {obj}')
+                    else:
+                        v.extend(new_logSettings[k])
                 else:
                     if v != new_logSettings[k]:
                         print(v)
@@ -99,8 +105,18 @@ def merge_object_requests(python_list):
     # Make sure list logSettings are unique
     for request in merged_list:
         for logSetting in list_log_settings:
-            request['logSettings'][logSetting] = list(
-                set(request['logSettings'][logSetting]))
+            list_setting_value = request['logSettings'][logSetting]
+            if list_setting_value is None:
+                continue
+            else:
+                if None in list_setting_value:
+                    raise RuntimeError(
+                        f'Mismatching logSettings for object {obj}')
+                else:
+                    # Dedupe
+                    request['logSettings'][logSetting] = list(
+                        set(request['logSettings'][logSetting])
+                    )
     return merged_list
 
 

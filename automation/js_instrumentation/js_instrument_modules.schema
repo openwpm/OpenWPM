@@ -21,7 +21,7 @@
         "properties": {
           "propertiesToInstrument": {
             "description": "An array of properties to instrument on this object. If array is empty, then all properties are instrumented.",
-            "type": "array",
+            "type": ["array", "null"],
             "items": {
               "type": "string"
             },

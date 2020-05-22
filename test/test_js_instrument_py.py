@@ -154,6 +154,97 @@ def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties
         jsi.validate(merged)
 
 
+def test_merge_and_validate_multiple_overlap_properties(default_log_settings):
+    log_settings_1 = default_log_settings.copy()
+    log_settings_2 = default_log_settings.copy()
+    log_settings_merge = default_log_settings.copy()
+    log_settings_1['propertiesToInstrument'] = ['name', 'place']
+    log_settings_2['propertiesToInstrument'] = ['localStorage']
+    log_settings_merge['propertiesToInstrument'] = ['name', 'place', 'localStorage']
+    dupe_input = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_1
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_2
+        },
+    ]
+    expected_de_dupe_output = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_merge
+        },
+    ]
+    actual_output = jsi.merge_object_requests(dupe_input)
+    for key in ['object', 'instrumentedName']:
+        assert expected_de_dupe_output[0][key] == actual_output[0][key]
+    assert set(expected_de_dupe_output[0]['logSettings']) == \
+           set(actual_output[0]['logSettings'])
+
+
+def test_merge_when_log_settings_is_null(default_log_settings):
+    # It's valid to send None to log settings.
+    # In that case, merging with another list would be a
+    # mismatch. But just asking for null should be allowed.
+
+    log_settings_some = default_log_settings.copy()
+    log_settings_none = default_log_settings.copy()
+    log_settings_some['propertiesToInstrument'] = ['name', 'place']
+    log_settings_none['propertiesToInstrument'] = None
+    input_1 = [
+        {
+            'object': 'window.document',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_none
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_some
+        },
+    ]
+    actual_output = jsi.merge_object_requests(input_1)
+    assert actual_output == input_1
+
+    input_2 = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_some
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_none
+        },
+    ]
+    with pytest.raises(RuntimeError) as error:
+        jsi.merge_object_requests(input_2)
+    assert 'Mismatching logSettings' in str(error.value)
+
+    input_3 = [
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_none
+        },
+        {
+            'object': 'window',
+            'instrumentedName': 'window',
+            'logSettings': log_settings_some
+        },
+    ]
+    with pytest.raises(RuntimeError) as error:
+        jsi.merge_object_requests(input_3)
+    assert 'Mismatching logSettings' in str(error.value)
+
+
+
 def test_merge_diff_instrumented_names(default_log_settings):
     dupe_input = [
         {
