@@ -6,8 +6,13 @@ const VERSION = 75
 
 const api = [];
 Object.keys(bcd.api).forEach(item => {
-    if (item !== '__compat') {
-        api.push(`"${item}"`);
+    try {
+        let version_added = bcd.api[item].__compat.support.firefox.version_added;
+        if ( ( version_added !== null ) && ( version_added <= VERSION ) ) {
+            api.push(`"${item}"`);
+        }
+    } catch(error) {
+        console.log(error);
     }
 });
 
