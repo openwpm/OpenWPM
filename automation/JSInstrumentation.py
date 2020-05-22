@@ -3,8 +3,6 @@ import os
 
 import jsonschema
 
-from .js_instrumentation.mdn_browser_compat_data import api as mdn
-
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
     curdir, 'js_instrumentation', 'js_instrument_modules.schema'
@@ -107,15 +105,12 @@ def merge_object_requests(python_list):
 
 
 def _handle_obj_string(obj_string):
-    if obj_string in mdn:
-        obj = f'window.{obj_string}.prototype'
-        instrumentedName = obj_string
-    elif obj_string.startswith('window'):
+    if obj_string.startswith('window'):
         obj = obj_string
         instrumentedName = obj_string
     else:
-        raise RuntimeError(
-            'Requested API not listed in MDN Browser Compat Data')
+        obj = f'window["{obj_string}"].prototype'
+        instrumentedName = obj_string
     return obj, instrumentedName
 
 
