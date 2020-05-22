@@ -694,9 +694,11 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
         isObject(object, propertyName) &&
         propertyName !== "__proto__"
       ) {
+
         const newInstrumentedName = `${instrumentedName}.${propertyName}`;
         const newLogSettings = { ...logSettings };
         newLogSettings.depth = logSettings.depth - 1;
+        newLogSettings.propertiesToInstrument = [];
         instrumentObject(
           object[propertyName],
           newInstrumentedName,
