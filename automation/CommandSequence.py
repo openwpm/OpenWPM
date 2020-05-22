@@ -46,9 +46,10 @@ class CommandSequence:
         callback :
             A callback to be invoked once all data regarding this
             CommandSequence has been saved out or it has been interrupted.
-            If the command sequence completes and all data is saved successfully, `True` will be passed to the callback.
-            Otherwise `False` will be passed. A value of `False` indicates that the data saved from the site visit may be 
-            incomplete or empty.
+            If the command sequence completes and all data is saved
+            successfully, `True` will be passed to the callback.
+            Otherwise `False` will be passed. A value of `False` indicates
+            that the data saved from the site visit may be incomplete or empty.
         """
         self.url = url
         self.reset = reset
