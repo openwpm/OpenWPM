@@ -109,7 +109,7 @@ def _handle_obj_string(obj_string):
         obj = obj_string
         instrumentedName = obj_string
     else:
-        obj = f'window["{obj_string}"].prototype'
+        obj = f"window['{obj_string}'].prototype"
         instrumentedName = obj_string
     return obj, instrumentedName
 

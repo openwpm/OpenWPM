@@ -220,7 +220,7 @@ def test_merge_multiple_duped_properties_different_log_settings(default_log_sett
 def test_api_whole_module(default_log_settings):
     shortcut_input = "XMLHttpRequest"
     expected_output = {
-        'object': 'window["XMLHttpRequest"].prototype',
+        'object': "window['XMLHttpRequest'].prototype",
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': default_log_settings,
     }
@@ -263,7 +263,7 @@ def test_api_module_specific_properties(default_log_settings):
     log_settings['propertiesToInstrument'] = ['send']
     shortcut_input = {"XMLHttpRequest": ['send']}
     expected_output = {
-        'object': 'window["XMLHttpRequest"].prototype',
+        'object': "window['XMLHttpRequest'].prototype",
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': log_settings,
     }
@@ -283,7 +283,7 @@ def test_api_passing_partial_log_settings(default_log_settings):
     }
     }
     expected_output = {
-        'object': 'window["XMLHttpRequest"].prototype',
+        'object': "window['XMLHttpRequest'].prototype",
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': log_settings,
     }
@@ -297,7 +297,7 @@ def test_api_shortcut_fingerprinting():
     shortcut_input = ['fingerprinting']
     output = jsi.convert_browser_params_to_js_string(shortcut_input)
     assert 'window.document' in output
-    assert 'window[\\"AudioContext\\"].prototype' in output
+    assert 'window[\'AudioContext\'].prototype' in output
 
 
 def test_complete_pass():
