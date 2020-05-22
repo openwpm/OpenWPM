@@ -54,5 +54,7 @@
             "vendorSub",
             "vendor"
         ]
-    }}
+    }},
+    "window.navigator.mimeTypes",
+    "window.navigator.plugins"
 ]
