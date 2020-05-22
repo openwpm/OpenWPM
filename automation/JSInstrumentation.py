@@ -55,10 +55,12 @@ def validate(python_list_to_validate):
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
     for request in python_list_to_validate:
-        propertiesToInstrument = request['logSettings']['propertiesToInstrument']
+        propertiesToInstrument = \
+            request['logSettings']['propertiesToInstrument']
         if propertiesToInstrument is not None:
             propertiesToInstrument = set(propertiesToInstrument)
-            excludedProperties = set(request['logSettings']['excludedProperties'])
+            excludedProperties = set(
+                request['logSettings']['excludedProperties'])
             assert len(propertiesToInstrument.intersection(
                 excludedProperties)) == 0
     return True

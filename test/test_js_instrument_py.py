@@ -160,7 +160,8 @@ def test_merge_and_validate_multiple_overlap_properties(default_log_settings):
     log_settings_merge = default_log_settings.copy()
     log_settings_1['propertiesToInstrument'] = ['name', 'place']
     log_settings_2['propertiesToInstrument'] = ['localStorage']
-    log_settings_merge['propertiesToInstrument'] = ['name', 'place', 'localStorage']
+    log_settings_merge['propertiesToInstrument'] = [
+        'name', 'place', 'localStorage']
     dupe_input = [
         {
             'object': 'window',
@@ -184,7 +185,7 @@ def test_merge_and_validate_multiple_overlap_properties(default_log_settings):
     for key in ['object', 'instrumentedName']:
         assert expected_de_dupe_output[0][key] == actual_output[0][key]
     assert set(expected_de_dupe_output[0]['logSettings']) == \
-           set(actual_output[0]['logSettings'])
+        set(actual_output[0]['logSettings'])
 
 
 def test_merge_when_log_settings_is_null(default_log_settings):
@@ -242,7 +243,6 @@ def test_merge_when_log_settings_is_null(default_log_settings):
     with pytest.raises(RuntimeError) as error:
         jsi.merge_object_requests(input_3)
     assert 'Mismatching logSettings' in str(error.value)
-
 
 
 def test_merge_diff_instrumented_names(default_log_settings):
