@@ -349,8 +349,8 @@ def finalize(visit_id: int, webdriver: WebDriver,
              extension_socket: clientsocket, sleep: int) -> None:
     """ Informs the extension that a visit is done """
     tab_restart_browser(webdriver)
-    # This doesn't seem to be instant
-    # so we should wait a bit before unsetting the visit_id
+    # This doesn't immediately stop data saving from the current
+    # visit so we sleep briefly before unsetting the visit_id.
     time.sleep(sleep)
     msg = {"action": "Finalize", "visit_id": visit_id}
     extension_socket.send(msg)
@@ -360,4 +360,3 @@ def initialize(visit_id: int,
                extension_socket: clientsocket) -> None:
     msg = {"action": "Initialize", "visit_id": visit_id}
     extension_socket.send(msg)
-    pass

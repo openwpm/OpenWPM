@@ -287,10 +287,10 @@ class TaskManager:
         ----------
         during_init :
             flag to indicator if this shutdown is occuring during
-                      the TaskManager initialization
+          the TaskManager initialization
         relaxed :
             If `True` the function will wait for all active
-            `CommandSequences` to finish
+            `CommandSequences` to finish before shutting down
         """
         if self.closing:
             return

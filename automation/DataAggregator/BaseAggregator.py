@@ -105,6 +105,8 @@ class BaseListener:
     def should_shutdown(self):
         """Return `True` if the listener has received a shutdown signal
         Sets `self._relaxed` and `self.shutdown_flag`
+        `self._relaxed means this shutdown is happening after all visits have completed and all data can be seen as
+        complete
         """
         if not self.shutdown_queue.empty():
             _, relaxed = self.shutdown_queue.get()
