@@ -324,3 +324,39 @@ class TestJSInstrument(OpenWPMJSTest):
                 )
         assert observed_calls == self.SET_PREVENT_CALLS
         assert observed_gets_and_sets == self.SET_PREVENT_GETS_AND_SETS
+
+
+class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
+    # Since the window property remains non-existing, attempts to
+    # access the window property's attributes first fails when evaluating
+    # the non-existing window property, thus preventing us from receiving
+    # events about the attributes that were attempted to be accessed
+    # This is why we don't see any gets to window.nonExisting.nonExistingProp1
+    # etc below
+
+    GETS_AND_SETS = {
+        ("window.test.prop1", "get", "test_prop1"),
+        # At the nested level we have both because the propertiesToInstrument
+        # was not propogated down.
+        ("window.test.test.prop1", "get", "test_test_prop1"),
+        ("window.test.test.prop2", "get", "test_test_prop2"),
+    }
+
+    METHOD_CALLS = set()
+
+    TEST_PAGE = "instrument_do_not_recurse_properties_to_instrument.html"
+    TOP_URL = (
+        u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    )
+
+    def test_instrument_object(self):
+        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        db = self.visit('/js_instrument/%s' % self.TEST_PAGE)
+        self._check_calls(
+            db=db,
+            symbol_prefix='',
+            doc_url=self.TOP_URL,
+            top_url=self.TOP_URL,
+            expected_method_calls=self.METHOD_CALLS,
+            expected_gets_and_sets=self.GETS_AND_SETS,
+        )
