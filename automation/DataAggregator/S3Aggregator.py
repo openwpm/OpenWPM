@@ -73,8 +73,12 @@ class S3Listener(BaseListener):
                  manager_params: Dict[str, Any],
                  instance_id: int) -> None:
         self.dir = manager_params['s3_directory']
+
+        def factory_function():
+            return defaultdict(list)
+
         self._records: Dict[int, DefaultDict[str, List[Any]]] =\
-            dict()  # maps visit_id and table to records
+            defaultdict(factory_function)  # maps visit_id and table to records
         self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
             defaultdict(list)  # maps table_name to a list of batches
         self._unsaved_visit_ids: MutableSet[int] = \
@@ -96,15 +100,9 @@ class S3Listener(BaseListener):
         self._last_record_received: Optional[float] = None
         super(S3Listener, self).__init__(*base_params)
 
-    def _get_records(self, visit_id: int) -> DefaultDict[str, List[Any]]:
-        """Get the RecordBatch corresponding to `visit_id`"""
-        if visit_id not in self._records:
-            self._records[visit_id] = defaultdict(list)
-        return self._records[visit_id]
-
     def _write_record(self, table, data, visit_id):
         """Insert data into a RecordBatch"""
-        records = self._get_records(visit_id)
+        records = self._records[visit_id]
         # Add nulls
         for item in PQ_SCHEMAS[table].names:
             if item not in data:
@@ -268,7 +266,8 @@ class S3Listener(BaseListener):
     def process_record(self, record):
         """Add `record` to database"""
         if len(record) != 2:
-            self.logger.error("Query is not the correct length")
+            self.logger.error("Query is not the correct length %s",
+                              repr(record))
             return
         self._last_record_received = time.time()
         table, data = record
@@ -310,16 +309,27 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
-        # can't directly iterate because _create_batch modifies records
-        visit_ids = list(self._records.keys())
-        for visit_id in visit_ids:
-            self._create_batch(visit_id)
         self._send_to_s3(force=True)
 
     def run_visit_completion_tasks(self, visit_id: int,
-                                   is_shutdown: bool = False):
+                                   interrupted: bool = False):
+        if interrupted:
+            self.logger.error(
+                "Visit with visit_id %d got interrupted", visit_id)
+            self._write_record("incomplete_visits",
+                               {"visit_id": visit_id}, visit_id)
+            self._create_batch(visit_id)
+            self.mark_visit_incomplete(visit_id)
+            return
         self._create_batch(visit_id)
-        self._send_to_s3(force=is_shutdown)
+        self._send_to_s3()
+
+    def shutdown(self):
+        # We should only have unsaved records if we are in forced shutdown
+        if self._relaxed and self._records:
+            self.logger.error("Had unfinished records during relaxed shutdown")
+        super(S3Listener, self).shutdown()
+        self._send_to_s3(force=True)
 
 
 class S3Aggregator(BaseAggregator):

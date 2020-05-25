@@ -14,6 +14,7 @@ from PIL import Image
 from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
                                         TimeoutException, WebDriverException)
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -344,7 +345,18 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
         f.write(json.dumps(page_source).encode('utf-8'))
 
 
-def finalize(visit_id: int, extension_socket: clientsocket) -> None:
+def finalize(visit_id: int, webdriver: WebDriver,
+             extension_socket: clientsocket, sleep: int) -> None:
     """ Informs the extension that a visit is done """
+    tab_restart_browser(webdriver)
+    # This doesn't immediately stop data saving from the current
+    # visit so we sleep briefly before unsetting the visit_id.
+    time.sleep(sleep)
     msg = {"action": "Finalize", "visit_id": visit_id}
+    extension_socket.send(msg)
+
+
+def initialize(visit_id: int,
+               extension_socket: clientsocket) -> None:
+    msg = {"action": "Initialize", "visit_id": visit_id}
     extension_socket.send(msg)

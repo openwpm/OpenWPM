@@ -16,6 +16,8 @@ from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
+from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
+                                            RECORD_TYPE_SPECIAL)
 from .Errors import CommandExecutionError
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
@@ -183,7 +185,7 @@ class TaskManager:
             try:
                 success = browser.launch_browser_manager()
             except Exception:
-                self._cleanup_before_fail(during_init=True)
+                self._shutdown_manager(during_init=True)
                 raise
 
             if not success:
@@ -275,33 +277,38 @@ class TaskManager:
         self.sock = clientsocket(serialization='dill')
         self.sock.connect(*self.manager_params['aggregator_address'])
 
-    def _shutdown_manager(self, during_init: bool = False) -> None:
+    def _shutdown_manager(self, during_init: bool = False,
+                          relaxed: bool = True) -> None:
         """
         Wait for current commands to finish, close all child processes and
         threads
-        <during_init> flag to indicator if this shutdown is occuring during
-                      the TaskManager initialization
+
+        Parameters
+        ----------
+        during_init :
+            flag to indicator if this shutdown is occuring during
+          the TaskManager initialization
+        relaxed :
+            If `True` the function will wait for all active
+            `CommandSequences` to finish before shutting down
         """
+        if self.closing:
+            return
         self.closing = True
 
         for browser in self.browsers:
-            browser.shutdown_browser(during_init)
+            if relaxed is True and \
+               browser.command_thread and \
+               browser.command_thread.is_alive():
+                # Waiting for the command_sequence to be finished
+                browser.command_thread.join()
+            browser.shutdown_browser(during_init, force=not relaxed)
 
         self.sock.close()  # close socket to data aggregator
-        self.data_aggregator.shutdown()
+        self.data_aggregator.shutdown(relaxed=relaxed)
         self.logging_server.close()
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
-
-    def _cleanup_before_fail(self, during_init: bool = False) -> None:
-        """
-        Execute shutdown commands before throwing an exception
-        This should keep us from having a bunch of hanging processes
-        and incomplete data.
-        <during_init> flag to indicator if this shutdown is occuring during
-                      the TaskManager initialization
-        """
-        self._shutdown_manager(during_init=during_init)
 
     def _check_failure_status(self) -> None:
         """ Check the status of command failures. Raise exceptions as necessary
@@ -317,7 +324,7 @@ class TaskManager:
 
         self.logger.debug(
             "TaskManager failure status set, halting command execution.")
-        self._cleanup_before_fail()
+        self._shutdown_manager()
         if self.failure_status['ErrorType'] == 'ExceedCommandFailureLimit':
             raise CommandExecutionError(
                 "TaskManager exceeded maximum consecutive command "
@@ -371,19 +378,20 @@ class TaskManager:
             and calls their callbacks
         """
         while True:
-            visit_id_list = self.data_aggregator.get_new_completed_visits()
             if self.closing and not self.unsaved_command_sequences:
                 # we're shutting down and have no unprocessed callbacks
                 break
+
+            visit_id_list = self.data_aggregator.get_new_completed_visits()
             if not visit_id_list:
                 time.sleep(1)
                 continue
 
-            for visit_id in visit_id_list:
+            for visit_id, interrupted in visit_id_list:
                 self.logger.debug("Invoking callback of visit_id %d", visit_id)
                 cs = self.unsaved_command_sequences.pop(visit_id, None)
                 if cs:
-                    cs.mark_done()
+                    cs.mark_done(not interrupted)
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
@@ -412,7 +420,7 @@ class TaskManager:
                 "profile for each command." % browser.crawl_id
             )
         self.logger.info("Starting to work on CommandSequence with "
-                         " visit_id %d on browser with id %d",
+                         "visit_id %d on browser with id %d",
                          browser.curr_visit_id, browser.crawl_id)
         for command_and_timeout in command_sequence \
                 .get_commands_with_timeout():
@@ -426,47 +434,53 @@ class TaskManager:
             # received reply from BrowserManager, either success or failure
             error_text = None
             tb = None
+            status = None
             try:
                 status = browser.status_queue.get(
                     True, browser.current_timeout)
-                if status == "OK":
-                    command_status = 'ok'
-                elif status[0] == "CRITICAL":
-                    command_status = 'critical'
-                    self.logger.critical(
-                        "BROWSER %i: Received critical error from browser "
-                        "process while executing command %s. Setting failure "
-                        "status." % (browser.crawl_id, str(command)))
-                    self.failure_status = {
-                        'ErrorType': 'CriticalChildException',
-                        'CommandSequence': command_sequence,
-                        'Exception': status[1]
-                    }
-                    error_text, tb = self._unpack_picked_error(status[1])
-                elif status[0] == "FAILED":
-                    command_status = 'error'
-                    error_text, tb = self._unpack_picked_error(status[1])
-                    self.logger.info(
-                        "BROWSER %i: Received failure status while executing "
-                        "command: %s" % (browser.crawl_id, repr(command)))
-                elif status[0] == 'NETERROR':
-                    command_status = 'neterror'
-                    error_text, tb = self._unpack_picked_error(status[1])
-                    error_text = parse_neterror(error_text)
-                    self.logger.info(
-                        "BROWSER %i: Received neterror %s while executing "
-                        "command: %s" %
-                        (browser.crawl_id, error_text, repr(command))
-                    )
-                else:
-                    raise ValueError(
-                        "Unknown browser status message %s" % status
-                    )
             except EmptyQueue:
                 command_status = 'timeout'
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.crawl_id, repr(command)))
+
+            if status is None:
+                # allows us to skip this entire block without having to bloat
+                # every if statement
+                pass
+            elif status == "OK":
+                command_status = 'ok'
+            elif status[0] == "CRITICAL":
+                command_status = 'critical'
+                self.logger.critical(
+                    "BROWSER %i: Received critical error from browser "
+                    "process while executing command %s. Setting failure "
+                    "status." % (browser.crawl_id, str(command)))
+                self.failure_status = {
+                    'ErrorType': 'CriticalChildException',
+                    'CommandSequence': command_sequence,
+                    'Exception': status[1]
+                }
+                error_text, tb = self._unpack_picked_error(status[1])
+            elif status[0] == "FAILED":
+                command_status = 'error'
+                error_text, tb = self._unpack_picked_error(status[1])
+                self.logger.info(
+                    "BROWSER %i: Received failure status while executing "
+                    "command: %s" % (browser.crawl_id, repr(command)))
+            elif status[0] == 'NETERROR':
+                command_status = 'neterror'
+                error_text, tb = self._unpack_picked_error(status[1])
+                error_text = parse_neterror(error_text)
+                self.logger.info(
+                    "BROWSER %i: Received neterror %s while executing "
+                    "command: %s" %
+                    (browser.crawl_id, error_text, repr(command))
+                )
+            else:
+                raise ValueError(
+                    "Unknown browser status message %s" % status
+                )
 
             self.sock.send(("crawl_history", {
                 "crawl_id": browser.crawl_id,
@@ -480,6 +494,12 @@ class TaskManager:
             }))
 
             if command_status == 'critical':
+                self.sock.send((RECORD_TYPE_SPECIAL, {
+                    "crawl_id": browser.crawl_id,
+                    "success": False,
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": browser.curr_visit_id
+                }))
                 return
 
             if command_status != 'ok':
@@ -498,11 +518,18 @@ class TaskManager:
                 browser.restart_required = True
                 self.logger.debug("BROWSER %i: Browser restart required" % (
                     browser.crawl_id))
+
             else:
                 with self.threadlock:
                     self.failurecount = 0
 
             if browser.restart_required:
+                self.sock.send((RECORD_TYPE_SPECIAL, {
+                    "crawl_id": browser.crawl_id,
+                    "success": False,
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": browser.curr_visit_id
+                }))
                 break
 
         self.logger.info("Finished working on CommandSequence with "
@@ -606,7 +633,7 @@ class TaskManager:
         command_sequence.reset = reset
         self.execute_command_sequence(command_sequence, index=index)
 
-    def close(self) -> None:
+    def close(self, relaxed: bool = True) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
@@ -614,6 +641,6 @@ class TaskManager:
             self.logger.error("TaskManager already closed")
             return
         start_time = time.time()
-        self._shutdown_manager()
+        self._shutdown_manager(relaxed=relaxed)
         # We don't have a logging thread at this time anymore
         print("Shutdown took %s seconds" % str(time.time() - start_time))

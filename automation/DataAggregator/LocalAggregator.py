@@ -87,7 +87,8 @@ class LocalListener(BaseListener):
         """Add `record` to database"""
 
         if len(record) != 2:
-            self.logger.error("Query is not the correct length")
+            self.logger.error("Query is not the correct length %s",
+                              repr(record))
             return
 
         table, data = record
@@ -172,18 +173,23 @@ class LocalListener(BaseListener):
             self._ldb_commit_time = time.time()
 
     def run_visit_completion_tasks(self, visit_id: int,
-                                   is_shutdown: bool = False):
-        self.mark_visit_complete(visit_id)
+                                   interrupted: bool = False):
+        if interrupted:
+            self.logger.error(
+                "Visit with visit_id %d got interrupted", visit_id)
+            self.cur.execute("INSERT INTO incomplete_visits VALUES (?)",
+                             (visit_id,))
+            self.mark_visit_incomplete(visit_id)
+        else:
+            self.mark_visit_complete(visit_id)
 
     def shutdown(self):
-        for visit_id in self.browser_map.values():
-            self.mark_visit_complete(visit_id)
+        super(LocalListener, self).shutdown()
         self.db.commit()
         self.db.close()
         if self.ldb_enabled:
             self._write_content_batch()
             self.ldb.close()
-        super(LocalListener, self).shutdown()
 
 
 class LocalAggregator(BaseAggregator):
@@ -273,7 +279,7 @@ class LocalAggregator(BaseAggregator):
             listener_process_runner, self.manager_params,
             self.ldb_enabled)
 
-    def shutdown(self):
+    def shutdown(self, relaxed: bool = False) -> None:
         """ Terminates the aggregator"""
+        super(LocalAggregator, self).shutdown(relaxed)
         self.db.close()
-        super(LocalAggregator, self).shutdown()
