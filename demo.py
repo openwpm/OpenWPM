@@ -4,9 +4,8 @@ from automation import CommandSequence, TaskManager
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
 sites = [
-    'http://www.example.com',
-    'http://www.princeton.edu',
-    'http://citp.princeton.edu/'
+    'https://mattressfirm.com',
+    'https://fingerprintjs.com/demo',
 ]
 
 # Loads the default manager params
@@ -26,11 +25,11 @@ for i in range(NUM_BROWSERS):
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
 # Launch only browser 0 headless
-browser_params[0]['display_mode'] = 'headless'
+browser_params[0]['display_mode'] = 'xvfb'
 
 # Update TaskManager configuration (use this for crawl-wide settings)
-manager_params['data_directory'] = '~/Desktop/'
-manager_params['log_directory'] = '~/Desktop/'
+manager_params['data_directory'] = 'crawl_data'
+manager_params['log_directory'] = 'crawl_data'
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
@@ -46,7 +45,10 @@ for site in sites:
         print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
-    command_sequence.get(sleep=3, timeout=60)
+    command_sequence.get(sleep=10, timeout=60)
+
+    # Screenshot
+    command_sequence.save_screenshot()
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)

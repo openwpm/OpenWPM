@@ -8,7 +8,7 @@ docker-volume
 .pytest_cache
 
 # firefox directories
-firefox-bin
+#firefox-bin
 *.app
 
 # PyCharm
