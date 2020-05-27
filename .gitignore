@@ -92,5 +92,5 @@ node_modules
 # built extension artifacts
 automation/Extension/firefox/dist
 automation/Extension/firefox/openwpm.xpi
-automation/Extension/firefox/src/content.js
+automation/Extension/firefox/src/*content-script.js
 automation/Extension/firefox/src/feature.js

@@ -173,3 +173,32 @@ export interface JavascriptCookieRecord extends JavascriptCookie {
   record_type?: "deleted" | "added-or-changed" | "manual-export";
   change_cause?: OnChangedCause;
 }
+
+export interface UiInstrumentMetadata {
+  id?: number;
+  incognito?: number;
+  crawl_id?: number;
+  visit_id?: number;
+  extension_session_uuid?: string;
+  event_ordinal?: number;
+  page_scoped_event_ordinal?: number;
+  window_id?: number;
+  tab_id?: number;
+  frame_id?: number;
+  document_url?: string;
+  top_level_url?: string;
+  time_stamp: DateTime;
+}
+
+export interface UiInteraction extends UiInstrumentMetadata {
+  type?: string;
+  target?: string;
+  composed_path?: string;
+}
+
+export interface UiState extends UiInstrumentMetadata {
+  document_hidden: number;
+  audio_element_is_playing: number;
+  video_element_is_playing: number;
+  interval_ms: number;
+}

@@ -2,7 +2,8 @@ import {
   CookieInstrument,
   JavascriptInstrument,
   HttpInstrument,
-  NavigationInstrument
+  NavigationInstrument,
+  UiInstrument
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
@@ -23,6 +24,10 @@ async function main() {
       js_instrument_modules:"fingerprinting",
       http_instrument:true,
       callstack_instrument:true,
+      ui_instrument:true,
+      ui_instrument_clicks:true,
+      ui_instrument_state:true,
+      ui_instrument_state_interval_ms:"1000",
       save_content:false,
       testing:true,
       crawl_id:0
@@ -65,6 +70,20 @@ async function main() {
     loggingDB.logDebug("Callstack Instrumentation enabled");
     let callstackInstrument = new CallstackInstrument(loggingDB);
     callstackInstrument.run(config['crawl_id']);
+  }
+
+  if (config['ui_instrument']) {
+    loggingDB.logDebug("UI Instrumentation enabled");
+    let uiInstrument = new UiInstrument(loggingDB);
+    uiInstrument.run(config['crawl_id']);
+    await uiInstrument.registerContentScript(
+      {
+        testing: config['testing'],
+        clicks: config['ui_instrument_clicks'],
+        state: config['ui_instrument_state'],
+        state_interval_ms: config['ui_instrument_state_interval_ms'],
+      },
+    );
   }
 }
 

@@ -132,7 +132,7 @@ export class JavascriptInstrument {
       });
     }
     return browser.contentScripts.register({
-      js: [{ file: "/content.js" }],
+      js: [{ file: "/js-instrument-content-script.js" }],
       matches: ["<all_urls>"],
       allFrames: true,
       runAt: "document_start",

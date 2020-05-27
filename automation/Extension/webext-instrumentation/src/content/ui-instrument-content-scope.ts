@@ -1,17 +1,12 @@
-import { instrumentFingerprintingApis } from "../lib/instrument-fingerprinting-apis";
-import { jsInstruments } from "../lib/js-instruments";
-import { pageScript } from "./javascript-instrument-page-scope";
+import { xpath } from "../lib/xpath";
+import { pageScript } from "./ui-instrument-page-scope";
+
+export interface UiInstrumentTimeStampedMessage {
+  timeStamp: string;
+}
 
 function getPageScriptAsString() {
-  return (
-    jsInstruments +
-    "\n" +
-    instrumentFingerprintingApis +
-    "\n" +
-    "(" +
-    pageScript +
-    "({jsInstruments, instrumentFingerprintingApis}));"
-  );
+  return `const xpath = ${xpath};\n(${pageScript}({xpath}));`;
 }
 
 function insertScript(text, data) {
@@ -32,16 +27,16 @@ function insertScript(text, data) {
 function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
   browser.runtime.sendMessage({
-    namespace: "javascript-instrumentation",
+    namespace: "ui-instrument",
     type,
     data: msg,
   });
 }
 
-const event_id = Math.random();
+const injection_uuid = Math.random();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(event_id.toString(), function(e: CustomEvent) {
+document.addEventListener(injection_uuid.toString(), function(e: CustomEvent) {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
@@ -53,9 +48,9 @@ document.addEventListener(event_id.toString(), function(e: CustomEvent) {
   }
 });
 
-export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
+export function injectUiInstrumentPageScript(contentScriptConfig) {
   insertScript(getPageScriptAsString(), {
-    event_id,
+    injection_uuid,
     ...contentScriptConfig,
   });
 }
