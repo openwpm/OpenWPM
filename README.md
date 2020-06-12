@@ -122,8 +122,9 @@ Advice for Measurement Researchers
 OpenWPM is [often used](https://webtap.princeton.edu/software/) for web
 measurement research. We recommend the following for researchers using the tool:
 
-**Use a versioned [release](https://github.com/mozilla/OpenWPM/releases).**
-If we happen to fall behind on checking in new releases, please file an
+**Use a versioned [release](https://github.com/mozilla/OpenWPM/releases).** We
+aim to follow Firefox's release cadence, which is roughly once every four
+weeks. If we happen to fall behind on checking in new releases, please file an
 issue. Versions more than a few months out of date will use unsupported
 versions of Firefox, which are likely to have known security
 vulnerabilities. Versions less than v0.10.0 are from a previous architecture
