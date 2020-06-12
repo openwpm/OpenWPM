@@ -15,6 +15,7 @@ Table of Contents <!-- omit in toc -->
 
 * [Installation](#installation)
 * [Quick Start](#quick-start)
+* [Advice for Measurement Researchers](#advice-for-measurement-researchers)
 * [Instrumentation and Data Access](#instrumentation-and-data-access)
 * [Output Format](#output-format)
     * [Local Databases](#local-databases)
