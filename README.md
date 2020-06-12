@@ -40,7 +40,6 @@ Table of Contents <!-- omit in toc -->
   * [Building the Docker Container](#building-the-docker-container)
   * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
   * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
-* [Disclaimer](#disclaimer)
 * [Citation](#citation)
 * [License](#license)
 
