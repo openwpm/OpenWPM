@@ -113,11 +113,27 @@ tutorial, including a
 [platform demo](https://github.com/citp/OpenWPM/wiki/Platform-Demo)
 and a description of the
 [additional commands](https://github.com/citp/OpenWPM/wiki/Available-Commands)
-available. You can also take a look at two of our past studies, which use the
-infrastructure:
+available.
 
-1. [The Web Never Forgets](https://github.com/citp/TheWebNeverForgets)
-2. [Cookies that Give You Away](https://github.com/englehardt/cookies-that-give-you-away)
+
+Advice for Measurement Researchers
+----------------------------------
+
+OpenWPM is [often used](https://webtap.princeton.edu/software/) for web
+measurement research. We recommend the following for researchers using the tool:
+
+**Use a versioned [release](https://github.com/mozilla/OpenWPM/releases).**
+If we happen to fall behind on checking in new releases, please file an
+issue. Versions more than a few months out of date will use unsupported
+versions of Firefox, which are likely to have known security
+vulnerabilities. Versions less than v0.10.0 are from a previous architecture
+and should not be used.
+
+**Include the OpenWPM version number in your publication.** As of v0.10.0
+OpenWPM pins all python, npm, and system dependencies. Including this
+information alongside your work will allow other researchers to contextualize
+the results, and can be helpful if future versions of OpenWPM have
+instrumentation bugs that impact results.
 
 Instrumentation and Data Access
 -------------------------------
@@ -656,22 +672,6 @@ Or, run commands directly:
     ./run-on-osx-via-docker.sh python -m test.manual_test
     ./run-on-osx-via-docker.sh python -m pytest
     ./run-on-osx-via-docker.sh python -m pytest -vv -s
-
-Disclaimer
------------
-
-Note that OpenWPM is under active development, and should be considered
-experimental software. The repository may contain experimental features that
-aren't fully tested. We recommend using a [tagged
-release](https://github.com/citp/OpenWPM/releases).
-
-Although OpenWPM is actively used by our group for research studies and we
-regularly use of the data collected, it is still possible there are unknown bugs
-in the infrastructure. We are in the process of writing comprehensive tests to
-verify the integrity of all included instrumentation. Prior to using OpenWPM
-for your own research we encourage you to write tests (and submit pull
-requests!) for any instrumentation that isn't currently included in our test
-scripts.
 
 Citation
 --------
