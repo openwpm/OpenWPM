@@ -10,7 +10,7 @@ dependencies:
 - geckodriver=0.26.0
 - ipython=7.15.0
 - leveldb=1.22
-- localstack=0.11.2
+- localstack=0.11.1
 - multiprocess=0.70.10
 - nodejs=14.4.0
 - pandas=1.0.5
