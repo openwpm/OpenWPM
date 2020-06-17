@@ -4,13 +4,10 @@ Workarounds for Selenium headaches.
 
 
 import errno
-import json
 import logging
 import os
-import sys
 import tempfile
 import threading
-import zipfile
 
 from selenium.webdriver.common.service import Service as BaseService
 from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
