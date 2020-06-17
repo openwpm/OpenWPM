@@ -10,7 +10,7 @@ set -e
 eval "$(conda shell.bash hook)"
 
 # Create openwpm env with unpinned yaml file
-conda env create --force -q -f environment-unpinned.yaml
+PYTHONNOUSERSITE=True conda env create --force -q -f environment-unpinned.yaml
 
 # Activate
 conda activate openwpm
