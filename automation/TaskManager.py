@@ -486,7 +486,9 @@ class TaskManager:
                 "crawl_id": browser.crawl_id,
                 "visit_id": browser.curr_visit_id,
                 "command": type(command),
-                "arguments": json.dumps(command.__dict__).encode('utf-8'),
+                "arguments": json.dumps(command.__dict__,
+                                        default=lambda x: repr(x)
+                                        ).encode('utf-8'),
                 "retry_number": command_sequence.retry_number,
                 "command_status": command_status,
                 "error": error_text,

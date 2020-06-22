@@ -4,6 +4,7 @@ channels:
 dependencies:
 - autopep8=1.5.3
 - beautifulsoup4=4.9.1
+- codecov=2.1.7
 - dill=0.3.2
 - flake8-isort=3.0.0
 - flake8=3.8.3
@@ -19,6 +20,7 @@ dependencies:
 - pre-commit=2.5.1
 - psutil=5.7.0
 - pyarrow=0.17.1
+- pytest-cov=2.10.0
 - pytest=5.4.3
 - python=3.8.3
 - pyvirtualdisplay=0.2.5

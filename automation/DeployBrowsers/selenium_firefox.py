@@ -4,23 +4,17 @@ Workarounds for Selenium headaches.
 
 
 import errno
-import json
 import logging
 import os
-import sys
 import tempfile
 import threading
-import zipfile
 
 from selenium.webdriver.common.service import Service as BaseService
 from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.firefox.firefox_profile import AddonFormatError
-from selenium.webdriver.firefox.firefox_profile import \
-    FirefoxProfile as BaseFirefoxProfile
 from selenium.webdriver.firefox.options import Options
 
-__all__ = ['FirefoxBinary', 'FirefoxProfile', 'FirefoxLogInterceptor',
+__all__ = ['FirefoxBinary', 'FirefoxLogInterceptor',
            'Options']
 
 
@@ -134,89 +128,3 @@ class PatchedGeckoDriverService(BaseService):
 
 
 FirefoxDriverModule.Service = PatchedGeckoDriverService
-
-
-class FirefoxProfile(BaseFirefoxProfile):
-    """Hook class for patching bugs in Selenium's FirefoxProfile class"""
-
-    def __init__(self, *args, **kwargs):
-        BaseFirefoxProfile.__init__(self, *args, **kwargs)
-
-    def _addon_details(self, addon_path):
-        """Selenium 3.4.0 doesn't support loading WebExtensions. See bug:
-        https://github.com/SeleniumHQ/selenium/issues/4093. This patch uses
-        code from PR: https://github.com/SeleniumHQ/selenium/pull/4790"""
-        try:
-            return BaseFirefoxProfile._addon_details(self, addon_path)
-        except AddonFormatError:
-            pass
-
-        # Addon must be a WebExtension, parse details from `manifest.json`
-        details = {
-            'id': None,
-            'unpack': False,
-            'name': None,
-            'version': None
-        }
-
-        def get_namespace_id(doc, url):
-            attributes = doc.documentElement.attributes
-            namespace = ""
-            for i in range(attributes.length):
-                if attributes.item(i).value == url:
-                    if ":" in attributes.item(i).name:
-                        # If the namespace is not the default one remove xlmns:
-                        namespace = attributes.item(i).name.split(':')[1] + ":"
-                        break
-            return namespace
-
-        def get_text(element):
-            """Retrieve the text value of a given node"""
-            rc = []
-            for node in element.childNodes:
-                if node.nodeType == node.TEXT_NODE:
-                    rc.append(node.data)
-            return ''.join(rc).strip()
-
-        if not os.path.exists(addon_path):
-            raise IOError('Add-on path does not exist: %s' % addon_path)
-
-        try:
-            if zipfile.is_zipfile(addon_path):
-                # Bug 944361 - We cannot use 'with' together with zipFile
-                # because it will cause an exception thrown in Python 2.6.
-                try:
-                    compressed_file = zipfile.ZipFile(addon_path, 'r')
-                    manifest = compressed_file.read('install.rdf')
-                finally:
-                    compressed_file.close()
-            elif os.path.isdir(addon_path):
-                manifest_source = 'manifest.json'
-                with open(os.path.join(addon_path, manifest_source), 'r') as f:
-                    manifest = f.read()
-            else:
-                raise IOError("Add-on path is neither an XPI nor a "
-                              "directory: %s" % addon_path)
-        except (IOError, KeyError) as e:
-            raise AddonFormatError(str(e), sys.exc_info()[2])
-
-        doc = json.loads(manifest)
-
-        try:
-            details['version'] = doc['version']
-            details['name'] = doc['name']
-        except KeyError:
-            raise AddonFormatError(
-                "Add-on manifest.json is missing mandatory fields. "
-                "https://developer.mozilla.org/en-US/Add-ons/"
-                "WebExtensions/manifest.json")
-
-        try:
-            id_ = doc['applications']['gecko']['id']
-        except KeyError:
-            id_ = "%s@%s" % (doc['name'], doc['version'])
-            id_ = ''.join(id_.split())
-        finally:
-            details["id"] = id_
-
-        return details
