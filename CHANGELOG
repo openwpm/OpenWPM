@@ -1,8 +1,33 @@
-v0.10.0 - under development
+v0.10.0 - 2020-06-11
 =======
 
+This release is a long overdue release of OpenWPM, and contains too many
+changes to list here. Instead, we highlight the major architectural since the
+previous release. The instrumentation has been completely rewritten as part of
+this release to the new WebExtensions framework. Older versions of OpenWPM
+should not be used.
+
 Changes:
-  * Migrate to WebExtensions from the addon-sdk.
+  * Migrate instrumentation from the addon-sdk framework to WebExtensions.
+  * Migrate to unbranded builds of Firefox, and off of the ESR channel to the
+    Release channel
+  * Add support for MacOS development
+  * Add an S3Aggregator that saves data in Parquet format on S3
+  * Use conda for dependency management
+  * Disable stateful crawling due to intermittent loss of profiles and
+    geckodriver incompatibilities
+  * Refactor extension instumentation to live in a separate module
+  * Re-write logger and add support for logging to sentry
+  * Add a crawler.py crawl script that can be used for cloud deployments like
+    the type documented in https://github.com/mozilla/openwpm-crawler
+  * Add support for Firefox's native headless mode alongside XVFB
+  * Add Dockerfile and automatically deploy builds to dockerhub
+  * Add a Navigation instrument that records navigation events
+  * Drop support for Python 2
+  * Remove support for Flash
+  * Numerous stability and data saving improvements (particularly for cloud
+    crawls / the S3Aggregator)
+  * Numerous bugfixes + improved testing
 
 v0.9.0 - 2019-04-15
 ======
