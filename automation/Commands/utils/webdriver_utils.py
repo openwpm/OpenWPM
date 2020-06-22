@@ -19,7 +19,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from . import XPathUtil
 
 NETERROR_RE = re.compile(
-    r"WebDriverException: Message: Reached error page: about:neterror\?(.*)\."
+    r"selenium\.common\.exceptions\.WebDriverException: "
+    r"Message: Reached error page: about:neterror\?(.*)\."
 )
 
 
@@ -29,7 +30,7 @@ def parse_neterror(error_message):
     If any errors occur while parsing, we fall back to the unparsed message
     """
     try:
-        qs = re.match(NETERROR_RE, error_message).group(1)
+        qs = NETERROR_RE.match(error_message).group(1)
         params = urlparse.parse_qs(qs)
         return '&'.join(params['e'])
     except Exception:
