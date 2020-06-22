@@ -102,7 +102,8 @@ lint all the changes before you make a commit.
    python [user site packages directory](https://www.python.org/dev/peps/pep-0370/),
    by prepending `PYTHONNOUSERSITE=True` to a specific command, or by setting
    the environment variable for the session (e.g., `export PYTHONNOUSERSITE=True`
-   in bash).
+   in bash). Please also add a comment to that issue to let us know you ran
+   into this problem.
 
 Quick Start
 -----------
