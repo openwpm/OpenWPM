@@ -18,7 +18,7 @@ PYTHONNOUSERSITE=True conda env create --force -q -f environment-unpinned.yaml
 conda activate openwpm
 
 # Adding dev dependencies to environment
-conda env update -f environment-unpinned-dev.yaml
+PYTHONNOUSERSITE=True conda env update -f environment-unpinned-dev.yaml
 
 # Export the environment including manually specify channels
 conda env export --no-builds --override-channels -c conda-forge -c main -f ../environment.yaml
