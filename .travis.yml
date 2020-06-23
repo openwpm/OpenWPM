@@ -32,11 +32,13 @@ script:
       npm test;
     else
       cd test;
-      python -m pytest -s -v --durations=10 $TESTS;
+      python -m pytest --cov --cov-report=xml $TESTS -s -v --durations=10;
+      codecov -f coverage.xml;
     fi
 after_success:
   - if [[ "$TESTS" == "webextension" ]]; then
       npm run cov:check;
+      npm run cov:send;
     fi
 
 jobs:

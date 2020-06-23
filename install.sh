@@ -19,7 +19,9 @@ set -e
 eval "$(conda shell.bash hook)"
 
 echo 'Creating / Overwriting openwpm conda environment.'
-conda env create --force -q -f environment.yaml
+# `PYTHONNOUSERSITE` set so python ignores local user site libraries when building the env
+# See: https://github.com/mozilla/OpenWPM/pull/682#issuecomment-645648939
+PYTHONNOUSERSITE=True conda env create --force -q -f environment.yaml
 
 echo 'Activating environment.'
 conda activate openwpm

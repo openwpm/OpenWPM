@@ -45,11 +45,13 @@ export interface WebNavigationOnCommittedEventDetails
   transitionQualifiers?: TransitionQualifier[];
 }
 
+/*
 export interface WebNavigationOnDOMContentLoadedEventDetails
   extends WebNavigationBaseEventDetails {}
 
 export interface WebNavigationOnCompletedEventDetails
   extends WebNavigationBaseEventDetails {}
+*/
 
 export interface WebNavigationOnErrorOccurredEventDetails
   extends WebNavigationBaseEventDetails {

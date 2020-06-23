@@ -10,13 +10,15 @@ set -e
 eval "$(conda shell.bash hook)"
 
 # Create openwpm env with unpinned yaml file
-conda env create --force -q -f environment-unpinned.yaml
+# `PYTHONNOUSERSITE` set so python ignores local user site libraries when building the env
+# See: https://github.com/mozilla/OpenWPM/pull/682#issuecomment-645648939
+PYTHONNOUSERSITE=True conda env create --force -q -f environment-unpinned.yaml
 
 # Activate
 conda activate openwpm
 
 # Adding dev dependencies to environment
-conda env update -f environment-unpinned-dev.yaml
+PYTHONNOUSERSITE=True conda env update -f environment-unpinned-dev.yaml
 
 # Export the environment including manually specify channels
 conda env export --no-builds --override-channels -c conda-forge -c main -f ../environment.yaml
