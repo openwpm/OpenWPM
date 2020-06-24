@@ -26,7 +26,8 @@ COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
 CALLSTACK_INSTRUMENT = os.getenv('CALLSTACK_INSTRUMENT', '1') == '1'
-JS_INSTRUMENT_SETTINGS = os.getenv('JS_INSTRUMENT_SETTINGS', '["fingerprinting"]')
+JS_INSTRUMENT_SETTINGS = os.getenv(
+    'JS_INSTRUMENT_SETTINGS', '["fingerprinting"]')
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 PREFS = os.getenv('PREFS', None)
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
