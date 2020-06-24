@@ -115,12 +115,12 @@ class TaskManager:
             raise Exception("Number of <browser_params> dicts is not the same "
                             "as manager_params['num_browsers']")
 
-        # Parse and flesh out js_instrument_modules
+        # Parse and flesh out js_instrument_settings
         for a_browsers_params in self.browser_params:
-            js_request = a_browsers_params['js_instrument_modules']
+            js_request = a_browsers_params['js_instrument_settings']
             js_request_as_string = convert_browser_params_to_js_string(
                 js_request)
-            a_browsers_params['js_instrument_modules'] = js_request_as_string
+            a_browsers_params['js_instrument_settings'] = js_request_as_string
 
         # Flow control
         self.closing = False

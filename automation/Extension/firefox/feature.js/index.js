@@ -20,7 +20,7 @@ async function main() {
       navigation_instrument:true,
       cookie_instrument:true,
       js_instrument:true,
-      js_instrument_modules: `
+      js_instrument_settings: `
       [
         {
           object: window.CanvasRenderingContext2D.prototype,
@@ -69,7 +69,7 @@ async function main() {
     loggingDB.logDebug("Javascript instrumentation enabled");
     let jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
-    await jsInstrument.registerContentScript(config['testing'], config['js_instrument_modules']);
+    await jsInstrument.registerContentScript(config['testing'], config['js_instrument_settings']);
   }
 
   if (config['http_instrument']) {

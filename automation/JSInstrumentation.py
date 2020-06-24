@@ -5,7 +5,7 @@ import jsonschema
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
-    curdir, 'js_instrumentation', 'js_instrument_modules.schema'
+    curdir, 'js_instrumentation', 'js_instrument_settings.schema'
 )
 
 list_log_settings = [
@@ -174,7 +174,7 @@ def build_object_from_request(request):
     }
 
 
-def convert_browser_params_to_js_string(js_instrument_modules):
+def convert_browser_params_to_js_string(js_instrument_settings):
     """
     We accept a list. From the list we need to parse each item.
     Examples of the requests we accept.
@@ -190,9 +190,9 @@ def convert_browser_params_to_js_string(js_instrument_modules):
     {"window.document": ["cookie", "referrer"]},
     {"window": ["name", "localStorage", "sessionStorage"]}
     """
-    assert isinstance(js_instrument_modules, list)
+    assert isinstance(js_instrument_settings, list)
     requests = []
-    for request in js_instrument_modules:
+    for request in js_instrument_settings:
         if isinstance(request, str) and (request in shortcut_specs):
             shortcut_spec = json.loads(open(shortcut_specs[request]).read())
             for sub_request in shortcut_spec:
