@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
+export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -741,11 +741,11 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
     }
   }
 
-  const sendFactory = function($event_id, $sendMessagesToLogger) {
+  const sendFactory = function(eventId, $sendMessagesToLogger) {
     let messages = [];
     // debounce sending queued messages
     const _send = debounce(function() {
-      $sendMessagesToLogger($event_id, messages);
+      $sendMessagesToLogger(eventId, messages);
 
       // clear the queue
       messages = [];
@@ -758,7 +758,7 @@ export function getInstrumentJS(event_id: string, sendMessagesToLogger) {
     };
   };
 
-  const send = sendFactory(event_id, sendMessagesToLogger);
+  const send = sendFactory(eventId, sendMessagesToLogger);
 
   function instrumentJS(JSInstrumentRequests: JSInstrumentRequest[]) {
     // The JS Instrument Requests are setup and validated python side

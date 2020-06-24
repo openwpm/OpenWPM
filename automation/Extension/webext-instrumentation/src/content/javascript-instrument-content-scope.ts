@@ -24,14 +24,14 @@ const instrumentationRequests = ${jsInstrumentationRequestsString};
 
 function insertScript(
   pageScriptString: string,
-  event_id: string,
+  eventId: string,
   testing: boolean = false,
 ) {
   const parent = document.documentElement,
     script = document.createElement("script");
   script.text = pageScriptString;
   script.async = false;
-  script.setAttribute("data-event-id", event_id);
+  script.setAttribute("data-event-id", eventId);
   script.setAttribute("data-testing", `${testing}`);
   parent.insertBefore(script, parent.firstChild);
   parent.removeChild(script);
@@ -46,10 +46,10 @@ function emitMsg(type, msg) {
   });
 }
 
-const $event_id = Math.random().toString();
+const eventId = Math.random().toString();
 
 // listen for messages from the script we are about to insert
-document.addEventListener($event_id, function(e: CustomEvent) {
+document.addEventListener(eventId, function(e: CustomEvent) {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
@@ -64,7 +64,7 @@ document.addEventListener($event_id, function(e: CustomEvent) {
 export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
   insertScript(
     getPageScriptAsString(contentScriptConfig.jsInstrumentationRequestsString),
-    $event_id,
+    eventId,
     contentScriptConfig.testing,
   );
 }
