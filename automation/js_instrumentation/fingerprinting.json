@@ -8,6 +8,7 @@
     "RTCPeerConnection",
     "HTMLCanvasElement",
     "Storage",
+    "window.navigator",
     {"CanvasRenderingContext2D": {
         "excludedProperties": [
             "quadraticCurveTo",
@@ -33,28 +34,5 @@
     }},
     {"window.screen": {
         "propertiesToInstrument": ["pixelDepth", "colorDepth"]
-    }},
-    {"window.navigator": {
-        "propertiesToInstrument": [
-            "appCodeName",
-            "appName",
-            "appVersion",
-            "buildID",
-            "cookieEnabled",
-            "doNotTrack",
-            "geolocation",
-            "language",
-            "languages",
-            "onLine",
-            "oscpu",
-            "platform",
-            "product",
-            "productSub",
-            "userAgent",
-            "vendorSub",
-            "vendor"
-        ]
-    }},
-    "window.navigator.mimeTypes",
-    "window.navigator.plugins"
+    }}
 ]
