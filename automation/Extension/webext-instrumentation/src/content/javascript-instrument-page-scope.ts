@@ -14,7 +14,7 @@ export const pageScript = function(getInstrumentJS, jsInstrumentationSettings) {
 
   const eventId = document.currentScript.getAttribute("data-event-id");
   const testing = document.currentScript.getAttribute("data-testing");
-const instrumentJS = getInstrumentJS(eventId, sendMessagesToLogger);
+  const instrumentJS = getInstrumentJS(eventId, sendMessagesToLogger);
   let t0: number;
   if (testing === "true") {
     console.log("OpenWPM: Currently testing");
