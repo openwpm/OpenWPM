@@ -112,11 +112,11 @@ export class JavascriptInstrument {
 
   public async registerContentScript(
     testing: boolean,
-    jsInstrumentationRequestsString: string,
+    jsInstrumentationSettingsString: string,
   ) {
     const contentScriptConfig = {
       testing,
-      jsInstrumentationRequestsString,
+      jsInstrumentationSettingsString,
     };
     if (contentScriptConfig) {
       // TODO: Avoid using window to pass the content script config
