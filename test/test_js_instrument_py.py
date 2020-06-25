@@ -9,54 +9,8 @@ pytestmark = pytest.mark.pyonly
 def _no_whitespace(x):
     return "".join(x.split())
 
-# Test function that converts our python
-# objects to our JS string
 
-
-def test_python_to_js_lower_true_false():
-    inpy = [{
-        'object': 'window',
-        'logSettings': {
-            'logCallStack': False,
-            'preventSets': True,
-        }
-    }]
-    expected_out = _no_whitespace("""
-    [{
-        "object": window,
-        "logSettings": {
-            "logCallStack": false,
-            "preventSets": true
-        }
-    }]
-    """)
-    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
-    assert actual_out == expected_out
-
-
-def test_python_to_js_no_quote_object():
-    inpy = [{'object': 'window', 'logSettings': {}}]
-    expected_out = _no_whitespace('[{"object": window, "logSettings": {}}]')
-    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
-    assert actual_out == expected_out
-
-
-def test_python_to_js_no_quote_object_two_matching_objects():
-    inpy = [
-        {'object': 'window', 'logSettings': {}},
-        {'object': 'window', 'logSettings': {}},
-        {'object': 'window2', 'logSettings': {}}
-    ]
-    expected_out = _no_whitespace("""[
-        {"object": window, "logSettings": {}},
-        {"object": window, "logSettings": {}},
-        {"object": window2, "logSettings": {}}
-    ]""")
-    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
-    assert actual_out == expected_out
-
-
-# Test our validation
+# Test validation
 @pytest.fixture
 def default_log_settings():
     return jsi.get_default_log_settings()
@@ -391,9 +345,25 @@ def test_api_collection_fingerprinting():
     # This is a very crude test, there are other tests to
     # check fingeprinting instrumentation in more detail
     shortcut_input = ['collection_fingerprinting']
+    expected_instrumented_objects = {
+        "window['AnalyserNode'].prototype", 
+        "window['AudioContext'].prototype", 
+        "window['CanvasRenderingContext2D'].prototype", 
+        "window['GainNode'].prototype", 
+        "window['HTMLCanvasElement'].prototype", 
+        "window['OfflineAudioContext'].prototype", 
+        "window['OscillatorNode'].prototype", 
+        "window['RTCPeerConnection'].prototype", 
+        "window['ScriptProcessorNode'].prototype", 
+        "window['Storage'].prototype", 
+        "window",
+        "window.document", 
+        "window.navigator", 
+        "window.screen"
+    }
     output = jsi.clean_js_instrumentation_settings(shortcut_input)
-    assert 'window.document' in output
-    assert 'window[\'AudioContext\'].prototype' in output
+    actual_instrumented_objects = {x['object'] for x in output}
+    assert actual_instrumented_objects == expected_instrumented_objects
 
 
 def test_complete_pass():
@@ -403,5 +373,6 @@ def test_complete_pass():
         }
     ]
     output = jsi.clean_js_instrumentation_settings(shortcut_input)
-    assert '"recursive": true' in output
-    assert '"instrumentedName": "window"' in output
+    assert len(output) == 1
+    assert output[0]['logSettings']['recursive'] == True
+    assert output[0]['instrumentedName'] == 'window'
