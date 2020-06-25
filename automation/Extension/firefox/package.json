@@ -35,7 +35,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/mozilla/openwpm-firefox-webext"
+    "url": "git+https://github.com/mozilla/OpenWPM.git"
   },
   "scripts": {
     "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",

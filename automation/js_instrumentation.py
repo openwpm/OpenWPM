@@ -5,7 +5,7 @@ import jsonschema
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
-    curdir, 'js_instrument_settings.schema'
+    curdir, os.pardir, 'schemas', 'js_instrument_settings.schema.json'
 )
 
 list_log_settings = [
@@ -15,7 +15,8 @@ list_log_settings = [
 ]
 shortcut_specs = {
     'collection_fingerprinting':
-    os.path.join(curdir, 'collections', 'fingerprinting.json')
+    os.path.join(curdir, 'js_instrumentation_collections',
+                 'fingerprinting.json')
 }
 
 
