@@ -22,7 +22,7 @@ export interface OpenWPMUiStateData {
   ordinal: number;
 }
 
-export const pageScript = function({ xpath }) {
+export const uiInstrumentPageScript = function({ xpath }) {
   const injection_uuid = document.currentScript.getAttribute(
     "data-injection-uuid",
   );

@@ -1,12 +1,12 @@
 import { xpath } from "../lib/xpath";
-import { pageScript } from "./ui-instrument-page-scope";
+import { uiInstrumentPageScript } from "./ui-instrument-page-scope";
 
 export interface UiInstrumentTimeStampedMessage {
   timeStamp: string;
 }
 
 function getPageScriptAsString() {
-  return `const xpath = ${xpath};\n(${pageScript}({xpath}));`;
+  return `const xpath = ${xpath};\n(${uiInstrumentPageScript}({xpath}));`;
 }
 
 function insertScript(text, data) {

@@ -87,7 +87,7 @@ export class UiInstrument {
 
   /**
    * Either sends the log data to the dataReceiver or store it in memory
-   * as a pending record if the JS instrumentation is not yet configured
+   * as a pending record if the instrumentation is not yet configured
    * @param message
    * @param sender
    */
