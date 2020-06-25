@@ -1,7 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ..automation import JSInstrumentation as jsi
+from ..automation import js_instrumentation as jsi
 
 pytestmark = pytest.mark.pyonly
 
@@ -387,10 +387,10 @@ def test_api_passing_partial_log_settings(default_log_settings):
     assert actual_output == expected_output
 
 
-def test_api_shortcut_fingerprinting():
+def test_api_collection_fingerprinting():
     # This is a very crude test, there are other tests to
     # check fingeprinting instrumentation in more detail
-    shortcut_input = ['fingerprinting']
+    shortcut_input = ['collection_fingerprinting']
     output = jsi.clean_js_instrumentation_settings(shortcut_input)
     assert 'window.document' in output
     assert 'window[\'AudioContext\'].prototype' in output

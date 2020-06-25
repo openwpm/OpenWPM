@@ -19,7 +19,7 @@ from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
                                             RECORD_TYPE_SPECIAL)
 from .Errors import CommandExecutionError
-from .JSInstrumentation import clean_js_instrumentation_settings
+from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version

@@ -5,7 +5,7 @@ import jsonschema
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
-    curdir, 'js_instrumentation', 'js_instrument_settings.schema'
+    curdir, 'js_instrument_settings.schema'
 )
 
 list_log_settings = [
@@ -14,8 +14,8 @@ list_log_settings = [
     'excludedProperties'
 ]
 shortcut_specs = {
-    'fingerprinting':
-    os.path.join(curdir, 'js_instrumentation', 'fingerprinting.json')
+    'collection_fingerprinting':
+    os.path.join(curdir, 'collections', 'fingerprinting.json')
 }
 
 
@@ -128,7 +128,7 @@ def _build_full_settings_object(setting):
 
     The item may be a string or an object with one key.
     If the item is a string:
-      - Is it a shortcut e.g. "fingerprinting"
+      - Is it a shortcut e.g. "collection_fingerprinting"
       - Is it an object (verified by mdn-browser-compat)
       - If neither, reject
     If the item is an object:
