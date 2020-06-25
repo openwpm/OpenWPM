@@ -150,7 +150,7 @@ def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties
         },
     ]
     merged = jsi._merge_settings(dupe_input)
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         jsi._validate(merged)
 
 
@@ -315,15 +315,15 @@ def test_api_whole_module(default_log_settings):
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': default_log_settings,
     }
-    actual_output = jsi._build_object_from_instrumentation_input(
+    actual_output = jsi._build_full_settings_object(
         shortcut_input)
     assert actual_output == expected_output
 
 
 def test_api_two_keys_in_shortcut():
     shortcut_input = {'k1': [], 'k2': []}
-    with pytest.raises(AssertionError):
-        jsi._build_object_from_instrumentation_input(shortcut_input)
+    with pytest.raises(ValueError):
+        jsi._build_full_settings_object(shortcut_input)
 
 
 def test_api_instances_on_window(default_log_settings):
@@ -333,7 +333,7 @@ def test_api_instances_on_window(default_log_settings):
         'instrumentedName': 'window.navigator',
         'logSettings': default_log_settings,
     }
-    actual_output = jsi._build_object_from_instrumentation_input(
+    actual_output = jsi._build_full_settings_object(
         shortcut_input)
     assert actual_output == expected_output
 
@@ -347,7 +347,7 @@ def test_api_instances_on_window_with_properties(default_log_settings):
         'instrumentedName': 'window',
         'logSettings': log_settings,
     }
-    actual_output = jsi._build_object_from_instrumentation_input(
+    actual_output = jsi._build_full_settings_object(
         shortcut_input)
     assert actual_output == expected_output
 
@@ -361,7 +361,7 @@ def test_api_module_specific_properties(default_log_settings):
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': log_settings,
     }
-    actual_output = jsi._build_object_from_instrumentation_input(
+    actual_output = jsi._build_full_settings_object(
         shortcut_input)
     assert actual_output == expected_output
 
@@ -382,7 +382,7 @@ def test_api_passing_partial_log_settings(default_log_settings):
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': log_settings,
     }
-    actual_output = jsi._build_object_from_instrumentation_input(
+    actual_output = jsi._build_full_settings_object(
         shortcut_input)
     assert actual_output == expected_output
 

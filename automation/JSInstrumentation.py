@@ -47,8 +47,12 @@ def _validate(python_list_to_validate):
             propertiesToInstrument = set(propertiesToInstrument)
             excludedProperties = set(
                 setting['logSettings']['excludedProperties'])
-            assert len(propertiesToInstrument.intersection(
-                excludedProperties)) == 0
+            if len(propertiesToInstrument.intersection(
+                    excludedProperties)) != 0:
+                raise ValueError(f"excludedProperties and \
+                    propertiesToInstrument collide. This \
+                    may have occurred after a merge. \
+                    Setting with collision: {setting}.")
     return True
 
 
@@ -118,7 +122,7 @@ def _handle_obj_string(obj_string):
     return obj, instrumentedName
 
 
-def _build_object_from_instrumentation_input(input_):
+def _build_full_settings_object(setting):
     """
     We need to build a valid object from each setting.
 
@@ -137,22 +141,35 @@ def _build_object_from_instrumentation_input(input_):
     obj = None
     instrumentedName = None
     logSettings = get_default_log_settings()
-    if isinstance(input_, str):
-        obj, instrumentedName = _handle_obj_string(input_)
-    elif isinstance(input_, dict):
-        assert len(input_.keys()) == 1
-        req = list(input_.keys())[0]
-        props = input_[req]
-        obj, instrumentedName = _handle_obj_string(req)
+
+    if isinstance(setting, str):
+        obj, instrumentedName = _handle_obj_string(setting)
+
+    elif isinstance(setting, dict):
+
+        if len(setting.keys()) != 1:
+            raise ValueError(f"Invalid settings request. \
+                Settings item is a dictionary with more \
+                than one key. Received {setting}.")
+
+        setting_key = list(setting.keys())[0]
+        props = setting[setting_key]
+        obj, instrumentedName = _handle_obj_string(setting_key)
         if isinstance(props, list):
             logSettings['propertiesToInstrument'] = props
         elif isinstance(props, dict):
             for k, v in props.items():
                 logSettings[k] = v
         else:
-            raise RuntimeError('Invalid settings for object')
+            raise ValueError(f"Invalid settings request. \
+                Setting was a dictionary. Settings value \
+                must be a list or a dictionary. Received \
+                {setting}.")
     else:
-        raise RuntimeError('Invalid input')
+        raise ValueError(f"Invalid settings request. \
+            Must be a string or a dictionary. \
+            Received {setting}.")
+
     return {
         'object': obj,
         'instrumentedName': instrumentedName,
@@ -233,9 +250,9 @@ def clean_js_instrumentation_settings(user_requested_settings):
             shortcut_spec = json.loads(open(shortcut_specs[setting]).read())
             for sub_setting in shortcut_spec:
                 settings.append(
-                    _build_object_from_instrumentation_input(sub_setting))
+                    _build_full_settings_object(sub_setting))
         else:
-            settings.append(_build_object_from_instrumentation_input(setting))
+            settings.append(_build_full_settings_object(setting))
     settings = _merge_settings(settings)
     _validate(settings)
     return _python_to_js_string(settings)
