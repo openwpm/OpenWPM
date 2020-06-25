@@ -40,6 +40,7 @@
   "scripts": {
     "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
     "postinstall": "cd ../webext-instrumentation && npm install",
+    "postbuild": "cp dist/openwpm-1.0.zip openwpm.xpi",
     "build": "web-ext build",
     "eslint": "eslint . --ext jsm,js,json",
     "lint": "npm-run-all lint:*",
