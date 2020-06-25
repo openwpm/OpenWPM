@@ -19,7 +19,7 @@ from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
                                             RECORD_TYPE_SPECIAL)
 from .Errors import CommandExecutionError
-from .JSInstrumentation import convert_browser_params_to_js_string
+from .JSInstrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
@@ -117,10 +117,10 @@ class TaskManager:
 
         # Parse and flesh out js_instrument_settings
         for a_browsers_params in self.browser_params:
-            js_request = a_browsers_params['js_instrument_settings']
-            js_request_as_string = convert_browser_params_to_js_string(
-                js_request)
-            a_browsers_params['js_instrument_settings'] = js_request_as_string
+            js_settings = a_browsers_params['js_instrument_settings']
+            cleaned_js_settings = clean_js_instrumentation_settings(
+                js_settings)
+            a_browsers_params['js_instrument_settings'] = cleaned_js_settings
 
         # Flow control
         self.closing = False

@@ -19,21 +19,7 @@ shortcut_specs = {
 }
 
 
-def get_default_log_settings():
-    return {
-        'propertiesToInstrument': [],
-        'nonExistingPropertiesToInstrument': [],
-        'excludedProperties': [],
-        'logCallStack': False,
-        'logFunctionsAsStrings': False,
-        'logFunctionGets': False,
-        'preventSets': False,
-        'recursive': False,
-        'depth': 5,
-    }
-
-
-def python_to_js_string(py_in):
+def _python_to_js_string(py_in):
     """Takes python in and converts it to a string
     of the equivalent JS object.
 
@@ -50,43 +36,43 @@ def python_to_js_string(py_in):
     return out
 
 
-def validate(python_list_to_validate):
+def _validate(python_list_to_validate):
     schema = json.loads(open(schema_path).read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
-    for request in python_list_to_validate:
+    for setting in python_list_to_validate:
         propertiesToInstrument = \
-            request['logSettings']['propertiesToInstrument']
+            setting['logSettings']['propertiesToInstrument']
         if propertiesToInstrument is not None:
             propertiesToInstrument = set(propertiesToInstrument)
             excludedProperties = set(
-                request['logSettings']['excludedProperties'])
+                setting['logSettings']['excludedProperties'])
             assert len(propertiesToInstrument.intersection(
                 excludedProperties)) == 0
     return True
 
 
-def merge_object_requests(python_list):
+def _merge_settings(python_list):
     """
-    Try to merge requests for the same object. Note that
+    Try to merge settings for the same object. Note that
     this isn't that smart and you could still
     end up instrumenting a property twice if you're
     not careful.
     """
     merged_map = {}
-    for request in python_list:
-        obj = request['object']
+    for setting in python_list:
+        obj = setting['object']
         if obj not in merged_map:
-            merged_map[obj] = request
+            merged_map[obj] = setting
         else:
-            existing_request = merged_map[obj]
-            new_request = request
-            if (new_request['instrumentedName']
-                    != existing_request['instrumentedName']):
+            existing_setting = merged_map[obj]
+            new_setting = setting
+            if (new_setting['instrumentedName']
+                    != existing_setting['instrumentedName']):
                 raise RuntimeError(
                     f'Mismatching instrumentedNames found for object {obj}')
-            existing_logSettings = existing_request['logSettings']
-            new_logSettings = new_request['logSettings']
+            existing_logSettings = existing_setting['logSettings']
+            new_logSettings = new_setting['logSettings']
             for k, v in existing_logSettings.items():
                 # Special case for lists
                 if k in list_log_settings:
@@ -105,9 +91,9 @@ def merge_object_requests(python_list):
 
     merged_list = list(merged_map.values())
     # Make sure list logSettings are unique
-    for request in merged_list:
+    for setting in merged_list:
         for logSetting in list_log_settings:
-            list_setting_value = request['logSettings'][logSetting]
+            list_setting_value = setting['logSettings'][logSetting]
             if list_setting_value is None:
                 continue
             else:
@@ -116,8 +102,8 @@ def merge_object_requests(python_list):
                         f'Mismatching logSettings for object {obj}')
                 else:
                     # Dedupe
-                    request['logSettings'][logSetting] = list(
-                        set(request['logSettings'][logSetting])
+                    setting['logSettings'][logSetting] = list(
+                        set(setting['logSettings'][logSetting])
                     )
     return merged_list
 
@@ -132,9 +118,9 @@ def _handle_obj_string(obj_string):
     return obj, instrumentedName
 
 
-def build_object_from_request(request):
+def _build_object_from_instrumentation_input(input_):
     """
-    We need to build a valid object from each request.
+    We need to build a valid object from each setting.
 
     The item may be a string or an object with one key.
     If the item is a string:
@@ -151,12 +137,12 @@ def build_object_from_request(request):
     obj = None
     instrumentedName = None
     logSettings = get_default_log_settings()
-    if isinstance(request, str):
-        obj, instrumentedName = _handle_obj_string(request)
-    elif isinstance(request, dict):
-        assert len(request.keys()) == 1
-        req = list(request.keys())[0]
-        props = request[req]
+    if isinstance(input_, str):
+        obj, instrumentedName = _handle_obj_string(input_)
+    elif isinstance(input_, dict):
+        assert len(input_.keys()) == 1
+        req = list(input_.keys())[0]
+        props = input_[req]
         obj, instrumentedName = _handle_obj_string(req)
         if isinstance(props, list):
             logSettings['propertiesToInstrument'] = props
@@ -174,31 +160,82 @@ def build_object_from_request(request):
     }
 
 
-def convert_browser_params_to_js_string(js_instrument_settings):
+def get_default_log_settings():
+    """Returns a dictionary of default instrumentation settings.
+
+    The set of instrumentation settings to be used when
+    others are not provided. The specification of these
+    settings is detailed in ``js_instrument_settings.schema``.
+
+
+    Returns
+    -------
+    dict
+        Dictionary of default instrumentation settings
     """
-    We accept a list. From the list we need to parse each item.
-    Examples of the requests we accept.
-    // Shortcut
-    "fingerprinting",
-    // APIs
-    {"XMLHttpRequest": {"badSetting": 1}},
+    return {
+        'propertiesToInstrument': [],
+        'nonExistingPropertiesToInstrument': [],
+        'excludedProperties': [],
+        'logCallStack': False,
+        'logFunctionsAsStrings': False,
+        'logFunctionGets': False,
+        'preventSets': False,
+        'recursive': False,
+        'depth': 5,
+    }
+
+
+def clean_js_instrumentation_settings(user_requested_settings):
+    """Convert user input JSinstrumentation settings to full settings object.
+
+    Accepts a list. From the list we need to parse each item.
+    Examples of the settings we accept.
+
+    ```
+    // Collections
+    "collection_fingerprinting",
+    // APIs, with or without settings details
+    "XMLHttpRequest",
     {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+    // APIs with shortcut to includedProperties
     {"Prop1": ["hi"], "Prop2": ["hi2"]},
     {"XMLHttpRequest": ["send"]},
     "Storage",
     // Specific instances on window
     {"window.document": ["cookie", "referrer"]},
     {"window": ["name", "localStorage", "sessionStorage"]}
+    ```
+
+    Parameters
+    ----------
+    user_requested_settings: list
+        The list of JS Instrumentation settings requested by
+        the user, which may include syntactic shortcuts as outlined
+        in method docs.
+
+
+    Returns
+    -------
+    list
+        List of all requested JS Instrumentation with all settings
+        applied. Has been nominally de-duped and validated against
+        `js_instrument_settings.schema``.
+
     """
-    assert isinstance(js_instrument_settings, list)
-    requests = []
-    for request in js_instrument_settings:
-        if isinstance(request, str) and (request in shortcut_specs):
-            shortcut_spec = json.loads(open(shortcut_specs[request]).read())
-            for sub_request in shortcut_spec:
-                requests.append(build_object_from_request(sub_request))
+    if not isinstance(user_requested_settings, list):
+        raise TypeError(
+            f"js_instrumentation_settings must be a list. \
+              Received {user_requested_settings}")
+    settings = []
+    for setting in user_requested_settings:
+        if isinstance(setting, str) and (setting in shortcut_specs):
+            shortcut_spec = json.loads(open(shortcut_specs[setting]).read())
+            for sub_setting in shortcut_spec:
+                settings.append(
+                    _build_object_from_instrumentation_input(sub_setting))
         else:
-            requests.append(build_object_from_request(request))
-    requests = merge_object_requests(requests)
-    validate(requests)
-    return python_to_js_string(requests)
+            settings.append(_build_object_from_instrumentation_input(setting))
+    settings = _merge_settings(settings)
+    _validate(settings)
+    return _python_to_js_string(settings)

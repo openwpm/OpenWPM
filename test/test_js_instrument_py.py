@@ -30,14 +30,14 @@ def test_python_to_js_lower_true_false():
         }
     }]
     """)
-    actual_out = _no_whitespace(jsi.python_to_js_string(inpy))
+    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
     assert actual_out == expected_out
 
 
 def test_python_to_js_no_quote_object():
     inpy = [{'object': 'window', 'logSettings': {}}]
     expected_out = _no_whitespace('[{"object": window, "logSettings": {}}]')
-    actual_out = _no_whitespace(jsi.python_to_js_string(inpy))
+    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
     assert actual_out == expected_out
 
 
@@ -52,7 +52,7 @@ def test_python_to_js_no_quote_object_two_matching_objects():
         {"object": window, "logSettings": {}},
         {"object": window2, "logSettings": {}}
     ]""")
-    actual_out = _no_whitespace(jsi.python_to_js_string(inpy))
+    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
     assert actual_out == expected_out
 
 
@@ -70,7 +70,7 @@ def test_validate_good(default_log_settings):
             'logSettings': default_log_settings
         }
     ]
-    assert jsi.validate(good_input)
+    assert jsi._validate(good_input)
 
 
 def test_validate_bad__log_settings_missing(default_log_settings):
@@ -87,7 +87,7 @@ def test_validate_bad__log_settings_missing(default_log_settings):
             }
         ]
         with pytest.raises(ValidationError):
-            jsi.validate(bad_input),
+            jsi._validate(bad_input),
 
 
 def test_validate_bad__log_settings_invalid(default_log_settings):
@@ -101,7 +101,7 @@ def test_validate_bad__log_settings_invalid(default_log_settings):
         }
     ]
     with pytest.raises(ValidationError):
-        assert jsi.validate(bad_input)
+        assert jsi._validate(bad_input)
 
 
 def test_validate_bad__not_a_list(default_log_settings):
@@ -111,7 +111,7 @@ def test_validate_bad__not_a_list(default_log_settings):
         'logSettings': default_log_settings
     }
     with pytest.raises(ValidationError):
-        assert jsi.validate(bad_input)
+        assert jsi._validate(bad_input)
 
 
 def test_validate_bad__missing_object(default_log_settings):
@@ -120,7 +120,7 @@ def test_validate_bad__missing_object(default_log_settings):
         'logSettings': default_log_settings
     }]
     with pytest.raises(ValidationError):
-        assert jsi.validate(bad_input)
+        assert jsi._validate(bad_input)
 
 
 def test_validated_bad__missing_instrumentedName(default_log_settings):
@@ -129,7 +129,7 @@ def test_validated_bad__missing_instrumentedName(default_log_settings):
         'logSettings': default_log_settings
     }]
     with pytest.raises(ValidationError):
-        assert jsi.validate(bad_input)
+        assert jsi._validate(bad_input)
 
 
 def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties_to_exclude(default_log_settings):  # noqa
@@ -149,9 +149,9 @@ def test_merge_and_validate_multiple_overlap_properties_to_instrument_properties
             'logSettings': log_settings_2
         },
     ]
-    merged = jsi.merge_object_requests(dupe_input)
+    merged = jsi._merge_settings(dupe_input)
     with pytest.raises(AssertionError):
-        jsi.validate(merged)
+        jsi._validate(merged)
 
 
 def test_merge_and_validate_multiple_overlap_properties(default_log_settings):
@@ -181,7 +181,7 @@ def test_merge_and_validate_multiple_overlap_properties(default_log_settings):
             'logSettings': log_settings_merge
         },
     ]
-    actual_output = jsi.merge_object_requests(dupe_input)
+    actual_output = jsi._merge_settings(dupe_input)
     for key in ['object', 'instrumentedName']:
         assert expected_de_dupe_output[0][key] == actual_output[0][key]
     assert set(expected_de_dupe_output[0]['logSettings']) == \
@@ -209,7 +209,7 @@ def test_merge_when_log_settings_is_null(default_log_settings):
             'logSettings': log_settings_some
         },
     ]
-    actual_output = jsi.merge_object_requests(input_1)
+    actual_output = jsi._merge_settings(input_1)
     assert actual_output == input_1
 
     input_2 = [
@@ -225,7 +225,7 @@ def test_merge_when_log_settings_is_null(default_log_settings):
         },
     ]
     with pytest.raises(RuntimeError) as error:
-        jsi.merge_object_requests(input_2)
+        jsi._merge_settings(input_2)
     assert 'Mismatching logSettings' in str(error.value)
 
     input_3 = [
@@ -241,7 +241,7 @@ def test_merge_when_log_settings_is_null(default_log_settings):
         },
     ]
     with pytest.raises(RuntimeError) as error:
-        jsi.merge_object_requests(input_3)
+        jsi._merge_settings(input_3)
     assert 'Mismatching logSettings' in str(error.value)
 
 
@@ -259,7 +259,7 @@ def test_merge_diff_instrumented_names(default_log_settings):
         },
     ]
     with pytest.raises(RuntimeError) as error:
-        jsi.merge_object_requests(dupe_input)
+        jsi._merge_settings(dupe_input)
     assert 'Mismatching instrumentedNames' in str(error.value)
 
 
@@ -283,7 +283,7 @@ def test_merge_multiple_duped_properties(default_log_settings):
             'logSettings': default_log_settings
         },
     ]
-    assert jsi.merge_object_requests(dupe_input) == expected_de_dupe_output
+    assert jsi._merge_settings(dupe_input) == expected_de_dupe_output
 
 
 def test_merge_multiple_duped_properties_different_log_settings(default_log_settings):  # noqa
@@ -304,7 +304,7 @@ def test_merge_multiple_duped_properties_different_log_settings(default_log_sett
         },
     ]
     with pytest.raises(RuntimeError) as error:
-        jsi.merge_object_requests(dupe_input)
+        jsi._merge_settings(dupe_input)
     assert 'Mismatching logSettings for object' in str(error.value)
 
 
@@ -315,14 +315,15 @@ def test_api_whole_module(default_log_settings):
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': default_log_settings,
     }
-    actual_output = jsi.build_object_from_request(shortcut_input)
+    actual_output = jsi._build_object_from_instrumentation_input(
+        shortcut_input)
     assert actual_output == expected_output
 
 
 def test_api_two_keys_in_shortcut():
     shortcut_input = {'k1': [], 'k2': []}
     with pytest.raises(AssertionError):
-        jsi.build_object_from_request(shortcut_input)
+        jsi._build_object_from_instrumentation_input(shortcut_input)
 
 
 def test_api_instances_on_window(default_log_settings):
@@ -332,7 +333,8 @@ def test_api_instances_on_window(default_log_settings):
         'instrumentedName': 'window.navigator',
         'logSettings': default_log_settings,
     }
-    actual_output = jsi.build_object_from_request(shortcut_input)
+    actual_output = jsi._build_object_from_instrumentation_input(
+        shortcut_input)
     assert actual_output == expected_output
 
 
@@ -345,7 +347,8 @@ def test_api_instances_on_window_with_properties(default_log_settings):
         'instrumentedName': 'window',
         'logSettings': log_settings,
     }
-    actual_output = jsi.build_object_from_request(shortcut_input)
+    actual_output = jsi._build_object_from_instrumentation_input(
+        shortcut_input)
     assert actual_output == expected_output
 
 
@@ -358,7 +361,8 @@ def test_api_module_specific_properties(default_log_settings):
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': log_settings,
     }
-    actual_output = jsi.build_object_from_request(shortcut_input)
+    actual_output = jsi._build_object_from_instrumentation_input(
+        shortcut_input)
     assert actual_output == expected_output
 
 
@@ -378,7 +382,8 @@ def test_api_passing_partial_log_settings(default_log_settings):
         'instrumentedName': 'XMLHttpRequest',
         'logSettings': log_settings,
     }
-    actual_output = jsi.build_object_from_request(shortcut_input)
+    actual_output = jsi._build_object_from_instrumentation_input(
+        shortcut_input)
     assert actual_output == expected_output
 
 
@@ -386,7 +391,7 @@ def test_api_shortcut_fingerprinting():
     # This is a very crude test, there are other tests to
     # check fingeprinting instrumentation in more detail
     shortcut_input = ['fingerprinting']
-    output = jsi.convert_browser_params_to_js_string(shortcut_input)
+    output = jsi.clean_js_instrumentation_settings(shortcut_input)
     assert 'window.document' in output
     assert 'window[\'AudioContext\'].prototype' in output
 
@@ -397,6 +402,6 @@ def test_complete_pass():
             'window': {'recursive': True}
         }
     ]
-    output = jsi.convert_browser_params_to_js_string(shortcut_input)
+    output = jsi.clean_js_instrumentation_settings(shortcut_input)
     assert '"recursive": true' in output
     assert '"instrumentedName": "window"' in output
