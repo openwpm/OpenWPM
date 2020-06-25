@@ -157,7 +157,7 @@ def get_job_completion_callback(logger: logging.Logger,
                 logger.info("Job %r is done", job)
                 job_queue.complete(job)
             else:
-                logger.warn("Job %r got interrupted", job)
+                logger.warning("Job %r got interrupted", job)
             unsaved_jobs.remove(job)
     return callback
 
