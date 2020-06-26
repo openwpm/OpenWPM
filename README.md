@@ -80,10 +80,16 @@ After running the install script, activate your conda environment by running:
 ### Developer instructions
 
 Dev dependencies are installed by using the main `environment.yaml` (which
-is used by `./install.sh` script.
+is used by `./install.sh` script).
 
-You can install pre-commit hooks install the hooks by running `pre-commit install` to 
+You can install pre-commit hooks install the hooks by running `pre-commit install` to
 lint all the changes before you make a commit.
+
+In the rare instance that you need to create schema docs 
+(after updating or adding files to `schemas` folder), run `npm install`
+from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the 
+`docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
+incase files have been renamed.
 
 ### Troubleshooting
 
@@ -173,8 +179,22 @@ available [below](#output-format).
         with the exception of images.
         See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
 * Javascript Calls
-    * Records all method calls (with arguments) and property accesses for APIs
-      of potential fingerprinting interest:
+    * Records all method calls (with arguments) and property accesses for configured APIs
+    * Set `browser_params['js_instrument'] = True`
+    * Configure `browser_params['js_instrument_settings']` to desired settings.
+    * Data is saved to the `javascript` table.
+    * The full specification for `js_instrument_settings` is defined by a JSON schema.
+      Details of that schema are available in [docs/schemas/README.md](docs/schemas/README.md).
+      In summary, a list is passed with JS objects to be instrumented and details about how
+      that object should be instrumented. The js_instrument_settings you pass to browser_params
+      will be validated python side against the JSON schema before the crawl starts running.
+    * A number of shortcuts are available to make writing `js_instrument_settings` less
+      cumbersome than spelling out the full schema. These shortcuts are converted to a full
+      specification by the `clean_js_instrumentation_settings` method in 
+      [automation/js_instrumentation.py](automation/js_instrumentation.py).
+    * The first shortcut is the fingerprinting collection, specified by 
+      `collection_fingerprinting`. This was the default before the ability to specify APIs
+      was added. It contains a collection of APIs of potential fingerprinting interest:
         * HTML5 Canvas
         * HTML5 WebRTC
         * HTML5 Audio
@@ -184,8 +204,35 @@ available [below](#output-format).
               and `window.name` access.
         * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
         * Window properties (via `window.screen`)
-    * Set `browser_params['js_instrument'] = True`
-    * Data is saved to the `javascript` table.
+    * The fingerprinting collection is specified by the json file
+      [fingerprinting.json](automation/js_instrumentation_collections/fingeprinting.json).
+      This file is also a nice reference example for specifying your own APIs using the other
+      shortcuts.
+    * Shortcuts:
+        * Specifying just a string will instrument
+          the whole API with the [default log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
+        * For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API) 
+          such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
+        * Alternatively, you can specify a dictionary with just one key. As with strings, the key
+          can be an instance on `window` or a Web API. The value of the key can be:
+            * A list - this is a shortcut for `propertiesToInstrument`
+            * A dictionary - with non default log settings. Items missing from this dictionary
+              will be filled in with the default log settings.
+        * Here are some examples:
+            ```
+            // Collections
+            "collection_fingerprinting",
+            // APIs, with or without settings details
+            "XMLHttpRequest",
+            {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+            // APIs with shortcut to includedProperties
+            {"Prop1": ["hi"], "Prop2": ["hi2"]},
+            {"XMLHttpRequest": ["send"]},
+            "Storage",
+            // Specific instances on window
+            {"window.document": ["cookie", "referrer"]},
+            {"window": ["name", "localStorage", "sessionStorage"]}
+            ```
 * Response body content
     * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
