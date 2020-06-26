@@ -15,9 +15,8 @@ import tblib
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
-from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
-from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
-                                            RECORD_TYPE_SPECIAL)
+from .data_aggregator import BaseAggregator, build_data_aggregator_class
+from .data_aggregator.base import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
 from .Errors import CommandExecutionError
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
@@ -258,17 +257,11 @@ class TaskManager:
                         process.kill()
 
     def _launch_aggregators(self) -> None:
-        """Launch the necessary data aggregators"""
+        """Launch the data aggregator"""
         self.data_aggregator: BaseAggregator.BaseAggregator
-        if self.manager_params["output_format"] == "local":
-            self.data_aggregator = LocalAggregator.LocalAggregator(
-                self.manager_params, self.browser_params)
-        elif self.manager_params["output_format"] == "s3":
-            self.data_aggregator = S3Aggregator.S3Aggregator(
-                self.manager_params, self.browser_params)
-        else:
-            raise Exception("Unrecognized output format: %s" %
-                            self.manager_params["output_format"])
+        DataAggregator = build_data_aggregator_class(self.manager_params)
+        self.data_aggregator = DataAggregator(
+            self.manager_params, self.browser_params)
         self.data_aggregator.launch()
         self.manager_params[
             'aggregator_address'] = self.data_aggregator.listener_address
