@@ -1,4 +1,3 @@
-import abc
 import logging
 import queue
 import threading
@@ -32,7 +31,6 @@ class BaseListener:
     receive data. Classes which inherit from this base class define
     how that data is written to disk.
     """
-    __metaclass = abc.ABCMeta
 
     def __init__(self, status_queue: Queue, completion_queue: Queue,
                  shutdown_queue: Queue) -> None:
@@ -61,7 +59,6 @@ class BaseListener:
         self.curent_visit_ids: List[int] = list()  # All visit_ids in flight
         self.sock: Optional[serversocket] = None
 
-    @abc.abstractmethod
     def process_record(self, record):
         """Parse and save `record` to persistent storage.
 
@@ -70,8 +67,8 @@ class BaseListener:
         record : tuple
             2-tuple in format (table_name, data). `data` is a dict which maps
             column name to the record for that column"""
+        raise NotImplementedError()
 
-    @abc.abstractmethod
     def process_content(self, record):
         """Parse and save page content `record` to persistent storage.
 
@@ -80,8 +77,8 @@ class BaseListener:
         record : tuple
             2-tuple in format (table_name, data). `data` is a 2-tuple of the
             for (content, content_hash)"""
+        raise NotImplementedError()
 
-    @abc.abstractmethod
     def run_visit_completion_tasks(self, visit_id: int,
                                    interrupted: bool = False):
         """Will be called once a visit_id will receive no new records
@@ -92,6 +89,7 @@ class BaseListener:
             the id that will receive no more updates
         interrupted
            whether a visit is unfinished"""
+        raise NotImplementedError()
 
     def startup(self):
         """Run listener startup tasks
@@ -195,7 +193,6 @@ class BaseAggregator:
         TaskManager configuration parameters
     browser_params : list of dict
         List of browser configuration dictionaries"""
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, manager_params, browser_params):
         self.manager_params = manager_params
@@ -209,17 +206,17 @@ class BaseAggregator:
         self._last_status_received = None
         self.logger = logging.getLogger('openwpm')
 
-    @abc.abstractmethod
     def save_configuration(self, openwpm_version, browser_version):
         """Save configuration details to the database"""
+        raise NotImplementedError()
 
-    @abc.abstractmethod
     def get_next_visit_id(self):
         """Return a unique visit ID to be used as a key for a single visit"""
+        raise NotImplementedError()
 
-    @abc.abstractmethod
     def get_next_crawl_id(self):
         """Return a unique crawl ID used as a key for a browser instance"""
+        raise NotImplementedError()
 
     def get_most_recent_status(self):
         """Return the most recent queue size sent from the listener process"""

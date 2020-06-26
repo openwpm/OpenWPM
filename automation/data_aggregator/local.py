@@ -10,8 +10,8 @@ from typing import Any, Dict, Tuple, Union
 
 import plyvel
 
-from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
-                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener)
+from .base import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                   RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener)
 
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100
@@ -192,94 +192,106 @@ class LocalListener(BaseListener):
             self.ldb.close()
 
 
-class LocalAggregator(BaseAggregator):
-    """
-    Receives SQL queries from other processes and writes them to the central
-    database. Executes queries until being told to die (then it will finish
-    work and shut down). Killing this process will result in data loss.
+"""
+Methods for LocalAggregator
 
-    If content saving is enabled, we write page content to a LevelDB database.
-    """
+Receives SQL queries from other processes and writes them to the central
+database. Executes queries until being told to die (then it will finish
+work and shut down). Killing this process will result in data loss.
 
-    def __init__(self, manager_params, browser_params):
-        super(LocalAggregator, self).__init__(manager_params, browser_params)
-        db_path = self.manager_params['database_name']
-        if not os.path.exists(manager_params['data_directory']):
-            os.mkdir(manager_params['data_directory'])
-        self.db = sqlite3.connect(db_path, check_same_thread=False)
-        self.cur = self.db.cursor()
-        self._create_tables()
-        self._get_last_used_ids()
+If content saving is enabled, we write page content to a LevelDB database.
+"""
 
-        # Mark if LDBAggregator is needed
-        # (if content saving is enabled on any browser)
-        self.ldb_enabled = False
-        for params in browser_params:
-            if params['save_content']:
-                self.ldb_enabled = True
-                break
 
-    def _create_tables(self):
-        """Create tables (if this is a new database)"""
-        with open(SCHEMA_FILE, 'r') as f:
-            self.db.executescript(f.read())
-        self.db.commit()
+def __init__(self, manager_params, browser_params):
+    BaseAggregator.__init__(self, manager_params, browser_params)
+    db_path = self.manager_params['database_name']
+    if not os.path.exists(manager_params['data_directory']):
+        os.mkdir(manager_params['data_directory'])
+    self.db = sqlite3.connect(db_path, check_same_thread=False)
+    self.cur = self.db.cursor()
+    self._create_tables()
+    self._get_last_used_ids()
 
-    def _get_last_used_ids(self):
-        """Query max ids from database"""
-        self.cur.execute("SELECT MAX(visit_id) from site_visits")
-        last_visit_id = self.cur.fetchone()[0]
-        if last_visit_id is None:
-            last_visit_id = 0
-        self.current_visit_id = last_visit_id
+    # Mark if LDBAggregator is needed
+    # (if content saving is enabled on any browser)
+    self.ldb_enabled = False
+    for params in browser_params:
+        if params['save_content']:
+            self.ldb_enabled = True
+            break
 
-        self.cur.execute("SELECT MAX(crawl_id) from crawl")
-        last_crawl_id = self.cur.fetchone()[0]
-        if last_crawl_id is None:
-            last_crawl_id = 0
-        self.current_crawl_id = last_crawl_id
 
-    def save_configuration(self, openwpm_version, browser_version):
-        """Save configuration details for this crawl to the database"""
+def _create_tables(self):
+    """Create tables (if this is a new database)"""
+    with open(SCHEMA_FILE, 'r') as f:
+        self.db.executescript(f.read())
+    self.db.commit()
 
-        # Record task details
+
+def _get_last_used_ids(self):
+    """Query max ids from database"""
+    self.cur.execute("SELECT MAX(visit_id) from site_visits")
+    last_visit_id = self.cur.fetchone()[0]
+    if last_visit_id is None:
+        last_visit_id = 0
+    self.current_visit_id = last_visit_id
+
+    self.cur.execute("SELECT MAX(crawl_id) from crawl")
+    last_crawl_id = self.cur.fetchone()[0]
+    if last_crawl_id is None:
+        last_crawl_id = 0
+    self.current_crawl_id = last_crawl_id
+
+
+def save_configuration(self, openwpm_version, browser_version):
+    """Save configuration details for this crawl to the database"""
+
+    # Record task details
+    self.cur.execute(
+        "INSERT INTO task "
+        "(manager_params, openwpm_version, browser_version) "
+        "VALUES (?,?,?)",
+        (json.dumps(self.manager_params),
+            openwpm_version, browser_version)
+    )
+    self.db.commit()
+    self.task_id = self.cur.lastrowid
+
+    # Record browser details for each brower
+    for i in range(self.manager_params['num_browsers']):
         self.cur.execute(
-            "INSERT INTO task "
-            "(manager_params, openwpm_version, browser_version) "
+            "INSERT INTO crawl (crawl_id, task_id, browser_params) "
             "VALUES (?,?,?)",
-            (json.dumps(self.manager_params),
-             openwpm_version, browser_version)
+            (self.browser_params[i]['crawl_id'], self.task_id,
+                json.dumps(self.browser_params[i]))
         )
-        self.db.commit()
-        self.task_id = self.cur.lastrowid
+    self.db.commit()
 
-        # Record browser details for each brower
-        for i in range(self.manager_params['num_browsers']):
-            self.cur.execute(
-                "INSERT INTO crawl (crawl_id, task_id, browser_params) "
-                "VALUES (?,?,?)",
-                (self.browser_params[i]['crawl_id'], self.task_id,
-                 json.dumps(self.browser_params[i]))
-            )
-        self.db.commit()
 
-    def get_next_visit_id(self):
-        """Returns the next visit id"""
-        self.current_visit_id += 1
-        return self.current_visit_id
+def get_next_visit_id(self):
+    """Returns the next visit id"""
+    self.current_visit_id += 1
+    return self.current_visit_id
 
-    def get_next_crawl_id(self):
-        """Returns the next crawl id"""
-        self.current_crawl_id += 1
-        return self.current_crawl_id
 
-    def launch(self):
-        """Launch the aggregator listener process"""
-        super(LocalAggregator, self).launch(
-            listener_process_runner, self.manager_params,
-            self.ldb_enabled)
+def get_next_crawl_id(self):
+    """Returns the next crawl id"""
+    self.current_crawl_id += 1
+    return self.current_crawl_id
 
-    def shutdown(self, relaxed: bool = False) -> None:
-        """ Terminates the aggregator"""
-        super(LocalAggregator, self).shutdown(relaxed)
-        self.db.close()
+
+def launch(self):
+    """Launch the aggregator listener process"""
+    BaseAggregator.launch(
+        self,
+        listener_process_runner,
+        self.manager_params,
+        self.ldb_enabled
+    )
+
+
+def shutdown(self, relaxed: bool = False) -> None:
+    """ Terminates the aggregator"""
+    BaseAggregator.shutdown(self, relaxed)
+    self.db.close()

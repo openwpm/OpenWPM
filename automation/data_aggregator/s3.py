@@ -19,9 +19,9 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
-                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener,
-                             BaseParams)
+from .base import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                   RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener,
+                   BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
@@ -332,88 +332,95 @@ class S3Listener(BaseListener):
         self._send_to_s3(force=True)
 
 
-class S3Aggregator(BaseAggregator):
-    """
-    Receives data records from other processes and aggregates them locally
-    per-site before pushing them to a remote S3 bucket. The remote files are
-    saved in a Paquet Dataset partitioned by the crawl_id and visit_id of
-    each record.
+"""
+Methods for S3 Aggregator
 
-    The visit and task ids are randomly generated to allow multiple writers
-    to write to the same S3 bucket. Every record should have a `visit_id`
-    (which identifies the site visit) and a `crawl_id` (which identifies the
-    browser instance) so we can associate records with the appropriate meta
-    data. Any records which lack this information will be dropped by the
-    writer.
+Receives data records from other processes and aggregates them locally
+per-site before pushing them to a remote S3 bucket. The remote files are
+saved in a Paquet Dataset partitioned by the crawl_id and visit_id of
+each record.
 
-    Note: Parquet's partitioned dataset reader only supports integer partition
-    columns up to 32 bits. Currently, `instance_id` is the only partition
-    column, and thus can be no larger than 32 bits.
-    """
+The visit and task ids are randomly generated to allow multiple writers
+to write to the same S3 bucket. Every record should have a `visit_id`
+(which identifies the site visit) and a `crawl_id` (which identifies the
+browser instance) so we can associate records with the appropriate meta
+data. Any records which lack this information will be dropped by the
+writer.
 
-    def __init__(self, manager_params, browser_params):
-        super(S3Aggregator, self).__init__(manager_params, browser_params)
-        self.dir = manager_params['s3_directory']
-        self.bucket = manager_params['s3_bucket']
-        self.s3 = boto3.client('s3')
-        self._instance_id = random.getrandbits(32)
-        self._create_bucket()
+Note: Parquet's partitioned dataset reader only supports integer partition
+columns up to 32 bits. Currently, `instance_id` is the only partition
+column, and thus can be no larger than 32 bits.
+"""
 
-    def _create_bucket(self):
-        """Create remote S3 bucket if it doesn't exist"""
-        resource = boto3.resource('s3')
-        try:
-            resource.meta.client.head_bucket(Bucket=self.bucket)
-        except ClientError as e:
-            error_code = int(e.response['Error']['Code'])
-            if error_code == 404:
-                resource.create_bucket(Bucket=self.bucket)
-            else:
-                raise
 
-    def save_configuration(self, openwpm_version, browser_version):
-        """Save configuration details for this crawl to the database"""
+def __init__(self, manager_params, browser_params):
+    BaseAggregator.__init__(self, manager_params, browser_params)
+    self.dir = manager_params['s3_directory']
+    self.bucket = manager_params['s3_bucket']
+    self.s3 = boto3.client('s3')
+    self._instance_id = random.getrandbits(32)
+    self._create_bucket()
 
-        # Save config keyed by task id
-        fname = "%s/%s/instance-%s_configuration.json" % (
-            self.dir, CONFIG_DIR, self._instance_id)
 
-        # Config parameters for update
-        out = dict()
-        out['manager_params'] = self.manager_params
-        out['openwpm_version'] = str(openwpm_version)
-        out['browser_version'] = str(browser_version)
-        out['browser_params'] = self.browser_params
-        out_str = json.dumps(out)
-        out_bytes = out_str.encode('utf-8')
-        out_f = io.BytesIO(out_bytes)
-
-        # Upload to S3 and delete local copy
-        try:
-            self.s3.upload_fileobj(out_f, self.bucket, fname)
-        except Exception:
-            self.logger.error("Exception while uploading %s" % fname)
+def _create_bucket(self):
+    """Create remote S3 bucket if it doesn't exist"""
+    resource = boto3.resource('s3')
+    try:
+        resource.meta.client.head_bucket(Bucket=self.bucket)
+    except ClientError as e:
+        error_code = int(e.response['Error']['Code'])
+        if error_code == 404:
+            resource.create_bucket(Bucket=self.bucket)
+        else:
             raise
 
-    def get_next_visit_id(self):
-        """Generate visit id as randomly generated positive integer less than 2^53.
 
-        Parquet can support integers up to 64 bits, but Javascript can only
-        represent integers up to 53 bits:
-        https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
-        Thus, we cap these values at 53 bits.
-        """
-        return random.getrandbits(53)
+def save_configuration(self, openwpm_version, browser_version):
+    """Save configuration details for this crawl to the database"""
 
-    def get_next_crawl_id(self):
-        """Generate crawl id as randomly generated positive 32bit integer
+    # Save config keyed by task id
+    fname = "%s/%s/instance-%s_configuration.json" % (
+        self.dir, CONFIG_DIR, self._instance_id)
 
-        Note: Parquet's partitioned dataset reader only supports integer
-        partition columns up to 32 bits.
-        """
-        return random.getrandbits(32)
+    # Config parameters for update
+    out = dict()
+    out['manager_params'] = self.manager_params
+    out['openwpm_version'] = str(openwpm_version)
+    out['browser_version'] = str(browser_version)
+    out['browser_params'] = self.browser_params
+    out_str = json.dumps(out)
+    out_bytes = out_str.encode('utf-8')
+    out_f = io.BytesIO(out_bytes)
 
-    def launch(self):
-        """Launch the aggregator listener process"""
-        super(S3Aggregator, self).launch(
-            listener_process_runner, self.manager_params, self._instance_id)
+    # Upload to S3 and delete local copy
+    try:
+        self.s3.upload_fileobj(out_f, self.bucket, fname)
+    except Exception:
+        self.logger.error("Exception while uploading %s" % fname)
+        raise
+
+
+def get_next_visit_id(self):
+    """Generate visit id as randomly generated positive integer less than 2^53.
+
+    Parquet can support integers up to 64 bits, but Javascript can only
+    represent integers up to 53 bits:
+    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+    Thus, we cap these values at 53 bits.
+    """
+    return random.getrandbits(53)
+
+
+def get_next_crawl_id(self):
+    """Generate crawl id as randomly generated positive 32bit integer
+
+    Note: Parquet's partitioned dataset reader only supports integer
+    partition columns up to 32 bits.
+    """
+    return random.getrandbits(32)
+
+
+def launch(self):
+    """Launch the aggregator listener process"""
+    BaseAggregator.launch(
+        listener_process_runner, self.manager_params, self._instance_id)
