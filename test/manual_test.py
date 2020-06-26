@@ -8,7 +8,7 @@ import IPython
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
-from automation import JSInstrumentation as jsi
+from automation import js_instrumentation as jsi
 from automation.DeployBrowsers import configure_firefox
 from automation.TaskManager import load_default_params
 from automation.utilities.platform_utils import get_firefox_binary_path
