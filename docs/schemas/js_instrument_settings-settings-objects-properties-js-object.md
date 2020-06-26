@@ -1,16 +1,16 @@
-# Untitled boolean in JS Instrument Settings Schema
+# JS object Schema
 
 ```txt
-http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/preventSets
+http://example.com/js-instrument-settings.schema#/items/properties/object
 ```
 
-Set to true to prevent nested objects and functions from being overwritten (and thus having their instrumentation removed). Other properties (static values) can still be set with this is enabled.
+The JS object to be instrumented.
 
 
 | Abstract            | Extensible | Status         | Identifiable            | Custom Properties | Additional Properties | Access Restrictions | Defined In                                                                                                      |
 | :------------------ | ---------- | -------------- | ----------------------- | :---------------- | --------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Can be instantiated | No         | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [js_instrument_settings.schema.json\*](../../schemas/js_instrument_settings.schema.json "open original schema") |
 
-## preventSets Type
+## object Type
 
-`boolean`
+`string` ([JS object](js_instrument_settings-settings-objects-properties-js-object.md))

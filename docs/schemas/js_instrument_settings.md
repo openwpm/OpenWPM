@@ -13,4 +13,4 @@ Schema describing the JSON to be passed to JS Instrument Settings.
 
 ## JS Instrument Settings Type
 
-`object[]` ([Details](js_instrument_settings-items.md))
+`object[]` ([Settings objects](js_instrument_settings-settings-objects.md))

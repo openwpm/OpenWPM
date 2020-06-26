@@ -1,4 +1,4 @@
-# Untitled boolean in JS Instrument Settings Schema
+# Recursive? Schema
 
 ```txt
 http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/recursive
@@ -13,4 +13,4 @@ Set to `true` to recursively instrument all object properties of the given `obje
 
 ## recursive Type
 
-`boolean`
+`boolean` ([Recursive?](js_instrument_settings-settings-objects-properties-log-settings-properties-recursive.md))

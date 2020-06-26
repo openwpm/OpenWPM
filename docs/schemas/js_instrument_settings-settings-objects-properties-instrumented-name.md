@@ -1,16 +1,16 @@
-# Untitled boolean in JS Instrument Settings Schema
+# Instrumented name Schema
 
 ```txt
-http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/logCallStack
+http://example.com/js-instrument-settings.schema#/items/properties/instrumentedName
 ```
 
-Set to true save the call stack info with each property call.
+The name recorded by the instrumentation for this object.
 
 
 | Abstract            | Extensible | Status         | Identifiable            | Custom Properties | Additional Properties | Access Restrictions | Defined In                                                                                                      |
 | :------------------ | ---------- | -------------- | ----------------------- | :---------------- | --------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Can be instantiated | No         | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [js_instrument_settings.schema.json\*](../../schemas/js_instrument_settings.schema.json "open original schema") |
 
-## logCallStack Type
+## instrumentedName Type
 
-`boolean`
+`string` ([Instrumented name](js_instrument_settings-settings-objects-properties-instrumented-name.md))

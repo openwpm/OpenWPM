@@ -8,13 +8,13 @@
 
 ### Objects
 
--   [Untitled object in JS Instrument Settings](./js_instrument_settings-items.md) – `http://example.com/js-instrument-settings.schema#/items`
--   [Untitled object in JS Instrument Settings](./js_instrument_settings-items-properties-logsettings.md "The log settings object") – `http://example.com/js-instrument-settings.schema#/items/properties/logSettings`
+-   [Log settings](./js_instrument_settings-settings-objects-properties-log-settings.md "The log settings object") – `http://example.com/js-instrument-settings.schema#/items/properties/logSettings`
+-   [Settings objects](./js_instrument_settings-settings-objects.md) – `http://example.com/js-instrument-settings.schema#/items`
 
 ### Arrays
 
--   [Untitled array in JS Instrument Settings](./js_instrument_settings-items-properties-logsettings-properties-nonexistingpropertiestoinstrument.md "An array of non-existing properties to instrument on this object") – `http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/nonExistingPropertiesToInstrument`
--   [Untitled array in JS Instrument Settings](./js_instrument_settings-items-properties-logsettings-properties-excludedproperties.md "Properties excluded from instrumentation") – `http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/excludedProperties`
+-   [Excluded properties](./js_instrument_settings-settings-objects-properties-log-settings-properties-excluded-properties.md "Properties excluded from instrumentation") – `http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/excludedProperties`
+-   [Non-existing properties to instrument](./js_instrument_settings-settings-objects-properties-log-settings-properties-non-existing-properties-to-instrument.md "An array of non-existing properties to instrument on this object") – `http://example.com/js-instrument-settings.schema#/items/properties/logSettings/properties/nonExistingPropertiesToInstrument`
 
 ## Version Note
 
