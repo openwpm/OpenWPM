@@ -204,6 +204,7 @@ available [below](#output-format).
               and `window.name` access.
         * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
         * Window properties (via `window.screen`)
+    * `collection_fingerprinting` is the default if `js_instrument` is `True`.
     * The fingerprinting collection is specified by the json file
       [fingerprinting.json](automation/js_instrumentation_collections/fingeprinting.json).
       This file is also a nice reference example for specifying your own APIs using the other
@@ -215,7 +216,7 @@ available [below](#output-format).
           such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
         * Alternatively, you can specify a dictionary with just one key. As with strings, the key
           can be an instance on `window` or a Web API. The value of the key can be:
-            * A list - this is a shortcut for `propertiesToInstrument`
+            * A list - this is a shortcut for `propertiesToInstrument` (see [log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md))
             * A dictionary - with non default log settings. Items missing from this dictionary
               will be filled in with the default log settings.
         * Here are some examples:
@@ -223,12 +224,12 @@ available [below](#output-format).
             // Collections
             "collection_fingerprinting",
             // APIs, with or without settings details
+            "Storage",
             "XMLHttpRequest",
             {"XMLHttpRequest": {"excludedProperties": ["send"]}},
             // APIs with shortcut to includedProperties
             {"Prop1": ["hi"], "Prop2": ["hi2"]},
             {"XMLHttpRequest": ["send"]},
-            "Storage",
             // Specific instances on window
             {"window.document": ["cookie", "referrer"]},
             {"window": ["name", "localStorage", "sessionStorage"]}
