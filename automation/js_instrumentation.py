@@ -20,6 +20,23 @@ shortcut_specs = {
 }
 
 
+def _python_to_js_string(py_in):
+    """Takes python in and converts it to a string
+    of the equivalent JS object.
+
+    Customized for our specific needs:
+    * expects a list
+    * object is de-quoted
+    """
+    objects = [x['object'] for x in py_in]
+    out = json.dumps(py_in)
+    for o in objects:
+        obj_str_before = f'"object": "{o}",'
+        obj_str_after = f'"object": {o},'
+        out = out.replace(obj_str_before, obj_str_after)
+    return out
+
+
 def _validate(python_list_to_validate):
     schema = json.loads(open(schema_path).read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
@@ -239,4 +256,4 @@ def clean_js_instrumentation_settings(user_requested_settings):
             settings.append(_build_full_settings_object(setting))
     settings = _merge_settings(settings)
     _validate(settings)
-    return settings
+    return _python_to_js_string(settings)
