@@ -145,7 +145,7 @@ class BaseListener:
                 self.curent_visit_ids.remove(data["visit_id"])
             except ValueError:
                 self.logger.error(
-                    "Trying do remove visit_id %i "
+                    "Trying to remove visit_id %i "
                     "from current_visit_ids failed", data["visit_id"])
 
             self.run_visit_completion_tasks(
