@@ -34,7 +34,7 @@ Table of Contents <!-- omit in toc -->
   * [Debugging the platform](#debugging-the-platform)
   * [Managing requirements](#managing-requirements)
   * [Running tests](#running-tests)
-  * [Mac OSX (Limited support for developers)](#mac-osx-limited-support-for-developers)
+  * [Mac OSX](#mac-osx-limited-support-for-developers)
 * [Troubleshooting](#troubleshooting)
 * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
   * [Building the Docker Container](#building-the-docker-container)
