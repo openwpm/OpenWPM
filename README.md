@@ -193,8 +193,8 @@ available [below](#output-format).
       specification by the `clean_js_instrumentation_settings` method in 
       [automation/js_instrumentation.py](automation/js_instrumentation.py).
     * The first shortcut is the fingerprinting collection, specified by 
-      `collection_fingerprinting`. This was the default before the ability to specify APIs
-      was added. It contains a collection of APIs of potential fingerprinting interest:
+      `collection_fingerprinting`. This was the default prior to v0.11.0. It contains a collection
+      of APIs of potential fingerprinting interest:
         * HTML5 Canvas
         * HTML5 WebRTC
         * HTML5 Audio
