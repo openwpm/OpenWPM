@@ -58,15 +58,59 @@ class BaseListener:
         self.logger = logging.getLogger('openwpm')
         self.curent_visit_ids: List[int] = list()  # All visit_ids in flight
         self.sock: Optional[serversocket] = None
+        self.save_content = False
+        for params in browser_params:
+            if params['save_content']:
+                self.save_content = True
+                break
+
+    def commit_structured_records(self):
+        raise NotImplementedError()
+
+    def commit_unstructured_records(self)
+        if self.save_content:
+            raise NotImplementedError()
 
     def process_record(self, record):
         """Parse and save `record` to persistent storage.
+
+        This is confusing because its a place
+        that merges concepts
+        of structured and unstructured.
+
 
         Parameters
         ----------
         record : tuple
             2-tuple in format (table_name, data). `data` is a dict which maps
             column name to the record for that column"""
+
+        if len(record) != 2:
+            self.logger.error("Query is not the correct length %s",
+                              repr(record))
+            return
+
+        self._last_record_received = time.time()
+
+        table, data = record
+
+        if table == RECORD_TYPE_CREATE:
+            self.handle_create(data)
+            return
+        if table == RECORD_TYPE_CONTENT:
+            self.process_content(record)
+            return
+        if table == RECORD_TYPE_SPECIAL:
+            self.handle_special(data)
+            return
+
+        assert isinstance(data, dict)
+        self.write_structured_data(table, data, data["visit_id"])
+
+    def handle_create(self, data):
+        raise NotImplementedError()
+
+    def write_structured_data(self, table, data, visit_id):
         raise NotImplementedError()
 
     def process_content(self, record):
@@ -128,6 +172,7 @@ class BaseListener:
         )
         self._last_update = time.time()
 
+
     def handle_special(self, data: Dict[str, Any]) -> None:
         """
             Messages for the table RECORD_TYPE_SPECIAL are metainformation
@@ -172,12 +217,35 @@ class BaseListener:
             self.run_visit_completion_tasks(visit_id,
                                             interrupted=not self._relaxed)
 
+    def save_batch_if_past_timeout(self):
+        """
+        This seems like a useful concept generally - why not
+        have it for all.
+        Save the current batch of records if no new data has been received.
+
+        If we aren't receiving new data for this batch we commit early
+        regardless of the current batch size."""
+        if self._last_record_received is None:
+            return
+        if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
+            return
+        self.logger.debug(
+            "Saving current record batches to S3 since no new data has "
+            "been written for %d seconds." %
+            (time.time() - self._last_record_received)
+        )
+        self.drain_queue()
+        self._last_record_received = None
+
     def drain_queue(self):
         """ Ensures queue is empty before closing """
         time.sleep(3)  # TODO: the socket needs a better way of closing
         while not self.record_queue.empty():
             record = self.record_queue.get()
             self.process_record(record)
+        # Does this make sense?
+        self.commit_structured_records(force=True)
+        self.commit_unstructured_records()
         self.logger.info("Queue was flushed completely")
 
 
@@ -205,6 +273,8 @@ class BaseAggregator:
         self._last_status = None
         self._last_status_received = None
         self.logger = logging.getLogger('openwpm')
+        self.init_structured_datasource()
+        self.init_unstructured_datasource()
 
     def save_configuration(self, openwpm_version, browser_version):
         """Save configuration details to the database"""
@@ -216,6 +286,18 @@ class BaseAggregator:
 
     def get_next_crawl_id(self):
         """Return a unique crawl ID used as a key for a browser instance"""
+        raise NotImplementedError()
+
+    def init_structured_datasource(self):
+        raise NotImplementedError()
+
+    def init_unstructured_datasource(self):
+        raise NotImplementedError()
+
+    def shutdown_structured_datasource(self):
+        raise NotImplementedError()
+
+    def shutdown_unstructured_datasource(self):
         raise NotImplementedError()
 
     def get_most_recent_status(self):
@@ -295,3 +377,5 @@ class BaseAggregator:
         )
         self.listener_address = None
         self.listener_process = None
+        self.shutdown_structured_datasource()
+        self.shutdown_unstructured_datasource()

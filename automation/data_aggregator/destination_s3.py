@@ -73,18 +73,6 @@ class S3Listener(BaseListener):
                  manager_params: Dict[str, Any],
                  instance_id: int) -> None:
         self.dir = manager_params['s3_directory']
-
-        def factory_function():
-            return defaultdict(list)
-
-        self._records: Dict[int, DefaultDict[str, List[Any]]] =\
-            defaultdict(factory_function)  # maps visit_id and table to records
-        self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
-            defaultdict(list)  # maps table_name to a list of batches
-        self._unsaved_visit_ids: MutableSet[int] = \
-            set()
-
-        self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
         self._s3_content_cache: MutableSet[str] = \
             set()  # cache of filenames already uploaded
@@ -100,16 +88,6 @@ class S3Listener(BaseListener):
         self._last_record_received: Optional[float] = None
         super(S3Listener, self).__init__(*base_params)
 
-    def _write_record(self, table, data, visit_id):
-        """Insert data into a RecordBatch"""
-        records = self._records[visit_id]
-        # Add nulls
-        for item in PQ_SCHEMAS[table].names:
-            if item not in data:
-                data[item] = None
-        # Add instance_id (for partitioning)
-        data['instance_id'] = self._instance_id
-        records[table].append(data)
 
     def _create_batch(self, visit_id: int) -> None:
         """Create record batches for all records from `visit_id`"""
@@ -172,145 +150,6 @@ class S3Listener(BaseListener):
         self._s3_content_cache.add(filename.split('/', 1)[1])
         return True
 
-    def _write_str_to_s3(self, string, filename,
-                         compressed=True, skip_if_exists=True):
-        """Write `string` data to S3 with name `filename`"""
-        if skip_if_exists and self._exists_on_s3(filename):
-            self.logger.debug(
-                "File `%s` already exists on s3, skipping..." % filename)
-            return
-        if not isinstance(string, bytes):
-            string = string.encode('utf-8')
-        if compressed:
-            out_f = io.BytesIO()
-            with gzip.GzipFile(fileobj=out_f, mode='w') as writer:
-                writer.write(string)
-            out_f.seek(0)
-        else:
-            out_f = io.BytesIO(string)
-
-        # Upload to S3
-        try:
-            self._s3.upload_fileobj(out_f, self._bucket, filename)
-            self.logger.debug(
-                "Successfully uploaded file `%s` to S3." % filename)
-            # Cache the filenames that are already on S3
-            # We strip the bucket name as its the same for all files
-            if skip_if_exists:
-                self._s3_content_cache.add(filename.split('/', 1)[1])
-        except Exception:
-            self.logger.error(
-                "Exception while uploading %s" % filename, exc_info=True
-            )
-            pass
-
-    def _send_to_s3(self, force=False):
-        """Copy in-memory batches to s3"""
-        should_send = force
-        for batches in self._batches.values():
-            if len(batches) > CACHE_SIZE:
-                should_send = True
-        if not should_send:
-            return
-
-        for table_name, batches in self._batches.items():
-            if table_name == SITE_VISITS_INDEX:
-                out_str = '\n'.join([json.dumps(x) for x in batches])
-                out_str = out_str.encode('utf-8')
-                fname = '%s/site_index/instance-%s-%s.json.gz' % (
-                    self.dir, self._instance_id,
-                    hashlib.md5(out_str).hexdigest()
-                )
-                self._write_str_to_s3(out_str, fname)
-            else:
-                if len(batches) == 0:
-                    continue
-                try:
-                    table = pa.Table.from_batches(batches)
-                    pq.write_to_dataset(
-                        table, self._s3_bucket_uri % table_name,
-                        filesystem=self._fs,
-                        partition_cols=['instance_id'],
-                        compression='snappy',
-                        flavor='spark'
-                    )
-                except (pa.lib.ArrowInvalid, EndpointConnectionError):
-                    self.logger.error(
-                        "Error while sending records for: %s" % table_name,
-                        exc_info=True
-                    )
-                    pass
-            # can't del here because that would modify batches
-            self._batches[table_name] = list()
-        for visit_id in self._unsaved_visit_ids:
-            self.mark_visit_complete(visit_id)
-        self._unsaved_visit_ids = set()
-
-    def save_batch_if_past_timeout(self):
-        """Save the current batch of records if no new data has been received.
-
-        If we aren't receiving new data for this batch we commit early
-        regardless of the current batch size."""
-        if self._last_record_received is None:
-            return
-        if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
-            return
-        self.logger.debug(
-            "Saving current record batches to S3 since no new data has "
-            "been written for %d seconds." %
-            (time.time() - self._last_record_received)
-        )
-        self.drain_queue()
-        self._last_record_received = None
-
-    def process_record(self, record):
-        """Add `record` to database"""
-        if len(record) != 2:
-            self.logger.error("Query is not the correct length %s",
-                              repr(record))
-            return
-        self._last_record_received = time.time()
-        table, data = record
-        if table == RECORD_TYPE_CREATE:  # drop these statements
-            return
-        if table == RECORD_TYPE_CONTENT:
-            self.process_content(record)
-            return
-        if table == RECORD_TYPE_SPECIAL:
-            self.handle_special(data)
-            return
-
-        # Convert data to text type
-        for k, v in data.items():
-            if isinstance(v, bytes):
-                data[k] = str(v, errors='ignore')
-            elif callable(v):
-                data[k] = str(v)
-            # TODO: Can we fix this in the extension?
-            elif type(v) == dict:
-                data[k] = json.dumps(v)
-
-        # Save record to disk
-        self._write_record(table, data, data["visit_id"])
-
-    def process_content(self, record):
-        """Upload page content `record` to S3"""
-        if record[0] != RECORD_TYPE_CONTENT:
-            raise ValueError(
-                "Incorrect record type passed to `process_content`. Expected "
-                "record of type `%s`, received `%s`." % (
-                    RECORD_TYPE_CONTENT, record[0])
-            )
-        content, content_hash = record[1]
-        content = base64.b64decode(content)
-        fname = "%s/%s/%s.gz" % (self.dir, CONTENT_DIRECTORY, content_hash)
-        self._write_str_to_s3(content, fname)
-
-    def drain_queue(self):
-        """Process remaining records in queue and sync final files to S3"""
-        super(S3Listener, self).drain_queue()
-        self._send_to_s3(force=True)
-
     def run_visit_completion_tasks(self, visit_id: int,
                                    interrupted: bool = False):
         if interrupted:
@@ -322,14 +161,14 @@ class S3Listener(BaseListener):
             self.mark_visit_incomplete(visit_id)
             return
         self._create_batch(visit_id)
-        self._send_to_s3()
+        self.commit_structured_records()
 
     def shutdown(self):
         # We should only have unsaved records if we are in forced shutdown
         if self._relaxed and self._records:
             self.logger.error("Had unfinished records during relaxed shutdown")
         super(S3Listener, self).shutdown()
-        self._send_to_s3(force=True)
+        self.commit_structured_records(force=True)
 
 
 """
