@@ -7,7 +7,7 @@ dependencies:
 - click=7.1.2
 - codecov=2.1.7
 - dill=0.3.2
-- flake8-isort=3.0.0
+- flake8-isort=3.0.1
 - flake8=3.8.3
 - geckodriver=0.26.0
 - ipython=7.16.1
