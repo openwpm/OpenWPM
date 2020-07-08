@@ -1,6 +1,24 @@
 // Intrumentation injection code is based on privacybadgerfirefox
 // https://github.com/EFForg/privacybadgerfirefox/blob/master/data/fingerprinting.js
 
+interface LogSettings {
+  propertiesToInstrument: string[] | null;
+  nonExistingPropertiesToInstrument: string[];
+  excludedProperties: string[];
+  logCallStack: boolean;
+  logFunctionsAsStrings: boolean;
+  logFunctionGets: boolean;
+  preventSets: boolean;
+  recursive: boolean;
+  depth: number;
+}
+
+interface JSInstrumentRequest {
+  object: string;
+  instrumentedName: string;
+  logSettings: LogSettings;
+}
+
 declare global {
   interface Object {
     getPropertyDescriptor(subject: any, name: any): PropertyDescriptor;
@@ -11,26 +29,63 @@ declare global {
   }
 }
 
-interface LogSettings {
-  propertiesToInstrument?: string[];
-  nonExistingPropertiesToInstrument?: string[];
-  excludedProperties?: string[];
-  logCallStack?: boolean;
-  logFunctionsAsStrings?: boolean;
-  logFunctionGets?: boolean;
-  preventSets?: boolean;
-  recursive?: boolean;
-  depth?: number;
-}
-
-export function jsInstruments(event_id, sendMessagesToLogger) {
+export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
    */
 
+  // Counter to cap # of calls logged for each script/api combination
+  const maxLogCount = 500;
+  // logCounter
+  const logCounter = new Object();
+  // Prevent logging of gets arising from logging
+  let inLog = false;
+  // To keep track of the original order of events
+  let ordinal = 0;
+
+  // Options for JSOperation
+  const JSOperation = {
+    call: "call",
+    get: "get",
+    get_failed: "get(failed)",
+    get_function: "get(function)",
+    set: "set",
+    set_failed: "set(failed)",
+    set_prevented: "set(prevented)",
+  };
+
+  // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
+  // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
+  Object.getPropertyDescriptor = function(subject, name) {
+    if (subject === undefined) {
+      throw new Error("Can't get property descriptor for undefined");
+    }
+    let pd = Object.getOwnPropertyDescriptor(subject, name);
+    let proto = Object.getPrototypeOf(subject);
+    while (pd === undefined && proto !== null) {
+      pd = Object.getOwnPropertyDescriptor(proto, name);
+      proto = Object.getPrototypeOf(proto);
+    }
+    return pd;
+  };
+
+  Object.getPropertyNames = function(subject) {
+    if (subject === undefined) {
+      throw new Error("Can't get property names for undefined");
+    }
+    let props = Object.getOwnPropertyNames(subject);
+    let proto = Object.getPrototypeOf(subject);
+    while (proto !== null) {
+      props = props.concat(Object.getOwnPropertyNames(proto));
+      proto = Object.getPrototypeOf(proto);
+    }
+    // FIXME: remove duplicate property names from props
+    return props;
+  };
+
   // debounce - from Underscore v1.6.0
-  function debounce(func, wait, immediate = false) {
+  function debounce(func, wait, immediate: boolean = false) {
     let timeout, args, context, timestamp, result;
 
     const later = function() {
@@ -64,7 +119,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // Recursively generates a path for an element
-  function getPathToDomElement(element, visibilityAttr = false) {
+  function getPathToDomElement(element: any, visibilityAttr: boolean = false) {
     if (element === document.body) {
       return element.tagName;
     }
@@ -99,7 +154,10 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // Helper for JSONifying objects
-  function serializeObject(object, stringifyFunctions = false) {
+  function serializeObject(
+    object,
+    stringifyFunctions: boolean = false,
+  ): string {
     // Handle permissions errors
     try {
       if (object === null) {
@@ -154,33 +212,6 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     }
   }
 
-  /*
-   * Direct instrumentation of javascript objects
-   */
-
-  const sendFactory = function($event_id, $sendMessagesToLogger) {
-    let messages = [];
-    // debounce sending queued messages
-    const _send = debounce(function() {
-      $sendMessagesToLogger($event_id, messages);
-
-      // clear the queue
-      messages = [];
-    }, 100);
-
-    return function(msgType, msg) {
-      // queue the message
-      messages.push({ type: msgType, content: msg });
-      _send();
-    };
-  };
-
-  const send = sendFactory(event_id, sendMessagesToLogger);
-
-  // Counter to cap # of calls logged for each script/api combination
-  const maxLogCount = 500;
-  const logCounter = new Object();
-
   function updateCounterAndCheckIfOver(scriptUrl, symbol) {
     const key = scriptUrl + "|" + symbol;
     if (key in logCounter && logCounter[key] >= maxLogCount) {
@@ -193,19 +224,13 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     return false;
   }
 
-  // Prevent logging of gets arising from logging
-  let inLog = false;
-
-  // To keep track of the original order of events
-  let ordinal = 0;
-
   // For gets, sets, etc. on a single value
   function logValue(
-    instrumentedVariableName,
-    value,
-    operation,
-    callContext,
-    logSettings,
+    instrumentedVariableName: string,
+    value: any,
+    operation: string, // from JSOperation object please
+    callContext: any,
+    logSettings: LogSettings,
   ) {
     if (inLog) {
       return;
@@ -224,7 +249,7 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     const msg = {
       operation,
       symbol: instrumentedVariableName,
-      value: serializeObject(value, !!logSettings.logFunctionsAsStrings),
+      value: serializeObject(value, logSettings.logFunctionsAsStrings),
       scriptUrl: callContext.scriptUrl,
       scriptLine: callContext.scriptLine,
       scriptCol: callContext.scriptCol,
@@ -245,7 +270,12 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   // For functions
-  function logCall(instrumentedFunctionName, args, callContext, logSettings) {
+  function logCall(
+    instrumentedFunctionName: string,
+    args: IArguments,
+    callContext: any,
+    logSettings: LogSettings,
+  ) {
     if (inLog) {
       return;
     }
@@ -262,14 +292,14 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
 
     try {
       // Convert special arguments array to a standard array for JSONifying
-      const serialArgs = [];
-      for (let i = 0; i < args.length; i++) {
+      const serialArgs: string[] = [];
+      for (const arg of args) {
         serialArgs.push(
-          serializeObject(args[i], !!logSettings.logFunctionsAsStrings),
+          serializeObject(arg, logSettings.logFunctionsAsStrings),
         );
       }
       const msg = {
-        operation: "call",
+        operation: JSOperation.call,
         symbol: instrumentedFunctionName,
         args: serialArgs,
         value: "",
@@ -292,44 +322,15 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   }
 
   function logErrorToConsole(error, context: any = false) {
-    console.log("OpenWPM: Error name: " + error.name);
-    console.log("OpenWPM: Error message: " + error.message);
-    console.log("OpenWPM: Error filename: " + error.fileName);
-    console.log("OpenWPM: Error line number: " + error.lineNumber);
-    console.log("OpenWPM: Error stack: " + error.stack);
+    console.error("OpenWPM: Error name: " + error.name);
+    console.error("OpenWPM: Error message: " + error.message);
+    console.error("OpenWPM: Error filename: " + error.fileName);
+    console.error("OpenWPM: Error line number: " + error.lineNumber);
+    console.error("OpenWPM: Error stack: " + error.stack);
     if (context) {
-      console.log("OpenWPM: Error context: " + JSON.stringify(context));
+      console.error("OpenWPM: Error context: " + JSON.stringify(context));
     }
   }
-
-  // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
-  // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-  Object.getPropertyDescriptor = function(subject, name) {
-    if (subject === undefined) {
-      throw new Error("Can't get property descriptor for undefined");
-    }
-    let pd = Object.getOwnPropertyDescriptor(subject, name);
-    let proto = Object.getPrototypeOf(subject);
-    while (pd === undefined && proto !== null) {
-      pd = Object.getOwnPropertyDescriptor(proto, name);
-      proto = Object.getPrototypeOf(proto);
-    }
-    return pd;
-  };
-
-  Object.getPropertyNames = function(subject) {
-    if (subject === undefined) {
-      throw new Error("Can't get property names for undefined");
-    }
-    let props = Object.getOwnPropertyNames(subject);
-    let proto = Object.getPrototypeOf(subject);
-    while (proto !== null) {
-      props = props.concat(Object.getOwnPropertyNames(proto));
-      proto = Object.getPrototypeOf(proto);
-    }
-    // FIXME: remove duplicate property names from props
-    return props;
-  };
 
   // Helper to get originating script urls
   function getStackTrace() {
@@ -439,126 +440,18 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
     return typeof property === "object";
   }
 
-  function instrumentObject(object, objectName, logSettings: LogSettings = {}) {
-    // Use for objects or object prototypes
-    //
-    // Parameters
-    // ----------
-    //   object : Object
-    //     Object to instrument
-    //   objectName : String
-    //     Name of the object to be instrumented (saved to database)
-    //   logSettings : Object
-    //     (optional) object that can be used to specify additional logging
-    //     configurations. See available options below.
-    //
-    // logSettings options (all optional)
-    // -------------------
-    //   propertiesToInstrument : Array
-    //     An array of properties to instrument on this object. Default is
-    //     all properties.
-    //   nonExistingPropertiesToInstrument : Array
-    //     An array of non-existing properties to instrument on this object.
-    //   excludedProperties : Array
-    //     Properties excluded from instrumentation. Default is an empty
-    //     array.
-    //   logCallStack : boolean
-    //     Set to true save the call stack info with each property call.
-    //     Default is `false`.
-    //   logFunctionsAsStrings : boolean
-    //     Set to true to save functional arguments as strings during
-    //     argument serialization. Default is `false`.
-    //   preventSets : boolean
-    //     Set to true to prevent nested objects and functions from being
-    //     overwritten (and thus having their instrumentation removed).
-    //     Other properties (static values) can still be set with this is
-    //     enabled. Default is `false`.
-    //   recursive : boolean
-    //     Set to `true` to recursively instrument all object properties of
-    //     the given `object`. Default is `false`
-    //     NOTE:
-    //       (1)`logSettings['propertiesToInstrument']` does not propagate
-    //           to sub-objects.
-    //       (2) Sub-objects of prototypes can not be instrumented
-    //           recursively as these properties can not be accessed
-    //           until an instance of the prototype is created.
-    //   depth : integer
-    //     Recursion limit when instrumenting object recursively.
-    //     Default is `5`.
-    const properties = logSettings.propertiesToInstrument
-      ? logSettings.propertiesToInstrument
-      : Object.getPropertyNames(object);
-    for (const propertyName of properties) {
-      if (
-        logSettings.excludedProperties &&
-        logSettings.excludedProperties.indexOf(propertyName) > -1
-      ) {
-        continue;
-      }
-      // If `recursive` flag set we want to recursively instrument any
-      // object properties that aren't the prototype object. Only recurse if
-      // depth not set (at which point its set to default) or not at limit.
-      if (
-        !!logSettings.recursive &&
-        propertyName !== "__proto__" &&
-        isObject(object, propertyName) &&
-        (!("depth" in logSettings) || logSettings.depth > 0)
-      ) {
-        // set recursion limit to default if not specified
-        if (!("depth" in logSettings)) {
-          logSettings.depth = 5;
-        }
-        instrumentObject(
-          object[propertyName],
-          objectName + "." + propertyName,
-          {
-            excludedProperties: logSettings.excludedProperties,
-            logCallStack: logSettings.logCallStack,
-            logFunctionsAsStrings: logSettings.logFunctionsAsStrings,
-            preventSets: logSettings.preventSets,
-            recursive: logSettings.recursive,
-            depth: logSettings.depth - 1,
-          },
-        );
-      }
-      try {
-        instrumentObjectProperty(object, objectName, propertyName, logSettings);
-      } catch (error) {
-        logErrorToConsole(error, { objectName, propertyName });
-      }
-    }
-    const nonExistingProperties = logSettings.nonExistingPropertiesToInstrument;
-    if (nonExistingProperties) {
-      for (const propertyName of nonExistingProperties) {
-        if (
-          logSettings.excludedProperties &&
-          logSettings.excludedProperties.indexOf(propertyName) > -1
-        ) {
-          continue;
-        }
-        try {
-          instrumentObjectProperty(
-            object,
-            objectName,
-            propertyName,
-            logSettings,
-          );
-        } catch (error) {
-          logErrorToConsole(error, { objectName, propertyName });
-        }
-      }
-    }
-  }
-
   // Log calls to a given function
   // This helper function returns a wrapper around `func` which logs calls
   // to `func`. `objectName` and `methodName` are used strictly to identify
   // which object method `func` is coming from in the logs
-  function instrumentFunction(objectName, methodName, func, logSettings) {
+  function instrumentFunction(
+    objectName: string,
+    methodName: string,
+    func: any,
+    logSettings: LogSettings,
+  ) {
     return function() {
-      const callContext = getOriginatingScriptContext(
-        !!logSettings.logCallStack,
-      );
+      const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
         arguments,
@@ -572,30 +465,32 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
   // Log properties of prototypes and objects
   function instrumentObjectProperty(
     object,
-    objectName,
-    propertyName,
-    logSettings: LogSettings = {},
+    objectName: string,
+    propertyName: string,
+    logSettings: LogSettings,
   ) {
-    if (!object) {
-      throw new Error("Invalid object: " + propertyName);
-    }
-    if (!objectName) {
-      throw new Error("Invalid object name: " + propertyName);
-    }
-    if (!propertyName || propertyName === "undefined") {
-      throw new Error("Invalid object property name: " + propertyName);
+    if (
+      !object ||
+      !objectName ||
+      !propertyName ||
+      propertyName === "undefined"
+    ) {
+      throw new Error(
+        `Invalid request to instrumentObjectProperty.
+        Object: ${object}
+        objectName: ${objectName}
+        propertyName: ${propertyName}
+        `,
+      );
     }
 
     // Store original descriptor in closure
     const propDesc = Object.getPropertyDescriptor(object, propertyName);
 
-    // Property descriptor must exist unless we are instrumenting a
-    // non-existing property
+    // Property descriptor must exist unless we are instrumenting a nonExisting property
     if (
       !propDesc &&
-      (!logSettings.nonExistingPropertiesToInstrument ||
-        logSettings.nonExistingPropertiesToInstrument.indexOf(propertyName) ==
-          -1)
+      !logSettings.nonExistingPropertiesToInstrument.includes(propertyName)
     ) {
       console.error(
         "Property descriptor not found for",
@@ -631,8 +526,9 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
         return function() {
           let origProperty;
           const callContext = getOriginatingScriptContext(
-            !!logSettings.logCallStack,
+            logSettings.logCallStack,
           );
+          const instrumentedVariableName = `${objectName}.${propertyName}`;
 
           // get original value
           if (!propDesc) {
@@ -646,14 +542,12 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
             origProperty = originalValue;
           } else {
             console.error(
-              "Property descriptor for",
-              objectName + "." + propertyName,
-              "doesn't have getter or value?",
+              `Property descriptor for ${instrumentedVariableName} doesn't have getter or value?`,
             );
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               "",
-              "get(failed)",
+              JSOperation.get_failed,
               callContext,
               logSettings,
             );
@@ -667,9 +561,9 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
           if (typeof origProperty === "function") {
             if (logSettings.logFunctionGets) {
               logValue(
-                objectName + "." + propertyName,
+                instrumentedVariableName,
                 origProperty,
-                "get(function)",
+                JSOperation.get_function,
                 callContext,
                 logSettings,
               );
@@ -692,15 +586,15 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
             return instrumentedFunctionWrapper;
           } else if (
             typeof origProperty === "object" &&
-            !!logSettings.recursive &&
-            (!("depth" in logSettings) || logSettings.depth > 0)
+            logSettings.recursive &&
+            logSettings.depth > 0
           ) {
             return origProperty;
           } else {
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               origProperty,
-              "get",
+              JSOperation.get,
               callContext,
               logSettings,
             );
@@ -711,20 +605,21 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
       set: (function() {
         return function(value) {
           const callContext = getOriginatingScriptContext(
-            !!logSettings.logCallStack,
+            logSettings.logCallStack,
           );
+          const instrumentedVariableName = `${objectName}.${propertyName}`;
           let returnValue;
 
           // Prevent sets for functions and objects if enabled
           if (
-            !!logSettings.preventSets &&
+            logSettings.preventSets &&
             (typeof originalValue === "function" ||
               typeof originalValue === "object")
           ) {
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               value,
-              "set(prevented)",
+              JSOperation.set_prevented,
               callContext,
               logSettings,
             );
@@ -748,35 +643,134 @@ export function jsInstruments(event_id, sendMessagesToLogger) {
             inLog = false;
           } else {
             console.error(
-              "Property descriptor for",
-              objectName + "." + propertyName,
-              "doesn't have setter or value?",
+              `Property descriptor for ${instrumentedVariableName} doesn't have setter or value?`,
             );
             logValue(
-              objectName + "." + propertyName,
+              instrumentedVariableName,
               value,
-              "set(failed)",
+              JSOperation.set_failed,
               callContext,
               logSettings,
             );
             return value;
           }
-
-          // log set
           logValue(
-            objectName + "." + propertyName,
+            instrumentedVariableName,
             value,
-            "set",
+            JSOperation.set,
             callContext,
             logSettings,
           );
-
-          // return new value
           return returnValue;
         };
       })(),
     });
   }
 
-  return { instrumentObject, instrumentObjectProperty };
+  function instrumentObject(
+    object: any,
+    instrumentedName: string,
+    logSettings: LogSettings,
+  ) {
+    // Set propertiesToInstrument to null to force no properties to be instrumented.
+    // (this is used in testing for example)
+    let propertiesToInstrument: string[];
+    if (logSettings.propertiesToInstrument === null) {
+      propertiesToInstrument = [];
+    } else if (logSettings.propertiesToInstrument.length === 0) {
+      propertiesToInstrument = Object.getPropertyNames(object);
+    } else {
+      propertiesToInstrument = logSettings.propertiesToInstrument;
+    }
+    for (const propertyName of propertiesToInstrument) {
+      if (logSettings.excludedProperties.includes(propertyName)) {
+        continue;
+      }
+      // If `recursive` flag set we want to recursively instrument any
+      // object properties that aren't the prototype object.
+      if (
+        logSettings.recursive &&
+        logSettings.depth > 0 &&
+        isObject(object, propertyName) &&
+        propertyName !== "__proto__"
+      ) {
+        const newInstrumentedName = `${instrumentedName}.${propertyName}`;
+        const newLogSettings = { ...logSettings };
+        newLogSettings.depth = logSettings.depth - 1;
+        newLogSettings.propertiesToInstrument = [];
+        instrumentObject(
+          object[propertyName],
+          newInstrumentedName,
+          newLogSettings,
+        );
+      }
+      try {
+        instrumentObjectProperty(
+          object,
+          instrumentedName,
+          propertyName,
+          logSettings,
+        );
+      } catch (error) {
+        if (
+          error instanceof TypeError &&
+          error.message.includes("can't redefine non-configurable property")
+        ) {
+          console.warn(
+            `Cannot instrument non-configurable property: ${instrumentedName}:${propertyName}`,
+          );
+        } else {
+          logErrorToConsole(error, { instrumentedName, propertyName });
+        }
+      }
+    }
+    for (const propertyName of logSettings.nonExistingPropertiesToInstrument) {
+      if (logSettings.excludedProperties.includes(propertyName)) {
+        continue;
+      }
+      try {
+        instrumentObjectProperty(
+          object,
+          instrumentedName,
+          propertyName,
+          logSettings,
+        );
+      } catch (error) {
+        logErrorToConsole(error, { instrumentedName, propertyName });
+      }
+    }
+  }
+
+  const sendFactory = function(eventId, $sendMessagesToLogger) {
+    let messages = [];
+    // debounce sending queued messages
+    const _send = debounce(function() {
+      $sendMessagesToLogger(eventId, messages);
+
+      // clear the queue
+      messages = [];
+    }, 100);
+
+    return function(msgType, msg) {
+      // queue the message
+      messages.push({ type: msgType, content: msg });
+      _send();
+    };
+  };
+
+  const send = sendFactory(eventId, sendMessagesToLogger);
+
+  function instrumentJS(JSInstrumentRequests: JSInstrumentRequest[]) {
+    // The JS Instrument Requests are setup and validated python side
+    // including setting defaults for logSettings.
+
+    // More details about how this function is invoked are in
+    // content/javascript-instrument-content-scope.ts
+    JSInstrumentRequests.forEach(function(item) {
+      instrumentObject(item.object, item.instrumentedName, item.logSettings);
+    });
+  }
+
+  // This whole function getInstrumentJS returns just the function `instrumentJS`.
+  return instrumentJS;
 }

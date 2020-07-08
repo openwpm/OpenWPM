@@ -15,7 +15,6 @@ pushd ../webext-instrumentation
 npm install
 popd
 npm run build
-cp dist/*.zip ./openwpm.xpi
 popd
 
 echo "Success: automation/Extension/firefox/openwpm.xpi has been built"

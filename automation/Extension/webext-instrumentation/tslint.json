@@ -6,6 +6,7 @@
   ],
   "rules": {
     "no-object-literal-type-assertion": false,
+    "no-shadowed-variable": false,
     "interface-name": [
       true,
       "never-prefix"

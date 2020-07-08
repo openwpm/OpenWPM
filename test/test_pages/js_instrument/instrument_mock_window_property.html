@@ -1,16 +1,17 @@
 <!doctype html>
 <html>
   <head>
-    <title>Test page for JS Instrument's instrumentObject method - specifically instrumenting a non-existing window property's attributes via a mock class / object</title>
+    <title>Test page for JS Instrument's instrumentJS method - specifically instrumenting a non-existing window property's attributes via a mock class / object</title>
   </head>
   <body>
-    <h3>Test page for JS Instrument's instrumentObject method - specifically instrumenting a non-existing window property's attributes via a mock class / object</h3>
+    <h3>Test page for JS Instrument's instrumentJS method - specifically instrumenting a non-existing window property's attributes via a mock class / object</h3>
     <p> This page defines several types of objects and tests the js
-    instrument's instrumentObject() method. <br/>
+    instrument's instrumentJS() method. <br/>
     NOTE: The platform config option `manager_params['testing']` must be set
-    to True otherwise the instrumentObject method won't be exposed to this
+    to True otherwise the instrumentJS method won't be exposed to this
     test script.
     </p>
+    <script type="text/javascript", src="./utils.js"></script>
     <script type="text/javascript">
       function interactWithTestObjects() {
 
@@ -103,42 +104,68 @@
 
       // Instrument mock class non-recursively
       console.log("Instrumenting window.MockClass!");
+      window.instrumentJS(
+        [
+          // Instrument the window.MockClass property itself (not its object properties)
+          {
+            object: window,
+            instrumentedName: "window",
+            logSettings: getLogSettings({
+              propertiesToInstrument: ["MockClass"],
+            })
+          },
+          // Instrument window.MockClass object properties
+          {
+            object: window.MockClass.prototype,
+            instrumentedName: "window.MockClass",
+            logSettings: getLogSettings({
+              propertiesToInstrument: null, // Prevents default mode of instrumenting all properties
+              nonExistingPropertiesToInstrument: [
+                "nonExistingProp1",
+                "nonExistingMethod1",
+              ],
 
-      // Instrument the window.MockClass property itself (not its object properties)
-      window.instrumentObject(window, "window", {
-        propertiesToInstrument: ["MockClass"],
-      });
+            })
+          },
+          // Instrument the window.alreadyInstantiatedMockClassInstance property itself (not its object properties)
+          {
+            object: window,
+            instrumentedName: "window",
+            logSettings: getLogSettings({
+              propertiesToInstrument: ["alreadyInstantiatedMockClassInstance"],
+            })
+          },
+          // Instrument window.alreadyInstantiatedMockClassInstance object properties
+          {
+            object: window.alreadyInstantiatedMockClassInstance,
+            instrumentedName: "window.alreadyInstantiatedMockClassInstance",
+            logSettings: getLogSettings({
+              propertiesToInstrument: null, // Prevents default mode of instrumenting all properties
+              nonExistingPropertiesToInstrument: [
+                "nonExistingProp1",
+                "nonExistingMethod1",
+              ],
+            })
+          },
 
-      // Instrument window.MockClass object properties
-      window.instrumentObject(window.MockClass.prototype, "window.MockClass", {
-        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
-        nonExistingPropertiesToInstrument: [
-          "nonExistingProp1",
-          "nonExistingMethod1",
-        ],
-      });
-
-      // Instrument the window.alreadyInstantiatedMockClassInstance property itself (not its object properties)
-      window.instrumentObject(window, "window", {
-        propertiesToInstrument: ["alreadyInstantiatedMockClassInstance"],
-      });
-
-      // Instrument window.alreadyInstantiatedMockClassInstance object properties
-      window.instrumentObject(window.alreadyInstantiatedMockClassInstance, "window.alreadyInstantiatedMockClassInstance", {
-        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
-        nonExistingPropertiesToInstrument: [
-          "nonExistingProp1",
-          "nonExistingMethod1",
-        ],
-      });
+        ]
+      );
 
       // Set up instance of the instrumented Mock class
       window.newMockClassInstance = new MockClass();
 
       // Instrument the window.newMockClassInstance property itself (not its object properties)
-      window.instrumentObject(window, "window", {
-        propertiesToInstrument: ["newMockClassInstance"],
-      });
+      window.instrumentJS(
+        [
+          {
+            object:window,
+            instrumentedName: "window",
+            logSettings: getLogSettings({
+              propertiesToInstrument: ["newMockClassInstance"],
+            })
+          }
+        ]
+      );
 
       interactWithTestObjects();
     </script>

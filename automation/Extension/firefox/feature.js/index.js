@@ -20,7 +20,25 @@ async function main() {
       navigation_instrument:true,
       cookie_instrument:true,
       js_instrument:true,
-      js_instrument_modules:"fingerprinting",
+      js_instrument_settings: `
+      [
+        {
+          object: window.CanvasRenderingContext2D.prototype,
+          instrumentedName: "CanvasRenderingContext2D",
+          logSettings: {
+            propertiesToInstrument: [],
+            nonExistingPropertiesToInstrument: [],
+            excludedProperties: [],
+            excludedProperties: [],
+            logCallStack: false,
+            logFunctionsAsStrings: false,
+            logFunctionGets: false,
+            preventSets: false,
+            recursive: false,
+            depth: 5,
+          }
+        },
+      ]`,
       http_instrument:true,
       callstack_instrument:true,
       save_content:false,
@@ -51,7 +69,7 @@ async function main() {
     loggingDB.logDebug("Javascript instrumentation enabled");
     let jsInstrument = new JavascriptInstrument(loggingDB);
     jsInstrument.run(config['crawl_id']);
-    await jsInstrument.registerContentScript(config['testing'], config['js_instrument_modules']);
+    await jsInstrument.registerContentScript(config['testing'], config['js_instrument_settings']);
   }
 
   if (config['http_instrument']) {

@@ -2,7 +2,7 @@
     "extension_enabled": true,
     "cookie_instrument": false,
     "js_instrument": false,
-    "js_instrument_modules": "fingerprinting",
+    "js_instrument_settings": ["collection_fingerprinting"],
     "http_instrument": false,
     "navigation_instrument": false,
     "save_content": false,

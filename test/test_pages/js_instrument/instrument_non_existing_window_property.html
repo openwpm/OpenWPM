@@ -1,16 +1,17 @@
 <!doctype html>
 <html>
   <head>
-    <title>Test page for JS Instrument's instrumentObject method - specifically instrumenting non-existing window property</title>
+    <title>Test page for JS Instrument's instrumentJS method - specifically instrumenting non-existing window property</title>
   </head>
   <body>
-    <h3>Test page for JS Instrument's instrumentObject method - specifically instrumenting non-existing window property</h3>
+    <h3>Test page for JS Instrument's instrumentJS method - specifically instrumenting non-existing window property</h3>
     <p> This page defines several types of objects and tests the js
-    instrument's instrumentObject() method. <br/>
+    instrument's instrumentJS() method. <br/>
     NOTE: The platform config option `manager_params['testing']` must be set
-    to True otherwise the instrumentObject method won't be exposed to this
+    to True otherwise the instrumentJS method won't be exposed to this
     test script.
     </p>
+    <script type="text/javascript", src="./utils.js"></script>
     <script type="text/javascript">
       function interactWithTestObjects() {
 
@@ -57,10 +58,16 @@
       // Instrument non-existing object non-recursively
       console.log("Instrumenting window.nonExisting!");
       // Instrument the window.nonExisting property itself (not its object properties)
-      window.instrumentObject(window, "window", {
-        propertiesToInstrument: [], // Prevents default mode of instrumenting all properties
-        nonExistingPropertiesToInstrument: ["nonExisting"],
-      });
+      window.instrumentJS([
+        {
+          object: window,
+          instrumentedName: "window",
+          logSettings: getLogSettings({
+            propertiesToInstrument: null, // Prevents default mode of instrumenting all properties
+            nonExistingPropertiesToInstrument: ["nonExisting"],
+          })
+        }
+      ]);
       // Instrument window.nonExisting object properties - currently not supported
       // window.instrumentObject(window.nonExisting, "window.nonExisting", {
       //   nonExistingPropertiesToInstrument: [
