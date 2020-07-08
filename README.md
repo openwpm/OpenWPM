@@ -34,7 +34,8 @@ Table of Contents <!-- omit in toc -->
   * [Debugging the platform](#debugging-the-platform)
   * [Managing requirements](#managing-requirements)
   * [Running tests](#running-tests)
-  * [Mac OSX](#mac-osx-limited-support-for-developers)
+  * [Mac OSX](#mac-osx)
+  * [Updating schema docs](#updating-schema-docs)
 * [Troubleshooting](#troubleshooting)
 * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
   * [Building the Docker Container](#building-the-docker-container)
@@ -84,12 +85,6 @@ is used by `./install.sh` script).
 
 You can install pre-commit hooks install the hooks by running `pre-commit install` to
 lint all the changes before you make a commit.
-
-In the rare instance that you need to create schema docs 
-(after updating or adding files to `schemas` folder), run `npm install`
-from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the 
-`docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
-incase files have been renamed.
 
 ### Troubleshooting
 
@@ -585,7 +580,7 @@ in the test directory to run all tests:
     $ cd test
     $ py.test -vv
 
-See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting 
+See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting
 specific tests and various pytest options.
 
 ### Mac OSX
@@ -599,6 +594,14 @@ these issues and add full CI testing for Mac.
 Running Firefox with xvfb on OSX is untested and will require the user to install
 an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
 been tested, we welcome feedback as to whether this is working.
+
+### Updating schema docs
+
+In the rare instance that you need to create schema docs
+(after updating or adding files to `schemas` folder), run `npm install`
+from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the
+`docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
+incase files have been renamed.
 
 
 Troubleshooting
