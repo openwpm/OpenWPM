@@ -1,5 +1,32 @@
+v0.11.0 - 2020-07-08
+====================
+
+Firefox 78.0.1 scheduled release. This release contains some minor bug fixes
+and one new feature: Arbitrary JS Instrumentation.
+
+New features:
+  * Arbitrary JS Instrumentation allows users to specify, python side the set
+    APIs they would like to instrument in their crawl. The default remains the
+    set of fingerprinting apis, now called ``collection_fingerprinting``. This has
+    meant a number of API changes including the renaming of the browser_param
+    ``js_instrument_modules`` to ``js_instrument_settings``. As
+    ``js_instrument_modules`` was not actually configurable previously, we do not
+    anticipate too much disruption to users. Details of how to configure the
+    new ``js_instrument_settings`` are in the
+    `Instrumentation and Data Access section of the README <./README.md#instrumentation-and-data-access>`_.
+
+    - `Issue 641 <https://github.com/mozilla/OpenWPM/issues/641>`_
+    - `PR 642 <https://github.com/mozilla/OpenWPM/pull/642>`_
+
+Minor fixes:
+  * Asserting that unpickled exception is an exception `PR 705 <https://github.com/mozilla/OpenWPM/pull/705>`_
+  * Minor fixes `PR 703 <https://github.com/mozilla/OpenWPM/pull/703>`_
+  * Better crawling experience `PR 696 <https://github.com/mozilla/OpenWPM/pull/696>`_
+
+No OpenWPM release was made with Firefox 78.0.
+
 v0.10.0 - 2020-06-11
-=======
+====================
 
 This release is a long overdue release of OpenWPM, and contains too many
 changes to list here. Instead, we highlight the major architectural since the
@@ -30,7 +57,7 @@ Changes:
   * Numerous bugfixes + improved testing
 
 v0.9.0 - 2019-04-15
-======
+===================
 
 A checkpoint release for the final version of OpenWPM to support Firefox 52
 and the addon-sdk framework. We recommend against using this release as Firefox
@@ -56,7 +83,7 @@ Changes:
   * Numerous bug fixes
 
 v0.8.0 - 2017-10-09
-======
+===================
 
 A long overdue version bump to checkpoint the final version to support
 Selenium 2 + FF 45. Note we recommend against using the release as Firefox
@@ -78,7 +105,7 @@ Changes:
   * Make `install.sh` scriptable
 
 v0.7.0 - 2016-11-15
-======
+===================
 
 Changes:
   * Bugfixes to extension instrumentation where records would be dropped when
@@ -96,13 +123,13 @@ Changes:
   * Bugfix to extension instrumentation injection to avoid Security Errors
 
 v0.6.2 - 2016-04-08
-======
+===================
 
 Changes:
     * Bugfix to browse command. Now supports sleeping after get.
 
 v0.6.1 - 2016-04-08
-======
+===================
 
 Critical:
     * Bugfix in LevelDBAggregator preventing data loss
@@ -118,7 +145,7 @@ Changes:
     * Numerous bugfixes and improvements in Javascript Instrumentation
 
 v0.6.0 - 2015-12-22
-======
+===================
 
 Changes:
     * Cleanup of Firefox prefs to make browsers faster and reduce phoning home
@@ -131,17 +158,17 @@ Changes:
     * Improvements to javascript instrumentation
 
 v0.5.1 - 2015-10-15
-======
+===================
 
 Changes:
     * Save json serialized headers and fix cookie parsing
 
 v0.5.0 - 2015-10-14
-======
+===================
 
 Changes:
     * Added support for saving all javascript files de-duplicated and compressed
-    * Created two configuration dictionaries. One for individual browsers and 
+    * Created two configuration dictionaries. One for individual browsers and
       another for the entire infrastructure
     * Support for using OpenWPM as a submodule
     * Firefox (v39) and Selenium (v2.47.1)
@@ -176,12 +203,16 @@ Known Issues:
       dropped. The cause is unknown.
     * Forking can be done in a more memory efficient way
 
-0.3.1 - Fixes #5
-0.3.0 - Experimental merge of Fourthparty + framework to allow additional
+
+Older releases
+==============
+
+* 0.3.1 - Fixes #5
+* 0.3.0 - Experimental merge of Fourthparty + framework to allow additional
         javascript instrumentation.
-0.2.3 - Timeout logging
-0.2.2 - Browse command + better scrolling + bugfixes
-0.2.1 - Support for MITMProxy v0.11 + minor bugfixes
-0.2.0 - Complete re-write of HTTP Cookie parsing
-0.1.1 - Simplfied load of default settings, including wiki demo
-0.1.0 - Initial Public Release
+* 0.2.3 - Timeout logging
+* 0.2.2 - Browse command + better scrolling + bugfixes
+* 0.2.1 - Support for MITMProxy v0.11 + minor bugfixes
+* 0.2.0 - Complete re-write of HTTP Cookie parsing
+* 0.1.1 - Simplfied load of default settings, including wiki demo
+* 0.1.0 - Initial Public Release
