@@ -1,7 +1,6 @@
 {
   "name": "OpenWPM",
   "description": "OpenWPM Client extension",
-  "version": "1.0.0",
   "author": "Mozilla",
   "dependencies": {
     "openwpm-webext-instrumentation": "../webext-instrumentation"

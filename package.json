@@ -1,6 +1,5 @@
 {
   "name": "openwpm",
-  "version": "0.10.0",
   "author": "Mozilla",
   "description": "OpenWPM NodeJS Utilities",
   "scripts": {
