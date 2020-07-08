@@ -1,5 +1,6 @@
-v0.11.0 - 2020-07-08
-====================
+# Changelog
+
+## v0.11.0 - 2020-07-08
 
 Firefox 78.0.1 scheduled release. This release contains some minor bug fixes
 and one new feature: Arbitrary JS Instrumentation.
@@ -13,20 +14,19 @@ New features:
     ``js_instrument_modules`` was not actually configurable previously, we do not
     anticipate too much disruption to users. Details of how to configure the
     new ``js_instrument_settings`` are in the
-    `Instrumentation and Data Access section of the README <./README.md#instrumentation-and-data-access>`_.
+    [Instrumentation and Data Access section of the README](./README.md#instrumentation-and-data-access).
 
-    - `Issue 641 <https://github.com/mozilla/OpenWPM/issues/641>`_
-    - `PR 642 <https://github.com/mozilla/OpenWPM/pull/642>`_
+    - [Issue 641](https://github.com/mozilla/OpenWPM/issues/641)
+    - [PR 642](https://github.com/mozilla/OpenWPM/pull/642>)
 
 Minor fixes:
-  * Asserting that unpickled exception is an exception `PR 705 <https://github.com/mozilla/OpenWPM/pull/705>`_
-  * Minor fixes `PR 703 <https://github.com/mozilla/OpenWPM/pull/703>`_
-  * Better crawling experience `PR 696 <https://github.com/mozilla/OpenWPM/pull/696>`_
+  * Asserting that unpickled exception is an exception [PR 705](https://github.com/mozilla/OpenWPM/pull/705)
+  * Minor fixes [PR 703](https://github.com/mozilla/OpenWPM/pull/703)
+  * Better crawling experience [PR 696](https://github.com/mozilla/OpenWPM/pull/696)
 
 No OpenWPM release was made with Firefox 78.0.
 
-v0.10.0 - 2020-06-11
-====================
+## v0.10.0 - 2020-06-11
 
 This release is a long overdue release of OpenWPM, and contains too many
 changes to list here. Instead, we highlight the major architectural since the
@@ -56,8 +56,7 @@ Changes:
     crawls / the S3Aggregator)
   * Numerous bugfixes + improved testing
 
-v0.9.0 - 2019-04-15
-===================
+## v0.9.0 - 2019-04-15
 
 A checkpoint release for the final version of OpenWPM to support Firefox 52
 and the addon-sdk framework. We recommend against using this release as Firefox
@@ -67,7 +66,6 @@ Changes:
   * The ``automation`` library can now be used with Python 3.4 or later,
     as well as Python 2.7.
   * Bump to Firefox 52 ESR, Selenium 3.4.0+, and geckodriver 0.15.0.
-
     * geckodriver is required for Selenium 3+. ``install.sh`` will download
       and install it.
     * geckodriver 0.16.0+ does not support Firefox 52 or lower, so we are
@@ -75,7 +73,6 @@ Changes:
     * These versions of geckodriver and Selenium require Firefox 48+.
   * MITMProxy support has been removed.  Use ``http_instrument`` instead.
   * Bundled Firefox privacy extensions have been updated.
-
     * AdBlock Plus support has been removed.
     * uBlock Origin and Disconnect added.
     * Ghostery has been updated.
@@ -84,8 +81,7 @@ Changes:
   * Experimental support for saving Parquet files on S3
   * Numerous bug fixes
 
-v0.8.0 - 2017-10-09
-===================
+## v0.8.0 - 2017-10-09
 
 A long overdue version bump to checkpoint the final version to support
 Selenium 2 + FF 45. Note we recommend against using the release as Firefox
@@ -106,8 +102,7 @@ Changes:
     interface in extension
   * Make ``install.sh`` scriptable
 
-v0.7.0 - 2016-11-15
-===================
+## v0.7.0 - 2016-11-15
 
 Changes:
   * Bugfixes to extension instrumentation where records would be dropped when
@@ -124,90 +119,83 @@ Changes:
   * Bugfix to ``browse`` command
   * Bugfix to extension instrumentation injection to avoid Security Errors
 
-v0.6.2 - 2016-04-08
-===================
+## v0.6.2 - 2016-04-08
 
 Changes:
-    * Bugfix to browse command. Now supports sleeping after get.
+  * Bugfix to browse command. Now supports sleeping after get.
 
-v0.6.1 - 2016-04-08
-===================
+## v0.6.1 - 2016-04-08
 
 Critical:
-    * Bugfix in LevelDBAggregator preventing data loss
+  * Bugfix in LevelDBAggregator preventing data loss
 
 Changes:
-    * Bump to Firefox 45 & Selenium 2.53.0
-    * Update certificate stored
-    * Added sleep argument to ``get`` command
-    * Added install script for development dependencies
-    * Improved error handling in TaskManager and Proxy
-    * Version bumps and bugfixes in HTTPS Everywhere, Ghostery, and ABP
-    * Tests added!
-    * Numerous bugfixes and improvements in Javascript Instrumentation
+  * Bump to Firefox 45 & Selenium 2.53.0
+  * Update certificate stored
+  * Added sleep argument to ``get`` command
+  * Added install script for development dependencies
+  * Improved error handling in TaskManager and Proxy
+  * Version bumps and bugfixes in HTTPS Everywhere, Ghostery, and ABP
+  * Tests added!
+  * Numerous bugfixes and improvements in Javascript Instrumentation
 
-v0.6.0 - 2015-12-22
-===================
-
-Changes:
-    * Cleanup of Firefox prefs to make browsers faster and reduce phoning home
-    * Use LevelDB for javascript file storage
-    * Improved HTTP Cookie Parsing
-    * Several bugfixes to extension instrumentation
-    * Improved profile handling during shutdown and crashes
-    * Improved handling of child Exceptions
-    * Inital platform tests
-    * Improvements to javascript instrumentation
-
-v0.5.1 - 2015-10-15
-===================
+## v0.6.0 - 2015-12-22
 
 Changes:
-    * Save json serialized headers and fix cookie parsing
+  * Cleanup of Firefox prefs to make browsers faster and reduce phoning home
+  * Use LevelDB for javascript file storage
+  * Improved HTTP Cookie Parsing
+  * Several bugfixes to extension instrumentation
+  * Improved profile handling during shutdown and crashes
+  * Improved handling of child Exceptions
+  * Inital platform tests
+  * Improvements to javascript instrumentation
 
-v0.5.0 - 2015-10-14
-===================
-
-Changes:
-    * Added support for saving all javascript files de-duplicated and compressed
-    * Created two configuration dictionaries. One for individual browsers and
-      another for the entire infrastructure
-    * Support for using OpenWPM as a submodule
-    * Firefox (v39) and Selenium (v2.47.1)
-    * Added support for launching Ghostery, HTTPS Everywhere, and AdBlock Plus
-    * Removed Random Extension Support
-    * Bugfix for broken profile saving.
-    * Bugfix for profile clearing when memory limits are exceeded
-    * Numerous stability fixes
-    * Full Logging support in all commands
-
-v0.4.0
-======
+## v0.5.1 - 2015-10-15
 
 Changes:
-    * Significant stability improvements for long crawls
-    * Support for logging with logging module
-    * A large number of bugfixes related to process handling
-    * Prevention of a large number of stray tmp files/folders during long crawls
-    * Process/memory watchdog to handle orphaned processes and keep memory usage
-      reasonable
-    * Numerous bugfixes for extension
-    * Failure thresholds to prevent infinite loops of browser respawns or
-      command execution attempts (instead, Errors and raised)
-    * Script to install dependencies
-    * API changes to command timeouts
-    * Move SocketInterface from pickle to json serialization
+  * Save json serialized headers and fix cookie parsing
+
+## v0.5.0 - 2015-10-14
+
+Changes:
+  * Added support for saving all javascript files de-duplicated and compressed
+  * Created two configuration dictionaries. One for individual browsers and
+    another for the entire infrastructure
+  * Support for using OpenWPM as a submodule
+  * Firefox (v39) and Selenium (v2.47.1)
+  * Added support for launching Ghostery, HTTPS Everywhere, and AdBlock Plus
+  * Removed Random Extension Support
+  * Bugfix for broken profile saving.
+  * Bugfix for profile clearing when memory limits are exceeded
+  * Numerous stability fixes
+  * Full Logging support in all commands
+
+## v0.4.0
+
+Changes:
+  * Significant stability improvements for long crawls
+  * Support for logging with logging module
+  * A large number of bugfixes related to process handling
+  * Prevention of a large number of stray tmp files/folders during long crawls
+  * Process/memory watchdog to handle orphaned processes and keep memory usage
+    reasonable
+  * Numerous bugfixes for extension
+  * Failure thresholds to prevent infinite loops of browser respawns or
+    command execution attempts (instead, Errors and raised)
+  * Script to install dependencies
+  * API changes to command timeouts
+  * Move SocketInterface from pickle to json serialization
 
 Known Issues:
-    * Encoding issues cause a very small percentage of data to be dropped by the
-      extension
-    * Malformed queries are occassionally sent to the DataAggregator and are
-      dropped. The cause is unknown.
-    * Forking can be done in a more memory efficient way
+  * Encoding issues cause a very small percentage of data to be dropped by the
+    extension
+  * Malformed queries are occassionally sent to the DataAggregator and are
+    dropped. The cause is unknown.
+  * Forking can be done in a more memory efficient way
 
 
-Older releases
-==============
+## Older releases
 
 * 0.3.1 - Fixes #5
 * 0.3.0 - Experimental merge of Fourthparty + framework to allow additional
