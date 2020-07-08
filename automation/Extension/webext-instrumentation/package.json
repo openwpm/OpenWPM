@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@types/firefox-webext-browser": "^70.0.1",
-    "ava": "^3.8.2",
+    "ava": "^3.10.1",
     "codecov": "^3.7.0",
     "commitizen": "^4.1.2",
     "cz-conventional-changelog": "^2.1.0",
@@ -75,8 +75,8 @@
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.15.0",
     "tslint-immutable": "^4.7.0",
-    "typedoc": "^0.17.7",
-    "typescript": "^3.9.5"
+    "typedoc": "^0.17.8",
+    "typescript": "^3.9.6"
   },
   "ava": {
     "failFast": true,
