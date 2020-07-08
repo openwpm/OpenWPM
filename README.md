@@ -230,6 +230,12 @@ available [below](#output-format).
             {"window.document": ["cookie", "referrer"]},
             {"window": ["name", "localStorage", "sessionStorage"]}
             ```
+        * Note, the key / string will only have it's properties instrumented. That is, if you want to instrument
+          `window.fetch` function you must specify `{"window": ["fetch",]}`. If you specify just `window.fetch` the
+          instrumentation will try to instrument sub properties of `window.fetch` (which won't work as fetch is a
+          function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
+          In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
+          in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
 * Response body content
     * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.

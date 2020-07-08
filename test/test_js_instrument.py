@@ -87,27 +87,46 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
         )
 
 
-class TestJSInstrumentExistingWindowPropertyByPython(TestJSInstrumentExistingWindowProperty):  # noqa
-    # This test is a repeat of above test, but as an integration test
-    # to test correct setting of instrumentaiton via browser params.
+class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
+    # This test tests python side configuration. But we can only test
+    # built in browser APIs, so we're not using html specced objects.
+    TEST_PAGE = "instrument_pyside.html"
+    TOP_URL = (
+        u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    )
+
+    GETS_AND_SETS = {
+        ("window.navigator.webdriver", "get", "true"),
+        ("window.document.cookie", "set", "a=COOKIE"),
+        ("window.document.cookie", "get", "a=COOKIE")
+    }
+    METHOD_CALLS = {
+        # In the JS we use both fetch and window.fetch
+        ("window.fetch", "call", '["https://example1.com"]'),
+        ("window.fetch", "call", '["https://example2.com"]'),
+    }
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = super().get_config(data_dir)
-        browser_params[0]['js_insrument_modules'] = [
-            {"window": ["partiallyExisting", ]},
-            {
-                "object": "window.partiallyExisting",
-                "instrumentedName": "window.partiallyExisting",
-                "logSettings": {
-                    "propertiesToInstrument": ["existingProp", ],
-                    "nonExistingPropertiesToInstrument": [
-                        "nonExistingProp1",
-                        "nonExistingMethod1",
-                    ],
-                },
-            },
+        browser_params[0]['js_instrument_settings'] = [
+            # Note that the string "window.document.cookie" does not work.
+            {"window.document": ["cookie", ]},
+            {"window.navigator": ["webdriver", ]},
+            {"window": ["fetch", ]},
         ]
         return manager_params, browser_params
+
+    def test_instrument_object(self):
+        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        db = self.visit('/js_instrument/%s' % self.TEST_PAGE)
+        self._check_calls(
+            db=db,
+            symbol_prefix='',
+            doc_url=self.TOP_URL,
+            top_url=self.TOP_URL,
+            expected_method_calls=self.METHOD_CALLS,
+            expected_gets_and_sets=self.GETS_AND_SETS,
+        )
 
 
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
