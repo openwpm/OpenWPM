@@ -7,7 +7,7 @@ dependencies:
     - flake8
     - flake8-isort
     - ipython
-    - localstack==0.11.1.1 # See https://github.com/mozilla/OpenWPM/pull/682
+    - localstack
     - pip
     - pre-commit
     - pytest
@@ -16,5 +16,5 @@ dependencies:
         - amazon-kclpy
         - crontab
         - flask-cors
-        - moto-ext==1.3.15.15 # See https://github.com/mozilla/OpenWPM/pull/682
+        - moto-ext
         - subprocess32
