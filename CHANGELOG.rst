@@ -64,16 +64,18 @@ and the addon-sdk framework. We recommend against using this release as Firefox
 52ESR is no longer receiving security updates.
 
 Changes:
-  * The `automation` library can now be used with Python 3.4 or later,
+  * The ``automation`` library can now be used with Python 3.4 or later,
     as well as Python 2.7.
   * Bump to Firefox 52 ESR, Selenium 3.4.0+, and geckodriver 0.15.0.
-    * geckodriver is required for Selenium 3+. `install.sh` will download
+
+    * geckodriver is required for Selenium 3+. ``install.sh`` will download
       and install it.
     * geckodriver 0.16.0+ does not support Firefox 52 or lower, so we are
       stuck with 0.15.0 (and any bugs it may have) until the next ESR release.
     * These versions of geckodriver and Selenium require Firefox 48+.
-  * MITMProxy support has been removed.  Use `http_instrument` instead.
+  * MITMProxy support has been removed.  Use ``http_instrument`` instead.
   * Bundled Firefox privacy extensions have been updated.
+
     * AdBlock Plus support has been removed.
     * uBlock Origin and Disconnect added.
     * Ghostery has been updated.
@@ -99,10 +101,10 @@ Changes:
   * Refactor of socket interface in extension
   * Improvements to manual testing code
   * Add a logging module to the extension, logs to central log file
-  * Instrument `document.cookie`
-  * A number of improvements to the `instrumentObject` instrumentation
+  * Instrument ``document.cookie``
+  * A number of improvements to the ``instrumentObject`` instrumentation
     interface in extension
-  * Make `install.sh` scriptable
+  * Make ``install.sh`` scriptable
 
 v0.7.0 - 2016-11-15
 ===================
@@ -112,14 +114,14 @@ Changes:
     the extension was under heavy load and fail to re-enable until the browser
     was restarted.
   * Bugfix to extension / socket interface
-  * Add `run_custom_function` command
-  * Using alternative serialization/parallelization with `dill` and
-    `multiprocess`
+  * Add ``run_custom_function`` command
+  * Using alternative serialization/parallelization with ``dill`` and
+    ``multiprocess``
   * Better documentation
   * Bugfixes to install script
-  * Add `save_screenshot` and `dump_page_source` commands
+  * Add ``save_screenshot`` and ``dump_page_source`` commands
   * Add Audio API instrumentation
-  * Bugfix to `browse` command
+  * Bugfix to ``browse`` command
   * Bugfix to extension instrumentation injection to avoid Security Errors
 
 v0.6.2 - 2016-04-08
@@ -137,7 +139,7 @@ Critical:
 Changes:
     * Bump to Firefox 45 & Selenium 2.53.0
     * Update certificate stored
-    * Added sleep argument to `get` command
+    * Added sleep argument to ``get`` command
     * Added install script for development dependencies
     * Improved error handling in TaskManager and Proxy
     * Version bumps and bugfixes in HTTPS Everywhere, Ghostery, and ABP
