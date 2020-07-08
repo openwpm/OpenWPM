@@ -110,10 +110,13 @@ export class JavascriptInstrument {
     });
   }
 
-  public async registerContentScript(testing, modules) {
+  public async registerContentScript(
+    testing: boolean,
+    jsInstrumentationSettingsString: string,
+  ) {
     const contentScriptConfig = {
       testing,
-      modules,
+      jsInstrumentationSettingsString,
     };
     if (contentScriptConfig) {
       // TODO: Avoid using window to pass the content script config

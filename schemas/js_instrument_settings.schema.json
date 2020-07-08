@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/js-instrument-settings.schema",
+  "title": "JS Instrument Settings",
+  "description": "Schema describing the JSON to be passed to JS Instrument Settings.",
+  "type": "array",
+  "items": {
+    "title": "Settings objects",
+    "type": "object",
+    "properties": {
+      "object": {
+        "title": "JS object",
+        "description": "The JS object to be instrumented.",
+        "type": "string"
+      },
+      "instrumentedName": {
+        "title": "Instrumented name",
+        "description": "The name recorded by the instrumentation for this object.",
+        "type": "string"
+      },
+      "logSettings": {
+        "title": "Log settings",
+        "description": "The log settings object.",
+        "type": "object",
+        "properties": {
+          "propertiesToInstrument": {
+            "title": "Properties to instrument",
+            "description": "An array of properties to instrument on this object. If array is empty, then all properties are instrumented.",
+            "type": ["array", "null"],
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "nonExistingPropertiesToInstrument": {
+            "title": "Non-existing properties to instrument",
+            "description": "An array of non-existing properties to instrument on this object.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "excludedProperties": {
+            "title": "Excluded properties",
+            "description": "Properties excluded from instrumentation.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "logCallStack": {
+            "title": "Log call stack?",
+            "description": "Set to true save the call stack info with each property call.",
+            "type": "boolean",
+            "default": false
+          },
+          "logFunctionsAsStrings": {
+            "title": "Log functions as strings?",
+            "description": "Set to true to save args that are functions as strings during argument serialization. If false `FUNCTION` is recorded.",
+            "type": "boolean",
+            "default": false
+          },
+          "logFunctionGets": {
+            "title": "Log function gets?",
+            "description": "Set true to log get requests to properties that are functions. If true when a call is made, the log will contain both the call and a get log.",
+            "type": "boolean",
+            "default": false
+          },
+          "preventSets": {
+            "title": "Prevent sets?",
+            "description": "Set to true to prevent nested objects and functions from being overwritten (and thus having their instrumentation removed). Other properties (static values) can still be set with this is enabled.",
+            "type": "boolean",
+            "default": false
+          },
+          "recursive": {
+            "title": "Recursive?",
+            "description": "Set to `true` to recursively instrument all object properties of the given `object`. NOTE: (1) `propertiesToInstrument` does not propagate to sub-objects. (2) Sub-objects of prototypes can not be instrumented recursively as these properties can not be accessed until an instance of the prototype is created.",
+            "type": "boolean",
+            "default": false
+          },
+          "depth": {
+            "title": "Recursion depth",
+            "description": "Recursion limit when instrumenting object recursively",
+            "type": "number",
+            "default": 5
+          }
+        },
+        "required": [
+          "propertiesToInstrument",
+          "nonExistingPropertiesToInstrument",
+          "excludedProperties",
+          "logCallStack",
+          "logFunctionsAsStrings",
+          "logFunctionGets",
+          "preventSets",
+          "recursive",
+          "depth"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "object",
+      "instrumentedName",
+      "logSettings"
+    ],
+    "additionalProperties": false
+  }
+}

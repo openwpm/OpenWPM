@@ -1,10 +1,8 @@
-
 import os
 import socketserver
 import threading
 from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
-from random import choice
 from urllib.parse import parse_qs, urlparse
 
 import boto3
@@ -19,24 +17,6 @@ BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
                                          LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
 BASE_TEST_URL_NOSCHEME = BASE_TEST_URL.split('//')[1]
-
-
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
 
 
 class MyTCPServer(socketserver.TCPServer):
@@ -130,12 +110,6 @@ def start_server():
     thread.start()
     print("...serving at port", LOCAL_WEBSERVER_PORT)
     return server, thread
-
-
-def rand_str(size=8):
-    """Return random string with the given size."""
-    RAND_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
-    return ''.join(choice(RAND_CHARS) for _ in range(size))
 
 
 class LocalS3Session(object):

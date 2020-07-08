@@ -34,7 +34,8 @@ Table of Contents <!-- omit in toc -->
   * [Debugging the platform](#debugging-the-platform)
   * [Managing requirements](#managing-requirements)
   * [Running tests](#running-tests)
-  * [Mac OSX](#mac-osx-limited-support-for-developers)
+  * [Mac OSX](#mac-osx)
+  * [Updating schema docs](#updating-schema-docs)
 * [Troubleshooting](#troubleshooting)
 * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
   * [Building the Docker Container](#building-the-docker-container)
@@ -80,9 +81,9 @@ After running the install script, activate your conda environment by running:
 ### Developer instructions
 
 Dev dependencies are installed by using the main `environment.yaml` (which
-is used by `./install.sh` script.
+is used by `./install.sh` script).
 
-You can install pre-commit hooks install the hooks by running `pre-commit install` to 
+You can install pre-commit hooks install the hooks by running `pre-commit install` to
 lint all the changes before you make a commit.
 
 ### Troubleshooting
@@ -173,8 +174,22 @@ available [below](#output-format).
         with the exception of images.
         See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
 * Javascript Calls
-    * Records all method calls (with arguments) and property accesses for APIs
-      of potential fingerprinting interest:
+    * Records all method calls (with arguments) and property accesses for configured APIs
+    * Set `browser_params['js_instrument'] = True`
+    * Configure `browser_params['js_instrument_settings']` to desired settings.
+    * Data is saved to the `javascript` table.
+    * The full specification for `js_instrument_settings` is defined by a JSON schema.
+      Details of that schema are available in [docs/schemas/README.md](docs/schemas/README.md).
+      In summary, a list is passed with JS objects to be instrumented and details about how
+      that object should be instrumented. The js_instrument_settings you pass to browser_params
+      will be validated python side against the JSON schema before the crawl starts running.
+    * A number of shortcuts are available to make writing `js_instrument_settings` less
+      cumbersome than spelling out the full schema. These shortcuts are converted to a full
+      specification by the `clean_js_instrumentation_settings` method in 
+      [automation/js_instrumentation.py](automation/js_instrumentation.py).
+    * The first shortcut is the fingerprinting collection, specified by 
+      `collection_fingerprinting`. This was the default prior to v0.11.0. It contains a collection
+      of APIs of potential fingerprinting interest:
         * HTML5 Canvas
         * HTML5 WebRTC
         * HTML5 Audio
@@ -184,8 +199,43 @@ available [below](#output-format).
               and `window.name` access.
         * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
         * Window properties (via `window.screen`)
-    * Set `browser_params['js_instrument'] = True`
-    * Data is saved to the `javascript` table.
+    * `collection_fingerprinting` is the default if `js_instrument` is `True`.
+    * The fingerprinting collection is specified by the json file
+      [fingerprinting.json](automation/js_instrumentation_collections/fingeprinting.json).
+      This file is also a nice reference example for specifying your own APIs using the other
+      shortcuts.
+    * Shortcuts:
+        * Specifying just a string will instrument
+          the whole API with the [default log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
+        * For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API) 
+          such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
+        * Alternatively, you can specify a single-key dictionary that maps an API name to the properties / settings you'd
+          like to use. The key of this dictionary can be an instance on `window` or a Web API.
+          The value of this dictionary can be:
+            * A list - this is a shortcut for `propertiesToInstrument` (see [log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md))
+            * A dictionary - with non default log settings. Items missing from this dictionary
+              will be filled in with the default log settings.
+        * Here are some examples:
+            ```
+            // Collections
+            "collection_fingerprinting",
+            // APIs, with or without settings details
+            "Storage",
+            "XMLHttpRequest",
+            {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+            // APIs with shortcut to includedProperties
+            {"Prop1": ["hi"], "Prop2": ["hi2"]},
+            {"XMLHttpRequest": ["send"]},
+            // Specific instances on window
+            {"window.document": ["cookie", "referrer"]},
+            {"window": ["name", "localStorage", "sessionStorage"]}
+            ```
+        * Note, the key / string will only have it's properties instrumented. That is, if you want to instrument
+          `window.fetch` function you must specify `{"window": ["fetch",]}`. If you specify just `window.fetch` the
+          instrumentation will try to instrument sub properties of `window.fetch` (which won't work as fetch is a
+          function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
+          In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
+          in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
 * Response body content
     * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
@@ -537,7 +587,7 @@ in the test directory to run all tests:
     $ cd test
     $ py.test -vv
 
-See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting 
+See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting
 specific tests and various pytest options.
 
 ### Mac OSX
@@ -551,6 +601,14 @@ these issues and add full CI testing for Mac.
 Running Firefox with xvfb on OSX is untested and will require the user to install
 an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
 been tested, we welcome feedback as to whether this is working.
+
+### Updating schema docs
+
+In the rare instance that you need to create schema docs
+(after updating or adding files to `schemas` folder), run `npm install`
+from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the
+`docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
+incase files have been renamed.
 
 
 Troubleshooting

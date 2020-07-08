@@ -4,6 +4,7 @@ channels:
     - main
 dependencies:
     - beautifulsoup4
+    - click
     - dill
     # - firefox-unbranded - when it's available
     - geckodriver
@@ -25,5 +26,6 @@ dependencies:
     - tblib
     - wget
     - pip:
+      - jsonschema
       - plyvel
       - domain-utils

@@ -26,7 +26,8 @@ COOKIE_INSTRUMENT = os.getenv('COOKIE_INSTRUMENT', '1') == '1'
 NAVIGATION_INSTRUMENT = os.getenv('NAVIGATION_INSTRUMENT', '1') == '1'
 JS_INSTRUMENT = os.getenv('JS_INSTRUMENT', '1') == '1'
 CALLSTACK_INSTRUMENT = os.getenv('CALLSTACK_INSTRUMENT', '1') == '1'
-JS_INSTRUMENT_MODULES = os.getenv('JS_INSTRUMENT_MODULES', None)
+JS_INSTRUMENT_SETTINGS = os.getenv(
+    'JS_INSTRUMENT_SETTINGS', '["collection_fingerprinting"]')
 SAVE_CONTENT = os.getenv('SAVE_CONTENT', '')
 PREFS = os.getenv('PREFS', None)
 DWELL_TIME = int(os.getenv('DWELL_TIME', '10'))
@@ -35,6 +36,7 @@ SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 LOGGER_SETTINGS = MPLogger.parse_config_from_env()
 MAX_JOB_RETRIES = int(os.getenv('MAX_JOB_RETRIES', '2'))
 
+JS_INSTRUMENT_SETTINGS = json.loads(JS_INSTRUMENT_SETTINGS)
 
 if CALLSTACK_INSTRUMENT is True:
     # Must have JS_INSTRUMENT True for CALLSTACK_INSTRUMENT to work
@@ -57,8 +59,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['navigation_instrument'] = NAVIGATION_INSTRUMENT
     browser_params[i]['callstack_instrument'] = CALLSTACK_INSTRUMENT
     browser_params[i]['js_instrument'] = JS_INSTRUMENT
-    if JS_INSTRUMENT_MODULES:
-        browser_params[i]['js_instrument_modules'] = JS_INSTRUMENT_MODULES
+    browser_params[i]['js_instrument_settings'] = JS_INSTRUMENT_SETTINGS
     if SAVE_CONTENT == '1':
         browser_params[i]['save_content'] = True
     elif SAVE_CONTENT == '0':
@@ -99,7 +100,8 @@ if SENTRY_DSN:
         scope.set_tag('COOKIE_INSTRUMENT', COOKIE_INSTRUMENT)
         scope.set_tag('NAVIGATION_INSTRUMENT', NAVIGATION_INSTRUMENT)
         scope.set_tag('JS_INSTRUMENT', JS_INSTRUMENT)
-        scope.set_tag('JS_INSTRUMENT_MODULES', JS_INSTRUMENT)
+        scope.set_tag('JS_INSTRUMENT_SETTINGS', JS_INSTRUMENT_SETTINGS)
+        scope.set_tag('CALLSTACK_INSTRUMENT', CALLSTACK_INSTRUMENT)
         scope.set_tag('SAVE_CONTENT', SAVE_CONTENT)
         scope.set_tag('DWELL_TIME', DWELL_TIME)
         scope.set_tag('TIMEOUT', TIMEOUT)

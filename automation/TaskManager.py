@@ -19,6 +19,7 @@ from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
                                             RECORD_TYPE_SPECIAL)
 from .Errors import CommandExecutionError
+from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
 from .utilities.platform_utils import get_configuration_string, get_version
@@ -108,11 +109,18 @@ class TaskManager:
         if not os.path.exists(manager_params['source_dump_path']):
             os.makedirs(manager_params['source_dump_path'])
 
-        # check size of parameter dictionary
+        # Check size of parameter dictionary
         self.num_browsers = manager_params['num_browsers']
         if len(browser_params) != self.num_browsers:
             raise Exception("Number of <browser_params> dicts is not the same "
                             "as manager_params['num_browsers']")
+
+        # Parse and flesh out js_instrument_settings
+        for a_browsers_params in self.browser_params:
+            js_settings = a_browsers_params['js_instrument_settings']
+            cleaned_js_settings = clean_js_instrumentation_settings(
+                js_settings)
+            a_browsers_params['js_instrument_settings'] = cleaned_js_settings
 
         # Flow control
         self.closing = False
@@ -144,11 +152,11 @@ class TaskManager:
         # Initialize the data aggregators
         self._launch_aggregators()
 
-        # sets up the BrowserManager(s) + associated queues
+        # Sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)
         self._launch_browsers()
 
-        # start the manager watchdog
+        # Start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
         thread.daemon = True
         thread.name = "OpenWPM-watchdog"

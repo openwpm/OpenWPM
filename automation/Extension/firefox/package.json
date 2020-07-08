@@ -1,7 +1,6 @@
 {
   "name": "OpenWPM",
   "description": "OpenWPM Client extension",
-  "version": "1.0.0",
   "author": "Mozilla",
   "dependencies": {
     "openwpm-webext-instrumentation": "../webext-instrumentation"
@@ -35,11 +34,12 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/mozilla/openwpm-firefox-webext"
+    "url": "git+https://github.com/mozilla/OpenWPM.git"
   },
   "scripts": {
     "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
     "postinstall": "cd ../webext-instrumentation && npm install",
+    "postbuild": "cp dist/openwpm-1.0.zip openwpm.xpi",
     "build": "web-ext build",
     "eslint": "eslint . --ext jsm,js,json",
     "lint": "npm-run-all lint:*",
