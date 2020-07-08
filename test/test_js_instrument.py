@@ -102,12 +102,13 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
     }
     METHOD_CALLS = {
         # In the JS we use both fetch and window.fetch
-        ("window.fetch", "call", '["https://example1.com"]'),
-        ("window.fetch", "call", '["https://example2.com"]'),
+        ("window.fetch", "call", '["https://example.com"]'),
+        ("window.fetch", "call", '["https://example.org"]'),
     }
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0]['prefs'] = {'network.dns.localDomains': 'example.com,example.org'}
         browser_params[0]['js_instrument_settings'] = [
             # Note that the string "window.document.cookie" does not work.
             {"window.document": ["cookie", ]},

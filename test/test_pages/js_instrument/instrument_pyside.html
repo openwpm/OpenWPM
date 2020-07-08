@@ -18,12 +18,8 @@
         // Test get a cookie
         console.log(window.document.cookie);
         // Test both fetch() and window.fetch()
-        fetch(
-          "https://example1.com"
-        ).then(response => console.log(response));
-        window.fetch(
-          "https://example2.com"
-        ).then(response => console.log(response));
+        fetch("https://example.com");
+        window.fetch("https://example.org");
     </script>
   </body>
 </html>
