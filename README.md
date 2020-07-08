@@ -209,8 +209,9 @@ available [below](#output-format).
           the whole API with the [default log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
         * For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API) 
           such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
-        * Alternatively, you can specify a dictionary with just one key. As with strings, the key
-          can be an instance on `window` or a Web API. The value of the key can be:
+        * Alternatively, you can specify a single-key dictionary that maps an API name to the properties / settings you'd
+          like to use. The key of this dictionary can be an instance on `window` or a Web API.
+          The value of this dictionary can be:
             * A list - this is a shortcut for `propertiesToInstrument` (see [log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md))
             * A dictionary - with non default log settings. Items missing from this dictionary
               will be filled in with the default log settings.
