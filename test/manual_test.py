@@ -130,9 +130,8 @@ def start_webdriver(
 
         browser_params = load_default_params()[1][0]
         if browser_params_file is not None:
-            browser_params.update(
-                json.loads(open(browser_params_file).read())
-            )
+            with open(browser_params_file, 'r') as f:
+                browser_params.update(json.loads(f.read()))
         js_request = browser_params['js_instrument_settings']
         js_request_as_string = jsi.convert_browser_params_to_js_string(
             js_request)

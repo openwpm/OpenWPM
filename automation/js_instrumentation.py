@@ -38,7 +38,8 @@ def _python_to_js_string(py_in):
 
 
 def _validate(python_list_to_validate):
-    schema = json.loads(open(schema_path).read())
+    with open(schema_path, 'r') as f:
+        schema = json.loads(f.read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
     for setting in python_list_to_validate:
@@ -248,7 +249,8 @@ def clean_js_instrumentation_settings(user_requested_settings):
     settings = []
     for setting in user_requested_settings:
         if isinstance(setting, str) and (setting in shortcut_specs):
-            shortcut_spec = json.loads(open(shortcut_specs[setting]).read())
+            with open(shortcut_specs[setting], 'r') as f:
+                shortcut_spec = json.loads(f.read())
             for sub_setting in shortcut_spec:
                 settings.append(
                     _build_full_settings_object(sub_setting))
