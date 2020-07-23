@@ -1,5 +1,5 @@
 import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-request-event-details";
-import { sha256Buffer } from "./sha256";
+import { digestMessage } from "./sha256";
 
 export class ResponseBodyListener {
   private readonly responseBody: Promise<Uint8Array>;
@@ -22,7 +22,7 @@ export class ResponseBodyListener {
 
     let responseBody = new Uint8Array();
     filter.ondata = event => {
-      sha256Buffer(event.data).then(digest => {
+      digestMessage(event.data).then(digest => {
         this.resolveContentHash(digest);
       });
       const incoming = new Uint8Array(event.data);
