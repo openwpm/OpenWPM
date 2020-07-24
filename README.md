@@ -13,40 +13,91 @@ the instrumentation section below for more details.
 Table of Contents <!-- omit in toc -->
 ------------------
 
-* [Installation](#installation)
-  * [Pre-requisites](#pre-requisites)
-  * [Install](#install)
-  * [Developer instructions](#developer-instructions)
-  * [Troubleshooting](#troubleshooting)
-* [Quick Start](#quick-start)
-* [Advice for Measurement Researchers](#advice-for-measurement-researchers)_
-* [Instrumentation and Data Access](#instrumentation-and-data-access)
-* [Output Format](#output-format)
-    * [Local Databases](#local-databases)
-    * [Parquet on Amazon S3 **Experimental**](#parquet-on-amazon-s3-experimental)
-* [Browser and Platform Configuration](#browser-and-platform-configuration)
-  * [Platform Configuration Options](#platform-configuration-options)
-  * [Browser Configuration Options](#browser-configuration-options)
-* [Browser Profile Support](#browser-profile-support)
-  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
-  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
-    * [Save a profile](#save-a-profile)
-    * [Load a profile](#load-a-profile)
-* [Development pointers](#development-pointers)
-  * [Types Annotations in Python](#types-annotations-in-python)
-  * [Editing instrumentation](#editing-instrumentation)
-  * [Debugging the platform](#debugging-the-platform)
-  * [Managing requirements](#managing-requirements)
-  * [Running tests](#running-tests)
-  * [Mac OSX](#mac-osx)
-  * [Updating schema docs](#updating-schema-docs)
-* [Troubleshooting](#troubleshooting-1)
-* [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
-  * [Building the Docker Container](#building-the-docker-container)
-  * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
-  * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
-* [Citation](#citation)
-* [License](#license)
+<<<<<<< HEAD
+* [* License](#ullilicenseliul)
+  * [Installation](#installation)
+    * [Pre-requisites](#pre-requisites)
+    * [Install](#install)
+    * [Developer instructions](#developer-instructions)
+    * [Troubleshooting](#troubleshooting)
+  * [Quick Start](#quick-start)
+  * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+  * [Instrumentation and Data Access](#instrumentation-and-data-access)
+  * [Output Format](#output-format)
+      * [Local Databases](#local-databases)
+      * [Parquet on Amazon S3](#parquet-on-amazon-s3)
+  * [Browser and Platform Configuration](#browser-and-platform-configuration)
+    * [Platform Configuration Options](#platform-configuration-options)
+    * [Browser Configuration Options](#browser-configuration-options)
+  * [Browser Profile Support](#browser-profile-support)
+    * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+    * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+      * [Save a profile](#save-a-profile)
+      * [Load a profile](#load-a-profile)
+  * [Troubleshooting](#troubleshooting-1)
+  * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+    * [Building the Docker Container](#building-the-docker-container)
+    * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+    * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+  * [Citation](#citation)
+  * [License](#license)
+||||||| parent of a51b070... Initial port of wiki
+* [* License](#ullilicenseliul)
+  * [Installation](#installation)
+    * [Pre-requisites](#pre-requisites)
+    * [Install](#install)
+    * [Developer instructions](#developer-instructions)
+    * [Troubleshooting](#troubleshooting)
+  * [Quick Start](#quick-start)
+  * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+  * [Instrumentation and Data Access](#instrumentation-and-data-access)
+  * [Output Format](#output-format)
+      * [Local Databases](#local-databases)
+      * [Parquet on Amazon S3](#parquet-on-amazon-s3)
+  * [Browser and Platform Configuration](#browser-and-platform-configuration)
+    * [Platform Configuration Options](#platform-configuration-options)
+    * [Browser Configuration Options](#browser-configuration-options)
+  * [Browser Profile Support](#browser-profile-support)
+    * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+    * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+      * [Save a profile](#save-a-profile)
+      * [Load a profile](#load-a-profile)
+  * [Troubleshooting](#troubleshooting-1)
+  * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+    * [Building the Docker Container](#building-the-docker-container)
+    * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+    * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+  * [Citation](#citation)
+  * [License](#license)
+=======
+* [* License](#ullilicenseliul)
+  * [Installation](#installation)
+    * [Pre-requisites](#pre-requisites)
+    * [Install](#install)
+    * [Developer instructions](#developer-instructions)
+    * [Troubleshooting](#troubleshooting)
+  * [Quick Start](#quick-start)
+  * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+  * [Instrumentation and Data Access](#instrumentation-and-data-access)
+  * [Output Format](#output-format)
+      * [Local Databases](#local-databases)
+      * [Parquet on Amazon S3](#parquet-on-amazon-s3)
+  * [Browser and Platform Configuration](#browser-and-platform-configuration)
+    * [Platform Configuration Options](#platform-configuration-options)
+    * [Browser Configuration Options](#browser-configuration-options)
+  * [Browser Profile Support](#browser-profile-support)
+    * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+    * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+      * [Save a profile](#save-a-profile)
+      * [Load a profile](#load-a-profile)
+  * [Troubleshooting](#troubleshooting-1)
+  * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+    * [Building the Docker Container](#building-the-docker-container)
+    * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+    * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+  * [Citation](#citation)
+  * [License](#license)
+>>>>>>> a51b070... Initial port of wiki
 
 
 Installation
@@ -84,11 +135,7 @@ After running the install script, activate your conda environment by running:
 
 ### Developer instructions
 
-Dev dependencies are installed by using the main `environment.yaml` (which
-is used by `./install.sh` script).
-
-You can install pre-commit hooks install the hooks by running `pre-commit install` to
-lint all the changes before you make a commit.
+If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](wiki/CONTRIBUTING.md)
 
 ### Troubleshooting
 
@@ -316,7 +363,9 @@ available [below](#output-format).
               misaligned.
 
 Output Format
--------------
+------------
+
+Our general dataschema can be seen [here](wiki/Instrumentation-Schema-Documentation.md)
 
 #### Local Databases
 By default OpenWPM saves all data locally on disk in a variety of formats.
@@ -329,7 +378,7 @@ subdirectories of the main output directory. The SQLite schema
 specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
 inline by sending a `create_table` message to the data aggregator.
 
-#### Parquet on Amazon S3 **Experimental**
+#### Parquet on Amazon S3
 As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
 Parquet Dataset. This is currently experimental and hasn't been thoroughly
 tested. Screenshots, and page source saving is not currently supported and
@@ -539,95 +588,6 @@ Note that stateful crawl are currently [unsupported](https://github.com/mozilla/
 new page visit. Note that this means the profile will very likely be
 _incomplete_, as cookies or storage may have been set or changed during the
 page load that are **not** reflected back into the seed profile.
-
-Development pointers
---------------------
-
-### Types Annotations in Python
-
-We as maintainers have decided it would be helpful to have Python3 type annotations
-for the python part of this project to catch errors earlier, get better
-code completion and allow bigger changes down the line with more confidence.
-As such you should strive to add type annotations to all new code you add to
-the project as well as the one you plan to change fundamentally.
-
-### Editing instrumentation
-
-The instrumentation extension is included in `/automation/Extension/firefox/`.
-The instrumentation itself (used by the above extension) is included in
-`/automation/Extension/webext-instrumentation/`.
-Any edits within these directories will require the extension to be re-built to produce
-a new `openwpm.xpi` with your updates. You can use `./scripts/build-extension.sh` to do this,
-or you can run `npm run build` from `automation/Extension/firefox/`.
-
-### Debugging the platform
-
-Manual debugging with OpenWPM can be difficult. By design the platform runs all
-browsers in separate processes and swallows all exceptions (with the intent of
-continuing the crawl). We recommend using
-[manual_test.py](https://github.com/mozilla/OpenWPM/blob/master/test/manual_test.py).
-
-This utility allows manual debugging of the extension instrumentation with or
-without Selenium enabled, as well as makes it easy to launch a Selenium
-instance (without any instrumentation)
-* `./scripts/build-extension.sh`
-* `python -m test.manual_test` builds the current extension directory
-  and launches a Firefox instance with it.
-* `python -m test.manual_test --selenium` launches a Firefox Selenium instance
-  after automatically rebuilding `openwpm.xpi`. The script then
-  drops into an `ipython` shell where the webdriver instance is available
-  through variable `driver`.
-* `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
-  instance with no instrumentation. The script then
-  drops into an `ipython` shell where the webdriver instance is available
-  through variable `driver`.
-
-### Managing requirements
-
-We use a script to pin dependencies `scripts/repin.sh`.
-
-This means that `environment.yaml` should not be edited directly.
-
-Instead, place new requirements in `scripts/environment-unpinned.yaml` or `scripts/environment-unpinned-dev.yaml`
-and then run repin:
-
-    $ cd scripts
-    $ ./repin.sh
-
-To update the version of firefox, the TAG variable must be updated in the `./scripts/install-firefox.sh`
-script. This script contains further information about finding the right TAG.
-
-### Running tests
-
-OpenWPM's tests are build on [pytest](https://docs.pytest.org/en/latest/). Execute `py.test -vv`
-in the test directory to run all tests:
-
-    $ conda activate openwpm
-    $ cd test
-    $ py.test -vv
-
-See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting
-specific tests and various pytest options.
-
-### Mac OSX
-
-You may need to install `make` / `gcc` in order to build the extension.
-The necessary packages are part of xcode: `xcode-select --install`
-
-We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
-these issues and add full CI testing for Mac.
-
-Running Firefox with xvfb on OSX is untested and will require the user to install
-an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
-been tested, we welcome feedback as to whether this is working.
-
-### Updating schema docs
-
-In the rare instance that you need to create schema docs
-(after updating or adding files to `schemas` folder), run `npm install`
-from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the
-`docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
-incase files have been renamed.
 
 
 Troubleshooting
