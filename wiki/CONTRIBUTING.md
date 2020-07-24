@@ -1,16 +1,17 @@
 # Contributing <!-- omit in toc -->
 
 
-- [Setting up a dev enviroment](#setting-up-a-dev-enviroment)
-- [General Hints and Guidelines](#general-hints-and-guidelines)
-  - [Avoid failing tests for PRs caused by formatting/linting issues](#avoid-failing-tests-for-prs-caused-by-formattinglinting-issues)
-  - [Types Annotations in Python](#types-annotations-in-python)
-  - [Editing instrumentation](#editing-instrumentation)
-  - [Debugging the platform](#debugging-the-platform)
-  - [Managing requirements](#managing-requirements)
-  - [Running tests](#running-tests)
-  - [Mac OSX](#mac-osx)
-  - [Updating schema docs](#updating-schema-docs)
+* [Setting up a dev enviroment](#setting-up-a-dev-enviroment)
+* [General Hints and Guidelines](#general-hints-and-guidelines)
+  * [Avoid failing tests for PRs caused by formatting/linting issues](#avoid-failing-tests-for-prs-caused-by-formattinglinting-issues)
+  * [Types Annotations in Python](#types-annotations-in-python)
+  * [Editing instrumentation](#editing-instrumentation)
+  * [Debugging the platform](#debugging-the-platform)
+  * [Managing requirements](#managing-requirements)
+  * [Running tests](#running-tests)
+  * [Mac OSX](#mac-osx)
+  * [Updating schema docs](#updating-schema-docs)
+* [Troubleshooting](#troubleshooting)
 
 ## Setting up a dev enviroment
 Dev dependencies are installed by using the main `environment.yaml` (which
@@ -118,3 +119,23 @@ In the rare instance that you need to create schema docs
 from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the
 `docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
 incase files have been renamed.
+
+## Troubleshooting
+
+1. `make` / `gcc` may need to be installed in order to build the web extension.
+   On Ubuntu, this is achieved with `apt-get install make`. On OSX the necessary
+   packages are part of xcode: `xcode-select --install`.
+2. On a very sparse operating system additional dependencies may need to be
+   installed. See the [Dockerfile](Dockerfile) for more inspiration, or open
+   an issue if you are still having problems.
+3. If you see errors related to incompatible or non-existing python packages,
+   try re-running the file with the environment variable
+   `PYTHONNOUSERSITE` set. E.g., `PYTHONNOUSERSITE=True python demo.py`.
+   If that fixes your issues, you are experiencing
+   [issue 689](https://github.com/mozilla/OpenWPM/issues/689), which can be
+   fixed by clearing your
+   python [user site packages directory](https://www.python.org/dev/peps/pep-0370/),
+   by prepending `PYTHONNOUSERSITE=True` to a specific command, or by setting
+   the environment variable for the session (e.g., `export PYTHONNOUSERSITE=True`
+   in bash). Please also add a comment to that issue to let us know you ran
+   into this problem.

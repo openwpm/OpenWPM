@@ -16,7 +16,6 @@ Table of Contents <!-- omit in toc -->
   * [Pre-requisites](#pre-requisites)
   * [Install](#install)
   * [Developer instructions](#developer-instructions)
-  * [Troubleshooting](#troubleshooting)
 * [Quick Start](#quick-start)
 * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
 * [Instrumentation and Data Access](#instrumentation-and-data-access)
@@ -31,7 +30,7 @@ Table of Contents <!-- omit in toc -->
   * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
     * [Save a profile](#save-a-profile)
     * [Load a profile](#load-a-profile)
-* [Troubleshooting](#troubleshooting-1)
+* [Troubleshooting](#troubleshooting)
 * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
   * [Building the Docker Container](#building-the-docker-container)
   * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
@@ -76,26 +75,6 @@ After running the install script, activate your conda environment by running:
 ### Developer instructions
 
 If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](wiki/CONTRIBUTING.md)
-
-### Troubleshooting
-
-1. `make` / `gcc` may need to be installed in order to build the web extension.
-   On Ubuntu, this is achieved with `apt-get install make`. On OSX the necessary
-   packages are part of xcode: `xcode-select --install`.
-2. On a very sparse operating system additional dependencies may need to be
-   installed. See the [Dockerfile](Dockerfile) for more inspiration, or open
-   an issue if you are still having problems.
-3. If you see errors related to incompatible or non-existing python packages,
-   try re-running the file with the environment variable
-   `PYTHONNOUSERSITE` set. E.g., `PYTHONNOUSERSITE=True python demo.py`.
-   If that fixes your issues, you are experiencing
-   [issue 689](https://github.com/mozilla/OpenWPM/issues/689), which can be
-   fixed by clearing your
-   python [user site packages directory](https://www.python.org/dev/peps/pep-0370/),
-   by prepending `PYTHONNOUSERSITE=True` to a specific command, or by setting
-   the environment variable for the session (e.g., `export PYTHONNOUSERSITE=True`
-   in bash). Please also add a comment to that issue to let us know you ran
-   into this problem.
 
 Quick Start
 -----------
@@ -566,7 +545,7 @@ Troubleshooting
 
 3. Make sure you're conda environment is activated (`conda activate openwpm`). You can see
    you environments and the activate one by running `conda env list` the active environment
-   will have a `*` by it. 
+   will have a `*` by it.
 
 Docker Deployment for OpenWPM
 -----------------------------
