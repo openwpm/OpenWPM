@@ -1,13 +1,15 @@
-from __future__ import absolute_import, print_function
-
 import os
+import socketserver
 import threading
+from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
-from random import choice
+from urllib.parse import parse_qs, urlparse
 
-from six.moves import range, socketserver
-from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.urllib.parse import parse_qs, urlparse
+import boto3
+import pyarrow.parquet as pq
+import s3fs
+from botocore.credentials import Credentials
+from pyarrow.filesystem import S3FSWrapper  # noqa
 
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"
@@ -15,24 +17,6 @@ BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN,
                                          LOCAL_WEBSERVER_PORT)
 BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
 BASE_TEST_URL_NOSCHEME = BASE_TEST_URL.split('//')[1]
-
-
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
 
 
 class MyTCPServer(socketserver.TCPServer):
@@ -71,6 +55,7 @@ class MyHandler(SimpleHTTPRequestHandler):
     If a request is made the to `/MAGIC_REDIRECT/` path without a
     `dst` parameter defined, a `404` response is returned.
     """
+
     def __init__(self, *args, **kwargs):
         SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
@@ -119,7 +104,7 @@ def start_server():
     print("Starting HTTP Server in a separate thread")
     # switch to test dir, this is where the test files are
     os.chdir(dirname(realpath(__file__)))
-    server = MyTCPServer(("localhost", LOCAL_WEBSERVER_PORT), MyHandler)
+    server = MyTCPServer(("0.0.0.0", LOCAL_WEBSERVER_PORT), MyHandler)
     thread = threading.Thread(target=server.serve_forever)
     thread.daemon = True
     thread.start()
@@ -127,7 +112,96 @@ def start_server():
     return server, thread
 
 
-def rand_str(size=8):
-    """Return random string with the given size."""
-    RAND_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
-    return ''.join(choice(RAND_CHARS) for _ in range(size))
+class LocalS3Session(object):
+    """
+    Ensures that the local s3 service is used when
+    setup as the default boto3 Session
+    Based on localstack_client/session.py
+    """
+
+    def __init__(self, aws_access_key_id='accesskey',
+                 aws_secret_access_key='secretkey',
+                 aws_session_token='token', region_name='us-east-1',
+                 endpoint_url='http://localhost:4572',
+                 botocore_session=None, profile_name=None,
+                 localstack_host=None):
+        self.env = 'local'
+        self.session = boto3.session.Session()
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.aws_session_token = aws_session_token
+        self.region_name = region_name
+        self.endpoint_url = endpoint_url
+
+    def resource(self, service_name, **kwargs):
+        return self.session.resource(
+            service_name,
+            endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.region_name, verify=False
+        )
+
+    def get_credentials(self):
+        return Credentials(
+            access_key=self.aws_access_key_id,
+            secret_key=self.aws_secret_access_key,
+            token=self.aws_session_token
+        )
+
+    def client(self, service_name, **kwargs):
+        return self.session.client(
+            service_name, endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.region_name, verify=False
+        )
+
+
+def local_s3_bucket(resource, name='localstack-foo'):
+    bucket = resource.Bucket(name)
+    bucket.create()
+    return name
+
+
+class LocalS3Dataset(object):
+    def __init__(self, bucket, directory):
+        self.bucket = bucket
+        self.root_directory = directory
+        self.visits_uri = '%s/%s/visits/%%s' % (
+            self.bucket, self.root_directory)
+        self.s3_fs = s3fs.S3FileSystem(session=LocalS3Session())
+        boto3.DEFAULT_SESSION = LocalS3Session()
+        self.s3_client = boto3.client('s3')
+        self.s3_resource = boto3.resource('s3')
+
+    def load_table(self, table_name):
+        return pq.ParquetDataset(
+            self.visits_uri % table_name,
+            filesystem=self.s3_fs
+        ).read_pandas().to_pandas()
+
+    def list_files(self, directory, prepend_root=False):
+        bucket = self.s3_resource.Bucket(self.bucket)
+        files = list()
+        if prepend_root:
+            prefix = "%s/%s/" % (self.root_directory, directory)
+        else:
+            prefix = directory
+        for summary in bucket.objects.filter(Prefix=prefix):
+            files.append(summary.key)
+        return files
+
+    def get_file(self, filename, prepend_root=False):
+        if prepend_root:
+            key = "%s/%s" % (self.root_directory, filename)
+        else:
+            key = filename
+        obj = self.s3_client.get_object(
+            Bucket=self.bucket,
+            Key=key
+        )
+        body = obj["Body"]
+        content = body.read()
+        body.close()
+        return content

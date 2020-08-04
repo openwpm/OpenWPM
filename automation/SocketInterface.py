@@ -1,14 +1,11 @@
-from __future__ import absolute_import, print_function
-
 import json
 import socket
 import struct
 import threading
 import traceback
+from queue import Queue
 
 import dill
-from six.moves import input
-from six.moves.queue import Queue
 
 # TODO - Implement a cleaner shutdown for server socket
 # see: https://stackoverflow.com/a/1148237
@@ -19,6 +16,7 @@ class serversocket:
     A server socket to receive and process string messages
     from client sockets to a central queue
     """
+
     def __init__(self, name=None, verbose=False):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', 0))
@@ -40,11 +38,17 @@ class serversocket:
     def _accept(self):
         """ Listen for connections and pass handling to a new thread """
         while True:
-            (client, address) = self.sock.accept()
-            thread = threading.Thread(target=self._handle_conn,
-                                      args=(client, address))
-            thread.daemon = True
-            thread.start()
+            try:
+                (client, address) = self.sock.accept()
+                thread = threading.Thread(target=self._handle_conn,
+                                          args=(client, address))
+                thread.daemon = True
+                thread.start()
+            except ConnectionAbortedError:
+                # Workaround for #278
+                print("A connection establish request was performed "
+                      "on a closed socket")
+                return
 
     def _handle_conn(self, client, address):
         """
@@ -105,6 +109,7 @@ class serversocket:
 
 class clientsocket:
     """A client socket for sending messages"""
+
     def __init__(self, serialization='json', verbose=False):
         """ `serialization` specifies the type of serialization to use for
         non-string messages. Supported formats:
@@ -129,10 +134,9 @@ class clientsocket:
         using dill if not string, and prepends msg len (4-bytes) and
         serialization type (1-byte).
         """
-        import six
-        if isinstance(msg, six.binary_type):
+        if isinstance(msg, bytes):
             serialization = b'n'
-        elif isinstance(msg, six.text_type):
+        elif isinstance(msg, str):
             serialization = b'u'
             msg = msg.encode('utf-8')
         elif self.serialization == 'dill':
@@ -144,7 +148,6 @@ class clientsocket:
         else:
             raise ValueError("Unsupported serialization type set: %s"
                              % serialization)
-
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
 

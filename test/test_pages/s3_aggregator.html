@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+<title>Simple test page</title>
+  <script type="application/javascript">
+    function set_cookie() {
+        document.cookie = 'test_cookie='+Math.random()+'; expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/';
+        console.log(window.navigator.userAgent);
+     }
+     async function load_a_thing() {
+          const request  = await fetch("shared/utils.js");
+          console.log(request.ok);
+     }
+     load_a_thing();
+  </script>
+ </head>
+ <body onload="set_cookie()">
+   <img src='shared/test_image.png' />
+   <img alt='test image' src='/MAGIC_REDIRECT/req1.png?dst=req2.png&dst=req3.png&dst=/test_pages/shared/test_image_2.png' />
+ </body></html>

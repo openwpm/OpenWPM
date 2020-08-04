@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument's instrumentJS method - specifically instrumenting recursive properties</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrument's instrumentJS method - specifically instrumenting recursive properies.</h3>
+    <p> This page defines several types of objects and tests the js
+    instrument's instrumentJS() method. <br/>
+    NOTE: The platform config option `manager_params['testing']` must be set
+    to True otherwise the instrumentJS method won't be exposed to this
+    test script.
+    </p>
+    <script type="text/javascript", src="./utils.js"></script>
+    <script type="text/javascript">
+
+      function interactWithTestObjects() {
+        /*
+         * Interact with object instrumented recursively
+         * We should only see prop1 from top level
+         */
+        console.log("window.test.prop1", window.test.prop1);
+        console.log("window.test.prop2", window.test.prop2);
+        console.log("window.test.test.prop1", window.test.test.prop1);
+        console.log("window.test.test.prop2", window.test.test.prop2);
+      }
+      window.test = {};
+      window.test.prop1 = 'test_prop1'
+      window.test.prop2 = 'test_prop2'
+      window.test.test = {}
+      window.test.test.prop1 = 'test_test_prop1'
+      window.test.test.prop2 = 'test_test_prop2'
+
+
+      // Instrument partially existing object non-recursively
+      console.log("Instrumenting window.test recursively");
+
+      window.instrumentJS([
+        {
+          object: window.test,
+          instrumentedName: "window.test",
+          logSettings: getLogSettings({
+            propertiesToInstrument: ["prop1", "test"],
+            recursive: true
+          }),
+        },
+      ]);
+
+      interactWithTestObjects();
+    </script>
+  </body>
+</html>

@@ -210,15 +210,12 @@ Finis.
 
 # Import our required modules
 #
-from __future__ import absolute_import
 
 import re
 #
 import string
 import warnings
-
-from six.moves import map, range
-from six.moves.cPickle import dumps, loads
+from pickle import dumps, loads
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie", "SerialCookie",
            "SmartCookie", "Cookie"]
@@ -688,6 +685,7 @@ class SimpleCookie(BaseCookie):
     calls the builtin str() to convert the value to a string.  Values
     received from HTTP are kept as strings.
     """
+
     def value_decode(self, val):
         return _unquote(val), val
 
@@ -711,6 +709,7 @@ class SerialCookie(BaseCookie):
     Note: HTTP has a 2k limit on the size of a cookie.  This class
     does not check for this limit, so be careful!!!
     """
+
     def __init__(self, input=None):
         warnings.warn("SerialCookie class is insecure; do not use it",
                       DeprecationWarning)
@@ -739,6 +738,7 @@ class SmartCookie(BaseCookie):
     Note: HTTP has a 2k limit on the size of a cookie.  This class
     does not check for this limit, so be careful!!!
     """
+
     def __init__(self, input=None):
         warnings.warn("Cookie/SmartCookie class is insecure; do not use it",
                       DeprecationWarning)

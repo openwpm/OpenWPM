@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <title>HTTP Test page including a worker</title>
+    <link rel='icon' href='shared/test_favicon.ico' />
+  </head>
+  <body>
+    <p> This test page spawns a worker, which in turn makes
+    http-requests on its own.
+    </p>
+    <script>
+      let worker = new Worker("./shared/worker.js");
+    </script>
+    <script src="./shared/worker.js"></script>
+  </body>
+</html>

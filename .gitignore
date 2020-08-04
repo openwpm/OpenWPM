@@ -4,9 +4,14 @@ docker-volume/
 # pytest
 .pytest_cache/
 
+# mypy
+.mypy_cache
+
 # firefox directories
 firefox-bin/
 Firefox*.app/
+Nightly*.app/
+firefox-profile
 
 # VIM tmp files
 *~
@@ -19,6 +24,12 @@ C:\\nppdf32Log\\debuglog.txt
 .idea/*
 *.idea
 */idea
+.Trash-0
+
+#VSCode
+.vscode
+
+# Local Python virtual environments
 venv/
 
 # Byte-compiled / optimized / DLL files
@@ -77,3 +88,9 @@ docs/_build/
 
 # npm packages
 node_modules
+
+# built extension artifacts
+automation/Extension/firefox/dist
+automation/Extension/firefox/openwpm.xpi
+automation/Extension/firefox/src/content.js
+automation/Extension/firefox/src/feature.js

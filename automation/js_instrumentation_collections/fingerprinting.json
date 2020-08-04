@@ -1,0 +1,38 @@
+[
+    "ScriptProcessorNode",
+    "GainNode",
+    "AnalyserNode",
+    "OscillatorNode",
+    "OfflineAudioContext",
+    "AudioContext",
+    "RTCPeerConnection",
+    "HTMLCanvasElement",
+    "Storage",
+    "window.navigator",
+    {"CanvasRenderingContext2D": {
+        "excludedProperties": [
+            "quadraticCurveTo",
+            "lineTo",
+            "transform",
+            "globalAlpha",
+            "moveTo",
+            "drawImage",
+            "setTransform",
+            "clearRect",
+            "closePath",
+            "beginPath",
+            "canvas",
+            "translate"
+        ]
+    }},
+    {"window": {
+        "propertiesToInstrument": ["name", "localStorage", "sessionStorage"]
+    }},
+    {"window.document": {
+        "propertiesToInstrument": ["cookie", "referrer"],
+        "logCallStack": true
+    }},
+    {"window.screen": {
+        "propertiesToInstrument": ["pixelDepth", "colorDepth"]
+    }}
+]

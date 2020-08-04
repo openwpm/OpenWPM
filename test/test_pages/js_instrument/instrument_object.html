@@ -1,19 +1,19 @@
 <!doctype html>
 <html>
   <head>
-    <title>Test page for JS Instrument's instrumentObject method</title>
+    <title>Test page for JS Instrument's instrumentJS method</title>
   </head>
   <body>
-    <h3>Test page for JS Instrument's instrumentObject method</h3>
+    <h3>Test page for JS Instrument's instrumentJS method</h3>
     <p> This page defines several types of objects and tests the js
-    instrument's instrumentObject() method. <br/>
+    instrument's instrumentJS() method. <br/>
     NOTE: The platform config option `manager_params['testing']` must be set
-    to True otherwise the instrumentObject method won't be exposed to this
+    to True otherwise the instrumentJS method won't be exposed to this
     test script.
     </p>
+    <script type="text/javascript", src="./utils.js"></script>
     <script type="text/javascript">
       function interactWithTestObjects() {
-
         /*
          * Interact with object instrumented non-recursively
          */
@@ -47,7 +47,7 @@
 
         // overwrite a property with a function and call
         window.test.prop1 = function(arg) {console.log("prop now method", arg);};
-        window.test.prop1('now accepting arugments');
+        window.test.prop1('now accepting arguments');
 
         // overwrite a function with property
         window.test.method1 = 'now static';
@@ -204,19 +204,37 @@
 
       // Instrument object non-recursively
       console.log("Instrumenting window.test!");
-      window.instrumentObject(window.test, "window.test");
+      window.instrumentJS([
+        {
+          object: window.test,
+          instrumentedName: "window.test",
+          logSettings: getLogSettings(),
+        }
+      ]);
 
       // Instrument object recursively
       console.log("Instrumenting window.test2!");
-      window.instrumentObject(window.test2, "window.test2", {'recursive': true});
+      window.instrumentJS([
+        {
+          object: window.test2,
+          instrumentedName: "window.test2",
+          logSettings: getLogSettings({'recursive': true})
+        }
+      ]);
 
       // Instrument object with setting prevented
       console.log("Instrumenting window.test3!");
-      window.instrumentObject(window.test3, "window.test3", {
-        'recursive': true,
-        'depth': 1,
-        'preventSets': true
-      });
+      window.instrumentJS([
+        {
+          object: window.test3,
+          instrumentedName: "window.test3",
+          logSettings: getLogSettings({
+            'recursive': true,
+            'depth': 1,
+            'preventSets': true
+          })
+        }
+      ]);
       interactWithTestObjects();
     </script>
     <iframe src="framed1.html"></iframe>

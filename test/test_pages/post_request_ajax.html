@@ -2,20 +2,26 @@
 <html>
   <head>
     <title>Test page - POST request using AJAX</title>
+    <meta charset="utf-8"/>
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"
       integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
       crossorigin="anonymous"></script>
     <script type="text/javascript" src="shared/utils.js"></script>
     <script type="application/javascript">
 
+      function do_xhr(data) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "bogus_submit.html");
+        xhr.send(data);
+      }
+
 	    function send_form_data() {
-	      // Use "FormData"
-	      var formData = new FormData();
-	      formData.append("email", "test@example.com");
-	      formData.append("username", "name surname+");
-	      var request = new XMLHttpRequest();
-	      request.open("POST", "/bogus_submit");
-	      request.send(formData);
+        	// Use "FormData"
+        	var formData = new FormData();
+        	formData.append("email", "test@example.com")
+        	formData.append("username", "name surname+你好");
+        	formData.append("test", "ПриватБанк – банк для тих, хто йде вперед");
+        	do_xhr(formData);
 	    }
 
 	    function send_binary_data(){
@@ -27,9 +33,7 @@
 	        longInt8View[i] = i % 255;
 	      }
 
-	      var xhr = new XMLHttpRequest;
-	      xhr.open("POST", "ajax_post.html", false);
-	      xhr.send(myArray);
+        do_xhr(myArray);
 	    }
 
       $(document).ready(function(){
@@ -37,12 +41,16 @@
         if (format == "formData") {
           send_form_data();
         } else if (format == "object") {
-          var post_obj = {email:"test@example.com", username:"name surname+"};
+          var post_obj = {
+            email:"test@example.com",
+            username:"name surname+你好",
+            test:"ПриватБанк – банк для тих, хто йде вперед"
+          };
           $.post("bogus_submit.html", post_obj);
         } else if (format == "noKeyValue") {
-          $.post("bogus_submit.html", 'test@example.com + name surname');
+          do_xhr('test@example.com + name surname');
         } else if (format == "noKeyValueBase64") {
-          $.post("bogus_submit.html", btoa('test@example.com + name surname'));
+          do_xhr(btoa('test@example.com + name surname'));
         } else if (format == "binary") {
           send_binary_data();
         }

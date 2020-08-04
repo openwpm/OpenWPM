@@ -5,5 +5,7 @@
     "database_name": "crawl-data.sqlite",
     "log_file": "openwpm.log",
     "failure_limit": null,
-    "testing": false
+    "testing": false,
+    "s3_bucket": null,
+    "s3_directory": null
 }

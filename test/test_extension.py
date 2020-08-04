@@ -1,13 +1,12 @@
-from __future__ import absolute_import
 
 import os
 from datetime import datetime
 
 import pytest
 
-from . import utilities
 from ..automation import TaskManager
 from ..automation.utilities import db_utils
+from . import utilities
 from .openwpmtest import OpenWPMTest
 
 # Expected Navigator and Screen properties
@@ -37,41 +36,41 @@ PROPERTIES = {
 CANVAS_TEST_URL = u"%s/canvas_fingerprinting.html" % utilities.BASE_TEST_URL
 
 CANVAS_CALLS = {
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillStyle',
-     'set', '#f60', None),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.textBaseline', 'set',
-     'alphabetic', None),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.textBaseline', 'set',
-     'top', None),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.font', 'set',
-     "14px 'Arial'", None),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillStyle', 'set',
-     '#069', None),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillStyle', 'set',
-     'rgba(102, 204, 0, 0.7)', None),
-    (CANVAS_TEST_URL, 'HTMLCanvasElement.getContext', 'call',
-     '', '{"0":"2d"}'),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillRect', 'call',
-     '', '{"0":125,"1":1,"2":62,"3":20}'),
-    (CANVAS_TEST_URL, 'HTMLCanvasElement.toDataURL', 'call',
-     '', None),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillText', 'call',
-     '', '{"0":"BrowserLeaks,com <canvas> 1.0","1":4,"2":17}'),
-    (CANVAS_TEST_URL, 'CanvasRenderingContext2D.fillText', 'call',
-     '', '{"0":"BrowserLeaks,com <canvas> 1.0","1":2,"2":15}')
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.fillStyle',
+     u'set', u'#f60', None),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.textBaseline', u'set',
+     u'alphabetic', None),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.textBaseline', u'set',
+     u'top', None),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.font', u'set',
+     u"14px 'Arial'", None),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.fillStyle', u'set',
+     u'#069', None),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.fillStyle', u'set',
+     u'rgba(102, 204, 0, 0.7)', None),
+    (CANVAS_TEST_URL, u'HTMLCanvasElement.getContext', u'call',
+     u'', u'["2d"]'),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.fillRect', u'call',
+     u'', u'[125,1,62,20]'),
+    (CANVAS_TEST_URL, u'HTMLCanvasElement.toDataURL', u'call',
+     u'', None),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.fillText', u'call',
+     u'', u'["BrowserLeaks,com <canvas> 1.0",4,17]'),
+    (CANVAS_TEST_URL, u'CanvasRenderingContext2D.fillText', u'call',
+     u'', u'["BrowserLeaks,com <canvas> 1.0",2,15]')
 }
 
 WEBRTC_TEST_URL = u"%s/webrtc_localip.html" % utilities.BASE_TEST_URL
 
 WEBRTC_CALLS = {
-    (WEBRTC_TEST_URL, 'RTCPeerConnection.createOffer', 'call',
-     '', '{"0":"FUNCTION","1":"FUNCTION"}'),
-    (WEBRTC_TEST_URL, 'RTCPeerConnection.createDataChannel', 'call',
-     '', '{"0":""}'),
-    (WEBRTC_TEST_URL, 'RTCPeerConnection.createDataChannel', 'call',
-     '', '{"0":"","1":"{\\"reliable\\":false}"}'),
-    (WEBRTC_TEST_URL, 'RTCPeerConnection.onicecandidate', 'set',
-     'FUNCTION', None)
+    (WEBRTC_TEST_URL, u'RTCPeerConnection.createOffer', u'call',
+     u'', u'["FUNCTION","FUNCTION"]'),
+    (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel', u'call',
+     u'', u'[""]'),
+    (WEBRTC_TEST_URL, u'RTCPeerConnection.createDataChannel', u'call',
+     u'', u'["","{\\"reliable\\":false}"]'),
+    (WEBRTC_TEST_URL, u'RTCPeerConnection.onicecandidate', u'set',
+     u'FUNCTION', None)
 }
 
 # we expect these strings to be present in the WebRTC SDP
@@ -85,11 +84,9 @@ WEBRTC_SDP_OFFER_STRINGS = ("a=ice-options",
                             "a=sendrecv",
                             "a=ice-pwd:",
                             "a=ice-ufrag:",
-                            "a=mid:sdparta",
-                            "a=sctpmap:",
-                            "a=setup:",
-                            "a=ssrc:",
-                            "cname:")
+                            "a=mid:0",
+                            "a=sctp-port:",
+                            "a=setup:")
 
 # AudioContext and AudioNode symbols we expect from our test script
 AUDIO_SYMBOLS = {
@@ -126,7 +123,7 @@ JS_STACK_CALLS = {
      u'window.navigator.platform', u'get'),
     (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'', u'line 11 > eval', u'',
      u'window.navigator.buildID', u'get'),
-    (JS_STACK_TEST_SCRIPT_URL, u'1', u'1', u'anonymous', u'line 14 > Function',
+    (JS_STACK_TEST_SCRIPT_URL, u'3', u'1', u'anonymous', u'line 14 > Function',
      u'', u'window.navigator.appVersion', u'get'),
     (JS_STACK_TEST_URL, u'7', u'9', u'check_navigator', u'', u'',
      u'window.navigator.userAgent', u'get'),
@@ -243,8 +240,8 @@ class TestExtension(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for row in rows:
-            if (row['symbol'] == "RTCPeerConnection.setLocalDescription" and
-                    row['operation'] == 'call'):
+            if (row['symbol'] == "RTCPeerConnection.setLocalDescription" and (
+                    row['operation'] == 'call')):
                 sdp_offer = row['arguments']
                 self.check_webrtc_sdp_offer(sdp_offer)
             else:
@@ -279,7 +276,7 @@ class TestExtension(OpenWPMTest):
 
     def test_js_time_stamp(self):
         # Check that timestamp is recorded correctly for the javascript table
-        MAX_TIMEDELTA = 30  # max time diff in seconds
+        MAX_TIMEDELTA = 60  # max time diff in seconds
         db = self.visit('/js_call_stack.html')
         utc_now = datetime.utcnow()  # OpenWPM stores timestamp in UTC time
         rows = db_utils.get_javascript_entries(db, all_columns=True)

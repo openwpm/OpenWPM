@@ -1,0 +1,15 @@
+{
+  "validations": {
+    "vulnerableDependencies": true,
+    "uncommittedChanges": true,
+    "untrackedFiles": true,
+    "sensitiveData": false,
+    "branch": "master",
+    "gitTag": "@openwpm/webext-instrumentation@"
+  },
+  "confirm": true,
+  "publishCommand": "npm publish --access=public",
+  "publishTag": "latest",
+  "prePublishScript": "npm test",
+  "postPublishScript": false
+}

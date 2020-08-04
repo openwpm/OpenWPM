@@ -1,7 +1,7 @@
-from __future__ import absolute_import
 
 import gzip
 import json
+import logging
 import os
 import random
 import sys
@@ -14,23 +14,21 @@ from PIL import Image
 from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
                                         TimeoutException, WebDriverException)
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from six.moves import range
 
-from ..MPLogger import loggingclient
 from ..SocketInterface import clientsocket
-from .utils.firefox_profile import get_cookies
-from .utils.lso import get_flash_cookies
-from .utils.webdriver_extensions import (execute_in_all_frames,
-                                         execute_script_with_retry,
-                                         get_intra_links, is_displayed,
-                                         scroll_down, wait_until_loaded)
+from .utils.webdriver_utils import (execute_in_all_frames,
+                                    execute_script_with_retry, get_intra_links,
+                                    is_displayed, scroll_down,
+                                    wait_until_loaded)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
 RANDOM_SLEEP_LOW = 1  # low (in sec) for random sleep between page loads
 RANDOM_SLEEP_HIGH = 7  # high (in sec) for random sleep between page loads
+logger = logging.getLogger('openwpm')
 
 
 def bot_mitigation(webdriver):
@@ -108,7 +106,7 @@ def tab_restart_browser(webdriver):
 
 
 def get_website(url, sleep, visit_id, webdriver,
-                browser_params, extension_socket):
+                browser_params, extension_socket: clientsocket):
     """
     goes to <url> using the given <webdriver> instance
     """
@@ -133,7 +131,7 @@ def get_website(url, sleep, visit_id, webdriver,
         alert = webdriver.switch_to_alert()
         alert.dismiss()
         time.sleep(1)
-    except TimeoutException:
+    except (TimeoutException, WebDriverException):
         pass
 
     close_other_windows(webdriver)
@@ -152,9 +150,6 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
     # First get the site
     get_website(url, sleep, visit_id, webdriver,
                 browser_params, extension_socket)
-
-    # Connect to logger
-    logger = loggingclient(*manager_params['logger_address'])
 
     # Then visit a few subpages
     for _ in range(num_links):
@@ -178,61 +173,6 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
             pass
 
 
-def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
-                       manager_params):
-    """ Save newly changed Flash LSOs to database
-
-    We determine which LSOs to save by the `start_time` timestamp.
-    This timestamp should be taken prior to calling the `get` for
-    which creates these changes.
-    """
-    # Set up a connection to DataAggregator
-    tab_restart_browser(webdriver)  # kills window to avoid stray requests
-    sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
-
-    # Flash cookies
-    flash_cookies = get_flash_cookies(start_time)
-    for cookie in flash_cookies:
-        data = cookie._asdict()
-        data["crawl_id"] = browser_params["crawl_id"]
-        data["visit_id"] = visit_id
-        sock.send(("flash_cookies", data))
-
-    # Close connection to db
-    sock.close()
-
-
-def dump_profile_cookies(start_time, visit_id, webdriver,
-                         browser_params, manager_params):
-    """ Save changes to Firefox's cookies.sqlite to database
-
-    We determine which cookies to save by the `start_time` timestamp.
-    This timestamp should be taken prior to calling the `get` for
-    which creates these changes.
-
-    Note that the extension's cookieInstrument is preferred to this approach,
-    as this is likely to miss changes still present in the sqlite `wal` files.
-    This will likely be removed in a future version.
-    """
-    # Set up a connection to DataAggregator
-    tab_restart_browser(webdriver)  # kills window to avoid stray requests
-    sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
-
-    # Cookies
-    rows = get_cookies(browser_params['profile_path'], start_time)
-    if rows is not None:
-        for row in rows:
-            data = dict(row)
-            data["crawl_id"] = browser_params['crawl_id']
-            data["visit_id"] = visit_id
-            sock.send(("profile_cookies", data))
-
-    # Close connection to db
-    sock.close()
-
-
 def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
     """ Save a screenshot of the current viewport"""
     if suffix != '':
@@ -245,7 +185,7 @@ def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
     driver.save_screenshot(outname)
 
 
-def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
+def _stitch_screenshot_parts(visit_id, crawl_id, manager_params):
     # Read image parts and compute dimensions of output image
     total_height = -1
     max_scroll = -1
@@ -302,7 +242,6 @@ def _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params):
 
 def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
                          suffix=''):
-    logger = loggingclient(*manager_params['logger_address'])
 
     outdir = os.path.join(manager_params['screenshot_path'], 'parts')
     if not os.path.isdir(outdir):
@@ -323,8 +262,8 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             driver, 'return window.scrollY;')
         prev_scrollY = -1
         driver.save_screenshot(outname % (part, curr_scrollY))
-        while ((curr_scrollY + inner_height) < max_height and
-                curr_scrollY != prev_scrollY):
+        while (curr_scrollY + inner_height) < max_height and \
+                curr_scrollY != prev_scrollY:
 
             # Scroll down to bottom of previous viewport
             try:
@@ -350,7 +289,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             (crawl_id, ''.join(excp)))
         return
 
-    _stitch_screenshot_parts(visit_id, crawl_id, logger, manager_params)
+    _stitch_screenshot_parts(visit_id, crawl_id, manager_params)
 
 
 def dump_page_source(visit_id, driver, manager_params, suffix=''):
@@ -386,9 +325,8 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
             page_source = dict()
         page_source['doc_url'] = doc_url
         source = driver.page_source
-        import six
-        if type(source) != six.text_type:
-            source = six.text_type(source, 'utf-8')
+        if type(source) != str:
+            source = str(source, 'utf-8')
         page_source['source'] = source
         page_source['iframes'] = dict()
 
@@ -405,3 +343,20 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
 
     with gzip.GzipFile(outfile, 'wb') as f:
         f.write(json.dumps(page_source).encode('utf-8'))
+
+
+def finalize(visit_id: int, webdriver: WebDriver,
+             extension_socket: clientsocket, sleep: int) -> None:
+    """ Informs the extension that a visit is done """
+    tab_restart_browser(webdriver)
+    # This doesn't immediately stop data saving from the current
+    # visit so we sleep briefly before unsetting the visit_id.
+    time.sleep(sleep)
+    msg = {"action": "Finalize", "visit_id": visit_id}
+    extension_socket.send(msg)
+
+
+def initialize(visit_id: int,
+               extension_socket: clientsocket) -> None:
+    msg = {"action": "Initialize", "visit_id": visit_id}
+    extension_socket.send(msg)

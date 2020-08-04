@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrumentation configured python side.</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrumentation configured python side.</h3>
+    <p>
+      Because the instrumentation occurs before the page loads, we can not instrument
+      objects that we subsequently setup in this html. So we interact with standard
+      window objects and record the response.
+    </p>
+    <script type="text/javascript">
+        // Doubles as a test for the webdriver property
+        console.log(window.navigator.webdriver);
+        // Test set a cookie
+        window.document.cookie = 'a=COOKIE';
+        // Test get a cookie
+        console.log(window.document.cookie);
+        // Test both fetch() and window.fetch()
+        fetch("https://example.com");
+        window.fetch("https://example.org");
+    </script>
+  </body>
+</html>

@@ -1,4 +1,7 @@
-OpenWPM [![Build Status](https://travis-ci.org/mozilla/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
+
+OpenWPM
+[![Build Status](https://travis-ci.org/mozilla/OpenWPM.svg?branch=master)](https://travis-ci.org/mozilla/OpenWPM)
+[![OpenWPM Matrix Channel](https://img.shields.io/matrix/OpenWPM:mozilla.org?label=Join%20us%20on%20matrix&server_fqdn=mozilla.modular.im)](https://matrix.to/#/!pFJihVSEWzcMCcOzSH:mozilla.org?via=mozilla.org) <!-- omit in toc -->
 =======
 
 OpenWPM is a web privacy measurement framework which makes it easy to
@@ -7,21 +10,101 @@ of websites. OpenWPM is built on top of Firefox, with automation provided
 by Selenium. It includes several hooks for data collection. Check out
 the instrumentation section below for more details.
 
+Table of Contents <!-- omit in toc -->
+------------------
+
+* [Installation](#installation)
+* [Quick Start](#quick-start)
+* [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+* [Instrumentation and Data Access](#instrumentation-and-data-access)
+* [Output Format](#output-format)
+    * [Local Databases](#local-databases)
+    * [Parquet on Amazon S3 **Experimental**](#parquet-on-amazon-s3-experimental)
+* [Browser and Platform Configuration](#browser-and-platform-configuration)
+  * [Platform Configuration Options](#platform-configuration-options)
+  * [Browser Configuration Options](#browser-configuration-options)
+* [Browser Profile Support](#browser-profile-support)
+  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+    * [Save a profile](#save-a-profile)
+    * [Load a profile](#load-a-profile)
+* [Development pointers](#development-pointers)
+  * [Types Annotations in Python](#types-annotations-in-python)
+  * [Editing instrumentation](#editing-instrumentation)
+  * [Debugging the platform](#debugging-the-platform)
+  * [Managing requirements](#managing-requirements)
+  * [Running tests](#running-tests)
+  * [Mac OSX](#mac-osx)
+  * [Updating schema docs](#updating-schema-docs)
+* [Troubleshooting](#troubleshooting)
+* [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
+  * [Building the Docker Container](#building-the-docker-container)
+  * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
+  * [MacOS GUI applications in Docker](#macos-gui-applications-in-docker)
+* [Citation](#citation)
+* [License](#license)
+
+
 Installation
 ------------
 
-OpenWPM has been developed and tested on Ubuntu 14.04/16.04. An installation
-script, `install.sh` is included to install both the system and python
-dependencies automatically. A few of the python dependencies require specific
-versions, so you should install the dependencies in a virtual environment if
-you're installing a shared machine. If you plan to develop OpenWPM's
-instrumentation extension or run tests you will also need to install the
-development dependencies included in `install-dev.sh`.
+OpenWPM is tested on Ubuntu 18.04 via TravisCI and is commonly used via the docker container
+that this repo builds, which is also based on Ubuntu. Although we don't officially support
+other platforms, conda is a cross platform utility and the install script can be expected
+to work on OSX and other linux distributions.
 
-It is likely that OpenWPM will work on platforms other than Ubuntu, however
-we do not officially support anything else. For pointers on alternative
-platform support see
-[the wiki](https://github.com/citp/OpenWPM/wiki/OpenWPM-on-Alternate-Platforms).
+OpenWPM does not support windows: https://github.com/mozilla/OpenWPM/issues/503
+
+
+### Pre-requisites
+
+The main pre-requisite for OpenWPM is conda, a cross-platform package management tool.
+
+Conda is open-source, and can be installed from https://docs.conda.io/en/latest/miniconda.html.
+
+### Install
+
+An installation script, `install.sh` is included to: install the conda environment,
+install unbranded firefox, and build the instrumentation extension.
+
+All installation is confined to your conda environment and should not affect your machine.
+The installation script will, however, override any existing conda environment named openwpm.
+
+To run the install script, run
+
+    $ ./install.sh
+
+After running the install script, activate your conda environment by running:
+
+    $ conda activate openwpm
+
+### Developer instructions
+
+Dev dependencies are installed by using the main `environment.yaml` (which
+is used by `./install.sh` script).
+
+You can install pre-commit hooks install the hooks by running `pre-commit install` to
+lint all the changes before you make a commit.
+
+### Troubleshooting
+
+1. `make` / `gcc` may need to be installed in order to build the web extension.
+   On Ubuntu, this is achieved with `apt-get install make`. On OSX the necessary
+   packages are part of xcode: `xcode-select --install`.
+2. On a very sparse operating system additional dependencies may need to be
+   installed. See the [Dockerfile](Dockerfile) for more inspiration, or open
+   an issue if you are still having problems.
+3. If you see errors related to incompatible or non-existing python packages,
+   try re-running the file with the environment variable
+   `PYTHONNOUSERSITE` set. E.g., `PYTHONNOUSERSITE=True python demo.py`.
+   If that fixes your issues, you are experiencing
+   [issue 689](https://github.com/mozilla/OpenWPM/issues/689), which can be
+   fixed by clearing your
+   python [user site packages directory](https://www.python.org/dev/peps/pep-0370/),
+   by prepending `PYTHONNOUSERSITE=True` to a specific command, or by setting
+   the environment variable for the session (e.g., `export PYTHONNOUSERSITE=True`
+   in bash). Please also add a comment to that issue to let us know you ran
+   into this problem.
 
 Quick Start
 -----------
@@ -41,11 +124,28 @@ tutorial, including a
 [platform demo](https://github.com/citp/OpenWPM/wiki/Platform-Demo)
 and a description of the
 [additional commands](https://github.com/citp/OpenWPM/wiki/Available-Commands)
-available. You can also take a look at two of our past studies, which use the
-infrastructure:
+available.
 
-1. [The Web Never Forgets](https://github.com/citp/TheWebNeverForgets)
-2. [Cookies that Give You Away](https://github.com/englehardt/cookies-that-give-you-away)
+
+Advice for Measurement Researchers
+----------------------------------
+
+OpenWPM is [often used](https://webtap.princeton.edu/software/) for web
+measurement research. We recommend the following for researchers using the tool:
+
+**Use a versioned [release](https://github.com/mozilla/OpenWPM/releases).** We
+aim to follow Firefox's release cadence, which is roughly once every four
+weeks. If we happen to fall behind on checking in new releases, please file an
+issue. Versions more than a few months out of date will use unsupported
+versions of Firefox, which are likely to have known security
+vulnerabilities. Versions less than v0.10.0 are from a previous architecture
+and should not be used.
+
+**Include the OpenWPM version number in your publication.** As of v0.10.0
+OpenWPM pins all python, npm, and system dependencies. Including this
+information alongside your work will allow other researchers to contextualize
+the results, and can be helpful if future versions of OpenWPM have
+instrumentation bugs that impact results.
 
 Instrumentation and Data Access
 -------------------------------
@@ -74,8 +174,22 @@ available [below](#output-format).
         with the exception of images.
         See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
 * Javascript Calls
-    * Records all method calls (with arguments) and property accesses for APIs
-      of potential fingerprinting interest:
+    * Records all method calls (with arguments) and property accesses for configured APIs
+    * Set `browser_params['js_instrument'] = True`
+    * Configure `browser_params['js_instrument_settings']` to desired settings.
+    * Data is saved to the `javascript` table.
+    * The full specification for `js_instrument_settings` is defined by a JSON schema.
+      Details of that schema are available in [docs/schemas/README.md](docs/schemas/README.md).
+      In summary, a list is passed with JS objects to be instrumented and details about how
+      that object should be instrumented. The js_instrument_settings you pass to browser_params
+      will be validated python side against the JSON schema before the crawl starts running.
+    * A number of shortcuts are available to make writing `js_instrument_settings` less
+      cumbersome than spelling out the full schema. These shortcuts are converted to a full
+      specification by the `clean_js_instrumentation_settings` method in 
+      [automation/js_instrumentation.py](automation/js_instrumentation.py).
+    * The first shortcut is the fingerprinting collection, specified by 
+      `collection_fingerprinting`. This was the default prior to v0.11.0. It contains a collection
+      of APIs of potential fingerprinting interest:
         * HTML5 Canvas
         * HTML5 WebRTC
         * HTML5 Audio
@@ -85,41 +199,62 @@ available [below](#output-format).
               and `window.name` access.
         * Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
         * Window properties (via `window.screen`)
-    * Set `browser_params['js_instrument'] = True`
-    * Data is saved to the `javascript` table.
+    * `collection_fingerprinting` is the default if `js_instrument` is `True`.
+    * The fingerprinting collection is specified by the json file
+      [fingerprinting.json](automation/js_instrumentation_collections/fingeprinting.json).
+      This file is also a nice reference example for specifying your own APIs using the other
+      shortcuts.
+    * Shortcuts:
+        * Specifying just a string will instrument
+          the whole API with the [default log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
+        * For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API) 
+          such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
+        * Alternatively, you can specify a single-key dictionary that maps an API name to the properties / settings you'd
+          like to use. The key of this dictionary can be an instance on `window` or a Web API.
+          The value of this dictionary can be:
+            * A list - this is a shortcut for `propertiesToInstrument` (see [log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md))
+            * A dictionary - with non default log settings. Items missing from this dictionary
+              will be filled in with the default log settings.
+        * Here are some examples:
+            ```
+            // Collections
+            "collection_fingerprinting",
+            // APIs, with or without settings details
+            "Storage",
+            "XMLHttpRequest",
+            {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+            // APIs with shortcut to includedProperties
+            {"Prop1": ["hi"], "Prop2": ["hi2"]},
+            {"XMLHttpRequest": ["send"]},
+            // Specific instances on window
+            {"window.document": ["cookie", "referrer"]},
+            {"window": ["name", "localStorage", "sessionStorage"]}
+            ```
+        * Note, the key / string will only have it's properties instrumented. That is, if you want to instrument
+          `window.fetch` function you must specify `{"window": ["fetch",]}`. If you specify just `window.fetch` the
+          instrumentation will try to instrument sub properties of `window.fetch` (which won't work as fetch is a
+          function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
+          In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
+          in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
 * Response body content
     * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
-    * Set `browser_params['save_all_content'] = True`
+    * Set `browser_params['save_content'] = True`
     * The `content_hash` column of the `http_responses` table contains the md5
         hash for each script, and can be used to do content lookups in the
         LevelDB content database.
     * NOTE: this instrumentation may lead to performance issues when a large
         number of browsers are in use.
-    * Set `browser_params['save_javascript'] = True` to save only Javascript
+    * Set `browser_params['save_content']` to a comma-separated list of
+        [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
+        to save only specific types of files, for instance
+        `browser_params['save_content'] = "script"` to save only Javascript
         files. This will lessen the performance impact of this instrumentation
         when a large number of browsers are used in parallel.
-* Flash Cookies
-    * Recorded by scanning the respective Flash directories after each page visit.
-    * To enable: call the `CommandSequence::dump_flash_cookies` command after
-        a page visit. Note that calling this command will close the current tab
-        before recording the cookie changes.
-    * Data is saved to the `flash_cookies` table.
-    * NOTE: Flash cookies are shared across browsers, so this instrumentation
-        will not correctly attribute flash cookie changes if more than 1
-        browser is running on the machine.
-* Cookie Access (*Experimental* -- Needs tests)
+* Cookie Access
     * Set `browser_params['cookie_instrument'] = True`
     * Data is saved to the `javascript_cookies` table.
     * Will record cookies set both by Javascript and via HTTP Responses
-* Cookie Access (Alternate)
-    * Recorded by scanning the `cookies.sqlite` database in the Firefox profile
-        directory.
-    * Should contain both cookies added by Javascript and by HTTP Responses
-    * To enable: call the `CommandSequence::dump_profile_cookies` command after
-        a page visit. Note that calling this command will close the current tab
-        before recording the cookie changes.
-    * Data is saved to the `profile_cookies` table
 * Log Files
     * Stored in the directory specified by `manager_params['data_directory']`.
     * Name specified by `manager_params['log_file']`.
@@ -186,16 +321,15 @@ bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
 the hash of the content. In addition, the browser commands that dump page
 source and save screenshots save them in the `sources` and `screenshots`
 subdirectories of the main output directory. The SQLite schema
-specified by: `automation/schema.sql`. You can specify additional tables
+specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
 inline by sending a `create_table` message to the data aggregator.
 
 #### Parquet on Amazon S3 **Experimental**
 As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
 Parquet Dataset. This is currently experimental and hasn't been thoroughly
-tested. Response body content (both `save_javascript` and `save_all_content`),
-screenshots, and page source saving is not currently supported and will still
-be stored in local databases and directories. To enable S3 saving specify the
-following configuration parameters in `manager_params`:
+tested. Screenshots, and page source saving is not currently supported and
+will still be stored in local databases and directories. To enable S3
+saving specify the following configuration parameters in `manager_params`:
 * Output format: `manager_params['output_format'] = 's3'`
 * S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
 * Directory within S3 bucket: `manager_params['s3_directory'] = '2018-09-09_test-crawl-new'`
@@ -207,7 +341,7 @@ location.
 **NOTE:** The schemas should be kept in sync with the exception of
 output-specific columns (e.g., `instance_id` in the S3 output). You can compare
 the two schemas by running
-`diff -y automation/schema.sql automation/DataAggregator/parquet_schema.py`.
+`diff -y automation/DataAggregator/schema.sql automation/DataAggregator/parquet_schema.py`.
 
 Browser and Platform Configuration
 ----------------------------------
@@ -265,13 +399,25 @@ left out of this section.
   * Performs some actions to prevent the platform from being detected as a bot.
   * Note, these aren't comprehensive and automated interaction with the site
     will still appear very bot-like.
-* `disable_flash`
-  * Flash is disabled by default. Set this to `False` to re-enable. Note that
-    flash cookies are shared between browsers.
-* `headless`
-  * Launch the browser in a virtual frame buffer, no GUI will be visible.
-  * Use this when running browsers on a remote machine or to run crawls in the
-      background on a local machine.
+* `display_mode`:
+  * `native`:
+    * Launch the browser normally - GUI will be visible
+  * `headless`:
+    * Launch the browser in headless mode (supported as of Firefox 56),
+        no GUI will be visible.
+    * Use this when running browsers on a remote machine or to run crawls in the
+        background on a local machine.
+  * `xvfb`:
+    * Launch the browser using the X virtual frame buffer. In this mode, Firefox
+      is not running in it's own headless mode, but no GUI will be displayed.
+    * This mode requires `Xvfb` to be on your path. On Ubuntu that is achieved by running
+      `sudo apt-get install xvfb`. For other platforms check [www.X.org](http://www.X.org).
+  * `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
+    "headless" browsing because you do not need to be in a full X environment e.g. on a
+    server. `headless` mode is supported on all platforms and is implemented by the browser
+    but has some differences. For example webGL is not supported in headless mode.
+    https://github.com/mozilla/OpenWPM/issues/448 discusses additional factors to consider
+    when picking a `display_mode`.
 * `browser`
   * Used to specify which browser to launch. Currently only `firefox` is
     supported.
@@ -305,6 +451,11 @@ left out of this section.
 Browser Profile Support
 -----------------------
 
+**WARNING: Stateful crawls are currently not supported. Attempts to run
+stateful crawls will throw `NotImplementedError`s. The work required to
+restore support is tracked in
+[this project](https://github.com/mozilla/OpenWPM/projects/2).**
+
 ### Stateful vs Stateless crawls
 
 By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
@@ -323,7 +474,6 @@ manager = TaskManager.TaskManager(manager_params, browser_params)
 for site in sites:
     command_sequence = CommandSequence.CommandSequence(site, reset=True)
     command_sequence.get(sleep=30, timeout=60)
-    command_sequence.dump_profile_cookies(120)
     manager.execute_command_sequence(command_sequence)
 ```
 
@@ -374,33 +524,38 @@ instance for which the configuration parameter was set.
 Development pointers
 --------------------
 
-Much of OpenWPM's instrumentation is included in a Firefox add-on SDK extension.
-Thus, in order to add or change instrumentation you will need a few additional
-dependencies, which can be installed with `install-dev.sh`.
+### Types Annotations in Python
+
+We as maintainers have decided it would be helpful to have Python3 type annotations
+for the python part of this project to catch errors earlier, get better
+code completion and allow bigger changes down the line with more confidence.
+As such you should strive to add type annotations to all new code you add to
+the project as well as the one you plan to change fundamentally.
 
 ### Editing instrumentation
 
-The extension instrumentation is included in `/automation/Extension/firefox/`.
-Any edits within this directory will require the extension to be re-built with
-`jpm` to produce a new `openwpm.xpi` with your updates. For more information on
-developing a Firefox extension, we recommend reading this
-[MDN introductory tutorial](https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Getting_Started_(jpm)),
- as well as the [jpm reference page](https://developer.mozilla.org/en-US/Add-ons/SDK/Tools/jpm).
+The instrumentation extension is included in `/automation/Extension/firefox/`.
+The instrumentation itself (used by the above extension) is included in
+`/automation/Extension/webext-instrumentation/`.
+Any edits within these directories will require the extension to be re-built to produce
+a new `openwpm.xpi` with your updates. You can use `./scripts/build-extension.sh` to do this,
+or you can run `npm run build` from `automation/Extension/firefox/`.
 
 ### Debugging the platform
 
 Manual debugging with OpenWPM can be difficult. By design the platform runs all
 browsers in separate processes and swallows all exceptions (with the intent of
 continuing the crawl). We recommend using
-[manual_test.py](https://github.com/citp/OpenWPM/blob/master/test/manual_test.py).
+[manual_test.py](https://github.com/mozilla/OpenWPM/blob/master/test/manual_test.py).
 
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
 instance (without any instrumentation)
-* `python -m test.manual_test` uses `jpm` to build the current extension directory
-  and launch a Firefox instance with it.
+* `./scripts/build-extension.sh`
+* `python -m test.manual_test` builds the current extension directory
+  and launches a Firefox instance with it.
 * `python -m test.manual_test --selenium` launches a Firefox Selenium instance
-  after using `jpm` to automatically rebuild `openwpm.xpi`. The script then
+  after automatically rebuilding `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
 * `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
@@ -408,41 +563,53 @@ instance (without any instrumentation)
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
 
+### Managing requirements
+
+We use a script to pin dependencies `scripts/repin.sh`.
+
+This means that `environment.yaml` should not be edited directly.
+
+Instead, place new requirements in `scripts/environment-unpinned.yaml` or `scripts/environment-unpinned-dev.yaml`
+and then run repin:
+
+    $ cd scripts
+    $ ./repin.sh
+
+To update the version of firefox, the TAG variable must be updated in the `./scripts/install-firefox.sh`
+script. This script contains further information about finding the right TAG.
 
 ### Running tests
 
-OpenWPM's tests are build on `py.test`. To run the tests you will need a few
-additional dependencies, which can be installed by running `install-dev.sh`.
+OpenWPM's tests are build on [pytest](https://docs.pytest.org/en/latest/). Execute `py.test -vv`
+in the test directory to run all tests:
 
-Once installed, execute `py.test -vv` in the test directory to run all tests.
+    $ conda activate openwpm
+    $ cd test
+    $ py.test -vv
 
+See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting
+specific tests and various pytest options.
 
-### Mac OSX (Limited support for developers)
+### Mac OSX
 
-We've added an installation file to make it easier to run tests and develop on
-Mac OSX. To install the dependencies on Mac OSX, run `install-mac-dev.sh`
-instead of `install.sh` and `install-dev.sh`.
-This will download Firefox ESR into the current folder, move geckodriver
-next to the Firefox binary and install development dependencies.
-For the OpenWPM to be aware of which Firefox installation to run, set the
-FIREFOX_BINARY environment variable before running any commands.
-
-Example, running the OpenWPM tests on Mac OSX:
-
-    export FIREFOX_BINARY="$(PWD)/Firefox.app/Contents/MacOS/firefox-bin"
-    python -m pytest -vv
-
-There are known limitations on Mac:
-1. Flash cookies are not parsed correctly since we
-   [hardcode](https://github.com/citp/OpenWPM/blob/de84f0595dd512649e46c87b47d5ab18c8374d7e/automation/Commands/utils/lso.py#L34)
-   the Flash storage path to that used on Linux.
-2. Headless mode does not work since we currently use XVFB and the Firefox
-   GUI on Mac doesn't make use of X. The X virtual frame buffer is created, but
-   is not used by the Firefox GUI. Thus Firefox windows will always be visible
-   regardless of the `headless` configuration parameter set.
+You may need to install `make` / `gcc` in order to build the extension.
+The necessary packages are part of xcode: `xcode-select --install`
 
 We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
-these issues and add full support and CI testing for Mac.
+these issues and add full CI testing for Mac.
+
+Running Firefox with xvfb on OSX is untested and will require the user to install
+an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
+been tested, we welcome feedback as to whether this is working.
+
+### Updating schema docs
+
+In the rare instance that you need to create schema docs
+(after updating or adding files to `schemas` folder), run `npm install`
+from OpenWPM top level. Then run `npm run render_schema_docs`. This will update the
+`docs/schemas` folder. You may want to clean out the `docs/schemas` folder before doing this
+incase files have been renamed.
+
 
 Troubleshooting
 ---------------
@@ -455,7 +622,7 @@ Troubleshooting
   * If you are seeing this error for all browser spawn attempts check that:
     * Both selenium and Firefox are the appropriate versions. Run the following
       commands and check that the versions output match the required versions in
-      `install.sh` and `requirements.txt`. If not, re-run the install script.
+      `install.sh` and `environment.yaml`. If not, re-run the install script.
       ```sh
       cd firefox-bin/
       firefox --version
@@ -464,7 +631,7 @@ Troubleshooting
       and
 
       ```sh
-        pip show selenium
+        conda list selenium
       ```
     * If you are running in a headless environment (e.g. a remote server), ensure
       that all browsers have the `headless` browser parameter set to `True` before
@@ -472,6 +639,15 @@ Troubleshooting
   * If you are seeing this error randomly during crawls it can be caused by
     an overtaxed system, either memory or CPU usage. Try lowering the number of
     concurrent browsers.
+
+2. In older versions of firefox (pre 74) the setting to enable extensions was called
+   `extensions.legacy.enabled`. If you need to work with earlier firefox, update the
+   setting name `extensions.experiments.enabled` in
+   `automation/DeployBrowsers/configure_firefox.py`.
+
+3. Make sure you're conda environment is activated (`conda activate openwpm`). You can see
+   you environments and the activate one by running `conda env list` the active environment
+   will have a `*` by it. 
 
 Docker Deployment for OpenWPM
 -----------------------------
@@ -496,11 +672,9 @@ Docker service.
 __Step 2:__ to build the image, run the following command from a terminal
 within the root OpenWPM directory:
 
+```
     docker build -f Dockerfile -t openwpm .
-
-After building the above, you may optionally build a docker image for OpenWPM development:
-
-    docker build -f Dockerfile-dev -t openwpm-dev .
+```
 
 After a few minutes, the container is ready to use.
 
@@ -508,9 +682,20 @@ After a few minutes, the container is ready to use.
 
 You can run the demo measurement from inside the container, as follows:
 
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/home/user/Desktop \
-    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -it openwpm python /opt/OpenWPM/demo.py
+First of all, you need to give the container permissions on your local
+X-server. You can do this by running: `xhost +local:docker`
+
+Then you can run the demo script using:
+
+```
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/root/Desktop \
+    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
+    -it openwpm python3 /opt/OpenWPM/demo.py
+```
+
+**Note:** the `--shm-size=2g` parameter is required, as it increases the
+amount of shared memory available to Firefox. Without this parameter you can
+expect Firefox to crash on 20-30% of sites.
 
 This command uses _bind-mounts_ to share scripts and output between the
 container and host, as explained below (note the paths in the command assume
@@ -520,7 +705,7 @@ it's being run from the root OpenWPM directory):
     `python /opt/OpenWPM/demo.py` command.
 
 - `-v` binds a directory on the host (`$PWD/docker-volume`) to a
-    directory in the container (`/home/user`). Binding allows the script's
+    directory in the container (`/root`). Binding allows the script's
     output to be saved on the host (`./docker-volume/Desktop`), and also allows
     you to pass inputs to the docker container (if necessary). We first create
     the `docker-volume` direction (if it doesn't exist), as docker will
@@ -534,15 +719,21 @@ it's being run from the root OpenWPM directory):
     running headless crawls you can remove the following options:
     `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
-Instruction on how to run Docker GUI applications in Mac OSX are available
-[here](https://stackoverflow.com/questions/37523980/running-gui-apps-on-docker-container-with-a-macbookpro-host).
+Alternatively, it is possible to run jobs as the user _openwpm_ in the container
+too, but this might cause problems with none headless browers. It is therefore
+only recommended for headless crawls.
+
+### MacOS GUI applications in Docker
+
+**Requirements**: Install XQuartz by following [these instructions](https://stackoverflow.com/a/47309184).
+
 Given properly installed prerequisites (including a reboot), the helper script
 `run-on-osx-via-docker.sh` in the project root folder can be used to facilitate
 working with Docker in Mac OSX.
 
 To open a bash session within the environment:
 
-    ./run-on-osx-via-docker.sh # 
+    ./run-on-osx-via-docker.sh /bin/bash
 
 Or, run commands directly:
 
@@ -550,22 +741,6 @@ Or, run commands directly:
     ./run-on-osx-via-docker.sh python -m test.manual_test
     ./run-on-osx-via-docker.sh python -m pytest
     ./run-on-osx-via-docker.sh python -m pytest -vv -s
-
-Disclaimer
------------
-
-Note that OpenWPM is under active development, and should be considered
-experimental software. The repository may contain experimental features that
-aren't fully tested. We recommend using a [tagged
-release](https://github.com/citp/OpenWPM/releases).
-
-Although OpenWPM is actively used by our group for research studies and we
-regularly use of the data collected, it is still possible there are unknown bugs
-in the infrastructure. We are in the process of writing comprehensive tests to
-verify the integrity of all included instrumentation. Prior to using OpenWPM
-for your own research we encourage you to write tests (and submit pull
-requests!) for any instrumentation that isn't currently included in our test
-scripts.
 
 Citation
 --------
@@ -580,7 +755,7 @@ on the infrastructure. You can use the following BibTeX.
         year      = "2016",
     }
 
-OpenWPM has been used in over [25 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
+OpenWPM has been used in over [30 studies](https://webtransparency.cs.princeton.edu/webcensus/index.html#Users).
 
 License
 -------

@@ -1,45 +1,35 @@
-#=============================================================
-# Dockerfile for OpenWPM
-# See README.md for build & use instructions
-#=============================================================
+FROM krallin/ubuntu-tini:bionic
 
-FROM ubuntu:18.04
+SHELL ["/bin/bash", "-c"]
 
-#=============================================================
-# Packages required for container setup
-#=============================================================
+# Update ubuntu and setup conda
+# adapted from: https://hub.docker.com/r/conda/miniconda3/dockerfile
+RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
+RUN apt-get clean -qq \
+    && rm -r /var/lib/apt/lists/* -vf \
+    && apt-get clean -qq \
+    && apt-get update -qq \
+    && apt-get upgrade -qq \
+    # git and make for `npm install`, wget for `install-miniconda`
+    && apt-get install wget git make -qq \
+    # deps to run firefox inc. with xvfb
+    && apt-get install libgtk-3-0 libx11-xcb1 libdbus-glib-1-2 libxt6 xvfb -qq
 
-RUN apt-get -qqy update
-RUN apt-get -qqy install sudo
+ENV HOME /opt
+COPY scripts/install-miniconda.sh .
+RUN ./install-miniconda.sh
+ENV PATH $HOME/miniconda/bin:$PATH
 
-#=============================================================
-# Copy OpenWPM source
-#=============================================================
-RUN sudo mkdir /opt/OpenWPM/
+# Install OpenWPM
+WORKDIR /opt/OpenWPM
+COPY . .
+RUN ./install.sh
+ENV PATH $HOME/miniconda/envs/openwpm/bin:$PATH
 
-ADD automation /opt/OpenWPM/automation/
-ADD requirements.txt /opt/OpenWPM/
-ADD VERSION /opt/OpenWPM/
-ADD install.sh /opt/OpenWPM/
-ADD demo.py /opt/OpenWPM/
+# Move the firefox binary away from the /opt/OpenWPM root so that it is available if
+# we mount a local source code directory as /opt/OpenWPM
+RUN mv firefox-bin /opt/firefox-bin
+ENV FIREFOX_BINARY /opt/firefox-bin/firefox-bin
 
-#=============================================================
-# Add normal user with passwordless sudo, and switch
-#=============================================================
-RUN useradd user \
-         --shell /bin/bash  \
-         --create-home \
-  && usermod -a -G sudo user \
-  && echo 'ALL ALL = (ALL) NOPASSWD: ALL' >> /etc/sudoers \
-  && echo 'user:secret' | chpasswd
-
-USER user
-ENV PATH="/home/user/.local/bin:${PATH}"
-
-#=============================================================
-# Install requirements for OpenWPM
-#=============================================================
-RUN sudo chown -R user:user /opt/OpenWPM/
-
-RUN cd /opt/OpenWPM/ \
-     && ./install.sh --no-flash
+# Setting demo.py as the default command
+CMD [ "python", "demo.py"]

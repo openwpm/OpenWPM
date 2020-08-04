@@ -1,0 +1,42 @@
+<!-- sample code derived from https://www.browserleaks.com/canvas#how-does-it-work -->
+<html>
+<title>Large Payloads Test Page</title>
+<h1>Large Payloads Test Page</h1>
+<h3>Yields large payloads within the JS instrumentation</h3>
+
+<canvas id="myCanvas"></canvas>
+<pre id="canvasDataURL"></pre>
+<img id="canvasDataURLImage" src="about:blank"/>
+
+<script>
+console.log("Before", new Date().toISOString());
+
+const str200kb = "01234567890".repeat(100 * 200);
+
+// Text with lowercase/uppercase/punctuation symbols and a large string
+var txt = "BrowserLeaks,com <canvas> 1.0" + str200kb;
+
+var canvas = document.getElementById('myCanvas');
+var ctx = canvas.getContext("2d");
+ctx.textBaseline = "top";
+// The most common type
+ctx.font = "14px 'Arial'";
+ctx.textBaseline = "alphabetic";
+ctx.fillStyle = "#f60";
+ctx.fillRect(125,1,62,20);
+// Some tricks for color mixing to increase the difference in rendering
+ctx.fillStyle = "#069";
+ctx.fillText(txt, 2, 15);
+ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+ctx.fillText(txt, 4, 17);
+ctx.fillStyle = str200kb;
+ctx.fillText(txt, 6, 18);
+var pre = document.getElementById("canvasDataURL");
+pre.innerHTML = canvas.toDataURL();
+var img = document.getElementById("canvasDataURLImage");
+img.src = canvas.toDataURL();
+
+console.log("After", new Date().toISOString());
+</script>
+
+</html>

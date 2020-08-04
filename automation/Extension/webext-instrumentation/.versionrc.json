@@ -1,0 +1,8 @@
+{
+  "tagPrefix": "@openwpm/webext-instrumentation@",
+  "releaseCommitMessageFormat": "chore(release): @openwpm/webext-instrumentation@{{currentTag}}",
+  "infile": "README.md",
+  "skip": {
+    "changelog": true
+  }
+}

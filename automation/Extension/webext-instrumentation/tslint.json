@@ -1,0 +1,54 @@
+{
+  "extends": [
+    "tslint:latest",
+    "tslint-config-prettier",
+    "tslint-immutable"
+  ],
+  "rules": {
+    "no-object-literal-type-assertion": false,
+    "no-shadowed-variable": false,
+    "interface-name": [
+      true,
+      "never-prefix"
+    ],
+    "triple-equals": {
+      "severity": "warning"
+    },
+    "only-arrow-functions": {
+      "severity": "warning"
+    },
+    "no-console": {
+      "severity": "warning"
+    },
+    "no-bitwise": {
+      "severity": "warning"
+    },
+    "object-literal-sort-keys": {
+      "severity": "warning"
+    },
+    "variable-name": {
+      "severity": "warning"
+    },
+    "no-unused-expression": {
+      "severity": "warning"
+    },
+    "one-variable-per-declaration": {
+      "severity": "warning"
+    },
+    "forin": {
+      "severity": "warning"
+    },
+    "prefer-for-of": {
+      "severity": "warning"
+    },
+    "no-empty": {
+      "severity": "warning"
+    },
+    // TODO: allow devDependencies only in **/*.spec.ts files:
+    // waiting on https://github.com/palantir/tslint/pull/3708
+    "no-implicit-dependencies": [
+      true,
+      "dev"
+    ]
+  }
+}
