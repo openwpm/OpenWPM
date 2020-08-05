@@ -1,4 +1,5 @@
 export * from "./background/cookie-instrument";
+export * from "./background/dns-instrument";
 export * from "./background/http-instrument";
 export * from "./background/javascript-instrument";
 export * from "./background/navigation-instrument";

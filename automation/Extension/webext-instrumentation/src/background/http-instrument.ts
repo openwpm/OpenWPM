@@ -578,7 +578,7 @@ export class HttpInstrument {
 
   private async logWithResponseBody(
     details: WebRequestOnBeforeRequestEventDetails,
-    update: HttpResponse,
+    update,
   ) {
     const pendingResponse = this.getPendingResponse(details.requestId);
     try {

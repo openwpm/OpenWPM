@@ -29,6 +29,9 @@ for i in range(NUM_BROWSERS):
     # Record DNS resolution
     browser_params[i]['dns_instrument'] = True
     
+    # Instrument postMessage
+    browser_params[i]['js_instrument_settings'] = [{"window": ["postMessage"]}, ]
+    
 # Launch only browser 0 headless
 browser_params[0]['display_mode'] = 'headless'
 
