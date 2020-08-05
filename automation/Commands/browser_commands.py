@@ -153,7 +153,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
 
     # Then visit a few subpages
     for _ in range(num_links):
-        links = [x for x in get_intra_links(webdriver, url, logger)
+        links = [x for x in get_intra_links(webdriver, url)
                  if is_displayed(x) is True]
         if not links:
             break
