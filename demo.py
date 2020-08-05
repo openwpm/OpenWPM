@@ -28,6 +28,7 @@ for i in range(NUM_BROWSERS):
     
     # Record DNS resolution
     browser_params[i]['dns_instrument'] = True
+    
 # Launch only browser 0 headless
 browser_params[0]['display_mode'] = 'headless'
 
