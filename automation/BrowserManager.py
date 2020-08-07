@@ -59,7 +59,7 @@ class Browser:
         # queue for receiving command execution status from BrowserManager
         self.status_queue: Optional[Queue] = None
         # pid for browser instance controlled by BrowserManager
-        self.browser_pid: Optional[int] = None
+        self.geckodriver_pid: Optional[int] = None
         # the pid of the display for the Xvfb display (if it exists)
         self.display_pid: Optional[int] = None
         # the port of the display for the Xvfb display (if it exists)
@@ -162,7 +162,7 @@ class Browser:
                 # 4. Browser launch attempted
                 check_queue(launch_status)
                 # 5. Browser launched
-                (self.browser_pid, self.browser_settings) = check_queue(
+                (self.geckodriver_pid, self.browser_settings) = check_queue(
                     launch_status)
 
                 (driver_profile_path, ready) = check_queue(launch_status)
@@ -323,8 +323,8 @@ class Browser:
         self.logger.debug(
             "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
             "Browser PID: %s" % (
-                self.browser_id, self.browser_manager.pid,
-                self.browser_pid)
+                self.crawl_id, self.browser_manager.pid,
+                self.geckodriver_pid)
         )
         if self.display_pid is not None:
             self.logger.debug(
@@ -365,12 +365,12 @@ class Browser:
                                   "removed" % (self.browser_id, lockfile))
                 pass
 
-        if self.browser_pid is not None:
-            """`browser_pid` is the geckodriver process. We first kill
+        if self.geckodriver_pid is not None:
+            """`geckodriver_pid` is the geckodriver process. We first kill
             the child processes (i.e. firefox) and then kill the geckodriver
             process."""
             try:
-                geckodriver = psutil.Process(pid=self.browser_pid)
+                geckodriver = psutil.Process(pid=self.geckodriver_pid)
                 for child in geckodriver.children():
                     try:
                         child.kill()

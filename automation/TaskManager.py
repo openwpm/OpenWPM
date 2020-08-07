@@ -221,7 +221,7 @@ class TaskManager:
                     # main Firefox process and all its child processes.
                     # Use the USS metric for child processes, to avoid
                     # double-counting memory shared with their parent.
-                    geckodriver = psutil.Process(browser.browser_pid)
+                    geckodriver = psutil.Process(browser.geckodriver_pid)
                     mem_bytes = geckodriver.memory_info().rss
                     children = geckodriver.children()
                     if children:
@@ -243,20 +243,20 @@ class TaskManager:
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
             if self.process_watchdog:
-                browser_pids: Set[int] = set()
+                geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
                 check_time = time.time()
                 for browser in self.browsers:
-                    if browser.browser_pid is not None:
-                        browser_pids.add(browser.browser_pid)
+                    if browser.geckodriver_pid is not None:
+                        geckodriver_pids.add(browser.geckodriver_pid)
                     if browser.display_pid is not None:
                         display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
                     if process.create_time() + 300 < check_time and (
                             (process.name() == 'firefox' and (
-                                process.pid not in browser_pids)) or (
+                                process.pid not in geckodriver_pids)) or (
                             process.name() == 'Xvfb' and (
-                                process.pid not in browser_pids))):
+                                process.pid not in geckodriver_pids))):
                         self.logger.debug(
                             "Process: %s (pid: %i) with start "
                             "time %s found running but not in "
