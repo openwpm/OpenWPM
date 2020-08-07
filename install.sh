@@ -26,6 +26,12 @@ PYTHONNOUSERSITE=True conda env create --force -q -f environment.yaml
 echo 'Activating environment.'
 conda activate openwpm
 
+echo 'Installing activate scripts'
+python ./scripts/deploy_env_scripts.py
+
+#activating to run set_env.sh
+conda activate openwpm
+
 echo 'Installing firefox.'
 ./scripts/install-firefox.sh
 
