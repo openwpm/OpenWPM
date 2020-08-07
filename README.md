@@ -15,9 +15,9 @@ Table of Contents <!-- omit in toc -->
 * [Installation](#installation)
   * [Pre-requisites](#pre-requisites)
   * [Install](#install)
-  * [Developer instructions](#developer-instructions)
 * [Quick Start](#quick-start)
 * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+* [Developer instructions](#developer-instructions)
 * [Instrumentation and Data Access](#instrumentation-and-data-access)
 * [Output Format](#output-format)
     * [Local Databases](#local-databases)
@@ -72,9 +72,7 @@ After running the install script, activate your conda environment by running:
 
     $ conda activate openwpm
 
-### Developer instructions
 
-If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](wiki/CONTRIBUTING.md)
 
 Quick Start
 -----------
@@ -89,11 +87,10 @@ More information on the instrumentation and configuration parameters is given
 below.
 
 
-The [wiki](https://github.com/citp/OpenWPM/wiki) provides a more in-depth
-tutorial, including a
-[platform demo](https://github.com/citp/OpenWPM/wiki/Platform-Demo)
+The [wiki](wiki/Using_OpenWPM.md) provides a more in-depth
+tutorial,
 and a description of the
-[additional commands](https://github.com/citp/OpenWPM/wiki/Available-Commands)
+[additional commands](wiki/Available-Commands.md)
 available.
 
 
@@ -117,6 +114,11 @@ information alongside your work will allow other researchers to contextualize
 the results, and can be helpful if future versions of OpenWPM have
 instrumentation bugs that impact results.
 
+Developer instructions
+----------------------
+
+If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](wiki/CONTRIBUTING.md)
+
 Instrumentation and Data Access
 -------------------------------
 
@@ -124,12 +126,15 @@ OpenWPM provides several instrumentation modules which can be enabled
 independently of each other for each crawl. More detail on the output is
 available [below](#output-format).
 
+Our general dataschema can be seen [here](wiki/Instrumentation-Schema-Documentation.md)
+
+
 * HTTP Request and Response Headers, redirects, and POST request bodies
     * Set `browser_params['http_instrument'] = True`
     * Data is saved to the `http_requests`, `http_responses`, and
         `http_redirects`  tables.
         * `http_requests` schema
-            [documentation](https://github.com/citp/OpenWPM/wiki/Instrumentation-Schema-Documentation#http-requests)
+            [documentation](wiki/Instrumentation-Schema-Documentation#http-requests)
         * `channel_id` can be used to link a request saved in the
             `http_requests` table to its corresponding response in the
             `http_responses` table.
@@ -177,7 +182,7 @@ available [below](#output-format).
     * Shortcuts:
         * Specifying just a string will instrument
           the whole API with the [default log settings](docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
-        * For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API) 
+        * For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API)
           such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
         * Alternatively, you can specify a single-key dictionary that maps an API name to the properties / settings you'd
           like to use. The key of this dictionary can be an instance on `window` or a Web API.
@@ -259,7 +264,7 @@ available [below](#output-format).
 * Screenshots
     * Selenium 3 can be used to screenshot an individual element. None of the
         built-in commands offer this functionality, but you can use it when
-        [writing your own](https://github.com/citp/OpenWPM/wiki/Platform-Demo#adding-a-new-command). See the [Selenium documentation](https://seleniumhq.github.io/selenium/docs/api/py/webdriver_remote/selenium.webdriver.remote.webelement.html?highlight=element#selenium.webdriver.remote.webelement.WebElement.screenshot).
+        [writing your own](wiki/Using_OpenWPM.md#adding-a-new-command). See the [Selenium documentation](https://seleniumhq.github.io/selenium/docs/api/py/webdriver_remote/selenium.webdriver.remote.webelement.html?highlight=element#selenium.webdriver.remote.webelement.WebElement.screenshot).
     * Viewport screenshots (i.e. a screenshot of the portion of the website
         visible in the browser's window) are available with the
         `CommandSequence::save_screenshot` command.
@@ -284,7 +289,6 @@ available [below](#output-format).
 Output Format
 ------------
 
-Our general dataschema can be seen [here](wiki/Instrumentation-Schema-Documentation.md)
 
 #### Local Databases
 By default OpenWPM saves all data locally on disk in a variety of formats.
