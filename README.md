@@ -218,17 +218,17 @@ available [below](#output-format).
         * Here are some examples:
             ```
             // Collections
-            "collection_fingerprinting",
+            ["collection_fingerprinting"],
             // APIs, with or without settings details
-            "Storage",
-            "XMLHttpRequest",
-            {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+            ["Storage"],
+            ["XMLHttpRequest"],
+            [{"XMLHttpRequest": {"excludedProperties": ["send"]}}],
             // APIs with shortcut to includedProperties
-            {"Prop1": ["hi"], "Prop2": ["hi2"]},
-            {"XMLHttpRequest": ["send"]},
+            [{"Prop1": ["hi"], "Prop2": ["hi2"]}],
+            [{"XMLHttpRequest": ["send"]}],
             // Specific instances on window
-            {"window.document": ["cookie", "referrer"]},
-            {"window": ["name", "localStorage", "sessionStorage"]}
+            [{"window.document": ["cookie", "referrer"]}],
+            [{"window": ["name", "localStorage", "sessionStorage"]}]
             ```
         * Note, the key / string will only have it's properties instrumented. That is, if you want to instrument
           `window.fetch` function you must specify `{"window": ["fetch",]}`. If you specify just `window.fetch` the
@@ -236,6 +236,7 @@ available [below](#output-format).
           function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
           In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
           in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
+          
 * Response body content
     * Saves all files encountered during the crawl to a `LevelDB`
         database de-duplicated by the md5 hash of the content.
