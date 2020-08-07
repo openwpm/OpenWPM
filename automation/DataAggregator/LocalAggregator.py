@@ -233,11 +233,11 @@ class LocalAggregator(BaseAggregator):
             last_visit_id = 0
         self.current_visit_id = last_visit_id
 
-        self.cur.execute("SELECT MAX(crawl_id) from crawl")
-        last_crawl_id = self.cur.fetchone()[0]
-        if last_crawl_id is None:
-            last_crawl_id = 0
-        self.current_crawl_id = last_crawl_id
+        self.cur.execute("SELECT MAX(browser_id) from crawl")
+        last_browser_id = self.cur.fetchone()[0]
+        if last_browser_id is None:
+            last_browser_id = 0
+        self.current_browser_id = last_browser_id
 
     def save_configuration(self, openwpm_version, browser_version):
         """Save configuration details for this crawl to the database"""
@@ -256,9 +256,9 @@ class LocalAggregator(BaseAggregator):
         # Record browser details for each brower
         for i in range(self.manager_params['num_browsers']):
             self.cur.execute(
-                "INSERT INTO crawl (crawl_id, task_id, browser_params) "
+                "INSERT INTO crawl (browser_id, task_id, browser_params) "
                 "VALUES (?,?,?)",
-                (self.browser_params[i]['crawl_id'], self.task_id,
+                (self.browser_params[i]['browser_id'], self.task_id,
                  json.dumps(self.browser_params[i]))
             )
         self.db.commit()
@@ -268,10 +268,10 @@ class LocalAggregator(BaseAggregator):
         self.current_visit_id += 1
         return self.current_visit_id
 
-    def get_next_crawl_id(self):
+    def get_next_browser_id(self):
         """Returns the next crawl id"""
-        self.current_crawl_id += 1
-        return self.current_crawl_id
+        self.current_browser_id += 1
+        return self.current_browser_id
 
     def launch(self):
         """Launch the aggregator listener process"""

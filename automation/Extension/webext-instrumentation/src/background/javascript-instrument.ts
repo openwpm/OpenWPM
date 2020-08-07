@@ -83,7 +83,7 @@ export class JavascriptInstrument {
           sender,
         );
         if (this.configured) {
-          update.crawl_id = this.crawlID;
+          update.browser_id = this.crawlID;
           this.dataReceiver.saveRecord("javascript", update);
         } else {
           this.pendingRecords.push(update);
@@ -105,7 +105,7 @@ export class JavascriptInstrument {
     this.crawlID = crawlID;
     this.configured = true;
     this.pendingRecords.map(update => {
-      update.crawl_id = this.crawlID;
+      update.browser_id = this.crawlID;
       this.dataReceiver.saveRecord("javascript", update);
     });
   }

@@ -47,13 +47,13 @@ def execute_command(command, webdriver, browser_settings, browser_params,
 
     elif type(command) is SaveScreenshotCommand:
         browser_commands.save_screenshot(
-            visit_id=command.visit_id, crawl_id=command.crawl_id,
+            visit_id=command.visit_id, browser_id=command.browser_id,
             driver=webdriver, manager_params=manager_params,
             suffix=command.suffix)
 
     elif type(command) is ScreenshotFullPageCommand:
         browser_commands.screenshot_full_page(
-            visit_id=command.visit_id, crawl_id=command.crawl_id,
+            visit_id=command.visit_id, browser_id=command.browser_id,
             driver=webdriver, manager_params=manager_params,
             suffix=command.suffix)
 

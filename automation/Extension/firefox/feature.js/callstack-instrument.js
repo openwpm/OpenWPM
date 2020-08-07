@@ -7,10 +7,10 @@ export class CallstackInstrument {
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
   }
-  run(crawl_id) {
+  run(browser_id) {
     browser.stackDump.onStackAvailable.addListener((request_id, call_stack) => {
       const record = {
-        crawl_id,
+        browser_id,
         request_id,
         call_stack
       };

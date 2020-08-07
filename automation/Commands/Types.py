@@ -1,7 +1,7 @@
 class BaseCommand:
-    def set_visit_crawl_id(self, visit_id, crawl_id):
+    def set_visit_browser_id(self, visit_id, browser_id):
         self.visit_id = visit_id
-        self.crawl_id = crawl_id
+        self.browser_id = browser_id
 
     def set_start_time(self, start_time):
         self.start_time = start_time

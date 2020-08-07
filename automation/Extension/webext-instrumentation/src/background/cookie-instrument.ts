@@ -62,7 +62,7 @@ export class CookieInstrument {
       const update: JavascriptCookieRecord = {
         record_type: eventType,
         change_cause: changeInfo.cause,
-        crawl_id: crawlID,
+        browser_id: crawlID,
         extension_session_uuid: extensionSessionUuid,
         event_ordinal: incrementedEventOrdinal(),
         ...transformCookieObjectToMatchOpenWPMSchema(changeInfo.cookie),
@@ -78,7 +78,7 @@ export class CookieInstrument {
       allCookies.map((cookie: Cookie) => {
         const update: JavascriptCookieRecord = {
           record_type: "manual-export",
-          crawl_id: crawlID,
+          browser_id: crawlID,
           extension_session_uuid: extensionSessionUuid,
           ...transformCookieObjectToMatchOpenWPMSchema(cookie),
         };

@@ -182,7 +182,7 @@ class TaskManager:
         browsers = list()
         for i in range(self.num_browsers):
             browser_params[i][
-                'crawl_id'] = self.data_aggregator.get_next_crawl_id()
+                'browser_id'] = self.data_aggregator.get_next_browser_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -233,7 +233,7 @@ class TaskManager:
                     if mem > BROWSER_MEMORY_LIMIT:
                         self.logger.info("BROWSER %i: Memory usage: %iMB"
                                          ", exceeding limit of %iMB" %
-                                         (browser.crawl_id, int(mem),
+                                         (browser.browser_id, int(mem),
                                           BROWSER_MEMORY_LIMIT))
                         browser.restart_required = True
                 except psutil.NoSuchProcess:
@@ -370,7 +370,7 @@ class TaskManager:
 
         self.sock.send(("site_visits", {
             "visit_id": visit_id,
-            "crawl_id": browser.crawl_id,
+            "browser_id": browser.browser_id,
             "site_url": command_sequence.url,
             "site_rank": command_sequence.site_rank
         }))
@@ -427,15 +427,16 @@ class TaskManager:
                 "use the same profile (depending on the failure status of "
                 "this command). To prevent this warning, initialize the "
                 "CommandSequence with `reset` set to `True` to use a fresh "
-                "profile for each command." % browser.crawl_id
+                "profile for each command." % browser.browser_id
             )
         self.logger.info("Starting to work on CommandSequence with "
                          "visit_id %d on browser with id %d",
-                         browser.curr_visit_id, browser.crawl_id)
+                         browser.curr_visit_id, browser.browser_id)
         for command_and_timeout in command_sequence \
                 .get_commands_with_timeout():
             command, timeout = command_and_timeout
-            command.set_visit_crawl_id(browser.curr_visit_id, browser.crawl_id)
+            command.set_visit_browser_id(
+                browser.curr_visit_id, browser.browser_id)
             command.set_start_time(time.time())
             browser.current_timeout = timeout
             # passes off command and waits for a success (or failure signal)
@@ -452,7 +453,7 @@ class TaskManager:
                 command_status = 'timeout'
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
-                    "browser manager" % (browser.crawl_id, repr(command)))
+                    "browser manager" % (browser.browser_id, repr(command)))
 
             if status is None:
                 # allows us to skip this entire block without having to bloat
@@ -465,7 +466,7 @@ class TaskManager:
                 self.logger.critical(
                     "BROWSER %i: Received critical error from browser "
                     "process while executing command %s. Setting failure "
-                    "status." % (browser.crawl_id, str(command)))
+                    "status." % (browser.browser_id, str(command)))
                 self.failure_status = {
                     'ErrorType': 'CriticalChildException',
                     'CommandSequence': command_sequence,
@@ -477,7 +478,7 @@ class TaskManager:
                 error_text, tb = self._unpack_picked_error(status[1])
                 self.logger.info(
                     "BROWSER %i: Received failure status while executing "
-                    "command: %s" % (browser.crawl_id, repr(command)))
+                    "command: %s" % (browser.browser_id, repr(command)))
             elif status[0] == 'NETERROR':
                 command_status = 'neterror'
                 error_text, tb = self._unpack_picked_error(status[1])
@@ -485,7 +486,7 @@ class TaskManager:
                 self.logger.info(
                     "BROWSER %i: Received neterror %s while executing "
                     "command: %s" %
-                    (browser.crawl_id, error_text, repr(command))
+                    (browser.browser_id, error_text, repr(command))
                 )
             else:
                 raise ValueError(
@@ -493,7 +494,7 @@ class TaskManager:
                 )
 
             self.sock.send(("crawl_history", {
-                "crawl_id": browser.crawl_id,
+                "browser_id": browser.browser_id,
                 "visit_id": browser.curr_visit_id,
                 "command": type(command),
                 "arguments": json.dumps(command.__dict__,
@@ -507,7 +508,7 @@ class TaskManager:
 
             if command_status == 'critical':
                 self.sock.send((RECORD_TYPE_SPECIAL, {
-                    "crawl_id": browser.crawl_id,
+                    "browser_id": browser.browser_id,
                     "success": False,
                     "action": ACTION_TYPE_FINALIZE,
                     "visit_id": browser.curr_visit_id
@@ -521,7 +522,7 @@ class TaskManager:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
-                        "failure_status." % browser.crawl_id)
+                        "failure_status." % browser.browser_id)
                     self.failure_status = {
                         'ErrorType': 'ExceedCommandFailureLimit',
                         'CommandSequence': command_sequence
@@ -529,7 +530,7 @@ class TaskManager:
                     return
                 browser.restart_required = True
                 self.logger.debug("BROWSER %i: Browser restart required" % (
-                    browser.crawl_id))
+                    browser.browser_id))
 
             else:
                 with self.threadlock:
@@ -537,7 +538,7 @@ class TaskManager:
 
             if browser.restart_required:
                 self.sock.send((RECORD_TYPE_SPECIAL, {
-                    "crawl_id": browser.crawl_id,
+                    "browser_id": browser.browser_id,
                     "success": False,
                     "action": ACTION_TYPE_FINALIZE,
                     "visit_id": browser.curr_visit_id
@@ -546,7 +547,7 @@ class TaskManager:
 
         self.logger.info("Finished working on CommandSequence with "
                          "visit_id %d on browser with id %d",
-                         browser.curr_visit_id, browser.crawl_id)
+                         browser.curr_visit_id, browser.browser_id)
         # Sleep after executing CommandSequence to provide extra time for
         # internal buffers to drain. Stopgap in support of #135
         time.sleep(2)
@@ -560,7 +561,7 @@ class TaskManager:
                 self.logger.critical(
                     "BROWSER %i: Exceeded the maximum allowable consecutive "
                     "browser launch failures. Setting failure_status." % (
-                        browser.crawl_id))
+                        browser.browser_id))
                 self.failure_status = {
                     'ErrorType': 'ExceedLaunchFailureLimit',
                     'CommandSequence': command_sequence
