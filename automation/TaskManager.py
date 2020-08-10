@@ -347,8 +347,8 @@ class TaskManager:
             )
         if self.failure_status['ErrorType'] == 'CriticalChildException':
             exc = pickle.loads(self.failure_status['Exception'])
-            exc_msg = f'exc was not an exception but instead '
-            f'of type {type(exc)} and looked like this {exc!r}'
+            exc_msg = ('exc was not an exception but instead '
+                       + f'of type {type(exc)} and looked like this {exc!r}')
             assert type(exc) == BaseException, exc_msg
             raise exc
 
