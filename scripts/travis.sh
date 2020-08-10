@@ -4,8 +4,10 @@ if [[ "$TESTS" == "webextension" ]]; then
     npm test;
 else
     cd test;
-    if ! python -m pytest --cov=../automation --cov-report=xml $TESTS -s -v --durations=10; then
-        exit $?;
+    python -m pytest --cov=../automation --cov-report=xml $TESTS -s -v --durations=10;
+    exit_code=$?;
+    if [[ "$exit_code" -ne 0 ]]; then
+        exit $exit_code;
     fi
     codecov -f coverage.xml;
 fi
