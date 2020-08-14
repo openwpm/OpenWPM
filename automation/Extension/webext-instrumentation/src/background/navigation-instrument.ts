@@ -29,7 +29,7 @@ export const transformWebNavigationBaseEventDetailsToOpenWPMSchema = async (
     ? await browser.windows.get(tab.windowId)
     : { width: undefined, height: undefined, type: undefined };
   const navigation: Navigation = {
-    crawl_id: crawlID,
+    browser_id: crawlID,
     incognito: boolToInt(tab.incognito),
     extension_session_uuid: extensionSessionUuid,
     process_id: details.processId,

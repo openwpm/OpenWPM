@@ -51,9 +51,9 @@ class FirefoxLogInterceptor(threading.Thread):
     from geckodriver's log output (geckodriver copies the profile).
     """
 
-    def __init__(self, crawl_id, profile_path):
-        threading.Thread.__init__(self, name="log-interceptor-%i" % crawl_id)
-        self.crawl_id = crawl_id
+    def __init__(self, browser_id, profile_path):
+        threading.Thread.__init__(self, name="log-interceptor-%i" % browser_id)
+        self.browser_id = browser_id
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
         self.profile_path = profile_path
         self.daemon = True
@@ -67,7 +67,7 @@ class FirefoxLogInterceptor(threading.Thread):
             with open(self.fifo, "rt") as f:
                 for line in f:
                     self.logger.debug("BROWSER %i: driver: %s" %
-                                      (self.crawl_id, line.strip()))
+                                      (self.browser_id, line.strip()))
                     if "Using profile path" in line:
                         self.profile_path = \
                             line.partition("Using profile path")[-1].strip()

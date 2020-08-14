@@ -159,7 +159,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
             break
         r = int(random.random() * len(links))
         logger.info("BROWSER %i: visiting internal link %s" % (
-            browser_params['crawl_id'], links[r].get_attribute("href")))
+            browser_params['browser_id'], links[r].get_attribute("href")))
 
         try:
             links[r].click()
@@ -173,7 +173,7 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
             pass
 
 
-def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
+def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=''):
     """ Save a screenshot of the current viewport"""
     if suffix != '':
         suffix = '-' + suffix
@@ -185,7 +185,7 @@ def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
     driver.save_screenshot(outname)
 
 
-def _stitch_screenshot_parts(visit_id, crawl_id, manager_params):
+def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
     # Read image parts and compute dimensions of output image
     total_height = -1
     max_scroll = -1
@@ -234,13 +234,13 @@ def _stitch_screenshot_parts(visit_id, crawl_id, manager_params):
         logger.error(
             "BROWSER %i: SystemError while trying to save screenshot %s. \n"
             "Slices of image %s \n Final size %s, %s." %
-            (crawl_id, outname, '\n'.join([str(x) for x in parts]),
+            (browser_id, outname, '\n'.join([str(x) for x in parts]),
              max_width, total_height)
         )
         pass
 
 
-def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
+def screenshot_full_page(visit_id, browser_id, driver, manager_params,
                          suffix=''):
 
     outdir = os.path.join(manager_params['screenshot_path'], 'parts')
@@ -271,7 +271,7 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
             except WebDriverException:
                 logger.info(
                     "BROWSER %i: WebDriverException while scrolling, "
-                    "screenshot may be misaligned!" % crawl_id)
+                    "screenshot may be misaligned!" % browser_id)
                 pass
 
             # Update control variables
@@ -286,10 +286,10 @@ def screenshot_full_page(visit_id, crawl_id, driver, manager_params,
         excp = traceback.format_exception(*sys.exc_info())
         logger.error(
             "BROWSER %i: Exception while taking full page screenshot \n %s" %
-            (crawl_id, ''.join(excp)))
+            (browser_id, ''.join(excp)))
         return
 
-    _stitch_screenshot_parts(visit_id, crawl_id, manager_params)
+    _stitch_screenshot_parts(visit_id, browser_id, manager_params)
 
 
 def dump_page_source(visit_id, driver, manager_params, suffix=''):

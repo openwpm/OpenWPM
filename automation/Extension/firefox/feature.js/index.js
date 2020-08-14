@@ -43,7 +43,7 @@ async function main() {
       callstack_instrument:true,
       save_content:false,
       testing:true,
-      crawl_id:0
+      browser_id:0
     };
     console.log("WARNING: config not found. Assuming this is a test run of",
                 "the extension. Outputting all queries to console.", {config});
@@ -51,38 +51,38 @@ async function main() {
 
   await loggingDB.open(config['aggregator_address'],
                        config['logger_address'],
-                       config['crawl_id']);
+                       config['browser_id']);
 
   if (config["navigation_instrument"]) {
     loggingDB.logDebug("Navigation instrumentation enabled");
     let navigationInstrument = new NavigationInstrument(loggingDB);
-    navigationInstrument.run(config["crawl_id"]);
+    navigationInstrument.run(config["browser_id"]);
   }
 
   if (config['cookie_instrument']) {
     loggingDB.logDebug("Cookie instrumentation enabled");
     let cookieInstrument = new CookieInstrument(loggingDB);
-    cookieInstrument.run(config['crawl_id']);
+    cookieInstrument.run(config['browser_id']);
   }
 
   if (config['js_instrument']) {
     loggingDB.logDebug("Javascript instrumentation enabled");
     let jsInstrument = new JavascriptInstrument(loggingDB);
-    jsInstrument.run(config['crawl_id']);
+    jsInstrument.run(config['browser_id']);
     await jsInstrument.registerContentScript(config['testing'], config['js_instrument_settings']);
   }
 
   if (config['http_instrument']) {
     loggingDB.logDebug("HTTP Instrumentation enabled");
     let httpInstrument = new HttpInstrument(loggingDB);
-    httpInstrument.run(config['crawl_id'],
+    httpInstrument.run(config['browser_id'],
                        config['save_content']);
   }
 
   if (config['callstack_instrument']) {
     loggingDB.logDebug("Callstack Instrumentation enabled");
     let callstackInstrument = new CallstackInstrument(loggingDB);
-    callstackInstrument.run(config['crawl_id']);
+    callstackInstrument.run(config['browser_id']);
   }
 }
 

@@ -31,7 +31,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
             """ Collect links with `scheme` and save in table `table_name` """
             driver = kwargs['driver']
             manager_params = kwargs['manager_params']
-            crawl_id = kwargs['command'].crawl_id
+            browser_id = kwargs['command'].browser_id
             visit_id = kwargs['command'].visit_id
             link_urls = [
                 x for x in (
@@ -47,7 +47,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
             query = ("CREATE TABLE IF NOT EXISTS %s ("
                      "top_url TEXT, link TEXT, "
-                     "visit_id INTEGER, crawl_id INTEGER);" % table_name)
+                     "visit_id INTEGER, browser_id INTEGER);" % table_name)
             sock.send(("create_table", query))
 
             for link in link_urls:
@@ -55,7 +55,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
                     "top_url": current_url,
                     "link": link,
                     "visit_id": visit_id,
-                    "crawl_id": crawl_id
+                    "browser_id": browser_id
                 })
                 sock.send(query)
             sock.close()

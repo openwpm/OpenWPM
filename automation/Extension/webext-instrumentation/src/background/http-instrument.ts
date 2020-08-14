@@ -254,7 +254,7 @@ export class HttpInstrument {
     const update = {} as HttpRequest;
 
     update.incognito = boolToInt(tab.incognito);
-    update.crawl_id = crawlID;
+    update.browser_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
     update.event_ordinal = eventOrdinal;
     update.window_id = tab.windowId;
@@ -523,7 +523,7 @@ export class HttpInstrument {
         newChannel.QueryInterface(Ci.nsIHttpChannel);
 
         const httpRedirect: HttpRedirect = {
-          crawl_id: crawlID,
+          browser_id: crawlID,
           old_request_id: oldChannel.channelId,
           new_request_id: newChannel.channelId,
           time_stamp: new Date().toISOString(),
@@ -553,7 +553,7 @@ export class HttpInstrument {
         : { windowId: undefined, incognito: undefined };
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
-      crawl_id: crawlID,
+      browser_id: crawlID,
       old_request_url: escapeUrl(details.url),
       old_request_id: details.requestId,
       new_request_url: escapeUrl(details.redirectUrl),
@@ -634,7 +634,7 @@ export class HttpInstrument {
     const update = {} as HttpResponse;
 
     update.incognito = boolToInt(tab.incognito);
-    update.crawl_id = crawlID;
+    update.browser_id = crawlID;
     update.extension_session_uuid = extensionSessionUuid;
     update.event_ordinal = eventOrdinal;
     update.window_id = tab.windowId;

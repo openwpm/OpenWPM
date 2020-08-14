@@ -61,7 +61,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     profile_settings = None  # Imported browser settings
     if browser_params['profile_tar'] and not crash_recovery:
         logger.debug("BROWSER %i: Loading initial browser profile from: %s"
-                     % (browser_params['crawl_id'],
+                     % (browser_params['browser_id'],
                          browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
@@ -69,7 +69,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
                                         browser_params['profile_tar'])
     elif browser_params['profile_tar']:
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s"
-                     % (browser_params['crawl_id'],
+                     % (browser_params['browser_id'],
                          browser_params['profile_tar']))
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
@@ -79,7 +79,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
 
     if browser_params['random_attributes'] and profile_settings is None:
         logger.debug("BROWSER %i: Loading random attributes for browser"
-                     % browser_params['crawl_id'])
+                     % browser_params['browser_id'])
         profile_settings = dict()
 
         # choose a random screen-res from list
@@ -104,7 +104,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
 
     if profile_settings['ua_string'] is not None:
         logger.debug("BROWSER %i: Overriding user agent string to '%s'"
-                     % (browser_params['crawl_id'],
+                     % (browser_params['browser_id'],
                          profile_settings['ua_string']))
         fo.set_preference("general.useragent.override",
                           profile_settings['ua_string'])
@@ -169,7 +169,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         with open(ext_config_file, 'w') as f:
             json.dump(extension_config, f)
         logger.debug("BROWSER %i: Saved extension config file to: %s" %
-                     (browser_params['crawl_id'], ext_config_file))
+                     (browser_params['browser_id'], ext_config_file))
 
         # TODO restore detailed logging
         # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
@@ -185,7 +185,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     # main logger.  This will also inform us where the real profile
     # directory is hiding.
     interceptor = FirefoxLogInterceptor(
-        browser_params['crawl_id'], browser_profile_path)
+        browser_params['browser_id'], browser_profile_path)
     interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow
@@ -193,7 +193,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     for name, value in browser_params['prefs'].items():
         logger.info(
             "BROWSER %i: Setting custom preference: %s = %s" %
-            (browser_params['crawl_id'], name, value))
+            (browser_params['browser_id'], name, value))
         fo.set_preference(name, value)
 
     # Launch the webdriver
@@ -210,7 +210,7 @@ def deploy_firefox(status_queue, browser_params, manager_params,
         ext_loc = os.path.normpath(ext_loc)
         driver.install_addon(ext_loc, temporary=True)
         logger.debug("BROWSER %i: OpenWPM Firefox extension loaded"
-                     % browser_params['crawl_id'])
+                     % browser_params['browser_id'])
 
     # set window size
     driver.set_window_size(*profile_settings['screen_res'])

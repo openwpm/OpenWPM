@@ -218,7 +218,7 @@ class BaseAggregator:
         """Return a unique visit ID to be used as a key for a single visit"""
 
     @abc.abstractmethod
-    def get_next_crawl_id(self):
+    def get_next_browser_id(self):
         """Return a unique crawl ID used as a key for a browser instance"""
 
     def get_most_recent_status(self):

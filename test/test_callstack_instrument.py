@@ -69,7 +69,7 @@ class TestCallstackInstrument(OpenWPMTest):
             "   JOIN http_requests hr"
             "   ON c.request_id=hr.request_id"
             "      AND c.visit_id= hr.visit_id"
-            "      AND c.crawl_id = hr.crawl_id;"))
+            "      AND c.browser_id = hr.browser_id;"))
         print("Printing callstacks contents")
         observed_records = set()
         for row in rows:

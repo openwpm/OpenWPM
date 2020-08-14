@@ -150,14 +150,14 @@ def build_http_cookie_table(database, verbose=False):
 
     cur1.execute("CREATE TABLE IF NOT EXISTS http_request_cookies ( \
                     id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    crawl_id INTEGER NOT NULL, \
+                    browser_id INTEGER NOT NULL, \
                     header_id INTEGER NOT NULL, \
                     name VARCHAR(200) NOT NULL, \
                     value TEXT NOT NULL, \
                     accessed DATETIME);")
     cur1.execute("CREATE TABLE IF NOT EXISTS http_response_cookies ( \
                     id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    crawl_id INTEGER NOT NULL, \
+                    browser_id INTEGER NOT NULL, \
                     header_id INTEGER NOT NULL, \
                     name VARCHAR(200) NOT NULL, \
                     value TEXT NOT NULL, \
@@ -176,7 +176,7 @@ def build_http_cookie_table(database, verbose=False):
     commit = 0
     last_commit = 0
 
-    cur1.execute("""SELECT id, crawl_id, headers, time_stamp
+    cur1.execute("""SELECT id, browser_id, headers, time_stamp
                     FROM http_requests
                     WHERE id NOT IN (SELECT header_id FROM
                     http_request_cookies)""")
@@ -186,7 +186,7 @@ def build_http_cookie_table(database, verbose=False):
         raise Exception("Database error: No HTTP request to process")
 
     while row is not None:
-        req_id, crawl_id, header_str, time_stamp = row
+        req_id, browser_id, header_str, time_stamp = row
         header = ODictCaseless()
         try:
             header.load_state(json.loads(header_str))
@@ -196,9 +196,9 @@ def build_http_cookie_table(database, verbose=False):
             queries = parse_cookies(cookie_str, verbose)
             for query in queries:
                 cur2.execute("INSERT INTO http_request_cookies \
-                            (crawl_id, header_id, name, value, accessed) \
+                            (browser_id, header_id, name, value, accessed) \
                             VALUES (?,?,?,?,?)",
-                             (crawl_id, req_id) + query + (time_stamp,))
+                             (browser_id, req_id) + query + (time_stamp,))
                 commit += 1
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
@@ -212,7 +212,7 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http response cookies
     commit = 0
     last_commit = 0
-    cur1.execute("""SELECT id, crawl_id, url, headers, time_stamp
+    cur1.execute("""SELECT id, browser_id, url, headers, time_stamp
                     FROM http_responses
                     WHERE id NOT IN (SELECT header_id
                     FROM http_response_cookies)""")
@@ -222,7 +222,7 @@ def build_http_cookie_table(database, verbose=False):
         raise Exception("Database error: No HTTP response to process")
 
     while row is not None:
-        resp_id, crawl_id, req_url, header_str, time_stamp = row
+        resp_id, browser_id, req_url, header_str, time_stamp = row
         header = ODictCaseless()
         try:
             header.load_state(json.loads(header_str))
@@ -233,11 +233,11 @@ def build_http_cookie_table(database, verbose=False):
                                     response_cookie=True)
             for query in queries:
                 cur2.execute("INSERT INTO http_response_cookies \
-                            (crawl_id, header_id, name, \
+                            (browser_id, header_id, name, \
                             value, domain, path, expires, max_age, \
                             httponly, secure, comment, version, accessed) \
                             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                             (crawl_id, resp_id) + query + (time_stamp,))
+                             (browser_id, resp_id) + query + (time_stamp,))
                 commit += 1
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit

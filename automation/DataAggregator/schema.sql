@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS task (
     browser_version TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS crawl (
-    crawl_id INTEGER PRIMARY KEY,
+    browser_id INTEGER PRIMARY KEY,
     task_id INTEGER NOT NULL,
     browser_params TEXT NOT NULL,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -22,16 +22,16 @@ CREATE TABLE IF NOT EXISTS crawl (
  */
 CREATE TABLE IF NOT EXISTS site_visits (
     visit_id INTEGER PRIMARY KEY,
-    crawl_id INTEGER NOT NULL,
+    browser_id INTEGER NOT NULL,
     site_url VARCHAR(500) NOT NULL,
     site_rank INTEGER,
-    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+    FOREIGN KEY(browser_id) REFERENCES crawl(id));
 
 /*
 # crawl_history
  */
 CREATE TABLE IF NOT EXISTS crawl_history (
-    crawl_id INTEGER,
+    browser_id INTEGER,
     visit_id INTEGER,
     command TEXT,
     arguments TEXT,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS crawl_history (
     error TEXT,
     traceback TEXT,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY(crawl_id) REFERENCES crawl(id));
+    FOREIGN KEY(browser_id) REFERENCES crawl(id));
 
 /*
 # http_requests
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS crawl_history (
 CREATE TABLE IF NOT EXISTS http_requests(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   event_ordinal INTEGER,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS http_requests(
 CREATE TABLE IF NOT EXISTS http_responses(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   event_ordinal INTEGER,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS http_responses(
 CREATE TABLE IF NOT EXISTS http_redirects(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   incognito INTEGER,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   old_request_url TEXT,
   old_request_id TEXT,
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS http_redirects(
 CREATE TABLE IF NOT EXISTS javascript(
   id INTEGER PRIMARY KEY,
   incognito INTEGER,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   event_ordinal INTEGER,
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS javascript(
  */
 CREATE TABLE IF NOT EXISTS javascript_cookies(
     id INTEGER PRIMARY KEY ASC,
-    crawl_id INTEGER NOT NULL,
+    browser_id INTEGER NOT NULL,
     visit_id INTEGER NOT NULL,
     extension_session_uuid TEXT,
     event_ordinal INTEGER,
@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS javascript_cookies(
 CREATE TABLE IF NOT EXISTS navigations(
   id INTEGER,
   incognito INTEGER,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   extension_session_uuid TEXT,
   process_id INTEGER,
@@ -216,7 +216,7 @@ CREATE TABLE IF NOT EXISTS navigations(
 CREATE TABLE IF NOT EXISTS callstacks(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER NOT NULL,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   call_stack TEXT
 );

@@ -11,7 +11,7 @@ export const dateTimeUnicodeFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
 export interface Navigation {
   id?: number;
   incognito?: number;
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
   process_id?: number;
@@ -42,7 +42,7 @@ export interface Navigation {
 export interface HttpRequest {
   id?: number;
   incognito?: number;
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
   event_ordinal?: number;
@@ -76,7 +76,7 @@ export interface HttpRequest {
 export interface HttpResponse {
   id?: number;
   incognito?: number;
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
   event_ordinal?: number;
@@ -102,7 +102,7 @@ export interface HttpResponse {
 export interface HttpRedirect {
   id?: number;
   incognito?: number;
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   old_request_url?: string;
   old_request_id?: string;
@@ -122,7 +122,7 @@ export interface HttpRedirect {
 export interface JavascriptOperation {
   id?: number;
   incognito?: number;
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
   event_ordinal?: number;
@@ -166,7 +166,7 @@ export interface JavascriptCookie {
  */
 export interface JavascriptCookieRecord extends JavascriptCookie {
   id?: number;
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   extension_session_uuid?: string;
   event_ordinal?: number;

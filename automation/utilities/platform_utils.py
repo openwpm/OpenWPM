@@ -101,7 +101,7 @@ def get_configuration_string(manager_params, browser_params, versions):
     archive_dirs = OrderedDict()
     profile_all_none = archive_all_none = True
     for item in print_params:
-        crawl_id = item['crawl_id']
+        browser_id = item['browser_id']
 
         # Update print flags
         if item['profile_tar'] is not None:
@@ -110,12 +110,12 @@ def get_configuration_string(manager_params, browser_params, versions):
             archive_all_none = False
 
         # Separate out long profile directory strings
-        profile_dirs[crawl_id] = item.pop('profile_tar')
-        archive_dirs[crawl_id] = item.pop('profile_archive_dir')
+        profile_dirs[browser_id] = item.pop('profile_tar')
+        archive_dirs[browser_id] = item.pop('profile_archive_dir')
 
         # Copy items in sorted order
         dct = OrderedDict()
-        dct[u'crawl_id'] = crawl_id
+        dct[u'browser_id'] = browser_id
         for key in sorted(item.keys()):
             dct[key] = item[key]
         table_input.append(dct)

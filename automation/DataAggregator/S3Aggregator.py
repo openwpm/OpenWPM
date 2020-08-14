@@ -336,12 +336,12 @@ class S3Aggregator(BaseAggregator):
     """
     Receives data records from other processes and aggregates them locally
     per-site before pushing them to a remote S3 bucket. The remote files are
-    saved in a Paquet Dataset partitioned by the crawl_id and visit_id of
+    saved in a Paquet Dataset partitioned by the browser_id and visit_id of
     each record.
 
     The visit and task ids are randomly generated to allow multiple writers
     to write to the same S3 bucket. Every record should have a `visit_id`
-    (which identifies the site visit) and a `crawl_id` (which identifies the
+    (which identifies the site visit) and a `browser_id` (which identifies the
     browser instance) so we can associate records with the appropriate meta
     data. Any records which lack this information will be dropped by the
     writer.
@@ -405,7 +405,7 @@ class S3Aggregator(BaseAggregator):
         """
         return random.getrandbits(53)
 
-    def get_next_crawl_id(self):
+    def get_next_browser_id(self):
         """Generate crawl id as randomly generated positive 32bit integer
 
         Note: Parquet's partitioned dataset reader only supports integer
