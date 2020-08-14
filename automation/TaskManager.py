@@ -256,7 +256,7 @@ class TaskManager:
                             (process.name() == 'firefox' and (
                                 process.pid not in geckodriver_pids)) or (
                             process.name() == 'Xvfb' and (
-                                process.pid not in geckodriver_pids))):
+                                process.pid not in display_pids))):
                         self.logger.debug(
                             "Process: %s (pid: %i) with start "
                             "time %s found running but not in "
