@@ -1,10 +1,12 @@
 import { PendingResponse } from "../lib/pending-response";
 import { DnsResolved } from "../schema";
 import RequestFilter = browser.webRequest.RequestFilter;
-import ResourceType = browser.webRequest.ResourceType;
 import {
   WebRequestOnCompletedEventDetails,
 } from "../types/browser-web-request-event-details";
+import {
+  allTypes
+} from "./http-instrument";
 
 
 export class DnsInstrument {
@@ -19,30 +21,7 @@ export class DnsInstrument {
   }
   
   public run(crawlID){
-    // Adopted from http-instrument.ts
-    const allTypes: ResourceType[] = [
-      "beacon",
-      "csp_report",
-      "font",
-      "image",
-      "imageset",
-      "main_frame",
-      "media",
-      "object",
-      "object_subrequest",
-      "ping",
-      "script",
-      // "speculative",
-      "stylesheet",
-      "sub_frame",
-      "web_manifest",
-      "websocket",
-      "xbl",
-      "xml_dtd",
-      "xmlhttprequest",
-      "xslt",
-      "other",
-    ];
+
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
     
     const requestStemsFromExtension = details => {
