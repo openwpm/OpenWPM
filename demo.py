@@ -51,7 +51,7 @@ for site in sites:
         print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
-    command_sequence.get(sleep=3, timeout=60)
+    command_sequence.get(sleep=15, timeout=60)
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)
