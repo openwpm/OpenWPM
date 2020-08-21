@@ -317,6 +317,16 @@ HTTP_CACHED_REQUESTS = {
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         0, None, None, u'image'
     ),
+    ('http://localtest.me:8000/test_pages/shared/test_style.css',
+        'http://localtest.me:8000/test_pages/http_test_page.html',
+        'http://localtest.me:8000',
+        'http://localtest.me:8000',
+        'http://localtest.me:8000/test_pages/http_test_page.html',
+        0,
+        None,
+        None,
+        'stylesheet'),
+
 }
 
 # format: (request_url, referrer, is_cached)
