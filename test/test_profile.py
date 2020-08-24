@@ -6,6 +6,7 @@ import pytest
 from ..automation import TaskManager
 from ..automation.CommandSequence import CommandSequence
 from ..automation.Errors import CommandExecutionError, ProfileLoadError
+from ..automation.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 # TODO update these tests to make use of blocking commands
@@ -100,9 +101,23 @@ class TestProfile(OpenWPMTest):
             assert result, f"Result was {result} of {type(result)}"
 
         manager_params, browser_params = self.get_test_config(num_browsers=1)
-        browser_params["seed_tar"] = "."
+        browser_params[0]["seed_tar"] = "."
         command_sequences = []
         for _ in range(2):
-            cs = CommandSequence(reset=True)
+            cs = CommandSequence(url="https://example.com", reset=True)
+            cs.get()
             cs.run_custom_function(test_config_is_set)
             command_sequences.append(cs)
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        for cs in command_sequences:
+            manager.execute_command_sequence(cs)
+        manager.close()
+        query_result = db_utils.query_db(
+            manager_params['db'],
+            "SELECT * FROM crawl_history;",
+        )
+        assert len(query_result) > 0
+        for row in query_result:
+            assert row["command_status"] == "ok", (
+                f"Command {tuple(row)} was not ok"
+            )
