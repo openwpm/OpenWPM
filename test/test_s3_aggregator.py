@@ -6,8 +6,10 @@ from collections import defaultdict
 import boto3
 import pytest
 from localstack.services import infra
+from multiprocess import Queue
 
 from ..automation import TaskManager
+from ..automation.CommandSequence import CommandSequence
 from ..automation.DataAggregator.parquet_schema import PQ_SCHEMAS
 from .openwpmtest import OpenWPMTest
 from .utilities import (BASE_TEST_URL, LocalS3Dataset, LocalS3Session,
@@ -22,15 +24,16 @@ except NameError:
 class TestS3Aggregator(OpenWPMTest):
 
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         infra.start_infra(asynchronous=True, apis=["s3"])
         boto3.DEFAULT_SESSION = LocalS3Session()
-        self.s3_client = boto3.client('s3')
-        self.s3_resource = boto3.resource('s3')
+        cls.s3_client = boto3.client('s3')
+        cls.s3_resource = boto3.resource('s3')
 
     @classmethod
-    def teardown_class(self):
+    def teardown_class(cls):
         infra.stop_infra()
+        infra.check_infra(retries=2, expect_shutdown=True, apis=["s3"])
 
     def get_config(self, num_browsers=1, data_dir=""):
         manager_params, browser_params = self.get_test_config(
@@ -113,3 +116,27 @@ class TestS3Aggregator(OpenWPMTest):
         requests = dataset2.load_table('http_requests')
         assert TEST_SITE in requests.top_level_url.unique()
         manager.close()
+
+    def test_s3_callbacks(self):
+        TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
+        manager_params, browser_params = self.get_config()
+        dataset = LocalS3Dataset(
+            manager_params['s3_bucket'],
+            manager_params['s3_directory']
+        )
+        manager = TaskManager.TaskManager(manager_params, browser_params)
+        queue = Queue()
+
+        def ensure_site_in_s3(success: bool):
+            # Ensure http table is created
+            queue.put(TEST_SITE in dataset.load_table(
+                'http_requests').top_level_url.unique())
+
+        sequence = CommandSequence(TEST_SITE, reset=True,
+                                   blocking=True,
+                                   callback=ensure_site_in_s3)
+        sequence.get()
+        manager.execute_command_sequence(sequence)
+        manager.close()
+
+        assert queue.get()
