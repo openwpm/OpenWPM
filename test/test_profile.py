@@ -94,11 +94,13 @@ class TestProfile(OpenWPMTest):
                 var prefs = Components
                             .classes["@mozilla.org/preferences-service;1"]
                             .getService(Components.interfaces.nsIPrefBranch);
-                            return prefs.getBoolPref("test_pref")
+                try {
+                    return prefs.getBoolPref("test_pref")
+                } catch (e) {
+                    return false;
+                }
             """)
-            assert type(
-                result) == bool, f"Result was {result} of {type(result)}"
-            assert result, f"Result was {result} of {type(result)}"
+            assert result
 
         manager_params, browser_params = self.get_test_config(num_browsers=1)
         browser_params[0]["seed_tar"] = "."
