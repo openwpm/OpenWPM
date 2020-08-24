@@ -11,6 +11,9 @@ class TestCallbackCommand(OpenWPMTest):
     """Test test the Aggregators as well as the entire callback machinery
        to see if all callbacks get correctly called"""
 
+    def get_config(self, data_dir=""):
+        return self.get_test_config(data_dir)
+
     def test_local_callbacks(self):
         manager_params, browser_params = self.get_config()
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
