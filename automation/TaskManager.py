@@ -346,14 +346,8 @@ class TaskManager:
                 "failure limit.", self.failure_status['CommandSequence']
             )
         if self.failure_status['ErrorType'] == 'CriticalChildException':
-            exc = pickle.loads(self.failure_status['Exception'])
-            assert type(exc) == BaseException, (
-                'Unexpected object passed in place of exception while handling'
-                ' a critical exception in a child process. Please report this '
-                'error to https://github.com/mozilla/OpenWPM/issues/547. '
-                f'Object was of type {type(exc)} and looked like {exc!r}.'
-            )
-            raise exc
+            exc_type, exc, tb = pickle.loads(self.failure_status['Exception'])
+            raise exc.with_traceback(tb)
 
     # CRAWLER COMMAND CODE
 
