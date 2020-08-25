@@ -25,7 +25,7 @@ Your web extension needs to specify the following permissions in `manifest.json`
 
 ## Instrumentation
 
-The instrumentation leverages the available [JavaScript APIs for WebExtensions](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API) and listens to navigation, web requests, cookie modifications and access to certain javascript API:s, as described in [the main OpenWPM project README](https://github.com/citp/OpenWPM/tree/develop#instrumentation-and-data-access) under the following bullet points:
+The instrumentation leverages the available [JavaScript APIs for WebExtensions](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API) and listens to navigation, web requests, cookie modifications and access to certain javascript API:s, as described in [the main OpenWPM project README](../../../README.md#instrumentation-and-data-access) under the following bullet points:
  - HTTP Request and Response Headers, redirects, and POST request bodies
  - Javascript Calls
  - Response body content

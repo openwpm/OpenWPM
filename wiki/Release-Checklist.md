@@ -1,3 +1,5 @@
+# Release Checklist
+
 We aim to release a new version of OpenWPM with each new Firefox release (~1 release per month). The following steps are necessary for a release
 
 1. Upgrade Firefox to the newest version.

@@ -78,7 +78,7 @@ The Browser class, contained in the same file, is the Task Manager's wrapper aro
 
 ## Browser Information Logging
 
-Throughout the course of a measurement, the Browser Managers' commands (along with timestamps and the status of the commands) are logged by the Task Manager, which contributes the the reproducibility of individual experiments. Depending on whether the `proxy` flag is enabled in the Task Manager, the Browser Managers also instantiate HTTP proxies, specifically [mitmproxy](http://mitproxy.org) instances, which records traffic-related data during the crawl. The data are sent to the Data Aggregator process, which provides stability in logging data despite the possibility of individual browser crashes.
+Throughout the course of a measurement, the Browser Managers' commands (along with timestamps and the status of the commands) are logged by the Task Manager, which contributes the the reproducibility of individual experiments. Depending on whether the `proxy` flag is enabled in the Task Manager, the Browser Managers also instantiate HTTP proxies, specifically [mitmproxy](http://mitmproxy.org) instances, which records traffic-related data during the crawl. The data are sent to the Data Aggregator process, which provides stability in logging data despite the possibility of individual browser crashes.
 
 # Data Aggregator
 
@@ -90,7 +90,7 @@ So far the platform logs a wide variety of information into a single database. W
 
 ## Data Logged
 
-The full schema for the platform's output is contained in `automation/schema.sql`. On a high-level, the current information logged (assuming turning on the proxy and enabling Flash) is as follows:
+The full schema for the platform's output is contained in the [schema documentation](Instrumentation-Schema-Documentation.md). On a high-level, the current information logged (assuming turning on the proxy and enabling Flash) is as follows:
 
 * **crawl metadata**: browser options, start time, competition time
 * **HTTP requests**: referrer, headers, method, timestamp, top URL (i.e. currently-visited site)
