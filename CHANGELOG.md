@@ -1,5 +1,19 @@
 # Changelog
 
+
+## v0.12.0 - 2020-08-26
+
+Firefox 80.0.0 release
+
+There have been no new features added in this release.
+However there are two significant bugfixes worth highlighting:
+
+- We hopefully fixed [a bug when hashing content](https://github.com/mozilla/OpenWPM/issues/711) where the same file could have multiple hashes
+  If you ran a big crawl and could repeat @birdsarah's analysis, we'd be grateful if you reported your results [here](https://github.com/mozilla/OpenWPM/issues/719)
+- Fixed longstanding bug when [propagating exceptions from the BrowserManager to the TaskManager](https://github.com/mozilla/OpenWPM/issues/547) you should now be seeing
+  the exception that happened in the BrowserManager in your logs
+
+
 ## v0.11.0 - 2020-07-08
 
 Firefox 78.0.1 scheduled release. This release contains some minor bug fixes

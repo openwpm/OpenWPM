@@ -16,9 +16,9 @@
     "ts-loader": "^5.4.5",
     "tslint": "^5.20.1",
     "tslint-eslint-rules": "^5.4.0",
-    "typescript": "^3.9.6",
+    "typescript": "^3.9.7",
     "web-ext": "^4.3.0",
-    "webpack": "^4.42.1",
+    "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
   },
   "engines": {
