@@ -254,14 +254,6 @@ HTTP_CACHED_REQUESTS = {
         0, None, None, u'sub_frame'
     ),
     (
-        u'http://localtest.me:8000/test_pages/shared/test_style.css',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000',
-        u'http://localtest.me:8000/test_pages/http_test_page.html',
-        0, None, None, u'stylesheet'
-    ),
-    (
         u'http://localtest.me:8000/404.png',
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         u'http://localtest.me:8000',
@@ -325,10 +317,6 @@ HTTP_CACHED_RESPONSES = {
     (
         u'http://localtest.me:8000/test_pages/http_test_page.html',
         # u'',
-        1),
-    (
-        u'http://localtest.me:8000/test_pages/shared/test_style.css',
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
         1),
     (
         u'http://localtest.me:8000/test_pages/shared/test_script.js',
