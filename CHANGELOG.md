@@ -13,6 +13,8 @@ However there are two significant bugfixes worth highlighting:
 - Fixed longstanding bug when [propagating exceptions from the BrowserManager to the TaskManager](https://github.com/mozilla/OpenWPM/issues/547) you should now be seeing
   the exception that happened in the BrowserManager in your logs
 
+__NOTE:__ Please be aware that this release contains a regression related to https://bugzilla.mozilla.org/show_bug.cgi?id=1656405 and https://bugzilla.mozilla.org/show_bug.cgi?id=1599160.
+This means some requests with cached responses might not show up as requests or responses in your instrumentation. We assume this will be fixed in FF81.
 
 ## v0.11.0 - 2020-07-08
 
