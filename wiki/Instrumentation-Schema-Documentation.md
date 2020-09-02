@@ -60,9 +60,9 @@ update the description of the field here.
 | referrer                     | string | False    |             |
 | headers                      | string | False    |             |
 | request_id                   | string | False    |             |
-| is_XHR                       | bool_  |          |             |
-| is_third_party_channel       | bool_  |          |             |
-| is_third_party_to_top_window | bool_  |          |             |
+| is_XHR                       | bool   |          |             |
+| is_third_party_channel       | bool   |          |             |
+| is_third_party_to_top_window | bool   |          |             |
 | triggering_origin            | string |          |             |
 | loading_origin               | string |          |             |
 | loading_href                 | string |          |             |
@@ -89,7 +89,7 @@ update the description of the field here.
 | method                 | string | False    |             |
 | response_status        | int64  |          |             |
 | response_status_text   | string | False    |             |
-| is_cached              | bool_  | False    |             |
+| is_cached              | bool   | False    |             |
 | headers                | string | False    |             |
 | request_id             | string | False    |             |
 | location               | string | False    |             |
@@ -158,11 +158,11 @@ update the description of the field here.
 | record_type            | string |          |             |
 | change_cause           | string |          |             |
 | expiry                 | string |          |             |
-| is_http_only           | bool_  |          |             |
-| is_host_only           | bool_  |          |             |
-| is_session             | bool_  |          |             |
+| is_http_only           | bool   |          |             |
+| is_host_only           | bool   |          |             |
+| is_session             | bool   |          |             |
 | host                   | string |          |             |
-| is_secure              | bool_  |          |             |
+| is_secure              | bool   |          |             |
 | name                   | string |          |             |
 | path                   | string |          |             |
 | value                  | string |          |             |
