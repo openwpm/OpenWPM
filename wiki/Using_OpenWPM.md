@@ -52,7 +52,7 @@ To add a new command you need to modify the following four files:
       In our case this looks like this:
   ```python
         elif type(command) is JiggleCommand:
-        browser_commands.initialize(
+        browser_commands.jiggle_mouse(
             webdriver=webdriver,
             number_jiggles=self.num_jiggles)
   ```
