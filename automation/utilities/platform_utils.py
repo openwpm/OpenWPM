@@ -114,7 +114,12 @@ def get_configuration_string(manager_params, browser_params, versions):
         profile_dirs[browser_id] = item.pop('seed_tar')
         archive_dirs[browser_id] = item.pop('profile_archive_dir')
         js_config[browser_id] = item.pop('js_instrument_settings')
-        
+
+        try:
+            js_config[browser_id] = json.loads(js_config[browser_id])
+        except Exception:
+            pass
+
         # Copy items in sorted order
         dct = OrderedDict()
         dct[u'browser_id'] = browser_id
