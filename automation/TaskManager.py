@@ -253,7 +253,7 @@ class TaskManager:
                         display_pids.add(browser.display_pid)
                 for process in psutil.process_iter():
                     if process.create_time() + 300 < check_time and (
-                            (process.name() == 'firefox' and (
+                            (process.name() == 'geckodriver' and (
                                 process.pid not in geckodriver_pids)) or (
                             process.name() == 'Xvfb' and (
                                 process.pid not in display_pids))):
