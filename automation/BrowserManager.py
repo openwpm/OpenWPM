@@ -21,7 +21,8 @@ from .Commands.Types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
-from .utilities.multiprocess_utils import Process, parse_traceback_for_sentry
+from .utilities.multiprocess_utils import (Process, kill_process_and_children,
+                                           parse_traceback_for_sentry)
 
 pickling_support.install()
 
@@ -323,7 +324,7 @@ class Browser:
         self.logger.debug(
             "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
             "Browser PID: %s" % (
-                self.crawl_id, self.browser_manager.pid,
+                self.browser_id, self.browser_manager.pid,
                 self.geckodriver_pid)
         )
         if self.display_pid is not None:
@@ -369,29 +370,7 @@ class Browser:
             """`geckodriver_pid` is the geckodriver process. We first kill
             the child processes (i.e. firefox) and then kill the geckodriver
             process."""
-            try:
-                geckodriver = psutil.Process(pid=self.geckodriver_pid)
-                for child in geckodriver.children():
-                    try:
-                        child.kill()
-                    except psutil.NoSuchProcess:
-                        self.logger.debug(
-                            "BROWSER %i: Geckodriver child process already "
-                            "killed (pid=%i)." % (self.browser_id, child.pid))
-                        pass
-                geckodriver.kill()
-                geckodriver.wait(timeout=20)
-                for child in geckodriver.children():
-                    child.wait(timeout=20)
-            except psutil.NoSuchProcess:
-                self.logger.debug("BROWSER %i: Geckodriver process already "
-                                  "killed." % self.browser_id)
-                pass
-            except psutil.TimeoutExpired:
-                self.logger.debug("BROWSER %i: Timeout while waiting for "
-                                  "geckodriver or browser process to close " %
-                                  self.browser_id)
-                pass
+            kill_process_and_children(psutil.Process(pid=self.geckodriver_pid))
 
     def shutdown_browser(self, during_init: bool, force: bool = False) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """
