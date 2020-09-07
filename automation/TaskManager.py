@@ -22,6 +22,7 @@ from .Errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
 from .SocketInterface import clientsocket
+from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 
 tblib.pickling_support.install()
@@ -263,7 +264,7 @@ class TaskManager:
                             "browser process list. Killing." % (
                                 process.name(), process.pid,
                                 process.create_time()))
-                        process.kill()
+                        kill_process_and_children(process)
 
     def _launch_aggregators(self) -> None:
         """Launch the necessary data aggregators"""
