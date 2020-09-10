@@ -21,7 +21,8 @@ from .Commands.Types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
-from .utilities.multiprocess_utils import Process, parse_traceback_for_sentry
+from .utilities.multiprocess_utils import (Process, kill_process_and_children,
+                                           parse_traceback_for_sentry)
 
 pickling_support.install()
 
@@ -59,7 +60,7 @@ class Browser:
         # queue for receiving command execution status from BrowserManager
         self.status_queue: Optional[Queue] = None
         # pid for browser instance controlled by BrowserManager
-        self.browser_pid: Optional[int] = None
+        self.geckodriver_pid: Optional[int] = None
         # the pid of the display for the Xvfb display (if it exists)
         self.display_pid: Optional[int] = None
         # the port of the display for the Xvfb display (if it exists)
@@ -162,7 +163,7 @@ class Browser:
                 # 4. Browser launch attempted
                 check_queue(launch_status)
                 # 5. Browser launched
-                (self.browser_pid, self.browser_settings) = check_queue(
+                (self.geckodriver_pid, self.browser_settings) = check_queue(
                     launch_status)
 
                 (driver_profile_path, ready) = check_queue(launch_status)
@@ -324,7 +325,7 @@ class Browser:
             "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
             "Browser PID: %s" % (
                 self.browser_id, self.browser_manager.pid,
-                self.browser_pid)
+                self.geckodriver_pid)
         )
         if self.display_pid is not None:
             self.logger.debug(
@@ -365,33 +366,11 @@ class Browser:
                                   "removed" % (self.browser_id, lockfile))
                 pass
 
-        if self.browser_pid is not None:
-            """`browser_pid` is the geckodriver process. We first kill
+        if self.geckodriver_pid is not None:
+            """`geckodriver_pid` is the geckodriver process. We first kill
             the child processes (i.e. firefox) and then kill the geckodriver
             process."""
-            try:
-                geckodriver = psutil.Process(pid=self.browser_pid)
-                for child in geckodriver.children():
-                    try:
-                        child.kill()
-                    except psutil.NoSuchProcess:
-                        self.logger.debug(
-                            "BROWSER %i: Geckodriver child process already "
-                            "killed (pid=%i)." % (self.browser_id, child.pid))
-                        pass
-                geckodriver.kill()
-                geckodriver.wait(timeout=20)
-                for child in geckodriver.children():
-                    child.wait(timeout=20)
-            except psutil.NoSuchProcess:
-                self.logger.debug("BROWSER %i: Geckodriver process already "
-                                  "killed." % self.browser_id)
-                pass
-            except psutil.TimeoutExpired:
-                self.logger.debug("BROWSER %i: Timeout while waiting for "
-                                  "geckodriver or browser process to close " %
-                                  self.browser_id)
-                pass
+            kill_process_and_children(psutil.Process(pid=self.geckodriver_pid))
 
     def shutdown_browser(self, during_init: bool, force: bool = False) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """

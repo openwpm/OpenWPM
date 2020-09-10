@@ -3,6 +3,7 @@ import sys
 import traceback
 
 import multiprocess as mp
+import psutil
 
 
 def parse_traceback_for_sentry(tb):
@@ -49,3 +50,22 @@ class Process(mp.Process):
                 "Exception in child process.", exc_info=True, extra=extra
             )
             raise e
+
+
+def kill_process_and_children(parent_process: psutil.Process,
+                              logger, timeout: int = 20) -> None:
+    """ Attempts to recursively kill the entire process tree under
+        a given parent process"""
+    try:
+        for child in parent_process.children():
+            kill_process_and_children(child)
+
+        parent_process.kill()
+        parent_process.wait(timeout=20)
+    except psutil.NoSuchProcess:
+        logger.debug("Process %i has already exited", parent_process.pid)
+        pass
+    except psutil.TimeoutExpired:
+        logger.debug("Timeout while waiting for process %i to terminate" %
+                     parent_process.pid)
+        pass
