@@ -1,18 +1,23 @@
-
 from ..automation import CommandSequence, TaskManager
 from ..automation.utilities import db_utils
 from . import utilities
 from .openwpmtest import OpenWPMTest
 
-url_a = utilities.BASE_TEST_URL + '/simple_a.html'
+url_a = utilities.BASE_TEST_URL + "/simple_a.html"
 
 PAGE_LINKS = {
-    (u'http://localtest.me:8000/test_pages/simple_a.html',
-     u'http://localtest.me:8000/test_pages/simple_c.html'),
-    (u'http://localtest.me:8000/test_pages/simple_a.html',
-     u'http://localtest.me:8000/test_pages/simple_d.html'),
-    (u'http://localtest.me:8000/test_pages/simple_a.html',
-     u'http://example.com/test.html?localtest.me'),
+    (
+        u"http://localtest.me:8000/test_pages/simple_a.html",
+        u"http://localtest.me:8000/test_pages/simple_c.html",
+    ),
+    (
+        u"http://localtest.me:8000/test_pages/simple_a.html",
+        u"http://localtest.me:8000/test_pages/simple_d.html",
+    ),
+    (
+        u"http://localtest.me:8000/test_pages/simple_a.html",
+        u"http://example.com/test.html?localtest.me",
+    ),
 }
 
 
@@ -29,34 +34,40 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
         def collect_links(table_name, scheme, **kwargs):
             """ Collect links with `scheme` and save in table `table_name` """
-            driver = kwargs['driver']
-            manager_params = kwargs['manager_params']
-            browser_id = kwargs['command'].browser_id
-            visit_id = kwargs['command'].visit_id
+            driver = kwargs["driver"]
+            manager_params = kwargs["manager_params"]
+            browser_id = kwargs["command"].browser_id
+            visit_id = kwargs["command"].visit_id
             link_urls = [
-                x for x in (
+                x
+                for x in (
                     element.get_attribute("href")
-                    for element in driver.find_elements_by_tag_name('a')
+                    for element in driver.find_elements_by_tag_name("a")
                 )
-                if x.startswith(scheme + '://')
+                if x.startswith(scheme + "://")
             ]
             current_url = driver.current_url
 
             sock = clientsocket()
-            sock.connect(*manager_params['aggregator_address'])
+            sock.connect(*manager_params["aggregator_address"])
 
-            query = ("CREATE TABLE IF NOT EXISTS %s ("
-                     "top_url TEXT, link TEXT, "
-                     "visit_id INTEGER, browser_id INTEGER);" % table_name)
+            query = (
+                "CREATE TABLE IF NOT EXISTS %s ("
+                "top_url TEXT, link TEXT, "
+                "visit_id INTEGER, browser_id INTEGER);" % table_name
+            )
             sock.send(("create_table", query))
 
             for link in link_urls:
-                query = (table_name, {
-                    "top_url": current_url,
-                    "link": link,
-                    "visit_id": visit_id,
-                    "browser_id": browser_id
-                })
+                query = (
+                    table_name,
+                    {
+                        "top_url": current_url,
+                        "link": link,
+                        "visit_id": visit_id,
+                        "browser_id": browser_id,
+                    },
+                )
                 sock.send(query)
             sock.close()
 
@@ -64,12 +75,10 @@ class TestCustomFunctionCommand(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=0, timeout=60)
-        cs.run_custom_function(collect_links, ('page_links', 'http'))
+        cs.run_custom_function(collect_links, ("page_links", "http"))
         manager.execute_command_sequence(cs)
         manager.close()
         query_result = db_utils.query_db(
-            manager_params['db'],
-            "SELECT top_url, link FROM page_links;",
-            as_tuple=True
+            manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
         )
         assert PAGE_LINKS == set(query_result)

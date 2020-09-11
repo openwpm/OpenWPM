@@ -50,7 +50,7 @@ class RedisWQ(object):
         self._processing_q_key = name + ":processing"
         self._retry_hash_map_key = name + ":retries"
         self._lease_key_prefix = name + ":leased_by_session:"
-        self._logger = logging.getLogger('openwpm')
+        self._logger = logging.getLogger("openwpm")
         self._max_retries = max_retries
 
     def sessionID(self):
@@ -115,13 +115,10 @@ class RedisWQ(object):
         if retry_count + 1 > self._max_retries:
             self._logger.debug(
                 "Job %s exceeded maximum retry count, attempting to remove "
-                "from the processing queue. [session %s]" %
-                (job, self.sessionID())
+                "from the processing queue. [session %s]" % (job, self.sessionID())
             )
             pipe.multi()
-            pipe = pipe.lrem(
-                self._processing_q_key, 0, job
-            ).hdel(
+            pipe = pipe.lrem(self._processing_q_key, 0, job).hdel(
                 self._retry_hash_map_key, job
             )
             results = pipe.execute()
@@ -134,33 +131,29 @@ class RedisWQ(object):
             else:
                 self._logger.debug(
                     "Removing job %s was interrupted due to a change by a "
-                    "concurrent worker. [session %s]" %
-                    (job, self.sessionID())
+                    "concurrent worker. [session %s]" % (job, self.sessionID())
                 )
             return
 
         # Finally, execute the transaction to move the expired job
         # back to the main queue and increment the retry counter by 1
         pipe.multi()
-        pipe = pipe.lrem(
-            self._processing_q_key, 0, job
-        ).rpush(
-            self._main_q_key, job
-        ).hincrby(
-            self._retry_hash_map_key, job, 1
+        pipe = (
+            pipe.lrem(self._processing_q_key, 0, job)
+            .rpush(self._main_q_key, job)
+            .hincrby(self._retry_hash_map_key, job, 1)
         )
         results = pipe.execute()
         if results:
             self._logger.debug(
                 "Job %s successfully moved from processing queue to "
-                "work queue for retry attempt %d. [session %s]" %
-                (job, retry_count + 1, self.sessionID())
+                "work queue for retry attempt %d. [session %s]"
+                % (job, retry_count + 1, self.sessionID())
             )
         else:
             self._logger.debug(
                 "Moving job %s was interrupted due to a change by a "
-                "concurrent worker. [session %s]" %
-                (job, self.sessionID())
+                "concurrent worker. [session %s]" % (job, self.sessionID())
             )
         return
 
@@ -185,8 +178,9 @@ class RedisWQ(object):
                     )
                 except Exception:
                     self._logger.error(
-                        "Exception while renewing job %s. [session %s]" %
-                        (job, self.sessionID()), exc_info=True
+                        "Exception while renewing job %s. [session %s]"
+                        % (job, self.sessionID()),
+                        exc_info=True,
                     )
         return
 
@@ -209,7 +203,8 @@ class RedisWQ(object):
         if necessary until an item is available."""
         if block:
             item = self._db.brpoplpush(
-                self._main_q_key, self._processing_q_key, timeout=timeout)
+                self._main_q_key, self._processing_q_key, timeout=timeout
+            )
         else:
             item = self._db.rpoplpush(self._main_q_key, self._processing_q_key)
         if item:
@@ -218,14 +213,13 @@ class RedisWQ(object):
             # Note: if we crash at this line of the program, then GC will see
             # no lease for this item a later return it to the main queue.
             itemkey = self._itemkey(item)
-            self._db.setex(self._lease_key_prefix + itemkey,
-                           lease_secs, self._session)
+            self._db.setex(self._lease_key_prefix + itemkey, lease_secs, self._session)
         return item
 
     def renew_lease(self, job: Any, lease_secs=60) -> bool:
-        """ Checks if the item is currently leased by this client
-            and if so renews that lease by `lease_secs`
-            Return false if the lease was already expired"""
+        """Checks if the item is currently leased by this client
+        and if so renews that lease by `lease_secs`
+        Return false if the lease was already expired"""
 
         key = self._lease_key_prefix + self._itemkey(job)
         if self._db.get(key):

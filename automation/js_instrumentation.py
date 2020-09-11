@@ -5,18 +5,18 @@ import jsonschema
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
-    curdir, os.pardir, 'schemas', 'js_instrument_settings.schema.json'
+    curdir, os.pardir, "schemas", "js_instrument_settings.schema.json"
 )
 
 list_log_settings = [
-    'propertiesToInstrument',
-    'nonExistingPropertiesToInstrument',
-    'excludedProperties'
+    "propertiesToInstrument",
+    "nonExistingPropertiesToInstrument",
+    "excludedProperties",
 ]
 shortcut_specs = {
-    'collection_fingerprinting':
-    os.path.join(curdir, 'js_instrumentation_collections',
-                 'fingerprinting.json')
+    "collection_fingerprinting": os.path.join(
+        curdir, "js_instrumentation_collections", "fingerprinting.json"
+    )
 }
 
 
@@ -28,7 +28,7 @@ def _python_to_js_string(py_in):
     * expects a list
     * object is de-quoted
     """
-    objects = [x['object'] for x in py_in]
+    objects = [x["object"] for x in py_in]
     out = json.dumps(py_in)
     for o in objects:
         obj_str_before = f'"object": "{o}",'
@@ -38,23 +38,22 @@ def _python_to_js_string(py_in):
 
 
 def _validate(python_list_to_validate):
-    with open(schema_path, 'r') as f:
+    with open(schema_path, "r") as f:
         schema = json.loads(f.read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
     # Check properties to instrument and excluded properties don't collide
     for setting in python_list_to_validate:
-        propertiesToInstrument = \
-            setting['logSettings']['propertiesToInstrument']
+        propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
         if propertiesToInstrument is not None:
             propertiesToInstrument = set(propertiesToInstrument)
-            excludedProperties = set(
-                setting['logSettings']['excludedProperties'])
-            if len(propertiesToInstrument.intersection(
-                    excludedProperties)) != 0:
-                raise ValueError(f"excludedProperties and \
+            excludedProperties = set(setting["logSettings"]["excludedProperties"])
+            if len(propertiesToInstrument.intersection(excludedProperties)) != 0:
+                raise ValueError(
+                    f"excludedProperties and \
                     propertiesToInstrument collide. This \
                     may have occurred after a merge. \
-                    Setting with collision: {setting}.")
+                    Setting with collision: {setting}."
+                )
     return True
 
 
@@ -67,55 +66,52 @@ def _merge_settings(python_list):
     """
     merged_map = {}
     for setting in python_list:
-        obj = setting['object']
+        obj = setting["object"]
         if obj not in merged_map:
             merged_map[obj] = setting
         else:
             existing_setting = merged_map[obj]
             new_setting = setting
-            if (new_setting['instrumentedName']
-                    != existing_setting['instrumentedName']):
+            if new_setting["instrumentedName"] != existing_setting["instrumentedName"]:
                 raise RuntimeError(
-                    f'Mismatching instrumentedNames found for object {obj}')
-            existing_logSettings = existing_setting['logSettings']
-            new_logSettings = new_setting['logSettings']
+                    f"Mismatching instrumentedNames found for object {obj}"
+                )
+            existing_logSettings = existing_setting["logSettings"]
+            new_logSettings = new_setting["logSettings"]
             for k, v in existing_logSettings.items():
                 # Special case for lists
                 if k in list_log_settings:
                     new_val = new_logSettings[k]
                     if (v is None) or (new_val is None):
-                        raise RuntimeError(
-                            f'Mismatching logSettings for object {obj}')
+                        raise RuntimeError(f"Mismatching logSettings for object {obj}")
                     else:
                         v.extend(new_logSettings[k])
                 else:
                     if v != new_logSettings[k]:
                         print(v)
                         print(new_logSettings[k])
-                        raise RuntimeError(
-                            f'Mismatching logSettings for object {obj}')
+                        raise RuntimeError(f"Mismatching logSettings for object {obj}")
 
     merged_list = list(merged_map.values())
     # Make sure list logSettings are unique
     for setting in merged_list:
         for logSetting in list_log_settings:
-            list_setting_value = setting['logSettings'][logSetting]
+            list_setting_value = setting["logSettings"][logSetting]
             if list_setting_value is None:
                 continue
             else:
                 if None in list_setting_value:
-                    raise RuntimeError(
-                        f'Mismatching logSettings for object {obj}')
+                    raise RuntimeError(f"Mismatching logSettings for object {obj}")
                 else:
                     # Dedupe
-                    setting['logSettings'][logSetting] = list(
-                        set(setting['logSettings'][logSetting])
+                    setting["logSettings"][logSetting] = list(
+                        set(setting["logSettings"][logSetting])
                     )
     return merged_list
 
 
 def _handle_obj_string(obj_string):
-    if obj_string.startswith('window'):
+    if obj_string.startswith("window"):
         obj = obj_string
         instrumentedName = obj_string
     else:
@@ -150,32 +146,38 @@ def _build_full_settings_object(setting):
     elif isinstance(setting, dict):
 
         if len(setting.keys()) != 1:
-            raise ValueError(f"Invalid settings request. \
+            raise ValueError(
+                f"Invalid settings request. \
                 Settings item is a dictionary with more \
-                than one key. Received {setting}.")
+                than one key. Received {setting}."
+            )
 
         setting_key = list(setting.keys())[0]
         props = setting[setting_key]
         obj, instrumentedName = _handle_obj_string(setting_key)
         if isinstance(props, list):
-            logSettings['propertiesToInstrument'] = props
+            logSettings["propertiesToInstrument"] = props
         elif isinstance(props, dict):
             for k, v in props.items():
                 logSettings[k] = v
         else:
-            raise ValueError(f"Invalid settings request. \
+            raise ValueError(
+                f"Invalid settings request. \
                 Setting was a dictionary. Settings value \
                 must be a list or a dictionary. Received \
-                {setting}.")
+                {setting}."
+            )
     else:
-        raise ValueError(f"Invalid settings request. \
+        raise ValueError(
+            f"Invalid settings request. \
             Must be a string or a dictionary. \
-            Received {setting}.")
+            Received {setting}."
+        )
 
     return {
-        'object': obj,
-        'instrumentedName': instrumentedName,
-        'logSettings': logSettings
+        "object": obj,
+        "instrumentedName": instrumentedName,
+        "logSettings": logSettings,
     }
 
 
@@ -193,15 +195,15 @@ def get_default_log_settings():
         Dictionary of default instrumentation settings
     """
     return {
-        'propertiesToInstrument': [],
-        'nonExistingPropertiesToInstrument': [],
-        'excludedProperties': [],
-        'logCallStack': False,
-        'logFunctionsAsStrings': False,
-        'logFunctionGets': False,
-        'preventSets': False,
-        'recursive': False,
-        'depth': 5,
+        "propertiesToInstrument": [],
+        "nonExistingPropertiesToInstrument": [],
+        "excludedProperties": [],
+        "logCallStack": False,
+        "logFunctionsAsStrings": False,
+        "logFunctionGets": False,
+        "preventSets": False,
+        "recursive": False,
+        "depth": 5,
     }
 
 
@@ -245,15 +247,15 @@ def clean_js_instrumentation_settings(user_requested_settings):
     if not isinstance(user_requested_settings, list):
         raise TypeError(
             f"js_instrumentation_settings must be a list. \
-              Received {user_requested_settings}")
+              Received {user_requested_settings}"
+        )
     settings = []
     for setting in user_requested_settings:
         if isinstance(setting, str) and (setting in shortcut_specs):
-            with open(shortcut_specs[setting], 'r') as f:
+            with open(shortcut_specs[setting], "r") as f:
                 shortcut_spec = json.loads(f.read())
             for sub_setting in shortcut_spec:
-                settings.append(
-                    _build_full_settings_object(sub_setting))
+                settings.append(_build_full_settings_object(sub_setting))
         else:
             settings.append(_build_full_settings_object(setting))
     settings = _merge_settings(settings)

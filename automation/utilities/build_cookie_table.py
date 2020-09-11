@@ -1,4 +1,3 @@
-
 import json
 import os
 import sqlite3
@@ -12,10 +11,16 @@ from netlib.odict import ODictCaseless
 from . import Cookie
 
 # Potential formats for expires timestamps
-DATE_FORMATS = ['%a, %d-%b-%Y %H:%M:%S %Z', '%a, %d %b %Y %H:%M:%S %Z',
-                '%a, %d-%b-%y %H:%M:%S %Z', '%a, %d %b %y %H:%M:%S %Z',
-                '%a, %d-%m-%Y %H:%M:%S %Z', '%a, %d %m %Y %H:%M:%S %Z',
-                '%a, %d-%m-%y %H:%M:%S %Z', '%a, %d %m %y %H:%M:%S %Z']
+DATE_FORMATS = [
+    "%a, %d-%b-%Y %H:%M:%S %Z",
+    "%a, %d %b %Y %H:%M:%S %Z",
+    "%a, %d-%b-%y %H:%M:%S %Z",
+    "%a, %d %b %y %H:%M:%S %Z",
+    "%a, %d-%m-%Y %H:%M:%S %Z",
+    "%a, %d %m %Y %H:%M:%S %Z",
+    "%a, %d-%m-%y %H:%M:%S %Z",
+    "%a, %d %m %y %H:%M:%S %Z",
+]
 
 
 def encode_to_unicode(string):
@@ -24,18 +29,18 @@ def encode_to_unicode(string):
     Ignore errors if both of these don't work
     """
     try:
-        encoded = str(string, 'UTF-8')
+        encoded = str(string, "UTF-8")
     except UnicodeDecodeError:
         try:
-            encoded = str(string, 'ISO-8859-1')
+            encoded = str(string, "ISO-8859-1")
         except UnicodeDecodeError:
-            encoded = str(string, 'UTF-8', errors='ignore')
+            encoded = str(string, "UTF-8", errors="ignore")
     return encoded
 
 
 def select_date_format(date_string):
     """ Try different formats for date and output sqlite format """
-    if date_string == '' or date_string == '0':
+    if date_string == "" or date_string == "0":
         return None
     else:
         for date_format in DATE_FORMATS:
@@ -55,12 +60,12 @@ def select_date_format(date_string):
 
 
 def get_path(path_string, url):
-    """ Parse path. Defaults to the path of the request URL that generated the
-        Set-Cookie response, up to, but not including, the right-most / """
-    if path_string == '':
+    """Parse path. Defaults to the path of the request URL that generated the
+    Set-Cookie response, up to, but not including, the right-most /"""
+    if path_string == "":
         path = urlparse(url).path
-        if path == '':
-            return '/'
+        if path == "":
+            return "/"
         path = os.path.split(path)[0]
         return path
     else:
@@ -84,10 +89,10 @@ def get_domain(domain_string, url):
     sent to hostnames that are exact matches (no subdomains). This should match
     the cookies seen in our scans of cookies.sqlite.
     """
-    if domain_string == '':
+    if domain_string == "":
         domain_string = urlparse(url).hostname
-    elif domain_string[0] != '.':
-        domain_string = '.' + domain_string
+    elif domain_string[0] != ".":
+        domain_string = "." + domain_string
     return domain_string
 
 
@@ -98,14 +103,14 @@ def parse_cookie_attributes(cookie, key, url):
     See: http://tools.ietf.org/html/rfc2109#section-4.3.1
     domain is set according to Firefox spec
     """
-    domain = get_domain(cookie[key]['domain'], url)
-    path = get_path(cookie[key]['path'], url)
-    expires = select_date_format(cookie[key]['expires'])
-    max_age = cookie[key]['max-age'] if cookie[key]['max-age'] != '' else None
-    httponly = True if cookie[key]['httponly'] is True else False
-    secure = True if cookie[key]['secure'] is True else False
-    comment = cookie[key]['comment'] if cookie[key]['comment'] != '' else None
-    version = cookie[key]['version'] if cookie[key]['version'] != '' else None
+    domain = get_domain(cookie[key]["domain"], url)
+    path = get_path(cookie[key]["path"], url)
+    expires = select_date_format(cookie[key]["expires"])
+    max_age = cookie[key]["max-age"] if cookie[key]["max-age"] != "" else None
+    httponly = True if cookie[key]["httponly"] is True else False
+    secure = True if cookie[key]["secure"] is True else False
+    comment = cookie[key]["comment"] if cookie[key]["comment"] != "" else None
+    version = cookie[key]["version"] if cookie[key]["version"] != "" else None
     return (domain, path, expires, max_age, httponly, secure, comment, version)
 
 
@@ -122,7 +127,7 @@ def parse_cookies(cookie_string, verbose, url=None, response_cookie=False):
     attrs = ()
     try:
         if type(cookie_string) == str:
-            cookie_string = cookie_string.encode('utf-8')
+            cookie_string = cookie_string.encode("utf-8")
         cookie = Cookie.BaseCookie(cookie_string)
         for key in cookie.keys():
             name = encode_to_unicode(key)
@@ -148,14 +153,17 @@ def build_http_cookie_table(database, verbose=False):
     cur1 = con.cursor()
     cur2 = con.cursor()
 
-    cur1.execute("CREATE TABLE IF NOT EXISTS http_request_cookies ( \
+    cur1.execute(
+        "CREATE TABLE IF NOT EXISTS http_request_cookies ( \
                     id INTEGER PRIMARY KEY AUTOINCREMENT, \
                     browser_id INTEGER NOT NULL, \
                     header_id INTEGER NOT NULL, \
                     name VARCHAR(200) NOT NULL, \
                     value TEXT NOT NULL, \
-                    accessed DATETIME);")
-    cur1.execute("CREATE TABLE IF NOT EXISTS http_response_cookies ( \
+                    accessed DATETIME);"
+    )
+    cur1.execute(
+        "CREATE TABLE IF NOT EXISTS http_response_cookies ( \
                     id INTEGER PRIMARY KEY AUTOINCREMENT, \
                     browser_id INTEGER NOT NULL, \
                     header_id INTEGER NOT NULL, \
@@ -169,17 +177,20 @@ def build_http_cookie_table(database, verbose=False):
                     secure BOOLEAN, \
                     comment VARCHAR(200), \
                     version VARCHAR(100), \
-                    accessed DATETIME);")
+                    accessed DATETIME);"
+    )
     con.commit()
 
     # Parse http request cookies
     commit = 0
     last_commit = 0
 
-    cur1.execute("""SELECT id, browser_id, headers, time_stamp
+    cur1.execute(
+        """SELECT id, browser_id, headers, time_stamp
                     FROM http_requests
                     WHERE id NOT IN (SELECT header_id FROM
-                    http_request_cookies)""")
+                    http_request_cookies)"""
+    )
 
     row = cur1.fetchone()
     if row is None:
@@ -192,13 +203,15 @@ def build_http_cookie_table(database, verbose=False):
             header.load_state(json.loads(header_str))
         except ValueError:  # XXX temporary shim -- should be removed
             header.load_state(eval(header_str))
-        for cookie_str in header['Cookie']:
+        for cookie_str in header["Cookie"]:
             queries = parse_cookies(cookie_str, verbose)
             for query in queries:
-                cur2.execute("INSERT INTO http_request_cookies \
+                cur2.execute(
+                    "INSERT INTO http_request_cookies \
                             (browser_id, header_id, name, value, accessed) \
                             VALUES (?,?,?,?,?)",
-                             (browser_id, req_id) + query + (time_stamp,))
+                    (browser_id, req_id) + query + (time_stamp,),
+                )
                 commit += 1
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
@@ -212,10 +225,12 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http response cookies
     commit = 0
     last_commit = 0
-    cur1.execute("""SELECT id, browser_id, url, headers, time_stamp
+    cur1.execute(
+        """SELECT id, browser_id, url, headers, time_stamp
                     FROM http_responses
                     WHERE id NOT IN (SELECT header_id
-                    FROM http_response_cookies)""")
+                    FROM http_response_cookies)"""
+    )
 
     row = cur1.fetchone()
     if row is None:
@@ -228,16 +243,19 @@ def build_http_cookie_table(database, verbose=False):
             header.load_state(json.loads(header_str))
         except ValueError:  # XXX temporary shim -- should be removed
             header.load_state(eval(header_str))
-        for cookie_str in header['Set-Cookie']:
-            queries = parse_cookies(cookie_str, verbose, url=req_url,
-                                    response_cookie=True)
+        for cookie_str in header["Set-Cookie"]:
+            queries = parse_cookies(
+                cookie_str, verbose, url=req_url, response_cookie=True
+            )
             for query in queries:
-                cur2.execute("INSERT INTO http_response_cookies \
+                cur2.execute(
+                    "INSERT INTO http_response_cookies \
                             (browser_id, header_id, name, \
                             value, domain, path, expires, max_age, \
                             httponly, secure, comment, version, accessed) \
                             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                             (browser_id, resp_id) + query + (time_stamp,))
+                    (browser_id, resp_id) + query + (time_stamp,),
+                )
                 commit += 1
         if commit % 10000 == 0 and commit != 0 and commit != last_commit:
             last_commit = commit
@@ -252,8 +270,9 @@ def build_http_cookie_table(database, verbose=False):
 
 def main():
     import sys
+
     build_http_cookie_table(sys.argv[1], verbose=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

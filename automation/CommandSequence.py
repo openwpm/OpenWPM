@@ -1,10 +1,18 @@
 from typing import Callable, List, Tuple
 
-from .Commands.Types import (BaseCommand, BrowseCommand, DumpPageSourceCommand,
-                             DumpProfCommand, FinalizeCommand, GetCommand,
-                             InitializeCommand, RecursiveDumpPageSourceCommand,
-                             RunCustomFunctionCommand, SaveScreenshotCommand,
-                             ScreenshotFullPageCommand)
+from .Commands.Types import (
+    BaseCommand,
+    BrowseCommand,
+    DumpPageSourceCommand,
+    DumpProfCommand,
+    FinalizeCommand,
+    GetCommand,
+    InitializeCommand,
+    RecursiveDumpPageSourceCommand,
+    RunCustomFunctionCommand,
+    SaveScreenshotCommand,
+    ScreenshotFullPageCommand,
+)
 from .Errors import CommandExecutionError
 
 
@@ -23,10 +31,15 @@ class CommandSequence:
     by a single browser instance.
     """
 
-    def __init__(self, url: str, reset: bool = False,
-                 blocking: bool = False, retry_number: int = None,
-                 site_rank: int = None,
-                 callback: Callable[[bool], None] = None):
+    def __init__(
+        self,
+        url: str,
+        reset: bool = False,
+        blocking: bool = False,
+        retry_number: int = None,
+        site_rank: int = None,
+        callback: Callable[[bool], None] = None,
+    ):
         """Initialize command sequence.
 
         Parameters
@@ -75,26 +88,30 @@ class CommandSequence:
         self._commands_with_timeout.append((command, timeout))
         self.contains_get_or_browse = True
 
-    def dump_profile(self, dump_folder, close_webdriver=False,
-                     compress=True, timeout=120):
+    def dump_profile(
+        self, dump_folder, close_webdriver=False, compress=True, timeout=120
+    ):
         """ dumps from the profile path to a given file (absolute path) """
         raise NotImplementedError(
             "Profile saving is currently unsupported. "
-            "See: https://github.com/mozilla/OpenWPM/projects/2.")
+            "See: https://github.com/mozilla/OpenWPM/projects/2."
+        )
         self.total_timeout += timeout
         command = DumpProfCommand(dump_folder, close_webdriver, compress)
         self._commands_with_timeout.append((command, timeout))
 
-    def save_screenshot(self, suffix='', timeout=30):
+    def save_screenshot(self, suffix="", timeout=30):
         """Save a screenshot of the current viewport."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the save screenshot command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding " "the save screenshot command",
+                self,
+            )
         command = SaveScreenshotCommand(suffix)
         self._commands_with_timeout.append((command, timeout))
 
-    def screenshot_full_page(self, suffix='', timeout=30):
+    def screenshot_full_page(self, suffix="", timeout=30):
         """Save a screenshot of the entire page.
 
         NOTE: geckodriver v0.15 only supports viewport screenshots. To
@@ -115,21 +132,25 @@ class CommandSequence:
         """
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump page source command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding " "the dump page source command",
+                self,
+            )
         command = ScreenshotFullPageCommand(suffix)
         self._commands_with_timeout.append((command, timeout))
 
-    def dump_page_source(self, suffix='', timeout=30):
+    def dump_page_source(self, suffix="", timeout=30):
         """Dumps rendered source of current page to 'sources' directory."""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump page source command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding " "the dump page source command",
+                self,
+            )
         command = DumpPageSourceCommand(suffix)
         self._commands_with_timeout.append((command, timeout))
 
-    def recursive_dump_page_source(self, suffix='', timeout=30):
+    def recursive_dump_page_source(self, suffix="", timeout=30):
         """Dumps rendered source of current page visit to 'sources' dir.
         Unlike `dump_page_source`, this includes iframe sources. Archive is
         stored in `manager_params['source_dump_path']` and is keyed by the
@@ -151,8 +172,10 @@ class CommandSequence:
         """
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump page source command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding " "the dump page source command",
+                self,
+            )
         command = RecursiveDumpPageSourceCommand(suffix)
         self._commands_with_timeout.append((command, timeout))
 
@@ -160,8 +183,10 @@ class CommandSequence:
         """Run a custom by passing the function handle"""
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
-            raise CommandExecutionError("No get or browse request preceding "
-                                        "the dump page source command", self)
+            raise CommandExecutionError(
+                "No get or browse request preceding " "the dump page source command",
+                self,
+            )
         command = RunCustomFunctionCommand(function_handle, func_args)
         self._commands_with_timeout.append((command, timeout))
 
@@ -170,8 +195,8 @@ class CommandSequence:
             self.callback(success)
 
     def get_commands_with_timeout(self) -> List[Tuple[BaseCommand, int]]:
-        """ Returns a list of all commands in the command_sequence
-            appended by a finalize command
+        """Returns a list of all commands in the command_sequence
+        appended by a finalize command
         """
 
         commands = list(self._commands_with_timeout)

@@ -23,8 +23,7 @@ class BrowseCommand(BaseCommand):
         self.sleep = sleep
 
     def __repr__(self):
-        return "BrowseCommand({},{},{})".format(
-            self.url, self.num_links, self.sleep)
+        return "BrowseCommand({},{},{})".format(self.url, self.num_links, self.sleep)
 
 
 class DumpProfCommand(BaseCommand):
@@ -35,7 +34,8 @@ class DumpProfCommand(BaseCommand):
 
     def __repr__(self):
         return "DumpProfCommand({},{},{})".format(
-            self.dump_folder, self.close_webdriver, self.compress)
+            self.dump_folder, self.close_webdriver, self.compress
+        )
 
 
 class DumpPageSourceCommand(BaseCommand):
@@ -77,7 +77,8 @@ class RunCustomFunctionCommand(BaseCommand):
 
     def __repr__(self):
         return "RunCustomFunctionCommand({},{})".format(
-            self.function_handle, self.func_args)
+            self.function_handle, self.func_args
+        )
 
 
 class ShutdownCommand(BaseCommand):
@@ -86,9 +87,9 @@ class ShutdownCommand(BaseCommand):
 
 
 class FinalizeCommand(BaseCommand):
-    """ This command is automatically appended to the end of a CommandSequence
-        It's apperance means there won't be any more commands for this
-        visit_id
+    """This command is automatically appended to the end of a CommandSequence
+    It's apperance means there won't be any more commands for this
+    visit_id
     """
 
     def __init__(self, sleep):
@@ -99,10 +100,10 @@ class FinalizeCommand(BaseCommand):
 
 
 class InitializeCommand(BaseCommand):
-    """ The command is automatically prepended to the beginning of a
-        CommandSequence
-        It initializes state both in the extensions as well in as the
-        Aggregator
+    """The command is automatically prepended to the beginning of a
+    CommandSequence
+    It initializes state both in the extensions as well in as the
+    Aggregator
     """
 
     def __repr__(self):

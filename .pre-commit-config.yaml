@@ -1,13 +1,11 @@
 repos:
-  - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v1.5.2
-    hooks:
-      - id: autopep8
   - repo: https://github.com/timothycrosley/isort
-    rev: 4.3.21
+    rev: 5.5.1
     hooks:
     -   id: isort
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+  - repo: https://github.com/psf/black
+    rev: 20.8b1 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
-      - id: flake8
+      - id: black
+        language_version: python3 # Should be a command that runs python3.6+
+

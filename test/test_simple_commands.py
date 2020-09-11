@@ -12,53 +12,68 @@ from ..automation.utilities import db_utils
 from . import utilities
 from .openwpmtest import OpenWPMTest
 
-url_a = utilities.BASE_TEST_URL + '/simple_a.html'
-url_b = utilities.BASE_TEST_URL + '/simple_b.html'
-url_c = utilities.BASE_TEST_URL + '/simple_c.html'
-url_d = utilities.BASE_TEST_URL + '/simple_d.html'
+url_a = utilities.BASE_TEST_URL + "/simple_a.html"
+url_b = utilities.BASE_TEST_URL + "/simple_b.html"
+url_c = utilities.BASE_TEST_URL + "/simple_c.html"
+url_d = utilities.BASE_TEST_URL + "/simple_d.html"
 
-rendered_js_url = utilities.BASE_TEST_URL + '/property_enumeration.html'
+rendered_js_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
 
 # Expected nested page source
-NESTED_TEST_DIR = '/recursive_iframes/'
-NESTED_FRAMES_URL = utilities.BASE_TEST_URL + NESTED_TEST_DIR + 'parent.html'
-D1_BASE = 'http://d1.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D2_BASE = 'http://d2.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D3_BASE = 'http://d3.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D4_BASE = 'http://d4.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D5_BASE = 'http://d5.' + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+NESTED_TEST_DIR = "/recursive_iframes/"
+NESTED_FRAMES_URL = utilities.BASE_TEST_URL + NESTED_TEST_DIR + "parent.html"
+D1_BASE = "http://d1." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D2_BASE = "http://d2." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D3_BASE = "http://d3." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D4_BASE = "http://d4." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D5_BASE = "http://d5." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
 EXPECTED_PARENTS = {
     NESTED_FRAMES_URL: [],
-    D1_BASE + 'child1a.html': [NESTED_FRAMES_URL],
-    D1_BASE + 'child1b.html': [NESTED_FRAMES_URL],
-    D1_BASE + 'child1c.html': [NESTED_FRAMES_URL],
-    D2_BASE + 'child2a.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1a.html'],
-    D2_BASE + 'child2b.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1a.html'],
-    D2_BASE + 'child2c.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1c.html'],
-    D3_BASE + 'child3a.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1a.html',
-                               D2_BASE + 'child2a.html'],
-    D3_BASE + 'child3b.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1c.html',
-                               D2_BASE + 'child2c.html'],
-    D3_BASE + 'child3c.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1c.html',
-                               D2_BASE + 'child2c.html'],
-    D3_BASE + 'child3d.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1c.html',
-                               D2_BASE + 'child2c.html'],
-    D4_BASE + 'child4a.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1a.html',
-                               D2_BASE + 'child2a.html',
-                               D3_BASE + 'child3a.html'],
-    D5_BASE + 'child5a.html': [NESTED_FRAMES_URL,
-                               D1_BASE + 'child1a.html',
-                               D2_BASE + 'child2a.html',
-                               D3_BASE + 'child3a.html',
-                               D4_BASE + 'child4a.html']
+    D1_BASE + "child1a.html": [NESTED_FRAMES_URL],
+    D1_BASE + "child1b.html": [NESTED_FRAMES_URL],
+    D1_BASE + "child1c.html": [NESTED_FRAMES_URL],
+    D2_BASE + "child2a.html": [NESTED_FRAMES_URL, D1_BASE + "child1a.html"],
+    D2_BASE + "child2b.html": [NESTED_FRAMES_URL, D1_BASE + "child1a.html"],
+    D2_BASE + "child2c.html": [NESTED_FRAMES_URL, D1_BASE + "child1c.html"],
+    D3_BASE
+    + "child3a.html": [
+        NESTED_FRAMES_URL,
+        D1_BASE + "child1a.html",
+        D2_BASE + "child2a.html",
+    ],
+    D3_BASE
+    + "child3b.html": [
+        NESTED_FRAMES_URL,
+        D1_BASE + "child1c.html",
+        D2_BASE + "child2c.html",
+    ],
+    D3_BASE
+    + "child3c.html": [
+        NESTED_FRAMES_URL,
+        D1_BASE + "child1c.html",
+        D2_BASE + "child2c.html",
+    ],
+    D3_BASE
+    + "child3d.html": [
+        NESTED_FRAMES_URL,
+        D1_BASE + "child1c.html",
+        D2_BASE + "child2c.html",
+    ],
+    D4_BASE
+    + "child4a.html": [
+        NESTED_FRAMES_URL,
+        D1_BASE + "child1a.html",
+        D2_BASE + "child2a.html",
+        D3_BASE + "child3a.html",
+    ],
+    D5_BASE
+    + "child5a.html": [
+        NESTED_FRAMES_URL,
+        D1_BASE + "child1a.html",
+        D2_BASE + "child2a.html",
+        D3_BASE + "child3a.html",
+        D4_BASE + "child4a.html",
+    ],
 }
 
 
@@ -82,16 +97,15 @@ class TestSimpleCommands(OpenWPMTest):
     both headless and xvfb modes to ensure both are exercized
     during the test suite and there are no obvious problems.
     """
+
     scenarios = [
         ("headless", {"display_mode": "headless"}),
-        ("xvfb", {"display_mode": "xvfb"})
+        ("xvfb", {"display_mode": "xvfb"}),
     ]
 
     def get_config(self, display_mode):
-        manager_params, browser_params = self.get_test_config(
-            display_mode=display_mode
-        )
-        browser_params[0]['http_instrument'] = True
+        manager_params, browser_params = self.get_test_config(display_mode=display_mode)
+        browser_params[0]["http_instrument"] = True
         return manager_params, browser_params
 
     def test_get_site_visits_table_valid(self, display_mode):
@@ -111,8 +125,9 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs_b)
         manager.close()
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT site_url FROM site_visits")
+        qry_res = db_utils.query_db(
+            manager_params["db"], "SELECT site_url FROM site_visits"
+        )
 
         # We had two separate page visits
         assert len(qry_res) == 2
@@ -137,32 +152,40 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params['db'],
-            "SELECT visit_id, site_url FROM site_visits")
+            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+        )
 
         # Construct dict mapping site_url to visit_id
         visit_ids = dict()
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_requests"
-                                    " WHERE url = ?", (url_a,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_requests" " WHERE url = ?",
+            (url_a,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_requests"
-                                    " WHERE url = ?", (url_b,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_requests" " WHERE url = ?",
+            (url_b,),
+        )
         assert qry_res[0][0] == visit_ids[url_b]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_a,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_a,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_b,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_b,),
+        )
         assert qry_res[0][0] == visit_ids[url_b]
 
     def test_browse_site_visits_table_valid(self, display_mode):
@@ -181,9 +204,9 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs_b)
         manager.close()
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT site_url, site_rank"
-                                    " FROM site_visits")
+        qry_res = db_utils.query_db(
+            manager_params["db"], "SELECT site_url, site_rank" " FROM site_visits"
+        )
 
         # We had two separate page visits
         assert len(qry_res) == 2
@@ -215,32 +238,40 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params['db'],
-            "SELECT visit_id, site_url FROM site_visits")
+            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+        )
 
         # Construct dict mapping site_url to visit_id
         visit_ids = dict()
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_requests"
-                                    " WHERE url = ?", (url_a,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_requests" " WHERE url = ?",
+            (url_a,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_requests"
-                                    " WHERE url = ?", (url_b,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_requests" " WHERE url = ?",
+            (url_b,),
+        )
         assert qry_res[0][0] == visit_ids[url_b]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_a,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_a,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_b,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_b,),
+        )
         assert qry_res[0][0] == visit_ids[url_b]
 
         # Page simple_a.html has three links:
@@ -250,20 +281,24 @@ class TestSimpleCommands(OpenWPMTest):
         # 4) A link to www.google.com
         # 5) A link to example.com?localtest.me
         # We should see page visits for 1 and 2, but not 3-5.
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_c,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_c,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_d,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_d,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
         # We expect 4 urls: a,c,d and a favicon request
         qry_res = db_utils.query_db(
-            manager_params['db'],
-            "SELECT COUNT(DISTINCT url) FROM http_responses"
-            " WHERE visit_id = ?", (visit_ids[url_a],)
+            manager_params["db"],
+            "SELECT COUNT(DISTINCT url) FROM http_responses" " WHERE visit_id = ?",
+            (visit_ids[url_a],),
         )
         assert qry_res[0][0] == 4
 
@@ -285,8 +320,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params['db'],
-            "SELECT visit_id, site_url FROM site_visits"
+            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
         )
 
         # Construct dict mapping site_url to visit_id
@@ -294,24 +328,32 @@ class TestSimpleCommands(OpenWPMTest):
         for row in qry_res:
             visit_ids[row[1]] = row[0]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_requests"
-                                    " WHERE url = ?", (url_a,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_requests" " WHERE url = ?",
+            (url_a,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_requests"
-                                    " WHERE url = ?", (url_b,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_requests" " WHERE url = ?",
+            (url_b,),
+        )
         assert qry_res[0][0] == visit_ids[url_b]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_a,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_a,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_b,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_b,),
+        )
         assert qry_res[0][0] == visit_ids[url_b]
 
         # Page simple_a.html has three links:
@@ -321,20 +363,25 @@ class TestSimpleCommands(OpenWPMTest):
         # 4) A link to www.google.com
         # 5) A link to example.com?localtest.me
         # We should see page visits for 1 and 2, but not 3-5.
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_c,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_c,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
-        qry_res = db_utils.query_db(manager_params['db'],
-                                    "SELECT visit_id FROM http_responses"
-                                    " WHERE url = ?", (url_d,))
+        qry_res = db_utils.query_db(
+            manager_params["db"],
+            "SELECT visit_id FROM http_responses" " WHERE url = ?",
+            (url_d,),
+        )
         assert qry_res[0][0] == visit_ids[url_a]
 
         # We expect 4 urls: a,c,d and a favicon request
         qry_res = db_utils.query_db(
-            manager_params['db'],
-            "SELECT COUNT(DISTINCT url) FROM http_responses"
-            " WHERE visit_id = ?", (visit_ids[url_a],))
+            manager_params["db"],
+            "SELECT COUNT(DISTINCT url) FROM http_responses" " WHERE visit_id = ?",
+            (visit_ids[url_a],),
+        )
         assert qry_res[0][0] == 4
 
     def test_save_screenshot_valid(self, display_mode):
@@ -344,13 +391,13 @@ class TestSimpleCommands(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
-        cs.save_screenshot('test')
-        cs.screenshot_full_page('test_full')
+        cs.save_screenshot("test")
+        cs.screenshot_full_page("test_full")
         manager.execute_command_sequence(cs)
         manager.close()
 
         # Check that viewport image is not blank
-        pattern = os.path.join(str(self.tmpdir), 'screenshots', '1-*-test.png')
+        pattern = os.path.join(str(self.tmpdir), "screenshots", "1-*-test.png")
         screenshot = glob.glob(pattern)[0]
         im = Image.open(screenshot)
         bands = im.split()
@@ -358,8 +405,7 @@ class TestSimpleCommands(OpenWPMTest):
         assert not is_blank
 
         # Check that full page screenshot is not blank
-        pattern = os.path.join(
-            str(self.tmpdir), 'screenshots', '1-*-test_full.png')
+        pattern = os.path.join(str(self.tmpdir), "screenshots", "1-*-test_full.png")
         screenshot = glob.glob(pattern)[0]
         im = Image.open(screenshot)
         bands = im.split()
@@ -373,18 +419,18 @@ class TestSimpleCommands(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=1)
-        cs.dump_page_source(suffix='test')
+        cs.dump_page_source(suffix="test")
         manager.execute_command_sequence(cs)
         manager.close()
 
         # Source filename is of the follow structure:
         # `sources/<visit_id>-<md5_of_url>(-suffix).html`
         # thus for this test we expect `sources/1-<md5_of_test_url>-test.html`.
-        outfile = os.path.join(str(self.tmpdir), 'sources', '1-*-test.html')
+        outfile = os.path.join(str(self.tmpdir), "sources", "1-*-test.html")
         source_file = glob.glob(outfile)[0]
-        with open(source_file, 'rb') as f:
+        with open(source_file, "rb") as f:
             actual_source = f.read()
-        with open('./test_pages/expected_source.html', 'rb') as f:
+        with open("./test_pages/expected_source.html", "rb") as f:
             expected_source = f.read()
 
         assert actual_source == expected_source
@@ -400,32 +446,32 @@ class TestSimpleCommands(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
-        outfile = os.path.join(str(self.tmpdir), 'sources', '1-*.json.gz')
+        outfile = os.path.join(str(self.tmpdir), "sources", "1-*.json.gz")
         src_file = glob.glob(outfile)[0]
-        with gzip.GzipFile(src_file, 'rb') as f:
-            visit_source = json.loads(f.read().decode('utf-8'))
+        with gzip.GzipFile(src_file, "rb") as f:
+            visit_source = json.loads(f.read().decode("utf-8"))
 
         observed_parents = dict()
 
         def verify_frame(frame, parent_frames=[]):
             # Verify structure
-            observed_parents[frame['doc_url']] = list(parent_frames)  # copy
+            observed_parents[frame["doc_url"]] = list(parent_frames)  # copy
 
             # Verify source
-            path = urlparse(frame['doc_url']).path
-            expected_source = ''
-            with open('.' + path, 'r') as f:
-                expected_source = re.sub(r'\s', '', f.read().lower())
-                if expected_source.startswith('<!doctypehtml>'):
+            path = urlparse(frame["doc_url"]).path
+            expected_source = ""
+            with open("." + path, "r") as f:
+                expected_source = re.sub(r"\s", "", f.read().lower())
+                if expected_source.startswith("<!doctypehtml>"):
                     expected_source = expected_source[14:]
-            observed_source = re.sub(r'\s', '', frame['source'].lower())
-            if observed_source.startswith('<!doctypehtml>'):
+            observed_source = re.sub(r"\s", "", frame["source"].lower())
+            if observed_source.startswith("<!doctypehtml>"):
                 observed_source = observed_source[14:]
             assert observed_source == expected_source
 
             # Verify children
-            parent_frames.append(frame['doc_url'])
-            for key, child_frame in frame['iframes'].items():
+            parent_frames.append(frame["doc_url"])
+            for key, child_frame in frame["iframes"].items():
                 verify_frame(child_frame, parent_frames)
             parent_frames.pop()
 

@@ -1,4 +1,3 @@
-
 import os
 from os.path import isfile, join
 
@@ -28,22 +27,22 @@ class OpenWPMTest(object):
             page_url = utilities.BASE_TEST_URL + page_url
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
-        return manager_params['db']
+        return manager_params["db"]
 
-    def get_test_config(self, data_dir="",
-                        num_browsers=NUM_BROWSERS,
-                        display_mode="headless"):
+    def get_test_config(
+        self, data_dir="", num_browsers=NUM_BROWSERS, display_mode="headless"
+    ):
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
-        manager_params, browser_params = TaskManager.\
-            load_default_params(num_browsers)
-        manager_params['data_directory'] = data_dir
-        manager_params['log_directory'] = data_dir
+        manager_params, browser_params = TaskManager.load_default_params(num_browsers)
+        manager_params["data_directory"] = data_dir
+        manager_params["log_directory"] = data_dir
         for i in range(num_browsers):
-            browser_params[i]['display_mode'] = display_mode
-        manager_params['db'] = join(manager_params['data_directory'],
-                                    manager_params['database_name'])
+            browser_params[i]["display_mode"] = display_mode
+        manager_params["db"] = join(
+            manager_params["data_directory"], manager_params["database_name"]
+        )
         return manager_params, browser_params
 
     def is_installed(self, cmd):
@@ -56,4 +55,4 @@ class OpenWPMTest(object):
         return False
 
     def assert_is_installed(self, cmd):
-        assert self.is_installed(cmd), 'Cannot find %s in your system' % cmd
+        assert self.is_installed(cmd), "Cannot find %s in your system" % cmd

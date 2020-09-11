@@ -26,10 +26,10 @@ from selenium.common.exceptions import *  # noqa isort:skip
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
-EXT_PATH = join(BASE_DIR, 'automation', 'Extension', 'firefox')
+EXT_PATH = join(BASE_DIR, "automation", "Extension", "firefox")
 
 
-class Logger():
+class Logger:
     def __init__(self):
         return
 
@@ -47,19 +47,20 @@ class Logger():
 
 
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 def get_command_output(command, cwd=None):
-    popen = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT, cwd=cwd)
+    popen = subprocess.Popen(
+        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
+    )
     return iter(popen.stdout.readline, b"")
 
 
@@ -67,16 +68,14 @@ def colorize(line):
     if INSERT_PREFIX in line:  # print long DB insert lines in blue
         line = line.replace(INSERT_PREFIX, bcolors.OKBLUE + INSERT_PREFIX)
     if OPENWPM_LOG_PREFIX in line:
-        line = line.replace(OPENWPM_LOG_PREFIX,
-                            OPENWPM_LOG_PREFIX + bcolors.OKGREEN)
+        line = line.replace(OPENWPM_LOG_PREFIX, OPENWPM_LOG_PREFIX + bcolors.OKGREEN)
     return line
 
 
 def start_webdriver(
-        with_extension=True,
-        load_browser_params=True,
-        browser_params_file=None):
-    """ Open a webdriver instance and a server for the test pages
+    with_extension=True, load_browser_params=True, browser_params_file=None
+):
+    """Open a webdriver instance and a server for the test pages
 
     This is meant to be imported and run manually from a python or
     ipython shell. A webdriver instance is returned and both the webdriver
@@ -130,21 +129,20 @@ def start_webdriver(
 
         browser_params = load_default_params()[1][0]
         if browser_params_file is not None:
-            with open(browser_params_file, 'r') as f:
+            with open(browser_params_file, "r") as f:
                 browser_params.update(json.loads(f.read()))
-        js_request = browser_params['js_instrument_settings']
-        js_request_as_string = jsi.convert_browser_params_to_js_string(
-            js_request)
-        browser_params['js_instrument_settings'] = js_request_as_string
+        js_request = browser_params["js_instrument_settings"]
+        js_request_as_string = jsi.convert_browser_params_to_js_string(js_request)
+        browser_params["js_instrument_settings"] = js_request_as_string
 
-        profile_dir = driver.capabilities['moz:profile']
-        with open(join(profile_dir, 'browser_params.json'), 'w') as f:
+        profile_dir = driver.capabilities["moz:profile"]
+        with open(join(profile_dir, "browser_params.json"), "w") as f:
             f.write(json.dumps(browser_params))
 
     if with_extension:
         # add openwpm extension to profile
         create_xpi()
-        ext_xpi = join(EXT_PATH, 'dist', 'openwpm-1.0.zip')
+        ext_xpi = join(EXT_PATH, "dist", "openwpm-1.0.zip")
         driver.install_addon(ext_xpi, temporary=True)
 
     return register_cleanup(driver)
@@ -161,7 +159,7 @@ def start_webext():
     try:
         # http://stackoverflow.com/a/4417735/3104416
         for line in get_command_output(cmd_webext_run, cwd=EXT_PATH):
-            print(colorize(line.decode("utf-8")), bcolors.ENDC, end=' ')
+            print(colorize(line.decode("utf-8")), bcolors.ENDC, end=" ")
     except KeyboardInterrupt:
         print("Keyboard Interrupt detected, shutting down...")
     print("\nClosing server thread...")
@@ -177,25 +175,23 @@ flag_opts = dict(
 
 @click.command()
 @click.option(
-    '--selenium',
+    "--selenium",
     help="""
     Run a selenium webdriver instance, and drop into an IPython shell""",
-    **flag_opts
+    **flag_opts,
 )
 @click.option(
-    '--no-extension',
+    "--no-extension",
     help="""
     Use this to prevent the openwpm webextension being loaded.
     Only applies if --selenium is being used.""",
-    **flag_opts
+    **flag_opts,
 )
 @click.option(
-    '--browser-params',
-    help="""Set flag to load browser_params.""",
-    **flag_opts
+    "--browser-params", help="""Set flag to load browser_params.""", **flag_opts
 )
 @click.option(
-    '--browser-params-file',
+    "--browser-params-file",
     help="""
     Specify a browser_params.json file. If none provided and
     --browser-params is enabled. Default browser_params.json
@@ -208,17 +204,19 @@ def main(selenium, no_extension, browser_params, browser_params_file):
         driver = start_webdriver(  # noqa
             with_extension=not no_extension,
             load_browser_params=browser_params,
-            browser_params_file=browser_params_file
+            browser_params_file=browser_params_file,
         )
-        print("\nDropping into ipython shell....\n"
-              "  * Interact with the webdriver instance using `driver`\n"
-              "  * The webdriver and server will close automatically\n"
-              "  * Use `exit` to quit the ipython shell\n")
+        print(
+            "\nDropping into ipython shell....\n"
+            "  * Interact with the webdriver instance using `driver`\n"
+            "  * The webdriver and server will close automatically\n"
+            "  * Use `exit` to quit the ipython shell\n"
+        )
         logger = Logger()  # noqa
         IPython.embed()
     else:
         start_webext()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
