@@ -99,6 +99,7 @@ def get_configuration_string(manager_params, browser_params, versions):
     table_input = list()
     profile_dirs = OrderedDict()
     archive_dirs = OrderedDict()
+    js_config = OrderedDict()
     profile_all_none = archive_all_none = True
     for item in print_params:
         browser_id = item['browser_id']
@@ -112,6 +113,12 @@ def get_configuration_string(manager_params, browser_params, versions):
         # Separate out long profile directory strings
         profile_dirs[browser_id] = item.pop('seed_tar')
         archive_dirs[browser_id] = item.pop('profile_archive_dir')
+        js_config[browser_id] = item.pop('js_instrument_settings')
+
+        try:
+            js_config[browser_id] = json.loads(js_config[browser_id])
+        except Exception:
+            pass
 
         # Copy items in sorted order
         dct = OrderedDict()
@@ -130,6 +137,9 @@ def get_configuration_string(manager_params, browser_params, versions):
                              separators=(',', ': '))
     config_str += '\n\n'
     config_str += tabulate(table_input, headers=key_dict)
+
+    config_str += "\n\n========== JS Instrument Settings ==========\n"
+    config_str += json.dumps(js_config, indent=2, separators=(',', ': '))
 
     config_str += "\n\n========== Input profile tar files ==========\n"
     if profile_all_none:
