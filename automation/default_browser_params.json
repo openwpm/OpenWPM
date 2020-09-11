@@ -10,7 +10,8 @@
 
     "random_attributes": false,
     "bot_mitigation": false,
-    "profile_tar": null,
+    "seed_tar": null,
+    "recovery_tar": null,
     "profile_archive_dir": null,
     "display_mode": "native",
     "browser": "firefox",

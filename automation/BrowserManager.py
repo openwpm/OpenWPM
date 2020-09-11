@@ -108,7 +108,7 @@ class Browser:
                 browser_settings=self.browser_settings
             )
             # make sure browser loads crashed profile
-            self.browser_params['profile_tar'] = tempdir
+            self.browser_params['recovery_tar'] = tempdir
             # don't re-randomize attributes
             self.browser_params['random_attributes'] = False
             crash_recovery = True
@@ -227,7 +227,7 @@ class Browser:
         if clear_profile and self.current_profile_path is not None:
             shutil.rmtree(self.current_profile_path, ignore_errors=True)
             self.current_profile_path = None
-            self.browser_params['profile_tar'] = None
+            self.browser_params['recovery_tar'] = None
 
         return self.launch_browser_manager()
 

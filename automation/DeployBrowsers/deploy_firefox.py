@@ -59,22 +59,22 @@ def deploy_firefox(status_queue, browser_params, manager_params,
     fo = Options()
 
     profile_settings = None  # Imported browser settings
-    if browser_params['profile_tar'] and not crash_recovery:
-        logger.debug("BROWSER %i: Loading initial browser profile from: %s"
-                     % (browser_params['browser_id'],
-                         browser_params['profile_tar']))
+    if browser_params['seed_tar'] and not crash_recovery:
+        logger.info("BROWSER %i: Loading initial browser profile from: %s"
+                    % (browser_params['browser_id'],
+                       browser_params['seed_tar']))
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
                                         browser_params,
-                                        browser_params['profile_tar'])
-    elif browser_params['profile_tar']:
+                                        browser_params['seed_tar'])
+    elif browser_params['recovery_tar']:
         logger.debug("BROWSER %i: Loading recovered browser profile from: %s"
                      % (browser_params['browser_id'],
-                         browser_params['profile_tar']))
+                         browser_params['recovery_tar']))
         profile_settings = load_profile(browser_profile_path,
                                         manager_params,
                                         browser_params,
-                                        browser_params['profile_tar'])
+                                        browser_params['recovery_tar'])
     status_queue.put(('STATUS', 'Profile Tar', None))
 
     if browser_params['random_attributes'] and profile_settings is None:

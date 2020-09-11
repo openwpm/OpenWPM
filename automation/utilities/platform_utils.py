@@ -104,13 +104,13 @@ def get_configuration_string(manager_params, browser_params, versions):
         browser_id = item['browser_id']
 
         # Update print flags
-        if item['profile_tar'] is not None:
+        if item['seed_tar'] is not None:
             profile_all_none = False
         if item['profile_archive_dir'] is not None:
             archive_all_none = False
 
         # Separate out long profile directory strings
-        profile_dirs[browser_id] = item.pop('profile_tar')
+        profile_dirs[browser_id] = item.pop('seed_tar')
         archive_dirs[browser_id] = item.pop('profile_archive_dir')
 
         # Copy items in sorted order

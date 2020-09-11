@@ -14,8 +14,12 @@ Table of Contents <!-- omit in toc -->
 ------------------
 
 * [Installation](#installation)
+  * [Pre-requisites](#pre-requisites)
+  * [Install](#install)
+  * [Developer instructions](#developer-instructions)
+  * [Troubleshooting](#troubleshooting)
 * [Quick Start](#quick-start)
-* [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+* [Advice for Measurement Researchers](#advice-for-measurement-researchers)_
 * [Instrumentation and Data Access](#instrumentation-and-data-access)
 * [Output Format](#output-format)
     * [Local Databases](#local-databases)
@@ -36,7 +40,7 @@ Table of Contents <!-- omit in toc -->
   * [Running tests](#running-tests)
   * [Mac OSX](#mac-osx)
   * [Updating schema docs](#updating-schema-docs)
-* [Troubleshooting](#troubleshooting)
+* [Troubleshooting](#troubleshooting-1)
 * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
   * [Building the Docker Container](#building-the-docker-container)
   * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
@@ -187,7 +191,7 @@ available [below](#output-format).
       cumbersome than spelling out the full schema. These shortcuts are converted to a full
       specification by the `clean_js_instrumentation_settings` method in 
       [automation/js_instrumentation.py](automation/js_instrumentation.py).
-    * The first shortcut is the fingerprinting collection, specified by 
+    * The first shortcut is the fingerprinting collection, specified by
       `collection_fingerprinting`. This was the default prior to v0.11.0. It contains a collection
       of APIs of potential fingerprinting interest:
         * HTML5 Canvas
@@ -516,11 +520,25 @@ for more information.
 
 #### Load a profile
 
-To load a profile, specify the `profile_tar` browser parameter in the browser
+To load a profile, specify the `seed_tar` browser parameter in the browser
 configuration dictionary. This should point to the location of the
-`profile.tar` or (`profile.tar.gz` if compressed) file produced by OpenWPM.
+`profile.tar` or (`profile.tar.gz` if compressed) file produced by OpenWPM
+or by manually tarring a firefox profile directory.
 The profile will be automatically extracted and loaded into the browser
 instance for which the configuration parameter was set.
+
+The profile specified by `seed_tar` will be loaded anytime the browser is
+deliberately reset (i.e., using the `reset=True` CommandSequence argument),
+but will not be used during crash recovery. Specifically:
+* For stateful crawls the initial load of Firefox will use the
+profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
+restart for some reason during the crawl, it will use the profile from
+the most recent page visit (pre-crash) rather than the `seed_tar` profile.
+Note that stateful crawl are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
+* For stateless crawls, the initial `seed_tar` will be loaded during each
+new page visit. Note that this means the profile will very likely be
+_incomplete_, as cookies or storage may have been set or changed during the
+page load that are **not** reflected back into the seed profile.
 
 Development pointers
 --------------------
