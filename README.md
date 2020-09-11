@@ -19,7 +19,7 @@ Table of Contents <!-- omit in toc -->
   * [Developer instructions](#developer-instructions)
   * [Troubleshooting](#troubleshooting)
 * [Quick Start](#quick-start)
-* [Advice for Measurement Researchers](#advice-for-measurement-researchers)
+* [Advice for Measurement Researchers](#advice-for-measurement-researchers)_
 * [Instrumentation and Data Access](#instrumentation-and-data-access)
 * [Output Format](#output-format)
     * [Local Databases](#local-databases)
@@ -526,6 +526,19 @@ configuration dictionary. This should point to the location of the
 or by manually tarring a firefox profile directory.
 The profile will be automatically extracted and loaded into the browser
 instance for which the configuration parameter was set.
+
+The profile specified by `seed_tar` will be loaded anytime the browser is
+deliberately reset (i.e., using the `reset=True` CommandSequence argument),
+but will not be used during crash recovery. Specifically:
+* For stateful crawls the initial load of Firefox will use the
+profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
+restart for some reason during the crawl, it will use the profile from
+the most recent page visit (pre-crash) rather than the `seed_tar` profile.
+Note that stateful crawl are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
+* For stateless crawls, the initial `seed_tar` will be loaded during each
+new page visit. Note that this means the profile will very likely be
+_incomplete_, as cookies or storage may have been set or changed during the
+page load that are **not** reflected back into the seed profile.
 
 Development pointers
 --------------------
