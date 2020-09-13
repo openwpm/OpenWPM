@@ -58,7 +58,7 @@ def kill_process_and_children(parent_process: psutil.Process,
         a given parent process"""
     try:
         for child in parent_process.children():
-            kill_process_and_children(child)
+            kill_process_and_children(child, logger)
 
         parent_process.kill()
         parent_process.wait(timeout=20)
