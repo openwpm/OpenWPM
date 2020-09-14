@@ -1,4 +1,3 @@
-
 import copy
 import json
 import logging
@@ -26,10 +25,10 @@ BROWSER_PREFIX = re.compile(r"^BROWSER -?\d+:\s*")
 EXTENSION_PREFIX = re.compile(r"^Extension-\d+ :\s*")
 # These config variable names should name to lowercase kwargs for MPLogger
 ENV_CONFIG_VARS = [
-    'LOG_LEVEL_CONSOLE',
-    'LOG_LEVEL_FILE',
-    'LOG_LEVEL_SENTRY_BREADCRUMB',
-    'LOG_LEVEL_SENTRY_EVENT'
+    "LOG_LEVEL_CONSOLE",
+    "LOG_LEVEL_FILE",
+    "LOG_LEVEL_SENTRY_BREADCRUMB",
+    "LOG_LEVEL_SENTRY_EVENT",
 ]
 
 
@@ -38,17 +37,17 @@ def _retrive_log_level_from_env(env_var_name):
 
     Levels from: https://docs.python.org/3/library/logging.html#levels"""
     level = os.getenv(env_var_name, None)
-    if level == 'CRITICAL':
+    if level == "CRITICAL":
         level = logging.CRITICAL
-    elif level == 'ERROR':
+    elif level == "ERROR":
         level = logging.ERROR
-    elif level == 'WARNING':
+    elif level == "WARNING":
         level = logging.WARNING
-    elif level == 'INFO':
+    elif level == "INFO":
         level = logging.INFO
-    elif level == 'DEBUG':
+    elif level == "DEBUG":
         level = logging.DEBUG
-    elif level == 'NOTSET':
+    elif level == "NOTSET":
         level = logging.NOTSET
     return level
 
@@ -76,32 +75,36 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
         d = copy.deepcopy(record.__dict__)
 
         # Pickle fields to so record is safe to send across socket
-        if 'exc_info' in d and d['exc_info']:
+        if "exc_info" in d and d["exc_info"]:
             try:
-                d['exc_info'] = dill.dumps(d['exc_info'])
+                d["exc_info"] = dill.dumps(d["exc_info"])
             except dill.PicklingError:
-                d['exc_info'] = None
-        if 'args' in d and d['args']:
+                d["exc_info"] = None
+        if "args" in d and d["args"]:
             try:
-                d['args'] = dill.dumps(d['args'])
+                d["args"] = dill.dumps(d["args"])
             except dill.PicklingError:
-                d['msg'] = record.getMessage()
-                d['args'] = None
+                d["msg"] = record.getMessage()
+                d["args"] = None
 
         # Serialize logging record so it can be sent to MPLogger
         # s = json.dumps(d).encode('utf-8')
         s = dill.dumps(d)
-        return struct.pack('>Lc', len(s), b'd') + s
+        return struct.pack(">Lc", len(s), b"d") + s
 
 
 class MPLogger(object):
     """Configure OpenWPM logging across processes"""
 
-    def __init__(self, log_file, crawl_context=None,
-                 log_level_console=logging.INFO,
-                 log_level_file=logging.DEBUG,
-                 log_level_sentry_breadcrumb=logging.DEBUG,
-                 log_level_sentry_event=logging.ERROR):
+    def __init__(
+        self,
+        log_file,
+        crawl_context=None,
+        log_level_console=logging.INFO,
+        log_level_file=logging.DEBUG,
+        log_level_sentry_breadcrumb=logging.DEBUG,
+        log_level_sentry_event=logging.ERROR,
+    ):
         self._crawl_context = crawl_context
         self._log_level_console = log_level_console
         self._log_level_file = log_level_file
@@ -114,7 +117,7 @@ class MPLogger(object):
         self._initialize_loggers()
 
         # Configure sentry (if available)
-        self._sentry_dsn = os.getenv('SENTRY_DSN', None)
+        self._sentry_dsn = os.getenv("SENTRY_DSN", None)
         if self._sentry_dsn:
             self._initialize_sentry()
 
@@ -123,7 +126,7 @@ class MPLogger(object):
 
         The logger and socket handler are set to log at the logging.DEBUG level
         and filtering happens at the outputs (console, file, and sentry)."""
-        logger = logging.getLogger('openwpm')
+        logger = logging.getLogger("openwpm")
         logger.setLevel(logging.DEBUG)
 
         # Remove any previous handlers to avoid registering duplicates
@@ -140,9 +143,7 @@ class MPLogger(object):
         handler.setLevel(self._log_level_file)
         self._file_handler = handler
 
-        self._listener = threading.Thread(
-            target=self._start_listener
-        )
+        self._listener = threading.Thread(target=self._start_listener)
         self._listener.daemon = True
         self._listener.start()
         self.logger_address = self._status_queue.get(timeout=60)
@@ -151,8 +152,7 @@ class MPLogger(object):
         # Attach console handler to log to console
         consoleHandler = logging.StreamHandler(sys.stdout)
         consoleHandler.setLevel(self._log_level_console)
-        formatter = logging.Formatter(
-            '%(module)-20s - %(levelname)-8s - %(message)s')
+        formatter = logging.Formatter("%(module)-20s - %(levelname)-8s - %(message)s")
         consoleHandler.setFormatter(formatter)
         logger.addHandler(consoleHandler)
 
@@ -171,25 +171,27 @@ class MPLogger(object):
         """
 
         # Strip "BROWSER X: " and `Extension-X: ` prefix to clean up logs
-        if 'logentry' in event and 'message' in event['logentry']:
-            if re.match(BROWSER_PREFIX, event['logentry']['message']):
-                event['logentry']['message'] = re.sub(
-                    BROWSER_PREFIX, '', event['logentry']['message'])
-            if re.match(EXTENSION_PREFIX, event['logentry']['message']):
-                event['logentry']['message'] = re.sub(
-                    EXTENSION_PREFIX, '', event['logentry']['message'])
+        if "logentry" in event and "message" in event["logentry"]:
+            if re.match(BROWSER_PREFIX, event["logentry"]["message"]):
+                event["logentry"]["message"] = re.sub(
+                    BROWSER_PREFIX, "", event["logentry"]["message"]
+                )
+            if re.match(EXTENSION_PREFIX, event["logentry"]["message"]):
+                event["logentry"]["message"] = re.sub(
+                    EXTENSION_PREFIX, "", event["logentry"]["message"]
+                )
 
         # Add traceback info to fingerprint for logs that contain a traceback
         try:
-            event['logentry']['message'] = event['extra']['exception'].strip()
+            event["logentry"]["message"] = event["extra"]["exception"].strip()
         except KeyError:
             pass
 
         # Combine neterrors of the same type
         try:
-            if 'about:neterror' in event['extra']['exception']:
-                error_text = parse_neterror(event['extra']['exception'])
-                event['fingerprint'] = ['neterror-%s' % error_text]
+            if "about:neterror" in event["extra"]["exception"]:
+                error_text = parse_neterror(event["extra"]["exception"])
+                event["fingerprint"] = ["neterror-%s" % error_text]
         except Exception:
             pass
 
@@ -199,19 +201,19 @@ class MPLogger(object):
         """If running a cloud crawl, we can pull the sentry endpoint
         and related config varibles from the environment"""
         self._breadcrumb_handler = BreadcrumbHandler(
-            level=self._log_level_sentry_breadcrumb)
-        self._event_handler = EventHandler(
-            level=self._log_level_sentry_event)
-        sentry_sdk.init(
-            dsn=self._sentry_dsn,
-            before_send=self._sentry_before_send
+            level=self._log_level_sentry_breadcrumb
         )
+        self._event_handler = EventHandler(level=self._log_level_sentry_event)
+        sentry_sdk.init(dsn=self._sentry_dsn, before_send=self._sentry_before_send)
         with sentry_sdk.configure_scope() as scope:
             if self._crawl_context:
                 scope.set_tag(
-                    'CRAWL_REFERENCE', '%s/%s' %
-                    (self._crawl_context.get('s3_bucket', 'UNKNOWN'),
-                     self._crawl_context.get('s3_directory', 'UNKNOWN'))
+                    "CRAWL_REFERENCE",
+                    "%s/%s"
+                    % (
+                        self._crawl_context.get("s3_bucket", "UNKNOWN"),
+                        self._crawl_context.get("s3_directory", "UNKNOWN"),
+                    ),
                 )
 
     def _start_listener(self):
@@ -241,7 +243,7 @@ class MPLogger(object):
                 pass
 
     def _process_record(self, obj):
-        if len(obj) == 2 and obj[0] == 'EXT':
+        if len(obj) == 2 and obj[0] == "EXT":
             self._handle_extension_log(obj)
         else:
             self._handle_serialized_writes(obj)
@@ -251,15 +253,15 @@ class MPLogger(object):
         obj = json.loads(obj[1])
         record = logging.LogRecord(
             name=__name__,
-            level=obj['level'],
-            pathname=obj['pathname'],
-            lineno=obj['lineno'],
-            msg=obj['msg'],
-            args=obj['args'],
-            exc_info=obj['exc_info'],
-            func=obj['func']
+            level=obj["level"],
+            pathname=obj["pathname"],
+            lineno=obj["lineno"],
+            msg=obj["msg"],
+            args=obj["args"],
+            exc_info=obj["exc_info"],
+            func=obj["func"],
         )
-        logger = logging.getLogger('openwpm')
+        logger = logging.getLogger("openwpm")
         logger.handle(record)
 
     def _handle_serialized_writes(self, obj):
@@ -268,10 +270,10 @@ class MPLogger(object):
         This is currently records that are written to a file on disk
         and those sent to Sentry.
         """
-        if obj['exc_info']:
-            obj['exc_info'] = dill.loads(obj['exc_info'])
-        if obj['args']:
-            obj['args'] = dill.loads(obj['args'])
+        if obj["exc_info"]:
+            obj["exc_info"] = dill.loads(obj["exc_info"])
+        if obj["args"]:
+            obj["args"] = dill.loads(obj["args"])
         record = logging.makeLogRecord(obj)
         self._file_handler.emit(record)
         if self._sentry_dsn:

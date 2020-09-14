@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 
@@ -7,12 +6,12 @@ import pytest
 from . import utilities
 
 EXTENSION_DIR = os.path.join(
-    os.path.dirname(
-        os.path.realpath(__file__)),
-    '..',
-    'automation',
-    'Extension',
-    'firefox')
+    os.path.dirname(os.path.realpath(__file__)),
+    "..",
+    "automation",
+    "Extension",
+    "firefox",
+)
 
 
 def create_xpi():
@@ -25,7 +24,7 @@ def create_xpi():
 def prepare_test_setup(request):
     """Run an HTTP server during the tests."""
 
-    if 'pyonly' in request.config.invocation_params.args:
+    if "pyonly" in request.config.invocation_params.args:
         return
 
     create_xpi()

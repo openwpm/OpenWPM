@@ -9,7 +9,7 @@ from .utilities import BASE_TEST_URL
 
 class TestCallbackCommand(OpenWPMTest):
     """Test test the Aggregators as well as the entire callback machinery
-       to see if all callbacks get correctly called"""
+    to see if all callbacks get correctly called"""
 
     def get_config(self, data_dir=""):
         return self.get_test_config(data_dir)
@@ -23,9 +23,9 @@ class TestCallbackCommand(OpenWPMTest):
             argument.extend([1, 2, 3])
 
         my_list = []
-        sequence = CommandSequence(TEST_SITE, reset=True,
-                                   blocking=True,
-                                   callback=partial(callback, my_list))
+        sequence = CommandSequence(
+            TEST_SITE, reset=True, blocking=True, callback=partial(callback, my_list)
+        )
         sequence.get()
 
         manager.execute_command_sequence(sequence)

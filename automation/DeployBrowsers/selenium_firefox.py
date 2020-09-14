@@ -14,8 +14,7 @@ from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.options import Options
 
-__all__ = ['FirefoxBinary', 'FirefoxLogInterceptor',
-           'Options']
+__all__ = ["FirefoxBinary", "FirefoxLogInterceptor", "Options"]
 
 
 def mktempfifo(suffix="", prefix="tmp", dir=None):
@@ -36,7 +35,7 @@ def mktempfifo(suffix="", prefix="tmp", dir=None):
             if e.errno == errno.EEXIST:
                 continue
             raise
-    if hasattr(__builtins__, 'FileExistsError'):
+    if hasattr(__builtins__, "FileExistsError"):
         exc = FileExistsError  # noqa
     else:
         exc = IOError
@@ -57,7 +56,7 @@ class FirefoxLogInterceptor(threading.Thread):
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
         self.profile_path = profile_path
         self.daemon = True
-        self.logger = logging.getLogger('openwpm')
+        self.logger = logging.getLogger("openwpm")
 
     def run(self):
         # We might not ever get EOF on the FIFO, so instead we delete
@@ -66,11 +65,13 @@ class FirefoxLogInterceptor(threading.Thread):
         try:
             with open(self.fifo, "rt") as f:
                 for line in f:
-                    self.logger.debug("BROWSER %i: driver: %s" %
-                                      (self.browser_id, line.strip()))
+                    self.logger.debug(
+                        "BROWSER %i: driver: %s" % (self.browser_id, line.strip())
+                    )
                     if "Using profile path" in line:
-                        self.profile_path = \
-                            line.partition("Using profile path")[-1].strip()
+                        self.profile_path = line.partition("Using profile path")[
+                            -1
+                        ].strip()
 
                     if self.fifo is not None:
                         os.unlink(self.fifo)
@@ -88,8 +89,14 @@ class PatchedGeckoDriverService(BaseService):
     for Py3 compat in the presence of log FIFOs, and for potential future
     extra flexibility."""
 
-    def __init__(self, executable_path, port=0, service_args=None,
-                 log_path="geckodriver.log", env=None):
+    def __init__(
+        self,
+        executable_path,
+        port=0,
+        service_args=None,
+        log_path="geckodriver.log",
+        env=None,
+    ):
         """Creates a new instance of the GeckoDriver remote service proxy.
 
         GeckoDriver provides a HTTP interface speaking the W3C WebDriver
@@ -117,7 +124,8 @@ class PatchedGeckoDriverService(BaseService):
                 log_file = open(log_path, "w")
 
         BaseService.__init__(
-            self, executable_path, port=port, log_file=log_file, env=env)
+            self, executable_path, port=port, log_file=log_file, env=env
+        )
         self.service_args = service_args or []
 
     def command_line_args(self):

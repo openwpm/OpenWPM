@@ -1,4 +1,3 @@
-
 import base64
 import gzip
 import hashlib
@@ -19,27 +18,28 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
-                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener,
-                             BaseParams)
+from .BaseAggregator import (
+    RECORD_TYPE_CONTENT,
+    RECORD_TYPE_CREATE,
+    RECORD_TYPE_SPECIAL,
+    BaseAggregator,
+    BaseListener,
+    BaseParams,
+)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
-SITE_VISITS_INDEX = '_site_visits_index'
-CONTENT_DIRECTORY = 'content'
-CONFIG_DIR = 'config'
+SITE_VISITS_INDEX = "_site_visits_index"
+CONTENT_DIRECTORY = "content"
+CONFIG_DIR = "config"
 BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
-S3_CONFIG_KWARGS = {
-    'retries': {
-        'max_attempts': 20
-    }
-}
+S3_CONFIG_KWARGS = {"retries": {"max_attempts": 20}}
 S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
-def listener_process_runner(base_params: BaseParams,
-                            manager_params: Dict[str, Any],
-                            instance_id: int) -> None:
+def listener_process_runner(
+    base_params: BaseParams, manager_params: Dict[str, Any], instance_id: int
+) -> None:
     """S3Listener runner. Pass to new process"""
     listener = S3Listener(base_params, manager_params, instance_id)
     listener.startup()
@@ -68,34 +68,33 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(self,
-                 base_params: BaseParams,
-                 manager_params: Dict[str, Any],
-                 instance_id: int) -> None:
-        self.dir = manager_params['s3_directory']
+    def __init__(
+        self, base_params: BaseParams, manager_params: Dict[str, Any], instance_id: int
+    ) -> None:
+        self.dir = manager_params["s3_directory"]
 
         def factory_function():
             return defaultdict(list)
 
-        self._records: Dict[int, DefaultDict[str, List[Any]]] =\
-            defaultdict(factory_function)  # maps visit_id and table to records
-        self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
-            defaultdict(list)  # maps table_name to a list of batches
-        self._unsaved_visit_ids: MutableSet[int] = \
-            set()
+        self._records: Dict[int, DefaultDict[str, List[Any]]] = defaultdict(
+            factory_function
+        )  # maps visit_id and table to records
+        self._batches: DefaultDict[str, List[pa.RecordBatch]] = defaultdict(
+            list
+        )  # maps table_name to a list of batches
+        self._unsaved_visit_ids: MutableSet[int] = set()
 
         self._instance_id = instance_id
-        self._bucket = manager_params['s3_bucket']
-        self._s3_content_cache: MutableSet[str] = \
-            set()  # cache of filenames already uploaded
-        self._s3 = boto3.client('s3', config=S3_CONFIG)
-        self._s3_resource = boto3.resource('s3', config=S3_CONFIG)
+        self._bucket = manager_params["s3_bucket"]
+        self._s3_content_cache: MutableSet[
+            str
+        ] = set()  # cache of filenames already uploaded
+        self._s3 = boto3.client("s3", config=S3_CONFIG)
+        self._s3_resource = boto3.resource("s3", config=S3_CONFIG)
         self._fs = s3fs.S3FileSystem(
-            session=boto3.DEFAULT_SESSION,
-            config_kwargs=S3_CONFIG_KWARGS
+            session=boto3.DEFAULT_SESSION, config_kwargs=S3_CONFIG_KWARGS
         )
-        self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
-            self._bucket, self.dir)
+        self._s3_bucket_uri = "s3://%s/%s/visits/%%s" % (self._bucket, self.dir)
         # time last record was received
         self._last_record_received: Optional[float] = None
         super(S3Listener, self).__init__(*base_params)
@@ -108,7 +107,7 @@ class S3Listener(BaseListener):
             if item not in data:
                 data[item] = None
         # Add instance_id (for partitioning)
-        data['instance_id'] = self._instance_id
+        data["instance_id"] = self._instance_id
         records[table].append(data)
 
     def _create_batch(self, visit_id: int) -> None:
@@ -129,13 +128,13 @@ class S3Listener(BaseListener):
                 )
             except pa.lib.ArrowInvalid:
                 self.logger.error(
-                    "Error while creating record batch for table %s\n"
-                    % table_name, exc_info=True
+                    "Error while creating record batch for table %s\n" % table_name,
+                    exc_info=True,
                 )
                 pass
             # We construct a special index file from the site_visits data
             # to make it easier to query the dataset
-            if table_name == 'site_visits':
+            if table_name == "site_visits":
                 if SITE_VISITS_INDEX not in self._batches:
                     self._batches[SITE_VISITS_INDEX] = list()
                 for item in data:
@@ -147,43 +146,39 @@ class S3Listener(BaseListener):
     def _exists_on_s3(self, filename: str) -> bool:
         """Check if `filename` already exists on S3"""
         # Check local filename cache
-        if filename.split('/', 1)[1] in self._s3_content_cache:
-            self.logger.debug(
-                "File `%s` found in content cache." % filename)
+        if filename.split("/", 1)[1] in self._s3_content_cache:
+            self.logger.debug("File `%s` found in content cache." % filename)
             return True
 
         # Check S3
         try:
             self._s3_resource.Object(self._bucket, filename).load()
         except ClientError as e:
-            if e.response['Error']['Code'] == "404":
+            if e.response["Error"]["Code"] == "404":
                 return False
             else:
                 raise
         except EndpointConnectionError:
             self.logger.error(
-                "Exception while checking if file exists %s" % filename,
-                exc_info=True
+                "Exception while checking if file exists %s" % filename, exc_info=True
             )
             return False
 
         # Add filename to local cache to avoid remote lookups on next request
         # We strip the bucket name as its the same for all files
-        self._s3_content_cache.add(filename.split('/', 1)[1])
+        self._s3_content_cache.add(filename.split("/", 1)[1])
         return True
 
-    def _write_str_to_s3(self, string, filename,
-                         compressed=True, skip_if_exists=True):
+    def _write_str_to_s3(self, string, filename, compressed=True, skip_if_exists=True):
         """Write `string` data to S3 with name `filename`"""
         if skip_if_exists and self._exists_on_s3(filename):
-            self.logger.debug(
-                "File `%s` already exists on s3, skipping..." % filename)
+            self.logger.debug("File `%s` already exists on s3, skipping..." % filename)
             return
         if not isinstance(string, bytes):
-            string = string.encode('utf-8')
+            string = string.encode("utf-8")
         if compressed:
             out_f = io.BytesIO()
-            with gzip.GzipFile(fileobj=out_f, mode='w') as writer:
+            with gzip.GzipFile(fileobj=out_f, mode="w") as writer:
                 writer.write(string)
             out_f.seek(0)
         else:
@@ -192,16 +187,13 @@ class S3Listener(BaseListener):
         # Upload to S3
         try:
             self._s3.upload_fileobj(out_f, self._bucket, filename)
-            self.logger.debug(
-                "Successfully uploaded file `%s` to S3." % filename)
+            self.logger.debug("Successfully uploaded file `%s` to S3." % filename)
             # Cache the filenames that are already on S3
             # We strip the bucket name as its the same for all files
             if skip_if_exists:
-                self._s3_content_cache.add(filename.split('/', 1)[1])
+                self._s3_content_cache.add(filename.split("/", 1)[1])
         except Exception:
-            self.logger.error(
-                "Exception while uploading %s" % filename, exc_info=True
-            )
+            self.logger.error("Exception while uploading %s" % filename, exc_info=True)
             pass
 
     def _send_to_s3(self, force=False):
@@ -215,11 +207,12 @@ class S3Listener(BaseListener):
 
         for table_name, batches in self._batches.items():
             if table_name == SITE_VISITS_INDEX:
-                out_str = '\n'.join([json.dumps(x) for x in batches])
-                out_str = out_str.encode('utf-8')
-                fname = '%s/site_index/instance-%s-%s.json.gz' % (
-                    self.dir, self._instance_id,
-                    hashlib.md5(out_str).hexdigest()
+                out_str = "\n".join([json.dumps(x) for x in batches])
+                out_str = out_str.encode("utf-8")
+                fname = "%s/site_index/instance-%s-%s.json.gz" % (
+                    self.dir,
+                    self._instance_id,
+                    hashlib.md5(out_str).hexdigest(),
                 )
                 self._write_str_to_s3(out_str, fname)
             else:
@@ -228,16 +221,17 @@ class S3Listener(BaseListener):
                 try:
                     table = pa.Table.from_batches(batches)
                     pq.write_to_dataset(
-                        table, self._s3_bucket_uri % table_name,
+                        table,
+                        self._s3_bucket_uri % table_name,
                         filesystem=self._fs,
-                        partition_cols=['instance_id'],
-                        compression='snappy',
-                        flavor='spark'
+                        partition_cols=["instance_id"],
+                        compression="snappy",
+                        flavor="spark",
                     )
                 except (pa.lib.ArrowInvalid, EndpointConnectionError):
                     self.logger.error(
                         "Error while sending records for: %s" % table_name,
-                        exc_info=True
+                        exc_info=True,
                     )
                     pass
             # can't del here because that would modify batches
@@ -257,8 +251,7 @@ class S3Listener(BaseListener):
             return
         self.logger.debug(
             "Saving current record batches to S3 since no new data has "
-            "been written for %d seconds." %
-            (time.time() - self._last_record_received)
+            "been written for %d seconds." % (time.time() - self._last_record_received)
         )
         self.drain_queue()
         self._last_record_received = None
@@ -266,8 +259,7 @@ class S3Listener(BaseListener):
     def process_record(self, record):
         """Add `record` to database"""
         if len(record) != 2:
-            self.logger.error("Query is not the correct length %s",
-                              repr(record))
+            self.logger.error("Query is not the correct length %s", repr(record))
             return
         self._last_record_received = time.time()
         table, data = record
@@ -283,7 +275,7 @@ class S3Listener(BaseListener):
         # Convert data to text type
         for k, v in data.items():
             if isinstance(v, bytes):
-                data[k] = str(v, errors='ignore')
+                data[k] = str(v, errors="ignore")
             elif callable(v):
                 data[k] = str(v)
             # TODO: Can we fix this in the extension?
@@ -298,8 +290,7 @@ class S3Listener(BaseListener):
         if record[0] != RECORD_TYPE_CONTENT:
             raise ValueError(
                 "Incorrect record type passed to `process_content`. Expected "
-                "record of type `%s`, received `%s`." % (
-                    RECORD_TYPE_CONTENT, record[0])
+                "record of type `%s`, received `%s`." % (RECORD_TYPE_CONTENT, record[0])
             )
         content, content_hash = record[1]
         content = base64.b64decode(content)
@@ -311,13 +302,10 @@ class S3Listener(BaseListener):
         super(S3Listener, self).drain_queue()
         self._send_to_s3(force=True)
 
-    def run_visit_completion_tasks(self, visit_id: int,
-                                   interrupted: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int, interrupted: bool = False):
         if interrupted:
-            self.logger.error(
-                "Visit with visit_id %d got interrupted", visit_id)
-            self._write_record("incomplete_visits",
-                               {"visit_id": visit_id}, visit_id)
+            self.logger.error("Visit with visit_id %d got interrupted", visit_id)
+            self._write_record("incomplete_visits", {"visit_id": visit_id}, visit_id)
             self._create_batch(visit_id)
             self.mark_visit_incomplete(visit_id)
             return
@@ -353,19 +341,19 @@ class S3Aggregator(BaseAggregator):
 
     def __init__(self, manager_params, browser_params):
         super(S3Aggregator, self).__init__(manager_params, browser_params)
-        self.dir = manager_params['s3_directory']
-        self.bucket = manager_params['s3_bucket']
-        self.s3 = boto3.client('s3')
+        self.dir = manager_params["s3_directory"]
+        self.bucket = manager_params["s3_bucket"]
+        self.s3 = boto3.client("s3")
         self._instance_id = random.getrandbits(32)
         self._create_bucket()
 
     def _create_bucket(self):
         """Create remote S3 bucket if it doesn't exist"""
-        resource = boto3.resource('s3')
+        resource = boto3.resource("s3")
         try:
             resource.meta.client.head_bucket(Bucket=self.bucket)
         except ClientError as e:
-            error_code = int(e.response['Error']['Code'])
+            error_code = int(e.response["Error"]["Code"])
             if error_code == 404:
                 resource.create_bucket(Bucket=self.bucket)
             else:
@@ -376,16 +364,19 @@ class S3Aggregator(BaseAggregator):
 
         # Save config keyed by task id
         fname = "%s/%s/instance-%s_configuration.json" % (
-            self.dir, CONFIG_DIR, self._instance_id)
+            self.dir,
+            CONFIG_DIR,
+            self._instance_id,
+        )
 
         # Config parameters for update
         out = dict()
-        out['manager_params'] = self.manager_params
-        out['openwpm_version'] = str(openwpm_version)
-        out['browser_version'] = str(browser_version)
-        out['browser_params'] = self.browser_params
+        out["manager_params"] = self.manager_params
+        out["openwpm_version"] = str(openwpm_version)
+        out["browser_version"] = str(browser_version)
+        out["browser_params"] = self.browser_params
         out_str = json.dumps(out)
-        out_bytes = out_str.encode('utf-8')
+        out_bytes = out_str.encode("utf-8")
         out_f = io.BytesIO(out_bytes)
 
         # Upload to S3 and delete local copy
@@ -416,4 +407,5 @@ class S3Aggregator(BaseAggregator):
     def launch(self):
         """Launch the aggregator listener process"""
         super(S3Aggregator, self).launch(
-            listener_process_runner, self.manager_params, self._instance_id)
+            listener_process_runner, self.manager_params, self._instance_id
+        )

@@ -10,13 +10,13 @@ from multiprocess import Queue
 from ..SocketInterface import serversocket
 from ..utilities.multiprocess_utils import Process
 
-RECORD_TYPE_CONTENT = 'page_content'
-RECORD_TYPE_SPECIAL = 'meta_information'
-ACTION_TYPE_FINALIZE = 'Finalize'
-ACTION_TYPE_INITIALIZE = 'Initialize'
-RECORD_TYPE_CREATE = 'create_table'
+RECORD_TYPE_CONTENT = "page_content"
+RECORD_TYPE_SPECIAL = "meta_information"
+ACTION_TYPE_FINALIZE = "Finalize"
+ACTION_TYPE_INITIALIZE = "Initialize"
+RECORD_TYPE_CREATE = "create_table"
 STATUS_TIMEOUT = 120  # seconds
-SHUTDOWN_SIGNAL = 'SHUTDOWN'
+SHUTDOWN_SIGNAL = "SHUTDOWN"
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 
@@ -32,10 +32,12 @@ class BaseListener:
     receive data. Classes which inherit from this base class define
     how that data is written to disk.
     """
+
     __metaclass = abc.ABCMeta
 
-    def __init__(self, status_queue: Queue, completion_queue: Queue,
-                 shutdown_queue: Queue) -> None:
+    def __init__(
+        self, status_queue: Queue, completion_queue: Queue, shutdown_queue: Queue
+    ) -> None:
         """
         Creates a BaseListener instance
 
@@ -57,7 +59,7 @@ class BaseListener:
         self._relaxed = False
         self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
-        self.logger = logging.getLogger('openwpm')
+        self.logger = logging.getLogger("openwpm")
         self.curent_visit_ids: List[int] = list()  # All visit_ids in flight
         self.sock: Optional[serversocket] = None
 
@@ -82,8 +84,7 @@ class BaseListener:
             for (content, content_hash)"""
 
     @abc.abstractmethod
-    def run_visit_completion_tasks(self, visit_id: int,
-                                   interrupted: bool = False):
+    def run_visit_completion_tasks(self, visit_id: int, interrupted: bool = False):
         """Will be called once a visit_id will receive no new records
 
         Parameters
@@ -125,18 +126,17 @@ class BaseListener:
         self.status_queue.put(qsize)
         self.logger.debug(
             "Status update; current record queue size: %d. "
-            "current number of threads: %d." %
-            (qsize, threading.active_count())
+            "current number of threads: %d." % (qsize, threading.active_count())
         )
         self._last_update = time.time()
 
     def handle_special(self, data: Dict[str, Any]) -> None:
         """
-            Messages for the table RECORD_TYPE_SPECIAL are metainformation
-            communicated to the aggregator
-            Supported message types:
-            - finalize: A message sent by the extension to
-                        signal that a visit_id is complete.
+        Messages for the table RECORD_TYPE_SPECIAL are metainformation
+        communicated to the aggregator
+        Supported message types:
+        - finalize: A message sent by the extension to
+                    signal that a visit_id is complete.
         """
         if data["action"] == ACTION_TYPE_INITIALIZE:
             self.curent_visit_ids.append(data["visit_id"])
@@ -145,22 +145,25 @@ class BaseListener:
                 self.curent_visit_ids.remove(data["visit_id"])
             except ValueError:
                 self.logger.error(
-                    "Trying to remove visit_id %i "
-                    "from current_visit_ids failed", data["visit_id"])
+                    "Trying to remove visit_id %i " "from current_visit_ids failed",
+                    data["visit_id"],
+                )
 
             self.run_visit_completion_tasks(
-                data["visit_id"], interrupted=not data["success"])
+                data["visit_id"], interrupted=not data["success"]
+            )
         else:
-            raise ValueError("Unexpected meta "
-                             "information type: %s" % data["meta_type"])
+            raise ValueError(
+                "Unexpected meta " "information type: %s" % data["meta_type"]
+            )
 
     def mark_visit_complete(self, visit_id: int) -> None:
-        """ This function should be called to indicate that all records
+        """This function should be called to indicate that all records
         relating to a certain visit_id have been saved"""
         self.completion_queue.put((visit_id, False))
 
     def mark_visit_incomplete(self, visit_id: int):
-        """ This function should be called to indicate that a certain visit
+        """This function should be called to indicate that a certain visit
         has been interrupted and will forever be incomplete
         """
         self.completion_queue.put((visit_id, True))
@@ -171,8 +174,7 @@ class BaseListener:
         Note: Child classes should call this method"""
         self.sock.close()
         for visit_id in self.curent_visit_ids:
-            self.run_visit_completion_tasks(visit_id,
-                                            interrupted=not self._relaxed)
+            self.run_visit_completion_tasks(visit_id, interrupted=not self._relaxed)
 
     def drain_queue(self):
         """ Ensures queue is empty before closing """
@@ -195,6 +197,7 @@ class BaseAggregator:
         TaskManager configuration parameters
     browser_params : list of dict
         List of browser configuration dictionaries"""
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, manager_params, browser_params):
@@ -207,7 +210,7 @@ class BaseAggregator:
         self.shutdown_queue = Queue()
         self._last_status = None
         self._last_status_received = None
-        self.logger = logging.getLogger('openwpm')
+        self.logger = logging.getLogger("openwpm")
 
     @abc.abstractmethod
     def save_configuration(self, openwpm_version, browser_version):
@@ -246,7 +249,8 @@ class BaseAggregator:
         """Get listener process status. If the status queue is empty, block."""
         try:
             self._last_status = self.status_queue.get(
-                block=True, timeout=STATUS_TIMEOUT)
+                block=True, timeout=STATUS_TIMEOUT
+            )
             self._last_status_received = time.time()
         except queue.Empty:
             raise RuntimeError(
@@ -271,12 +275,8 @@ class BaseAggregator:
 
     def launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
-        args = ((self.status_queue,
-                 self.completion_queue, self.shutdown_queue),) + args
-        self.listener_process = Process(
-            target=listener_process_runner,
-            args=args
-        )
+        args = ((self.status_queue, self.completion_queue, self.shutdown_queue),) + args
+        self.listener_process = Process(target=listener_process_runner, args=args)
         self.listener_process.daemon = True
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
@@ -284,17 +284,15 @@ class BaseAggregator:
     def shutdown(self, relaxed: bool = True):
         """ Terminate the aggregator listener process"""
         self.logger.debug(
-            "Sending the shutdown signal to the %s listener process..." %
-            type(self).__name__
+            "Sending the shutdown signal to the %s listener process..."
+            % type(self).__name__
         )
         self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
         start_time = time.time()
         self.listener_process.join(300)
         self.logger.debug(
-            "%s took %s seconds to close." % (
-                type(self).__name__,
-                str(time.time() - start_time)
-            )
+            "%s took %s seconds to close."
+            % (type(self).__name__, str(time.time() - start_time))
         )
         self.listener_address = None
         self.listener_process = None

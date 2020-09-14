@@ -8,10 +8,13 @@ import time
 from urllib import parse as urlparse
 
 import domain_utils as du
-from selenium.common.exceptions import (ElementNotVisibleException,
-                                        NoSuchElementException,
-                                        StaleElementReferenceException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import (
+    ElementNotVisibleException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -32,33 +35,33 @@ def parse_neterror(error_message):
     try:
         qs = NETERROR_RE.match(error_message).group(1)
         params = urlparse.parse_qs(qs)
-        return '&'.join(params['e'])
+        return "&".join(params["e"])
     except Exception:
         return error_message
 
 
 def scroll_down(driver):
     at_bottom = False
-    while random.random() > .20 and not at_bottom:
-        driver.execute_script("window.scrollBy(0,%d)"
-                              % (10 + int(200 * random.random())))
+    while random.random() > 0.20 and not at_bottom:
+        driver.execute_script(
+            "window.scrollBy(0,%d)" % (10 + int(200 * random.random()))
+        )
         at_bottom = driver.execute_script(
             "return (((window.scrollY + window.innerHeight ) + 100 "
-            "> document.body.clientHeight ))")
+            "> document.body.clientHeight ))"
+        )
         time.sleep(0.5 + random.random())
 
 
 def scroll_to_bottom(driver):
     try:
-        driver.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);")
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     except WebDriverException:
         pass
 
 
 def is_loaded(webdriver):
-    return (webdriver.execute_script(
-        "return document.readyState") == "complete")
+    return webdriver.execute_script("return document.readyState") == "complete"
 
 
 def wait_until_loaded(webdriver, timeout, period=0.25, min_time=0):
@@ -78,13 +81,13 @@ def get_intra_links(webdriver, url):
     links = list()
     for elem in webdriver.find_elements_by_tag_name("a"):
         try:
-            href = elem.get_attribute('href')
+            href = elem.get_attribute("href")
         except StaleElementReferenceException:
             continue
         if href is None:
             continue
         full_href = urlparse.urljoin(url, href)
-        if not full_href.startswith('http'):
+        if not full_href.startswith("http"):
             continue
         if du.get_ps_plus_1(full_href) == ps1:
             links.append(elem)
@@ -104,8 +107,7 @@ def execute_script_with_retry(driver, script):
 
 
 # ####### Search Helpers ########
-def wait_and_find(driver, locator_type, locator,
-                  timeout=3, check_iframes=True):
+def wait_and_find(driver, locator_type, locator, timeout=3, check_iframes=True):
     """Search for element with `locator` and block if not found
 
     Parameters
@@ -141,7 +143,7 @@ def wait_and_find(driver, locator_type, locator,
     else:
         if check_iframes:  # this may return the browser with an iframe active
             driver.switch_to_default_content()
-            iframes = driver.find_elements_by_tag_name('iframe')
+            iframes = driver.find_elements_by_tag_name("iframe")
 
             for iframe in iframes:
                 driver.switch_to_default_content()
@@ -199,7 +201,7 @@ def is_clickable(driver, full_xpath, xpath, timeout=1):
     """
     try:
         w = WebDriverWait(driver, timeout)
-        w.until(EC.element_to_be_clickable(('xpath', xpath)))
+        w.until(EC.element_to_be_clickable(("xpath", xpath)))
         return XPathUtil.is_clickable(full_xpath)
     except (TimeoutException, ElementNotVisibleException):
         return False
@@ -223,8 +225,9 @@ def move_to_element(driver, element):
 
 def scroll_to_element(driver, element):
     try:
-        driver.execute_script("window.scrollTo(%s, %s);" % (
-            element.location['x'], element.location['y']))
+        driver.execute_script(
+            "window.scrollTo(%s, %s);" % (element.location["x"], element.location["y"])
+        )
     except WebDriverException:
         pass
 
@@ -267,7 +270,7 @@ def get_button_text(element):
 def iter_frames(driver):
     """Return a generator for iframes."""
     driver.switch_to_default_content()
-    iframes = driver.find_elements_by_tag_name('iframe')
+    iframes = driver.find_elements_by_tag_name("iframe")
     for iframe in iframes:
         driver.switch_to_default_content()
         yield iframe
@@ -296,8 +299,15 @@ def switch_to_parent_frame(driver, frame_stack):
         driver.switch_to_frame(frame)
 
 
-def execute_in_all_frames(driver, func, kwargs={}, frame_stack=['default'],
-                          max_depth=5, logger=None, visit_id=-1):
+def execute_in_all_frames(
+    driver,
+    func,
+    kwargs={},
+    frame_stack=["default"],
+    max_depth=5,
+    logger=None,
+    visit_id=-1,
+):
     """Recursively apply `func` within each iframe
 
     When called at each level, `func` will be passed the webdriver instance
@@ -350,7 +360,7 @@ def execute_in_all_frames(driver, func, kwargs={}, frame_stack=['default'],
     func(driver, frame_stack, **kwargs)
 
     # Grab all iframes in the current frame
-    frames = driver.find_elements_by_tag_name('iframe')
+    frames = driver.find_elements_by_tag_name("iframe")
 
     # Recurse through frames
     for frame in frames:
@@ -359,14 +369,15 @@ def execute_in_all_frames(driver, func, kwargs={}, frame_stack=['default'],
             driver.switch_to_frame(frame)
         except StaleElementReferenceException:
             if logger is not None:
-                logger.error("Error while switching to frame %s (visit: %d))" %
-                             (str(frame), visit_id))
+                logger.error(
+                    "Error while switching to frame %s (visit: %d))"
+                    % (str(frame), visit_id)
+                )
             continue
         else:
             if logger is not None:
                 doc_url = driver.execute_script("return window.document.URL;")
-                logger.info("Switched to frame: %s (visit: %d)" %
-                            (doc_url, visit_id))
+                logger.info("Switched to frame: %s (visit: %d)" % (doc_url, visit_id))
             # Search within child frame
             execute_in_all_frames(driver, func, kwargs, frame_stack, max_depth)
             switch_to_parent_frame(driver, frame_stack)

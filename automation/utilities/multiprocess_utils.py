@@ -20,14 +20,14 @@ def parse_traceback_for_sentry(tb):
         Traceback formatted such that each list item is a new line.
     """
     out = dict()
-    out_str = ''
+    out_str = ""
     counter = 0
     for i in range(len(tb)):
-        out_str += tb[i][0:min(500, len(tb[i]))]
+        out_str += tb[i][0 : min(500, len(tb[i]))]
         if i != len(tb) - 1 and len(out_str) + len(tb[i + 1]) < 500:
             continue
         out["traceback-%d" % counter] = out_str
-        out_str = ''
+        out_str = ""
         counter += 1
     return out
 
@@ -37,7 +37,7 @@ class Process(mp.Process):
 
     def __init__(self, *args, **kwargs):
         mp.Process.__init__(self, *args, **kwargs)
-        self.logger = logging.getLogger('openwpm')
+        self.logger = logging.getLogger("openwpm")
 
     def run(self):
         try:
@@ -45,17 +45,16 @@ class Process(mp.Process):
         except Exception as e:
             tb = traceback.format_exception(*sys.exc_info())
             extra = parse_traceback_for_sentry(tb)
-            extra['exception'] = tb[-1]
-            self.logger.error(
-                "Exception in child process.", exc_info=True, extra=extra
-            )
+            extra["exception"] = tb[-1]
+            self.logger.error("Exception in child process.", exc_info=True, extra=extra)
             raise e
 
 
-def kill_process_and_children(parent_process: psutil.Process,
-                              logger, timeout: int = 20) -> None:
-    """ Attempts to recursively kill the entire process tree under
-        a given parent process"""
+def kill_process_and_children(
+    parent_process: psutil.Process, logger, timeout: int = 20
+) -> None:
+    """Attempts to recursively kill the entire process tree under
+    a given parent process"""
     try:
         for child in parent_process.children():
             kill_process_and_children(child, logger)
@@ -66,6 +65,7 @@ def kill_process_and_children(parent_process: psutil.Process,
         logger.debug("Process %i has already exited", parent_process.pid)
         pass
     except psutil.TimeoutExpired:
-        logger.debug("Timeout while waiting for process %i to terminate" %
-                     parent_process.pid)
+        logger.debug(
+            "Timeout while waiting for process %i to terminate" % parent_process.pid
+        )
         pass
