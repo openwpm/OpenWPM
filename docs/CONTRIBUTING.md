@@ -25,14 +25,7 @@ lint all the changes before you make a commit.
 ### Avoid failing tests for PRs caused by formatting/linting issues
 
 If you have `pre-commit` running you should pass all linting in the CI as the lints run before every commit.
-If you have chosen not to use pre-commit we recommend you run
-a combination of `isort` and `autopep8` to fix errors automatically in-place before you submit your PR:
-
-* `python -m isort -rc --skip venv .`
-* `python -m autopep8 -r --in-place --exclude venv .`
-
-Not all errors will be fixed automatically, and sometimes the above commands will change files that are not relevant to your PR. Revert those changes and only include (automatic and manual) changes that are related to the code you are modifying by your PR.
-
+If you have chosen not to use pre-commit we recommend you run `black` to fix errors automatically in-place before you submit your PR
 
 ### Types Annotations in Python
 

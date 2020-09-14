@@ -1,9 +1,22 @@
-# Data gathering
+# Data gathering <!-- omit in toc -->
 
 There are a multitude of ways to collect data with OpenWPM some of them are listed here
 
-Our general dataschema can be seen [here](Instrumentation-Schema-Documentation.md)
+Our general dataschema can be seen [here](Schema-Documentation.md)
 
+* [Instruments](#instruments)
+  * [`http_instrument`](#http_instrument)
+  * [`js_instrument`](#js_instrument)
+  * [`navigation_instrument`](#navigation_instrument)
+  * [`callstack_instrument`](#callstack_instrument)
+  * [`dns_instrument`](#dns_instrument)
+  * [`cookie_instrument`](#cookie_instrument)
+* [Non instrument data gathering](#non-instrument-data-gathering)
+  * [Log Files](#log-files)
+  * [Browser Profile](#browser-profile)
+  * [Rendered Page Source](#rendered-page-source)
+  * [Screenshots](#screenshots)
+  * [`save_content`](#save_content)
 
 # Instruments
 
@@ -13,7 +26,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
 * HTTP Request and Response Headers, redirects, and POST request bodies
 * Data is saved to the `http_requests`, `http_responses`, and `http_redirects`  tables.
     * `http_requests` schema
-        [documentation](Instrumentation-Schema-Documentation.md#http-requests)
+        [documentation](Schema-Documentation.md#http-requests)
     * `channel_id` can be used to link a request saved in the
         `http_requests` table to its corresponding response in the
         `http_responses` table.
@@ -27,6 +40,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
 * Note: request and response headers for cached content are also saved,
     with the exception of images.
     See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
+
 ## `js_instrument`
 * Records all method calls (with arguments) and property accesses for configured APIs
 * Configure `browser_params['js_instrument_settings']` to desired settings.
@@ -89,21 +103,17 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
       function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
       In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
       in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
-## `save_content`
-Response body content
-* Saves all files encountered during the crawl to a `LevelDB`
-    database de-duplicated by the md5 hash of the content.
-* The `content_hash` column of the `http_responses` table contains the md5
-    hash for each script, and can be used to do content lookups in the
-    LevelDB content database.
-* NOTE: this instrumentation may lead to performance issues when a large
-    number of browsers are in use.
-* Set `browser_params['save_content']` to a comma-separated list of
-    [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
-    to save only specific types of files, for instance
-    `browser_params['save_content'] = "script"` to save only Javascript
-    files. This will lessen the performance impact of this instrumentation
-    when a large number of browsers are used in parallel.
+
+## `navigation_instrument`
+TODO
+
+## `callstack_instrument`
+
+TODO
+
+## `dns_instrument`
+TODO
+
 ## `cookie_instrument`
 * Data is saved to the `javascript_cookies` table.
 * Will record cookies set both by Javascript and via HTTP Responses
@@ -163,3 +173,19 @@ Response body content
           open) seems to break element-only screenshots. So using this
           command will cause any future element-only screenshots to be
           misaligned.
+
+## `save_content`
+Response body content
+* Saves all files encountered during the crawl to a `LevelDB`
+    database de-duplicated by the md5 hash of the content.
+* The `content_hash` column of the `http_responses` table contains the md5
+    hash for each script, and can be used to do content lookups in the
+    LevelDB content database.
+* NOTE: this instrumentation may lead to performance issues when a large
+    number of browsers are in use.
+* Set `browser_params['save_content']` to a comma-separated list of
+    [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
+    to save only specific types of files, for instance
+    `browser_params['save_content'] = "script"` to save only Javascript
+    files. This will lessen the performance impact of this instrumentation
+    when a large number of browsers are used in parallel.

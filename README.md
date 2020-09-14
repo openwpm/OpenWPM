@@ -87,8 +87,8 @@ More information on the instrumentation and configuration parameters is given
 below.
 
 
-The [wiki](wiki/Using_OpenWPM.md) provides a more in-depth tutorial,
-and a description of the [additional commands](wiki/Available-Commands.md)
+The docs provide a more [in-depth tutorial](docs/Using_OpenWPM.md),
+and a description of the [methods of data collection](docs/Instruments.md)
 available.
 
 
@@ -115,14 +115,14 @@ instrumentation bugs that impact results.
 Developer instructions
 ----------------------
 
-If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](wiki/CONTRIBUTING.md)
+If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](docs/CONTRIBUTING.md)
 
 Instrumentation and Data Access
 -------------------------------
 OpenWPM provides several instrumentation modules which can be enabled
 independently of each other for each crawl.
 A list of all instruments, their functions and their output formats can be
-found [here](wiki/Instruments.md)
+found [here](docs/Instruments.md)
 More detail on the output is available [below](#persistence-types).
 
 Persistence Types
@@ -323,10 +323,6 @@ the browser command will run before a crash.
 parameter to a directory where the browser profile should be saved. The profile
 will be automatically saved when `TaskManager::close` is called or when a
 platform-level crash occurs.
-
-**Browser command:** See the command definition
-[wiki page](https://github.com/citp/OpenWPM/wiki/Available-Commands#dump_profile)
-for more information.
 
 #### Load a profile
 

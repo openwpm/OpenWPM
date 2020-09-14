@@ -8,15 +8,17 @@
     "save_content": false,
     "callstack_instrument": false,
     "dns_instrument": false,
-    "random_attributes": false,
-    "bot_mitigation": false,
     "seed_tar": null,
-    "recovery_tar": null,
-    "profile_archive_dir": null,
     "display_mode": "native",
     "browser": "firefox",
     "prefs": {},
     "tp_cookies": "always",
+
+    "bot_mitigation": false,
+    "profile_archive_dir": null,
+    "recovery_tar": null,
+
+    "random_attributes": false,
     "donottrack": false,
     "tracking-protection": false
 }
