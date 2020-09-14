@@ -1,15 +1,8 @@
-# !!Warning!!
-
-As of January 31st, 2017 this section is out of date and needs a complete rewrite.
-DO NOT TREAT ANYTHING IN THIS FILE AS FACT UNLESS VERIFIED AGAINST THE CODE!
-
 # TaskManager
 
 ## Overview
 
 The user-facing component of the OpenWPM platform is the Task Manager. The Task Manager oversees multiple browser instances and passes them commands. The Task Manager also ensures that crawls continue despite browser crashes for freezes. In particular, it checks whether a given browser fails to complete a command within a given timeout (or has died) and kills/restarts this browser as necessary.
-
-More importantly, the Task Manager supports profile maintenance throughout a measurement. In particular, it cleanly transfers cookies, history and other data between browser instances between crashes so a given browser appears to represent the same user. The Task Manager also has support to dump these browser profiles (as well as browser settings such as enabling Do Not Track) at any point during a crawl and when instantiating a new Task Manager.
 
 ## Instantiating a Task Manager
 
@@ -17,15 +10,21 @@ All automation code is contained within the `automation` folder; the Task Manage
 
 Task Managers can be instantiated in the following way:
 
-`manager = TaskManager.TaskManager(<db_path>, <browser_params>, <num_browsers>)`
+`manager = TaskManager.TaskManager(manager_params, browser_params)`
 
-such that, `<db_path>` is the absolute path to the output database (even if this database does not yet exist), `<browser_params>` is a list of dictionaries where each dictionary represents the parameters set for a given browser and `<num_browsers>` is the number of browsers to be instantiated.
+You can call
+```python
+manager_params, browser_params = TaskManager.load_default_params(number_of_browsers_to_spawn)
+```
+to get the default parameters. Note that browser_params in this case is a list of dicts, containing as many dicts as you want to spawn browsers and you can change each browser individually.
 
-`<task_description>` is an optional string that can be used to describe the crawl associated with a given Task Manager instance. This description is useful for record-keeping for longer studies. 
+`<process_watchdog>` is an optional parameter that can be passed to the `TaskManager` to create another thread that kills off all processes named `Xvfb` or `firefox` that haven't been spawned by OpenWPM.
 
-However, the power of the platform is from the variety of parameters passed in through the `<browser_params>` dictionaries. We have provided a JSON-encoded dictionary at `automation/default_settings.json`. Their meanings are contained below:
+The power of the platform stems from the variety of parameters passed in through the `browser_params` and `manager_params` dictionaries. We have provided a JSON-encoded dictionary at `automation/default_manager_params.json` and `automation/default_browser_params.json`.
 
-* `num_browsers`: number of browser instances the Task Manager should create and manage (takes an integer value)
+
+Their meanings are contained below:
+
 * `browser`: the type of browser that the Task Manager should create ('firefox' is the primary option but 'chrome' has some support as well)
 * `headless`: indicates whether the browsers should be run in headless mode, a useful option for virtual machines (takes a boolean value)
 * `proxy`: indicates whether the platform should instantiate a data-logging proxy, which is necessary for most measurements (takes a boolean value)
@@ -52,8 +51,6 @@ The `index` parameter enables the end-user to specify which of the many browsers
 
 * `None`: the command is executed by a single browser on a first-come, first-serve basis
 * `<index>`: the command is executed by the `<index>`th browser instance
-* `'*'`: the command is sent to all browser, asynchronously
-* `'**'`: the command is sent to all browsers, synchronously (useful for removing temporal effects)
 
 ## Adding new commands
 
