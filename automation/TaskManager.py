@@ -264,7 +264,7 @@ class TaskManager:
                             "browser process list. Killing." % (
                                 process.name(), process.pid,
                                 process.create_time()))
-                        kill_process_and_children(process)
+                        kill_process_and_children(process, self.logger)
 
     def _launch_aggregators(self) -> None:
         """Launch the necessary data aggregators"""
@@ -347,7 +347,7 @@ class TaskManager:
                 "failure limit.", self.failure_status['CommandSequence']
             )
         if self.failure_status['ErrorType'] == 'CriticalChildException':
-            exc_type, exc, tb = pickle.loads(self.failure_status['Exception'])
+            _, exc, tb = pickle.loads(self.failure_status['Exception'])
             raise exc.with_traceback(tb)
 
     # CRAWLER COMMAND CODE
