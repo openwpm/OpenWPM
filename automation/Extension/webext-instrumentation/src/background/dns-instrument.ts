@@ -91,7 +91,7 @@ export class DnsInstrument {
   ) {
       // Create and populate DnsResolve object
       const dnsRecord = {} as DnsResolved;
-      dnsRecord.crawl_id = crawlID;
+      dnsRecord.browser_id = crawlID;
       dnsRecord.request_id =  details.requestId;
       dnsRecord.used_address = details.ip;
       const currentTime = new Date(details.timeStamp);

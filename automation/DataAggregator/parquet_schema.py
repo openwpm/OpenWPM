@@ -208,7 +208,7 @@ PQ_SCHEMAS["incomplete_visits"] = pa.schema(fields)
 # dns_responses
 fields = [
     pa.field("request_id", pa.int64(), nullable=False),
-    pa.field("crawl_id", pa.uint32(), nullable=False),
+    pa.field("browser_id", pa.uint32(), nullable=False),
     pa.field("visit_id", pa.int64(), nullable=False),
     pa.field("hostname", pa.string()),
     pa.field("addresses", pa.string()),

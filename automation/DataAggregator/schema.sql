@@ -234,7 +234,7 @@ CREATE TABLE IF NOT EXISTS incomplete_visits (
 CREATE TABLE IF NOT EXISTS dns_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER NOT NULL,
-  crawl_id INTEGER NOT NULL,
+  browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   hostname TEXT,
   addresses TEXT,

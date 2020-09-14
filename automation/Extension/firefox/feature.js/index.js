@@ -89,7 +89,7 @@ async function main() {
   if (config['dns_instrument']) {
     loggingDB.logDebug("DNS instrumentation enabled");
     let dnsInstrument = new DnsInstrument(loggingDB);
-    dnsInstrument.run(config['crawl_id']);
+    dnsInstrument.run(config['browser_id']);
   }
 }
 

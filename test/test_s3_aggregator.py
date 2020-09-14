@@ -45,6 +45,7 @@ class TestS3Aggregator(OpenWPMTest):
             browser_params[i]["cookie_instrument"] = True
             browser_params[i]["navigation_instrument"] = True
             browser_params[i]["callstack_instrument"] = True
+            browser_params[i]["dns_instrument"] = True
         return manager_params, browser_params
 
     def test_basic_properties(self):

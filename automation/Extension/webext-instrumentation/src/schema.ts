@@ -165,7 +165,7 @@ export interface JavascriptCookie {
  * DNS results
  */
 export interface DnsResolved {
-  crawl_id?: number;
+  browser_id?: number;
   visit_id?: number;
   hostname: string;
   request_id: string;
