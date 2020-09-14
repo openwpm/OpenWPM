@@ -13,11 +13,6 @@ from ..automation.DataAggregator.parquet_schema import PQ_SCHEMAS
 from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL, LocalS3Dataset, LocalS3Session, local_s3_bucket
 
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-
 
 class TestS3Aggregator(OpenWPMTest):
     @classmethod
