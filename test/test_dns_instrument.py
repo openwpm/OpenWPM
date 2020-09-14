@@ -6,13 +6,12 @@ class TestDNSInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
         for browser_param in browser_params:
-            browser_param['dns_instrument'] = True
+            browser_param["dns_instrument"] = True
         return manager_params, browser_params
 
     def test_name_resolution(self):
         db = self.visit("http://localtest.me:8000")
-        result = db_utils.query_db(db,
-                                   "SELECT * FROM dns_responses")
+        result = db_utils.query_db(db, "SELECT * FROM dns_responses")
         result = result[0]
         print(result.keys())
         assert result["used_address"] == "127.0.0.1"
