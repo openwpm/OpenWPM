@@ -188,6 +188,7 @@ fields = [
 ]
 PQ_SCHEMAS['navigations'] = pa.schema(fields)
 
+# callstacks
 fields = [
     pa.field('visit_id', pa.int64(), nullable=False),
     pa.field('request_id', pa.int64(), nullable=False),
@@ -197,8 +198,22 @@ fields = [
 ]
 PQ_SCHEMAS['callstacks'] = pa.schema(fields)
 
+# incomplete_visits
 fields = [
     pa.field('visit_id', pa.int64(), nullable=False),
     pa.field('instance_id', pa.uint32(), nullable=False)
 ]
 PQ_SCHEMAS['incomplete_visits'] = pa.schema(fields)
+
+# dns_responses
+fields = [
+    pa.field('request_id', pa.int64(), nullable=False),
+    pa.field('crawl_id', pa.uint32(), nullable=False),
+    pa.field('visit_id', pa.int64(), nullable=False),
+    pa.field('hostname', pa.string()),
+    pa.field('addresses', pa.string()),
+    pa.field('canonical_name', pa.string()),
+    pa.field('is_TRR', pa.string()),
+    pa.field('time_stamp', pa.string(), nullable=False)
+]
+PQ_SCHEMAS['dns_responses'] = pa.schema(fields)

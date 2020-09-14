@@ -25,6 +25,10 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
+    # Record DNS resolution
+    browser_params[i]['dns_instrument'] = True
+
+
 # Launch only browser 0 headless
 browser_params[0]['display_mode'] = 'headless'
 

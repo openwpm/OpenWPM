@@ -162,6 +162,21 @@ export interface JavascriptCookie {
 }
 
 /**
+ * DNS results
+ */
+export interface DnsResolved {
+  crawl_id?: number;
+  visit_id?: number;
+  hostname: string;
+  request_id: string;
+  time_stamp: DateTime;
+  addresses?: string;
+  used_address?: string;
+  canonical_name?: string;
+  is_TRR?: string;
+}
+
+/**
  * Corresponds to cookies.onChanged
  */
 export interface JavascriptCookieRecord extends JavascriptCookie {

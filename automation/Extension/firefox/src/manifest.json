@@ -24,7 +24,8 @@
     "storage",
     "alarms",
     "downloads",
-    "tabs"
+    "tabs",
+    "dns"
   ],
 
   "experiment_apis": {

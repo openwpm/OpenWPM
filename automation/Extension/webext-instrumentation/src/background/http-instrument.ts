@@ -25,26 +25,8 @@ type SaveContentOption = boolean | string;
  * redirect = original request headers+body, followed by a onBeforeRedirect and then a new set of request headers+body and response headers+body
  * Docs: https://developer.mozilla.org/en-US/docs/User:wbamberg/webRequest.RequestDetails
  */
-
-export class HttpInstrument {
-  private readonly dataReceiver;
-  private pendingRequests: {
-    [requestId: number]: PendingRequest;
-  } = {};
-  private pendingResponses: {
-    [requestId: number]: PendingResponse;
-  } = {};
-  private onBeforeRequestListener;
-  private onBeforeSendHeadersListener;
-  private onBeforeRedirectListener;
-  private onCompletedListener;
-
-  constructor(dataReceiver) {
-    this.dataReceiver = dataReceiver;
-  }
-
-  public run(crawlID, saveContentOption: SaveContentOption) {
-    const allTypes: ResourceType[] = [
+ 
+const allTypes: ResourceType[] = [
       "beacon",
       "csp_report",
       "font",
@@ -67,6 +49,28 @@ export class HttpInstrument {
       "xslt",
       "other",
     ];
+
+export { allTypes};
+
+export class HttpInstrument {
+  private readonly dataReceiver;
+  private pendingRequests: {
+    [requestId: number]: PendingRequest;
+  } = {};
+  private pendingResponses: {
+    [requestId: number]: PendingResponse;
+  } = {};
+  private onBeforeRequestListener;
+  private onBeforeSendHeadersListener;
+  private onBeforeRedirectListener;
+  private onCompletedListener;
+
+  constructor(dataReceiver) {
+    this.dataReceiver = dataReceiver;
+  }
+
+  public run(crawlID, saveContentOption: SaveContentOption) {
+
 
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
 

@@ -2,7 +2,8 @@ import {
   CookieInstrument,
   JavascriptInstrument,
   HttpInstrument,
-  NavigationInstrument
+  NavigationInstrument,
+  DnsInstrument
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
@@ -83,6 +84,12 @@ async function main() {
     loggingDB.logDebug("Callstack Instrumentation enabled");
     let callstackInstrument = new CallstackInstrument(loggingDB);
     callstackInstrument.run(config['browser_id']);
+  }
+  
+  if (config['dns_instrument']) {
+    loggingDB.logDebug("DNS instrumentation enabled");
+    let dnsInstrument = new DnsInstrument(loggingDB);
+    dnsInstrument.run(config['crawl_id']);
   }
 }
 
