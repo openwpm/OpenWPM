@@ -4,7 +4,9 @@ from automation import CommandSequence, TaskManager
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
 sites = [
-    'http://localtest.me:8000'
+    'http://www.example.com',
+    'http://www.princeton.edu',
+    'http://citp.princeton.edu/'
 ]
 
 # Loads the default manager params
@@ -23,7 +25,6 @@ for i in range(NUM_BROWSERS):
     browser_params[i]['js_instrument'] = True
     # Record the callstack of all WebRequests made
     browser_params[i]['callstack_instrument'] = True
-
     # Record DNS resolution
     browser_params[i]['dns_instrument'] = True
 
@@ -49,7 +50,7 @@ for site in sites:
         print("CommandSequence {} done".format(val)))
 
     # Start by visiting the page
-    command_sequence.get(sleep=15, timeout=60)
+    command_sequence.get(sleep=3, timeout=60)
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)
