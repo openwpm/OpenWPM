@@ -108,7 +108,6 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
 TODO
 
 ## `callstack_instrument`
-
 TODO
 
 ## `dns_instrument`
@@ -134,7 +133,7 @@ TODO
 * Save the full rendered source (including all nested iframes) with the
 `CommandSequence::recursive_dump_page_source` command.
     * The page source is saved in the following nested json structure:
-        ```
+        ```json
         {
             'doc_url': "http://example.com",
             'source': "<html> ... </html>",
