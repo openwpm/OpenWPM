@@ -1,4 +1,12 @@
-class BaseCommand:
+from abc import ABC, abstractmethod
+from typing import Any, Dict
+
+from selenium.webdriver import Firefox
+
+from automation.SocketInterface import clientsocket
+
+
+class BaseCommand(ABC):
     def set_visit_browser_id(self, visit_id, browser_id):
         self.visit_id = visit_id
         self.browser_id = browser_id
@@ -6,24 +14,16 @@ class BaseCommand:
     def set_start_time(self, start_time):
         self.start_time = start_time
 
-
-class GetCommand(BaseCommand):
-    def __init__(self, url, sleep):
-        self.url = url
-        self.sleep = sleep
-
-    def __repr__(self):
-        return "GetCommand({},{})".format(self.url, self.sleep)
-
-
-class BrowseCommand(BaseCommand):
-    def __init__(self, url, num_links, sleep):
-        self.url = url
-        self.num_links = num_links
-        self.sleep = sleep
-
-    def __repr__(self):
-        return "BrowseCommand({},{},{})".format(self.url, self.num_links, self.sleep)
+    @abstractmethod
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_settings: Dict[str, Any],
+        browser_params: Dict[str, Any],
+        manager_params: Dict[str, Any],
+        extension_socket: clientsocket,
+    ) -> None:
+        raise NotImplementedError()
 
 
 class DumpProfCommand(BaseCommand):

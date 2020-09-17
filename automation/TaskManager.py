@@ -440,7 +440,7 @@ class TaskManager:
         self, browser: Browser, command_sequence: CommandSequence
     ) -> None:
         """
-        sends command tuple to the BrowserManager
+        Sends CommandSequence to the BrowserManager one command at a time
         """
         browser.is_fresh = False
 

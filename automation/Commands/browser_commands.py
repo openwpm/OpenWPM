@@ -21,6 +21,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from ..SocketInterface import clientsocket
+from .types import BaseCommand
 from .utils.webdriver_utils import (
     execute_in_all_frames,
     execute_script_with_retry,
@@ -111,81 +112,111 @@ def tab_restart_browser(webdriver):
     webdriver.switch_to_window(webdriver.window_handles[0])
 
 
-def get_website(
-    url, sleep, visit_id, webdriver, browser_params, extension_socket: clientsocket
-):
+class GetCommand(BaseCommand):
     """
     goes to <url> using the given <webdriver> instance
     """
 
-    tab_restart_browser(webdriver)
+    def __init__(self, url, sleep):
+        self.url = url
+        self.sleep = sleep
 
-    if extension_socket is not None:
-        extension_socket.send(visit_id)
+    def __repr__(self):
+        return "GetCommand({},{})".format(self.url, self.sleep)
 
-    # Execute a get through selenium
-    try:
-        webdriver.get(url)
-    except TimeoutException:
-        pass
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        tab_restart_browser(webdriver)
 
-    # Sleep after get returns
-    time.sleep(sleep)
+        if extension_socket is not None:
+            extension_socket.send(self.visit_id)
 
-    # Close modal dialog if exists
-    try:
-        WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
-        alert = webdriver.switch_to_alert()
-        alert.dismiss()
-        time.sleep(1)
-    except (TimeoutException, WebDriverException):
-        pass
+        # Execute a get through selenium
+        try:
+            webdriver.get(url)
+        except TimeoutException:
+            pass
 
-    close_other_windows(webdriver)
+        # Sleep after get returns
+        time.sleep(sleep)
 
-    if browser_params["bot_mitigation"]:
-        bot_mitigation(webdriver)
+        # Close modal dialog if exists
+        try:
+            WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
+            alert = webdriver.switch_to_alert()
+            alert.dismiss()
+            time.sleep(1)
+        except (TimeoutException, WebDriverException):
+            pass
+
+        close_other_windows(webdriver)
+
+        if browser_params["bot_mitigation"]:
+            bot_mitigation(webdriver)
 
 
-def browse_website(
-    url,
-    num_links,
-    sleep,
-    visit_id,
-    webdriver,
-    browser_params,
-    manager_params,
-    extension_socket,
-):
-    """Calls get_website before visiting <num_links> present on the page.
+class BrowseCommand(BaseCommand):
+    def __init__(self, url, num_links, sleep):
+        self.url = url
+        self.num_links = num_links
+        self.sleep = sleep
 
-    Note: the site_url in the site_visits table for the links visited will
-    be the site_url of the original page and NOT the url of the links visited.
-    """
-    # First get the site
-    get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket)
+    def __repr__(self):
+        return "BrowseCommand({},{},{})".format(self.url, self.num_links, self.sleep)
 
-    # Then visit a few subpages
-    for _ in range(num_links):
-        links = [x for x in get_intra_links(webdriver, url) if is_displayed(x) is True]
-        if not links:
-            break
-        r = int(random.random() * len(links))
-        logger.info(
-            "BROWSER %i: visiting internal link %s"
-            % (browser_params["browser_id"], links[r].get_attribute("href"))
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        """Calls get_website before visiting <num_links> present on the page.
+
+        Note: the site_url in the site_visits table for the links visited will
+        be the site_url of the original page and NOT the url of the links visited.
+        """
+        # First get the site
+        get_command = GetCommand(self.url, self.sleep)
+        get_command.set_visit_browser_id(self.visit_id, self.browser_id)
+        get_command.execute(
+            webdriver,
+            browser_settings,
+            browser_params,
+            manager_params,
+            extension_socket,
         )
 
-        try:
-            links[r].click()
-            wait_until_loaded(webdriver, 300)
-            time.sleep(max(1, sleep))
-            if browser_params["bot_mitigation"]:
-                bot_mitigation(webdriver)
-            webdriver.back()
-            wait_until_loaded(webdriver, 300)
-        except Exception:
-            pass
+        # Then visit a few subpages
+        for _ in range(num_links):
+            links = [
+                x for x in get_intra_links(webdriver, url) if is_displayed(x) is True
+            ]
+            if not links:
+                break
+            r = int(random.random() * len(links))
+            logger.info(
+                "BROWSER %i: visiting internal link %s"
+                % (browser_params["browser_id"], links[r].get_attribute("href"))
+            )
+
+            try:
+                links[r].click()
+                wait_until_loaded(webdriver, 300)
+                time.sleep(max(1, sleep))
+                if browser_params["bot_mitigation"]:
+                    bot_mitigation(webdriver)
+                webdriver.back()
+                wait_until_loaded(webdriver, 300)
+            except Exception:
+                pass
 
 
 def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
