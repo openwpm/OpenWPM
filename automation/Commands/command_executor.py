@@ -1,12 +1,10 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .Types import (
+from .types import (
     BaseCommand,
-    BrowseCommand,
     DumpPageSourceCommand,
     DumpProfCommand,
     FinalizeCommand,
-    GetCommand,
     InitializeCommand,
     RecursiveDumpPageSourceCommand,
     RunCustomFunctionCommand,

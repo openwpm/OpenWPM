@@ -139,12 +139,12 @@ class GetCommand(BaseCommand):
 
         # Execute a get through selenium
         try:
-            webdriver.get(url)
+            webdriver.get(self.url)
         except TimeoutException:
             pass
 
         # Sleep after get returns
-        time.sleep(sleep)
+        time.sleep(self.sleep)
 
         # Close modal dialog if exists
         try:

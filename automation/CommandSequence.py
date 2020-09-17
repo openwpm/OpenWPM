@@ -1,12 +1,11 @@
 from typing import Callable, List, Tuple
 
-from .Commands.Types import (
+from .Commands.browser_commands import GetCommand
+from .Commands.types import (
     BaseCommand,
-    BrowseCommand,
     DumpPageSourceCommand,
     DumpProfCommand,
     FinalizeCommand,
-    GetCommand,
     InitializeCommand,
     RecursiveDumpPageSourceCommand,
     RunCustomFunctionCommand,
