@@ -14,7 +14,8 @@ class BaseCommand(ABC):
     def set_start_time(self, start_time):
         self.start_time = start_time
 
-    @abstractmethod
+    # FIXME: After transitioning all Commands to the new format this needs to be reenabled
+    # @abstractmethod
     def execute(
         self,
         webdriver: Firefox,

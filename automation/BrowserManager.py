@@ -17,7 +17,7 @@ from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
 from .Commands import command_executor
-from .Commands.Types import ShutdownCommand
+from .Commands.types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
