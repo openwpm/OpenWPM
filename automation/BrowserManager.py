@@ -130,7 +130,8 @@ class Browser:
                 launch_status[result[1]] = True
                 return result[2]
             elif result[0] == "CRITICAL":
-                raise pickle.loads(result[1])
+                _, exc, tb = pickle.loads(result[1])
+                raise exc.with_traceback(tb)
             elif result[0] == "FAILED":
                 raise BrowserCrashError("Browser spawn returned failure status")
 
