@@ -1,6 +1,7 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
 from .Types import (
+    BaseCommand,
     BrowseCommand,
     DumpPageSourceCommand,
     DumpProfCommand,
@@ -15,7 +16,7 @@ from .Types import (
 
 
 def execute_command(
-    command,
+    command: BaseCommand,
     webdriver,
     browser_params,
     manager_params,
@@ -24,29 +25,21 @@ def execute_command(
     """Executes BrowserManager commands
     commands are of form (COMMAND, ARG0, ARG1, ...)
     """
-    if type(command) is GetCommand:
-        browser_commands.get_website(
-            url=command.url,
-            sleep=command.sleep,
-            visit_id=command.visit_id,
-            webdriver=webdriver,
-            browser_params=browser_params,
-            extension_socket=extension_socket,
-        )
 
-    elif type(command) is BrowseCommand:
-        browser_commands.browse_website(
-            url=command.url,
-            num_links=command.num_links,
-            sleep=command.sleep,
-            visit_id=command.visit_id,
-            webdriver=webdriver,
-            browser_params=browser_params,
-            manager_params=manager_params,
-            extension_socket=extension_socket,
+    try:
+        command.execute(
+            webdriver,
+            browser_settings,
+            browser_params,
+            manager_params,
+            extension_socket,
         )
+        return
+    except NotImplementedError:
+        # Using old style dispatching
+        pass
 
-    elif type(command) is DumpProfCommand:
+    if type(command) is DumpProfCommand:
         profile_commands.dump_profile(
             browser_profile_folder=browser_params["profile_path"],
             manager_params=manager_params,
