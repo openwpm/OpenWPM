@@ -524,7 +524,7 @@ class TaskManager:
                     {
                         "browser_id": browser.browser_id,
                         "visit_id": browser.curr_visit_id,
-                        "command": type(command),
+                        "command": command.__name__,
                         "arguments": json.dumps(
                             command.__dict__, default=lambda x: repr(x)
                         ).encode("utf-8"),
