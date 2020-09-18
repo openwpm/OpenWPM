@@ -195,9 +195,11 @@ class BrowseCommand(BaseCommand):
         )
 
         # Then visit a few subpages
-        for _ in range(num_links):
+        for _ in range(self.num_links):
             links = [
-                x for x in get_intra_links(webdriver, url) if is_displayed(x) is True
+                x
+                for x in get_intra_links(webdriver, self.url)
+                if is_displayed(x) is True
             ]
             if not links:
                 break
