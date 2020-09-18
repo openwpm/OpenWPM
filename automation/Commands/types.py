@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from selenium.webdriver import Firefox
 
-from automation.SocketInterface import clientsocket
+from ..SocketInterface import clientsocket
 
 
 class BaseCommand(ABC):
