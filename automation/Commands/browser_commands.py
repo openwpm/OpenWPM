@@ -217,7 +217,13 @@ class BrowseCommand(BaseCommand):
                     bot_mitigation(webdriver)
                 webdriver.back()
                 wait_until_loaded(webdriver, 300)
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    "BROWSER %i: Error visitit internal link %s",
+                    browser_params["browser_id"],
+                    links[r].get_attribute("href"),
+                    exc_info=e,
+                )
                 pass
 
 
