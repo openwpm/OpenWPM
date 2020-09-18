@@ -1,6 +1,6 @@
 from typing import Callable, List, Tuple
 
-from .Commands.browser_commands import GetCommand
+from .Commands.browser_commands import BrowseCommand, GetCommand
 from .Commands.types import (
     BaseCommand,
     DumpPageSourceCommand,
