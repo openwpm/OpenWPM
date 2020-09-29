@@ -18,6 +18,8 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
+from automation.data_aggregator.parquet_schema import PQ_SCHEMAS
+
 from .BaseAggregator import (
     RECORD_TYPE_CONTENT,
     RECORD_TYPE_CREATE,
@@ -26,7 +28,6 @@ from .BaseAggregator import (
     BaseListener,
     BaseParams,
 )
-from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
 SITE_VISITS_INDEX = "_site_visits_index"
@@ -76,7 +77,7 @@ class S3Listener(BaseListener):
         def factory_function():
             return defaultdict(list)
 
-        self._records: Dict[int, DefaultDict[str, List[Any]]] = defaultdict(
+        self._records: DefaultDict[int, DefaultDict[str, List[Any]]] = defaultdict(
             factory_function
         )  # maps visit_id and table to records
         self._batches: DefaultDict[str, List[pa.RecordBatch]] = defaultdict(

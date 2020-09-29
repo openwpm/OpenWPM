@@ -11,6 +11,7 @@ dependencies:
     - pip
     - pre-commit
     - pytest
+    - mypy
     - pip:
         # Select depenedencies from localstack[full] that we need
         - amazon-kclpy
