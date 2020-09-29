@@ -41,13 +41,6 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
             "https://github.com/citp/OpenWPM/issues/101"
         )
 
-    # AbBlock Plus
-    if browser_params["adblock-plus"]:
-        raise RuntimeError(
-            "AdBlock Plus is not currently supported. See: "
-            "https://github.com/citp/OpenWPM/issues/35"
-        )
-
 
 def optimize_prefs(fo):
     """
