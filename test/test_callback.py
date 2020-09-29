@@ -1,8 +1,9 @@
 from functools import partial
 from typing import List
 
-from ..automation.CommandSequence import CommandSequence
-from ..automation.TaskManager import TaskManager
+from automation.CommandSequence import CommandSequence
+from automation.TaskManager import TaskManager
+
 from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL
 

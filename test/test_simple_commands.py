@@ -7,8 +7,9 @@ from urllib.parse import urlparse
 
 from PIL import Image
 
-from ..automation import CommandSequence, TaskManager
-from ..automation.utilities import db_utils
+from automation import CommandSequence, TaskManager
+from automation.utilities import db_utils
+
 from . import utilities
 from .openwpmtest import OpenWPMTest
 

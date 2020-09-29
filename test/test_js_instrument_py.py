@@ -1,7 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ..automation import js_instrumentation as jsi
+from automation import js_instrumentation as jsi
 
 pytestmark = pytest.mark.pyonly
 

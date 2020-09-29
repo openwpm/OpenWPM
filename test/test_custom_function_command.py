@@ -1,5 +1,6 @@
-from ..automation import CommandSequence, TaskManager
-from ..automation.utilities import db_utils
+from automation import CommandSequence, TaskManager
+from automation.utilities import db_utils
+
 from . import utilities
 from .openwpmtest import OpenWPMTest
 
@@ -30,7 +31,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
     def test_custom_function(self):
         """ Test `custom_function` with an inline func that collects links """
 
-        from ..automation.SocketInterface import clientsocket
+        from automation.SocketInterface import ClientSocket
 
         def collect_links(table_name, scheme, **kwargs):
             """ Collect links with `scheme` and save in table `table_name` """
@@ -48,7 +49,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
             ]
             current_url = driver.current_url
 
-            sock = clientsocket()
+            sock = ClientSocket()
             sock.connect(*manager_params["aggregator_address"])
 
             query = (

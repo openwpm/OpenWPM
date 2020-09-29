@@ -20,7 +20,7 @@ from .DataAggregator.BaseAggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPE
 from .Errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
-from .SocketInterface import clientsocket
+from .SocketInterface import ClientSocket
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 
@@ -299,7 +299,7 @@ class TaskManager:
         ] = self.data_aggregator.listener_address
 
         # open connection to aggregator for saving crawl details
-        self.sock = clientsocket(serialization="dill")
+        self.sock = ClientSocket(serialization="dill")
         self.sock.connect(*self.manager_params["aggregator_address"])
 
     def _shutdown_manager(

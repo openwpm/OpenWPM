@@ -1,4 +1,5 @@
-from ..automation.utilities import db_utils
+from automation.utilities import db_utils
+
 from .openwpmtest import OpenWPMTest
 
 

@@ -5,16 +5,21 @@ from .storage_providers import StructuredStorageProvider, UnstructuredStoragePro
 
 
 class MemoryStructuredProvider(StructuredStorageProvider):
+    """This storage provider stores all data in memory under
+    self.storage.
+    This makes it ideal for testing and for small crawls where no persitence is required
+    """
+
     def __init__(self):
         super().__init__()
-        self._storage: DefaultDict[str, List[Any]] = defaultdict(list)
+        self.storage: DefaultDict[str, List[Any]] = defaultdict(list)
         self._completed_visit_ids: List[Tuple[int, bool]] = list()
 
     def flush_cache(self) -> None:
         pass
 
     def store_record(self, table: str, record: Dict[str, Any]) -> None:
-        self._storage[table].append(record)
+        self.storage[table].append(record)
         pass
 
     def run_visit_completion_tasks(

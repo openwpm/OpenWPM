@@ -2,10 +2,11 @@ from os.path import isfile, join
 
 import pytest
 
-from ..automation import TaskManager
-from ..automation.CommandSequence import CommandSequence
-from ..automation.Errors import CommandExecutionError, ProfileLoadError
-from ..automation.utilities import db_utils
+from automation import TaskManager
+from automation.CommandSequence import CommandSequence
+from automation.Errors import CommandExecutionError, ProfileLoadError
+from automation.utilities import db_utils
+
 from .openwpmtest import OpenWPMTest
 
 # TODO update these tests to make use of blocking commands

@@ -36,15 +36,11 @@ after_success:
 
 jobs:
   include:
-    - language:
-      python:
+    - language: "python"
       env:
         - TESTS="Docker"
       services:
         - docker
-      before_install:
-      before_script:
-      install:
       script:
         - docker build -f Dockerfile -t openwpm .
         - ./scripts/deploy-to-dockerhub.sh
