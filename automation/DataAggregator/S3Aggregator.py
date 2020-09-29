@@ -18,8 +18,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from automation.data_aggregator.parquet_schema import PQ_SCHEMAS
-
+from ..data_aggregator.parquet_schema import PQ_SCHEMAS
 from .BaseAggregator import (
     RECORD_TYPE_CONTENT,
     RECORD_TYPE_CREATE,
