@@ -49,7 +49,6 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         )
 
 
-
 def optimize_prefs(fo):
     """
     Disable various features and checks the browser will do on startup.
