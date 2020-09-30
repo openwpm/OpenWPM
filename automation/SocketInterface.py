@@ -171,17 +171,17 @@ def main():
 
     # Just for testing
     if sys.argv[1] == "s":
-        sock = ServerSocket(verbose=True)
-        sock.start_accepting()
+        ssock: ServerSocket = ServerSocket(verbose=True)
+        ssock.start_accepting()
         input("Press enter to exit...")
-        sock.close()
+        ssock.close()
     elif sys.argv[1] == "c":
         host = input("Enter the host name:\n")
         port = input("Enter the port:\n")
         serialization = input("Enter the serialization type (default: 'json'):\n")
         if serialization == "":
             serialization = "json"
-        sock = ClientSocket(serialization=serialization)
+        sock: ClientSocket = ClientSocket(serialization=serialization)
         sock.connect(host, int(port))
         msg = None
 

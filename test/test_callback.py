@@ -15,15 +15,15 @@ class TestCallbackCommand(OpenWPMTest):
     def get_config(self, data_dir=""):
         return self.get_test_config(data_dir)
 
-    def test_local_callbacks(self):
+    def test_local_callbacks(self) -> None:
         manager_params, browser_params = self.get_config()
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
         manager = TaskManager(manager_params, browser_params)
 
-        def callback(argument: List[int], success: bool):
+        def callback(argument: List[int], success: bool) -> None:
             argument.extend([1, 2, 3])
 
-        my_list = []
+        my_list: List[int] = []
         sequence = CommandSequence(
             TEST_SITE, reset=True, blocking=True, callback=partial(callback, my_list)
         )

@@ -1,9 +1,11 @@
 import os
 from os.path import isfile, join
+from typing import List, Tuple
 
 import pytest
 
 from automation import TaskManager
+from automation.types import BrowserParams, ManagerParams
 
 from . import utilities
 
@@ -31,8 +33,11 @@ class OpenWPMTest(object):
         return manager_params["db"]
 
     def get_test_config(
-        self, data_dir="", num_browsers=NUM_BROWSERS, display_mode="headless"
-    ):
+        self,
+        data_dir: str = "",
+        num_browsers: int = NUM_BROWSERS,
+        display_mode: str = "headless",
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir

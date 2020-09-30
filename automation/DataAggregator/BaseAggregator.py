@@ -84,7 +84,9 @@ class BaseListener:
             for (content, content_hash)"""
 
     @abc.abstractmethod
-    def run_visit_completion_tasks(self, visit_id: int, interrupted: bool = False):
+    def run_visit_completion_tasks(
+        self, visit_id: int, interrupted: bool = False
+    ) -> None:
         """Will be called once a visit_id will receive no new records
 
         Parameters
@@ -162,7 +164,7 @@ class BaseListener:
         relating to a certain visit_id have been saved"""
         self.completion_queue.put((visit_id, False))
 
-    def mark_visit_incomplete(self, visit_id: int):
+    def mark_visit_incomplete(self, visit_id: int) -> None:
         """This function should be called to indicate that a certain visit
         has been interrupted and will forever be incomplete
         """
@@ -224,6 +226,10 @@ class BaseAggregator:
     def get_next_browser_id(self):
         """Return a unique crawl ID used as a key for a browser instance"""
 
+    @abc.abstractmethod
+    def launch(self):
+        """Launch the aggregator listener process"""
+
     def get_most_recent_status(self):
         """Return the most recent queue size sent from the listener process"""
 
@@ -273,7 +279,7 @@ class BaseAggregator:
             finished_visit_ids.append(self.completion_queue.get())
         return finished_visit_ids
 
-    def launch(self, listener_process_runner, *args):
+    def _launch(self, listener_process_runner, *args):
         """Launch the aggregator listener process"""
         args = ((self.status_queue, self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(target=listener_process_runner, args=args)
@@ -281,7 +287,7 @@ class BaseAggregator:
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
 
-    def shutdown(self, relaxed: bool = True):
+    def shutdown(self, relaxed: bool = True) -> None:
         """ Terminate the aggregator listener process"""
         self.logger.debug(
             "Sending the shutdown signal to the %s listener process..."

@@ -190,7 +190,7 @@ class CommandSequence:
         command = RunCustomFunctionCommand(function_handle, func_args)
         self._commands_with_timeout.append((command, timeout))
 
-    def mark_done(self, success: bool):
+    def mark_done(self, success: bool) -> None:
         if self.callback is not None:
             self.callback(success)
 

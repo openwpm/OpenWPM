@@ -302,7 +302,9 @@ class S3Listener(BaseListener):
         super(S3Listener, self).drain_queue()
         self._send_to_s3(force=True)
 
-    def run_visit_completion_tasks(self, visit_id: int, interrupted: bool = False):
+    def run_visit_completion_tasks(
+        self, visit_id: int, interrupted: bool = False
+    ) -> None:
         if interrupted:
             self.logger.error("Visit with visit_id %d got interrupted", visit_id)
             self._write_record("incomplete_visits", {"visit_id": visit_id}, visit_id)
@@ -406,6 +408,6 @@ class S3Aggregator(BaseAggregator):
 
     def launch(self):
         """Launch the aggregator listener process"""
-        super(S3Aggregator, self).launch(
+        super(S3Aggregator, self)._launch(
             listener_process_runner, self.manager_params, self._instance_id
         )

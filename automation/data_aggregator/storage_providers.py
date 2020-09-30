@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple
 
+from automation.types import VisitId
+
 """
 This module contains all base classes of the storage provider hierachy
 Any subclass of these classes should be able to be used in OpenWPM
@@ -29,7 +31,9 @@ class StorageProvider(ABC):
 
 class StructuredStorageProvider(StorageProvider):
     @abstractmethod
-    def store_record(self, table: str, record: Dict[str, Any]) -> None:
+    def store_record(
+        self, table: str, visit_id: VisitId, record: Dict[str, Any]
+    ) -> None:
         """Submit a record to be stored
         The storing might not happen immediately
         """
@@ -37,7 +41,7 @@ class StructuredStorageProvider(StorageProvider):
 
     @abstractmethod
     def run_visit_completion_tasks(
-        self, visit_id: int, interrupted: bool = False
+        self, visit_id: VisitId, interrupted: bool = False
     ) -> None:
         """This method is invoked to inform the StrucuturedStorageProvider that no more
         records for this visit_id will be submitted
@@ -45,7 +49,7 @@ class StructuredStorageProvider(StorageProvider):
         pass
 
     @abstractmethod
-    def saved_visit_ids(self) -> List[Tuple[int, bool]]:
+    def saved_visit_ids(self) -> List[Tuple[VisitId, bool]]:
         """Return the list of all visit_ids that have been saved to permanent storage
         since the last time this method was called
 

@@ -1,6 +1,10 @@
+import random
 from abc import abstractmethod
+from typing import Any, Dict, List
 
 from pyarrow import Table
+
+from automation.types import VisitId
 
 from .parquet_schema import PQ_SCHEMAS
 from .storage_providers import StructuredStorageProvider
@@ -11,15 +15,22 @@ class ArrowAggregator(StructuredStorageProvider):
     serializes records into the arrow format
     """
 
+    def __init__(self):
+        super().__init__()
+        self._records: Dict[VisitId, Dict[str, List[Dict[str, Any]]]] = {}
+        self._instance_id = random.getrandbits(32)
+
     def flush_cache(self):
         pass
 
-    def store_record(self, table: str, record: Dict[str, Any], visit_id: int) -> None:
+    def store_record(
+        self, table: str, visit_id: VisitId, record: Dict[str, Any]
+    ) -> None:
         records = self._records[visit_id]
         # Add nulls
         for item in PQ_SCHEMAS[table].names:
             if item not in record:
-                data[item] = None
+                record[item] = None
         # Add instance_id (for partitioning)
         record["instance_id"] = self._instance_id
         records[table].append(record)

@@ -87,7 +87,7 @@ class LocalListener(BaseListener):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
-    def process_record(self, record: Tuple[str, Union[str, Dict[str, Any]]]):
+    def process_record(self, record: Tuple[str, Union[str, Dict[str, Any]]]) -> None:
         """Add `record` to database"""
 
         if len(record) != 2:
@@ -181,7 +181,9 @@ class LocalListener(BaseListener):
             self._ldb_counter = 0
             self._ldb_commit_time = time.time()
 
-    def run_visit_completion_tasks(self, visit_id: int, interrupted: bool = False):
+    def run_visit_completion_tasks(
+        self, visit_id: int, interrupted: bool = False
+    ) -> None:
         if interrupted:
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             self.cur.execute("INSERT INTO incomplete_visits VALUES (?)", (visit_id,))
@@ -283,7 +285,7 @@ class LocalAggregator(BaseAggregator):
 
     def launch(self):
         """Launch the aggregator listener process"""
-        super(LocalAggregator, self).launch(
+        super(LocalAggregator, self)._launch(
             listener_process_runner, self.manager_params, self.ldb_enabled
         )
 

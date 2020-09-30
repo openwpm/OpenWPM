@@ -6,6 +6,7 @@ import json
 import os
 from hashlib import sha256
 from time import sleep
+from typing import Set
 from urllib.parse import urlparse
 
 import pytest
@@ -623,7 +624,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
         # HTTP Responses
         rows = db_utils.query_db(db, "SELECT * FROM http_responses")
-        observed_records = set()
+        observed_records: Set[str, str] = set()
         for row in rows:
             observed_records.add(
                 (

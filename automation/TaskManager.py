@@ -21,6 +21,7 @@ from .Errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
 from .SocketInterface import ClientSocket
+from .types import BrowserParams, ManagerParams
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 
@@ -34,7 +35,7 @@ AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
 
 def load_default_params(
     num_browsers: int = 1,
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Tuple[ManagerParams, List[BrowserParams]]:
     """
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
@@ -64,8 +65,8 @@ class TaskManager:
 
     def __init__(
         self,
-        manager_params: Dict[str, Any],
-        browser_params: List[Dict[str, Any]],
+        manager_params: ManagerParams,
+        browser_params: List[BrowserParams],
         process_watchdog: bool = False,
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
@@ -182,7 +183,7 @@ class TaskManager:
         self.callback_thread.start()
 
     def _initialize_browsers(
-        self, browser_params: List[Dict[str, Any]]
+        self, browser_params: List[BrowserParams]
     ) -> List[Browser]:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
@@ -460,6 +461,9 @@ class TaskManager:
             browser.curr_visit_id,
             browser.browser_id,
         )
+        assert browser.command_queue is not None
+        assert browser.status_queue is not None
+
         for command_and_timeout in command_sequence.get_commands_with_timeout():
             command, timeout = command_and_timeout
             command.set_visit_browser_id(browser.curr_visit_id, browser.browser_id)
