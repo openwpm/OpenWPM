@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from collections import defaultdict
 
@@ -43,6 +44,10 @@ class TestS3Aggregator(OpenWPMTest):
             browser_params[i]["dns_instrument"] = True
         return manager_params, browser_params
 
+    @pytest.mark.skipif(
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason="Localstack fails to start on Travis",
+    )
     def test_basic_properties(self):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
         NUM_VISITS = 2
@@ -86,6 +91,10 @@ class TestS3Aggregator(OpenWPMTest):
         config = json.loads(str(dataset.get_file(config_file[0]), "utf-8"))
         assert len(config["browser_params"]) == NUM_BROWSERS
 
+    @pytest.mark.skipif(
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason="Localstack fails to start on Travis",
+    )
     def test_commit_on_timeout(self):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
         manager_params, browser_params = self.get_config(num_browsers=1)
@@ -105,6 +114,10 @@ class TestS3Aggregator(OpenWPMTest):
         assert TEST_SITE in requests.top_level_url.unique()
         manager.close()
 
+    @pytest.mark.skipif(
+        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+        reason="Localstack fails to start on Travis",
+    )
     def test_s3_callbacks(self):
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
         manager_params, browser_params = self.get_config()
