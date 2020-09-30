@@ -212,7 +212,7 @@ class BrowseCommand(BaseCommand):
             try:
                 links[r].click()
                 wait_until_loaded(webdriver, 300)
-                time.sleep(max(1, sleep))
+                time.sleep(max(1, self.sleep))
                 if browser_params["bot_mitigation"]:
                     bot_mitigation(webdriver)
                 webdriver.back()
