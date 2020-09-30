@@ -6,11 +6,11 @@ env:
 # Once we add and remove tests, this distribution may become unbalanced.
 # Feel free to move tests around to make the running time of the jobs
 # as close as possible.
-  - TESTS=test_[a-e]*
-  - TESTS=test_[f-h]*
-  - TESTS=test_[i-r,t-z]*
+  - TESTS=test/test_[a-e]*
+  - TESTS=test/test_[f-h]*
+  - TESTS=test/test_[i-r,t-z]*
 # test_simple_commands.py is slow due to parametrization.
-  - TESTS=test_[s]*
+  - TESTS=test/test_[s]*
   - TESTS=webextension
 git:
   depth: 3
