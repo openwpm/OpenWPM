@@ -1,12 +1,6 @@
 """ Set prefs and load extensions in Firefox """
 
 
-import os
-import shutil
-
-EXT_STORAGE_DIR = "browser-extension-data"
-
-
 def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     """
     Configure the privacy settings in Firefox. This includes:
@@ -15,11 +9,6 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     * Tracking protection
     * Privacy extensions
     """
-
-    # Make extension storage directory
-    storage_dir = os.path.join(browser_profile_path, EXT_STORAGE_DIR)
-    if not os.path.isdir(storage_dir):
-        os.mkdir(storage_dir)
 
     # Turns on Do Not Track
     if browser_params["donottrack"]:
