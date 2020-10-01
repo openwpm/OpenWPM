@@ -1,3 +1,5 @@
+import gzip
+import io
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple
 
@@ -59,6 +61,24 @@ class StructuredStorageProvider(StorageProvider):
 
 
 class UnstructuredStorageProvider(StorageProvider):
-    def store_blob(self, blob: str) -> None:
-        """Stores the data passed in as an base64 encoded string"""
+    @abstractmethod
+    def store_blob(
+        self,
+        filename: str,
+        blob: bytes,
+        compressed: bool = True,
+        skip_if_exists: bool = True,
+    ) -> None:
+        """Stores the given bytes under the provided filename"""
         pass
+
+    def _compress(self, blob: bytes) -> io.BytesIO:
+        """Takes a byte blob and compresses it with gzip
+        The returned BytesIO object is at stream position 0.
+        This means it can be treated like a zip file on disk.
+        """
+        out_f = io.BytesIO()
+        with gzip.GzipFile(fileobj=out_f, mode="w") as writer:
+            writer.write(blob)
+        out_f.seek(0)
+        return out_f

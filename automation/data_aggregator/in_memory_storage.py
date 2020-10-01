@@ -1,15 +1,18 @@
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Tuple
 
+import pytest
+
 from automation.types import VisitId
 
 from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
 
+pytestmark = pytest.mark.pyonly
+
 
 class MemoryStructuredProvider(StructuredStorageProvider):
-    """This storage provider stores all data in memory under
-    self.storage.
-    This makes it ideal for testing and for small crawls where no persitence is required
+    """This storage provider stores all data in memory under self.storage.
+    This makes it ideal for testing and for small crawls where no persistence is required
     """
 
     def __init__(self):
@@ -38,4 +41,34 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         return temp
 
     def shutdown(self) -> None:
+        pass
+
+
+class MemoryUnstructuredProvider(UnstructuredStorageProvider):
+    """This storage provider stores all data in memory under self.storage as a dict
+    from filename to content.
+    Use this provider for writing tests and for small crawls where no persistence is required
+    """
+
+    def __init__(self) -> None:
+        self.storage: Dict[str, bytes] = {}
+
+    def store_blob(
+        self,
+        filename: str,
+        blob: bytes,
+        compressed: bool = True,
+        skip_if_exists: bool = True,
+    ) -> None:
+        if skip_if_exists and filename in self.storage:
+            return
+        if compressed:
+            bytesIO = self._compress(blob)
+            blob = bytesIO.getvalue()
+        self.storage[filename] = blob
+
+    def flush_cache(self):
+        pass
+
+    def shutdown(self):
         pass
