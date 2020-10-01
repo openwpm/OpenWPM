@@ -1,14 +1,17 @@
 import base64
 import logging
 import queue
+import random
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
 
+from automation.utilities.multiprocess_utils import Process
+
 from ..SocketInterface import ServerSocket
-from ..types import ManagerParams, VisitId
+from ..types import BrowserId, ManagerParams, VisitId
 from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
 
 RECORD_TYPE_CONTENT = "page_content"
@@ -22,31 +25,6 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
-
-
-def listener_process_runner(
-    status_queue: Queue,
-    completion_queue: Queue,
-    shutdown_queue: Queue,
-    structured_storage: StructuredStorageProvider,
-    unstructured_storage: UnstructuredStorageProvider,
-) -> None:
-    aggregator = DataAggregator(
-        structured_storage,
-        unstructured_storage,
-        status_queue=status_queue,
-        completion_queue=completion_queue,
-        shutdown_queue=shutdown_queue,
-    )
-    aggregator.startup()
-
-    while not aggregator.should_shutdown():
-        aggregator.update_status_queue()
-        aggregator.save_batch_if_past_timeout()
-        aggregator.poll_queue()
-
-    aggregator.drain_queue()
-    aggregator.shutdown()
 
 
 class DataAggregator:
@@ -84,6 +62,7 @@ class DataAggregator:
         self.sock: Optional[ServerSocket] = None
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
+        self._last_record_received = None
 
     def startup(self):
         """Puts the DataAggregator into a runable state
@@ -121,12 +100,12 @@ class DataAggregator:
             self.unstructured_storage.store_blob(filename=content_hash, blob=content)
             return
         if record_type == RECORD_TYPE_META:
-            self.handle_meta(data)
+            self._handle_meta(data)
             return
 
         self.structured_storage.store_record
 
-    def handle_meta(self, data: Dict[str, Any]) -> None:
+    def _handle_meta(self, data: Dict[str, Any]) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are metainformation
         communicated to the aggregator
@@ -153,7 +132,7 @@ class DataAggregator:
                 "Unexpected meta " "information type: %s" % data["meta_type"]
             )
 
-    def update_status_queue(self):
+    def update_status_queue(self) -> None:
         """Send manager process a status update."""
         if (time.time() - self._last_update) < STATUS_UPDATE_INTERVAL:
             return
@@ -164,6 +143,10 @@ class DataAggregator:
             "current number of threads: %d." % (qsize, threading.active_count())
         )
         self._last_update = time.time()
+
+    def update_completion_queue(self) -> None:
+        for pair in self.structured_storage.saved_visit_ids():
+            self.completion_queue.put(pair)
 
     def drain_queue(self) -> None:
         """ Ensures queue is empty before closing """
@@ -210,9 +193,110 @@ class DataAggregator:
         self._last_record_received = None
 
 
+def listener_process_runner(aggregator: DataAggregator) -> None:
+
+    aggregator.startup()
+
+    while not aggregator.should_shutdown():
+        aggregator.update_status_queue()
+        aggregator.update_completion_queue()
+        aggregator.save_batch_if_past_timeout()
+        aggregator.poll_queue()
+
+    aggregator.drain_queue()
+    aggregator.shutdown()
+
+
 class DataAggregatorHandle:
     """This class contains all methods relevant for the TaskManager
     to interact with the DataAggregator
     """
 
-    ...
+    def __init__(
+        self,
+        structured_storage: StructuredStorageProvider,
+        unstructured_storage: UnstructuredStorageProvider,
+    ) -> None:
+
+        self.listener_address = None
+        self.listener_process = None
+        self.status_queue = Queue()
+        self.completion_queue = Queue()
+        self.shutdown_queue = Queue()
+        self._last_status = None
+        self._last_status_received = None
+        self.logger = logging.getLogger("openwpm")
+        self.aggregator = DataAggregator(
+            structured_storage,
+            unstructured_storage,
+            status_queue=self.status_queue,
+            completion_queue=self.completion_queue,
+            shutdown_queue=self.shutdown_queue,
+        )
+
+    def get_next_visit_id(self) -> VisitId:
+        """Generate visit id as randomly generated positive integer less than 2^53.
+
+        Parquet can support integers up to 64 bits, but Javascript can only
+        represent integers up to 53 bits:
+        https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+        Thus, we cap these values at 53 bits.
+        """
+        return VisitId(random.getrandbits(53))
+
+    def get_next_browser_id(self) -> BrowserId:
+        """Generate crawl id as randomly generated positive 32bit integer
+
+        Note: Parquet's partitioned dataset reader only supports integer
+        partition columns up to 32 bits.
+        """
+        return BrowserId(random.getrandbits(32))
+
+    def save_configuration(self, openwpm_version, browser_version):
+        # FIXME I need to find a solution for this
+        self.logger.error(
+            "Can't log config as of yet, because it's still not implemented"
+        )
+
+    def launch(self) -> None:
+        """Starts the data aggregator"""
+        self.listener_process = Process(
+            name="DataAggregator",
+            target=listener_process_runner,
+            args=(self.aggregator,),
+        )
+        self.listener_process.daemon = True
+        self.listener_process.start()
+
+        self.listener_address = self.status_queue.get()
+
+    def get_new_completed_visits(self) -> List[Tuple[int, bool]]:
+        """
+        Returns a list of all visit ids that have been processed since
+        the last time the method was called and whether or not they
+        have been interrupted.
+
+        This method will return an empty list in case no visit ids have
+        been processed since the last time this method was called
+        """
+        finished_visit_ids = list()
+        while not self.completion_queue.empty():
+            finished_visit_ids.append(self.completion_queue.get())
+        return finished_visit_ids
+
+    def shutdown(self, relaxed: bool = True) -> None:
+        """ Terminate the aggregator listener process"""
+        assert isinstance(self.listener_process, Process)
+        self.logger.debug(
+            "Sending the shutdown signal to the %s listener process..."
+            % type(self).__name__
+        )
+        self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
+        start_time = time.time()
+        self.listener_process.join(300)
+        self.logger.debug(
+            "%s took %s seconds to close."
+            % (type(self).__name__, str(time.time() - start_time))
+        )
+        self.listener_address = None
+        self.listener_process = None
