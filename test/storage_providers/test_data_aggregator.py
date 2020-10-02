@@ -5,7 +5,15 @@ from automation.data_aggregator.in_memory_storage import (
 )
 
 
-def test_construction():
+def test_startup_and_shutdown():
+    structured = MemoryStructuredProvider()
+    unstructured = MemoryUnstructuredProvider()
+    agg_handle = DataAggregatorHandle(structured, unstructured)
+    agg_handle.launch()
+    agg_handle.shutdown()
+
+
+def test_startup_and_shutdown():
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
     agg_handle = DataAggregatorHandle(structured, unstructured)

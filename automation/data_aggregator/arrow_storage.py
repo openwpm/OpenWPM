@@ -10,7 +10,7 @@ from .parquet_schema import PQ_SCHEMAS
 from .storage_providers import StructuredStorageProvider
 
 
-class ArrowAggregator(StructuredStorageProvider):
+class ArrowProvider(StructuredStorageProvider):
     """This class implements a StructuredStorage provider that
     serializes records into the arrow format
     """

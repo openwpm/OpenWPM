@@ -1,13 +1,10 @@
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Tuple
 
-import pytest
-
 from automation.types import VisitId
 
+from .arrow_storage import ArrowProvider
 from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
-
-pytestmark = pytest.mark.pyonly
 
 
 class MemoryStructuredProvider(StructuredStorageProvider):
@@ -72,3 +69,7 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
 
     def shutdown(self):
         pass
+
+
+class MemoryArrowProvider(ArrowProvider):
+    ...
