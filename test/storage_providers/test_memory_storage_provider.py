@@ -64,9 +64,6 @@ class TestStructuredStorageProvider(OpenWPMTest):
         structured_provider.run_visit_completion_tasks(VisitId(2))
         structured_provider.flush_cache()
         assert structured_provider.saved_visit_ids() == [(2, False)]
-        assert structured_provider.storage == {
-            "test": [{"visit_id": 2, "data": "test"}]
-        }
 
 
 class TestUnstructuredStorageProvide(OpenWPMTest):

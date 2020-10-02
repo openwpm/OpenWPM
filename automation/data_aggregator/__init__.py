@@ -62,7 +62,7 @@ class DataAggregator:
         self.sock: Optional[ServerSocket] = None
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
-        self._last_record_received = None
+        self._last_record_received: Optional[float] = None
 
     def startup(self):
         """Puts the DataAggregator into a runable state
@@ -219,7 +219,7 @@ class DataAggregatorHandle:
     ) -> None:
 
         self.listener_address = None
-        self.listener_process = None
+        self.listener_process: Optional[Process] = None
         self.status_queue = Queue()
         self.completion_queue = Queue()
         self.shutdown_queue = Queue()
@@ -300,3 +300,38 @@ class DataAggregatorHandle:
         )
         self.listener_address = None
         self.listener_process = None
+
+    def get_most_recent_status(self):
+        """Return the most recent queue size sent from the listener process"""
+
+        # Block until we receive the first status update
+        if self._last_status is None:
+            return self.get_status()
+
+        # Drain status queue until we receive most recent update
+        while not self.status_queue.empty():
+            self._last_status = self.status_queue.get()
+            self._last_status_received = time.time()
+
+        # Check last status signal
+        if (time.time() - self._last_status_received) > STATUS_TIMEOUT:
+            raise RuntimeError(
+                "No status update from DataAggregator listener process "
+                "for %d seconds." % (time.time() - self._last_status_received)
+            )
+
+        return self._last_status
+
+    def get_status(self):
+        """Get listener process status. If the status queue is empty, block."""
+        try:
+            self._last_status = self.status_queue.get(
+                block=True, timeout=STATUS_TIMEOUT
+            )
+            self._last_status_received = time.time()
+        except queue.Empty:
+            raise RuntimeError(
+                "No status update from DataAggregator listener process "
+                "for %d seconds." % (time.time() - self._last_status_received)
+            )
+        return self._last_status

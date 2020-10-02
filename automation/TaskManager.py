@@ -15,6 +15,11 @@ import tblib
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
+from .data_aggregator import DataAggregatorHandle
+from .data_aggregator.storage_providers import (
+    StructuredStorageProvider,
+    UnstructuredStorageProvider,
+)
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .DataAggregator.BaseAggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
 from .Errors import CommandExecutionError
@@ -67,6 +72,8 @@ class TaskManager:
         self,
         manager_params: ManagerParams,
         browser_params: List[BrowserParams],
+        structured_storage_provider: StructuredStorageProvider,
+        unstructured_storage_provider: UnstructuredStorageProvider,
         process_watchdog: bool = False,
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
@@ -115,13 +122,7 @@ class TaskManager:
         if not os.path.exists(manager_params["source_dump_path"]):
             os.makedirs(manager_params["source_dump_path"])
 
-        # Check size of parameter dictionary
-        self.num_browsers = manager_params["num_browsers"]
-        if len(browser_params) != self.num_browsers:
-            raise Exception(
-                "Number of <browser_params> dicts is not the same "
-                "as manager_params['num_browsers']"
-            )
+        self.num_browsers = len(browser_params)
 
         # Parse and flesh out js_instrument_settings
         for a_browsers_params in self.browser_params:
@@ -155,7 +156,9 @@ class TaskManager:
         self.logger = logging.getLogger("openwpm")
 
         # Initialize the data aggregators
-        self._launch_aggregators()
+        self._launch_aggregators(
+            structured_storage_provider, unstructured_storage_provider
+        )
 
         # Sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)
@@ -169,7 +172,7 @@ class TaskManager:
 
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
-        self.data_aggregator.save_configuration(openwpm_v, browser_v)
+        self.data_aggregator_handle.save_configuration(openwpm_v, browser_v)
         self.logger.info(
             get_configuration_string(
                 self.manager_params, browser_params, (openwpm_v, browser_v)
@@ -188,7 +191,9 @@ class TaskManager:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
-            browser_params[i]["browser_id"] = self.data_aggregator.get_next_browser_id()
+            browser_params[i][
+                "browser_id"
+            ] = self.data_aggregator_handle.get_next_browser_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -279,25 +284,19 @@ class TaskManager:
                         )
                         kill_process_and_children(process, self.logger)
 
-    def _launch_aggregators(self) -> None:
+    def _launch_aggregators(
+        self,
+        structured_storage_provider: StructuredStorageProvider,
+        unstructured_storage_provider: UnstructuredStorageProvider,
+    ) -> None:
         """Launch the necessary data aggregators"""
-        self.data_aggregator: BaseAggregator.BaseAggregator
-        if self.manager_params["output_format"] == "local":
-            self.data_aggregator = LocalAggregator.LocalAggregator(
-                self.manager_params, self.browser_params
-            )
-        elif self.manager_params["output_format"] == "s3":
-            self.data_aggregator = S3Aggregator.S3Aggregator(
-                self.manager_params, self.browser_params
-            )
-        else:
-            raise Exception(
-                "Unrecognized output format: %s" % self.manager_params["output_format"]
-            )
-        self.data_aggregator.launch()
+        self.data_aggregator_handle = DataAggregatorHandle(
+            structured_storage_provider, unstructured_storage_provider
+        )
+        self.data_aggregator_handle.launch()
         self.manager_params[
             "aggregator_address"
-        ] = self.data_aggregator.listener_address
+        ] = self.data_aggregator_handle.listener_address
 
         # open connection to aggregator for saving crawl details
         self.sock = ClientSocket(serialization="dill")
@@ -334,7 +333,7 @@ class TaskManager:
             browser.shutdown_browser(during_init, force=not relaxed)
 
         self.sock.close()  # close socket to data aggregator
-        self.data_aggregator.shutdown(relaxed=relaxed)
+        self.data_aggregator_handle.shutdown(relaxed=relaxed)
         self.logging_server.close()
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
@@ -383,7 +382,7 @@ class TaskManager:
                 "Attempted to execute" " command on a closed TaskManager"
             )
         self._check_failure_status()
-        visit_id = self.data_aggregator.get_next_visit_id()
+        visit_id = self.data_aggregator_handle.get_next_visit_id()
         browser.set_visit_id(visit_id)
         if command_sequence.callback:
             self.unsaved_command_sequences[visit_id] = command_sequence
@@ -417,7 +416,7 @@ class TaskManager:
                 # we're shutting down and have no unprocessed callbacks
                 break
 
-            visit_id_list = self.data_aggregator.get_new_completed_visits()
+            visit_id_list = self.data_aggregator_handle.get_new_completed_visits()
             if not visit_id_list:
                 time.sleep(1)
                 continue
@@ -630,7 +629,7 @@ class TaskManager:
         """
 
         # Block if the aggregator queue is too large
-        agg_queue_size = self.data_aggregator.get_most_recent_status()
+        agg_queue_size = self.data_aggregator_handle.get_most_recent_status()
         if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
             while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
                 self.logger.info(
@@ -638,7 +637,7 @@ class TaskManager:
                     "is below the max queue size of %d. Current queue "
                     "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
                 )
-                agg_queue_size = self.data_aggregator.get_status()
+                agg_queue_size = self.data_aggregator_handle.get_status()
 
         # Distribute command
         if index is None:

@@ -1,4 +1,8 @@
 from automation import CommandSequence, TaskManager
+from automation.data_aggregator.in_memory_storage import (
+    MemoryStructuredProvider,
+    MemoryUnstructuredProvider,
+)
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
@@ -37,7 +41,12 @@ manager_params["log_directory"] = "~/Desktop/"
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
-manager = TaskManager.TaskManager(manager_params, browser_params)
+manager = TaskManager.TaskManager(
+    manager_params,
+    browser_params,
+    MemoryStructuredProvider(),
+    MemoryUnstructuredProvider(),
+)
 
 # Visits the sites
 for site in sites:

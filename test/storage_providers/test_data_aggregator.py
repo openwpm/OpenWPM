@@ -11,11 +11,3 @@ def test_startup_and_shutdown():
     agg_handle = DataAggregatorHandle(structured, unstructured)
     agg_handle.launch()
     agg_handle.shutdown()
-
-
-def test_startup_and_shutdown():
-    structured = MemoryStructuredProvider()
-    unstructured = MemoryUnstructuredProvider()
-    agg_handle = DataAggregatorHandle(structured, unstructured)
-    agg_handle.launch()
-    agg_handle.shutdown()
