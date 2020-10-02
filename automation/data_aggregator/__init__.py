@@ -31,7 +31,7 @@ class DataAggregator:
     def __init__(
         self,
         structured_storage: StructuredStorageProvider,
-        unstructured_storage: UnstructuredStorageProvider,
+        unstructured_storage: Optional[UnstructuredStorageProvider],
         status_queue: Queue,
         completion_queue: Queue,
         shutdown_queue: Queue,
@@ -95,6 +95,12 @@ class DataAggregator:
         if record_type == RECORD_TYPE_CONTENT:
             assert isinstance(data, tuple)
             assert len(data) == 2
+            if self.unstructured_storage is None:
+                self.logger.error(
+                    """Tried to save content while not having
+                                  provided any unstructured storage provider."""
+                )
+                return
             content, content_hash = data
             content = base64.b64decode(content)
             self.unstructured_storage.store_blob(filename=content_hash, blob=content)
@@ -102,8 +108,11 @@ class DataAggregator:
         if record_type == RECORD_TYPE_META:
             self._handle_meta(data)
             return
-
-        self.structured_storage.store_record
+        visit_id = VisitId(data["visit_id"])
+        self.curent_visit_ids.append(visit_id)
+        self.structured_storage.store_record(
+            table=record_type, visit_id=visit_id, record=data
+        )
 
     def _handle_meta(self, data: Dict[str, Any]) -> None:
         """
@@ -147,6 +156,7 @@ class DataAggregator:
     def update_completion_queue(self) -> None:
         for pair in self.structured_storage.saved_visit_ids():
             self.completion_queue.put(pair)
+            self.curent_visit_ids.remove(pair[0])
 
     def drain_queue(self) -> None:
         """ Ensures queue is empty before closing """
@@ -157,9 +167,10 @@ class DataAggregator:
 
     def shutdown(self) -> None:
         self.structured_storage.flush_cache()
-        self.unstructured_storage.flush_cache()
         self.structured_storage.shutdown()
-        self.unstructured_storage.shutdown()
+        if self.unstructured_storage is not None:
+            self.unstructured_storage.flush_cache()
+            self.unstructured_storage.shutdown()
 
     def should_shutdown(self):
         """Return `True` if the listener has received a shutdown signal

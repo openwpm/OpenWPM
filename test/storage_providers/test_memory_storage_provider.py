@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Tuple
+
 import pytest
 
 from automation.data_aggregator.in_memory_storage import (
@@ -20,7 +22,7 @@ memory_unstructured = "memory_unstructured"
 leveldb = "leveldb"
 
 
-structured_scenarios = [
+structured_scenarios: List[Tuple[str, Dict[str, Any]]] = [
     (memory_structured, {"structured_provider": memory_structured}),
     (sqllite, {"structured_provider": sqllite}),
     (memory_arrow, {"structured_provider": memory_arrow}),
@@ -28,17 +30,15 @@ structured_scenarios = [
 
 
 @pytest.fixture
-def structured_provider(request):
-    print("Fixture was executed")
+def structured_provider(request, tmp_path_factory):
     if request.param == memory_structured:
         return MemoryStructuredProvider()
     elif request.param == sqllite:
-        return SqlLiteStorageProvider()
+        tmp_path = tmp_path_factory.mktemp("sqllite")
+        return SqlLiteStorageProvider(tmp_path / "test_db.sqllite")
     elif request.param == memory_arrow:
         return MemoryArrowProvider()
-    else:
-        return MemoryStructuredProvider()
-        raise ValueError("invalid internal test config")
+    raise ValueError("invalid internal test config")
 
 
 def pytest_generate_tests(metafunc):
@@ -67,7 +67,7 @@ class TestStructuredStorageProvider(OpenWPMTest):
 
 
 class TestUnstructuredStorageProvide(OpenWPMTest):
-    scenarios = [(memory_unstructured, {})]
+    scenarios: List[Tuple[str, Dict[str, Any]]] = [(memory_unstructured, {})]
 
     def test_basic_unstructured_storing(self):
         test_string = "This is my test string"

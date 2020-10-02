@@ -32,6 +32,20 @@ class StorageProvider(ABC):
 
 
 class StructuredStorageProvider(StorageProvider):
+    def __init__(self):
+        super().__init__()
+        self._completed_visit_ids: List[Tuple[VisitId, bool]] = list()
+
+    def saved_visit_ids(self) -> List[Tuple[VisitId, bool]]:
+        """Return the list of all visit_ids that have been saved to permanent storage
+        since the last time this method was called
+
+        For each visit_id it's also noted whether they were interrupted
+        """
+        temp = self._completed_visit_ids
+        self._completed_visit_ids = list()
+        return temp
+
     @abstractmethod
     def store_record(
         self, table: str, visit_id: VisitId, record: Dict[str, Any]
@@ -47,15 +61,6 @@ class StructuredStorageProvider(StorageProvider):
     ) -> None:
         """This method is invoked to inform the StrucuturedStorageProvider that no more
         records for this visit_id will be submitted
-        """
-        pass
-
-    @abstractmethod
-    def saved_visit_ids(self) -> List[Tuple[VisitId, bool]]:
-        """Return the list of all visit_ids that have been saved to permanent storage
-        since the last time this method was called
-
-        For each visit_id it's also noted whether they were interrupted
         """
         pass
 

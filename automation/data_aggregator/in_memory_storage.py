@@ -32,11 +32,6 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         self._completed_visit_ids.append((visit_id, interrupted))
         pass
 
-    def saved_visit_ids(self) -> List[Tuple[VisitId, bool]]:
-        temp = self._completed_visit_ids
-        self._completed_visit_ids = list()
-        return temp
-
     def shutdown(self) -> None:
         pass
 

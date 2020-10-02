@@ -1,8 +1,8 @@
+import os
+
 from automation import CommandSequence, TaskManager
-from automation.data_aggregator.in_memory_storage import (
-    MemoryStructuredProvider,
-    MemoryUnstructuredProvider,
-)
+from automation.data_aggregator.in_memory_storage import MemoryUnstructuredProvider
+from automation.data_aggregator.sql_provider import SqlLiteStorageProvider
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
@@ -44,8 +44,10 @@ manager_params["log_directory"] = "~/Desktop/"
 manager = TaskManager.TaskManager(
     manager_params,
     browser_params,
-    MemoryStructuredProvider(),
-    MemoryUnstructuredProvider(),
+    SqlLiteStorageProvider(
+        os.path.expanduser(manager_params["data_directory"] + "crawl-data.sqlite")
+    ),
+    None,
 )
 
 # Visits the sites
