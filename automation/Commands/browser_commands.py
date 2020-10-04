@@ -236,14 +236,14 @@ class SaveScreenShotCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-    if suffix != "":
-        suffix = "-" + suffix
+        if suffix != "":
+            suffix = "-" + suffix
 
-    urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outname = os.path.join(
-        manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
-    )
-    driver.save_screenshot(outname)
+        urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
+        outname = os.path.join(
+            manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
+        )
+        driver.save_screenshot(outname)
 
 
 # def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
