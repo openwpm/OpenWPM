@@ -227,8 +227,15 @@ class BrowseCommand(BaseCommand):
                 pass
 
 
-def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
-    """ Save a screenshot of the current viewport"""
+class SaveScreenShotCommand(BaseCommand):
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
     if suffix != "":
         suffix = "-" + suffix
 
@@ -237,6 +244,18 @@ def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
         manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
     )
     driver.save_screenshot(outname)
+
+
+# def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
+#     """ Save a screenshot of the current viewport"""
+#     if suffix != "":
+#         suffix = "-" + suffix
+
+#     urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
+#     outname = os.path.join(
+#         manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
+#     )
+#     driver.save_screenshot(outname)
 
 
 def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
