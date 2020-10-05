@@ -227,7 +227,13 @@ class BrowseCommand(BaseCommand):
                 pass
 
 
-class SaveScreenShotCommand(BaseCommand):
+class SaveScreenshotCommand(BaseCommand):
+    def __init__(self, suffix): 
+         self.suffix = suffix 
+  
+    def __repr__(self): 
+        return "SaveScreenshotCommand({})".format(self.suffix)
+
     def execute(
         self,
         webdriver,
@@ -236,14 +242,16 @@ class SaveScreenShotCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-        if suffix != "":
-            suffix = "-" + suffix
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
 
-        urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
+        # get_command.set_visit_browser_id(self.visit_id, self.browser_id)
+
+        urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outname = os.path.join(
-            manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
+            manager_params["screenshot_path"], "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix)
         )
-        driver.save_screenshot(outname)
+        webdriver.save_screenshot(outname)
 
 
 # def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
