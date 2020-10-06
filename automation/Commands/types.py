@@ -55,14 +55,6 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
         return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
 
 
-class SaveScreenshotCommand(BaseCommand):
-    def __init__(self, suffix):
-        self.suffix = suffix
-
-    def __repr__(self):
-        return "SaveScreenshotCommand({})".format(self.suffix)
-
-
 class ScreenshotFullPageCommand(BaseCommand):
     def __init__(self, suffix):
         self.suffix = suffix

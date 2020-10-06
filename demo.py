@@ -51,6 +51,7 @@ for site in sites:
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
+    command_sequence.save_screenshot()
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)
