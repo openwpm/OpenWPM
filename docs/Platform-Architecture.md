@@ -16,19 +16,11 @@ You can call
 ```python
 manager_params, browser_params = TaskManager.load_default_params(number_of_browsers_to_spawn)
 ```
-to get the default parameters. Note that browser_params in this case is a list of dicts, containing as many dicts as you want to spawn browsers and you can change each browser individually.
+to get the default parameters.
+
+To learn more about the `manager_params` and `browser_params` have a look at [Configuration.md](Configuration.md)
 
 `<process_watchdog>` is an optional parameter that can be passed to the `TaskManager` to create another thread that kills off all processes named `Xvfb` or `firefox` that haven't been spawned by OpenWPM.
-
-The power of the platform stems from the variety of parameters passed in through the `browser_params` and `manager_params` dictionaries. We have provided a JSON-encoded dictionary at `automation/default_manager_params.json` and `automation/default_browser_params.json`.
-
-The `manager_params` contain mostly configuration options in regards to which DataAggregator should be chosen,
-and how it should be configured.
-We currently support two output formats `s3` and `local`.
-`s3` saves both structured and unstructured data to Amazon S3, whereas `local` saves the structured data to
-a SQLite Database and saves content to LevelDB.
-
-TODO talk about the `browser_params`
 
 ## Issuing commands
 
