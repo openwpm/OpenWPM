@@ -141,6 +141,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
         `old_channel_id`, the `channel_id` of the HTTP request that
         resulted in a 3XX response, and `new_channel_id`, the HTTP request
         that resulted from that redirect.
+        TODO: `channel_id`s now persist across redirects
 * OCSP POST request bodies are not recorded
 * Note: request and response headers for cached content are also saved,
     with the exception of images.
