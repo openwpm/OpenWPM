@@ -259,18 +259,6 @@ left out of this section.
       visited as a first party.
 * `donottrack`
   * Set to `True` to enable Do Not Track in the browser.
-* `disconnect`
-  * Set to `True` to enable Disconnect with all blocking enabled
-  * The filter list may be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
-* `ghostery`
-  * Set to `True` to enable Ghostery with all blocking enabled
-  * The filter list won't be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
-* `https-everywhere`
-  * Set to `True` to enable HTTPS Everywhere in the browser.
-  * The filter list won't be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
-* `ublock-origin`
-  * Set to `True` to enable uBlock Origin in the browser.
-  * The filter lists may be automatically updated. We recommend checking the version of the xpi [located here](https://github.com/citp/OpenWPM/tree/master/automation/DeployBrowsers/firefox_extensions), which may be outdated.
 * `tracking-protection`
   * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
