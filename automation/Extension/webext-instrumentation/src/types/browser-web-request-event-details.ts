@@ -21,7 +21,7 @@ export interface WebRequestOnBeforeSendHeadersEventDetails {
    * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
    * relate different events of the same request.
    */
-  requestId: number;
+  requestId: string;
   url: string;
   /** Standard HTTP method. */
   method: string;
@@ -55,7 +55,7 @@ export interface WebRequestOnBeforeRequestEventDetails {
    * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
    * relate different events of the same request.
    */
-  requestId: number;
+  requestId: string;
   url: string;
   /** Standard HTTP method. */
   method: string;
@@ -150,7 +150,7 @@ export interface WebRequestOnCompletedEventDetails {
    * The ID of the request. Request IDs are unique within a browser session. As a result, they could be used to
    * relate different events of the same request.
    */
-  requestId: number;
+  requestId: string;
   url: string;
   /** Standard HTTP method. */
   method: string;
