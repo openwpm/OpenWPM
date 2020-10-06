@@ -17,21 +17,13 @@ Table of Contents <!-- omit in toc -->
   * [Install](#install)
   * [Mac OSX](#mac-osx)
 * [Quick Start](#quick-start)
+* [Troubleshooting](#troubleshooting)
 * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
 * [Developer instructions](#developer-instructions)
-* [Instrumentation and Data Access](#instrumentation-and-data-access)
+* [Instrumentation and Configuration](#instrumentation-and-configuration)
 * [Persistence Types](#persistence-types)
     * [Local Databases](#local-databases)
     * [Parquet on Amazon S3](#parquet-on-amazon-s3)
-* [Browser and Platform Configuration](#browser-and-platform-configuration)
-  * [Platform Configuration Options](#platform-configuration-options)
-  * [Browser Configuration Options](#browser-configuration-options)
-* [Browser Profile Support](#browser-profile-support)
-  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
-  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
-    * [Save a profile](#save-a-profile)
-    * [Load a profile](#load-a-profile)
-* [Troubleshooting](#troubleshooting)
 * [Docker Deployment for OpenWPM](#docker-deployment-for-openwpm)
   * [Building the Docker Container](#building-the-docker-container)
   * [Running Measurements from inside the Container](#running-measurements-from-inside-the-container)
@@ -85,8 +77,6 @@ Running Firefox with xvfb on OSX is untested and will require the user to instal
 an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
 been tested, we welcome feedback as to whether this is working.
 
-
-
 Quick Start
 -----------
 
@@ -103,250 +93,6 @@ below.
 The docs provide a more [in-depth tutorial](docs/Using_OpenWPM.md),
 and a description of the [methods of data collection](docs/Instruments.md)
 available.
-
-
-Advice for Measurement Researchers
-----------------------------------
-
-OpenWPM is [often used](https://webtap.princeton.edu/software/) for web
-measurement research. We recommend the following for researchers using the tool:
-
-**Use a versioned [release](https://github.com/mozilla/OpenWPM/releases).** We
-aim to follow Firefox's release cadence, which is roughly once every four
-weeks. If we happen to fall behind on checking in new releases, please file an
-issue. Versions more than a few months out of date will use unsupported
-versions of Firefox, which are likely to have known security
-vulnerabilities. Versions less than v0.10.0 are from a previous architecture
-and should not be used.
-
-**Include the OpenWPM version number in your publication.** As of v0.10.0
-OpenWPM pins all python, npm, and system dependencies. Including this
-information alongside your work will allow other researchers to contextualize
-the results, and can be helpful if future versions of OpenWPM have
-instrumentation bugs that impact results.
-
-Developer instructions
-----------------------
-
-If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](docs/CONTRIBUTING.md)
-
-Instrumentation and Data Access
--------------------------------
-OpenWPM provides several instrumentation modules which can be enabled
-independently of each other for each crawl.
-A list of all instruments, their functions and their output formats can be
-found [here](docs/Instruments.md)
-More detail on the output is available [below](#persistence-types).
-
-Persistence Types
-------------
-
-#### Local Databases
-By default OpenWPM saves all data locally on disk in a variety of formats.
-Most of the instrumentation saves to a SQLite database specified
-by `manager_params['database_name']` in the main output directory. Response
-bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
-the hash of the content. In addition, the browser commands that dump page
-source and save screenshots save them in the `sources` and `screenshots`
-subdirectories of the main output directory. The SQLite schema
-specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
-inline by sending a `create_table` message to the data aggregator.
-
-#### Parquet on Amazon S3
-As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
-Parquet Dataset. This is currently experimental and hasn't been thoroughly
-tested. Screenshots, and page source saving is not currently supported and
-will still be stored in local databases and directories. To enable S3
-saving specify the following configuration parameters in `manager_params`:
-* Persistence Type: `manager_params['output_format'] = 's3'`
-* S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
-* Directory within S3 bucket: `manager_params['s3_directory'] = '2018-09-09_test-crawl-new'`
-
-In order to save to S3 you must have valid access credentials stored in
-`~/.aws`. We do not currently allow you to specify an alternate storage
-location.
-
-**NOTE:** The schemas should be kept in sync with the exception of
-output-specific columns (e.g., `instance_id` in the S3 output). You can compare
-the two schemas by running
-`diff -y automation/DataAggregator/schema.sql automation/DataAggregator/parquet_schema.py`.
-
-Browser and Platform Configuration
-----------------------------------
-
-The browser and platform can be configured by two separate dictionaries. The
-platform configuration options can be set in `manager_params`, while the
-browser configuration options can be set in `browser_params`. The default
-settings are given in `automation/default_manager_params.json` and
-`automation/default_browser_params.json`.
-
-To load the default configuration parameter dictionaries we provide a helper
-function `TaskManager::load_default_params`. For example:
-
-```python
-from automation import TaskManager
-manager_params, browser_params = TaskManager.load_default_params(num_browsers=5)
-```
-
-where `manager_params` is a dictionary and `browser_params` is a length 5 list
-of configuration dictionaries.
-
-### Platform Configuration Options
-
-* `data_directory`
-  * The directory in which to output the crawl database and related files. The
-    directory given will be created if it does not exist.
-* `log_directory`
-  * The directory in which to output platform logs. The
-    directory given will be created if it does not exist.
-* `log_file`
-  * The name of the log file to be written to `log_directory`.
-* `database_name`
-  * The name of the database file to be written to `data_directory`
-* `failure_limit`
-  * The number of successive command failures the platform will tolerate before
-    raising a `CommandExecutionError` exception. Otherwise the default is set
-    to 2 x the number of browsers plus 10.
-* `testing`
-  * A platform wide flag that can be used to only run certain functionality
-    while testing. For example, the Javascript instrumentation
-    [exposes its instrumentation function](https://github.com/citp/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/automation/Extension/firefox/data/content.js#L447-L449)
-    on the page script global to allow test scripts to instrument objects
-    on-the-fly. Depending on where you would like to add test functionality,
-    you may need to propagate the flag.
-  * This is not something you should enable during normal crawls.
-
-### Browser Configuration Options
-
-Note: Instrumentation configuration options are described in the
-*Instrumentation and Data Access* section and profile configuration options are
-described in the *Browser Profile Support* section. As such, these options are
-left out of this section.
-
-* `bot_mitigation`
-  * Performs some actions to prevent the platform from being detected as a bot.
-  * Note, these aren't comprehensive and automated interaction with the site
-    will still appear very bot-like.
-* `display_mode`:
-  * `native`:
-    * Launch the browser normally - GUI will be visible
-  * `headless`:
-    * Launch the browser in headless mode (supported as of Firefox 56),
-        no GUI will be visible.
-    * Use this when running browsers on a remote machine or to run crawls in the
-        background on a local machine.
-  * `xvfb`:
-    * Launch the browser using the X virtual frame buffer. In this mode, Firefox
-      is not running in it's own headless mode, but no GUI will be displayed.
-    * This mode requires `Xvfb` to be on your path. On Ubuntu that is achieved by running
-      `sudo apt-get install xvfb`. For other platforms check [www.X.org](http://www.X.org).
-  * `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
-    "headless" browsing because you do not need to be in a full X environment e.g. on a
-    server. `headless` mode is supported on all platforms and is implemented by the browser
-    but has some differences. For example webGL is not supported in headless mode.
-    https://github.com/mozilla/OpenWPM/issues/448 discusses additional factors to consider
-    when picking a `display_mode`.
-* `browser`
-  * Used to specify which browser to launch. Currently only `firefox` is
-    supported.
-  * Other browsers may be added in the future.
-* `tp_cookies`
-  * Specifies the third-party cookie policy to set in Firefox.
-  * The following options are supported:
-    * `always`: Accept all third-party cookies
-    * `never`: Never accept any third-party cookies
-    * `from_visited`: Only accept third-party cookies from sites that have been
-      visited as a first party.
-* `donottrack`
-  * Set to `True` to enable Do Not Track in the browser.
-* `tracking-protection`
-  * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
-  * Set to `True` to enable Firefox's built-in
-    [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
-
-Browser Profile Support
------------------------
-
-**WARNING: Stateful crawls are currently not supported. Attempts to run
-stateful crawls will throw `NotImplementedError`s. The work required to
-restore support is tracked in
-[this project](https://github.com/mozilla/OpenWPM/projects/2).**
-
-### Stateful vs Stateless crawls
-
-By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
-browser profile between page visits in the same browser. If the browser
-freezes or crashes during the crawl, the profile is saved to disk and restored
-before the next page visit.
-
-It's also possible to run "stateless" crawls, in which each new page visit uses
-a fresh browser profile. To perform a stateless crawl you can restart the
-browser after each command sequence by setting the `reset` initialization
-argument to `True` when creating the command sequence. As an example:
-
-```python
-manager = TaskManager.TaskManager(manager_params, browser_params)
-
-for site in sites:
-    command_sequence = CommandSequence.CommandSequence(site, reset=True)
-    command_sequence.get(sleep=30, timeout=60)
-    manager.execute_command_sequence(command_sequence)
-```
-
-In this example, the browser will `get` the requested `site`, sleep for 30
-seconds, dump the profile cookies to the crawl database, and then restart the
-browser before visiting the next `site` in `sites`.
-
-### Loading and saving a browser profile
-
-It's possible to load and save profiles during stateful crawls. Profile dumps
-currently consist of the following browser storage items:
-
-* cookies
-* localStorage
-* IndexedDB
-* browser history
-
-Other browser state, such as the browser cache, is not saved. In
-[Issue #62](https://github.com/citp/OpenWPM/issues/62) we plan to expand
-profiles to include all browser storage.
-
-#### Save a profile
-
-A browser's profile can be saved to disk for use in later crawls. This can be
-done using a browser command or by setting a browser configuration parameter.
-For long running crawls we recommend saving the profile using the browser
-configuration parameter as the platform will take steps to save the
-profile in the event of a platform-level crash, whereas there is no guarantee
-the browser command will run before a crash.
-
-**Browser configuration parameter:** Set the `profile_archive_dir` browser
-parameter to a directory where the browser profile should be saved. The profile
-will be automatically saved when `TaskManager::close` is called or when a
-platform-level crash occurs.
-
-#### Load a profile
-
-To load a profile, specify the `seed_tar` browser parameter in the browser
-configuration dictionary. This should point to the location of the
-`profile.tar` or (`profile.tar.gz` if compressed) file produced by OpenWPM
-or by manually tarring a firefox profile directory.
-The profile will be automatically extracted and loaded into the browser
-instance for which the configuration parameter was set.
-
-The profile specified by `seed_tar` will be loaded anytime the browser is
-deliberately reset (i.e., using the `reset=True` CommandSequence argument),
-but will not be used during crash recovery. Specifically:
-* For stateful crawls the initial load of Firefox will use the
-profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
-restart for some reason during the crawl, it will use the profile from
-the most recent page visit (pre-crash) rather than the `seed_tar` profile.
-Note that stateful crawl are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
-* For stateless crawls, the initial `seed_tar` will be loaded during each
-new page visit. Note that this means the profile will very likely be
-_incomplete_, as cookies or storage may have been set or changed during the
-page load that are **not** reflected back into the seed profile.
-
 
 Troubleshooting
 ---------------
@@ -405,6 +151,69 @@ Troubleshooting
    into this problem.
 
 
+Advice for Measurement Researchers
+----------------------------------
+
+OpenWPM is [often used](https://webtap.princeton.edu/software/) for web
+measurement research. We recommend the following for researchers using the tool:
+
+**Use a versioned [release](https://github.com/mozilla/OpenWPM/releases).** We
+aim to follow Firefox's release cadence, which is roughly once every four
+weeks. If we happen to fall behind on checking in new releases, please file an
+issue. Versions more than a few months out of date will use unsupported
+versions of Firefox, which are likely to have known security
+vulnerabilities. Versions less than v0.10.0 are from a previous architecture
+and should not be used.
+
+**Include the OpenWPM version number in your publication.** As of v0.10.0
+OpenWPM pins all python, npm, and system dependencies. Including this
+information alongside your work will allow other researchers to contextualize
+the results, and can be helpful if future versions of OpenWPM have
+instrumentation bugs that impact results.
+
+Developer instructions
+----------------------
+
+If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](docs/CONTRIBUTING.md)
+
+Instrumentation and Configuration
+-------------------------------
+OpenWPM provides a breadth of configuration options which can be found
+in [Configuration.md](docs/Configuration.md)
+More detail on the output is available [below](#persistence-types).
+
+Persistence Types
+------------
+
+#### Local Databases
+By default OpenWPM saves all data locally on disk in a variety of formats.
+Most of the instrumentation saves to a SQLite database specified
+by `manager_params['database_name']` in the main output directory. Response
+bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
+the hash of the content. In addition, the browser commands that dump page
+source and save screenshots save them in the `sources` and `screenshots`
+subdirectories of the main output directory. The SQLite schema
+specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
+inline by sending a `create_table` message to the data aggregator.
+
+#### Parquet on Amazon S3
+As an option, OpenWPM can save data directly to an Amazon S3 bucket as a
+Parquet Dataset. This is currently experimental and hasn't been thoroughly
+tested. Screenshots, and page source saving is not currently supported and
+will still be stored in local databases and directories. To enable S3
+saving specify the following configuration parameters in `manager_params`:
+* Persistence Type: `manager_params['output_format'] = 's3'`
+* S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
+* Directory within S3 bucket: `manager_params['s3_directory'] = '2018-09-09_test-crawl-new'`
+
+In order to save to S3 you must have valid access credentials stored in
+`~/.aws`. We do not currently allow you to specify an alternate storage
+location.
+
+**NOTE:** The schemas should be kept in sync with the exception of
+output-specific columns (e.g., `instance_id` in the S3 output). You can compare
+the two schemas by running
+`diff -y automation/DataAggregator/schema.sql automation/DataAggregator/parquet_schema.py`.
 
 Docker Deployment for OpenWPM
 -----------------------------
