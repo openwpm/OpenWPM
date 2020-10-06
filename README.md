@@ -15,6 +15,7 @@ Table of Contents <!-- omit in toc -->
 * [Installation](#installation)
   * [Pre-requisites](#pre-requisites)
   * [Install](#install)
+  * [Mac OSX](#mac-osx)
 * [Quick Start](#quick-start)
 * [Advice for Measurement Researchers](#advice-for-measurement-researchers)
 * [Developer instructions](#developer-instructions)
@@ -71,6 +72,18 @@ To run the install script, run
 After running the install script, activate your conda environment by running:
 
     $ conda activate openwpm
+
+### Mac OSX
+
+You may need to install `make` / `gcc` in order to build the extension.
+The necessary packages are part of xcode: `xcode-select --install`
+
+We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
+these issues and add full CI testing for Mac.
+
+Running Firefox with xvfb on OSX is untested and will require the user to install
+an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
+been tested, we welcome feedback as to whether this is working.
 
 
 
@@ -402,6 +415,8 @@ Troubleshooting
    the environment variable for the session (e.g., `export PYTHONNOUSERSITE=True`
    in bash). Please also add a comment to that issue to let us know you ran
    into this problem.
+
+
 
 Docker Deployment for OpenWPM
 -----------------------------

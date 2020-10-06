@@ -9,7 +9,6 @@
   * [Debugging the platform](#debugging-the-platform)
   * [Managing requirements](#managing-requirements)
   * [Running tests](#running-tests)
-  * [Mac OSX](#mac-osx)
   * [Updating schema docs](#updating-schema-docs)
 
 ## Setting up a dev enviroment
@@ -92,17 +91,6 @@ in the test directory to run all tests:
 See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting
 specific tests and various pytest options.
 
-### Mac OSX
-
-You may need to install `make` / `gcc` in order to build the extension.
-The necessary packages are part of xcode: `xcode-select --install`
-
-We do not run CI tests for Mac, so new issues may arise. We welcome PRs to fix
-these issues and add full CI testing for Mac.
-
-Running Firefox with xvfb on OSX is untested and will require the user to install
-an X11 server. We suggest [XQuartz](https://www.xquartz.org/). This setup has not
-been tested, we welcome feedback as to whether this is working.
 
 ### Updating schema docs
 
