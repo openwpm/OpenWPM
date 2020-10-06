@@ -228,10 +228,10 @@ class BrowseCommand(BaseCommand):
 
 
 class SaveScreenshotCommand(BaseCommand):
-    def __init__(self, suffix): 
-         self.suffix = suffix 
-  
-    def __repr__(self): 
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
         return "SaveScreenshotCommand({})".format(self.suffix)
 
     def execute(
@@ -245,25 +245,12 @@ class SaveScreenshotCommand(BaseCommand):
         if self.suffix != "":
             self.suffix = "-" + self.suffix
 
-        # get_command.set_visit_browser_id(self.visit_id, self.browser_id)
-
         urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outname = os.path.join(
-            manager_params["screenshot_path"], "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix)
+            manager_params["screenshot_path"],
+            "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix),
         )
         webdriver.save_screenshot(outname)
-
-
-# def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
-#     """ Save a screenshot of the current viewport"""
-#     if suffix != "":
-#         suffix = "-" + suffix
-
-#     urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
-#     outname = os.path.join(
-#         manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
-#     )
-#     driver.save_screenshot(outname)
 
 
 def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
