@@ -12,7 +12,7 @@
 
 This is an overview of all tables currently existing in OpenWPM. Over time we want to add
 a description for all fields and tables here.
-If you have any questions on any field, please file an issue or ask in the OpenWPM riot channel and we'll
+If you have any questions on any field, please file an issue or ask in the [OpenWPM riot channel](https://matrix.to/#/#OpenWPM:mozilla.org?via=mozilla.org) and we'll
 update the description of the field here.
 
 # site_visits
