@@ -130,7 +130,7 @@ class CommandSequence:
         open) seems to break element-only screenshots. So using this command
         will cause any future element-only screenshots to be mis-aligned
 
-        NOTE: In geckodriver v0.24 implemented a full screenshot feature, this
+        NOTE: In geckodriver v0.24 the full screenshot feature was implemented, this
         code is still using the above method.
         """
         self.total_timeout += timeout
