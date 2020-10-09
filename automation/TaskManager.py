@@ -15,13 +15,15 @@ import tblib
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
-from .data_aggregator import DataAggregatorHandle
+from .data_aggregator.storage_controller import (
+    ACTION_TYPE_FINALIZE,
+    RECORD_TYPE_META,
+    DataAggregatorHandle,
+)
 from .data_aggregator.storage_providers import (
     StructuredStorageProvider,
     UnstructuredStorageProvider,
 )
-from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
-from .DataAggregator.BaseAggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
 from .Errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
@@ -542,7 +544,7 @@ class TaskManager:
             if command_status == "critical":
                 self.sock.send(
                     (
-                        RECORD_TYPE_SPECIAL,
+                        RECORD_TYPE_META,
                         {
                             "browser_id": browser.browser_id,
                             "success": False,
@@ -579,7 +581,7 @@ class TaskManager:
             if browser.restart_required:
                 self.sock.send(
                     (
-                        RECORD_TYPE_SPECIAL,
+                        RECORD_TYPE_META,
                         {
                             "browser_id": browser.browser_id,
                             "success": False,
