@@ -51,7 +51,6 @@ manager = TaskManager.TaskManager(
         os.path.expanduser(manager_params["data_directory"] + "crawl-data.sqlite")
     ),
     None,
-    logger_kwargs=logging_params,
 )
 
 # Visits the sites

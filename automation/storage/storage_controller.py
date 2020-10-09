@@ -5,6 +5,7 @@ import queue
 import random
 import threading
 import time
+from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
@@ -12,7 +13,7 @@ from multiprocess import Queue
 from automation.utilities.multiprocess_utils import Process
 
 from ..SocketInterface import AsyncServerSocket
-from ..types import BrowserId, ManagerParams, VisitId
+from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
     TableName,
@@ -63,7 +64,7 @@ class StorageController:
         self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger("openwpm")
-        self.current_tasks: DefaultDict[VisitId, List[asyncio.Task]] = DefaultDict(list)
+        self.current_tasks: DefaultDict[VisitId, List[asyncio.Task]] = defaultdict(list)
         self.sock: Optional[AsyncServerSocket] = None
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
@@ -86,13 +87,14 @@ class StorageController:
             return
 
         record: Tuple[str, Any] = await self.record_queue.get()
-
         if len(record) != 2:
             self.logger.error("Query is not the correct length %s", repr(record))
             return
 
         self._last_record_received = time.time()
         record_type, data = record
+
+        self.logger.info("Received record for record_type %s", record_type)
 
         if record_type == RECORD_TYPE_CREATE:
             raise RuntimeError(
@@ -102,7 +104,6 @@ class StorageController:
                 launching the DataAggregator
                 """
             )
-            return
 
         if record_type == RECORD_TYPE_CONTENT:
             assert isinstance(data, tuple)
@@ -145,7 +146,7 @@ class StorageController:
         visit_id = VisitId(data["visit_id"])
         action = data["action"]
 
-        self.logger.debug(
+        self.logger.info(
             "Received meta message to %s for visit_id %d", action, visit_id
         )
         if action == ACTION_TYPE_INITIALIZE:
@@ -219,7 +220,7 @@ class StorageController:
             "Saving current records since no new data has "
             "been written for %d seconds." % (time.time() - self._last_record_received)
         )
-        self.drain_queue()
+        await self.drain_queue()
         self._last_record_received = None
 
     async def finish_tasks(self) -> None:
