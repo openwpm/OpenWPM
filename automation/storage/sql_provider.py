@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Tuple
 
 from automation.types import VisitId
 
-from .storage_providers import StructuredStorageProvider
+from .storage_providers import StructuredStorageProvider, TableName
 
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 
@@ -33,7 +33,7 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         self.db.commit()
 
     async def store_record(
-        self, table: str, visit_id: VisitId, record: Dict[str, Any]
+        self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         """Submit a record to be stored
         The storing might not happen immediately
@@ -61,7 +61,7 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
             )
 
     def _generate_insert(
-        self, table: str, data: Dict[str, Any]
+        self, table: TableName, data: Dict[str, Any]
     ) -> Tuple[str, List[Any]]:
         """Generate a SQL query from `record`"""
         statement = "INSERT INTO %s (" % table

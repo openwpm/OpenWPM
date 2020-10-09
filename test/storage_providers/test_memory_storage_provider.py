@@ -10,7 +10,7 @@ from automation.storage.in_memory_storage import (
 )
 from automation.storage.leveldb import LevelDbProvider
 from automation.storage.sql_provider import SqlLiteStorageProvider
-from automation.storage.storage_providers import StructuredStorageProvider
+from automation.storage.storage_providers import StructuredStorageProvider, TableName
 from automation.types import VisitId
 
 from ..openwpmtest import OpenWPMTest
@@ -66,7 +66,7 @@ class TestStructuredStorageProvider(OpenWPMTest):
         self, structured_provider: StructuredStorageProvider
     ) -> None:
         await structured_provider.store_record(
-            "test", VisitId(2), {"visit_id": 2, "data": "test"}
+            TableName("test"), VisitId(2), {"visit_id": 2, "data": "test"}
         )
         await structured_provider.finalize_visit_id(VisitId(2))
         await structured_provider.flush_cache()

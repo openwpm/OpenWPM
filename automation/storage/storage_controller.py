@@ -5,7 +5,7 @@ import queue
 import random
 import threading
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, DefaultDict, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
 
@@ -13,7 +13,11 @@ from automation.utilities.multiprocess_utils import Process
 
 from ..SocketInterface import AsyncServerSocket
 from ..types import BrowserId, ManagerParams, VisitId
-from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
+from .storage_providers import (
+    StructuredStorageProvider,
+    TableName,
+    UnstructuredStorageProvider,
+)
 
 RECORD_TYPE_CONTENT = "page_content"
 RECORD_TYPE_META = "meta_information"
@@ -59,7 +63,7 @@ class StorageController:
         self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger("openwpm")
-        self.current_visit_ids: List[VisitId] = list()  # All visit_ids in flight
+        self.current_tasks: DefaultDict[VisitId, List[asyncio.Task]] = DefaultDict(list)
         self.sock: Optional[AsyncServerSocket] = None
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
@@ -120,10 +124,14 @@ class StorageController:
             await self._handle_meta(data)
             return
         visit_id = VisitId(data["visit_id"])
-        self.current_visit_ids.append(visit_id)
+        table_name = TableName(record_type)
 
-        await self.structured_storage.store_record(
-            table=record_type, visit_id=visit_id, record=data
+        self.current_tasks[visit_id].append(
+            asyncio.create_task(
+                self.structured_storage.store_record(
+                    table=table_name, visit_id=visit_id, record=data
+                )
+            )
         )
 
     async def _handle_meta(self, data: Dict[str, Any]) -> None:
@@ -137,22 +145,24 @@ class StorageController:
         visit_id = VisitId(data["visit_id"])
         action = data["action"]
 
+        self.logger.debug(
+            "Received meta message to %s for visit_id %d", action, visit_id
+        )
         if action == ACTION_TYPE_INITIALIZE:
-            self.current_visit_ids.append(visit_id)
+            return
         elif action == ACTION_TYPE_FINALIZE:
             success = data["success"]
-            try:
-                self.current_visit_ids.remove(visit_id)
-            except ValueError:
-                self.logger.error(
-                    "Trying to remove visit_id %i from current_visit_ids failed",
-                    visit_id,
-                )
+            for task in self.current_tasks[visit_id]:
+                await task
+            self.logger.debug(
+                "Awaited all tasks for visit_id %d while finalizing", visit_id
+            )
 
             await self.structured_storage.finalize_visit_id(
                 visit_id, interrupted=not success
             )
             self.completion_queue.put((visit_id, success))
+            del self.current_tasks[visit_id]
         else:
             raise ValueError("Unexpected action: %s", action)
 
@@ -212,14 +222,19 @@ class StorageController:
         self.drain_queue()
         self._last_record_received = None
 
+    async def finish_tasks(self) -> None:
+        for visit_id, tasks in self.current_tasks.items():
+            for task in tasks:
+                await task
+
     async def _run(self) -> None:
         await self.startup()
         while not self.should_shutdown():
             self.update_status_queue()
             await self.save_batch_if_past_timeout()
             await self.poll_queue()
-        await asyncio.sleep(3)
         await self.drain_queue()
+        await self.finish_tasks()
         await self.shutdown()
 
     def run(self) -> None:

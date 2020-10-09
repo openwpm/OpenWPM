@@ -1,7 +1,7 @@
 import gzip
 import io
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, NewType, Tuple
 
 from automation.types import VisitId
 
@@ -10,6 +10,8 @@ This module contains all base classes of the storage provider hierachy
 Any subclass of these classes should be able to be used in OpenWPM
 without any changes to the rest of the code base
 """
+
+TableName = NewType("TableName", str)
 
 
 class StorageProvider(ABC):
@@ -37,7 +39,7 @@ class StructuredStorageProvider(StorageProvider):
 
     @abstractmethod
     async def store_record(
-        self, table: str, visit_id: VisitId, record: Dict[str, Any]
+        self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         """Submit a record to be stored
         The storing might not happen immediately

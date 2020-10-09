@@ -1,3 +1,4 @@
+import logging
 import os
 
 from automation import CommandSequence, TaskManager
@@ -39,6 +40,8 @@ browser_params[0]["display_mode"] = "headless"
 manager_params["data_directory"] = "~/Desktop/"
 manager_params["log_directory"] = "~/Desktop/"
 
+logging_params = {"log_level_console": logging.DEBUG}
+
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
 manager = TaskManager.TaskManager(
@@ -48,6 +51,7 @@ manager = TaskManager.TaskManager(
         os.path.expanduser(manager_params["data_directory"] + "crawl-data.sqlite")
     ),
     None,
+    logger_kwargs=logging_params,
 )
 
 # Visits the sites

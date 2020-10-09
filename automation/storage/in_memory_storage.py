@@ -6,7 +6,11 @@ from multiprocess import Queue
 from automation.types import VisitId
 
 from .arrow_storage import ArrowProvider
-from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
+from .storage_providers import (
+    StructuredStorageProvider,
+    TableName,
+    UnstructuredStorageProvider,
+)
 
 """
 This module contains implementations for various kinds of storage providers
@@ -33,7 +37,7 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         pass
 
     async def store_record(
-        self, table: str, visit_id: VisitId, record: Dict[str, Any]
+        self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         self.queue.put((table, record))
 
