@@ -117,7 +117,7 @@ class StorageController:
 
             return
         if record_type == RECORD_TYPE_META:
-            self._handle_meta(data)
+            await self._handle_meta(data)
             return
         visit_id = VisitId(data["visit_id"])
         self.current_visit_ids.append(visit_id)
@@ -152,7 +152,7 @@ class StorageController:
             await self.structured_storage.finalize_visit_id(
                 visit_id, interrupted=not success
             )
-            self.completion_queue.put(visit_id, success)
+            self.completion_queue.put((visit_id, success))
         else:
             raise ValueError("Unexpected action: %s", action)
 
