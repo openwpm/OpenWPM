@@ -1,13 +1,13 @@
-from automation.data_aggregator import DataAggregatorHandle
-from automation.data_aggregator.in_memory_storage import (
+from automation.storage.in_memory_storage import (
     MemoryStructuredProvider,
     MemoryUnstructuredProvider,
 )
+from automation.storage.storage_controller import StorageControllerHandle
 
 
-def test_startup_and_shutdown():
+def test_startup_and_shutdown() -> None:
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
-    agg_handle = DataAggregatorHandle(structured, unstructured)
+    agg_handle = StorageControllerHandle(structured, unstructured)
     agg_handle.launch()
     agg_handle.shutdown()

@@ -1,39 +1,65 @@
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Tuple
 
+from multiprocess import Queue
+
 from automation.types import VisitId
 
 from .arrow_storage import ArrowProvider
 from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
 
+"""
+This module contains implementations for various kinds of storage providers
+that store their results in memory.
+These classes are designed to allow for easier parallel testing as there are
+no shared resources between tests. It also makes it easier to verify results
+by not having to do a round trip to a perstitent storage provider
+"""
+
 
 class MemoryStructuredProvider(StructuredStorageProvider):
-    """This storage provider stores all data in memory under self.storage.
+    """
+    This storage provider passes all it's data to the MemoryStructuredProviderHandle in
+    process safe way.
     This makes it ideal for testing and for small crawls where no persistence is required
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.storage: DefaultDict[str, List[Any]] = defaultdict(list)
-        self._completed_visit_ids: List[Tuple[VisitId, bool]] = list()
+        self.queue = Queue()
+        self.handle = MemoryStructuredProviderHandle(self.queue)
 
-    def flush_cache(self) -> None:
+    async def flush_cache(self) -> None:
         pass
 
-    def store_record(
+    async def store_record(
         self, table: str, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
-        self.storage[table].append(record)
-        pass
+        self.queue.put((table, record))
 
-    def run_visit_completion_tasks(
+    async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> None:
-        self._completed_visit_ids.append((visit_id, interrupted))
         pass
 
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
         pass
+
+
+class MemoryStructuredProviderHandle:
+    """
+    Call poll_queue to load all available data into the dict
+    at self.storage
+    """
+
+    def __init__(self, queue: Queue) -> None:
+        self.queue = queue
+        self.storage: DefaultDict[str, List[Any]] = defaultdict(list)
+
+    def poll_queue(self) -> None:
+        while not self.queue.empty():
+            table, record = self.queue.get()
+            self.storage[table].append(record)
 
 
 class MemoryUnstructuredProvider(UnstructuredStorageProvider):
@@ -45,7 +71,7 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
     def __init__(self) -> None:
         self.storage: Dict[str, bytes] = {}
 
-    def store_blob(
+    async def store_blob(
         self,
         filename: str,
         blob: bytes,
@@ -59,10 +85,10 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
             blob = bytesIO.getvalue()
         self.storage[filename] = blob
 
-    def flush_cache(self):
+    async def flush_cache(self) -> None:
         pass
 
-    def shutdown(self):
+    async def shutdown(self) -> None:
         pass
 
 

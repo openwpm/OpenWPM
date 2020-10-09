@@ -1,8 +1,8 @@
 import os
 
 from automation import CommandSequence, TaskManager
-from automation.data_aggregator.in_memory_storage import MemoryUnstructuredProvider
-from automation.data_aggregator.sql_provider import SqlLiteStorageProvider
+from automation.storage.in_memory_storage import MemoryUnstructuredProvider
+from automation.storage.sql_provider import SqlLiteStorageProvider
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1

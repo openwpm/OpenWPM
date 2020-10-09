@@ -1,3 +1,4 @@
+import asyncio
 import json
 import socket
 import struct
@@ -47,9 +48,7 @@ class ServerSocket:
                 thread.start()
             except ConnectionAbortedError:
                 # Workaround for #278
-                print(
-                    "A connection establish request was performed " "on a closed socket"
-                )
+                print("A connection establish request was performed on a closed socket")
                 return
 
     def _handle_conn(self, client, address):
@@ -93,10 +92,14 @@ class ServerSocket:
                             % (msg, traceback.format_exc(e))
                         )
                         continue
-                self.queue.put(msg)
+                self._put_into_queue(msg)
         except RuntimeError:
             if self.verbose:
                 print("Client socket: " + str(address) + " closed")
+
+    def _put_into_queue(self, msg):
+        """Put the parsed message into a queue from where it can be read by consumers"""
+        self.queue.put(msg)
 
     def receive_msg(self, client, msglen):
         msg = b""
@@ -109,6 +112,25 @@ class ServerSocket:
 
     def close(self):
         self.sock.close()
+
+
+class AsyncServerSocket(ServerSocket):
+    def __init__(
+        self,
+        queue: asyncio.Queue,
+        loop: asyncio.AbstractEventLoop,
+        name=None,
+        verbose=False,
+    ):
+        super().__init__(name=name, verbose=verbose)
+        self.queue = queue
+        self.loop = loop
+
+    def _put_into_queue(self, msg):
+        async def callback(queue, msg):
+            queue.put_nowait(msg)
+
+        asyncio.run_coroutine_threadsafe(callback(self.queue, msg), self.loop)
 
 
 class ClientSocket:

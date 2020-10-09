@@ -15,15 +15,12 @@ class ArrowProvider(StructuredStorageProvider):
     serializes records into the arrow format
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._records: Dict[VisitId, Dict[str, List[Dict[str, Any]]]] = {}
         self._instance_id = random.getrandbits(32)
 
-    def flush_cache(self):
-        pass
-
-    def store_record(
+    async def store_record(
         self, table: str, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         records = self._records[visit_id]
@@ -36,5 +33,5 @@ class ArrowProvider(StructuredStorageProvider):
         records[table].append(record)
 
     @abstractmethod
-    def write_table(self, table: Table) -> None:
+    async def write_table(self, table: Table) -> None:
         """Write out the table to persistent storage"""

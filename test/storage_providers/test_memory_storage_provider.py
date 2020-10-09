@@ -1,14 +1,16 @@
+import asyncio
 from typing import Any, Dict, List, Tuple
 
 import pytest
 
-from automation.data_aggregator.in_memory_storage import (
+from automation.storage.in_memory_storage import (
     MemoryArrowProvider,
     MemoryStructuredProvider,
     MemoryUnstructuredProvider,
 )
-from automation.data_aggregator.leveldb import LevelDbProvider
-from automation.data_aggregator.sql_provider import SqlLiteStorageProvider
+from automation.storage.leveldb import LevelDbProvider
+from automation.storage.sql_provider import SqlLiteStorageProvider
+from automation.storage.storage_providers import StructuredStorageProvider
 from automation.types import VisitId
 
 from ..openwpmtest import OpenWPMTest
@@ -30,7 +32,9 @@ structured_scenarios: List[Tuple[str, Dict[str, Any]]] = [
 
 
 @pytest.fixture
-def structured_provider(request, tmp_path_factory):
+def structured_provider(
+    request: Any, tmp_path_factory: Any
+) -> StructuredStorageProvider:
     if request.param == memory_structured:
         return MemoryStructuredProvider()
     elif request.param == sqllite:
@@ -41,7 +45,7 @@ def structured_provider(request, tmp_path_factory):
     raise ValueError("invalid internal test config")
 
 
-def pytest_generate_tests(metafunc):
+def pytest_generate_tests(metafunc: Any) -> Any:
     # Source: https://docs.pytest.org/en/latest/example/parametrize.html#a-quick-port-of-testscenarios  # noqa
     idlist = []
     argvalues = []
@@ -54,22 +58,24 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize(argnames, argvalues, ids=idlist, scope="class", indirect=True)
 
 
+@pytest.mark.asyncio
 class TestStructuredStorageProvider(OpenWPMTest):
     scenarios = structured_scenarios
 
-    def test_basic_access(self, structured_provider):
-        structured_provider.store_record(
+    async def test_basic_access(
+        self, structured_provider: StructuredStorageProvider
+    ) -> None:
+        await structured_provider.store_record(
             "test", VisitId(2), {"visit_id": 2, "data": "test"}
         )
-        structured_provider.run_visit_completion_tasks(VisitId(2))
-        structured_provider.flush_cache()
-        assert structured_provider.saved_visit_ids() == [(2, False)]
+        await structured_provider.finalize_visit_id(VisitId(2))
+        await structured_provider.flush_cache()
 
 
 class TestUnstructuredStorageProvide(OpenWPMTest):
     scenarios: List[Tuple[str, Dict[str, Any]]] = [(memory_unstructured, {})]
 
-    def test_basic_unstructured_storing(self):
+    async def test_basic_unstructured_storing(self) -> None:
         test_string = "This is my test string"
         blob = test_string.encode()
         prov = MemoryUnstructuredProvider()

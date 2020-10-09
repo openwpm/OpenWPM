@@ -14,7 +14,7 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
 class SqlLiteStorageProvider(StructuredStorageProvider):
-    def __init__(self, db_path: PathLike):
+    def __init__(self, db_path: PathLike) -> None:
         super().__init__()
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -23,16 +23,16 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         self.logger = logging.getLogger("openwpm")
         self._create_tables()
 
-    def _create_tables(self):
+    def _create_tables(self) -> None:
         """Create tables (if this is a new database)"""
         with open(SCHEMA_FILE, "r") as f:
             self.db.executescript(f.read())
         self.db.commit()
 
-    def flush_cache(self):
+    async def flush_cache(self) -> None:
         self.db.commit()
 
-    def store_record(
+    async def store_record(
         self, table: str, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         """Submit a record to be stored
@@ -77,14 +77,13 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
-    def run_visit_completion_tasks(
+    async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> None:
         if interrupted:
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             self.cur.execute("INSERT INTO incomplete_visits VALUES (?)", (visit_id,))
-        self._completed_visit_ids.append((visit_id, interrupted))
 
-    def shutdown(self):
+    async def shutdown(self) -> None:
         self.db.commit()
         self.db.close()

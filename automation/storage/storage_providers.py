@@ -19,12 +19,12 @@ class StorageProvider(ABC):
     """
 
     @abstractmethod
-    def flush_cache(self) -> None:
+    async def flush_cache(self) -> None:
         """ Blockingly write out any cached data to the respective storage """
         pass
 
     @abstractmethod
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
         """Close all open ressources
         After this method has been called no further calls should be made to the object
         """
@@ -32,22 +32,11 @@ class StorageProvider(ABC):
 
 
 class StructuredStorageProvider(StorageProvider):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self._completed_visit_ids: List[Tuple[VisitId, bool]] = list()
-
-    def saved_visit_ids(self) -> List[Tuple[VisitId, bool]]:
-        """Return the list of all visit_ids that have been saved to permanent storage
-        since the last time this method was called
-
-        For each visit_id it's also noted whether they were interrupted
-        """
-        temp = self._completed_visit_ids
-        self._completed_visit_ids = list()
-        return temp
 
     @abstractmethod
-    def store_record(
+    async def store_record(
         self, table: str, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         """Submit a record to be stored
@@ -56,23 +45,25 @@ class StructuredStorageProvider(StorageProvider):
         pass
 
     @abstractmethod
-    def run_visit_completion_tasks(
+    async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> None:
         """This method is invoked to inform the StrucuturedStorageProvider that no more
         records for this visit_id will be submitted
+        It will only return once all records for this visit_id have been saved
+        to permanent storage.
         """
         pass
 
 
 class UnstructuredStorageProvider(StorageProvider):
     @abstractmethod
-    def store_blob(
+    async def store_blob(
         self,
         filename: str,
         blob: bytes,
         compressed: bool = True,
-        skip_if_exists: bool = True,
+        overwrite: bool = False,
     ) -> None:
         """Stores the given bytes under the provided filename"""
         pass

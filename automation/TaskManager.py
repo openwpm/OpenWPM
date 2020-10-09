@@ -15,19 +15,19 @@ import tblib
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
-from .data_aggregator.storage_controller import (
-    ACTION_TYPE_FINALIZE,
-    RECORD_TYPE_META,
-    DataAggregatorHandle,
-)
-from .data_aggregator.storage_providers import (
-    StructuredStorageProvider,
-    UnstructuredStorageProvider,
-)
 from .Errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
 from .SocketInterface import ClientSocket
+from .storage.storage_controller import (
+    ACTION_TYPE_FINALIZE,
+    RECORD_TYPE_META,
+    StorageControllerHandle,
+)
+from .storage.storage_providers import (
+    StructuredStorageProvider,
+    UnstructuredStorageProvider,
+)
 from .types import BrowserParams, ManagerParams
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
@@ -292,7 +292,7 @@ class TaskManager:
         unstructured_storage_provider: UnstructuredStorageProvider,
     ) -> None:
         """Launch the necessary data aggregators"""
-        self.data_aggregator_handle = DataAggregatorHandle(
+        self.data_aggregator_handle = StorageControllerHandle(
             structured_storage_provider, unstructured_storage_provider
         )
         self.data_aggregator_handle.launch()

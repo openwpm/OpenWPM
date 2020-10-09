@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import logging
 import queue
@@ -10,7 +11,7 @@ from multiprocess import Queue
 
 from automation.utilities.multiprocess_utils import Process
 
-from ..SocketInterface import ServerSocket
+from ..SocketInterface import AsyncServerSocket
 from ..types import BrowserId, ManagerParams, VisitId
 from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
 
@@ -27,7 +28,7 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 STATUS_UPDATE_INTERVAL = 5  # seconds
 
 
-class DataAggregator:
+class StorageController:
     def __init__(
         self,
         structured_storage: StructuredStorageProvider,
@@ -58,31 +59,37 @@ class DataAggregator:
         self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger("openwpm")
-        self.curent_visit_ids: List[VisitId] = list()  # All visit_ids in flight
-        self.sock: Optional[ServerSocket] = None
+        self.current_visit_ids: List[VisitId] = list()  # All visit_ids in flight
+        self.sock: Optional[AsyncServerSocket] = None
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
 
-    def startup(self):
+    async def startup(self) -> None:
         """Puts the DataAggregator into a runable state
         by starting up the ServerSocket"""
-        self.sock = ServerSocket(name=type(self).__name__)
+        self.record_queue = asyncio.Queue()
+        self.sock = AsyncServerSocket(
+            self.record_queue, asyncio.get_event_loop(), name=type(self).__name__
+        )
         self.status_queue.put(self.sock.sock.getsockname())
         self.sock.start_accepting()
-        self.record_queue = self.sock.queue
 
-    def poll_queue(self) -> None:
+    async def poll_queue(self) -> None:
+        """Tries to get one record from the queue and processes it, if there is one"""
         assert self.record_queue is not None
-        try:
-            record: Tuple[str, Any] = self.record_queue.get(block=True, timeout=5)
-        except queue.Empty:
+        if self.record_queue.empty():
             return
+
+        record: Tuple[str, Any] = await self.record_queue.get()
+
         if len(record) != 2:
             self.logger.error("Query is not the correct length %s", repr(record))
             return
+
         self._last_record_received = time.time()
         record_type, data = record
+
         if record_type == RECORD_TYPE_CREATE:
             raise RuntimeError(
                 f"""{RECORD_TYPE_CREATE} is no longer supported.
@@ -92,6 +99,7 @@ class DataAggregator:
                 """
             )
             return
+
         if record_type == RECORD_TYPE_CONTENT:
             assert isinstance(data, tuple)
             assert len(data) == 2
@@ -103,18 +111,22 @@ class DataAggregator:
                 return
             content, content_hash = data
             content = base64.b64decode(content)
-            self.unstructured_storage.store_blob(filename=content_hash, blob=content)
+            await self.unstructured_storage.store_blob(
+                filename=content_hash, blob=content
+            )
+
             return
         if record_type == RECORD_TYPE_META:
             self._handle_meta(data)
             return
         visit_id = VisitId(data["visit_id"])
-        self.curent_visit_ids.append(visit_id)
-        self.structured_storage.store_record(
+        self.current_visit_ids.append(visit_id)
+
+        await self.structured_storage.store_record(
             table=record_type, visit_id=visit_id, record=data
         )
 
-    def _handle_meta(self, data: Dict[str, Any]) -> None:
+    async def _handle_meta(self, data: Dict[str, Any]) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are metainformation
         communicated to the aggregator
@@ -122,24 +134,27 @@ class DataAggregator:
         - finalize: A message sent by the extension to
                     signal that a visit_id is complete.
         """
-        if data["action"] == ACTION_TYPE_INITIALIZE:
-            self.curent_visit_ids.append(data["visit_id"])
-        elif data["action"] == ACTION_TYPE_FINALIZE:
+        visit_id = VisitId(data["visit_id"])
+        action = data["action"]
+
+        if action == ACTION_TYPE_INITIALIZE:
+            self.current_visit_ids.append(visit_id)
+        elif action == ACTION_TYPE_FINALIZE:
+            success = data["success"]
             try:
-                self.curent_visit_ids.remove(data["visit_id"])
+                self.current_visit_ids.remove(visit_id)
             except ValueError:
                 self.logger.error(
-                    "Trying to remove visit_id %i " "from current_visit_ids failed",
-                    data["visit_id"],
+                    "Trying to remove visit_id %i from current_visit_ids failed",
+                    visit_id,
                 )
 
-            self.structured_storage.run_visit_completion_tasks(
-                data["visit_id"], interrupted=not data["success"]
+            await self.structured_storage.finalize_visit_id(
+                visit_id, interrupted=not success
             )
+            self.completion_queue.put(visit_id, success)
         else:
-            raise ValueError(
-                "Unexpected meta " "information type: %s" % data["meta_type"]
-            )
+            raise ValueError("Unexpected action: %s", action)
 
     def update_status_queue(self) -> None:
         """Send manager process a status update."""
@@ -153,26 +168,20 @@ class DataAggregator:
         )
         self._last_update = time.time()
 
-    def update_completion_queue(self) -> None:
-        for pair in self.structured_storage.saved_visit_ids():
-            self.completion_queue.put(pair)
-            self.curent_visit_ids.remove(pair[0])
-
-    def drain_queue(self) -> None:
+    async def drain_queue(self) -> None:
         """ Ensures queue is empty before closing """
-        time.sleep(3)  # TODO: the socket needs a better way of closing
         while not self.record_queue.empty():
-            self.poll_queue()
+            await self.poll_queue()
         self.logger.info("Queue was flushed completely")
 
-    def shutdown(self) -> None:
-        self.structured_storage.flush_cache()
-        self.structured_storage.shutdown()
+    async def shutdown(self) -> None:
+        await self.structured_storage.flush_cache()
+        await self.structured_storage.shutdown()
         if self.unstructured_storage is not None:
-            self.unstructured_storage.flush_cache()
-            self.unstructured_storage.shutdown()
+            await self.unstructured_storage.flush_cache()
+            await self.unstructured_storage.shutdown()
 
-    def should_shutdown(self):
+    def should_shutdown(self) -> bool:
         """Return `True` if the listener has received a shutdown signal
         Sets `self._relaxed` and `self.shutdown_flag`
         `self._relaxed means this shutdown is
@@ -187,7 +196,7 @@ class DataAggregator:
             return True
         return False
 
-    def save_batch_if_past_timeout(self):
+    async def save_batch_if_past_timeout(self) -> None:
         """Save the current batch of records if no new data has been received.
 
         If we aren't receiving new data for this batch we commit early
@@ -197,28 +206,27 @@ class DataAggregator:
         if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
             return
         self.logger.debug(
-            "Saving current record batches to S3 since no new data has "
+            "Saving current records since no new data has "
             "been written for %d seconds." % (time.time() - self._last_record_received)
         )
         self.drain_queue()
         self._last_record_received = None
 
+    async def _run(self) -> None:
+        await self.startup()
+        while not self.should_shutdown():
+            self.update_status_queue()
+            await self.save_batch_if_past_timeout()
+            await self.poll_queue()
+        await asyncio.sleep(3)
+        await self.drain_queue()
+        await self.shutdown()
 
-def listener_process_runner(aggregator: DataAggregator) -> None:
-
-    aggregator.startup()
-
-    while not aggregator.should_shutdown():
-        aggregator.update_status_queue()
-        aggregator.update_completion_queue()
-        aggregator.save_batch_if_past_timeout()
-        aggregator.poll_queue()
-
-    aggregator.drain_queue()
-    aggregator.shutdown()
+    def run(self) -> None:
+        asyncio.run(self._run(), debug=True)
 
 
-class DataAggregatorHandle:
+class StorageControllerHandle:
     """This class contains all methods relevant for the TaskManager
     to interact with the DataAggregator
     """
@@ -235,9 +243,9 @@ class DataAggregatorHandle:
         self.completion_queue = Queue()
         self.shutdown_queue = Queue()
         self._last_status = None
-        self._last_status_received = None
+        self._last_status_received: Optional[float] = None
         self.logger = logging.getLogger("openwpm")
-        self.aggregator = DataAggregator(
+        self.aggregator = StorageController(
             structured_storage,
             unstructured_storage,
             status_queue=self.status_queue,
@@ -263,7 +271,7 @@ class DataAggregatorHandle:
         """
         return BrowserId(random.getrandbits(32))
 
-    def save_configuration(self, openwpm_version, browser_version):
+    def save_configuration(self, openwpm_version: str, browser_version: str) -> None:
         # FIXME I need to find a solution for this
         self.logger.error(
             "Can't log config as of yet, because it's still not implemented"
@@ -272,8 +280,8 @@ class DataAggregatorHandle:
     def launch(self) -> None:
         """Starts the data aggregator"""
         self.listener_process = Process(
-            name="DataAggregator",
-            target=listener_process_runner,
+            name="StorageController",
+            target=StorageController.run,
             args=(self.aggregator,),
         )
         self.listener_process.daemon = True
@@ -312,7 +320,7 @@ class DataAggregatorHandle:
         self.listener_address = None
         self.listener_process = None
 
-    def get_most_recent_status(self):
+    def get_most_recent_status(self) -> int:
         """Return the most recent queue size sent from the listener process"""
 
         # Block until we receive the first status update
@@ -333,7 +341,7 @@ class DataAggregatorHandle:
 
         return self._last_status
 
-    def get_status(self):
+    def get_status(self) -> int:
         """Get listener process status. If the status queue is empty, block."""
         try:
             self._last_status = self.status_queue.get(
@@ -341,8 +349,10 @@ class DataAggregatorHandle:
             )
             self._last_status_received = time.time()
         except queue.Empty:
+            assert self._last_status_received is not None
             raise RuntimeError(
                 "No status update from DataAggregator listener process "
                 "for %d seconds." % (time.time() - self._last_status_received)
             )
+        assert isinstance(self._last_status, int)
         return self._last_status
