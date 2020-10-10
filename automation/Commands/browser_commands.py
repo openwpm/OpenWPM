@@ -314,13 +314,13 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
         )
         pass
 
+
 class ScreenshotFullPageCommand(BaseCommand):
     def __init__(self, suffix):
         self.suffix = suffix
 
     def __repr__(self):
         return "ScreenshotFullPageCommand({})".format(self.suffix)
-        
 
     def execute(
         self,
@@ -337,7 +337,8 @@ class ScreenshotFullPageCommand(BaseCommand):
             self.suffix = "-" + self.suffix
         urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outname = os.path.join(
-            self.outdir, "%i-%s%s-part-%%i-%%i.png" % (self.visit_id, urlhash, self.suffix)
+            self.outdir,
+            "%i-%s%s-part-%%i-%%i.png" % (self.visit_id, urlhash, self.suffix),
         )
 
         try:
@@ -345,8 +346,12 @@ class ScreenshotFullPageCommand(BaseCommand):
             max_height = execute_script_with_retry(
                 webdriver, "return document.body.scrollHeight;"
             )
-            inner_height = execute_script_with_retry(webdriver, "return window.innerHeight;")
-            curr_scrollY = execute_script_with_retry(webdriver, "return window.scrollY;")
+            inner_height = execute_script_with_retry(
+                webdriver, "return window.innerHeight;"
+            )
+            curr_scrollY = execute_script_with_retry(
+                webdriver, "return window.scrollY;"
+            )
             prev_scrollY = -1
             webdriver.save_screenshot(outname % (part, curr_scrollY))
             while (
@@ -366,7 +371,9 @@ class ScreenshotFullPageCommand(BaseCommand):
                 # Update control variables
                 part += 1
                 prev_scrollY = curr_scrollY
-                curr_scrollY = execute_script_with_retry(webdriver, "return window.scrollY;")
+                curr_scrollY = execute_script_with_retry(
+                    webdriver, "return window.scrollY;"
+                )
 
                 # Save screenshot
                 webdriver.save_screenshot(outname % (part, curr_scrollY))
@@ -379,6 +386,8 @@ class ScreenshotFullPageCommand(BaseCommand):
             return
 
         _stitch_screenshot_parts(self.visit_id, self.browser_id, manager_params)
+
+
 # def screenshot_full_page(visit_id, browser_id, driver, manager_params, suffix=""):
 
 #     outdir = os.path.join(manager_params["screenshot_path"], "parts")
