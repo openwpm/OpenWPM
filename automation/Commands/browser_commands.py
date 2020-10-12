@@ -315,77 +315,57 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
         pass
 
 
-class ScreenshotFullPageCommand(BaseCommand):
-    def __init__(self, suffix):
-        self.suffix = suffix
+def screenshot_full_page(visit_id, browser_id, driver, manager_params, suffix=""):
 
-    def __repr__(self):
-        return "ScreenshotFullPageCommand({})".format(self.suffix)
+    outdir = os.path.join(manager_params["screenshot_path"], "parts")
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+    if suffix != "":
+        suffix = "-" + suffix
+    urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
+    outname = os.path.join(
+        outdir, "%i-%s%s-part-%%i-%%i.png" % (visit_id, urlhash, suffix)
+    )
 
-    def execute(
-        self,
-        webdriver,
-        browser_settings,
-        browser_params,
-        manager_params,
-        extension_socket,
-    ):
-        self.outdir = os.path.join(manager_params["screenshot_path"], "parts")
-        if not os.path.isdir(self.outdir):
-            os.mkdir(self.outdir)
-        if self.suffix != "":
-            self.suffix = "-" + self.suffix
-        urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
-        outname = os.path.join(
-            self.outdir,
-            "%i-%s%s-part-%%i-%%i.png" % (self.visit_id, urlhash, self.suffix),
+    try:
+        part = 0
+        max_height = execute_script_with_retry(
+            driver, "return document.body.scrollHeight;"
         )
+        inner_height = execute_script_with_retry(driver, "return window.innerHeight;")
+        curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
+        prev_scrollY = -1
+        driver.save_screenshot(outname % (part, curr_scrollY))
+        while (
+            curr_scrollY + inner_height
+        ) < max_height and curr_scrollY != prev_scrollY:
 
-        try:
-            part = 0
-            max_height = execute_script_with_retry(
-                webdriver, "return document.body.scrollHeight;"
-            )
-            inner_height = execute_script_with_retry(
-                webdriver, "return window.innerHeight;"
-            )
-            curr_scrollY = execute_script_with_retry(
-                webdriver, "return window.scrollY;"
-            )
-            prev_scrollY = -1
-            webdriver.save_screenshot(outname % (part, curr_scrollY))
-            while (
-                curr_scrollY + inner_height
-            ) < max_height and curr_scrollY != prev_scrollY:
-
-                # Scroll down to bottom of previous viewport
-                try:
-                    webdriver.execute_script("window.scrollBy(0, window.innerHeight)")
-                except WebDriverException:
-                    logger.info(
-                        "BROWSER %i: WebDriverException while scrolling, "
-                        "screenshot may be misaligned!" % self.browser_id
-                    )
-                    pass
-
-                # Update control variables
-                part += 1
-                prev_scrollY = curr_scrollY
-                curr_scrollY = execute_script_with_retry(
-                    webdriver, "return window.scrollY;"
+            # Scroll down to bottom of previous viewport
+            try:
+                driver.execute_script("window.scrollBy(0, window.innerHeight)")
+            except WebDriverException:
+                logger.info(
+                    "BROWSER %i: WebDriverException while scrolling, "
+                    "screenshot may be misaligned!" % browser_id
                 )
+                pass
 
-                # Save screenshot
-                webdriver.save_screenshot(outname % (part, curr_scrollY))
-        except WebDriverException:
-            excp = traceback.format_exception(*sys.exc_info())
-            logger.error(
-                "BROWSER %i: Exception while taking full page screenshot \n %s"
-                % (self.browser_id, "".join(excp))
-            )
-            return
+            # Update control variables
+            part += 1
+            prev_scrollY = curr_scrollY
+            curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
 
-        _stitch_screenshot_parts(self.visit_id, self.browser_id, manager_params)
+            # Save screenshot
+            driver.save_screenshot(outname % (part, curr_scrollY))
+    except WebDriverException:
+        excp = traceback.format_exception(*sys.exc_info())
+        logger.error(
+            "BROWSER %i: Exception while taking full page screenshot \n %s"
+            % (browser_id, "".join(excp))
+        )
+        return
+
+    _stitch_screenshot_parts(visit_id, browser_id, manager_params)
 
 
 def dump_page_source(visit_id, driver, manager_params, suffix=""):

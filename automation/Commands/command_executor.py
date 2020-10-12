@@ -8,6 +8,7 @@ from .types import (
     InitializeCommand,
     RecursiveDumpPageSourceCommand,
     RunCustomFunctionCommand,
+    ScreenshotFullPageCommand,
 )
 
 
@@ -59,6 +60,15 @@ def execute_command(
     elif type(command) is RecursiveDumpPageSourceCommand:
         browser_commands.recursive_dump_page_source(
             visit_id=command.visit_id,
+            driver=webdriver,
+            manager_params=manager_params,
+            suffix=command.suffix,
+        )
+
+    elif type(command) is ScreenshotFullPageCommand:
+        browser_commands.screenshot_full_page(
+            visit_id=command.visit_id,
+            browser_id=command.browser_id,
             driver=webdriver,
             manager_params=manager_params,
             suffix=command.suffix,
