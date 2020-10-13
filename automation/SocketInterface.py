@@ -4,7 +4,9 @@ import socket
 import struct
 import threading
 import traceback
+from asyncio import IncompleteReadError
 from queue import Queue
+from typing import Any
 
 import dill
 
@@ -75,23 +77,14 @@ class ServerSocket:
                         % (msglen, serialization)
                     )
                 msg = self.receive_msg(client, msglen)
-                if serialization != b"n":
-                    try:
-                        if serialization == b"d":  # dill serialization
-                            msg = dill.loads(msg)
-                        elif serialization == b"j":  # json serialization
-                            msg = json.loads(msg.decode("utf-8"))
-                        elif serialization == b"u":  # utf-8 serialization
-                            msg = msg.decode("utf-8")
-                        else:
-                            print("Unrecognized serialization type: %r" % serialization)
-                            continue
-                    except (UnicodeDecodeError, ValueError) as e:
-                        print(
-                            "Error de-serializing message: %s \n %s"
-                            % (msg, traceback.format_exc(e))
-                        )
-                        continue
+                try:
+                    msg = _parse(serialization, msg)
+                except (UnicodeDecodeError, ValueError) as e:
+                    print(
+                        "Error de-serializing message: %s \n %s"
+                        % (msg, traceback.format_exc(e))
+                    )
+                    continue
                 self._put_into_queue(msg)
         except RuntimeError:
             if self.verbose:
@@ -112,25 +105,6 @@ class ServerSocket:
 
     def close(self):
         self.sock.close()
-
-
-class AsyncServerSocket(ServerSocket):
-    def __init__(
-        self,
-        queue: asyncio.Queue,
-        loop: asyncio.AbstractEventLoop,
-        name=None,
-        verbose=False,
-    ):
-        super().__init__(name=name, verbose=verbose)
-        self.queue = queue
-        self.loop = loop
-
-    def _put_into_queue(self, msg):
-        async def callback(queue, msg):
-            queue.put_nowait(msg)
-
-        asyncio.run_coroutine_threadsafe(callback(self.queue, msg), self.loop)
 
 
 class ClientSocket:
@@ -186,6 +160,35 @@ class ClientSocket:
 
     def close(self):
         self.sock.close()
+
+
+async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
+    msg = await get_n_bytes_from_reader(reader, 5)
+    msglen, serialization = struct.unpack(">Lc", msg)
+    msg = await get_n_bytes_from_reader(reader, msglen)
+    return _parse(serialization, msg)
+
+
+async def get_n_bytes_from_reader(reader: asyncio.StreamReader, n: int) -> bytes:
+    b = b""
+    while True:
+        try:
+            return await reader.readexactly(n)
+        except IncompleteReadError as e:
+            b += e.partial
+            n -= len(e.partial)
+
+
+def _parse(serialization: bytes, msg: bytes) -> Any:
+    if serialization == b"n":
+        return msg
+    if serialization == b"d":  # dill serialization
+        return dill.loads(msg)
+    if serialization == b"j":  # json serialization
+        return json.loads(msg.decode("utf-8"))
+    if serialization == b"u":  # utf-8 serialization
+        return msg.decode("utf-8")
+    raise ValueError("Unkown Encoding")
 
 
 def main():

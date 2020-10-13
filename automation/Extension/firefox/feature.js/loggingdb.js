@@ -64,7 +64,7 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     if (aggregatorAddress != null) {
         dataAggregator = new socket.SendingSocket();
         let rv = await dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
-        console.log("sqliteSocket started?",rv);
+        console.log("StorageController started?",rv);
     }
 
     // Listen for incoming urls as visit ids

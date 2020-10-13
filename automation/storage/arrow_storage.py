@@ -81,7 +81,6 @@ class ArrowProvider(StructuredStorageProvider):
                     self._batches[SITE_VISITS_INDEX].append(item)
 
         del self._records[visit_id]
-        self._unsaved_visit_ids.add(visit_id)
 
     @abstractmethod
     async def write_table(self, table: Table) -> None:
@@ -90,13 +89,14 @@ class ArrowProvider(StructuredStorageProvider):
     def _is_cache_full(self) -> bool:
         for batches in self._batches.values():
             if len(batches) > CACHE_SIZE:
-                should_send = True
+                return True
+        return False
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> None:
         if interrupted:
-            await self.store_record(INCOMPLETE_VISITS, {"visit_id": visit_id}, visit_id)
+            await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
 
         self._create_batch(visit_id)
         if self._is_cache_full():

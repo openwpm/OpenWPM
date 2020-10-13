@@ -3,16 +3,17 @@ import base64
 import logging
 import queue
 import random
+import socket
 import threading
 import time
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Tuple
+from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
 
 from automation.utilities.multiprocess_utils import Process
 
-from ..SocketInterface import AsyncServerSocket
+from ..SocketInterface import get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
@@ -61,79 +62,68 @@ class StorageController:
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._relaxed = False
-        self._last_update = time.time()  # last status update time
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger("openwpm")
         self.current_tasks: DefaultDict[VisitId, List[asyncio.Task]] = defaultdict(list)
-        self.sock: Optional[AsyncServerSocket] = None
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
 
-    async def startup(self) -> None:
-        """Puts the DataAggregator into a runable state
-        by starting up the ServerSocket"""
-        self.record_queue = asyncio.Queue()
-        self.sock = AsyncServerSocket(
-            self.record_queue, asyncio.get_event_loop(), name=type(self).__name__
-        )
-        self.status_queue.put(self.sock.sock.getsockname())
-        self.sock.start_accepting()
+    async def handler(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> NoReturn:
+        """Created for every new connection to the Server"""
+        while True:
+            record: Tuple[str, Any] = await get_message_from_reader(reader)
 
-    async def poll_queue(self) -> None:
-        """Tries to get one record from the queue and processes it, if there is one"""
-        assert self.record_queue is not None
-        if self.record_queue.empty():
-            return
+            if len(record) != 2:
+                self.logger.error("Query is not the correct length %s", repr(record))
+                continue
 
-        record: Tuple[str, Any] = await self.record_queue.get()
-        if len(record) != 2:
-            self.logger.error("Query is not the correct length %s", repr(record))
-            return
+            self._last_record_received = time.time()
+            record_type, data = record
 
-        self._last_record_received = time.time()
-        record_type, data = record
+            self.logger.info("Received record for record_type %s", record_type)
 
-        self.logger.info("Received record for record_type %s", record_type)
-
-        if record_type == RECORD_TYPE_CREATE:
-            raise RuntimeError(
-                f"""{RECORD_TYPE_CREATE} is no longer supported.
-                since the user now has access to the DB before it
-                goes into use, they should set up all schemas before
-                launching the DataAggregator
-                """
-            )
-
-        if record_type == RECORD_TYPE_CONTENT:
-            assert isinstance(data, tuple)
-            assert len(data) == 2
-            if self.unstructured_storage is None:
-                self.logger.error(
-                    """Tried to save content while not having
-                                  provided any unstructured storage provider."""
+            if record_type == RECORD_TYPE_CREATE:
+                raise RuntimeError(
+                    f"""{RECORD_TYPE_CREATE} is no longer supported.
+                    since the user now has access to the DB before it
+                    goes into use, they should set up all schemas before
+                    launching the DataAggregator
+                    """
                 )
-                return
-            content, content_hash = data
-            content = base64.b64decode(content)
-            await self.unstructured_storage.store_blob(
-                filename=content_hash, blob=content
-            )
 
-            return
-        if record_type == RECORD_TYPE_META:
-            await self._handle_meta(data)
-            return
-        visit_id = VisitId(data["visit_id"])
-        table_name = TableName(record_type)
+            if record_type == RECORD_TYPE_CONTENT:
+                assert isinstance(data, tuple)
+                assert len(data) == 2
+                if self.unstructured_storage is None:
+                    self.logger.error(
+                        """Tried to save content while not having
+                        provided any unstructured storage provider."""
+                    )
+                    continue
+                content, content_hash = data
+                content = base64.b64decode(content)
+                await self.unstructured_storage.store_blob(
+                    filename=content_hash, blob=content
+                )
+                continue
 
-        self.current_tasks[visit_id].append(
-            asyncio.create_task(
-                self.structured_storage.store_record(
-                    table=table_name, visit_id=visit_id, record=data
+            if record_type == RECORD_TYPE_META:
+                await self._handle_meta(data)
+                continue
+
+            visit_id = VisitId(data["visit_id"])
+            table_name = TableName(record_type)
+
+            self.current_tasks[visit_id].append(
+                asyncio.create_task(
+                    self.structured_storage.store_record(
+                        table=table_name, visit_id=visit_id, record=data
+                    )
                 )
             )
-        )
 
     async def _handle_meta(self, data: Dict[str, Any]) -> None:
         """
@@ -146,12 +136,10 @@ class StorageController:
         visit_id = VisitId(data["visit_id"])
         action = data["action"]
 
-        self.logger.info(
-            "Received meta message to %s for visit_id %d", action, visit_id
-        )
         if action == ACTION_TYPE_INITIALIZE:
             return
         elif action == ACTION_TYPE_FINALIZE:
+            self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
             success = data["success"]
             for task in self.current_tasks[visit_id]:
                 await task
@@ -167,23 +155,25 @@ class StorageController:
         else:
             raise ValueError("Unexpected action: %s", action)
 
-    def update_status_queue(self) -> None:
+    async def update_status_queue(self) -> NoReturn:
         """Send manager process a status update."""
-        if (time.time() - self._last_update) < STATUS_UPDATE_INTERVAL:
-            return
-        qsize = self.record_queue.qsize()
-        self.status_queue.put(qsize)
-        self.logger.debug(
-            "Status update; current record queue size: %d. "
-            "current number of threads: %d." % (qsize, threading.active_count())
-        )
-        self._last_update = time.time()
-
-    async def drain_queue(self) -> None:
-        """ Ensures queue is empty before closing """
-        while not self.record_queue.empty():
-            await self.poll_queue()
-        self.logger.info("Queue was flushed completely")
+        while True:
+            await asyncio.sleep(STATUS_UPDATE_INTERVAL)
+            visit_id_count = len(self.current_tasks.keys())
+            task_count = 0
+            for task_list in self.current_tasks.values():
+                for task in task_list:
+                    if not task.done():
+                        task_count += 1
+            self.status_queue.put(task_count)
+            self.logger.debug(
+                (
+                    "StorageController status: There are currently %d scheduled tasks "
+                    "for %d visit_ids"
+                ),
+                task_count,
+                visit_id_count,
+            )
 
     async def shutdown(self) -> None:
         await self.structured_storage.flush_cache()
@@ -192,49 +182,73 @@ class StorageController:
             await self.unstructured_storage.flush_cache()
             await self.unstructured_storage.shutdown()
 
-    def should_shutdown(self) -> bool:
-        """Return `True` if the listener has received a shutdown signal
-        Sets `self._relaxed` and `self.shutdown_flag`
-        `self._relaxed means this shutdown is
-        happening after all visits have completed and
-        all data can be seen as complete
-        """
-        if not self.shutdown_queue.empty():
-            _, relaxed = self.shutdown_queue.get()
-            self._relaxed = relaxed
-            self._shutdown_flag = True
-            self.logger.info("Received shutdown signal!")
-            return True
-        return False
+    async def should_shutdown(self) -> None:
+        """Returns when we should shut down"""
 
-    async def save_batch_if_past_timeout(self) -> None:
+        while self.shutdown_queue.empty():
+            await asyncio.sleep(STATUS_UPDATE_INTERVAL)
+        _, relaxed = self.shutdown_queue.get()
+        self._relaxed = relaxed
+        self._shutdown_flag = True
+        self.logger.info("Received shutdown signal!")
+
+    async def save_batch_if_past_timeout(self) -> NoReturn:
         """Save the current batch of records if no new data has been received.
 
         If we aren't receiving new data for this batch we commit early
         regardless of the current batch size."""
-        if self._last_record_received is None:
-            return
-        if time.time() - self._last_record_received < BATCH_COMMIT_TIMEOUT:
-            return
-        self.logger.debug(
-            "Saving current records since no new data has "
-            "been written for %d seconds." % (time.time() - self._last_record_received)
-        )
-        await self.drain_queue()
-        self._last_record_received = None
+        while True:
+            if self._last_record_received is None:
+                await asyncio.sleep(BATCH_COMMIT_TIMEOUT)
+                continue
+
+            time_until_timeout = (
+                time.time() - self._last_record_received - BATCH_COMMIT_TIMEOUT
+            )
+            if time_until_timeout > 0:
+                await asyncio.sleep(time_until_timeout)
+                continue
+
+            self.logger.debug(
+                "Saving current records since no new data has "
+                "been written for %d seconds."
+                % (time.time() - self._last_record_received)
+            )
+            await self.structured_storage.flush_cache()
+            if self.unstructured_storage:
+                await self.unstructured_storage.flush_cache()
+            self._last_record_received = None
 
     async def finish_tasks(self) -> None:
+        self.logger.info("Awaiting unfinished tasks before shutting down")
         for visit_id, tasks in self.current_tasks.items():
+            self.logger.debug("Awaiting tasks for visit_id %d", visit_id)
             for task in tasks:
                 await task
 
     async def _run(self) -> None:
-        await self.startup()
-        while not self.should_shutdown():
-            self.update_status_queue()
-            await self.save_batch_if_past_timeout()
-            await self.poll_queue()
-        await self.drain_queue()
+        server: asyncio.AbstractServer = await asyncio.start_server(
+            self.handler, "localhost", 0, family=socket.AF_INET
+        )
+        sockets = server.sockets
+        assert sockets is not None
+        assert len(sockets) == 1
+        socketname = sockets[0].getsockname()
+        self.status_queue.put(socketname)
+        status_queue_update = asyncio.create_task(
+            self.update_status_queue(), name="StatusQueue"
+        )
+        timeout_check = asyncio.create_task(
+            self.save_batch_if_past_timeout(), name="TimeoutCheck"
+        )
+        # Blocks until we should shutdown
+        await self.should_shutdown()
+
+        server.close()
+        status_queue_update.cancel()
+        timeout_check.cancel()
+        await server.wait_closed()
+
         await self.finish_tasks()
         await self.shutdown()
 
@@ -295,13 +309,13 @@ class StorageControllerHandle:
 
     def launch(self) -> None:
         """Starts the data aggregator"""
-        self.listener_process = Process(
+        self.storage_controller = Process(
             name="StorageController",
             target=StorageController.run,
             args=(self.aggregator,),
         )
-        self.listener_process.daemon = True
-        self.listener_process.start()
+        self.storage_controller.daemon = True
+        self.storage_controller.start()
 
         self.listener_address = self.status_queue.get()
 
@@ -321,20 +335,15 @@ class StorageControllerHandle:
 
     def shutdown(self, relaxed: bool = True) -> None:
         """ Terminate the aggregator listener process"""
-        assert isinstance(self.listener_process, Process)
-        self.logger.debug(
-            "Sending the shutdown signal to the %s listener process..."
-            % type(self).__name__
-        )
+        assert isinstance(self.storage_controller, Process)
+        self.logger.debug("Sending the shutdown signal to the Storage Controller...")
         self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
         start_time = time.time()
-        self.listener_process.join(300)
+        self.storage_controller.join(300)
         self.logger.debug(
             "%s took %s seconds to close."
             % (type(self).__name__, str(time.time() - start_time))
         )
-        self.listener_address = None
-        self.listener_process = None
 
     def get_most_recent_status(self) -> int:
         """Return the most recent queue size sent from the listener process"""

@@ -34,11 +34,11 @@ for i in range(NUM_BROWSERS):
 
 
 # Launch only browser 0 headless
-browser_params[0]["display_mode"] = "headless"
+# browser_params[0]["display_mode"] = "headless"
 
 # Update TaskManager configuration (use this for crawl-wide settings)
-manager_params["data_directory"] = "~/Desktop/"
-manager_params["log_directory"] = "~/Desktop/"
+manager_params["data_directory"] = "./datadir/"
+manager_params["log_directory"] = "./datadir/"
 
 logging_params = {"log_level_console": logging.DEBUG}
 
