@@ -71,10 +71,18 @@ class StorageController:
 
     async def handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ) -> NoReturn:
+    ) -> None:
         """Created for every new connection to the Server"""
+        self.logger.debug("Initializing new handler")
         while True:
-            record: Tuple[str, Any] = await get_message_from_reader(reader)
+            try:
+                record: Tuple[str, Any] = await get_message_from_reader(reader)
+            except IOError as e:
+                self.logger.debug(
+                    "Terminatin handler, because the underlying socket closed",
+                    exc_info=e,
+                )
+                break
 
             if len(record) != 2:
                 self.logger.error("Query is not the correct length %s", repr(record))

@@ -177,6 +177,8 @@ async def get_n_bytes_from_reader(reader: asyncio.StreamReader, n: int) -> bytes
         except IncompleteReadError as e:
             b += e.partial
             n -= len(e.partial)
+            if reader.at_eof():
+                raise IOError("Socket Connection closed")
 
 
 def _parse(serialization: bytes, msg: bytes) -> Any:
