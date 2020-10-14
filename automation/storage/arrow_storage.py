@@ -37,6 +37,7 @@ class ArrowProvider(StructuredStorageProvider):
 
         # Record batches by TableName
         self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = DefaultDict(list)
+        self._signals = list()
 
         self._instance_id = random.getrandbits(32)
 
@@ -56,6 +57,10 @@ class ArrowProvider(StructuredStorageProvider):
         """Create record batches for all records from `visit_id`"""
         if visit_id not in self._records:
             # The batch for this `visit_id` was already created, skip
+            self.logger.error(
+                "Trying to create batch for visit_id %d" "when one was already created",
+                visit_id,
+            )
             return
         for table_name, data in self._records[visit_id].items():
             try:
