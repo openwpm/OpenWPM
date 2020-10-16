@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import traceback
+
 from queue import Empty as EmptyQueue
 from typing import Optional
 
@@ -16,6 +17,7 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
+from .Status import Status
 from .Commands import command_executor
 from .Commands.Types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
@@ -125,14 +127,15 @@ class Browser:
         success = False
 
         def check_queue(launch_status):
+            result = Status()
             result = self.status_queue.get(True, self._SPAWN_TIMEOUT)
-            if result[0] == "STATUS":
-                launch_status[result[1]] = True
+            if result.name == "STATUS":
+                launch_status[result.error_class] = True
                 return result[2]
-            elif result[0] == "CRITICAL":
-                _, exc, tb = pickle.loads(result[1])
-                raise exc.with_traceback(tb)
-            elif result[0] == "FAILED":
+            elif result.name == "CRITICAL":
+                _, result.error_text, result.tb = pickle.loads(result.error_class)
+                raise result.error_text.with_traceback(result.tb)
+            elif result.name == "FAILED":
                 raise BrowserCrashError("Browser spawn returned failure status")
 
         while not success and unsuccessful_spawns < self._UNSUCCESSFUL_SPAWN_LIMIT:
@@ -529,33 +532,41 @@ def BrowserManager(
                 )
                 status_queue.put("OK")
             except WebDriverException:
+                status_obj = Status()
                 # We handle WebDriverExceptions separately here because they
                 # are quite common, and we often still have a handle to the
                 # browser, allowing us to run the SHUTDOWN command.
-                tb = traceback.format_exception(*sys.exc_info())
-                if "about:neterror" in tb[-1]:
-                    status_queue.put(("NETERROR", pickle.dumps(sys.exc_info())))
+                string_tb = traceback.format_exception(*sys.exc_info())
+                if "about:neterror" in string_tb[-1]:
+                    status_obj.set_name("NETERROR")
+                    status_queue.put(pickle.dumps(status_obj))
                     continue
-                extra = parse_traceback_for_sentry(tb)
-                extra["exception"] = tb[-1]
+                extra = parse_traceback_for_sentry(string_tb)
+                extra["exception"] = string_tb[-1]
                 logger.error(
                     "BROWSER %i: WebDriverException while executing command"
                     % browser_params["browser_id"],
                     exc_info=True,
                     extra=extra,
                 )
-                status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
+                status_obj.set_name("FAILED")
+                status_obj.tb = sys.exc_info()
+                status_queue.put(pickle.dumps(status_obj))
 
     except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
+        status_obj = Status()
         logger.error(
             "BROWSER %i: %s thrown, informing parent and raising"
             % (browser_params["browser_id"], e.__class__.__name__)
         )
-        status_queue.put(("CRITICAL", pickle.dumps(sys.exc_info())))
+        status_obj.set_name("CRITICAL")
+        status_obj.tb = sys.exc_info()
+        status_queue.put(pickle.dumps(status_obj))
         return
     except Exception:
-        tb = traceback.format_exception(*sys.exc_info())
-        extra = parse_traceback_for_sentry(tb)
+        status_obj = Status()
+        string_tb = traceback.format_exception(*sys.exc_info())
+        extra = parse_traceback_for_sentry(string_tb)
         extra["exception"] = tb[-1]
         logger.error(
             "BROWSER %i: Crash in driver, restarting browser manager"
@@ -563,5 +574,7 @@ def BrowserManager(
             exc_info=True,
             extra=extra,
         )
-        status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
+        status_obj.set_name("FAILED")
+        status_obj.tb = sys.exc_info()
+        status_queue.put(pickle.dumps(status_obj))
         return

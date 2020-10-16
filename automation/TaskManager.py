@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import psutil
 import tblib
-
+from .Status import Status
 from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
@@ -427,12 +427,13 @@ class TaskManager:
                 if cs:
                     cs.mark_done(not interrupted)
 
-    def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
-        """Unpacks `pickled_error` into and error `message` and `tb` string."""
+    def _unpack_picked_error(self, pickled_error: bytes) -> Status:
+        """Unpacks `pickled_error` into a object of type Status"""
+        s = Status()
         exc = pickle.loads(pickled_error)
-        message = traceback.format_exception(*exc)[-1]
-        tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
-        return message, tb
+        s.error_text = traceback.format_exception(*exc)[-1]
+        s.tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
+        return s
 
     def _issue_command(
         self, browser: Browser, command_sequence: CommandSequence
@@ -469,11 +470,13 @@ class TaskManager:
             browser.command_queue.put(command)
 
             # received reply from BrowserManager, either success or failure
-            error_text = None
-            tb = None
-            status = None
+
+            status = Status()
+
             try:
-                status = browser.status_queue.get(True, browser.current_timeout)
+                status.raw_tuple(
+                    browser.status_queue.get(True, browser.current_timeout)
+                )
             except EmptyQueue:
                 command_status = "timeout"
                 self.logger.info(
@@ -481,13 +484,13 @@ class TaskManager:
                     "browser manager" % (browser.browser_id, repr(command))
                 )
 
-            if status is None:
+            if status.raw_tuple is None:
                 # allows us to skip this entire block without having to bloat
                 # every if statement
                 pass
-            elif status == "OK":
+            elif status.name == "OK":
                 command_status = "ok"
-            elif status[0] == "CRITICAL":
+            elif status.name == "CRITICAL":
                 command_status = "critical"
                 self.logger.critical(
                     "BROWSER %i: Received critical error from browser "
@@ -497,20 +500,26 @@ class TaskManager:
                 self.failure_status = {
                     "ErrorType": "CriticalChildException",
                     "CommandSequence": command_sequence,
-                    "Exception": status[1],
+                    "Exception": status.error_class,
                 }
-                error_text, tb = self._unpack_picked_error(status[1])
-            elif status[0] == "FAILED":
+                status = self._unpack_picked_error(
+                    status.error_class
+                )
+            elif status.name == "FAILED":
                 command_status = "error"
-                error_text, tb = self._unpack_picked_error(status[1])
+                status = self._unpack_picked_error(
+                    status.error_class
+                )
                 self.logger.info(
                     "BROWSER %i: Received failure status while executing "
                     "command: %s" % (browser.browser_id, repr(command))
                 )
-            elif status[0] == "NETERROR":
+            elif status.name == "NETERROR":
                 command_status = "neterror"
-                error_text, tb = self._unpack_picked_error(status[1])
-                error_text = parse_neterror(error_text)
+                status = self._unpack_picked_error(
+                    status.error_class
+                )
+                status.error_text = parse_neterror(status.error_text)
                 self.logger.info(
                     "BROWSER %i: Received neterror %s while executing "
                     "command: %s" % (browser.browser_id, error_text, repr(command))
@@ -530,8 +539,8 @@ class TaskManager:
                         ).encode("utf-8"),
                         "retry_number": command_sequence.retry_number,
                         "command_status": command_status,
-                        "error": error_text,
-                        "traceback": tb,
+                        "error": status.error_text,
+                        "traceback": status.tb,
                     },
                 )
             )
