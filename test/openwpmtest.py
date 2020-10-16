@@ -1,3 +1,4 @@
+import logging
 import os
 from os.path import isfile, join
 from typing import List, Tuple
@@ -5,6 +6,7 @@ from typing import List, Tuple
 import pytest
 
 from automation import TaskManager
+from automation.storage.sql_provider import SqlLiteStorageProvider
 from automation.types import BrowserParams, ManagerParams
 
 from . import utilities
@@ -25,7 +27,13 @@ class OpenWPMTest:
     def visit(self, page_url, data_dir="", sleep_after=0):
         """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        structured_provider = SqlLiteStorageProvider(manager_params["db"])
+        manager = TaskManager.TaskManager(
+            manager_params,
+            browser_params,
+            structured_provider,
+            logger_kwargs={"log_level_console": logging.DEBUG},
+        )
         if not page_url.startswith("http"):
             page_url = utilities.BASE_TEST_URL + page_url
         manager.get(url=page_url, sleep=sleep_after)

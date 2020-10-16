@@ -31,10 +31,7 @@ def prepare_test_setup(request):
 
     print("Starting local_http_server")
     server, server_thread = utilities.start_server()
-
-    def local_http_server_stop():
-        print("\nClosing server thread...")
-        server.shutdown()
-        server_thread.join()
-
-    request.addfinalizer(local_http_server_stop)
+    yield
+    print("\nClosing server thread...")
+    server.shutdown()
+    server_thread.join()
