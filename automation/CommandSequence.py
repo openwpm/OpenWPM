@@ -6,13 +6,13 @@ from .Commands.browser_commands import (
     SaveScreenshotCommand,
     ScreenshotFullPageCommand,
     DumpPageSourceCommand,
+    RecursiveDumpPageSourceCommand,
 )
 from .Commands.types import (
     BaseCommand,
     DumpProfCommand,
     FinalizeCommand,
     InitializeCommand,
-    RecursiveDumpPageSourceCommand,
     RunCustomFunctionCommand,
 )
 from .Errors import CommandExecutionError

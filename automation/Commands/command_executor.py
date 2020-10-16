@@ -5,7 +5,6 @@ from .types import (
     DumpProfCommand,
     FinalizeCommand,
     InitializeCommand,
-    RecursiveDumpPageSourceCommand,
     RunCustomFunctionCommand,
 )
 
@@ -45,14 +44,6 @@ def execute_command(
             webdriver=webdriver,
             browser_settings=browser_settings,
             compress=command.compress,
-        )
-
-    elif type(command) is RecursiveDumpPageSourceCommand:
-        browser_commands.recursive_dump_page_source(
-            visit_id=command.visit_id,
-            driver=webdriver,
-            manager_params=manager_params,
-            suffix=command.suffix,
         )
 
     elif type(command) is RunCustomFunctionCommand:
