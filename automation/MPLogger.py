@@ -18,6 +18,7 @@ from tblib import pickling_support
 
 from .Commands.utils.webdriver_utils import parse_neterror
 from .SocketInterface import ServerSocket
+from .types import ManagerParams
 
 pickling_support.install()
 
@@ -99,12 +100,12 @@ class MPLogger(object):
     def __init__(
         self,
         log_file,
-        crawl_context=None,
+        crawl_context: ManagerParams = None,
         log_level_console=logging.INFO,
         log_level_file=logging.DEBUG,
         log_level_sentry_breadcrumb=logging.DEBUG,
         log_level_sentry_event=logging.ERROR,
-    ):
+    ) -> None:
         self._crawl_context = crawl_context
         self._log_level_console = log_level_console
         self._log_level_file = log_level_file

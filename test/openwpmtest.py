@@ -10,7 +10,7 @@ from automation.types import BrowserParams, ManagerParams
 from . import utilities
 
 
-class OpenWPMTest(object):
+class OpenWPMTest:
     NUM_BROWSERS = 1
 
     @pytest.fixture(autouse=True)

@@ -1,3 +1,9 @@
+import logging
+import time
+
+import pytest
+
+from automation.MPLogger import MPLogger
 from automation.SocketInterface import ClientSocket
 from automation.storage.in_memory_storage import (
     MemoryStructuredProvider,
@@ -6,16 +12,29 @@ from automation.storage.in_memory_storage import (
 from automation.storage.storage_controller import StorageControllerHandle
 
 
-def test_startup_and_shutdown() -> None:
+@pytest.fixture(scope="session")
+def logger() -> MPLogger:
+    """PyTest only captures logging events in the Main Process
+    so we need to log everything to console to have it show
+    up in our tests
+    """
+    return MPLogger(
+        "/dev/null",
+        None,  # We have no manager params here
+        log_level_console=logging.DEBUG,
+    )
+
+
+def test_startup_and_shutdown(logger: MPLogger) -> None:
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
     agg_handle = StorageControllerHandle(structured, unstructured)
     agg_handle.launch()
     assert agg_handle.listener_address is not None
-    print(agg_handle.listener_address)
     cs = ClientSocket()
     cs.connect(*agg_handle.listener_address)
-    cs.send(("test", {"asd": "dfg"}))
+    cs.send(("test", {"visit_id": 1, "asd": "dfg"}))
+    time.sleep(5)
     agg_handle.shutdown()
     handle = structured.handle
     handle.poll_queue()

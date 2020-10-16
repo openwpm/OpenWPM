@@ -54,7 +54,6 @@ def pytest_generate_tests(metafunc: Any) -> Any:
         items = scenario[1].items()
         argnames = [x[0] for x in items]
         argvalues.append([x[1] for x in items])
-    print("metafunc called")
     metafunc.parametrize(argnames, argvalues, ids=idlist, scope="class", indirect=True)
 
 

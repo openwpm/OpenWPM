@@ -42,6 +42,9 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
+        self.logger.debug(
+            "Saving into table %s for visit_id %d record %r", table, visit_id, record
+        )
         self.queue.put((table, record))
 
     async def finalize_visit_id(

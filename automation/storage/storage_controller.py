@@ -7,7 +7,7 @@ import socket
 import threading
 import time
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
+from typing import Any, DefaultDict, Dict, List, Literal, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
 
@@ -25,6 +25,7 @@ RECORD_TYPE_CONTENT = "page_content"
 RECORD_TYPE_META = "meta_information"
 ACTION_TYPE_FINALIZE = "Finalize"
 ACTION_TYPE_INITIALIZE = "Initialize"
+
 RECORD_TYPE_CREATE = "create_table"
 STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = "SHUTDOWN"
@@ -68,6 +69,20 @@ class StorageController:
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
+
+    async def _handler(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
+        """This is a dirty hack around the fact that exceptions get swallowed by the asyncio.Server
+        and the coroutine just dies without any message.
+        By having this function be a wrapper we at least get a log message
+        """
+        try:
+            await self.handler(reader, writer)
+        except Exception as e:
+            self.logger.error(
+                "An exception occured while listening for data", exc_info=e
+            )
 
     async def handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -118,11 +133,18 @@ class StorageController:
                 )
                 continue
 
-            if record_type == RECORD_TYPE_META:
-                await self._handle_meta(data)
+            if not "visit_id" in data:
+                self.logger.error(
+                    "Skipping record: No visit_id contained in record %r", record
+                )
                 continue
 
             visit_id = VisitId(data["visit_id"])
+
+            if record_type == RECORD_TYPE_META:
+                await self._handle_meta(visit_id, data)
+                continue
+
             table_name = TableName(record_type)
 
             self.current_tasks[visit_id].append(
@@ -133,7 +155,7 @@ class StorageController:
                 )
             )
 
-    async def _handle_meta(self, data: Dict[str, Any]) -> None:
+    async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are metainformation
         communicated to the aggregator
@@ -141,9 +163,7 @@ class StorageController:
         - finalize: A message sent by the extension to
                     signal that a visit_id is complete.
         """
-        visit_id = VisitId(data["visit_id"])
-        action = data["action"]
-
+        action: str = data["action"]
         if action == ACTION_TYPE_INITIALIZE:
             return
         elif action == ACTION_TYPE_FINALIZE:
@@ -236,7 +256,7 @@ class StorageController:
 
     async def _run(self) -> None:
         server: asyncio.AbstractServer = await asyncio.start_server(
-            self.handler, "localhost", 0, family=socket.AF_INET
+            self._handler, "localhost", 0, family=socket.AF_INET
         )
         sockets = server.sockets
         assert sockets is not None
@@ -261,6 +281,7 @@ class StorageController:
         await self.shutdown()
 
     def run(self) -> None:
+        logging.getLogger("asyncio").setLevel(logging.WARNING)
         asyncio.run(self._run(), debug=True)
 
 
