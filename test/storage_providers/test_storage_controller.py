@@ -26,6 +26,7 @@ def logger() -> MPLogger:
 
 
 def test_startup_and_shutdown(logger: MPLogger) -> None:
+    data = {"visit_id": 1, "asd": "dfg"}
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
     agg_handle = StorageControllerHandle(structured, unstructured)
@@ -33,9 +34,8 @@ def test_startup_and_shutdown(logger: MPLogger) -> None:
     assert agg_handle.listener_address is not None
     cs = ClientSocket()
     cs.connect(*agg_handle.listener_address)
-    cs.send(("test", {"visit_id": 1, "asd": "dfg"}))
-    time.sleep(5)
+    cs.send(("test", data))
     agg_handle.shutdown()
     handle = structured.handle
     handle.poll_queue()
-    assert handle.storage["test"] == {"asd": "dfg"}
+    assert handle.storage["test"] == [data]
