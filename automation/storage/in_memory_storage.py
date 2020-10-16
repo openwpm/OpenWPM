@@ -1,7 +1,9 @@
+import logging
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Tuple
 
 from multiprocess import Queue
+from pyarrow import Table
 
 from automation.types import VisitId
 
@@ -31,7 +33,8 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     def __init__(self) -> None:
         super().__init__()
         self.queue = Queue()
-        self.handle = MemoryStructuredProviderHandle(self.queue)
+        self.handle = MemoryProviderHandle(self.queue)
+        self.logger = logging.getLogger("openwpm")
 
     async def flush_cache(self) -> None:
         pass
@@ -50,7 +53,7 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         pass
 
 
-class MemoryStructuredProviderHandle:
+class MemoryProviderHandle:
     """
     Call poll_queue to load all available data into the dict
     at self.storage
@@ -97,4 +100,13 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
 
 
 class MemoryArrowProvider(ArrowProvider):
-    ...
+    def __init__(self) -> None:
+        super().__init__()
+        self.queue = Queue()
+        self.handle = MemoryProviderHandle(self.queue)
+
+    async def write_table(self, table_name: TableName, table: Table) -> None:
+        self.queue.put((table_name, table))
+
+    async def shutdown(self) -> None:
+        pass

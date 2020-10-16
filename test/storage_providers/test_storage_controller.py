@@ -11,6 +11,7 @@ def test_startup_and_shutdown() -> None:
     unstructured = MemoryUnstructuredProvider()
     agg_handle = StorageControllerHandle(structured, unstructured)
     agg_handle.launch()
+    assert agg_handle.listener_address is not None
     print(agg_handle.listener_address)
     cs = ClientSocket()
     cs.connect(*agg_handle.listener_address)

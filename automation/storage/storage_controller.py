@@ -79,7 +79,7 @@ class StorageController:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
             except IOError as e:
                 self.logger.debug(
-                    "Terminatin handler, because the underlying socket closed",
+                    "Terminating handler, because the underlying socket closed",
                     exc_info=e,
                 )
                 break
@@ -275,7 +275,7 @@ class StorageControllerHandle:
         unstructured_storage: UnstructuredStorageProvider,
     ) -> None:
 
-        self.listener_address = None
+        self.listener_address: Optional[Tuple[str, int]] = None
         self.listener_process: Optional[Process] = None
         self.status_queue = Queue()
         self.completion_queue = Queue()
