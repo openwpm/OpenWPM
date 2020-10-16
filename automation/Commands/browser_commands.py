@@ -388,18 +388,34 @@ class ScreenshotFullPageCommand(BaseCommand):
         _stitch_screenshot_parts(self.visit_id, self.browser_id, manager_params)
 
 
-def dump_page_source(visit_id, driver, manager_params, suffix=""):
-    if suffix != "":
-        suffix = "-" + suffix
+class DumpPageSourceCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
 
-    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outfile = os.path.join(
-        manager_params["source_dump_path"], "%i-%s%s.html" % (visit_id, outname, suffix)
-    )
+    def __repr__(self):
+        return "DumpPageSourceCommand({})".format(self.suffix)
 
-    with open(outfile, "wb") as f:
-        f.write(driver.page_source.encode("utf8"))
-        f.write(b"\n")
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params["source_dump_path"],
+            "%i-%s%s.html" % (self.visit_id, outname, self.suffix),
+        )
+
+        with open(outfile, "wb") as f:
+            f.write(webdriver.page_source.encode("utf8"))
+            f.write(b"\n")
 
 
 def recursive_dump_page_source(visit_id, driver, manager_params, suffix=""):

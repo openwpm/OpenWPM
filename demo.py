@@ -53,6 +53,7 @@ for site in sites:
     command_sequence.get(sleep=3, timeout=60)
     command_sequence.save_screenshot()
     command_sequence.screenshot_full_page()
+    command_sequence.dump_page_source()
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)

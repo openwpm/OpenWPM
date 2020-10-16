@@ -5,10 +5,10 @@ from .Commands.browser_commands import (
     GetCommand,
     SaveScreenshotCommand,
     ScreenshotFullPageCommand,
+    DumpPageSourceCommand,
 )
 from .Commands.types import (
     BaseCommand,
-    DumpPageSourceCommand,
     DumpProfCommand,
     FinalizeCommand,
     InitializeCommand,
