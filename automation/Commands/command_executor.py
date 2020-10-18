@@ -1,12 +1,7 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .types import (
-    BaseCommand,
-    DumpProfCommand,
-    FinalizeCommand,
-    InitializeCommand,
-    RunCustomFunctionCommand,
-)
+from .types import (BaseCommand, DumpProfCommand, FinalizeCommand,
+                    InitializeCommand, RunCustomFunctionCommand)
 
 
 def execute_command(
