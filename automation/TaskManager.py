@@ -39,14 +39,16 @@ def load_default_params(
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
     """
-    fp = open(os.path.join(os.path.dirname(__file__), "default_browser_params.json"))
-    preferences = json.load(fp)
-    fp.close()
+    with open(
+        os.path.join(os.path.dirname(__file__), "default_browser_params.json"), "r"
+    ) as fp:
+        preferences = json.load(fp)
     browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
 
-    fp = open(os.path.join(os.path.dirname(__file__), "default_manager_params.json"))
-    manager_params = json.load(fp)
-    fp.close()
+    with open(
+        os.path.join(os.path.dirname(__file__), "default_manager_params.json"), "r"
+    ) as fp:
+        manager_params = json.load(fp)
     manager_params["num_browsers"] = num_browsers
 
     return manager_params, browser_params
