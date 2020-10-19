@@ -3,18 +3,14 @@ import json
 import os
 import sqlite3
 import time
-from sqlite3 import IntegrityError, InterfaceError, OperationalError, ProgrammingError
+from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
+                     ProgrammingError)
 from typing import Any, Dict, Tuple, Union
 
 import plyvel
 
-from .BaseAggregator import (
-    RECORD_TYPE_CONTENT,
-    RECORD_TYPE_CREATE,
-    RECORD_TYPE_SPECIAL,
-    BaseAggregator,
-    BaseListener,
-)
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener)
 
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100

@@ -10,11 +10,8 @@ from glob import glob
 from hashlib import md5
 
 from PIL import Image
-from selenium.common.exceptions import (
-    MoveTargetOutOfBoundsException,
-    TimeoutException,
-    WebDriverException,
-)
+from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
+                                        TimeoutException, WebDriverException)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
@@ -22,14 +19,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from ..SocketInterface import clientsocket
 from .types import BaseCommand
-from .utils.webdriver_utils import (
-    execute_in_all_frames,
-    execute_script_with_retry,
-    get_intra_links,
-    is_displayed,
-    scroll_down,
-    wait_until_loaded,
-)
+from .utils.webdriver_utils import (execute_in_all_frames,
+                                    execute_script_with_retry, get_intra_links,
+                                    is_displayed, scroll_down,
+                                    wait_until_loaded)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -388,60 +381,91 @@ class ScreenshotFullPageCommand(BaseCommand):
         _stitch_screenshot_parts(self.visit_id, self.browser_id, manager_params)
 
 
-def dump_page_source(visit_id, driver, manager_params, suffix=""):
-    if suffix != "":
-        suffix = "-" + suffix
+class DumpPageSourceCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
 
-    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outfile = os.path.join(
-        manager_params["source_dump_path"], "%i-%s%s.html" % (visit_id, outname, suffix)
-    )
+    def __repr__(self):
+        return "DumpPageSourceCommand({})".format(self.suffix)
 
-    with open(outfile, "wb") as f:
-        f.write(driver.page_source.encode("utf8"))
-        f.write(b"\n")
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params["source_dump_path"],
+            "%i-%s%s.html" % (self.visit_id, outname, self.suffix),
+        )
+
+        with open(outfile, "wb") as f:
+            f.write(webdriver.page_source.encode("utf8"))
+            f.write(b"\n")
 
 
-def recursive_dump_page_source(visit_id, driver, manager_params, suffix=""):
-    """Dump a compressed html tree for the current page visit"""
-    if suffix != "":
-        suffix = "-" + suffix
+class RecursiveDumpPageSourceCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
 
-    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outfile = os.path.join(
-        manager_params["source_dump_path"],
-        "%i-%s%s.json.gz" % (visit_id, outname, suffix),
-    )
+    def __repr__(self):
+        return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
 
-    def collect_source(driver, frame_stack, rv={}):
-        is_top_frame = len(frame_stack) == 1
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
 
-        # Gather frame information
-        doc_url = driver.execute_script("return window.document.URL;")
-        if is_top_frame:
-            page_source = rv
-        else:
-            page_source = dict()
-        page_source["doc_url"] = doc_url
-        source = driver.page_source
-        if type(source) != str:
-            source = str(source, "utf-8")
-        page_source["source"] = source
-        page_source["iframes"] = dict()
+        """Dump a compressed html tree for the current page visit"""
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
 
-        # Store frame info in correct area of return value
-        if is_top_frame:
-            return
-        out_dict = rv["iframes"]
-        for frame in frame_stack[1:-1]:
-            out_dict = out_dict[frame.id]["iframes"]
-        out_dict[frame_stack[-1].id] = page_source
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params["source_dump_path"],
+            "%i-%s%s.json.gz" % (self.visit_id, outname, self.suffix),
+        )
 
-    page_source = dict()
-    execute_in_all_frames(driver, collect_source, {"rv": page_source})
+        def collect_source(webdriver, frame_stack, rv={}):
+            is_top_frame = len(frame_stack) == 1
 
-    with gzip.GzipFile(outfile, "wb") as f:
-        f.write(json.dumps(page_source).encode("utf-8"))
+            # Gather frame information
+            doc_url = webdriver.execute_script("return window.document.URL;")
+            if is_top_frame:
+                page_source = rv
+            else:
+                page_source = dict()
+            page_source["doc_url"] = doc_url
+            source = webdriver.page_source
+            if type(source) != str:
+                source = str(source, "utf-8")
+            page_source["source"] = source
+            page_source["iframes"] = dict()
+
+            # Store frame info in correct area of return value
+            if is_top_frame:
+                return
+            out_dict = rv["iframes"]
+            for frame in frame_stack[1:-1]:
+                out_dict = out_dict[frame.id]["iframes"]
+            out_dict[frame_stack[-1].id] = page_source
+
+        page_source = dict()
+        execute_in_all_frames(webdriver, collect_source, {"rv": page_source})
+
+        with gzip.GzipFile(outfile, "wb") as f:
+            f.write(json.dumps(page_source).encode("utf-8"))
 
 
 def finalize(
