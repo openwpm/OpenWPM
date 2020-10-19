@@ -399,6 +399,7 @@ class DumpPageSourceCommand(BaseCommand):
 
         if self.suffix != "":
             self.suffix = "-" + self.suffix
+<<<<<<< HEAD
 
         outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outfile = os.path.join(
@@ -409,6 +410,75 @@ class DumpPageSourceCommand(BaseCommand):
         with open(outfile, "wb") as f:
             f.write(webdriver.page_source.encode("utf8"))
             f.write(b"\n")
+=======
+
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params["source_dump_path"],
+            "%i-%s%s.html" % (self.visit_id, outname, self.suffix),
+        )
+
+        with open(outfile, "wb") as f:
+            f.write(webdriver.page_source.encode("utf8"))
+            f.write(b"\n")
+
+
+class RecursiveDumpPageSourceCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
+        return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
+
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        """Dump a compressed html tree for the current page visit"""
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params["source_dump_path"],
+            "%i-%s%s.json.gz" % (self.visit_id, outname, self.suffix),
+        )
+
+        def collect_source(webdriver, frame_stack, rv={}):
+            is_top_frame = len(frame_stack) == 1
+
+            # Gather frame information
+            doc_url = webdriver.execute_script("return window.document.URL;")
+            if is_top_frame:
+                page_source = rv
+            else:
+                page_source = dict()
+            page_source["doc_url"] = doc_url
+            source = webdriver.page_source
+            if type(source) != str:
+                source = str(source, "utf-8")
+            page_source["source"] = source
+            page_source["iframes"] = dict()
+
+            # Store frame info in correct area of return value
+            if is_top_frame:
+                return
+            out_dict = rv["iframes"]
+            for frame in frame_stack[1:-1]:
+                out_dict = out_dict[frame.id]["iframes"]
+            out_dict[frame_stack[-1].id] = page_source
+
+        page_source = dict()
+        execute_in_all_frames(webdriver, collect_source, {"rv": page_source})
+
+        with gzip.GzipFile(outfile, "wb") as f:
+            f.write(json.dumps(page_source).encode("utf-8"))
+>>>>>>> 4f2c63715a86ae32935bd47f398d08c2b78c1bc8
 
 
 class RecursiveDumpPageSourceCommand(BaseCommand):
