@@ -53,14 +53,3 @@ class RunCustomFunctionCommand(BaseCommand):
 class ShutdownCommand(BaseCommand):
     def __repr__(self):
         return "ShutdownCommand()"
-
-
-class InitializeCommand(BaseCommand):
-    """The command is automatically prepended to the beginning of a
-    CommandSequence
-    It initializes state both in the extensions as well in as the
-    Aggregator
-    """
-
-    def __repr__(self):
-        return "IntitializeCommand()"

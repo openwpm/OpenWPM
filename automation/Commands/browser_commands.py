@@ -467,6 +467,7 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
         with gzip.GzipFile(outfile, "wb") as f:
             f.write(json.dumps(page_source).encode("utf-8"))
 
+
 class FinalizeCommand(BaseCommand):
     """This command is automatically appended to the end of a CommandSequence
     It's apperance means there won't be any more commands for this
@@ -478,7 +479,7 @@ class FinalizeCommand(BaseCommand):
 
     def __repr__(self):
         return f"FinalizeCommand({self.sleep})"
-    
+
     def execute(
         self,
         webdriver,
@@ -497,6 +498,24 @@ class FinalizeCommand(BaseCommand):
         extension_socket.send(msg)
 
 
-def initialize(visit_id: int, extension_socket: clientsocket) -> None:
-    msg = {"action": "Initialize", "visit_id": visit_id}
-    extension_socket.send(msg)
+class InitializeCommand(BaseCommand):
+    """The command is automatically prepended to the beginning of a
+    CommandSequence
+    It initializes state both in the extensions as well in as the
+    Aggregator
+    """
+
+    def __repr__(self):
+        return "IntitializeCommand()"
+
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        msg = {"action": "Initialize", "visit_id": self.visit_id}
+        extension_socket.send(msg)
