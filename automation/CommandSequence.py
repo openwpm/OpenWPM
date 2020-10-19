@@ -1,20 +1,12 @@
 from typing import Callable, List, Tuple
 
-from .Commands.browser_commands import (
-    BrowseCommand,
-    GetCommand,
-    SaveScreenshotCommand,
-    ScreenshotFullPageCommand,
-)
-from .Commands.types import (
-    BaseCommand,
-    DumpPageSourceCommand,
-    DumpProfCommand,
-    FinalizeCommand,
-    InitializeCommand,
-    RecursiveDumpPageSourceCommand,
-    RunCustomFunctionCommand,
-)
+from .Commands.browser_commands import (BrowseCommand, DumpPageSourceCommand,
+                                        GetCommand,
+                                        RecursiveDumpPageSourceCommand,
+                                        SaveScreenshotCommand,
+                                        ScreenshotFullPageCommand)
+from .Commands.types import (BaseCommand, DumpProfCommand, FinalizeCommand,
+                             InitializeCommand, RunCustomFunctionCommand)
 from .Errors import CommandExecutionError
 
 

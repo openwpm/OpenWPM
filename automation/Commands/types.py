@@ -39,30 +39,6 @@ class DumpProfCommand(BaseCommand):
         )
 
 
-class DumpPageSourceCommand(BaseCommand):
-    def __init__(self, suffix):
-        self.suffix = suffix
-
-    def __repr__(self):
-        return "DumpPageSourceCommand({})".format(self.suffix)
-
-
-class RecursiveDumpPageSourceCommand(BaseCommand):
-    def __init__(self, suffix):
-        self.suffix = suffix
-
-    def __repr__(self):
-        return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
-
-
-class ScreenshotFullPageCommand(BaseCommand):
-    def __init__(self, suffix):
-        self.suffix = suffix
-
-    def __repr__(self):
-        return "ScreenshotFullPageCommand({})".format(self.suffix)
-
-
 class RunCustomFunctionCommand(BaseCommand):
     def __init__(self, function_handle, func_args):
         self.function_handle = function_handle

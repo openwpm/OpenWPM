@@ -18,14 +18,9 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import (
-    RECORD_TYPE_CONTENT,
-    RECORD_TYPE_CREATE,
-    RECORD_TYPE_SPECIAL,
-    BaseAggregator,
-    BaseListener,
-    BaseParams,
-)
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener,
+                             BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500

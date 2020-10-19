@@ -1,14 +1,7 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .types import (
-    BaseCommand,
-    DumpPageSourceCommand,
-    DumpProfCommand,
-    FinalizeCommand,
-    InitializeCommand,
-    RecursiveDumpPageSourceCommand,
-    RunCustomFunctionCommand,
-)
+from .types import (BaseCommand, DumpProfCommand, FinalizeCommand,
+                    InitializeCommand, RunCustomFunctionCommand)
 
 
 def execute_command(
@@ -44,22 +37,6 @@ def execute_command(
             close_webdriver=command.close_webdriver,
             webdriver=webdriver,
             compress=command.compress,
-        )
-
-    elif type(command) is DumpPageSourceCommand:
-        browser_commands.dump_page_source(
-            visit_id=command.visit_id,
-            driver=webdriver,
-            manager_params=manager_params,
-            suffix=command.suffix,
-        )
-
-    elif type(command) is RecursiveDumpPageSourceCommand:
-        browser_commands.recursive_dump_page_source(
-            visit_id=command.visit_id,
-            driver=webdriver,
-            manager_params=manager_params,
-            suffix=command.suffix,
         )
 
     elif type(command) is RunCustomFunctionCommand:

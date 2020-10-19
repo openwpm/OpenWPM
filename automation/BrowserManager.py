@@ -21,11 +21,8 @@ from .Commands.types import ShutdownCommand
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket
-from .utilities.multiprocess_utils import (
-    Process,
-    kill_process_and_children,
-    parse_traceback_for_sentry,
-)
+from .utilities.multiprocess_utils import (Process, kill_process_and_children,
+                                           parse_traceback_for_sentry)
 
 pickling_support.install()
 
