@@ -4,9 +4,9 @@ from .Commands.browser_commands import (BrowseCommand, DumpPageSourceCommand,
                                         GetCommand,
                                         RecursiveDumpPageSourceCommand,
                                         SaveScreenshotCommand,
-                                        ScreenshotFullPageCommand)
-from .Commands.types import (BaseCommand, DumpProfCommand, FinalizeCommand,
-                             InitializeCommand, RunCustomFunctionCommand)
+                                        ScreenshotFullPageCommand,
+                                        FinalizeCommand)
+from .Commands.types import (BaseCommand, DumpProfCommand, InitializeCommand, RunCustomFunctionCommand)
 from .Errors import CommandExecutionError
 
 

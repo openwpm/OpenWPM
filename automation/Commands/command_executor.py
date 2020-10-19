@@ -1,6 +1,6 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .types import (BaseCommand, DumpProfCommand, FinalizeCommand,
+from .types import (BaseCommand, DumpProfCommand,
                     InitializeCommand, RunCustomFunctionCommand)
 
 
@@ -51,14 +51,6 @@ def execute_command(
             "extension_socket": extension_socket,
         }
         command.function_handle(*command.func_args, **arg_dict)
-
-    elif type(command) is FinalizeCommand:
-        browser_commands.finalize(
-            visit_id=command.visit_id,
-            sleep=command.sleep,
-            webdriver=webdriver,
-            extension_socket=extension_socket,
-        )
 
     elif type(command) is InitializeCommand:
         browser_commands.initialize(
