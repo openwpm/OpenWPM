@@ -64,13 +64,21 @@ class TestStructuredStorageProvider(OpenWPMTest):
     async def test_basic_access(
         self, structured_provider: StructuredStorageProvider
     ) -> None:
+        data = {
+            "visit_id": 2,
+            "browser_id": 3,
+            "instance_id": 4,
+            "site_url": "https://example.com",
+        }
+
         await structured_provider.store_record(
-            TableName("test"), VisitId(2), {"visit_id": 2, "data": "test"}
+            TableName("site_visits"), VisitId(2), data
         )
         await structured_provider.finalize_visit_id(VisitId(2))
         await structured_provider.flush_cache()
 
 
+@pytest.mark.asyncio
 class TestUnstructuredStorageProvide(OpenWPMTest):
     scenarios: List[Tuple[str, Dict[str, Any]]] = [(memory_unstructured, {})]
 

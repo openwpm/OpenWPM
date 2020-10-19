@@ -28,15 +28,11 @@ class TestStorageVectors(OpenWPMTest):
     on to check for completeness and correctness.
     """
 
-    def get_config(self, data_dir=""):
-        return self.get_test_config(data_dir)
-
-    def test_js_profile_cookies(self):
+    def test_js_profile_cookies(self, default_params):
         """ Check that profile cookies set by JS are saved """
         # Run the test crawl
-        manager_params, browser_params = self.get_config()
         browser_params[0]["cookie_instrument"] = True
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = TaskManager.TaskManager(*default_params)
         url = utilities.BASE_TEST_URL + "/js_cookie.html"
         cs = CommandSequence.CommandSequence(url)
         cs.get(sleep=3, timeout=120)

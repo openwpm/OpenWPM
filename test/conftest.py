@@ -1,7 +1,11 @@
 import os
 import subprocess
+from typing import List, Tuple
 
 import pytest
+
+from automation import TaskManager
+from automation.types import BrowserParams, ManagerParams
 
 from . import utilities
 
@@ -35,3 +39,18 @@ def prepare_test_setup(request):
     print("\nClosing server thread...")
     server.shutdown()
     server_thread.join()
+
+
+@pytest.fixture()
+def default_params(num_browsers, tmpdir) -> Tuple[ManagerParams, List[BrowserParams]]:
+    """Just a simple wrapper around TaskManager.load_default_params"""
+    data_dir = tmpdir
+    manager_params, browser_params = TaskManager.load_default_params(num_browsers)
+    manager_params["data_directory"] = data_dir
+    manager_params["log_directory"] = data_dir
+    for i in range(num_browsers):
+        browser_params[i]["display_mode"] = display_mode
+    manager_params["db"] = join(
+        manager_params["data_directory"], manager_params["database_name"]
+    )
+    return manager_params, browser_params
