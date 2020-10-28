@@ -4,8 +4,6 @@ from automation import CommandSequence, TaskManager
 NUM_BROWSERS = 1
 sites = [
     "http://www.example.com",
-    "http://www.princeton.edu",
-    "http://citp.princeton.edu/",
 ]
 
 # Loads the default manager params
@@ -29,11 +27,12 @@ for i in range(NUM_BROWSERS):
 
 
 # Launch only browser 0 headless
-browser_params[0]["display_mode"] = "headless"
+# browser_params[0]["display_mode"] = "headless"
+# browser_params[0]["tp_cookies"] = "etp"
 
 # Update TaskManager configuration (use this for crawl-wide settings)
-manager_params["data_directory"] = "~/Desktop/"
-manager_params["log_directory"] = "~/Desktop/"
+manager_params["data_directory"] = "datadir/"
+manager_params["log_directory"] = "datadir/"
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
@@ -50,7 +49,7 @@ for site in sites:
     )
 
     # Start by visiting the page
-    command_sequence.get(sleep=3, timeout=60)
+    command_sequence.get(sleep=600, timeout=600)
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)

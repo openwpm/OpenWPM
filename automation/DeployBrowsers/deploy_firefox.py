@@ -185,7 +185,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     configure_firefox.privacy(browser_params, fp, fo, root_dir, browser_profile_path)
 
     # Set various prefs to improve speed and eliminate traffic to Mozilla
-    configure_firefox.optimize_prefs(fo)
+    configure_firefox.optimize_prefs(fo, browser_params["tp_cookies"] == "etp")
 
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.  This will also inform us where the real profile

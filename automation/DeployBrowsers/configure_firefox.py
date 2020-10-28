@@ -19,6 +19,8 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         fo.set_preference("network.cookie.cookieBehavior", 1)
     elif browser_params["tp_cookies"].lower() == "from_visited":
         fo.set_preference("network.cookie.cookieBehavior", 3)
+    elif browser_params["tp_cookies"].lower() == "etp":
+        fo.set_preference("network.cookie.cookieBehavior", 5)
     else:  # always allow third party cookies
         fo.set_preference("network.cookie.cookieBehavior", 0)
 
@@ -31,7 +33,7 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         )
 
 
-def optimize_prefs(fo):
+def optimize_prefs(fo, enable_etp=False):
     """
     Disable various features and checks the browser will do on startup.
     Some of these (e.g. disabling the newtab page) are required to prevent
@@ -97,20 +99,22 @@ def optimize_prefs(fo):
 
     # Disable Safebrowsing and other security features
     # that require on remote content
-    fo.set_preference("browser.safebrowsing.phising.enabled", False)
-    fo.set_preference("browser.safebrowsing.malware.enabled", False)
-    fo.set_preference("browser.safebrowsing.downloads.enabled", False)
-    fo.set_preference("browser.safebrowsing.downloads.remote.enabled", False)
-    fo.set_preference("browser.safebrowsing.blockedURIs.enabled", False)
-    fo.set_preference("browser.safebrowsing.provider.mozilla.gethashURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google.gethashURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google4.gethashURL", "")
-    fo.set_preference("browser.safebrowsing.provider.mozilla.updateURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google.updateURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google4.updateURL", "")
-    fo.set_preference("browser.safebrowsing.provider.mozilla.lists", "")  # TP
-    fo.set_preference("browser.safebrowsing.provider.google.lists", "")  # TP
-    fo.set_preference("browser.safebrowsing.provider.google4.lists", "")  # TP
+
+    if not enable_etp:
+        fo.set_preference("browser.safebrowsing.phising.enabled", False)
+        fo.set_preference("browser.safebrowsing.malware.enabled", False)
+        fo.set_preference("browser.safebrowsing.blockedURIs.enabled", False)
+        fo.set_preference("browser.safebrowsing.downloads.enabled", False)
+        fo.set_preference("browser.safebrowsing.downloads.remote.enabled", False)
+        fo.set_preference("browser.safebrowsing.provider.mozilla.gethashURL", "")
+        fo.set_preference("browser.safebrowsing.provider.google.gethashURL", "")
+        fo.set_preference("browser.safebrowsing.provider.google4.gethashURL", "")
+        fo.set_preference("browser.safebrowsing.provider.mozilla.updateURL", "")
+        fo.set_preference("browser.safebrowsing.provider.google.updateURL", "")
+        fo.set_preference("browser.safebrowsing.provider.google4.updateURL", "")
+        fo.set_preference("browser.safebrowsing.provider.mozilla.lists", "")  # TP
+        fo.set_preference("browser.safebrowsing.provider.google.lists", "")  # TP
+        fo.set_preference("browser.safebrowsing.provider.google4.lists", "")  # TP
     fo.set_preference("extensions.blocklist.enabled", False)  # extensions
     fo.set_preference("security.OCSP.enabled", 0)
 
