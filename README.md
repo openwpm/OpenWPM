@@ -132,7 +132,7 @@ Troubleshooting
    you environments and the activate one by running `conda env list` the active environment
    will have a `*` by it.
 
-1. `make` / `gcc` may need to be installed in order to build the web extension.
+4. `make` / `gcc` may need to be installed in order to build the web extension.
    On Ubuntu, this is achieved with `apt-get install make`. On OSX the necessary
    packages are part of xcode: `xcode-select --install`.
 2. On a very sparse operating system additional dependencies may need to be
