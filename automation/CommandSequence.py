@@ -37,7 +37,7 @@ class CommandSequence:
         retry_number: int = None,
         site_rank: int = None,
         callback: Callable[[bool], None] = None,
-    ):
+    ) -> None:
         """Initialize command sequence.
 
         Parameters
@@ -186,6 +186,9 @@ class CommandSequence:
                 self,
             )
         command = RunCustomFunctionCommand(function_handle, func_args)
+        self._commands_with_timeout.append((command, timeout))
+
+    def append_command(self, command: BaseCommand, timeout: int = 30) -> None:
         self._commands_with_timeout.append((command, timeout))
 
     def mark_done(self, success: bool):
