@@ -10,8 +10,11 @@ from glob import glob
 from hashlib import md5
 
 from PIL import Image
-from selenium.common.exceptions import (MoveTargetOutOfBoundsException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import (
+    MoveTargetOutOfBoundsException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,10 +22,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from ..SocketInterface import clientsocket
 from .types import BaseCommand
-from .utils.webdriver_utils import (execute_in_all_frames,
-                                    execute_script_with_retry, get_intra_links,
-                                    is_displayed, scroll_down,
-                                    wait_until_loaded)
+from .utils.webdriver_utils import (
+    execute_in_all_frames,
+    execute_script_with_retry,
+    get_intra_links,
+    is_displayed,
+    scroll_down,
+    wait_until_loaded,
+)
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse

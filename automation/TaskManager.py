@@ -16,8 +16,7 @@ from .BrowserManager import Browser
 from .Commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
-from .DataAggregator.BaseAggregator import (ACTION_TYPE_FINALIZE,
-                                            RECORD_TYPE_SPECIAL)
+from .DataAggregator.BaseAggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
 from .Errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .MPLogger import MPLogger
