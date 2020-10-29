@@ -77,7 +77,7 @@ Throughout the course of a measurement, the Browser Managers' commands (along wi
 All of our data collection happens in the OpenWPM WebExtension, which can be found under [automation/Extension](../automation/Extension).
 The Extension makes heavy use of priviliged APIs and can only be installed on unbranded or custom builds of Firefox with add-on security disabled.
 
-The currently supported instruments can be found in [Instruments.md](Instruments.md)
+The currently supported instruments can be found in [Configuration.md](Configuration.md#Instruments)
 
 
 # Data Aggregator

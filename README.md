@@ -91,7 +91,7 @@ below.
 
 
 The docs provide a more [in-depth tutorial](docs/Using_OpenWPM.md),
-and a description of the [methods of data collection](docs/Instruments.md)
+and a description of the [methods of data collection](docs/Configuration.md#Instruments)
 available.
 
 Troubleshooting
