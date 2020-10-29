@@ -8,10 +8,13 @@ import time
 from urllib import parse as urlparse
 
 import domain_utils as du
-from selenium.common.exceptions import (ElementNotVisibleException,
-                                        NoSuchElementException,
-                                        StaleElementReferenceException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import (
+    ElementNotVisibleException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
