@@ -468,18 +468,54 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
             f.write(json.dumps(page_source).encode("utf-8"))
 
 
-def finalize(
-    visit_id: int, webdriver: WebDriver, extension_socket: clientsocket, sleep: int
-) -> None:
-    """ Informs the extension that a visit is done """
-    tab_restart_browser(webdriver)
-    # This doesn't immediately stop data saving from the current
-    # visit so we sleep briefly before unsetting the visit_id.
-    time.sleep(sleep)
-    msg = {"action": "Finalize", "visit_id": visit_id}
-    extension_socket.send(msg)
+class FinalizeCommand(BaseCommand):
+    """This command is automatically appended to the end of a CommandSequence
+    It's apperance means there won't be any more commands for this
+    visit_id
+    """
+
+    def __init__(self, sleep):
+        self.sleep = sleep
+
+    def __repr__(self):
+        return f"FinalizeCommand({self.sleep})"
+
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        """ Informs the extension that a visit is done """
+        tab_restart_browser(webdriver)
+        # This doesn't immediately stop data saving from the current
+        # visit so we sleep briefly before unsetting the visit_id.
+        time.sleep(self.sleep)
+        msg = {"action": "Finalize", "visit_id": self.visit_id}
+        extension_socket.send(msg)
 
 
-def initialize(visit_id: int, extension_socket: clientsocket) -> None:
-    msg = {"action": "Initialize", "visit_id": visit_id}
-    extension_socket.send(msg)
+class InitializeCommand(BaseCommand):
+    """The command is automatically prepended to the beginning of a
+    CommandSequence
+    It initializes state both in the extensions as well in as the
+    Aggregator
+    """
+
+    def __repr__(self):
+        return "IntitializeCommand()"
+
+    def execute(
+        self,
+        webdriver,
+        browser_settings,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        msg = {"action": "Initialize", "visit_id": self.visit_id}
+        extension_socket.send(msg)
