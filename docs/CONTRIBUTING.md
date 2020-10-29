@@ -15,8 +15,8 @@
 Dev dependencies are installed by using the main `environment.yaml` (which
 is used by `./install.sh` script).
 
-You can install pre-commit hooks install the hooks by running `pre-commit install` to
-lint all the changes before you make a commit.
+You can install pre-commit hooks that lint all of your changes by
+running `pre-commit install`.
 
 ## General Hints and Guidelines
 
