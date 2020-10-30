@@ -6,7 +6,7 @@ from selenium.webdriver import Firefox
 from ..SocketInterface import clientsocket
 
 
-class BaseCommand(ABC):
+class BaseCommand:
     def set_visit_browser_id(self, visit_id, browser_id):
         self.visit_id = visit_id
         self.browser_id = browser_id
