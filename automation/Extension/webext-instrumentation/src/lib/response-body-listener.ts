@@ -17,7 +17,7 @@ export class ResponseBodyListener {
 
     // Used to parse Response stream
     const filter: any = browser.webRequest.filterResponseData(
-      details.requestId,
+      details.requestId.toString(),
     ) as any;
 
     let responseBody = new Uint8Array();

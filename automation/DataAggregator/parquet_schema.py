@@ -44,7 +44,7 @@ fields = [
     pa.field("method", pa.string(), nullable=False),
     pa.field("referrer", pa.string(), nullable=False),
     pa.field("headers", pa.string(), nullable=False),
-    pa.field("request_id", pa.string(), nullable=False),
+    pa.field("request_id", pa.int64(), nullable=False),
     pa.field("is_XHR", pa.bool_()),
     pa.field("is_third_party_channel", pa.bool_()),
     pa.field("is_third_party_to_top_window", pa.bool_()),
@@ -76,7 +76,7 @@ fields = [
     pa.field("response_status_text", pa.string(), nullable=False),
     pa.field("is_cached", pa.bool_(), nullable=False),
     pa.field("headers", pa.string(), nullable=False),
-    pa.field("request_id", pa.string(), nullable=False),
+    pa.field("request_id", pa.int64(), nullable=False),
     pa.field("location", pa.string(), nullable=False),
     pa.field("time_stamp", pa.string(), nullable=False),
     pa.field("content_hash", pa.string()),
@@ -207,7 +207,7 @@ PQ_SCHEMAS["incomplete_visits"] = pa.schema(fields)
 
 # dns_responses
 fields = [
-    pa.field("request_id", pa.string(), nullable=False),
+    pa.field("request_id", pa.int64(), nullable=False),
     pa.field("browser_id", pa.uint32(), nullable=False),
     pa.field("visit_id", pa.int64(), nullable=False),
     pa.field("hostname", pa.string()),

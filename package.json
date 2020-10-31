@@ -4,7 +4,9 @@
   "description": "OpenWPM NodeJS Utilities",
   "scripts": {
     "jsonschema2md": "jsonschema2md || true",
-    "render_schema_docs": "jsonschema2md --input=schemas --out=docs/schemas --schema-out=-"
+    "render_schema_docs": "jsonschema2md --input=schemas --out=docs/schemas --schema-out=-",
+    "validate_markdown_links": "find . -name \\*.md  -not -path '*/node_modules/*' -exec markdown-link-check -q {} \\;",
+    "lint_markdown": "find . -name \\*.md  -not -path '*/node_modules/*' -exec markdownlint {} \\;"
   },
   "scripts-info": {
     "jsonschema2md": "Display the help for jsonschema2md",
@@ -17,7 +19,9 @@
     "url": "git+https://github.com/mozilla/OpenWPM.git"
   },
   "homepage": "",
-  "dependencies": {
-    "@adobe/jsonschema2md": "^4.1.5"
+  "devDependencies": {
+    "@adobe/jsonschema2md": "^4.1.5",
+    "markdown-link-check": "^3.8.1",
+    "markdownlint-cli": "^0.23.2"
   }
 }
