@@ -91,7 +91,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         fo.add_argument("--height={}".format(DEFAULT_SCREEN_RES[1]))
     if display_mode == "xvfb":
         try:
-            display = Display(visible=0)
+            display = Display(visible=0, size=DEFAULT_SCREEN_RES)
             display.start()
             display_pid, display_port = display.pid, display.cmd_param[-1][1:]
         except EasyProcessError:
@@ -192,6 +192,8 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             % browser_params["browser_id"]
         )
 
+    # set window size
+    driver.set_window_size(*DEFAULT_SCREEN_RES)
 
     # Get browser process pid
     if hasattr(driver, "service") and hasattr(driver.service, "process"):
