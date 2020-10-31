@@ -39,17 +39,6 @@ class DumpProfCommand(BaseCommand):
         )
 
 
-class RunCustomFunctionCommand(BaseCommand):
-    def __init__(self, function_handle, func_args):
-        self.function_handle = function_handle
-        self.func_args = func_args
-
-    def __repr__(self):
-        return "RunCustomFunctionCommand({},{})".format(
-            self.function_handle, self.func_args
-        )
-
-
 class ShutdownCommand(BaseCommand):
     def __repr__(self):
         return "ShutdownCommand()"

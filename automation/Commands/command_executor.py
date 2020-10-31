@@ -1,6 +1,6 @@
 from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .types import BaseCommand, DumpProfCommand, RunCustomFunctionCommand
+from .types import BaseCommand, DumpProfCommand
 
 
 def execute_command(
@@ -39,17 +39,6 @@ def execute_command(
             browser_settings=browser_settings,
             compress=command.compress,
         )
-
-    elif type(command) is RunCustomFunctionCommand:
-        arg_dict = {
-            "command": command,
-            "driver": webdriver,
-            "browser_settings": browser_settings,
-            "browser_params": browser_params,
-            "manager_params": manager_params,
-            "extension_socket": extension_socket,
-        }
-        command.function_handle(*command.func_args, **arg_dict)
 
     else:
         raise CommandExecutionError("Invalid Command", command)
