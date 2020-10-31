@@ -82,40 +82,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         )
     status_queue.put(("STATUS", "Profile Tar", None))
 
-    if browser_params["random_attributes"] and profile_settings is None:
-        logger.debug(
-            "BROWSER %i: Loading random attributes for browser"
-            % browser_params["browser_id"]
-        )
-        profile_settings = dict()
-
-        # choose a random screen-res from list
-        resolutions = list()
-        with open(os.path.join(root_dir, "screen_resolutions.txt"), "r") as f:
-            for line in f:
-                resolutions.append(tuple(line.strip().split(",")))
-        profile_settings["screen_res"] = random.choice(resolutions)
-
-        # set a random user agent from list
-        ua_strings = list()
-        with open(os.path.join(root_dir, "user_agent_strings.txt"), "r") as f:
-            for line in f:
-                ua_strings.append(line.strip())
-        profile_settings["ua_string"] = random.choice(ua_strings)
-
-    # If profile settings still not set - set defaults
-    if profile_settings is None:
-        profile_settings = dict()
-        profile_settings["screen_res"] = DEFAULT_SCREEN_RES
-        profile_settings["ua_string"] = None
-
-    if profile_settings["ua_string"] is not None:
-        logger.debug(
-            "BROWSER %i: Overriding user agent string to '%s'"
-            % (browser_params["browser_id"], profile_settings["ua_string"])
-        )
-        fo.set_preference("general.useragent.override", profile_settings["ua_string"])
-
     display_mode = browser_params["display_mode"]
     display_pid = None
     display_port = None
@@ -125,7 +91,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         fo.add_argument("--height={}".format(DEFAULT_SCREEN_RES[1]))
     if display_mode == "xvfb":
         try:
-            display = Display(visible=0, size=profile_settings["screen_res"])
+            display = Display(visible=0)
             display.start()
             display_pid, display_port = display.pid, display.cmd_param[-1][1:]
         except EasyProcessError:
@@ -226,8 +192,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             % browser_params["browser_id"]
         )
 
-    # set window size
-    driver.set_window_size(*profile_settings["screen_res"])
 
     # Get browser process pid
     if hasattr(driver, "service") and hasattr(driver.service, "process"):

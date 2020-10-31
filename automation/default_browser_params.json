@@ -8,7 +8,6 @@
     "save_content": false,
     "callstack_instrument": false,
     "dns_instrument": false,
-    "random_attributes": false,
     "bot_mitigation": false,
     "seed_tar": null,
     "recovery_tar": null,

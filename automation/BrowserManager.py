@@ -111,7 +111,6 @@ class Browser:
             # make sure browser loads crashed profile
             self.browser_params['recovery_tar'] = tempdir
             # don't re-randomize attributes
-            self.browser_params['random_attributes'] = False
             crash_recovery = True
         else:
         """
