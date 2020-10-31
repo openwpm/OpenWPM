@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS http_requests(
   method TEXT NOT NULL,
   referrer TEXT NOT NULL,
   headers TEXT NOT NULL,
-  request_id TEXT NOT NULL,
+  request_id INTEGER NOT NULL,
   is_XHR INTEGER,
   is_third_party_channel INTEGER,
   is_third_party_to_top_window INTEGER,
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS http_responses(
   response_status_text TEXT NOT NULL,
   is_cached INTEGER NOT NULL,
   headers TEXT NOT NULL,
-  request_id TEXT NOT NULL,
+  request_id INTEGER NOT NULL,
   location TEXT NOT NULL,
   time_stamp DATETIME NOT NULL,
   content_hash TEXT

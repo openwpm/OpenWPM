@@ -56,7 +56,7 @@ export interface HttpRequest {
   method: string;
   referrer: string;
   headers: string;
-  request_id: string;
+  request_id: number;
   is_XHR?: number;
   is_third_party_channel?: number;
   is_third_party_to_top_window?: number;
@@ -90,7 +90,7 @@ export interface HttpResponse {
   response_status_text: string;
   is_cached: number;
   headers: string;
-  request_id: string;
+  request_id: number;
   location: string;
   time_stamp: DateTime;
   content_hash?: string;
@@ -168,7 +168,7 @@ export interface DnsResolved {
   browser_id?: number;
   visit_id?: number;
   hostname: string;
-  request_id: string;
+  request_id: number;
   time_stamp: DateTime;
   addresses?: string;
   used_address?: string;
