@@ -254,7 +254,7 @@ X-server. You can do this by running: `xhost +local:docker`
 Then you can run the demo script using:
 
 ```
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/root/Desktop \
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/opt/Desktop \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
     -it openwpm python3 /opt/OpenWPM/demo.py
 ```
