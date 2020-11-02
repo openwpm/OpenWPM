@@ -75,7 +75,6 @@ class Browser:
         self.restart_required = False
 
         self.current_timeout: Optional[int] = None  # timeout of the current command
-        # dict of additional browser profile settings (e.g. screen_res)
         self.browser_settings = None
         self.browser_manager = None  # process that controls browser
 
