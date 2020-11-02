@@ -8,7 +8,7 @@
     "save_content": false,
     "callstack_instrument": false,
     "dns_instrument": false,
-    "bot_mitigation": false,
+    
     "seed_tar": null,
     "display_mode": "native",
     "browser": "firefox",
