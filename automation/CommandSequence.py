@@ -1,11 +1,15 @@
 from typing import Callable, List, Tuple
 
-from .Commands.browser_commands import (BrowseCommand, DumpPageSourceCommand,
-                                        FinalizeCommand, GetCommand,
-                                        InitializeCommand,
-                                        RecursiveDumpPageSourceCommand,
-                                        SaveScreenshotCommand,
-                                        ScreenshotFullPageCommand)
+from .Commands.browser_commands import (
+    BrowseCommand,
+    DumpPageSourceCommand,
+    FinalizeCommand,
+    GetCommand,
+    InitializeCommand,
+    RecursiveDumpPageSourceCommand,
+    SaveScreenshotCommand,
+    ScreenshotFullPageCommand,
+)
 from .Commands.types import BaseCommand, DumpProfCommand
 from .Errors import CommandExecutionError
 
@@ -171,6 +175,9 @@ class CommandSequence:
                 self,
             )
         command = RecursiveDumpPageSourceCommand(suffix)
+        self._commands_with_timeout.append((command, timeout))
+
+    def append_command(self, command: BaseCommand, timeout: int = 30) -> None:
         self._commands_with_timeout.append((command, timeout))
 
     def append_command(self, command: BaseCommand, timeout: int = 30) -> None:
