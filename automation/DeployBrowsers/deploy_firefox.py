@@ -57,13 +57,12 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # https://github.com/SeleniumHQ/selenium/issues/2106#issuecomment-320238039
     fo = Options()
 
-    profile_settings = None  # Imported browser settings
     if browser_params["seed_tar"] and not crash_recovery:
         logger.info(
             "BROWSER %i: Loading initial browser profile from: %s"
             % (browser_params["browser_id"], browser_params["seed_tar"])
         )
-        profile_settings = load_profile(
+        load_profile(
             browser_profile_path,
             manager_params,
             browser_params,
@@ -74,7 +73,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
             "BROWSER %i: Loading recovered browser profile from: %s"
             % (browser_params["browser_id"], browser_params["recovery_tar"])
         )
-        profile_settings = load_profile(
+        load_profile(
             browser_profile_path,
             manager_params,
             browser_params,
@@ -203,6 +202,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     else:
         raise RuntimeError("Unable to identify Firefox process ID.")
 
-    status_queue.put(("STATUS", "Browser Launched", (int(pid), profile_settings)))
+    status_queue.put(("STATUS", "Browser Launched", (int(pid))))
 
-    return driver, driver.capabilities["moz:profile"], profile_settings
+    return driver, driver.capabilities["moz:profile"]

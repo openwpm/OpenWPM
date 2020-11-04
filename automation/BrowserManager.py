@@ -75,7 +75,6 @@ class Browser:
         self.restart_required = False
 
         self.current_timeout: Optional[int] = None  # timeout of the current command
-        self.browser_settings = None
         self.browser_manager = None  # process that controls browser
 
         self.logger = logging.getLogger("openwpm")
@@ -105,7 +104,6 @@ class Browser:
                 self.browser_params,
                 tempdir,
                 close_webdriver=False,
-                browser_settings=self.browser_settings
             )
             # make sure browser loads crashed profile
             self.browser_params['recovery_tar'] = tempdir
@@ -164,9 +162,7 @@ class Browser:
                 # 4. Browser launch attempted
                 check_queue(launch_status)
                 # 5. Browser launched
-                (self.geckodriver_pid, self.browser_settings) = check_queue(
-                    launch_status
-                )
+                (self.geckodriver_pid) = check_queue(launch_status)
 
                 (driver_profile_path, ready) = check_queue(launch_status)
                 if ready != "READY":
@@ -415,7 +411,6 @@ class Browser:
                 self.browser_params,
                 self.browser_params['profile_archive_dir'],
                 close_webdriver=False,
-                browser_settings=self.browser_settings,
                 compress=True
             )
         """
@@ -438,7 +433,7 @@ def BrowserManager(
     logger = logging.getLogger("openwpm")
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder, browser_settings = deploy_browser.deploy_browser(
+        driver, prof_folder = deploy_browser.deploy_browser(
             status_queue, browser_params, manager_params, crash_recovery
         )
         if prof_folder[-1] != "/":
@@ -520,7 +515,6 @@ def BrowserManager(
                 command_executor.execute_command(
                     command,
                     driver,
-                    browser_settings,
                     browser_params,
                     manager_params,
                     extension_socket,
