@@ -13,7 +13,7 @@ logger = logging.getLogger("openwpm")
 def save_browser_settings(location, browser_settings):
     """
     browser_settings stores additional profile config parameters
-    e.g. screen_res, plugin sets, user_agent string
+    e.g. plugin sets
     """
     if browser_settings is not None:
         # see if the browser_settings file exists, and if so delete
