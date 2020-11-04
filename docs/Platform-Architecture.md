@@ -43,7 +43,7 @@ Instead you need to submit them to a `TaskManager` by calling:
     manager.close()
 ```
 
-Please note that you need to close the manager, because by default CommandSequences are executed in a non-blocking fashion meaning that you might reach the end of you main function/file before the CommandSequence completed running.
+Please note that you need to close the manager, because by default CommandSequences are executed in a non-blocking fashion meaning that you might reach the end of your main function/file before the CommandSequence completed running.
 
 `TaskManager.execute_command_sequence` has an optional `index` parameter that enables the user to specify which of the existing browsers should execute a command. The options are
 
