@@ -202,6 +202,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     else:
         raise RuntimeError("Unable to identify Firefox process ID.")
 
-    status_queue.put(("STATUS", "Browser Launched", (int(pid))))
+    status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
     return driver, driver.capabilities["moz:profile"]
