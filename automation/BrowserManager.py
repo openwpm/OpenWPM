@@ -162,7 +162,7 @@ class Browser:
                 # 4. Browser launch attempted
                 check_queue(launch_status)
                 # 5. Browser launched
-                (self.geckodriver_pid) = check_queue(launch_status)
+                self.geckodriver_pid = check_queue(launch_status)
 
                 (driver_profile_path, ready) = check_queue(launch_status)
                 if ready != "READY":
