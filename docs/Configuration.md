@@ -63,6 +63,9 @@ of configuration dictionaries.
     on-the-fly. Depending on where you would like to add test functionality,
     you may need to propagate the flag.
   * This is not something you should enable during normal crawls.
+* `memory_watchdog`
+  * A watchdog that tries to ensure that no Firefox instance takes up to much memory. It is set to false by default
+  * It is mostly useful for long running cloud crawls
 
 # Browser Configuration Options
 
