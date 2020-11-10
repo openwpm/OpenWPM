@@ -7,5 +7,6 @@
     "failure_limit": null,
     "testing": false,
     "s3_bucket": null,
-    "s3_directory": null
+    "s3_directory": null,
+    "memory_watchdog": false
 }
