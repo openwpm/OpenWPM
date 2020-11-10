@@ -275,9 +275,9 @@ class TaskManager:
                         )
                     ):
                         self.logger.debug(
-                            "Process: %s (pid: %i) with start "
-                            "time %s found running but not in "
-                            "browser process list. Killing."
+                            "Process %s (pid: %i) with start "
+                            "time %s isn't controlled by any BrowserManager."
+                            "Killing it now."
                             % (process.name(), process.pid, process.create_time())
                         )
                         kill_process_and_children(process, self.logger)
