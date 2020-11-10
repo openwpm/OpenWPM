@@ -34,6 +34,7 @@ browser_params[0]["display_mode"] = "headless"
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params["data_directory"] = "~/Desktop/"
 manager_params["log_directory"] = "~/Desktop/"
+manager_params["memory_watchdog"] = True
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
