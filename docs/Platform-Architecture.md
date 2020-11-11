@@ -24,7 +24,7 @@ To learn more about the `manager_params` and `browser_params` have a look at [Co
 In OpenWPM we have a so called watchdog that tries to ensure two things.
 - `process_watchdog`
     * It is part of default manager_params. It is set to false by default which can manually be set to true.
-    * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
+    * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that aren't currently controlled by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
 - `memory_watchdog`
     * It is part of default manager_params. It is set to false by default which can manually be set to true.
     * It is a watchdog that tries to ensure that no Firefox instance takes up to much memory.
