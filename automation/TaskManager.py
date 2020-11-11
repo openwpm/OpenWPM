@@ -31,6 +31,7 @@ BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
 MEMORY_WATCHDOG = "memory_watchdog"
+PROCESS_WATCHDOG = "process_watchdog"
 
 
 def load_default_params(
@@ -69,7 +70,6 @@ class TaskManager:
         self,
         manager_params: Dict[str, Any],
         browser_params: List[Dict[str, Any]],
-        process_watchdog: bool = False,
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -140,14 +140,6 @@ class TaskManager:
             self.failure_limit = manager_params["failure_limit"]
         else:
             self.failure_limit = self.num_browsers * 2 + 10
-
-        if process_watchdog:
-            raise ValueError(
-                "The Process watchdog functionality is currently broken. "
-                "See: https://github.com/mozilla/OpenWPM/issues/174."
-            )
-
-        self.process_watchdog = process_watchdog
 
         # Start logging server thread
         self.logging_server = MPLogger(
@@ -254,7 +246,7 @@ class TaskManager:
             # Check for browsers or displays that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
-            if self.process_watchdog:
+            if self.manager_params[PROCESS_WATCHDOG]:
                 geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
                 check_time = time.time()
