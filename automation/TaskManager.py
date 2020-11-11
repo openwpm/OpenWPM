@@ -209,9 +209,6 @@ class TaskManager:
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
         - presence of processes that are no longer in use
-
-        TODO: process watchdog needs to be updated since `psutil` won't
-              kill browser processes started by Selenium 3 (with `subprocess`)
         """
         while not self.closing:
             time.sleep(10)
