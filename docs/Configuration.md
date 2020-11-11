@@ -63,7 +63,11 @@ of configuration dictionaries.
     on-the-fly. Depending on where you would like to add test functionality,
     you may need to propagate the flag.
   * This is not something you should enable during normal crawls.
+* `process_watchdog`
+  * It is part of default manager_params. It is set to false by default which can manually be set to true.
+  * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
 * `memory_watchdog`
+  * It is part of default manager_params. It is set to false by default which can manually be set to true.
   * A watchdog that tries to ensure that no Firefox instance takes up to much memory. It is set to false by default
   * It is mostly useful for long running cloud crawls
 
