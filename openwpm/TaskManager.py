@@ -460,7 +460,7 @@ class TaskManager:
             browser.current_timeout = timeout
 
             # Adding timer to track performance of commands
-            t1 = time.time()
+            t1 = time.time_ns()
 
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
@@ -529,7 +529,7 @@ class TaskManager:
                         "command_status": command_status,
                         "error": error_text,
                         "traceback": tb,
-                        "duration": time.time() - t1,
+                        "duration": time.time_ns() - t1,
                     },
                 )
             )
