@@ -244,6 +244,7 @@ class TaskManager:
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
              # TODO This buffer should correspond to the maximum spawn timeout
+            # TODO This buffer should correspond to the maximum spawn timeout
             if self.manager_params[PROCESS_WATCHDOG]:
                 geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
