@@ -8,5 +8,6 @@
     "testing": false,
     "s3_bucket": null,
     "s3_directory": null,
-    "memory_watchdog": false
+    "memory_watchdog": false,
+    "process_watchdog": false
 }

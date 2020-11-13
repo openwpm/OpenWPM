@@ -35,6 +35,7 @@ browser_params[0]["display_mode"] = "headless"
 manager_params["data_directory"] = "~/Desktop/"
 manager_params["log_directory"] = "~/Desktop/"
 manager_params["memory_watchdog"] = True
+manager_params["process_watchdog"] = True
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds

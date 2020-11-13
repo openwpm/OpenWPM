@@ -31,6 +31,7 @@ BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
 MEMORY_WATCHDOG = "memory_watchdog"
+PROCESS_WATCHDOG = "process_watchdog"
 
 
 def load_default_params(
@@ -69,7 +70,6 @@ class TaskManager:
         self,
         manager_params: Dict[str, Any],
         browser_params: List[Dict[str, Any]],
-        process_watchdog: bool = False,
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -141,14 +141,6 @@ class TaskManager:
         else:
             self.failure_limit = self.num_browsers * 2 + 10
 
-        if process_watchdog:
-            raise ValueError(
-                "The Process watchdog functionality is currently broken. "
-                "See: https://github.com/mozilla/OpenWPM/issues/174."
-            )
-
-        self.process_watchdog = process_watchdog
-
         # Start logging server thread
         self.logging_server = MPLogger(
             self.manager_params["log_file"], self.manager_params, **self._logger_kwargs
@@ -217,9 +209,6 @@ class TaskManager:
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
         - presence of processes that are no longer in use
-
-        TODO: process watchdog needs to be updated since `psutil` won't
-              kill browser processes started by Selenium 3 (with `subprocess`)
         """
         while not self.closing:
             time.sleep(10)
@@ -254,7 +243,8 @@ class TaskManager:
             # Check for browsers or displays that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
-            if self.process_watchdog:
+            # TODO This buffer should correspond to the maximum spawn timeout
+            if self.manager_params[PROCESS_WATCHDOG]:
                 geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
                 check_time = time.time()
