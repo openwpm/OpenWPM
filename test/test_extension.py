@@ -3,8 +3,8 @@ from datetime import datetime
 
 import pytest
 
-from ..automation import TaskManager
-from ..automation.utilities import db_utils
+from ..openwpm import TaskManager
+from ..openwpm.utilities import db_utils
 from . import utilities
 from .openwpmtest import OpenWPMTest
 

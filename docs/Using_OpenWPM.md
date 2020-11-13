@@ -20,7 +20,7 @@ Suppose we want to add a top-level command to cause the browser to jiggle the mo
 
 To add a new command you need to modify the following four files:
 
-1. Define all required paramters in a type in `automation/Commands/Types.py`  
+1. Define all required paramters in a type in `openwpm/Commands/Types.py`  
   In our case this looks like this:
   ```python
     class JiggleCommand(BaseCommand):
@@ -31,9 +31,9 @@ To add a new command you need to modify the following four files:
             return "JiggleCommand({})".format(self.num_jiggles)
   ```
 
-2. Define the behaviour of our new command in `*_commands.py` in `automation/Commands/`,
+2. Define the behaviour of our new command in `*_commands.py` in `openwpm/Commands/`,
    e.g. `browser_commands.py`.
-   Feel free to add a new module within `automation/Commands/` for your own custom commands  
+   Feel free to add a new module within `openwpm/Commands/` for your own custom commands  
     In our case this looks like this:
   ```python
     from selenium.webdriver.common.action_chains import ActionChains
@@ -48,7 +48,7 @@ To add a new command you need to modify the following four files:
   ```
 
 3. Make our function be called when the command_sequence reaches our Command, by adding it to the
-    `execute_command` function in `automation/Commands/command_executer.py`
+    `execute_command` function in `openwpm/Commands/command_executer.py`
       In our case this looks like this:
   ```python
         elif type(command) is JiggleCommand:
@@ -57,7 +57,7 @@ To add a new command you need to modify the following four files:
             number_jiggles=self.num_jiggles)
   ```
 
-4. Lastly we change ```automation/CommandSequence.py``` by adding a `jiggle_mouse` method to the `CommandSequence`
+4. Lastly we change ```openwpm/CommandSequence.py``` by adding a `jiggle_mouse` method to the `CommandSequence`
   so we can add our command to the commands list  
   In our case this looks like this:
   ```python

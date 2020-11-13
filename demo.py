@@ -1,4 +1,4 @@
-from automation import CommandSequence, TaskManager
+from openwpm import CommandSequence, TaskManager
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1

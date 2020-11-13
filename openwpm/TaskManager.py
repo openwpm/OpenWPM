@@ -58,7 +58,7 @@ def load_default_params(
 class TaskManager:
     """User-facing Class for interfacing with OpenWPM
 
-    The TaskManager spawns several child processes to run the automation tasks.
+    The TaskManager spawns several child processes to run the openwpm tasks.
         - DataAggregator to aggregate data across browsers and save to the
           database.
         - MPLogger to aggregate logs across processes

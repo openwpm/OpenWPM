@@ -4,8 +4,8 @@ import tarfile
 import domain_utils as du
 import pytest
 
-from ..automation import TaskManager
-from ..automation.utilities import db_utils
+from ..openwpm import TaskManager
+from ..openwpm.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 TEST_SITES = [
