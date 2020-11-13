@@ -1,6 +1,6 @@
-from ..automation import TaskManager
-from ..automation.Commands.utils.webdriver_utils import parse_neterror
-from ..automation.utilities import db_utils
+from ..openwpm import TaskManager
+from ..openwpm.Commands.utils.webdriver_utils import parse_neterror
+from ..openwpm.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 

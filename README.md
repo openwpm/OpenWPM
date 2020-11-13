@@ -82,8 +82,8 @@ Quick Start
 
 Once installed, it is very easy to run a quick test of OpenWPM. Check out
 `demo.py` for an example. This will use the default setting specified in
-`automation/default_manager_params.json` and
-`automation/default_browser_params.json`, with the exception of the changes
+`openwpm/default_manager_params.json` and
+`openwpm/default_browser_params.json`, with the exception of the changes
 specified in `demo.py`.
 
 More information on the instrumentation and configuration parameters is given
@@ -126,7 +126,7 @@ Troubleshooting
 2. In older versions of firefox (pre 74) the setting to enable extensions was called
    `extensions.legacy.enabled`. If you need to work with earlier firefox, update the
    setting name `extensions.experiments.enabled` in
-   `automation/DeployBrowsers/configure_firefox.py`.
+   `openwpm/DeployBrowsers/configure_firefox.py`.
 
 3. Make sure you're conda environment is activated (`conda activate openwpm`). You can see
    you environments and the activate one by running `conda env list` the active environment
@@ -193,7 +193,7 @@ bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
 the hash of the content. In addition, the browser commands that dump page
 source and save screenshots save them in the `sources` and `screenshots`
 subdirectories of the main output directory. The SQLite schema
-specified by: `automation/DataAggregator/schema.sql`. You can specify additional tables
+specified by: `openwpm/DataAggregator/schema.sql`. You can specify additional tables
 inline by sending a `create_table` message to the data aggregator.
 
 #### Parquet on Amazon S3
@@ -213,7 +213,7 @@ location.
 **NOTE:** The schemas should be kept in sync with the exception of
 output-specific columns (e.g., `instance_id` in the S3 output). You can compare
 the two schemas by running
-`diff -y automation/DataAggregator/schema.sql automation/DataAggregator/parquet_schema.py`.
+`diff -y openwpm/DataAggregator/schema.sql openwpm/DataAggregator/parquet_schema.py`.
 
 Docker Deployment for OpenWPM
 -----------------------------

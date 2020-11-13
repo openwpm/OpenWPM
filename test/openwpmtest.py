@@ -3,7 +3,7 @@ from os.path import isfile, join
 
 import pytest
 
-from ..automation import TaskManager
+from ..openwpm import TaskManager
 from . import utilities
 
 

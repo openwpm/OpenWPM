@@ -35,12 +35,12 @@ the project as well as the one you plan to change fundamentally.
 
 ### Editing instrumentation
 
-The instrumentation extension is included in `/automation/Extension/firefox/`.
+The instrumentation extension is included in `/openwpm/Extension/firefox/`.
 The instrumentation itself (used by the above extension) is included in
-`/automation/Extension/webext-instrumentation/`.
+`/openwpm/Extension/webext-instrumentation/`.
 Any edits within these directories will require the extension to be re-built to produce
 a new `openwpm.xpi` with your updates. You can use `./scripts/build-extension.sh` to do this,
-or you can run `npm run build` from `automation/Extension/firefox/`.
+or you can run `npm run build` from `openwpm/Extension/firefox/`.
 
 ### Debugging the platform
 
