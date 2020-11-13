@@ -529,7 +529,7 @@ class TaskManager:
                         "command_status": command_status,
                         "error": error_text,
                         "traceback": tb,
-                        "duration": int((time.time_ns() - t1)/1000000),
+                        "duration": int((time.time_ns() - t1) / 1000000),
                     },
                 )
             )
