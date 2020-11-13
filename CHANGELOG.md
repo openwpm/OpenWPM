@@ -79,7 +79,7 @@ and the addon-sdk framework. We recommend against using this release as Firefox
 52ESR is no longer receiving security updates.
 
 Changes:
-  * The ``openwpm`` library can now be used with Python 3.4 or later,
+  * The ``automation`` library can now be used with Python 3.4 or later,
     as well as Python 2.7.
   * Bump to Firefox 52 ESR, Selenium 3.4.0+, and geckodriver 0.15.0.
     * geckodriver is required for Selenium 3+. ``install.sh`` will download

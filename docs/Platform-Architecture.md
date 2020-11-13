@@ -6,7 +6,7 @@ The user-facing component of the OpenWPM platform is the Task Manager. The Task 
 
 ## Instantiating a Task Manager
 
-All openwpm code is contained within the `openwpm` folder; the Task Manager code is contained in `openwpm/TaskManager.py`.
+All automation code is contained within the `openwpm` folder; the Task Manager code is contained in `openwpm/TaskManager.py`.
 
 Task Managers can be instantiated in the following way:
 
