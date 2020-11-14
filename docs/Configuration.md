@@ -3,14 +3,14 @@
 The browser and platform can be configured by two separate dictionaries. The
 platform configuration options can be set in `manager_params`, while the
 browser configuration options can be set in `browser_params`. The default
-settings are given in `automation/default_manager_params.json` and
-`automation/default_browser_params.json`.
+settings are given in `openwpm/default_manager_params.json` and
+`openwpm/default_browser_params.json`.
 
 To load the default configuration parameter dictionaries we provide a helper
 function `TaskManager::load_default_params`. For example:
 
 ```python
-from automation import TaskManager
+from openwpm import TaskManager
 manager_params, browser_params = TaskManager.load_default_params(num_browsers=5)
 ```
 
@@ -58,7 +58,7 @@ of configuration dictionaries.
 * `testing`
   * A platform wide flag that can be used to only run certain functionality
     while testing. For example, the Javascript instrumentation
-    [exposes its instrumentation function](https://github.com/citp/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/automation/Extension/firefox/data/content.js#L447-L449)
+    [exposes its instrumentation function](https://github.com/citp/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/openwpm/Extension/firefox/data/content.js#L447-L449)
     on the page script global to allow test scripts to instrument objects
     on-the-fly. Depending on where you would like to add test functionality,
     you may need to propagate the flag.
@@ -166,7 +166,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
 * A number of shortcuts are available to make writing `js_instrument_settings` less
   cumbersome than spelling out the full schema. These shortcuts are converted to a full
   specification by the `clean_js_instrumentation_settings` method in
-  [automation/js_instrumentation.py](../automation/js_instrumentation.py).
+  [openwpm/js_instrumentation.py](../openwpm/js_instrumentation.py).
 * The first shortcut is the fingerprinting collection, specified by
   `collection_fingerprinting`. This was the default prior to v0.11.0. It contains a collection
   of APIs of potential fingerprinting interest:
@@ -181,7 +181,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
     * Window properties (via `window.screen`)
 * `collection_fingerprinting` is the default if `js_instrument` is `True`.
 * The fingerprinting collection is specified by the json file
-  [fingerprinting.json](../automation/js_instrumentation_collections/fingerprinting.json).
+  [fingerprinting.json](../openwpm/js_instrumentation_collections/fingerprinting.json).
   This file is also a nice reference example for specifying your own APIs using the other
   shortcuts.
 * Shortcuts:

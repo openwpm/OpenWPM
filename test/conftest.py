@@ -8,7 +8,7 @@ from . import utilities
 EXTENSION_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "..",
-    "automation",
+    "openwpm",
     "Extension",
     "firefox",
 )

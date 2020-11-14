@@ -1,6 +1,6 @@
 import re
 
-from ..automation.utilities import db_utils
+from ..openwpm.utilities import db_utils
 from .openwpmtest import OpenWPMTest
 
 
