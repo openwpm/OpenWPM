@@ -38,6 +38,8 @@ SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
+MEMORY_WATCHDOG = "memory_watchdog"
+PROCESS_WATCHDOG = "process_watchdog"
 
 
 def load_default_params(
@@ -47,14 +49,16 @@ def load_default_params(
     Loads num_browsers copies of the default browser_params dictionary.
     Also loads a single copy of the default TaskManager params dictionary.
     """
-    fp = open(os.path.join(os.path.dirname(__file__), "default_browser_params.json"))
-    preferences = json.load(fp)
-    fp.close()
+    with open(
+        os.path.join(os.path.dirname(__file__), "default_browser_params.json"), "r"
+    ) as fp:
+        preferences = json.load(fp)
     browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
 
-    fp = open(os.path.join(os.path.dirname(__file__), "default_manager_params.json"))
-    manager_params = json.load(fp)
-    fp.close()
+    with open(
+        os.path.join(os.path.dirname(__file__), "default_manager_params.json"), "r"
+    ) as fp:
+        manager_params = json.load(fp)
     manager_params["num_browsers"] = num_browsers
 
     return manager_params, browser_params
@@ -76,7 +80,6 @@ class TaskManager:
         browser_params: List[BrowserParams],
         structured_storage_provider: StructuredStorageProvider,
         unstructured_storage_provider: UnstructuredStorageProvider,
-        process_watchdog: bool = False,
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -141,14 +144,6 @@ class TaskManager:
             self.failure_limit = manager_params["failure_limit"]
         else:
             self.failure_limit = self.num_browsers * 2 + 10
-
-        if process_watchdog:
-            raise ValueError(
-                "The Process watchdog functionality is currently broken. "
-                "See: https://github.com/mozilla/OpenWPM/issues/174."
-            )
-
-        self.process_watchdog = process_watchdog
 
         # Start logging server thread
         self.logging_server = MPLogger(
@@ -222,43 +217,41 @@ class TaskManager:
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
         - presence of processes that are no longer in use
-
-        TODO: process watchdog needs to be updated since `psutil` won't
-              kill browser processes started by Selenium 3 (with `subprocess`)
         """
         while not self.closing:
             time.sleep(10)
 
             # Check browser memory usage
-            for browser in self.browsers:
-                try:
-                    # Sum the memory used by the geckodriver process, the
-                    # main Firefox process and all its child processes.
-                    # Use the USS metric for child processes, to avoid
-                    # double-counting memory shared with their parent.
-                    geckodriver = psutil.Process(browser.geckodriver_pid)
-                    mem_bytes = geckodriver.memory_info().rss
-                    children = geckodriver.children()
-                    if children:
-                        firefox = children[0]
-                        mem_bytes += firefox.memory_info().rss
-                        for child in firefox.children():
-                            mem_bytes += child.memory_full_info().uss
-                    mem = mem_bytes / 2 ** 20
-                    if mem > BROWSER_MEMORY_LIMIT:
-                        self.logger.info(
-                            "BROWSER %i: Memory usage: %iMB"
-                            ", exceeding limit of %iMB"
-                            % (browser.browser_id, int(mem), BROWSER_MEMORY_LIMIT)
-                        )
-                        browser.restart_required = True
-                except psutil.NoSuchProcess:
-                    pass
+            if self.manager_params[MEMORY_WATCHDOG]:
+                for browser in self.browsers:
+                    try:
+                        # Sum the memory used by the geckodriver process, the
+                        # main Firefox process and all its child processes.
+                        # Use the USS metric for child processes, to avoid
+                        # double-counting memory shared with their parent.
+                        geckodriver = psutil.Process(browser.geckodriver_pid)
+                        mem_bytes = geckodriver.memory_info().rss
+                        children = geckodriver.children()
+                        if children:
+                            firefox = children[0]
+                            mem_bytes += firefox.memory_info().rss
+                            for child in firefox.children():
+                                mem_bytes += child.memory_full_info().uss
+                        mem = mem_bytes / 2 ** 20
+                        if mem > BROWSER_MEMORY_LIMIT:
+                            self.logger.info(
+                                "BROWSER %i: Memory usage: %iMB"
+                                ", exceeding limit of %iMB"
+                                % (browser.browser_id, int(mem), BROWSER_MEMORY_LIMIT)
+                            )
+                            browser.restart_required = True
+                    except psutil.NoSuchProcess:
+                        pass
 
             # Check for browsers or displays that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
-            if self.process_watchdog:
+            if self.manager_params[PROCESS_WATCHDOG]:
                 geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
                 check_time = time.time()
@@ -279,9 +272,9 @@ class TaskManager:
                         )
                     ):
                         self.logger.debug(
-                            "Process: %s (pid: %i) with start "
-                            "time %s found running but not in "
-                            "browser process list. Killing."
+                            "Process %s (pid: %i) with start "
+                            "time %s isn't controlled by any BrowserManager."
+                            "Killing it now."
                             % (process.name(), process.pid, process.create_time())
                         )
                         kill_process_and_children(process, self.logger)

@@ -17,7 +17,6 @@ from .Types import (
 def execute_command(
     command,
     webdriver,
-    browser_settings,
     browser_params,
     manager_params,
     extension_socket,
@@ -55,7 +54,6 @@ def execute_command(
             tar_location=command.dump_folder,
             close_webdriver=command.close_webdriver,
             webdriver=webdriver,
-            browser_settings=browser_settings,
             compress=command.compress,
         )
 
@@ -97,7 +95,6 @@ def execute_command(
         arg_dict = {
             "command": command,
             "driver": webdriver,
-            "browser_settings": browser_settings,
             "browser_params": browser_params,
             "manager_params": manager_params,
             "extension_socket": extension_socket,

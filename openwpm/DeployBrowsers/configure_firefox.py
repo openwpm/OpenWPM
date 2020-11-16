@@ -1,12 +1,6 @@
 """ Set prefs and load extensions in Firefox """
 
 
-import os
-import shutil
-
-EXT_STORAGE_DIR = "browser-extension-data"
-
-
 def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     """
     Configure the privacy settings in Firefox. This includes:
@@ -15,11 +9,6 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     * Tracking protection
     * Privacy extensions
     """
-
-    # Make extension storage directory
-    storage_dir = os.path.join(browser_profile_path, EXT_STORAGE_DIR)
-    if not os.path.isdir(storage_dir):
-        os.mkdir(storage_dir)
 
     # Turns on Do Not Track
     if browser_params["donottrack"]:
@@ -39,67 +28,6 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
             "Firefox Tracking Protection is not currently "
             "supported. See: "
             "https://github.com/citp/OpenWPM/issues/101"
-        )
-
-    # AbBlock Plus
-    if browser_params["adblock-plus"]:
-        raise RuntimeError(
-            "AdBlock Plus is not currently supported. See: "
-            "https://github.com/citp/OpenWPM/issues/35"
-        )
-
-    # Ghostery
-    # Updated: 2017-10-7
-    if browser_params["ghostery"]:
-        fp.add_extension(
-            extension=os.path.join(
-                root_dir, "firefox_extensions", "ghostery", "ghostery-7.3.3.7.xpi"
-            )
-        )
-        ghostery_dir = os.path.join(storage_dir, "firefox@ghostery.com")
-        if not os.path.isdir(ghostery_dir):
-            os.mkdir(ghostery_dir)
-        shutil.copy(
-            os.path.join(root_dir, "firefox_extensions", "ghostery", "storage.js"),
-            ghostery_dir,
-        )
-
-    # Disconnect
-    # Updated: 2017-10-7
-    if browser_params["disconnect"]:
-        fp.add_extension(
-            extension=os.path.join(
-                root_dir, "firefox_extensions", "disconnect-5.18.21.xpi"
-            )
-        )
-
-    # Enable HTTPS Everywhere
-    # Updated: 2017-10-7
-    if browser_params["https-everywhere"]:
-        fp.add_extension(
-            extension=os.path.join(
-                root_dir, "firefox_extensions", "https_everywhere-2017.10.4.xpi"
-            )
-        )
-
-    # uBlock Origin
-    # Updated: 2017-10-7
-    # Uses the default blocklists that ship with the XPI.
-    if browser_params["ublock-origin"]:
-        fp.add_extension(
-            extension=os.path.join(
-                root_dir,
-                "firefox_extensions",
-                "ublock_origin",
-                "ublock_origin-1.14.10.xpi",
-            )
-        )
-        ublock_dir = os.path.join(storage_dir, "uBlock0@raymondhill.net")
-        if not os.path.isdir(ublock_dir):
-            os.mkdir(ublock_dir)
-        shutil.copy(
-            os.path.join(root_dir, "firefox_extensions", "ublock_origin", "storage.js"),
-            ublock_dir,
         )
 
 

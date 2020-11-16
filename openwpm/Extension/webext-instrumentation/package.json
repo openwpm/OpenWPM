@@ -7,7 +7,7 @@
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
   "repository": "https://github.com/mozilla/OpenWPM",
-  "homepage": "https://github.com/mozilla/OpenWPM/tree/master/automation/Extension/webext-instrumentation",
+  "homepage": "https://github.com/mozilla/OpenWPM/tree/master/openwpm/Extension/webext-instrumentation",
   "keywords": [],
   "scripts": {
     "info": "npm-scripts-info",

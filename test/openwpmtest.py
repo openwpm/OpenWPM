@@ -5,9 +5,9 @@ from typing import List, Tuple
 
 import pytest
 
-from automation import TaskManager
-from automation.storage.sql_provider import SqlLiteStorageProvider
-from automation.types import BrowserParams, ManagerParams
+from openwpm import TaskManager
+from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
 

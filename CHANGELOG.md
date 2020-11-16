@@ -33,7 +33,7 @@ New features:
     [Instrumentation and Data Access section of the README](./README.md#instrumentation-and-data-access).
 
     - [Issue 641](https://github.com/mozilla/OpenWPM/issues/641)
-    - [PR 642](https://github.com/mozilla/OpenWPM/pull/642>)
+    - [PR 642](https://github.com/mozilla/OpenWPM/pull/642)
 
 Minor fixes:
   * Asserting that unpickled exception is an exception [PR 705](https://github.com/mozilla/OpenWPM/pull/705)

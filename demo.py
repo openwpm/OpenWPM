@@ -1,9 +1,9 @@
 import logging
 import os
 
-from automation import CommandSequence, TaskManager
-from automation.storage.in_memory_storage import MemoryUnstructuredProvider
-from automation.storage.sql_provider import SqlLiteStorageProvider
+from openwpm import CommandSequence, TaskManager
+from openwpm.storage.in_memory_storage import MemoryUnstructuredProvider
+from openwpm.storage.sql_provider import SqlLiteStorageProvider
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1

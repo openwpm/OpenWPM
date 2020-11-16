@@ -266,7 +266,7 @@ export class HttpInstrument {
     update.frame_id = details.frameId;
 
     // requestId is a unique identifier that can be used to link requests and responses
-    update.request_id = details.requestId;
+    update.request_id = Number(details.requestId);
 
     const url = details.url;
     update.url = escapeUrl(url);
@@ -646,7 +646,7 @@ export class HttpInstrument {
     update.frame_id = details.frameId;
 
     // requestId is a unique identifier that can be used to link requests and responses
-    update.request_id = details.requestId;
+    update.request_id = Number(details.requestId);
 
     const isCached = details.fromCache;
     update.is_cached = boolToInt(isCached);
