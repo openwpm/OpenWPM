@@ -2,7 +2,6 @@ import asyncio
 from typing import Any, Dict, List, Tuple
 
 import pytest
-
 from automation.storage.in_memory_storage import (
     MemoryArrowProvider,
     MemoryStructuredProvider,

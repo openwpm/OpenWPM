@@ -2,7 +2,6 @@ import logging
 import time
 
 import pytest
-
 from automation.MPLogger import MPLogger
 from automation.SocketInterface import ClientSocket
 from automation.storage.in_memory_storage import (

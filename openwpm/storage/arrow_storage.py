@@ -7,9 +7,8 @@ from typing import Any, DefaultDict, Dict, List
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from pyarrow import Table
-
 from automation.types import VisitId
+from pyarrow import Table
 
 from .parquet_schema import PQ_SCHEMAS
 from .storage_providers import StructuredStorageProvider, TableName
