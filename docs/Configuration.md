@@ -58,7 +58,7 @@ of configuration dictionaries.
 * `testing`
   * A platform wide flag that can be used to only run certain functionality
     while testing. For example, the Javascript instrumentation
-    [exposes its instrumentation function](https://github.com/citp/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/openwpm/Extension/firefox/data/content.js#L447-L449)
+    [exposes its instrumentation function](https://github.com/mozilla/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/automation/Extension/firefox/data/content.js#L447-L449)
     on the page script global to allow test scripts to instrument objects
     on-the-fly. Depending on where you would like to add test functionality,
     you may need to propagate the flag.
@@ -330,16 +330,16 @@ page load that are **not** reflected back into the seed profile.
     * The page source is saved in the following nested json structure:
         ```json
         {
-            'doc_url': "http://example.com",
-            'source': "<html> ... </html>",
-            'iframes': {
-                'frame_1': {'doc_url': ...,
-                            'source': ...,
-                            'iframes: { ... }},
-                'frame_2': {'doc_url': ...,
-                            'source': ...,
-                            'iframes: { ... }},
-                'frame_3': { ... }
+            "doc_url": "http://example.com",
+            "source": "<html> ... </html>",
+            "iframes": {
+                "frame_1": {"doc_url": ...,
+                            "source": ...,
+                            "iframes": { ... }},
+                "frame_2": {"doc_url": ...,
+                            "source": ...,
+                            "iframes": { ... }},
+                "frame_3": { ... }
             }
         }
         ```
