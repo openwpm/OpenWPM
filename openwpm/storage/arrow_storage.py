@@ -2,18 +2,19 @@ import asyncio
 import logging
 import random
 from abc import abstractmethod
+from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from automation.types import VisitId
 from pyarrow import Table
+
+from openwpm.types import VisitId
 
 from .parquet_schema import PQ_SCHEMAS
 from .storage_providers import StructuredStorageProvider, TableName
 
-SITE_VISITS_INDEX = TableName("_site_visits_index")
 INCOMPLETE_VISITS = TableName("incomplete_visits")
 CACHE_SIZE = 500
 
@@ -28,19 +29,19 @@ class ArrowProvider(StructuredStorageProvider):
         self.logger = logging.getLogger("openwpm")
 
         def factory_function() -> DefaultDict[TableName, List[Dict[str, Any]]]:
-            return DefaultDict(list)
+            return defaultdict(list)
 
         # Raw records per VisitId and Table
         self._records: DefaultDict[
             VisitId, DefaultDict[TableName, List[Dict[str, Any]]]
-        ] = DefaultDict(factory_function)
+        ] = defaultdict(factory_function)
 
         # Record batches by TableName
-        self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = DefaultDict(list)
+        self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = defaultdict(list)
 
         # Used to synchronize the finalizing and the flushing
         self.storing_condition = asyncio.Condition()
-        self.is_flushing = False
+        self.flushing = False
 
         self._instance_id = random.getrandbits(32)
 
@@ -82,11 +83,6 @@ class ArrowProvider(StructuredStorageProvider):
                     exc_info=True,
                 )
                 pass
-            # We construct a special index file from the site_visits data
-            # to make it easier to query the dataset
-            if table_name == "site_visits":
-                for item in data:
-                    self._batches[SITE_VISITS_INDEX].append(item)
 
         del self._records[visit_id]
 
@@ -107,6 +103,7 @@ class ArrowProvider(StructuredStorageProvider):
         # 2. No new batches should be created while saving out all the batches
         async with self.storing_condition:
             if self.flushing:
+                # This way we wait if there is an on going flush
                 await self.storing_condition.wait()
             self._create_batch(visit_id)
 
@@ -116,8 +113,6 @@ class ArrowProvider(StructuredStorageProvider):
                 self.flushing = False
             else:
                 await self.storing_condition.wait()
-
-        raise NotImplementedError()
 
     @abstractmethod
     async def write_table(self, table_name: TableName, table: Table) -> None:
@@ -134,7 +129,7 @@ class ArrowProvider(StructuredStorageProvider):
         got_cond = not not cond
         if not got_cond:
             cond = self.storing_condition
-            cond.acquire()
+            await cond.acquire()
         assert cond.locked()
         for table_name, batches in self._batches.items():
             table = pa.Table.from_batches(batches)

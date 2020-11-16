@@ -23,7 +23,6 @@ memory_arrow = "memory_arrow"
 memory_unstructured = "memory_unstructured"
 leveldb = "leveldb"
 
-
 structured_scenarios: List[Tuple[str, Dict[str, Any]]] = [
     (memory_structured, {"structured_provider": memory_structured}),
     (sqllite, {"structured_provider": sqllite}),
@@ -74,8 +73,10 @@ class TestStructuredStorageProvider(OpenWPMTest):
         await structured_provider.store_record(
             TableName("site_visits"), VisitId(2), data
         )
-        await structured_provider.finalize_visit_id(VisitId(2))
-        await structured_provider.flush_cache()
+        await asyncio.gather(
+            structured_provider.finalize_visit_id(VisitId(2)),
+            structured_provider.flush_cache(),
+        )
 
 
 @pytest.mark.asyncio
@@ -86,4 +87,4 @@ class TestUnstructuredStorageProvide(OpenWPMTest):
         test_string = "This is my test string"
         blob = test_string.encode()
         prov = MemoryUnstructuredProvider()
-        prov.store_blob("test", blob, compressed=False)
+        await prov.store_blob("test", blob, compressed=False)

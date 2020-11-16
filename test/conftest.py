@@ -49,8 +49,8 @@ def default_params(num_browsers, tmpdir) -> Tuple[ManagerParams, List[BrowserPar
     manager_params["data_directory"] = data_dir
     manager_params["log_directory"] = data_dir
     for i in range(num_browsers):
-        browser_params[i]["display_mode"] = display_mode
-    manager_params["db"] = join(
-        manager_params["data_directory"], manager_params["database_name"]
+        browser_params[i]["display_mode"] = "headless"
+    manager_params["db"] = os.sep.join(
+        [manager_params["data_directory"], manager_params["database_name"]]
     )
     return manager_params, browser_params
