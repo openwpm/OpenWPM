@@ -2,9 +2,10 @@ import logging
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Tuple
 
-from automation.types import VisitId
 from multiprocess import Queue
 from pyarrow import Table
+
+from openwpm.types import VisitId
 
 from .arrow_storage import ArrowProvider
 from .storage_providers import (

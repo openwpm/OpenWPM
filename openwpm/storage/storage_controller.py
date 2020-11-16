@@ -9,8 +9,9 @@ import time
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Literal, NoReturn, Optional, Tuple
 
-from automation.utilities.multiprocess_utils import Process
 from multiprocess import Queue
+
+from openwpm.utilities.multiprocess_utils import Process
 
 from ..SocketInterface import get_message_from_reader
 from ..types import BrowserId, VisitId

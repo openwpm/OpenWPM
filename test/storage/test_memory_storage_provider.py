@@ -2,15 +2,16 @@ import asyncio
 from typing import Any, Dict, List, Tuple
 
 import pytest
-from automation.storage.in_memory_storage import (
+
+from openwpm.storage.in_memory_storage import (
     MemoryArrowProvider,
     MemoryStructuredProvider,
     MemoryUnstructuredProvider,
 )
-from automation.storage.leveldb import LevelDbProvider
-from automation.storage.sql_provider import SqlLiteStorageProvider
-from automation.storage.storage_providers import StructuredStorageProvider, TableName
-from automation.types import VisitId
+from openwpm.storage.leveldb import LevelDbProvider
+from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.storage_providers import StructuredStorageProvider, TableName
+from openwpm.types import VisitId
 
 from ..openwpmtest import OpenWPMTest
 

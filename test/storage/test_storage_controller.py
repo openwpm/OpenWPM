@@ -2,13 +2,14 @@ import logging
 import time
 
 import pytest
-from automation.MPLogger import MPLogger
-from automation.SocketInterface import ClientSocket
-from automation.storage.in_memory_storage import (
+
+from openwpm.MPLogger import MPLogger
+from openwpm.SocketInterface import ClientSocket
+from openwpm.storage.in_memory_storage import (
     MemoryStructuredProvider,
     MemoryUnstructuredProvider,
 )
-from automation.storage.storage_controller import StorageControllerHandle
+from openwpm.storage.storage_controller import StorageControllerHandle
 
 
 @pytest.fixture(scope="session")

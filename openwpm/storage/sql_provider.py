@@ -6,7 +6,7 @@ from os import PathLike
 from sqlite3 import IntegrityError, InterfaceError, OperationalError, ProgrammingError
 from typing import Any, Dict, List, Tuple
 
-from automation.types import VisitId
+from openwpm.types import VisitId
 
 from .storage_providers import StructuredStorageProvider, TableName
 

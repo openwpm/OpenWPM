@@ -3,8 +3,9 @@ import subprocess
 from typing import List, Tuple
 
 import pytest
-from automation import TaskManager
-from automation.types import BrowserParams, ManagerParams
+
+from openwpm import TaskManager
+from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
 

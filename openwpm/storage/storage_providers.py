@@ -3,7 +3,7 @@ import io
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, NewType, Tuple
 
-from automation.types import VisitId
+from openwpm.types import VisitId
 
 """
 This module contains all base classes of the storage provider hierachy
