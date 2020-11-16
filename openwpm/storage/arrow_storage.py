@@ -37,7 +37,10 @@ class ArrowProvider(StructuredStorageProvider):
 
         # Record batches by TableName
         self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = DefaultDict(list)
+
+        # Used to synchronize the finalizing and the flushing
         self.storing_condition = asyncio.Condition()
+        self.is_flushing = False
 
         self._instance_id = random.getrandbits(32)
 
@@ -100,15 +103,19 @@ class ArrowProvider(StructuredStorageProvider):
             await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
 
         # This code is pretty tricky as there are a number of things going on
-        # 1. No finalize_visit_id shoudl return unless the visit has been saved to storage
+        # 1. No finalize_visit_id shouldn't return unless the visit has been saved to storage
         # 2. No new batches should be created while saving out all the batches
         async with self.storing_condition:
+            if self.flushing:
+                await self.storing_condition.wait()
             self._create_batch(visit_id)
 
             if self._is_cache_full():
+                self.flushing = True
                 await self.flush_cache(self.storing_condition)
-
-            await self.storing_condition.wait()
+                self.flushing = False
+            else:
+                await self.storing_condition.wait()
 
         raise NotImplementedError()
 
@@ -124,15 +131,15 @@ class ArrowProvider(StructuredStorageProvider):
         So we either grab the storing condition ourselves or the caller needs
         to pass us the locked storing_condition
         """
-        assert cond is None or cond.locked()
-        _cond = cond
-        if not _cond:
-            _cond = self.storing_condition
-            _cond.acquire()
+        got_cond = not not cond
+        if not got_cond:
+            cond = self.storing_condition
+            cond.acquire()
+        assert cond.locked()
         for table_name, batches in self._batches.items():
             table = pa.Table.from_batches(batches)
             await self.write_table(table_name, table)
-        _cond.notify_all()
+        cond.notify_all()
 
-        if cond is None:
-            _cond.release()
+        if not got_cond:
+            cond.release()
