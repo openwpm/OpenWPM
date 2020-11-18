@@ -31,15 +31,16 @@
     "doc:html": "typedoc src/ --target ES6 --mode file --out build/docs",
     "doc:json": "typedoc src/ --target ES6 --mode file --json build/docs/typedoc.json",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
-    "version-major": "git stash && run-s prepublishOnly && standard-version --release-as major",
-    "version-minor": "git stash && run-s prepublishOnly && standard-version --release-as minor",
-    "version-patch": "git stash && run-s prepublishOnly && standard-version --release-as patch",
+    "version-major": "git stash && run-s prepare && standard-version --release-as major",
+    "version-minor": "git stash && run-s prepare && standard-version --release-as minor",
+    "version-patch": "git stash && run-s prepare && standard-version --release-as patch",
     "reset": "git clean -dfx && git reset --hard && npm i",
     "clean": "trash build test",
     "all": "run-s reset test cov:check doc:html",
+    "prepare": "run-s build test",
     "prepare-release": "run-s all version doc:publish",
     "publish-please": "publish-please",
-    "prepublishOnly": "run-s build test && publish-please guard"
+    "prepublishOnly": "publish-please guard"
   },
   "scripts-info": {
     "info": "Display information about the package scripts",
