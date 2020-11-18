@@ -1,6 +1,7 @@
-from ..openwpm import TaskManager
-from ..openwpm.utilities import db_utils
-from ..openwpm.utilities.platform_utils import parse_http_stack_trace_str
+from openwpm import TaskManager
+from openwpm.utilities import db_utils
+from openwpm.utilities.platform_utils import parse_http_stack_trace_str
+
 from . import utilities
 from .openwpmtest import OpenWPMTest
 

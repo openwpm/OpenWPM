@@ -1,6 +1,7 @@
 from os.path import isfile
 
-from ..openwpm.utilities.platform_utils import get_firefox_binary_path
+from openwpm.utilities.platform_utils import get_firefox_binary_path
+
 from .openwpmtest import OpenWPMTest
 
 
