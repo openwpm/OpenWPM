@@ -38,7 +38,7 @@ update the description of the field here.
 | command_status | string |          |             |
 | error          | string |          |             |
 | traceback      | string |          |
-
+| duration       | int64  |          | A timer that logs how long a command took (in milliseconds)|
 
 # http_requests
 | Column Name                  | Type   | nullable | Description |

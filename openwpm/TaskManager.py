@@ -458,6 +458,10 @@ class TaskManager:
             command.set_visit_browser_id(browser.curr_visit_id, browser.browser_id)
             command.set_start_time(time.time())
             browser.current_timeout = timeout
+
+            # Adding timer to track performance of commands
+            t1 = time.time_ns()
+
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
 
@@ -525,6 +529,7 @@ class TaskManager:
                         "command_status": command_status,
                         "error": error_text,
                         "traceback": tb,
+                        "duration": int((time.time_ns() - t1) / 1000000),
                     },
                 )
             )
