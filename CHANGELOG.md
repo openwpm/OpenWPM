@@ -35,9 +35,7 @@ Besides the people mentioned above we also merged contributions from:
 - [@jyothisjagan](https://github.com/jyothisjagan) [#769](https://github.com/mozilla/OpenWPM/issues/769)
 - [@Prajwal7842](https://github.com/Prajwal7842) [#760](https://github.com/mozilla/OpenWPM/issues/760)
 - [@7brokenmirrors](https://github.com/7brokenmirrors) [#776](https://github.com/mozilla/OpenWPM/issues/776)
-
-
-
+- [@LordReigns](https://github.com/LordReigns) [#801](https://github.com/mozilla/OpenWPM/pull/801)
 
 ## v0.12.0 - 2020-08-26
 
