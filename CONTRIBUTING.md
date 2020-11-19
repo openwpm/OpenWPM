@@ -47,7 +47,7 @@ or you can run `npm run build` from `openwpm/Extension/firefox/`.
 Manual debugging with OpenWPM can be difficult. By design the platform runs all
 browsers in separate processes and swallows all exceptions (with the intent of
 continuing the crawl). We recommend using
-[manual_test.py](../test/manual_test.py).
+[manual_test.py](test/manual_test.py).
 
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium
