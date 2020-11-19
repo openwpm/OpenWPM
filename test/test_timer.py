@@ -1,5 +1,6 @@
-from ..openwpm import TaskManager
-from ..openwpm.utilities import db_utils
+from openwpm import TaskManager
+from openwpm.utilities import db_utils
+
 from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL
 
@@ -19,7 +20,7 @@ class TestCommandDuration(OpenWPMTest):
 
         get_command = db_utils.query_db(
             manager_params["db"],
-            "SELECT duration FROM crawl_history WHERE command = \"<class 'OpenWPM.openwpm.Commands.Types.GetCommand'>\"",
+            "SELECT duration FROM crawl_history WHERE command = \"<class 'openwpm.Commands.Types.GetCommand'>\"",
             as_tuple=True,
         )[0]
 

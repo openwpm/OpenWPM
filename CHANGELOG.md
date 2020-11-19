@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.13.0 - 2020-11-16
+
+Firefox 83 release
+
+There has been a lot happening in OpenWPM over the last three months.
+
+Here are the highlights:
+- Introduced `seed_profile` ([#735](https://github.com/mozilla/OpenWPM/issues/735))  
+  As part of our long-standing effort to restore stateful crawling support we now allow
+  specifying a `seed_profile` that gets loaded for each fresh start of a browser.  
+  More documentation can be found [here](docs/Configuration.md#load-a-profile).
+
+- Added new WebExtension instrument `dns_instrument` ([#721](https://github.com/mozilla/OpenWPM/issues/721))  
+  This instrument was contributed by [@turban1988](https://github.com/turban1988) .  
+  It allows to log the resolution of DNS requests. Unfortunately it is currently
+  undocumented. Adding docs is tracked in [#758](https://github.com/mozilla/OpenWPM/issues/758).
+
+- Moved `automation` to `openwpm` ([#793](https://github.com/mozilla/OpenWPM/issues/793))  
+  This change might have the biggest impact on users as we changed the name of the
+  top-level package. We apologize for the inconvenience caused but felt it was
+  a good change overall as the new name is a lot more meaningful.
+
+Internal changes:
+
+- We replaced flake8 with black as our formatting tool [#740](https://github.com/mozilla/OpenWPM/issues/740)
+- [@Metropass](https://github.com/Metropass) removed the built in extensions as they were horribly out of date [#754](https://github.com/mozilla/OpenWPM/issues/754)
+- [@Ankushduacodes](https://github.com/Ankushduacodes) removed the `browser_settings` as they required a lot of code for very little benefit [#775](https://github.com/mozilla/OpenWPM/issues/775)
+- [@Ankushduacodes](https://github.com/Ankushduacodes) made the `memory_watchdog` and `process_watchdog` part of the `manager_params` [#785](https://github.com/mozilla/OpenWPM/issues/785) [#787](https://github.com/mozilla/OpenWPM/issues/787)
+
+
+Thanks to all the external contributors that worked on this release.
+Besides the people mentioned above we also merged contributions from:
+- [@jyothisjagan](https://github.com/jyothisjagan) [#769](https://github.com/mozilla/OpenWPM/issues/769)
+- [@Prajwal7842](https://github.com/Prajwal7842) [#760](https://github.com/mozilla/OpenWPM/issues/760)
+- [@7brokenmirrors](https://github.com/7brokenmirrors) [#776](https://github.com/mozilla/OpenWPM/issues/776)
+- [@LordReigns](https://github.com/LordReigns) [#801](https://github.com/mozilla/OpenWPM/pull/801)
 
 ## v0.12.0 - 2020-08-26
 

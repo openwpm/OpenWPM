@@ -10,7 +10,7 @@ dependencies:
     - geckodriver
     - leveldb
     - multiprocess
-    - nodejs
+    - nodejs<15.0.0
     - pandas
     - pip
     - pillow
