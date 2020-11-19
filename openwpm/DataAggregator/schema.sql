@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS crawl_history (
     command_status TEXT,
     error TEXT,
     traceback TEXT,
+    duration INTEGER,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
     FOREIGN KEY(browser_id) REFERENCES crawl(id));
 

@@ -127,7 +127,6 @@ class GetCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -173,7 +172,6 @@ class BrowseCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -188,7 +186,6 @@ class BrowseCommand(BaseCommand):
         get_command.set_visit_browser_id(self.visit_id, self.browser_id)
         get_command.execute(
             webdriver,
-            browser_settings,
             browser_params,
             manager_params,
             extension_socket,
@@ -237,7 +234,6 @@ class SaveScreenshotCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -325,7 +321,6 @@ class ScreenshotFullPageCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -398,7 +393,6 @@ class DumpPageSourceCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -428,7 +422,6 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -490,7 +483,6 @@ class FinalizeCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,
@@ -518,7 +510,6 @@ class InitializeCommand(BaseCommand):
     def execute(
         self,
         webdriver,
-        browser_settings,
         browser_params,
         manager_params,
         extension_socket,

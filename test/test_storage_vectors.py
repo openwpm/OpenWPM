@@ -1,5 +1,5 @@
-from ..automation import CommandSequence, TaskManager
-from ..automation.utilities import db_utils
+from ..openwpm import CommandSequence, TaskManager
+from ..openwpm.utilities import db_utils
 from . import utilities
 from .openwpmtest import OpenWPMTest
 

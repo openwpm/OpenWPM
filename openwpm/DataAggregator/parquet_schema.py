@@ -23,6 +23,7 @@ fields = [
     pa.field("command_status", pa.string()),
     pa.field("error", pa.string()),
     pa.field("traceback", pa.string()),
+    pa.field("duration", pa.int64()),
 ]
 PQ_SCHEMAS["crawl_history"] = pa.schema(fields)
 

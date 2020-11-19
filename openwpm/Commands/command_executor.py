@@ -17,7 +17,6 @@ def execute_command(
     try:
         command.execute(
             webdriver,
-            browser_settings,
             browser_params,
             manager_params,
             extension_socket,

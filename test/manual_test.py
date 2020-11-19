@@ -8,17 +8,17 @@ import IPython
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
-from automation import js_instrumentation as jsi
-from automation.DeployBrowsers import configure_firefox
-from automation.TaskManager import load_default_params
-from automation.utilities.platform_utils import get_firefox_binary_path
+from openwpm import js_instrumentation as jsi
+from openwpm.DeployBrowsers import configure_firefox
+from openwpm.TaskManager import load_default_params
+from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import create_xpi
 from .utilities import BASE_TEST_URL, start_server
 
 # import commonly used modules and utilities so they can be easily accessed
 # in the interactive session
-from automation.Commands.utils import webdriver_utils as wd_util  # noqa isort:skip
+from openwpm.Commands.utils import webdriver_utils as wd_util  # noqa isort:skip
 import domain_utils as du  # noqa isort:skip
 from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 from selenium.common.exceptions import *  # noqa isort:skip
@@ -26,7 +26,7 @@ from selenium.common.exceptions import *  # noqa isort:skip
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
-EXT_PATH = join(BASE_DIR, "automation", "Extension", "firefox")
+EXT_PATH = join(BASE_DIR, "openwpm", "Extension", "firefox")
 
 
 class Logger:

@@ -4,8 +4,8 @@ import time
 
 import pytest
 
-from ..automation import MPLogger
-from ..automation.utilities.multiprocess_utils import Process
+from ..openwpm import MPLogger
+from ..openwpm.utilities.multiprocess_utils import Process
 from .openwpmtest import OpenWPMTest
 
 CHILD_INFO_STR_1 = "Child %d - INFO1"
