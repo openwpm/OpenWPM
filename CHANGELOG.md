@@ -2,7 +2,7 @@
 
 ## v0.13.0 - 2020-11-16
 
-Firefox 82.0.3 release
+Firefox 83 release
 
 There has been a lot happening in OpenWPM over the last three months.
 
