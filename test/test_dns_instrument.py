@@ -1,4 +1,5 @@
-from ..openwpm.utilities import db_utils
+from openwpm.utilities import db_utils
+
 from .openwpmtest import OpenWPMTest
 
 

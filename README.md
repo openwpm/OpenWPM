@@ -174,7 +174,7 @@ instrumentation bugs that impact results.
 Developer instructions
 ----------------------
 
-If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](docs/CONTRIBUTING.md)
+If you want to contribute to OpenWPM have a look at our [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 Instrumentation and Configuration
 -------------------------------
