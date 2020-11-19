@@ -24,8 +24,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get("http://website.invalid")
         manager.close()
-        # I couldn't figure out how to just get a the get_command
-        # Because the type has too many quotes
+
         get_command = db_utils.query_db(
             manager_params["db"],
             "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'OpenWPM.openwpm.Commands.Types.GetCommand'>\"",
