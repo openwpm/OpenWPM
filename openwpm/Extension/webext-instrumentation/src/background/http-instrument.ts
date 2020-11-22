@@ -43,7 +43,6 @@ const allTypes: ResourceType[] = [
       "sub_frame",
       "web_manifest",
       "websocket",
-      "xbl",
       "xml_dtd",
       "xmlhttprequest",
       "xslt",

@@ -30,6 +30,8 @@ SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
+MEMORY_WATCHDOG = "memory_watchdog"
+PROCESS_WATCHDOG = "process_watchdog"
 
 
 def load_default_params(
@@ -68,7 +70,6 @@ class TaskManager:
         self,
         manager_params: Dict[str, Any],
         browser_params: List[Dict[str, Any]],
-        process_watchdog: bool = False,
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -140,14 +141,6 @@ class TaskManager:
         else:
             self.failure_limit = self.num_browsers * 2 + 10
 
-        if process_watchdog:
-            raise ValueError(
-                "The Process watchdog functionality is currently broken. "
-                "See: https://github.com/mozilla/OpenWPM/issues/174."
-            )
-
-        self.process_watchdog = process_watchdog
-
         # Start logging server thread
         self.logging_server = MPLogger(
             self.manager_params["log_file"], self.manager_params, **self._logger_kwargs
@@ -216,43 +209,41 @@ class TaskManager:
         Periodically checks the following:
         - memory consumption of all browsers every 10 seconds
         - presence of processes that are no longer in use
-
-        TODO: process watchdog needs to be updated since `psutil` won't
-              kill browser processes started by Selenium 3 (with `subprocess`)
         """
         while not self.closing:
             time.sleep(10)
 
             # Check browser memory usage
-            for browser in self.browsers:
-                try:
-                    # Sum the memory used by the geckodriver process, the
-                    # main Firefox process and all its child processes.
-                    # Use the USS metric for child processes, to avoid
-                    # double-counting memory shared with their parent.
-                    geckodriver = psutil.Process(browser.geckodriver_pid)
-                    mem_bytes = geckodriver.memory_info().rss
-                    children = geckodriver.children()
-                    if children:
-                        firefox = children[0]
-                        mem_bytes += firefox.memory_info().rss
-                        for child in firefox.children():
-                            mem_bytes += child.memory_full_info().uss
-                    mem = mem_bytes / 2 ** 20
-                    if mem > BROWSER_MEMORY_LIMIT:
-                        self.logger.info(
-                            "BROWSER %i: Memory usage: %iMB"
-                            ", exceeding limit of %iMB"
-                            % (browser.browser_id, int(mem), BROWSER_MEMORY_LIMIT)
-                        )
-                        browser.restart_required = True
-                except psutil.NoSuchProcess:
-                    pass
+            if self.manager_params[MEMORY_WATCHDOG]:
+                for browser in self.browsers:
+                    try:
+                        # Sum the memory used by the geckodriver process, the
+                        # main Firefox process and all its child processes.
+                        # Use the USS metric for child processes, to avoid
+                        # double-counting memory shared with their parent.
+                        geckodriver = psutil.Process(browser.geckodriver_pid)
+                        mem_bytes = geckodriver.memory_info().rss
+                        children = geckodriver.children()
+                        if children:
+                            firefox = children[0]
+                            mem_bytes += firefox.memory_info().rss
+                            for child in firefox.children():
+                                mem_bytes += child.memory_full_info().uss
+                        mem = mem_bytes / 2 ** 20
+                        if mem > BROWSER_MEMORY_LIMIT:
+                            self.logger.info(
+                                "BROWSER %i: Memory usage: %iMB"
+                                ", exceeding limit of %iMB"
+                                % (browser.browser_id, int(mem), BROWSER_MEMORY_LIMIT)
+                            )
+                            browser.restart_required = True
+                    except psutil.NoSuchProcess:
+                        pass
 
             # Check for browsers or displays that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
-            if self.process_watchdog:
+            if self.manager_params[PROCESS_WATCHDOG]:
                 geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
                 check_time = time.time()
@@ -273,9 +264,9 @@ class TaskManager:
                         )
                     ):
                         self.logger.debug(
-                            "Process: %s (pid: %i) with start "
-                            "time %s found running but not in "
-                            "browser process list. Killing."
+                            "Process %s (pid: %i) with start "
+                            "time %s isn't controlled by any BrowserManager."
+                            "Killing it now."
                             % (process.name(), process.pid, process.create_time())
                         )
                         kill_process_and_children(process, self.logger)
@@ -467,6 +458,10 @@ class TaskManager:
             command.set_visit_browser_id(browser.curr_visit_id, browser.browser_id)
             command.set_start_time(time.time())
             browser.current_timeout = timeout
+
+            # Adding timer to track performance of commands
+            t1 = time.time_ns()
+
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
 
@@ -534,6 +529,7 @@ class TaskManager:
                         "command_status": command_status,
                         "error": error_text,
                         "traceback": tb,
+                        "duration": int((time.time_ns() - t1) / 1000000),
                     },
                 )
             )

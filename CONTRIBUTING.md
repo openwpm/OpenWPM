@@ -35,19 +35,19 @@ the project as well as the one you plan to change fundamentally.
 
 ### Editing instrumentation
 
-The instrumentation extension is included in `/automation/Extension/firefox/`.
+The instrumentation extension is included in `/openwpm/Extension/firefox/`.
 The instrumentation itself (used by the above extension) is included in
-`/automation/Extension/webext-instrumentation/`.
+`/openwpm/Extension/webext-instrumentation/`.
 Any edits within these directories will require the extension to be re-built to produce
 a new `openwpm.xpi` with your updates. You can use `./scripts/build-extension.sh` to do this,
-or you can run `npm run build` from `automation/Extension/firefox/`.
+or you can run `npm run build` from `openwpm/Extension/firefox/`.
 
 ### Debugging the platform
 
 Manual debugging with OpenWPM can be difficult. By design the platform runs all
 browsers in separate processes and swallows all exceptions (with the intent of
 continuing the crawl). We recommend using
-[manual_test.py](../test/manual_test.py).
+[manual_test.py](test/manual_test.py).
 
 This utility allows manual debugging of the extension instrumentation with or
 without Selenium enabled, as well as makes it easy to launch a Selenium

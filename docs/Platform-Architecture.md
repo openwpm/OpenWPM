@@ -6,7 +6,7 @@ The user-facing component of the OpenWPM platform is the Task Manager. The Task 
 
 ## Instantiating a Task Manager
 
-All automation code is contained within the `automation` folder; the Task Manager code is contained in `automation/TaskManager.py`.
+All automation code is contained within the `openwpm` folder; the Task Manager code is contained in `openwpm/TaskManager.py`.
 
 Task Managers can be instantiated in the following way:
 
@@ -20,7 +20,15 @@ to get the default parameters.
 
 To learn more about the `manager_params` and `browser_params` have a look at [Configuration.md](Configuration.md)
 
-`<process_watchdog>` is an optional parameter that can be passed to the `TaskManager` to create another thread that kills off all processes named `Xvfb` or `firefox` that haven't been spawned by OpenWPM.
+## Watchdogs
+In OpenWPM we have a so called watchdog that tries to ensure two things.
+- `process_watchdog`
+    * It is part of default manager_params. It is set to false by default which can manually be set to true.
+    * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that aren't currently controlled by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
+- `memory_watchdog`
+    * It is part of default manager_params. It is set to false by default which can manually be set to true.
+    * It is a watchdog that tries to ensure that no Firefox instance takes up to much memory.
+    * It is mostly useful for long running cloud crawls.
 
 ## Issuing commands
 
@@ -43,7 +51,7 @@ Instead you need to submit them to a `TaskManager` by calling:
     manager.close()
 ```
 
-Please note that you need to close the manager, because by default CommandSequences are executed in a non-blocking fashion meaning that you might reach the end of you main function/file before the CommandSequence completed running.
+Please note that you need to close the manager, because by default CommandSequences are executed in a non-blocking fashion meaning that you might reach the end of your main function/file before the CommandSequence completed running.
 
 `TaskManager.execute_command_sequence` has an optional `index` parameter that enables the user to specify which of the existing browsers should execute a command. The options are
 
@@ -60,9 +68,9 @@ with https://github.com/mozilla/OpenWPM/issues/743.
 
 ## Overview
 
-Contained in `automation/BrowserManager.py`, Browser Managers provide a wrapper around the drivers used to automate full browser instances. In particular, we opted to use [Selenium](http://docs.seleniumhq.org/) to drive full browser instances as bot detection frameworks can more easily detect lightweight alternatives such as PhantomJS. 
+Contained in `openwpm/BrowserManager.py`, Browser Managers provide a wrapper around the drivers used to automate full browser instances. In particular, we opted to use [Selenium](http://docs.seleniumhq.org/) to drive full browser instances as bot detection frameworks can more easily detect lightweight alternatives such as PhantomJS. 
 
-Browser Managers receive commands from the Task Manager, which they then pass to the command executor (located in `automation/Commands/command_executor.py`), which receives a command object and converts it into web driver actions. Browser Managers also receive browser parameters which they use to instantiate the Selenium web driver using one of the browser initialization functions contained in `automation/DeployBrowsers`.
+Browser Managers receive commands from the Task Manager, which they then pass to the command executor (located in `openwpm/Commands/command_executor.py`), which receives a command object and converts it into web driver actions. Browser Managers also receive browser parameters which they use to instantiate the Selenium web driver using one of the browser initialization functions contained in `openwpm/DeployBrowsers`.
 
 The Browser class, contained in the same file, is the Task Manager's wrapper around Browser Managers, which allow it to cleanly kill and restart Browser Managers as necessary.
 
@@ -74,7 +82,7 @@ Throughout the course of a measurement, the Browser Managers' commands (along wi
 
 # The WebExtension
 
-All of our data collection happens in the OpenWPM WebExtension, which can be found under [automation/Extension](../automation/Extension).
+All of our data collection happens in the OpenWPM WebExtension, which can be found under [openwpm/Extension](../openwpm/Extension).
 The Extension makes heavy use of priviliged APIs and can only be installed on unbranded or custom builds of Firefox with add-on security disabled.
 
 The currently supported instruments can be found in [Configuration.md](Configuration.md#Instruments)
@@ -84,8 +92,8 @@ The currently supported instruments can be found in [Configuration.md](Configura
 
 ## Overview
 
-One of the Data Aggregators, contained in `automation/DataAggregator`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. We as previously mentioned we support both local as well as remote data saving.
-The most useful feature of the Data Aggregator is the fact that it is isolated from the other processes through a network socket interface (see `automation/SocketInterface.py`).
+One of the Data Aggregators, contained in `openwpm/DataAggregator`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. We as previously mentioned we support both local as well as remote data saving.
+The most useful feature of the Data Aggregator is the fact that it is isolated from the other processes through a network socket interface (see `openwpm/SocketInterface.py`).
 
 ## Data Logged
 

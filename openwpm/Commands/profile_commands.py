@@ -10,30 +10,6 @@ from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 logger = logging.getLogger("openwpm")
 
 
-def save_browser_settings(location, browser_settings):
-    """
-    browser_settings stores additional profile config parameters
-    e.g. screen_res, plugin sets, user_agent string
-    """
-    if browser_settings is not None:
-        # see if the browser_settings file exists, and if so delete
-        if os.path.isfile(location + "browser_settings.p"):
-            os.remove(location + "browser_settings.p")
-
-        with open(location + "browser_settings.p", "wb") as f:
-            pickle.dump(browser_settings, f)
-
-
-def load_browser_settings(location):
-    """ loads the browser settings from a pickled dictionary in <location>"""
-    try:
-        with open(location + "browser_settings.p", "rb") as f:
-            browser_settings = pickle.load(f)
-    except IOError:
-        browser_settings = None
-    return browser_settings
-
-
 def dump_profile(
     browser_profile_folder,
     manager_params,
@@ -41,13 +17,11 @@ def dump_profile(
     tar_location,
     close_webdriver,
     webdriver=None,
-    browser_settings=None,
     compress=False,
 ):
     """
     dumps a browser profile currently stored in <browser_profile_folder> to
     <tar_location> in which both folders are absolute paths.
-    if <browser_settings> exists they are also saved
     """
     logger.debug(
         "BROWSER %i: Profile dumping is currently unsupported. "
@@ -135,10 +109,6 @@ def dump_profile(
         tar.add(full_path, arcname=item)
     tar.close()
 
-    # save the browser settings
-    if browser_settings is not None:
-        save_browser_settings(tar_location, browser_settings)
-
 
 def load_profile(browser_profile_folder, manager_params, browser_params, tar_location):
     """
@@ -178,13 +148,9 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
         os.remove(browser_profile_folder + tar_name)
         logger.debug("BROWSER %i: Tarfile extracted" % browser_params["browser_id"])
 
-        # load the browser settings
-        browser_settings = load_browser_settings(tar_location)
     except Exception as ex:
         logger.critical(
             "BROWSER %i: Error: %s while attempting to load profile"
             % (browser_params["browser_id"], str(ex))
         )
         raise ProfileLoadError("Profile Load not successful")
-
-    return browser_settings

@@ -10,8 +10,8 @@ from typing import Any, Callable, List
 import boto3
 import sentry_sdk
 
-from automation import CommandSequence, MPLogger, TaskManager
-from automation.utilities import rediswq
+from openwpm import CommandSequence, MPLogger, TaskManager
+from openwpm.utilities import rediswq
 from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables

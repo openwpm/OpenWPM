@@ -1,6 +1,7 @@
-from ..automation import TaskManager
-from ..automation.Commands.utils.webdriver_utils import parse_neterror
-from ..automation.utilities import db_utils
+from openwpm import TaskManager
+from openwpm.Commands.utils.webdriver_utils import parse_neterror
+from openwpm.utilities import db_utils
+
 from .openwpmtest import OpenWPMTest
 
 
@@ -24,12 +25,12 @@ class TestCustomFunctionCommand(OpenWPMTest):
         manager = TaskManager.TaskManager(manager_params, browser_params)
         manager.get("http://website.invalid")
         manager.close()
-        # I couldn't figure out how to just get a the get_command
-        # Because the type has too many quotes
-        _, get_command = db_utils.query_db(
+
+        get_command = db_utils.query_db(
             manager_params["db"],
-            "SELECT command_status, error " "FROM crawl_history ",
+            "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'openwpm.Commands.Types.GetCommand'>\"",
             as_tuple=True,
-        )
+        )[0]
+
         assert get_command[0] == "neterror"
         assert get_command[1] == "dnsNotFound"

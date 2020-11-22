@@ -13,12 +13,9 @@
     "browser": "firefox",
     "prefs": {},
     "tp_cookies": "always",
-
     "bot_mitigation": false,
     "profile_archive_dir": null,
     "recovery_tar": null,
-
-    "random_attributes": false,
     "donottrack": false,
     "tracking-protection": false
 }
