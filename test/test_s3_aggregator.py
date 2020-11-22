@@ -8,8 +8,8 @@ import pytest
 from localstack.services import infra
 from multiprocess import Queue
 
-from openwpm import TaskManager
-from openwpm.CommandSequence import CommandSequence
+from openwpm import task_manager
+from openwpm.command_sequence import CommandSequence
 from openwpm.DataAggregator.parquet_schema import PQ_SCHEMAS
 
 from .openwpmtest import OpenWPMTest

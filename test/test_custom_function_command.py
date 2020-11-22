@@ -1,4 +1,4 @@
-from openwpm import CommandSequence, TaskManager
+from openwpm import command_sequence, task_manager
 from openwpm.utilities import db_utils
 
 from . import utilities

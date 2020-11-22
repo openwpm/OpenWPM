@@ -1,4 +1,4 @@
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest

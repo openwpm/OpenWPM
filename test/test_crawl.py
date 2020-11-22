@@ -4,7 +4,7 @@ import tarfile
 import domain_utils as du
 import pytest
 
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest

@@ -1,4 +1,4 @@
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.Commands.utils.webdriver_utils import parse_neterror
 from openwpm.utilities import db_utils
 

@@ -2,8 +2,8 @@ from os.path import isfile, join
 
 import pytest
 
-from openwpm import TaskManager
-from openwpm.CommandSequence import CommandSequence
+from openwpm import task_manager
+from openwpm.command_sequence import CommandSequence
 from openwpm.Errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
 

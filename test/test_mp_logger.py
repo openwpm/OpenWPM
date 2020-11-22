@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from openwpm import MPLogger
+from openwpm import mp_logger
 from openwpm.utilities.multiprocess_utils import Process
 
 from .openwpmtest import OpenWPMTest
