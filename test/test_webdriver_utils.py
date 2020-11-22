@@ -22,7 +22,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
     def test_parse_neterror_integration(self):
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get("http://website.invalid")
         manager.close()
 

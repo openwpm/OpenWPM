@@ -14,7 +14,7 @@ class TestCommandDuration(OpenWPMTest):
 
     def test_command_duration(self):
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=TEST_URL, sleep=5)
         manager.close()
 

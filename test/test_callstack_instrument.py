@@ -70,7 +70,7 @@ class TestCallstackInstrument(OpenWPMTest):
     def test_http_stacktrace(self):
         test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(test_url, sleep=10)
         db = manager_params["db"]
         manager.close()
