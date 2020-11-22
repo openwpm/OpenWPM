@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
 
-from ..SocketInterface import serversocket
+from ..socket_interface import serversocket
 from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = "page_content"

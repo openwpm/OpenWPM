@@ -17,7 +17,7 @@ from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from tblib import pickling_support
 
 from .Commands.utils.webdriver_utils import parse_neterror
-from .SocketInterface import serversocket
+from .socket_interface import serversocket
 
 pickling_support.install()
 
