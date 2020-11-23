@@ -6,7 +6,6 @@ dependencies:
 - black=20.8b1
 - click=7.1.2
 - codecov=2.1.10
-- dataclasses-json=0.5.2
 - dill=0.3.3
 - geckodriver=0.28.0
 - ipython=7.19.0
