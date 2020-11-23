@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+
 from dataclasses_json import dataclass_json
 
 
@@ -8,7 +9,9 @@ class BrowserParams:
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
-    js_instrument_settings: list = field(default_factory=list)
+    js_instrument_settings: list = field(
+        default_factory=lambda: ["collection_fingerprinting"]
+    )
     http_instrument: bool = False
     navigation_instrument: bool = False
     save_content: bool = False
