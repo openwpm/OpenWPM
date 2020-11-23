@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
-
 from dataclasses_json import dataclass_json
 
 
-@dataclass_json()
+@dataclass_json
 @dataclass
 class BrowserParams:
     extension_enabled: bool = True
@@ -27,3 +26,19 @@ class BrowserParams:
     recovery_tar: str = None
     donottrack: str = False
     tracking_protection: bool = False
+
+
+@dataclass_json
+@dataclass
+class ManagerParams:
+    data_directory: str = "~/openwpm/"
+    log_directory: str = "~/openwpm/"
+    output_format: str = "local"
+    database_name: str = "crawl-data.sqlite"
+    log_file: str = "openwpm.log"
+    failure_limit: str = None
+    testing: bool = False
+    s3_bucket: str = None
+    s3_directory: str = None
+    memory_watchdog: bool = False
+    process_watchdog: bool = False
