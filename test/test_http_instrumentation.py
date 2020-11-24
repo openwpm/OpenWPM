@@ -1034,10 +1034,10 @@ class FilenamesIntoFormCommand(BaseCommand):
 
     def execute(
         self,
-        webdriver: Firefox,
-        browser_params: Dict[str, Any],
-        manager_params: Dict[str, Any],
-        extension_socket: clientsocket,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
     ) -> None:
         img_file_upload_element = webdriver.find_element_by_id("upload-img")
         css_file_upload_element = webdriver.find_element_by_id("upload-css")

@@ -113,10 +113,10 @@ class TestConfigSetCommand(BaseCommand):
 
     def execute(
         self,
-        webdriver: Firefox,
-        browser_params: Dict[str, Any],
-        manager_params: Dict[str, Any],
-        extension_socket: clientsocket,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
     ) -> None:
         webdriver.get("about:config")
         result = webdriver.execute_script(
