@@ -13,7 +13,7 @@ import psutil
 import tblib
 
 from .BrowserManager import Browser
-from .Commands.utils.webdriver_utils import parse_neterror
+from .commands.utils.webdriver_utils import parse_neterror
 from .CommandSequence import CommandSequence
 from .DataAggregator import BaseAggregator, LocalAggregator, S3Aggregator
 from .DataAggregator.BaseAggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL

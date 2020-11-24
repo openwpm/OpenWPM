@@ -3,7 +3,7 @@ from typing import Any, Dict
 from selenium.webdriver import Firefox
 
 from openwpm import CommandSequence, TaskManager
-from openwpm.Commands.types import BaseCommand
+from openwpm.commands.types import BaseCommand
 from openwpm.SocketInterface import clientsocket
 from openwpm.utilities import db_utils
 

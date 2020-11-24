@@ -16,8 +16,8 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
-from .Commands import command_executor
-from .Commands.types import BaseCommand, ShutdownSignal
+from .commands import command_executor
+from .commands.types import BaseCommand, ShutdownSignal
 from .DeployBrowsers import deploy_browser
 from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .SocketInterface import clientsocket

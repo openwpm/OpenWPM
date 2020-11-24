@@ -18,7 +18,7 @@ from .utilities import BASE_TEST_URL, start_server
 
 # import commonly used modules and utilities so they can be easily accessed
 # in the interactive session
-from openwpm.Commands.utils import webdriver_utils as wd_util  # noqa isort:skip
+from openwpm.commands.utils import webdriver_utils as wd_util  # noqa isort:skip
 import domain_utils as du  # noqa isort:skip
 from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 from selenium.common.exceptions import *  # noqa isort:skip
