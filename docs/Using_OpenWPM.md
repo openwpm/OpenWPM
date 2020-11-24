@@ -20,7 +20,7 @@ Suppose we want to add a top-level command to cause the browser to jiggle the mo
 
 To add a new command you need to modify the following four files:
 
-1. Define all required paramters in a type in `openwpm/commands/Types.py`  
+1. Define all required paramters in a type in `openwpm/commands/types.py`  
   In our case this looks like this:
   ```python
     class JiggleCommand(BaseCommand):
@@ -117,4 +117,3 @@ print list(fp_sites)
 ````
 
 The variety of data stored in OpenWPM databases (with all instrumentation enabled) allows the above script to easily be expanded into a larger study. For instance, one step would be to see which parties are the recipients of the email address. Do these recipients later place cookies containing the email? Besides the site on which the original email leak was made, on which other first parties do these recipients appear as a third party? All of these questions are answerable through OpenWPM database instances.
-
