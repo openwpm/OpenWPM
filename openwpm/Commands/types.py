@@ -14,8 +14,7 @@ class BaseCommand(ABC):
     def set_start_time(self, start_time):
         self.start_time = start_time
 
-    # FIXME: After transitioning all Commands to the new format this needs to be reenabled
-    # @abstractmethod
+    @abstractmethod
     def execute(
         self,
         webdriver: Firefox,
@@ -26,18 +25,6 @@ class BaseCommand(ABC):
         raise NotImplementedError()
 
 
-class DumpProfCommand(BaseCommand):
-    def __init__(self, dump_folder, close_webdriver, compress):
-        self.dump_folder = dump_folder
-        self.close_webdriver = close_webdriver
-        self.compress = compress
-
+class ShutdownSignal:
     def __repr__(self):
-        return "DumpProfCommand({},{},{})".format(
-            self.dump_folder, self.close_webdriver, self.compress
-        )
-
-
-class ShutdownCommand(BaseCommand):
-    def __repr__(self):
-        return "ShutdownCommand()"
+        return "ShutdownSignal()"
