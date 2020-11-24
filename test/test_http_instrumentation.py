@@ -998,16 +998,12 @@ class TestPOSTInstrument(OpenWPMTest):
         img_file_path = os.path.abspath("test_pages/shared/test_image.png")
         css_file_path = os.path.abspath("test_pages/shared/test_style.css")
 
-        def type_filenames_into_form(**kwargs):
-            """Simulate typing into the file upload input fields."""
-            driver = kwargs["driver"]
-
         manager_params, browser_params = self.get_config()
         manager = task_manager.TaskManager(manager_params, browser_params)
         test_url = utilities.BASE_TEST_URL + "/post_file_upload.html"
         cs = command_sequence.CommandSequence(test_url)
         cs.get(sleep=0, timeout=60)
-        cs.run_custom_function(type_filenames_into_form, ())
+        cs.append_command(FilenamesIntoFormCommand(img_file_path, css_file_path))
         manager.execute_command_sequence(cs)
         manager.close()
 
