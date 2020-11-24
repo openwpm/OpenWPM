@@ -14,13 +14,13 @@ import tblib
 
 from .browser_manager import Browser
 from .command_sequence import CommandSequence
-from .Commands.utils.webdriver_utils import parse_neterror
+from .commands.utils.webdriver_utils import parse_neterror
 from .DataAggregator import S3_aggregator, base_aggregator, local_aggregator
 from .DataAggregator.base_aggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
 from .errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .mp_logger import MPLogger
-from .socket_interface import clientsocket
+from .socket_interface import ClientSocket
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 
@@ -292,7 +292,7 @@ class TaskManager:
         ] = self.data_aggregator.listener_address
 
         # open connection to aggregator for saving crawl details
-        self.sock = clientsocket(serialization="dill")
+        self.sock = ClientSocket(serialization="dill")
         self.sock.connect(*self.manager_params["aggregator_address"])
 
     def _shutdown_manager(

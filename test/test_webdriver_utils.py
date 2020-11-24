@@ -1,5 +1,5 @@
 from openwpm import task_manager
-from openwpm.Commands.utils.webdriver_utils import parse_neterror
+from openwpm.commands.utils.webdriver_utils import parse_neterror
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest
@@ -28,7 +28,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
         get_command = db_utils.query_db(
             manager_params["db"],
-            "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'openwpm.Commands.types.GetCommand'>\"",
+            "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'openwpm.commands.types.GetCommand'>\"",
             as_tuple=True,
         )[0]
 

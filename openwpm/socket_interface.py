@@ -111,7 +111,7 @@ class serversocket:
         self.sock.close()
 
 
-class clientsocket:
+class ClientSocket:
     """A client socket for sending messages"""
 
     def __init__(self, serialization="json", verbose=False):
@@ -181,7 +181,7 @@ def main():
         serialization = input("Enter the serialization type (default: 'json'):\n")
         if serialization == "":
             serialization = "json"
-        sock = clientsocket(serialization=serialization)
+        sock = ClientSocket(serialization=serialization)
         sock.connect(host, int(port))
         msg = None
 
