@@ -53,11 +53,8 @@ class ManagerParams:
 
 
 def validate_browser_params(browser_params: BrowserParams):
-    temp_browser_params = BrowserParams()
-
-    if temp_browser_params == browser_params:
+    if BrowserParams() == browser_params:
         return
-    del temp_browser_params
 
     if browser_params.bot_mitigation not in BOOL_TYPE_VALIDATION_LIST:
         raise ConfigError(
