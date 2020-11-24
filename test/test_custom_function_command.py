@@ -2,9 +2,9 @@ from typing import Any, Dict
 
 from selenium.webdriver import Firefox
 
-from openwpm import CommandSequence, TaskManager
+from openwpm import command_sequence, task_manager
 from openwpm.commands.types import BaseCommand
-from openwpm.SocketInterface import clientsocket
+from openwpm.socket_interface import ClientSocket
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -40,7 +40,7 @@ class CollectLinksCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: Dict[str, Any],
         manager_params: Dict[str, Any],
-        extension_socket: clientsocket,
+        extension_socket: ClientSocket,
     ) -> None:
         link_urls = [
             x
@@ -52,7 +52,7 @@ class CollectLinksCommand(BaseCommand):
         ]
         current_url = webdriver.current_url
 
-        sock = clientsocket()
+        sock = ClientSocket()
         sock.connect(*manager_params["aggregator_address"])
 
         query = (
@@ -86,8 +86,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
         """ Test `custom_function` with an inline func that collects links """
 
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(url_a)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(url_a)
         cs.get(sleep=0, timeout=60)
         cs.append_command(CollectLinksCommand("http", "page_links"))
         manager.execute_command_sequence(cs)

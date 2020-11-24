@@ -11,7 +11,7 @@ from .commands.browser_commands import (
     ScreenshotFullPageCommand,
 )
 from .commands.types import BaseCommand, DumpProfCommand
-from .Errors import CommandExecutionError
+from .errors import CommandExecutionError
 
 
 class CommandSequence:

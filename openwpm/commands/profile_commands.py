@@ -7,9 +7,8 @@ from typing import Any, Dict
 
 from selenium.webdriver import Firefox
 
-from openwpm.SocketInterface import clientsocket
-
-from ..Errors import ProfileLoadError
+from ..errors import ProfileLoadError
+from ..socket_interface import ClientSocket
 from .types import BaseCommand
 from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 
@@ -37,7 +36,7 @@ class DumpProfileCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: Dict[str, Any],
         manager_params: Dict[str, Any],
-        extension_socket: clientsocket,
+        extension_socket: ClientSocket,
     ) -> None:
         logger.debug(
             "BROWSER %i: Profile dumping is currently unsupported. "

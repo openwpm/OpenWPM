@@ -3,9 +3,9 @@ from os.path import isfile, join
 import pytest
 
 from openwpm import TaskManager
-from openwpm.Commands.types import BaseCommand
-from openwpm.CommandSequence import CommandSequence
-from openwpm.Errors import CommandExecutionError, ProfileLoadError
+from openwpm.command_sequence import CommandSequence
+from openwpm.commands.types import BaseCommand
+from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest

@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from selenium.webdriver import Firefox
 
-from ..SocketInterface import clientsocket
+from ..socket_interface import ClientSocket
 
 
 class BaseCommand(ABC):
@@ -20,7 +20,7 @@ class BaseCommand(ABC):
         webdriver: Firefox,
         browser_params: Dict[str, Any],
         manager_params: Dict[str, Any],
-        extension_socket: clientsocket,
+        extension_socket: ClientSocket,
     ) -> None:
         raise NotImplementedError()
 

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
 
-from ..SocketInterface import serversocket
+from ..socket_interface import ServerSocket
 from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = "page_content"
@@ -61,7 +61,7 @@ class BaseListener:
         self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger("openwpm")
         self.curent_visit_ids: List[int] = list()  # All visit_ids in flight
-        self.sock: Optional[serversocket] = None
+        self.sock: Optional[ServerSocket] = None
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -98,7 +98,7 @@ class BaseListener:
         """Run listener startup tasks
 
         Note: Child classes should call this method"""
-        self.sock = serversocket(name=type(self).__name__)
+        self.sock = ServerSocket(name=type(self).__name__)
         self.status_queue.put(self.sock.sock.getsockname())
         self.sock.start_accepting()
         self.record_queue = self.sock.queue

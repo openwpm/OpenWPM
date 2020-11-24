@@ -4,7 +4,7 @@ import tarfile
 import domain_utils as du
 import pytest
 
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest
@@ -66,7 +66,7 @@ class TestCrawl(OpenWPMTest):
         # Run the test crawl
         data_dir = os.path.join(str(tmpdir), "data_dir")
         manager_params, browser_params = self.get_config(data_dir)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         for site in TEST_SITES:
             manager.get(site)
         ff_db_tar = os.path.join(

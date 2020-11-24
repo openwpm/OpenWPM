@@ -20,7 +20,7 @@ Suppose we want to add a top-level command to cause the browser to jiggle the mo
 
 To add a new command you need to modify the following four files:
 
-1. Define all required paramters in a type in `openwpm/Commands/Types.py`  
+1. Define all required paramters in a type in `openwpm/commands/types.py`  
   In our case this looks like this:
   ```python
     class JiggleCommand(BaseCommand):
@@ -31,9 +31,9 @@ To add a new command you need to modify the following four files:
             return "JiggleCommand({})".format(self.num_jiggles)
   ```
 
-2. Define the behaviour of our new command in `*_commands.py` in `openwpm/Commands/`,
+2. Define the behaviour of our new command in `*_commands.py` in `openwpm/commands/`,
    e.g. `browser_commands.py`.
-   Feel free to add a new module within `openwpm/Commands/` for your own custom commands  
+   Feel free to add a new module within `openwpm/commands/` for your own custom commands  
     In our case this looks like this:
   ```python
     from selenium.webdriver.common.action_chains import ActionChains
@@ -48,7 +48,7 @@ To add a new command you need to modify the following four files:
   ```
 
 3. Make our function be called when the command_sequence reaches our Command, by adding it to the
-    `execute_command` function in `openwpm/Commands/command_executer.py`
+    `execute_command` function in `openwpm/commands/command_executer.py`
       In our case this looks like this:
   ```python
         elif type(command) is JiggleCommand:
@@ -117,4 +117,3 @@ print list(fp_sites)
 ````
 
 The variety of data stored in OpenWPM databases (with all instrumentation enabled) allows the above script to easily be expanded into a larger study. For instance, one step would be to see which parties are the recipients of the email address. Do these recipients later place cookies containing the email? Besides the site on which the original email leak was made, on which other first parties do these recipients appear as a third party? All of these questions are answerable through OpenWPM database instances.
-

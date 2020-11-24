@@ -8,8 +8,8 @@ import pytest
 from localstack.services import infra
 from multiprocess import Queue
 
-from openwpm import TaskManager
-from openwpm.CommandSequence import CommandSequence
+from openwpm import task_manager
+from openwpm.command_sequence import CommandSequence
 from openwpm.DataAggregator.parquet_schema import PQ_SCHEMAS
 
 from .openwpmtest import OpenWPMTest
@@ -54,7 +54,7 @@ class TestS3Aggregator(OpenWPMTest):
         NUM_VISITS = 2
         NUM_BROWSERS = 4
         manager_params, browser_params = self.get_config(num_browsers=NUM_BROWSERS)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         for _ in range(NUM_VISITS * NUM_BROWSERS):
             manager.get(TEST_SITE, sleep=1)
         manager.close()
@@ -100,7 +100,7 @@ class TestS3Aggregator(OpenWPMTest):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
         manager_params, browser_params = self.get_config(num_browsers=1)
         manager_params["s3_directory"] = "s3-aggregator-tests-2"
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(TEST_SITE, sleep=1)
         dataset = LocalS3Dataset(
             manager_params["s3_bucket"], manager_params["s3_directory"]
@@ -125,7 +125,7 @@ class TestS3Aggregator(OpenWPMTest):
         dataset = LocalS3Dataset(
             manager_params["s3_bucket"], manager_params["s3_directory"]
         )
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         queue = Queue()
 
         def ensure_site_in_s3(success: bool):

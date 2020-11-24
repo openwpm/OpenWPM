@@ -9,8 +9,8 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from openwpm import js_instrumentation as jsi
-from openwpm.DeployBrowsers import configure_firefox
-from openwpm.TaskManager import load_default_params
+from openwpm.deploy_browsers import configure_firefox
+from openwpm.task_manager import load_default_params
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import create_xpi
