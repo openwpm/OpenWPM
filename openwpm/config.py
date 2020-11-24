@@ -56,61 +56,6 @@ def validate_browser_params(browser_params: BrowserParams):
     if BrowserParams() == browser_params:
         return
 
-    if browser_params.bot_mitigation not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.bot_mitigation. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.extension_enabled not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.extension_enabled. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.cookie_instrument not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.cookie_instrument. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.js_instrument not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.js_instrument. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.http_instrument not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.http_instrument. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.navigation_instrument not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.navigation_instrument. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.save_content not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.save_content. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.callstack_instrument not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.callstack_instrument. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.dns_instrument not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.dns_instrument. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.donottrack not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.donottrack. "
-            "Please look into BrowserParams Documentation for more information"
-        )
-    if browser_params.tracking_protection not in BOOL_TYPE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.tracking_protection. "
-            "Please look into BrowserParams Documentation for more information"
-        )
 
     if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
         raise ConfigError(
