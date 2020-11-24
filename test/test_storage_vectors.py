@@ -1,4 +1,4 @@
-from openwpm import CommandSequence, TaskManager
+from openwpm import command_sequence, task_manager
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -36,9 +36,9 @@ class TestStorageVectors(OpenWPMTest):
         # Run the test crawl
         manager_params, browser_params = self.get_config()
         browser_params[0]["cookie_instrument"] = True
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         url = utilities.BASE_TEST_URL + "/js_cookie.html"
-        cs = CommandSequence.CommandSequence(url)
+        cs = command_sequence.CommandSequence(url)
         cs.get(sleep=3, timeout=120)
         manager.execute_command_sequence(cs)
         manager.close()

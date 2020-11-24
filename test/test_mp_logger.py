@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from openwpm import MPLogger
+from openwpm import mp_logger
 from openwpm.utilities.multiprocess_utils import Process
 
 from .openwpmtest import OpenWPMTest
@@ -90,7 +90,7 @@ class TestMPLogger(OpenWPMTest):
     def test_multiprocess(self, tmpdir):
         # Set up loggingserver
         log_file = self.get_logfile_path(str(tmpdir))
-        openwpm_logger = MPLogger.MPLogger(log_file)
+        openwpm_logger = mp_logger.MPLogger(log_file)
 
         child_process_1 = Process(target=child_proc, args=(0,))
         child_process_1.daemon = True
@@ -144,7 +144,7 @@ class TestMPLogger(OpenWPMTest):
     )
     def test_child_process_with_exception(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
-        openwpm_logger = MPLogger.MPLogger(log_file)
+        openwpm_logger = mp_logger.MPLogger(log_file)
 
         child_process_1 = Process(target=child_proc_with_exception, args=(0,))
         child_process_1.daemon = True
@@ -172,7 +172,7 @@ class TestMPLogger(OpenWPMTest):
     )
     def test_child_process_logging(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
-        openwpm_logger = MPLogger.MPLogger(log_file)
+        openwpm_logger = mp_logger.MPLogger(log_file)
         child_process = Process(target=child_proc_logging_exception())
         child_process.daemon = True
         child_process.start()

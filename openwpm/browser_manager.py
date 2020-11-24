@@ -16,11 +16,11 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
-from .Commands import command_executor
-from .Commands.Types import ShutdownCommand
-from .DeployBrowsers import deploy_browser
-from .Errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
-from .SocketInterface import clientsocket
+from .commands import command_executor
+from .commands.types import ShutdownCommand
+from .deploy_browsers import deploy_browser
+from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
+from .socket_interface import ClientSocket
 from .utilities.multiprocess_utils import (
     Process,
     kill_process_and_children,
@@ -471,7 +471,7 @@ def BrowserManager(
                 "BROWSER %i: Connecting to extension on port %i"
                 % (browser_params["browser_id"], port)
             )
-            extension_socket = clientsocket(serialization="json")
+            extension_socket = ClientSocket(serialization="json")
             extension_socket.connect("127.0.0.1", int(port))
         else:
             extension_socket = None

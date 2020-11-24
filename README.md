@@ -126,7 +126,7 @@ Troubleshooting
 2. In older versions of firefox (pre 74) the setting to enable extensions was called
    `extensions.legacy.enabled`. If you need to work with earlier firefox, update the
    setting name `extensions.experiments.enabled` in
-   `openwpm/DeployBrowsers/configure_firefox.py`.
+   `openwpm/deploy_browsers/configure_firefox.py`.
 
 3. Make sure you're conda environment is activated (`conda activate openwpm`). You can see
    you environments and the activate one by running `conda env list` the active environment
