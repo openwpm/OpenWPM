@@ -57,11 +57,10 @@ def validate_browser_params(browser_params: BrowserParams):
         return
 
 
-    if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
-        raise ConfigError(
-            "Unrecognized value provided for BrowserParams.display_mode. "
-            "Please look into BrowserParams Documentation for more information"
-        )
+CONFIG_ERROR_STRING="Found {value} as value for {paramter_name} in BrowserParams."
+                                "Supported values are {value_list}
+                                "Please look at docs/Configuration.md#browser-configuration-options"
+        raise ConfigError(CONFIG_ERROR_STRING.format(value=browser_params.display_mode, value_list=DISPLAY_MODE_VALIDATION_LIST, parameter_name = "display_mode`)
 
     if browser_params.browser.lower() not in SUPPORTED_BROWSER_LIST:
         raise ConfigError(
