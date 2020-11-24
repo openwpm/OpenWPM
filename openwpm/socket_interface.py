@@ -11,7 +11,7 @@ import dill
 # see: https://stackoverflow.com/a/1148237
 
 
-class serversocket:
+class ServerSocket:
     """
     A server socket to receive and process string messages
     from client sockets to a central queue
@@ -111,7 +111,7 @@ class serversocket:
         self.sock.close()
 
 
-class clientsocket:
+class ClientSocket:
     """A client socket for sending messages"""
 
     def __init__(self, serialization="json", verbose=False):
@@ -171,7 +171,7 @@ def main():
 
     # Just for testing
     if sys.argv[1] == "s":
-        sock = serversocket(verbose=True)
+        sock = ServerSocket(verbose=True)
         sock.start_accepting()
         input("Press enter to exit...")
         sock.close()
@@ -181,7 +181,7 @@ def main():
         serialization = input("Enter the serialization type (default: 'json'):\n")
         if serialization == "":
             serialization = "json"
-        sock = clientsocket(serialization=serialization)
+        sock = ClientSocket(serialization=serialization)
         sock.connect(host, int(port))
         msg = None
 

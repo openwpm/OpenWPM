@@ -70,7 +70,7 @@ with https://github.com/mozilla/OpenWPM/issues/743.
 
 Contained in `openwpm/BrowserManager.py`, Browser Managers provide a wrapper around the drivers used to automate full browser instances. In particular, we opted to use [Selenium](http://docs.seleniumhq.org/) to drive full browser instances as bot detection frameworks can more easily detect lightweight alternatives such as PhantomJS. 
 
-Browser Managers receive commands from the Task Manager, which they then pass to the command executor (located in `openwpm/Commands/command_executor.py`), which receives a command object and converts it into web driver actions. Browser Managers also receive browser parameters which they use to instantiate the Selenium web driver using one of the browser initialization functions contained in `openwpm/DeployBrowsers`.
+Browser Managers receive commands from the Task Manager, which they then pass to the command executor (located in `openwpm/commands/command_executor.py`), which receives a command object and converts it into web driver actions. Browser Managers also receive browser parameters which they use to instantiate the Selenium web driver using one of the browser initialization functions contained in `openwpm/deploy_browsers`.
 
 The Browser class, contained in the same file, is the Task Manager's wrapper around Browser Managers, which allow it to cleanly kill and restart Browser Managers as necessary.
 

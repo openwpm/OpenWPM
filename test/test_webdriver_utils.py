@@ -1,5 +1,5 @@
-from openwpm import TaskManager
-from openwpm.Commands.utils.webdriver_utils import parse_neterror
+from openwpm import task_manager
+from openwpm.commands.utils.webdriver_utils import parse_neterror
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest
@@ -22,13 +22,13 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
     def test_parse_neterror_integration(self):
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get("http://website.invalid")
         manager.close()
 
         get_command = db_utils.query_db(
             manager_params["db"],
-            "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'openwpm.Commands.Types.GetCommand'>\"",
+            "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'openwpm.commands.types.GetCommand'>\"",
             as_tuple=True,
         )[0]
 

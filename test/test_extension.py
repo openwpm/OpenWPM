@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -281,7 +281,7 @@ class TestExtension(OpenWPMTest):
 
     def test_extension_gets_correct_visit_id(self):
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         url_a = utilities.BASE_TEST_URL + "/simple_a.html"
         url_b = utilities.BASE_TEST_URL + "/simple_b.html"
