@@ -125,7 +125,7 @@ class TestConfigSetCommand(BaseCommand):
                             .classes["@mozilla.org/preferences-service;1"]
                             .getService(Components.interfaces.nsIPrefBranch);
                 try {{
-                    return prefs.getBoolPref({self.pref_name})
+                    return prefs.getBoolPref("{self.pref_name}")
                 }} catch (e) {{
                     return false;
                 }}
