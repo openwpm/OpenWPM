@@ -1,4 +1,10 @@
+from typing import Any, Dict
+
+from selenium.webdriver import Firefox
+
 from openwpm import CommandSequence, TaskManager
+from openwpm.Commands.types import BaseCommand
+from openwpm.SocketInterface import clientsocket
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -22,6 +28,54 @@ PAGE_LINKS = {
 }
 
 
+class CollectLinksCommand(BaseCommand):
+    """ Collect links with `scheme` and save in table `table_name` """
+
+    def __init__(self, scheme, table_name) -> None:
+        self.scheme = scheme
+        self.table_name = table_name
+
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: Dict[str, Any],
+        manager_params: Dict[str, Any],
+        extension_socket: clientsocket,
+    ) -> None:
+        link_urls = [
+            x
+            for x in (
+                element.get_attribute("href")
+                for element in webdriver.find_elements_by_tag_name("a")
+            )
+            if x.startswith(self.scheme + "://")
+        ]
+        current_url = webdriver.current_url
+
+        sock = clientsocket()
+        sock.connect(*manager_params["aggregator_address"])
+
+        query = (
+            "CREATE TABLE IF NOT EXISTS %s ("
+            "top_url TEXT, link TEXT, "
+            "visit_id INTEGER, browser_id INTEGER);" % self.table_name
+        )
+        sock.send(("create_table", query))
+
+        for link in link_urls:
+            query = (
+                self.table_name,
+                {
+                    "top_url": current_url,
+                    "link": link,
+                    "visit_id": self.visit_id,
+                    "browser_id": self.browser_id,
+                },
+            )
+            sock.send(query)
+        sock.close()
+
+
 class TestCustomFunctionCommand(OpenWPMTest):
     """Test `custom_function` command's ability to handle inline functions"""
 
@@ -31,52 +85,11 @@ class TestCustomFunctionCommand(OpenWPMTest):
     def test_custom_function(self):
         """ Test `custom_function` with an inline func that collects links """
 
-        from openwpm.SocketInterface import clientsocket
-
-        def collect_links(table_name, scheme, **kwargs):
-            """ Collect links with `scheme` and save in table `table_name` """
-            driver = kwargs["driver"]
-            manager_params = kwargs["manager_params"]
-            browser_id = kwargs["command"].browser_id
-            visit_id = kwargs["command"].visit_id
-            link_urls = [
-                x
-                for x in (
-                    element.get_attribute("href")
-                    for element in driver.find_elements_by_tag_name("a")
-                )
-                if x.startswith(scheme + "://")
-            ]
-            current_url = driver.current_url
-
-            sock = clientsocket()
-            sock.connect(*manager_params["aggregator_address"])
-
-            query = (
-                "CREATE TABLE IF NOT EXISTS %s ("
-                "top_url TEXT, link TEXT, "
-                "visit_id INTEGER, browser_id INTEGER);" % table_name
-            )
-            sock.send(("create_table", query))
-
-            for link in link_urls:
-                query = (
-                    table_name,
-                    {
-                        "top_url": current_url,
-                        "link": link,
-                        "visit_id": visit_id,
-                        "browser_id": browser_id,
-                    },
-                )
-                sock.send(query)
-            sock.close()
-
         manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
         cs = CommandSequence.CommandSequence(url_a)
         cs.get(sleep=0, timeout=60)
-        cs.run_custom_function(collect_links, ("page_links", "http"))
+        cs.append_command(CollectLinksCommand("http", "page_links"))
         manager.execute_command_sequence(cs)
         manager.close()
         query_result = db_utils.query_db(

@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 import pytest
 
 from openwpm import CommandSequence, TaskManager
+from openwpm.Commands.types import BaseCommand
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -1000,11 +1001,6 @@ class TestPOSTInstrument(OpenWPMTest):
         def type_filenames_into_form(**kwargs):
             """Simulate typing into the file upload input fields."""
             driver = kwargs["driver"]
-            img_file_upload_element = driver.find_element_by_id("upload-img")
-            css_file_upload_element = driver.find_element_by_id("upload-css")
-            img_file_upload_element.send_keys(img_file_path)
-            css_file_upload_element.send_keys(css_file_path)
-            sleep(5)  # wait for the form submission (3 sec after onload)
 
         manager_params, browser_params = self.get_config()
         manager = TaskManager.TaskManager(manager_params, browser_params)
@@ -1029,3 +1025,22 @@ class TestPOSTInstrument(OpenWPMTest):
             u"upload-img": img_file_content,
         }
         assert expected_body == post_body_decoded
+
+
+class FilenamesIntoFormCommand(BaseCommand):
+    def __init__(self, img_file_path, css_file_path) -> None:
+        self.img_file_path = img_file_path
+        self.css_file_path = css_file_path
+
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: Dict[str, Any],
+        manager_params: Dict[str, Any],
+        extension_socket: clientsocket,
+    ) -> None:
+        img_file_upload_element = webdriver.find_element_by_id("upload-img")
+        css_file_upload_element = webdriver.find_element_by_id("upload-css")
+        img_file_upload_element.send_keys(self.img_file_path)
+        css_file_upload_element.send_keys(self.css_file_path)
+        sleep(5)  # wait for the form submission (3 sec after onload)

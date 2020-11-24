@@ -19,7 +19,6 @@ class BaseCommand(ABC):
     def execute(
         self,
         webdriver: Firefox,
-        browser_settings: Dict[str, Any],
         browser_params: Dict[str, Any],
         manager_params: Dict[str, Any],
         extension_socket: clientsocket,

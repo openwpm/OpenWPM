@@ -3,6 +3,7 @@ from os.path import isfile, join
 import pytest
 
 from openwpm import TaskManager
+from openwpm.Commands.types import BaseCommand
 from openwpm.CommandSequence import CommandSequence
 from openwpm.Errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
@@ -84,30 +85,13 @@ class TestProfile(OpenWPMTest):
         assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
 
     def test_seed_persistance(self):
-        def test_config_is_set(*args, **kwargs):
-            driver = kwargs["driver"]
-            driver.get("about:config")
-            result = driver.execute_script(
-                """
-                var prefs = Components
-                            .classes["@mozilla.org/preferences-service;1"]
-                            .getService(Components.interfaces.nsIPrefBranch);
-                try {
-                    return prefs.getBoolPref("test_pref")
-                } catch (e) {
-                    return false;
-                }
-            """
-            )
-            assert result
-
         manager_params, browser_params = self.get_test_config(num_browsers=1)
         browser_params[0]["seed_tar"] = "."
         command_sequences = []
         for _ in range(2):
             cs = CommandSequence(url="https://example.com", reset=True)
             cs.get()
-            cs.run_custom_function(test_config_is_set)
+            cs.append_command(TestConfigSetCommand("test_pref", True))
             command_sequences.append(cs)
         manager = TaskManager.TaskManager(manager_params, browser_params)
         for cs in command_sequences:
@@ -120,3 +104,31 @@ class TestProfile(OpenWPMTest):
         assert len(query_result) > 0
         for row in query_result:
             assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"
+
+
+class TestConfigSetCommand(BaseCommand):
+    def __init__(self, pref_name, expected_value) -> None:
+        self.pref_name = pref_name
+        self.expected_value = expected_value
+
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: Dict[str, Any],
+        manager_params: Dict[str, Any],
+        extension_socket: clientsocket,
+    ) -> None:
+        webdriver.get("about:config")
+        result = webdriver.execute_script(
+            f"""
+                var prefs = Components
+                            .classes["@mozilla.org/preferences-service;1"]
+                            .getService(Components.interfaces.nsIPrefBranch);
+                try {{
+                    return prefs.getBoolPref({self.pref_name})
+                }} catch (e) {{
+                    return false;
+                }}
+            """
+        )
+        assert result == self.expected_value
