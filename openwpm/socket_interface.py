@@ -11,7 +11,7 @@ import dill
 # see: https://stackoverflow.com/a/1148237
 
 
-class serversocket:
+class ServerSocket:
     """
     A server socket to receive and process string messages
     from client sockets to a central queue
@@ -171,7 +171,7 @@ def main():
 
     # Just for testing
     if sys.argv[1] == "s":
-        sock = serversocket(verbose=True)
+        sock = ServerSocket(verbose=True)
         sock.start_accepting()
         input("Press enter to exit...")
         sock.close()
