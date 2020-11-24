@@ -10,7 +10,7 @@ from .commands.browser_commands import (
     SaveScreenshotCommand,
     ScreenshotFullPageCommand,
 )
-from .commands.types import BaseCommand, DumpProfCommand
+from .commands.types import BaseCommand
 from .errors import CommandExecutionError
 
 
