@@ -4,7 +4,7 @@ import pickle
 import shutil
 import tarfile
 
-from ..Errors import ProfileLoadError
+from ..errors import ProfileLoadError
 from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 
 logger = logging.getLogger("openwpm")

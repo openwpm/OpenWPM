@@ -1,4 +1,4 @@
-from openwpm import CommandSequence, TaskManager
+from openwpm import command_sequence, task_manager
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -31,7 +31,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
     def test_custom_function(self):
         """ Test `custom_function` with an inline func that collects links """
 
-        from openwpm.SocketInterface import clientsocket
+        from openwpm.socket_interface import ClientSocket
 
         def collect_links(table_name, scheme, **kwargs):
             """ Collect links with `scheme` and save in table `table_name` """
@@ -49,7 +49,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
             ]
             current_url = driver.current_url
 
-            sock = clientsocket()
+            sock = ClientSocket()
             sock.connect(*manager_params["aggregator_address"])
 
             query = (
@@ -73,8 +73,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
             sock.close()
 
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(url_a)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(url_a)
         cs.get(sleep=0, timeout=60)
         cs.run_custom_function(collect_links, ("page_links", "http"))
         manager.execute_command_sequence(cs)
