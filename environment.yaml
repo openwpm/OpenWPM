@@ -13,6 +13,7 @@ dependencies:
 - localstack=0.11.1.1
 - multiprocess=0.70.11.1
 - mypy=0.790
+- nodejs=14.15.1
 - pandas=1.1.4
 - pillow=8.0.1
 - pip=20.2.4
