@@ -56,7 +56,6 @@ def validate_browser_params(browser_params: BrowserParams):
     if BrowserParams() == browser_params:
         return
 
-
     if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
         raise ConfigError(
             "Unrecognized value provided for BrowserParams.display_mode. "
