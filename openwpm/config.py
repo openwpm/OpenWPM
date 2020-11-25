@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from dataclasses_json import dataclass_json
 
-from .Errors import ConfigError
+from .errors import ConfigError
 
 BOOL_TYPE_VALIDATION_LIST = [True, False]
 DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
