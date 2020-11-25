@@ -1,9 +1,9 @@
 import os
 import sqlite3
+from pathlib import Path
+from typing import AnyStr, Iterator, Tuple
 
 import plyvel
-
-CONTENT_DB_NAME = "content.ldb"
 
 
 def query_db(db, query, params=None, as_tuple=False):
@@ -22,16 +22,15 @@ def query_db(db, query, params=None, as_tuple=False):
     return rows
 
 
-def get_content(data_directory):
+def get_content(db_name: Path) -> Iterator[Tuple[AnyStr, AnyStr]]:
     """Yield key, value pairs from the deduplicated leveldb content database
 
     Parameters
     ----------
-    data_directory : string
-        root directory of the crawl files containing the content database
+    db_name : Path
+        The full path to the current db
     """
-    db_path = os.path.join(data_directory, CONTENT_DB_NAME)
-    db = plyvel.DB(db_path, create_if_missing=False, compression="snappy")
+    db = plyvel.DB(str(db_name), create_if_missing=False, compression="snappy")
     for content_hash, content in db.iterator():
         yield content_hash, content
     db.close()
@@ -43,7 +42,7 @@ def get_javascript_entries(db, all_columns=False, as_tuple=False):
     else:
         select_columns = "script_url, symbol, operation, value, arguments"
 
-    return query_db(db, "SELECT %s FROM javascript" % select_columns, as_tuple=as_tuple)
+    return query_db(db, f"SELECT {select_columns} FROM javascript", as_tuple=as_tuple)
 
 
 def any_command_failed(db):

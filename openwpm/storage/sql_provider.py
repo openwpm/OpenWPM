@@ -78,6 +78,10 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
+    def execute_statement(self, statement: str):
+        self.cur.execute(statement)
+        self.db.commit()
+
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> None:

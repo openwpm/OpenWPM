@@ -118,7 +118,6 @@ class StorageController:
                 )
 
             if record_type == RECORD_TYPE_CONTENT:
-                assert isinstance(data, tuple)
                 assert len(data) == 2
                 if self.unstructured_storage is None:
                     self.logger.error(
@@ -133,7 +132,7 @@ class StorageController:
                 )
                 continue
 
-            if not "visit_id" in data:
+            if "visit_id" not in data:
                 self.logger.error(
                     "Skipping record: No visit_id contained in record %r", record
                 )

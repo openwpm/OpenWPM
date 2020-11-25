@@ -1,8 +1,10 @@
 from openwpm import command_sequence, task_manager
+from openwpm.socket_interface import ClientSocket
+from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
 from . import utilities
-from .openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + "/simple_a.html"
 
@@ -22,10 +24,9 @@ PAGE_LINKS = {
 }
 
 
-def test_custom_function(default_params, task_manager_creator):
+def test_custom_function(default_params, xpi, server):
     """ Test `custom_function` with an inline func that collects links """
-
-    from openwpm.socket_interface import ClientSocket
+    table_name = "page_links"
 
     def collect_links(table_name, scheme, **kwargs):
         """ Collect links with `scheme` and save in table `table_name` """
@@ -46,13 +47,6 @@ def test_custom_function(default_params, task_manager_creator):
         sock = ClientSocket()
         sock.connect(*manager_params["aggregator_address"])
 
-        query = (
-            "CREATE TABLE IF NOT EXISTS %s ("
-            "top_url TEXT, link TEXT, "
-            "visit_id INTEGER, browser_id INTEGER);" % table_name
-        )
-        sock.send(("create_table", query))
-
         for link in link_urls:
             query = (
                 table_name,
@@ -67,10 +61,17 @@ def test_custom_function(default_params, task_manager_creator):
         sock.close()
 
     manager_params, browser_params = default_params
-    manager = task_manager_creator(default_params)
+    storage_provider = SqlLiteStorageProvider(manager_params["db"])
+    storage_provider.execute_statement(
+        """CREATE TABLE IF NOT EXISTS %s (
+            top_url TEXT, link TEXT, 
+            visit_id INTEGER, browser_id INTEGER);"""
+        % table_name
+    )
+    manager = TaskManager(manager_params, browser_params, storage_provider, None)
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=0, timeout=60)
-    cs.run_custom_function(collect_links, ("page_links", "http"))
+    cs.run_custom_function(collect_links, (table_name, "http"))
     manager.execute_command_sequence(cs)
     manager.close()
     query_result = db_utils.query_db(

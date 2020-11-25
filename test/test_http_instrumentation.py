@@ -5,6 +5,7 @@ import base64
 import json
 import os
 from hashlib import sha256
+from pathlib import Path
 from time import sleep
 from typing import Set, Tuple
 from urllib.parse import urlparse
@@ -12,6 +13,8 @@ from urllib.parse import urlparse
 import pytest
 
 from openwpm import command_sequence, task_manager
+from openwpm.storage.leveldb import LevelDbProvider
+from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -733,27 +736,6 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add((src, dst))
         assert HTTP_CACHED_REDIRECTS == observed_records
 
-    def test_javascript_saving(self, tmpdir):
-        """ check that javascript content is saved and hashed correctly """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]["http_instrument"] = True
-        browser_params[0]["save_content"] = "script"
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=test_url, sleep=1)
-        manager.close()
-        expected_hashes = {
-            "0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc",
-            "b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08",
-        }
-        for chash, content in db_utils.get_content(str(tmpdir)):
-            chash = chash.decode("ascii").lower()
-            pyhash = sha256(content).hexdigest().lower()
-            assert pyhash == chash  # Verify expected key (sha256 of content)
-            assert chash in expected_hashes
-            expected_hashes.remove(chash)
-        assert len(expected_hashes) == 0  # All expected hashes have been seen
-
     def test_document_saving(self, tmpdir):
         """ check that document content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
@@ -1030,3 +1012,32 @@ class TestPOSTInstrument(OpenWPMTest):
             u"upload-img": img_file_content,
         }
         assert expected_body == post_body_decoded
+
+
+def test_javascript_saving(http_params, xpi, server):
+    """ check that javascript content is saved and hashed correctly """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+
+    for browser_param in browser_params:
+        browser_param["http_instrument"] = True
+        browser_param["save_content"] = "script"
+    structured_storage = SqlLiteStorageProvider(db_path=manager_params["db"])
+    ldb_path = Path(manager_params["data_directory"]) / "content.ldb"
+    unstructured_storage = LevelDbProvider(db_path=ldb_path)
+    manager = task_manager.TaskManager(
+        manager_params, browser_params, structured_storage, unstructured_storage
+    )
+    manager.get(url=test_url, sleep=1)
+    manager.close()
+    expected_hashes = {
+        "0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc",
+        "b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08",
+    }
+    for chash, content in db_utils.get_content(ldb_path):
+        chash = chash.decode("ascii").lower()
+        pyhash = sha256(content).hexdigest().lower()
+        assert pyhash == chash  # Verify expected key (sha256 of content)
+        assert chash in expected_hashes
+        expected_hashes.remove(chash)
+    assert len(expected_hashes) == 0  # All expected hashes have been seen
