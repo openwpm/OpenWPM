@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from PIL import Image
 
-from openwpm import CommandSequence, TaskManager
+from openwpm import command_sequence, task_manager
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -113,12 +113,12 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that get works and populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = command_sequence.CommandSequence(url_a)
         cs_a.get(sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = command_sequence.CommandSequence(url_b)
         cs_b.get(sleep=1)
 
         # Perform the get commands
@@ -140,12 +140,12 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that get works and populates http tables correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = command_sequence.CommandSequence(url_a)
         cs_a.get(sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = command_sequence.CommandSequence(url_b)
         cs_b.get(sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -193,12 +193,12 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that CommandSequence.browse() populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a, site_rank=0)
+        cs_a = command_sequence.CommandSequence(url_a, site_rank=0)
         cs_a.browse(num_links=1, sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b, site_rank=1)
+        cs_b = command_sequence.CommandSequence(url_b, site_rank=1)
         cs_b.browse(num_links=1, sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -226,12 +226,12 @@ class TestSimpleCommands(OpenWPMTest):
         """
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = command_sequence.CommandSequence(url_a)
         cs_a.browse(num_links=20, sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = command_sequence.CommandSequence(url_b)
         cs_b.browse(num_links=1, sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -313,7 +313,7 @@ class TestSimpleCommands(OpenWPMTest):
         """
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
         manager.browse(url_a, num_links=20, sleep=1)
@@ -389,8 +389,8 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that 'save_screenshot' works"""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(url_a)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(url_a)
         cs.get(sleep=1)
         cs.save_screenshot("test")
         cs.screenshot_full_page("test_full")
@@ -417,8 +417,8 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that 'dump_page_source' works and source is saved properly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(url_a)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(url_a)
         cs.get(sleep=1)
         cs.dump_page_source(suffix="test")
         manager.execute_command_sequence(cs)
@@ -440,8 +440,8 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that 'recursive_dump_page_source' works"""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(NESTED_FRAMES_URL)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(NESTED_FRAMES_URL)
         cs.get(sleep=1)
         cs.recursive_dump_page_source()
         manager.execute_command_sequence(cs)

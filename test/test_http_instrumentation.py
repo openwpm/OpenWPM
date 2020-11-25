@@ -6,12 +6,12 @@ import json
 import os
 from hashlib import sha256
 from time import sleep
-from typing import Set
+from typing import Set, Tuple
 from urllib.parse import urlparse
 
 import pytest
 
-from openwpm import CommandSequence, TaskManager
+from openwpm import command_sequence, task_manager
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -624,7 +624,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
         # HTTP Responses
         rows = db_utils.query_db(db, "SELECT * FROM http_responses")
-        observed_records: Set[str, str] = set()
+        observed_records: Set[Tuple[str, str]] = set()
         for row in rows:
             observed_records.add(
                 (
@@ -671,7 +671,7 @@ class TestHTTPInstrument(OpenWPMTest):
         """
         test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(test_url, sleep=5)
         manager.get(test_url, sleep=5)
         manager.close()
@@ -739,7 +739,7 @@ class TestHTTPInstrument(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]["http_instrument"] = True
         browser_params[0]["save_content"] = "script"
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
         expected_hashes = {
@@ -764,7 +764,7 @@ class TestHTTPInstrument(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]["http_instrument"] = True
         browser_params[0]["save_content"] = "main_frame,sub_frame"
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
         for chash, content in db_utils.get_content(str(tmpdir)):
@@ -781,7 +781,7 @@ class TestHTTPInstrument(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(str(tmpdir))
         browser_params[0]["http_instrument"] = True
         browser_params[0]["save_content"] = True
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
         db = manager_params["db"]
@@ -1008,9 +1008,9 @@ class TestPOSTInstrument(OpenWPMTest):
             sleep(5)  # wait for the form submission (3 sec after onload)
 
         manager_params, browser_params = self.get_config()
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
         test_url = utilities.BASE_TEST_URL + "/post_file_upload.html"
-        cs = CommandSequence.CommandSequence(test_url)
+        cs = command_sequence.CommandSequence(test_url)
         cs.get(sleep=0, timeout=60)
         cs.run_custom_function(type_filenames_into_form, ())
         manager.execute_command_sequence(cs)

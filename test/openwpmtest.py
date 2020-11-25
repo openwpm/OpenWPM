@@ -5,7 +5,7 @@ from typing import List, Tuple
 
 import pytest
 
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.types import BrowserParams, ManagerParams
 
@@ -28,7 +28,7 @@ class OpenWPMTest:
         """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
         structured_provider = SqlLiteStorageProvider(manager_params["db"])
-        manager = TaskManager.TaskManager(
+        manager = task_manager.TaskManager(
             manager_params,
             browser_params,
             structured_provider,
@@ -49,7 +49,7 @@ class OpenWPMTest:
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
-        manager_params, browser_params = TaskManager.load_default_params(num_browsers)
+        manager_params, browser_params = task_manager.load_default_params(num_browsers)
         manager_params["data_directory"] = data_dir
         manager_params["log_directory"] = data_dir
         for i in range(num_browsers):

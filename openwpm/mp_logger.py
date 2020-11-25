@@ -16,9 +16,10 @@ from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from tblib import pickling_support
 
-from .Commands.utils.webdriver_utils import parse_neterror
-from .SocketInterface import ServerSocket
-from .types import ManagerParams
+from openwpm.types import ManagerParams
+
+from .commands.utils.webdriver_utils import parse_neterror
+from .socket_interface import ServerSocket
 
 pickling_support.install()
 

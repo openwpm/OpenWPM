@@ -12,13 +12,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import psutil
 import tblib
 
-from .BrowserManager import Browser
-from .Commands.utils.webdriver_utils import parse_neterror
-from .CommandSequence import CommandSequence
-from .Errors import CommandExecutionError
+from .browser_manager import Browser
+from .command_sequence import CommandSequence
+from .commands.utils.webdriver_utils import parse_neterror
+from .errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
-from .MPLogger import MPLogger
-from .SocketInterface import ClientSocket
+from .mp_logger import MPLogger
+from .socket_interface import ClientSocket
 from .storage.storage_controller import (
     ACTION_TYPE_FINALIZE,
     RECORD_TYPE_META,
@@ -463,6 +463,10 @@ class TaskManager:
             command.set_visit_browser_id(browser.curr_visit_id, browser.browser_id)
             command.set_start_time(time.time())
             browser.current_timeout = timeout
+
+            # Adding timer to track performance of commands
+            t1 = time.time_ns()
+
             # passes off command and waits for a success (or failure signal)
             browser.command_queue.put(command)
 
@@ -473,7 +477,6 @@ class TaskManager:
             try:
                 status = browser.status_queue.get(True, browser.current_timeout)
             except EmptyQueue:
-                command_status = "timeout"
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.browser_id, repr(command))
@@ -482,6 +485,7 @@ class TaskManager:
             if status is None:
                 # allows us to skip this entire block without having to bloat
                 # every if statement
+                command_status = "timeout"
                 pass
             elif status == "OK":
                 command_status = "ok"
@@ -530,6 +534,7 @@ class TaskManager:
                         "command_status": command_status,
                         "error": error_text,
                         "traceback": tb,
+                        "duration": int((time.time_ns() - t1) / 1000000),
                     },
                 )
             )

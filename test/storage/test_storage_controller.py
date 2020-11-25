@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from openwpm.MPLogger import MPLogger
-from openwpm.SocketInterface import ClientSocket
+from openwpm.mp_logger import MPLogger
+from openwpm.socket_interface import ClientSocket
 from openwpm.storage.in_memory_storage import (
     MemoryStructuredProvider,
     MemoryUnstructuredProvider,

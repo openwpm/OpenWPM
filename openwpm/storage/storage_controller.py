@@ -13,7 +13,7 @@ from multiprocess import Queue
 
 from openwpm.utilities.multiprocess_utils import Process
 
-from ..SocketInterface import get_message_from_reader
+from ..socket_interface import get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,

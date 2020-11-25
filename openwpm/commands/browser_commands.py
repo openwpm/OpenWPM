@@ -20,7 +20,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ..SocketInterface import ClientSocket
+from ..socket_interface import ClientSocket
 from .utils.webdriver_utils import (
     execute_in_all_frames,
     execute_script_with_retry,

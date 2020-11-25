@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 import pytest
 
-from openwpm import TaskManager
+from openwpm import task_manager
 from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
@@ -43,9 +43,9 @@ def prepare_test_setup(request):
 
 @pytest.fixture()
 def default_params(num_browsers, tmpdir) -> Tuple[ManagerParams, List[BrowserParams]]:
-    """Just a simple wrapper around TaskManager.load_default_params"""
+    """Just a simple wrapper around task_manager.load_default_params"""
     data_dir = tmpdir
-    manager_params, browser_params = TaskManager.load_default_params(num_browsers)
+    manager_params, browser_params = task_manager.load_default_params(num_browsers)
     manager_params["data_directory"] = data_dir
     manager_params["log_directory"] = data_dir
     for i in range(num_browsers):

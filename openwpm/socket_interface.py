@@ -198,7 +198,7 @@ def main():
 
     # Just for testing
     if sys.argv[1] == "s":
-        ssock: ServerSocket = ServerSocket(verbose=True)
+        ssock = ServerSocket(verbose=True)
         ssock.start_accepting()
         input("Press enter to exit...")
         ssock.close()
@@ -208,7 +208,7 @@ def main():
         serialization = input("Enter the serialization type (default: 'json'):\n")
         if serialization == "":
             serialization = "json"
-        sock: ClientSocket = ClientSocket(serialization=serialization)
+        sock = ClientSocket(serialization=serialization)
         sock.connect(host, int(port))
         msg = None
 
