@@ -15,7 +15,6 @@ from . import utilities
 from .openwpmtest import OpenWPMTest
 
 expected_js_cookie = (
-    1,  # visit_id
     u"added-or-changed",  # record_type
     u"explicit",  # change_cause
     0,  # is_http_only
@@ -34,8 +33,9 @@ def test_js_profile_cookies(default_params, task_manager_creator):
     """ Check that profile cookies set by JS are saved """
     # Run the test crawl
     manager_params, browser_params = default_params
-    browser_params[0]["cookie_instrument"] = True
-    manager = task_manager_creator(default_params)
+    for browser_param in browser_params:
+        browser_param["cookie_instrument"] = True
+    manager = task_manager_creator((manager_params, browser_params))
     url = utilities.BASE_TEST_URL + "/js_cookie.html"
     cs = command_sequence.CommandSequence(url)
     cs.get(sleep=3, timeout=120)
@@ -45,7 +45,7 @@ def test_js_profile_cookies(default_params, task_manager_creator):
     qry_res = db_utils.query_db(
         manager_params["db"],
         (
-            "SELECT visit_id, record_type, change_cause, is_http_only, "
+            "SELECT record_type, change_cause, is_http_only, "
             "is_host_only, is_session, host, is_secure, name, path, "
             "value, same_site FROM javascript_cookies"
         ),

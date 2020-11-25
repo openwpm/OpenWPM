@@ -280,18 +280,12 @@ class TestExtension(OpenWPMTest):
         assert CANVAS_CALLS == observed_rows
 
     def test_extension_gets_correct_visit_id(self):
-        manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
-
         url_a = utilities.BASE_TEST_URL + "/simple_a.html"
         url_b = utilities.BASE_TEST_URL + "/simple_b.html"
+        self.visit(url_a)
+        db = self.visit(url_b)
 
-        manager.get(url_a)
-        manager.get(url_b)
-        manager.close()
-        qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
-        )
+        qry_res = db_utils.query_db(db, "SELECT visit_id, site_url FROM site_visits")
 
         # Construct dict mapping site_url to visit_id
         visit_ids = dict()
@@ -299,14 +293,14 @@ class TestExtension(OpenWPMTest):
             visit_ids[row[1]] = row[0]
 
         simple_a_visit_id = db_utils.query_db(
-            manager_params["db"],
-            "SELECT visit_id FROM javascript WHERE " "symbol=?",
+            db,
+            "SELECT visit_id FROM javascript WHERE symbol=?",
             ("window.navigator.userAgent",),
         )
 
         simple_b_visit_id = db_utils.query_db(
-            manager_params["db"],
-            "SELECT visit_id FROM javascript WHERE " "symbol=?",
+            db,
+            "SELECT visit_id FROM javascript WHERE symbol=?",
             ("window.navigator.platform",),
         )
 

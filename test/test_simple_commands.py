@@ -94,22 +94,6 @@ scenarios = [
 ]
 
 
-@pytest.fixture()
-def http_params(
-    default_params,
-) -> Callable[[str], Tuple[ManagerParams, List[BrowserParams]]]:
-    manager_params, browser_params = default_params
-    for browser_param in browser_params:
-        browser_param["http_instrument"] = True
-
-    def parameterize(display_mode: str) -> Tuple[ManagerParams, List[BrowserParams]]:
-        for browser_param in browser_params:
-            browser_param["display_mode"] = display_mode
-        return manager_params, browser_params
-
-    return parameterize
-
-
 @pytest.mark.parametrize("display_mode", scenarios)
 def test_get_site_visits_table_valid(http_params, task_manager_creator, display_mode):
     """Check that get works and populates db correctly."""

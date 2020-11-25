@@ -60,8 +60,9 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
                 % (type(e), e, statement, repr(args))
             )
 
+    @staticmethod
     def _generate_insert(
-        self, table: TableName, data: Dict[str, Any]
+        table: TableName, data: Dict[str, Any]
     ) -> Tuple[str, List[Any]]:
         """Generate a SQL query from `record`"""
         statement = "INSERT INTO %s (" % table

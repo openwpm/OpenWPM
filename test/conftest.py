@@ -77,3 +77,21 @@ def task_manager_creator(
         return manager
 
     return _create_task_manager
+
+
+@pytest.fixture()
+def http_params(
+    default_params,
+) -> Callable[[str], Tuple[ManagerParams, List[BrowserParams]]]:
+    manager_params, browser_params = default_params
+    for browser_param in browser_params:
+        browser_param["http_instrument"] = True
+
+    def parameterize(
+        display_mode: str = "headless",
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        for browser_param in browser_params:
+            browser_param["display_mode"] = display_mode
+        return manager_params, browser_params
+
+    return parameterize

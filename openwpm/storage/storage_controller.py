@@ -106,7 +106,7 @@ class StorageController:
             self._last_record_received = time.time()
             record_type, data = record
 
-            self.logger.info("Received record for record_type %s", record_type)
+            self.logger.debug("Received record for record_type %s", record_type)
 
             if record_type == RECORD_TYPE_CREATE:
                 raise RuntimeError(
@@ -260,7 +260,7 @@ class StorageController:
         )
         sockets = server.sockets
         assert sockets is not None
-        assert len(sockets) == 1
+        # assert len(sockets) == 1
         socketname = sockets[0].getsockname()
         self.status_queue.put(socketname)
         status_queue_update = asyncio.create_task(
