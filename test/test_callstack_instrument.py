@@ -27,9 +27,11 @@ STACK_TRACE_INJECT_JS = (
     "onload@" + HTTP_STACKTRACE_TEST_URL + ":1:1;null"
 )
 
-HTTP_STACKTRACES = set(
-    (STACK_TRACE_INJECT_IMAGE, STACK_TRACE_INJECT_PIXEL, STACK_TRACE_INJECT_JS)
-)
+HTTP_STACKTRACES = {
+    STACK_TRACE_INJECT_IMAGE,
+    STACK_TRACE_INJECT_PIXEL,
+    STACK_TRACE_INJECT_JS,
+}
 # parsed HTTP call stack dict
 CALL_STACK_INJECT_IMAGE = [
     {
@@ -56,53 +58,49 @@ CALL_STACK_INJECT_IMAGE = [
 ]
 
 
-class TestCallstackInstrument(OpenWPMTest):
-    def get_config(self, data_dir=""):
-        manager_params, browser_params = self.get_test_config(data_dir)
-        # Record HTTP Requests and Responses
-        browser_params[0]["http_instrument"] = True
-        # Record JS Web API calls
-        browser_params[0]["js_instrument"] = True
-        # Record the callstack of all WebRequests made
-        browser_params[0]["callstack_instrument"] = True
-        return manager_params, browser_params
-
-    def test_http_stacktrace(self):
-        test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
-        manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(test_url, sleep=10)
-        db = manager_params["db"]
-        manager.close()
-        rows = db_utils.query_db(
-            db,
-            (
-                "SELECT hr.url, c.call_stack"
-                "   FROM callstacks c"
-                "   JOIN http_requests hr"
-                "   ON c.request_id=hr.request_id"
-                "      AND c.visit_id= hr.visit_id"
-                "      AND c.browser_id = hr.browser_id;"
-            ),
+def test_http_stacktrace(default_params, task_manager_creator):
+    manager_params, browser_params = default_params
+    # Record HTTP Requests and Responses
+    browser_params[0]["http_instrument"] = True
+    # Record JS Web API calls
+    browser_params[0]["js_instrument"] = True
+    # Record the callstack of all WebRequests made
+    browser_params[0]["callstack_instrument"] = True
+    test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
+    manager = task_manager_creator(manager_params, browser_params)
+    manager.get(test_url, sleep=10)
+    db = manager_params["db"]
+    manager.close()
+    rows = db_utils.query_db(
+        db,
+        (
+            "SELECT hr.url, c.call_stack"
+            "   FROM callstacks c"
+            "   JOIN http_requests hr"
+            "   ON c.request_id=hr.request_id"
+            "      AND c.visit_id= hr.visit_id"
+            "      AND c.browser_id = hr.browser_id;"
+        ),
+    )
+    print("Printing callstacks contents")
+    observed_records = set()
+    for row in rows:
+        print(row["call_stack"])
+        url, call_stack = row
+        test_urls = (
+            "inject_pixel.js",
+            "test_image.png",
+            "Blank.gif",
         )
-        print("Printing callstacks contents")
-        observed_records = set()
-        for row in rows:
-            print(row["call_stack"])
-            url, call_stack = row
-            test_urls = (
-                "inject_pixel.js",
-                "test_image.png",
-                "Blank.gif",
-            )
-            if url.endswith(test_urls):
-                observed_records.add(call_stack)
-        assert HTTP_STACKTRACES == observed_records
+        if url.endswith(test_urls):
+            observed_records.add(call_stack)
+    assert HTTP_STACKTRACES == observed_records
 
-    def test_parse_http_stack_trace_str(self):
-        stacktrace = STACK_TRACE_INJECT_IMAGE
-        stack_frames = parse_http_stack_trace_str(stacktrace)
-        assert stack_frames == CALL_STACK_INJECT_IMAGE
+
+def test_parse_http_stack_trace_str():
+    stacktrace = STACK_TRACE_INJECT_IMAGE
+    stack_frames = parse_http_stack_trace_str(stacktrace)
+    assert stack_frames == CALL_STACK_INJECT_IMAGE
 
     # TODO: webext instrumentation doesn't support req_call_stack yet.
     # def test_http_stacktrace_nonjs_loads(self):

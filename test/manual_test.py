@@ -132,7 +132,7 @@ def start_webdriver(
             with open(browser_params_file, "r") as f:
                 browser_params.update(json.loads(f.read()))
         js_request = browser_params["js_instrument_settings"]
-        js_request_as_string = jsi.convert_browser_params_to_js_string(js_request)
+        js_request_as_string = jsi.clean_js_instrumentation_settings(js_request)
         browser_params["js_instrument_settings"] = js_request_as_string
 
         profile_dir = driver.capabilities["moz:profile"]

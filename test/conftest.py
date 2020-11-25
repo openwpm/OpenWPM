@@ -23,21 +23,16 @@ EXTENSION_DIR = os.path.join(
 )
 
 
-def create_xpi():
+@pytest.fixture(scope="session")
+def xpi():
     # Creates a new xpi using npm run build.
     print("Building new xpi")
     subprocess.check_call(["npm", "run", "build"], cwd=EXTENSION_DIR)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def prepare_test_setup(request):
+@pytest.fixture(scope="session")
+def server(request):
     """Run an HTTP server during the tests."""
-
-    if "pyonly" in request.config.invocation_params.args:
-        return
-
-    create_xpi()
-
     print("Starting local_http_server")
     server, server_thread = utilities.start_server()
     yield
@@ -48,7 +43,7 @@ def prepare_test_setup(request):
 
 @pytest.fixture()
 def default_params(
-    tmp_path: Path, num_browsers: int = 2
+    tmp_path: Path, num_browsers: int = 1
 ) -> Tuple[ManagerParams, List[BrowserParams]]:
     """Just a simple wrapper around task_manager.load_default_params"""
     data_dir = str(tmp_path)
@@ -62,9 +57,9 @@ def default_params(
 
 
 @pytest.fixture()
-def task_manager_creator() -> Callable[
-    [Tuple[ManagerParams, List[BrowserParams]]], TaskManager
-]:
+def task_manager_creator(
+    server, xpi
+) -> Callable[[Tuple[ManagerParams, List[BrowserParams]]], TaskManager]:
     """We create a callable that returns a TaskManager that has
     been configured with the Manager and BrowserParams"""
 

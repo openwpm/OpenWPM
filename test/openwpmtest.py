@@ -1,5 +1,6 @@
 import logging
 import os
+from abc import ABCMeta, abstractmethod
 from os.path import isfile, join
 from typing import List, Tuple
 
@@ -23,6 +24,9 @@ class OpenWPMTest:
         https://mail.python.org/pipermail/pytest-dev/2014-April/002484.html
         """
         self.tmpdir = str(tmpdir)
+
+    def get_config(self, data_dir) -> Tuple[ManagerParams, List[BrowserParams]]:
+        pass
 
     def visit(self, page_url, data_dir="", sleep_after=0):
         """Visit a test page with the given parameters."""
