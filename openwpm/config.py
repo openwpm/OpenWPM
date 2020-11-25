@@ -28,6 +28,29 @@ GENERAL_ERROR_STRING = (
     "Please look at docs/Configuration.md for more information"
 )
 
+ALL_RESOURCE_TYPES = {
+    "beacon",
+    "csp_report",
+    "font",
+    "image",
+    "imageset",
+    "main_frame",
+    "media",
+    "object",
+    "object_subrequest",
+    "ping",
+    "script",
+    "stylesheet",
+    "sub_frame",
+    "web_manifest",
+    "websocket",
+    "xbl",
+    "xml_dtd",
+    "xmlhttprequest",
+    "xslt",
+    "other",
+}
+
 
 @dataclass_json
 @dataclass
@@ -108,6 +131,16 @@ def validate_browser_params(browser_params: BrowserParams):
             "the JS instrument enabled. see: "
             "https://github.com/mozilla/OpenWPM/issues/557"
         )
+
+    if browser_params.save_content:
+        if isinstance(browser_params.save_content, str):
+            configured_types = set(browser_params.save_content.split(","))
+            if not configured_types.issubset(ALL_RESOURCE_TYPES):
+                diff = configured_types.difference(ALL_RESOURCE_TYPES)
+                raise ConfigError(
+                    "Unrecognized resource types provided ",
+                    "in browser_params.save_content (%s)" % diff,
+                )
 
 
 def validate_manager_params(manager_params: ManagerParams):

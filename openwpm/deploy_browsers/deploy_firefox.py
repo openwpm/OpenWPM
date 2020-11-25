@@ -15,28 +15,6 @@ from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
 
 DEFAULT_SCREEN_RES = (1366, 768)
-ALL_RESOURCE_TYPES = {
-    "beacon",
-    "csp_report",
-    "font",
-    "image",
-    "imageset",
-    "main_frame",
-    "media",
-    "object",
-    "object_subrequest",
-    "ping",
-    "script",
-    "stylesheet",
-    "sub_frame",
-    "web_manifest",
-    "websocket",
-    "xbl",
-    "xml_dtd",
-    "xmlhttprequest",
-    "xslt",
-    "other",
-}
 logger = logging.getLogger("openwpm")
 
 
@@ -103,18 +81,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Must do this for all display modes,
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))
-
-    if browser_params["save_content"]:
-        if isinstance(browser_params["save_content"], str):
-            configured_types = set(browser_params["save_content"].split(","))
-            if not configured_types.issubset(ALL_RESOURCE_TYPES):
-                diff = configured_types.difference(ALL_RESOURCE_TYPES)
-                raise BrowserConfigError(
-                    (
-                        "Unrecognized resource types provided ",
-                        "in browser_params['save_content`] (%s)" % diff,
-                    )
-                )
 
     if browser_params["extension_enabled"]:
         # Write config file
