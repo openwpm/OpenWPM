@@ -7,7 +7,9 @@ from .Errors import ConfigError
 
 BOOL_TYPE_VALIDATION_LIST = [True, False]
 DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
-SUPPORTED_BROWSER_LIST = ["firefox"]
+SUPPORTED_BROWSER_LIST = [
+    "firefox"
+]  # Using List instead of a str type to future proof the logic as OpenWPM may add support for more browsers in future
 TP_COOKIES_OPTIONALS_LIST = ["always", "never", "from_visited"]
 DB_EXTENSION_TYPE_LIST = [".db", ".sqlite"]
 LOG_EXTENSION_TYPE_LIST = [".log"]
