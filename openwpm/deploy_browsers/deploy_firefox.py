@@ -104,14 +104,6 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))
 
-    if browser_params["callstack_instrument"] and not browser_params["js_instrument"]:
-        raise BrowserConfigError
-        (
-            "The callstacks instrument currently doesn't work without "
-            "the JS instrument enabled. see: "
-            "https://github.com/mozilla/OpenWPM/issues/557"
-        )
-
     if browser_params["save_content"]:
         if isinstance(browser_params["save_content"], str):
             configured_types = set(browser_params["save_content"].split(","))

@@ -102,6 +102,13 @@ def validate_browser_params(browser_params: BrowserParams):
             )
         )
 
+    if browser_params["callstack_instrument"] and not browser_params["js_instrument"]:
+        raise ConfigError(
+            "The callstacks instrument currently doesn't work without "
+            "the JS instrument enabled. see: "
+            "https://github.com/mozilla/OpenWPM/issues/557"
+        )
+
 
 def validate_manager_params(manager_params: ManagerParams):
     if ManagerParams() == manager_params:
