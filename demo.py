@@ -1,4 +1,5 @@
-from openwpm import command_sequence, task_manager
+from openwpm.command_sequence import CommandSequence
+from openwpm.task_manager import TaskManager, load_default_params
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
@@ -10,7 +11,7 @@ sites = [
 
 # Loads the default manager params
 # and NUM_BROWSERS copies of the default browser params
-manager_params, browser_params = task_manager.load_default_params(NUM_BROWSERS)
+manager_params, browser_params = load_default_params(NUM_BROWSERS)
 
 # Update browser configuration (use this for per-browser settings)
 for i in range(NUM_BROWSERS):
@@ -39,13 +40,13 @@ manager_params["process_watchdog"] = True
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
-manager = task_manager.TaskManager(manager_params, browser_params)
+manager = TaskManager(manager_params, browser_params)
 
 # Visits the sites
 for site in sites:
 
     # Parallelize sites over all number of browsers set above.
-    command_sequence = command_sequence.CommandSequence(
+    command_sequence = CommandSequence(
         site,
         reset=True,
         callback=lambda success, val=site: print("CommandSequence {} done".format(val)),
