@@ -293,7 +293,7 @@ class StorageControllerHandle:
     def __init__(
         self,
         structured_storage: StructuredStorageProvider,
-        unstructured_storage: UnstructuredStorageProvider,
+        unstructured_storage: Optional[UnstructuredStorageProvider],
     ) -> None:
 
         self.listener_address: Optional[Tuple[str, int]] = None

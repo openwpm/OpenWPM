@@ -79,7 +79,7 @@ class TaskManager:
         manager_params: ManagerParams,
         browser_params: List[BrowserParams],
         structured_storage_provider: StructuredStorageProvider,
-        unstructured_storage_provider: UnstructuredStorageProvider,
+        unstructured_storage_provider: Optional[UnstructuredStorageProvider],
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -282,7 +282,7 @@ class TaskManager:
     def _launch_aggregators(
         self,
         structured_storage_provider: StructuredStorageProvider,
-        unstructured_storage_provider: UnstructuredStorageProvider,
+        unstructured_storage_provider: Optional[UnstructuredStorageProvider],
     ) -> None:
         """Launch the necessary data aggregators"""
         self.data_aggregator_handle = StorageControllerHandle(

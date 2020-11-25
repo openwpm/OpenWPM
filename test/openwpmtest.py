@@ -13,7 +13,7 @@ from . import utilities
 
 
 class OpenWPMTest:
-    NUM_BROWSERS = 1
+    NUM_BROWSERS = 2
 
     @pytest.fixture(autouse=True)
     def set_tmpdir(self, tmpdir):
@@ -58,15 +58,3 @@ class OpenWPMTest:
             manager_params["data_directory"], manager_params["database_name"]
         )
         return manager_params, browser_params
-
-    def is_installed(self, cmd):
-        """Check if a program is available via the standard PATH lookup."""
-        path = os.environ["PATH"].split(os.pathsep)
-        for d in path:
-            candidate = join(d, cmd)
-            if isfile(candidate) and os.access(candidate, os.X_OK):
-                return True
-        return False
-
-    def assert_is_installed(self, cmd):
-        assert self.is_installed(cmd), "Cannot find %s in your system" % cmd

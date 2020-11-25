@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS site_visits (
     browser_id INTEGER NOT NULL,
     site_url VARCHAR(500) NOT NULL,
     site_rank INTEGER,
-    FOREIGN KEY(browser_id) REFERENCES crawl(id));
+    FOREIGN KEY(browser_id) REFERENCES crawl(browser_id));
 
 /*
 # crawl_history
@@ -39,8 +39,9 @@ CREATE TABLE IF NOT EXISTS crawl_history (
     command_status TEXT,
     error TEXT,
     traceback TEXT,
+    duration INTEGER,
     dtg DATETIME DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY(browser_id) REFERENCES crawl(id));
+    FOREIGN KEY(browser_id) REFERENCES crawl(browser_id));
 
 /*
 # http_requests

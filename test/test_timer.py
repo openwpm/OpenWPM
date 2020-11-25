@@ -8,23 +8,19 @@ TEST_FILE = "canvas_fingerprinting.html"
 TEST_URL = BASE_TEST_URL + "/" + TEST_FILE
 
 
-class TestCommandDuration(OpenWPMTest):
-    def get_config(self, data_dir=""):
-        return self.get_test_config(data_dir)
+def test_command_duration(default_params, task_manager_creator):
+    manager_params = default_params[0]
+    manager = task_manager_creator(default_params)
+    manager.get(url=TEST_URL, sleep=5)
+    manager.close()
 
-    def test_command_duration(self):
-        manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=TEST_URL, sleep=5)
-        manager.close()
+    get_command = db_utils.query_db(
+        manager_params["db"],
+        "SELECT duration FROM crawl_history WHERE command = 'GetCommand'",
+        as_tuple=True,
+    )[0]
 
-        get_command = db_utils.query_db(
-            manager_params["db"],
-            "SELECT duration FROM crawl_history WHERE command = \"<class 'openwpm.commands.types.GetCommand'>\"",
-            as_tuple=True,
-        )[0]
-
-        assert get_command[0] > (5 * 1000)  # milliseconds conversion for sleep time
-        assert get_command[0] <= (
-            (5 * 1000) + 2 * 1000
-        )  # milliseconds conversion for sleep time + time duration a command took (milliseconds)
+    assert get_command[0] > (5 * 1000)  # milliseconds conversion for sleep time
+    assert get_command[0] <= (
+        (5 * 1000) + 2 * 1000
+    )  # milliseconds conversion for sleep time + time duration a command took (milliseconds)
