@@ -10,7 +10,9 @@ from typing import Any, Callable, List
 import boto3
 import sentry_sdk
 
-from openwpm import CommandSequence, MPLogger, TaskManager
+from openwpm.command_sequence import CommandSequence
+from openwpm.mp_logger import parse_config_from_env
+from openwpm.task_manager import TaskManager, load_default_params
 from openwpm.utilities import rediswq
 from test.utilities import LocalS3Session, local_s3_bucket
 
@@ -33,7 +35,7 @@ PREFS = os.getenv("PREFS", None)
 DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))
 TIMEOUT = int(os.getenv("TIMEOUT", "60"))
 SENTRY_DSN = os.getenv("SENTRY_DSN", None)
-LOGGER_SETTINGS = MPLogger.parse_config_from_env()
+LOGGER_SETTINGS = parse_config_from_env()
 MAX_JOB_RETRIES = int(os.getenv("MAX_JOB_RETRIES", "2"))
 
 JS_INSTRUMENT_SETTINGS = json.loads(JS_INSTRUMENT_SETTINGS)
@@ -49,7 +51,7 @@ EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 # code below requires blocking commands. For more context see:
 # https://github.com/mozilla/OpenWPM/issues/470
 NUM_BROWSERS = 1
-manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
+manager_params, browser_params = load_default_params(NUM_BROWSERS)
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
@@ -84,9 +86,7 @@ if S3_ENDPOINT:
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
-manager = TaskManager.TaskManager(
-    manager_params, browser_params, logger_kwargs=LOGGER_SETTINGS
-)
+manager = TaskManager(manager_params, browser_params, logger_kwargs=LOGGER_SETTINGS)
 
 # At this point, Sentry should be initiated
 if SENTRY_DSN:
@@ -133,7 +133,7 @@ shutting_down = False
 
 
 def on_shutdown(
-    manager: TaskManager.TaskManager, unsaved_jobs_lock: Lock
+    manager: TaskManager, unsaved_jobs_lock: Lock
 ) -> Callable[[signal.Signals, Any], None]:
     def actual_callback(s: signal.Signals, __: Any) -> None:
         global shutting_down
@@ -194,7 +194,7 @@ while not job_queue.empty():
     callback = get_job_completion_callback(
         manager.logger, unsaved_jobs_lock, job_queue, job
     )
-    command_sequence = CommandSequence.CommandSequence(
+    command_sequence = CommandSequence(
         site,
         blocking=True,
         reset=True,
