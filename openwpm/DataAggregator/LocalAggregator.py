@@ -8,7 +8,7 @@ from typing import Any, Dict, Tuple, Union
 
 import plyvel
 
-from .base_aggregator import (
+from .BaseAggregator import (
     RECORD_TYPE_CONTENT,
     RECORD_TYPE_CREATE,
     RECORD_TYPE_SPECIAL,

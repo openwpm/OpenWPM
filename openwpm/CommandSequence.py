@@ -1,6 +1,6 @@
 from typing import Callable, List, Tuple
 
-from .commands.types import (
+from .Commands.Types import (
     BaseCommand,
     BrowseCommand,
     DumpPageSourceCommand,
@@ -13,7 +13,7 @@ from .commands.types import (
     SaveScreenshotCommand,
     ScreenshotFullPageCommand,
 )
-from .errors import CommandExecutionError
+from .Errors import CommandExecutionError
 
 
 class CommandSequence:

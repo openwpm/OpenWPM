@@ -20,7 +20,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ..socket_interface import ClientSocket
+from ..SocketInterface import clientsocket
 from .utils.webdriver_utils import (
     execute_in_all_frames,
     execute_script_with_retry,
@@ -112,7 +112,7 @@ def tab_restart_browser(webdriver):
 
 
 def get_website(
-    url, sleep, visit_id, webdriver, browser_params, extension_socket: ClientSocket
+    url, sleep, visit_id, webdriver, browser_params, extension_socket: clientsocket
 ):
     """
     goes to <url> using the given <webdriver> instance
@@ -372,7 +372,7 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=""):
 
 
 def finalize(
-    visit_id: int, webdriver: WebDriver, extension_socket: ClientSocket, sleep: int
+    visit_id: int, webdriver: WebDriver, extension_socket: clientsocket, sleep: int
 ) -> None:
     """ Informs the extension that a visit is done """
     tab_restart_browser(webdriver)
@@ -383,6 +383,6 @@ def finalize(
     extension_socket.send(msg)
 
 
-def initialize(visit_id: int, extension_socket: ClientSocket) -> None:
+def initialize(visit_id: int, extension_socket: clientsocket) -> None:
     msg = {"action": "Initialize", "visit_id": visit_id}
     extension_socket.send(msg)

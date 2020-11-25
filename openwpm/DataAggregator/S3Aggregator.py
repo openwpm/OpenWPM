@@ -18,7 +18,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .base_aggregator import (
+from .BaseAggregator import (
     RECORD_TYPE_CONTENT,
     RECORD_TYPE_CREATE,
     RECORD_TYPE_SPECIAL,

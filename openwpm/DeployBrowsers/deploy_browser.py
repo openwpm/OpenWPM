@@ -1,4 +1,4 @@
-from ..errors import BrowserConfigError
+from ..Errors import BrowserConfigError
 from . import deploy_firefox
 
 

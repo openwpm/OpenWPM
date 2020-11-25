@@ -16,8 +16,8 @@ from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from tblib import pickling_support
 
-from .commands.utils.webdriver_utils import parse_neterror
-from .socket_interface import ServerSocket
+from .Commands.utils.webdriver_utils import parse_neterror
+from .SocketInterface import serversocket
 
 pickling_support.install()
 
@@ -218,7 +218,7 @@ class MPLogger(object):
 
     def _start_listener(self):
         """Start listening socket for remote logs from extension"""
-        socket = ServerSocket(name="loggingserver")
+        socket = serversocket(name="loggingserver")
         self._status_queue.put(socket.sock.getsockname())
         socket.start_accepting()
         self._status_queue.join()  # block to allow parent to retrieve address

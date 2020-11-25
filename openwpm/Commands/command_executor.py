@@ -1,6 +1,6 @@
-from ..errors import CommandExecutionError
+from ..Errors import CommandExecutionError
 from . import browser_commands, profile_commands
-from .types import (
+from .Types import (
     BrowseCommand,
     DumpPageSourceCommand,
     DumpProfCommand,
