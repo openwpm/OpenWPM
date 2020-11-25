@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, field
 
 from dataclasses_json import dataclass_json
@@ -8,10 +9,21 @@ BOOL_TYPE_VALIDATION_LIST = [True, False]
 DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
 SUPPORTED_BROWSER_LIST = ["firefox"]
 TP_COOKIES_OPTIONALS_LIST = ["always", "never", "from_visited"]
+DB_EXTENSION_TYPE_LIST = [".db", ".sqlite"]
+LOG_EXTENSION_TYPE_LIST = [".log"]
 CONFIG_ERROR_STRING = (
     "Found {value} as value for {parameter_name} in BrowserParams. "
-    "Supported values are {value_list} Please look at "
-    "docs/Configuration.md#browser-configuration-options"
+    "Supported values are {value_list}. Please look at "
+    "docs/Configuration.md#browser-configuration-options for more information"
+)
+EXTENSION_ERROR_STRING = (
+    "Found {extension} extension for {parameter_name} in ManagerParams "
+    "supported extensions are {value_list}. Please look at "
+    "docs/Configuration.md#platform-configuration-options for more information"
+)  # TODO mention supported file extensions in file docs/Configuration.md#platform-configuration-options
+GENERAL_ERROR_STRING = (
+    "Found invalid value `{value}` for {parameter_name} in {params_type}. "
+    "Please look at docs/Configuration.md for more information"
 )
 
 
@@ -85,5 +97,48 @@ def validate_browser_params(browser_params: BrowserParams):
                 value=browser_params.tp_cookies,
                 value_list=TP_COOKIES_OPTIONALS_LIST,
                 parameter_name="tp_cookies",
+            )
+        )
+
+
+def validate_manager_params(manager_params: ManagerParams):
+    if ManagerParams() == manager_params:
+        return
+
+    try:
+        log_file_extension = os.path.splitext(manager_params.log_file)[1]
+        if log_file_extension.lower() not in LOG_EXTENSION_TYPE_LIST:
+            raise ConfigError(
+                EXTENSION_ERROR_STRING.format(
+                    extension=log_file_extension or "no",
+                    value_list=LOG_EXTENSION_TYPE_LIST,
+                    parameter_name="log_file",
+                )
+            )
+    except TypeError:
+        raise ConfigError(
+            GENERAL_ERROR_STRING.format(
+                value=manager_params.log_file,
+                parameter_name="log_file",
+                params_type="ManagerParams",
+            )
+        )
+
+    try:
+        database_extension = os.path.splitext(manager_params.log_directory)[1]
+        if database_extension.lower() not in DB_EXTENSION_TYPE_LIST:
+            raise ConfigError(
+                EXTENSION_ERROR_STRING.format(
+                    extension=database_extension or "no",
+                    value_list=DB_EXTENSION_TYPE_LIST,
+                    parameter_name="database_name",
+                )
+            )
+    except TypeError:
+        raise ConfigError(
+            GENERAL_ERROR_STRING.format(
+                value=manager_params.database_name,
+                parameter_name="database_name",
+                params_type="ManagerParams",
             )
         )
