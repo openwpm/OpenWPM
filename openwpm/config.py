@@ -9,7 +9,7 @@ DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
 SUPPORTED_BROWSER_LIST = ["firefox"]
 TP_COOKIES_OPTIONALS_LIST = ["always", "never", "from_visited"]
 CONFIG_ERROR_STRING = (
-    "Found {value} as value for {paramter_name} in BrowserParams. "
+    "Found {value} as value for {parameter_name} in BrowserParams. "
     "Supported values are {value_list} Please look at "
     "docs/Configuration.md#browser-configuration-options"
 )
