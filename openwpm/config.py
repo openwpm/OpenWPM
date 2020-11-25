@@ -8,6 +8,11 @@ BOOL_TYPE_VALIDATION_LIST = [True, False]
 DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
 SUPPORTED_BROWSER_LIST = ["firefox"]
 TP_COOKIES_OPTIONALS_LIST = ["always", "never", "from_visited"]
+CONFIG_ERROR_STRING = (
+    "Found {value} as value for {paramter_name} in BrowserParams. "
+    "Supported values are {value_list} Please look at "
+    "docs/Configuration.md#browser-configuration-options"
+)
 
 
 @dataclass_json
@@ -58,20 +63,27 @@ def validate_browser_params(browser_params: BrowserParams):
 
     if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
         raise ConfigError(
-            "Unrecognized value provided for BrowserParams.display_mode. "
-            "Please look into BrowserParams Documentation for more information"
+            CONFIG_ERROR_STRING.format(
+                value=browser_params.display_mode,
+                value_list=DISPLAY_MODE_VALIDATION_LIST,
+                parameter_name="display_mode",
+            )
         )
 
     if browser_params.browser.lower() not in SUPPORTED_BROWSER_LIST:
         raise ConfigError(
-            "Unrecognized value provided for BrowserParams.browser. "
-            "Please look into BrowserParams Documentation for more information"
+            CONFIG_ERROR_STRING.format(
+                value=browser_params.browser,
+                value_list=SUPPORTED_BROWSER_LIST,
+                parameter_name="browser",
+            )
         )
 
     if browser_params.tp_cookies.lower() not in TP_COOKIES_OPTIONALS_LIST:
         raise ConfigError(
-            "Unrecognized value provided for BrowserParams.tp_cookies. "
-            "Please look into BrowserParams Documentation for more information"
+            CONFIG_ERROR_STRING.format(
+                value=browser_params.tp_cookies,
+                value_list=TP_COOKIES_OPTIONALS_LIST,
+                parameter_name="tp_cookies",
+            )
         )
-
-    # js_instrument_settings =? remaining
