@@ -18,7 +18,7 @@ from tblib import pickling_support
 
 from .commands import command_executor
 from .commands.types import ShutdownCommand
-from .deploy_browsers import deploy_browser
+from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .socket_interface import ClientSocket
 from .utilities.multiprocess_utils import (
@@ -433,7 +433,7 @@ def BrowserManager(
     logger = logging.getLogger("openwpm")
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder = deploy_browser.deploy_browser(
+        driver, prof_folder = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
         if prof_folder[-1] != "/":
