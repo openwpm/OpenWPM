@@ -1,7 +1,6 @@
 import json
 import logging
 import os.path
-import random
 
 from easyprocess import EasyProcessError
 from pyvirtualdisplay import Display
@@ -9,7 +8,6 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
-from ..errors import BrowserConfigError
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
