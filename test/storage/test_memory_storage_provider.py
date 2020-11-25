@@ -57,7 +57,7 @@ def pytest_generate_tests(metafunc: Any) -> Any:
 
 
 @pytest.mark.asyncio
-class TestStructuredStorageProvider(OpenWPMTest):
+class TestStructuredStorageProvider:
     scenarios = structured_scenarios
 
     async def test_basic_access(
@@ -80,7 +80,7 @@ class TestStructuredStorageProvider(OpenWPMTest):
 
 
 @pytest.mark.asyncio
-class TestUnstructuredStorageProvide(OpenWPMTest):
+class TestUnstructuredStorageProvide:
     scenarios: List[Tuple[str, Dict[str, Any]]] = [(memory_unstructured, {})]
 
     async def test_basic_unstructured_storing(self) -> None:

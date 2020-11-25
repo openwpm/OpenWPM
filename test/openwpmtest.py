@@ -12,10 +12,11 @@ from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
 
+NUM_BROWSERS = 2
 
+
+@pytest.mark.usefixtures("xpi", "server")
 class OpenWPMTest:
-    NUM_BROWSERS = 2
-
     @pytest.fixture(autouse=True)
     def set_tmpdir(self, tmpdir):
         """Create a tmpdir fixture to be used in `get_test_config`.
@@ -33,10 +34,7 @@ class OpenWPMTest:
         manager_params, browser_params = self.get_config(data_dir)
         structured_provider = SqlLiteStorageProvider(manager_params["db"])
         manager = task_manager.TaskManager(
-            manager_params,
-            browser_params,
-            structured_provider,
-            logger_kwargs={"log_level_console": logging.DEBUG},
+            manager_params, browser_params, structured_provider, None
         )
         if not page_url.startswith("http"):
             page_url = utilities.BASE_TEST_URL + page_url

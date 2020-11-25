@@ -7,12 +7,12 @@ from typing import Callable, List, Tuple
 import pytest
 
 from openwpm import task_manager
-from openwpm.commands import browser_commands
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager
 from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
+from .openwpmtest import NUM_BROWSERS
 
 EXTENSION_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -43,7 +43,7 @@ def server(request):
 
 @pytest.fixture()
 def default_params(
-    tmp_path: Path, num_browsers: int = 1
+    tmp_path: Path, num_browsers: int = NUM_BROWSERS
 ) -> Tuple[ManagerParams, List[BrowserParams]]:
     """Just a simple wrapper around task_manager.load_default_params"""
     data_dir = str(tmp_path)
@@ -73,7 +73,6 @@ def task_manager_creator(
             browser_params,
             structured_provider,
             None,
-            # logger_kwargs={"log_level_console": logging.DEBUG},
         )
         return manager
 

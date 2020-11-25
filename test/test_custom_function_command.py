@@ -22,64 +22,58 @@ PAGE_LINKS = {
 }
 
 
-class TestCustomFunctionCommand(OpenWPMTest):
-    """Test `custom_function` command's ability to handle inline functions"""
+def test_custom_function(default_params, task_manager_creator):
+    """ Test `custom_function` with an inline func that collects links """
 
-    def get_config(self, data_dir=""):
-        return self.get_test_config(data_dir)
+    from openwpm.socket_interface import ClientSocket
 
-    def test_custom_function(self):
-        """ Test `custom_function` with an inline func that collects links """
-
-        from openwpm.socket_interface import ClientSocket
-
-        def collect_links(table_name, scheme, **kwargs):
-            """ Collect links with `scheme` and save in table `table_name` """
-            driver = kwargs["driver"]
-            manager_params = kwargs["manager_params"]
-            browser_id = kwargs["command"].browser_id
-            visit_id = kwargs["command"].visit_id
-            link_urls = [
-                x
-                for x in (
-                    element.get_attribute("href")
-                    for element in driver.find_elements_by_tag_name("a")
-                )
-                if x.startswith(scheme + "://")
-            ]
-            current_url = driver.current_url
-
-            sock = ClientSocket()
-            sock.connect(*manager_params["aggregator_address"])
-
-            query = (
-                "CREATE TABLE IF NOT EXISTS %s ("
-                "top_url TEXT, link TEXT, "
-                "visit_id INTEGER, browser_id INTEGER);" % table_name
+    def collect_links(table_name, scheme, **kwargs):
+        """ Collect links with `scheme` and save in table `table_name` """
+        driver = kwargs["driver"]
+        manager_params = kwargs["manager_params"]
+        browser_id = kwargs["command"].browser_id
+        visit_id = kwargs["command"].visit_id
+        link_urls = [
+            x
+            for x in (
+                element.get_attribute("href")
+                for element in driver.find_elements_by_tag_name("a")
             )
-            sock.send(("create_table", query))
+            if x.startswith(scheme + "://")
+        ]
+        current_url = driver.current_url
 
-            for link in link_urls:
-                query = (
-                    table_name,
-                    {
-                        "top_url": current_url,
-                        "link": link,
-                        "visit_id": visit_id,
-                        "browser_id": browser_id,
-                    },
-                )
-                sock.send(query)
-            sock.close()
+        sock = ClientSocket()
+        sock.connect(*manager_params["aggregator_address"])
 
-        manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        cs = command_sequence.CommandSequence(url_a)
-        cs.get(sleep=0, timeout=60)
-        cs.run_custom_function(collect_links, ("page_links", "http"))
-        manager.execute_command_sequence(cs)
-        manager.close()
-        query_result = db_utils.query_db(
-            manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
+        query = (
+            "CREATE TABLE IF NOT EXISTS %s ("
+            "top_url TEXT, link TEXT, "
+            "visit_id INTEGER, browser_id INTEGER);" % table_name
         )
-        assert PAGE_LINKS == set(query_result)
+        sock.send(("create_table", query))
+
+        for link in link_urls:
+            query = (
+                table_name,
+                {
+                    "top_url": current_url,
+                    "link": link,
+                    "visit_id": visit_id,
+                    "browser_id": browser_id,
+                },
+            )
+            sock.send(query)
+        sock.close()
+
+    manager_params, browser_params = default_params
+    manager = task_manager_creator(default_params)
+    cs = command_sequence.CommandSequence(url_a)
+    cs.get(sleep=0, timeout=60)
+    cs.run_custom_function(collect_links, ("page_links", "http"))
+    manager.execute_command_sequence(cs)
+    manager.close()
+    query_result = db_utils.query_db(
+        manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
+    )
+    assert PAGE_LINKS == set(query_result)

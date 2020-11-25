@@ -83,40 +83,44 @@ class TestProfile(OpenWPMTest):
         manager.close()
         assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
 
-    def test_seed_persistance(self):
-        def test_config_is_set(*args, **kwargs):
-            driver = kwargs["driver"]
-            driver.get("about:config")
-            result = driver.execute_script(
-                """
-                var prefs = Components
-                            .classes["@mozilla.org/preferences-service;1"]
-                            .getService(Components.interfaces.nsIPrefBranch);
-                try {
-                    return prefs.getBoolPref("test_pref")
-                } catch (e) {
-                    return false;
-                }
-            """
-            )
-            assert result
 
-        manager_params, browser_params = self.get_test_config(num_browsers=1)
-        browser_params[0]["seed_tar"] = "."
-        command_sequences = []
-        for _ in range(2):
-            cs = CommandSequence(url="https://example.com", reset=True)
-            cs.get()
-            cs.run_custom_function(test_config_is_set)
-            command_sequences.append(cs)
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        for cs in command_sequences:
-            manager.execute_command_sequence(cs)
-        manager.close()
-        query_result = db_utils.query_db(
-            manager_params["db"],
-            "SELECT * FROM crawl_history;",
+def test_seed_persistance(default_params, task_manager_creator):
+    def test_config_is_set(*args, **kwargs):
+        driver = kwargs["driver"]
+        driver.get("about:config")
+        result = driver.execute_script(
+            """
+            var prefs = Components
+                        .classes["@mozilla.org/preferences-service;1"]
+                        .getService(Components.interfaces.nsIPrefBranch);
+            try {
+                return prefs.getBoolPref("test_pref")
+            } catch (e) {
+                return false;
+            }
+        """
         )
-        assert len(query_result) > 0
-        for row in query_result:
-            assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"
+        assert result
+
+    manager_params, browser_params = default_params
+    for browser_param in browser_params:
+        browser_param["seed_tar"] = "."
+    manager = task_manager_creator(default_params)
+
+    command_sequences = []
+    for _ in range(2):
+        cs = CommandSequence(url="https://example.com", reset=True)
+        cs.get()
+        cs.run_custom_function(test_config_is_set)
+        command_sequences.append(cs)
+
+    for cs in command_sequences:
+        manager.execute_command_sequence(cs)
+    manager.close()
+    query_result = db_utils.query_db(
+        manager_params["db"],
+        "SELECT * FROM crawl_history;",
+    )
+    assert len(query_result) > 0
+    for row in query_result:
+        assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"

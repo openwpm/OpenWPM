@@ -2,7 +2,6 @@ import logging
 import os
 
 from openwpm.command_sequence import CommandSequence
-from openwpm.storage.in_memory_storage import MemoryUnstructuredProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager, load_default_params
 
