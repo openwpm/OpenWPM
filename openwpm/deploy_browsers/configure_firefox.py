@@ -23,7 +23,7 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         fo.set_preference("network.cookie.cookieBehavior", 0)
 
     # Tracking Protection
-    if browser_params["tracking-protection"]:
+    if browser_params["tracking_protection"]:
         raise RuntimeError(
             "Firefox Tracking Protection is not currently "
             "supported. See: "

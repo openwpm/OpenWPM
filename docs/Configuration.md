@@ -114,7 +114,7 @@ left out of this section.
       visited as a first party.
 * `donottrack`
   * Set to `True` to enable Do Not Track in the browser.
-* `tracking-protection`
+* `tracking_protection`
   * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
