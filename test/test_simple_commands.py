@@ -400,7 +400,7 @@ def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
 
     # Check that viewport image is not blank
     pattern = os.path.join(
-        manager_params["data_directory"], "screenshots", "1-*-test.png"
+        manager_params["data_directory"], "screenshots", "*-*-test.png"
     )
     screenshot = glob.glob(pattern)[0]
     im = Image.open(screenshot)
@@ -410,7 +410,7 @@ def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
 
     # Check that full page screenshot is not blank
     pattern = os.path.join(
-        manager_params["data_directory"], "screenshots", "1-*-test_full.png"
+        manager_params["data_directory"], "screenshots", "*-*-test_full.png"
     )
     screenshot = glob.glob(pattern)[0]
     im = Image.open(screenshot)
