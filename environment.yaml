@@ -12,11 +12,11 @@ dependencies:
 - leveldb=1.22
 - localstack=0.11.1.1
 - multiprocess=0.70.11.1
-- nodejs=14.14.0
+- nodejs=14.15.1
 - pandas=1.1.4
 - pillow=8.0.1
 - pip=20.2.4
-- pre-commit=2.8.2
+- pre-commit=2.9.2
 - psutil=5.7.3
 - pyarrow=2.0.0
 - pytest-cov=2.10.1
@@ -26,13 +26,14 @@ dependencies:
 - redis-py=3.5.3
 - s3fs=0.4.0
 - selenium=3.141.0
-- sentry-sdk=0.19.3
+- sentry-sdk=0.19.4
 - tabulate=0.8.7
 - tblib=1.6.0
 - wget=1.20.1
 - pip:
   - amazon-kclpy==2.0.1
   - crontab==0.22.9
+  - dataclasses-json==0.5.2
   - domain-utils==0.7.1
   - flask-cors==3.0.9
   - jsonschema==3.2.0
