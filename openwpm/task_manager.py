@@ -91,11 +91,6 @@ class TaskManager:
         browser_params : list of dict
             Browser configuration parameters. If this is given as a list, it
             includes individual configurations for each browser.
-        process_watchdog : bool, optional
-            Set to True to monitor Firefox processes for zombie instances or
-            instances that exceed a reasonable amount of memory. Any process
-            found and not indexed by the TaskManager will be killed.
-            (Currently broken: https://github.com/mozilla/OpenWPM/issues/174)
         logger_kwargs : dict, optional
             Keyword arguments to pass to MPLogger on initialization.
         """
