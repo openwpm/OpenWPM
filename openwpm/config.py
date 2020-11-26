@@ -93,6 +93,7 @@ class ManagerParams:
     s3_directory: str = None
     memory_watchdog: bool = False
     process_watchdog: bool = False
+    num_browsers: int = 1
 
 
 def validate_browser_params(browser_params: BrowserParams):
@@ -179,7 +180,7 @@ def validate_manager_params(manager_params: ManagerParams):
         )
 
     try:
-        database_extension = os.path.splitext(manager_params.log_directory)[1]
+        database_extension = os.path.splitext(manager_params.database_name)[1]
         if database_extension.lower() not in DB_EXTENSION_TYPE_LIST:
             raise ConfigError(
                 EXTENSION_ERROR_STRING.format(
@@ -196,3 +197,9 @@ def validate_manager_params(manager_params: ManagerParams):
                 params_type="ManagerParams",
             )
         )
+
+
+def validate_crawl_configs(
+    manager_params: ManagerParams, browser_params_list: List[BrowserParams]
+):
+    ...
