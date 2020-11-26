@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, field
+from typing import List
 
 from dataclasses_json import dataclass_json
 
@@ -130,6 +131,17 @@ def validate_browser_params(browser_params: BrowserParams):
             "The callstacks instrument currently doesn't work without "
             "the JS instrument enabled. see: "
             "https://github.com/mozilla/OpenWPM/issues/557"
+        )
+
+    if not isinstance(browser_params.save_content, bool) and not isinstance(
+        browser_params.save_content, str
+    ):
+        raise ConfigError(
+            GENERAL_ERROR_STRING.format(
+                value=browser_params.save_content,
+                parameter_name="save_content",
+                params_type="BrowserParams",
+            )
         )
 
     if browser_params.save_content:
