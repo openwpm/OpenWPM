@@ -12,6 +12,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import psutil
 import tblib
 
+from openwpm.config import (
+    BrowserParams,
+    ManagerParams,
+    validate_browser_params,
+    validate_crawl_configs,
+    validate_manager_params,
+)
+
 from .browser_manager import Browser
 from .command_sequence import CommandSequence
 from .commands.utils.webdriver_utils import parse_neterror
@@ -34,6 +42,7 @@ MEMORY_WATCHDOG = "memory_watchdog"
 PROCESS_WATCHDOG = "process_watchdog"
 
 
+# TODO remove this function if everything goes well with config.py implementation
 def load_default_params(
     num_browsers: int = 1,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
@@ -68,8 +77,8 @@ class TaskManager:
 
     def __init__(
         self,
-        manager_params: Dict[str, Any],
-        browser_params: List[Dict[str, Any]],
+        manager_params_obj: ManagerParams,
+        browser_params_obj_list: List[BrowserParams],
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -90,6 +99,16 @@ class TaskManager:
         logger_kwargs : dict, optional
             Keyword arguments to pass to MPLogger on initialization.
         """
+
+        validate_manager_params(manager_params_obj)
+        for bp in browser_params_obj_list:
+            validate_browser_params(bp)
+
+        # Converting browser_params_obj_list and manager_params_obj to dictionaries
+        manager_params = vars(manager_params_obj)
+        browser_params = []
+        for bp in browser_params_obj_list:
+            browser_params.append(vars(bp))
 
         # Make paths absolute in manager_params
         for path in ["data_directory", "log_directory"]:
