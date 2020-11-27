@@ -660,57 +660,6 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add((src, dst, location))
         assert HTTP_REDIRECTS == observed_records
 
-    def test_document_saving(self, tmpdir):
-        """ check that document content is saved and hashed correctly """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        expected_hashes = {
-            "2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966",
-            "25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d",
-        }
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]["http_instrument"] = True
-        browser_params[0]["save_content"] = "main_frame,sub_frame"
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=test_url, sleep=1)
-        manager.close()
-        for chash, content in db_utils.get_content(str(tmpdir)):
-            chash = chash.decode("ascii").lower()
-            pyhash = sha256(content).hexdigest().lower()
-            assert pyhash == chash  # Verify expected key (sha256 of content)
-            assert chash in expected_hashes
-            expected_hashes.remove(chash)
-        assert len(expected_hashes) == 0  # All expected hashes have been seen
-
-    def test_content_saving(self, tmpdir):
-        """ check that content is saved and hashed correctly """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]["http_instrument"] = True
-        browser_params[0]["save_content"] = True
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=test_url, sleep=1)
-        manager.close()
-        db = manager_params["db"]
-        rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
-        disk_content = dict()
-        for row in rows:
-            if "MAGIC_REDIRECT" in row["url"] or "404" in row["url"]:
-                continue
-            path = urlparse(row["url"]).path
-            with open(os.path.join(BASE_PATH, path[1:]), "rb") as f:
-                content = f.read()
-            chash = sha256(content).hexdigest()
-            assert chash == row["content_hash"]
-            disk_content[chash] = content
-
-        ldb_content = dict()
-        for chash, content in db_utils.get_content(str(tmpdir)):
-            chash = chash.decode("ascii")
-            ldb_content[chash] = content
-
-        for k, v in disk_content.items():
-            assert v == ldb_content[k]
-
     def test_worker_script_requests(self):
         """Check correct URL attribution for requests made by worker script"""
         test_url = utilities.BASE_TEST_URL + "/http_worker_page.html"
@@ -965,6 +914,75 @@ def test_javascript_saving(http_params, xpi, server):
         assert chash in expected_hashes
         expected_hashes.remove(chash)
     assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+
+def test_document_saving(http_params, xpi, server):
+    """ check that document content is saved and hashed correctly """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    expected_hashes = {
+        "2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966",
+        "25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d",
+    }
+    manager_params, browser_params = http_params()
+    for browser_param in browser_params:
+        browser_param["http_instrument"] = True
+        browser_param["save_content"] = "main_frame,sub_frame"
+
+    structured_storage = SqlLiteStorageProvider(db_path=manager_params["db"])
+    ldb_path = Path(manager_params["data_directory"]) / "content.ldb"
+    unstructured_storage = LevelDbProvider(db_path=ldb_path)
+    manager = task_manager.TaskManager(
+        manager_params, browser_params, structured_storage, unstructured_storage
+    )
+
+    manager.get(url=test_url, sleep=1)
+    manager.close()
+    for chash, content in db_utils.get_content(ldb_path):
+        chash = chash.decode("ascii").lower()
+        pyhash = sha256(content).hexdigest().lower()
+        assert pyhash == chash  # Verify expected key (sha256 of content)
+        assert chash in expected_hashes
+        expected_hashes.remove(chash)
+    assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+
+def test_content_saving(http_params, xpi, server):
+    """ check that content is saved and hashed correctly """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+    for browser_param in browser_params:
+        browser_param["http_instrument"] = True
+        browser_param["save_content"] = True
+
+    structured_storage = SqlLiteStorageProvider(db_path=manager_params["db"])
+    ldb_path = Path(manager_params["data_directory"]) / "content.ldb"
+    unstructured_storage = LevelDbProvider(db_path=ldb_path)
+    manager = task_manager.TaskManager(
+        manager_params, browser_params, structured_storage, unstructured_storage
+    )
+    manager.get(url=test_url, sleep=1)
+    manager.close()
+
+    db = manager_params["db"]
+    rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
+    disk_content = dict()
+    for row in rows:
+        if "MAGIC_REDIRECT" in row["url"] or "404" in row["url"]:
+            continue
+        path = urlparse(row["url"]).path
+        with open(os.path.join(BASE_PATH, path[1:]), "rb") as f:
+            content = f.read()
+        chash = sha256(content).hexdigest()
+        assert chash == row["content_hash"]
+        disk_content[chash] = content
+
+    ldb_content = dict()
+    for chash, content in db_utils.get_content(ldb_path):
+        chash = chash.decode("ascii")
+        ldb_content[chash] = content
+
+    for k, v in disk_content.items():
+        assert v == ldb_content[k]
 
 
 def test_cache_hits_recorded(http_params, task_manager_creator):
