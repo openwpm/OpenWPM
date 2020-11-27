@@ -38,8 +38,11 @@ for i in range(NUM_BROWSERS):
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params.data_directory = "~/Desktop/"
 manager_params.log_directory = "~/Desktop/"
-manager_params.memory_watchdog = True
-manager_params.process_watchdog = True
+
+# memory_watchdog and process_watchdog are useful for large scale cloud crawls.
+# Please refer to docs/Configuration.md#platform-configuration-options for more information
+# manager_params.memory_watchdog = True
+# manager_params.process_watchdog = True
 
 # This assignment is necessary to let TaskManager know how many browsers to spawn
 manager_params.num_browsers = NUM_BROWSERS
