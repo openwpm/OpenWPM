@@ -198,7 +198,8 @@ def test_browse_site_visits_table_valid(
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params["db"], "SELECT site_url, site_rank FROM site_visits"
+        manager_params["db"],
+        "SELECT site_url, site_rank FROM site_visits ORDER BY site_rank",
     )
 
     # We had two separate page visits
