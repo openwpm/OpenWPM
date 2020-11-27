@@ -64,13 +64,13 @@ class UnstructuredStorageProvider(StorageProvider):
         self,
         filename: str,
         blob: bytes,
-        compressed: bool = True,
         overwrite: bool = False,
     ) -> None:
         """Stores the given bytes under the provided filename"""
         pass
 
-    def _compress(self, blob: bytes) -> io.BytesIO:
+    @staticmethod
+    def _compress(blob: bytes) -> io.BytesIO:
         """Takes a byte blob and compresses it with gzip
         The returned BytesIO object is at stream position 0.
         This means it can be treated like a zip file on disk.
