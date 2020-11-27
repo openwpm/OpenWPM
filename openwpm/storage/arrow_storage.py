@@ -126,7 +126,7 @@ class ArrowProvider(StructuredStorageProvider):
         So we either grab the storing condition ourselves or the caller needs
         to pass us the locked storing_condition
         """
-        got_cond = not not cond
+        got_cond = cond is not None
         if not got_cond:
             cond = self.storing_condition
             await cond.acquire()
