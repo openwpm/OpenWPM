@@ -41,7 +41,7 @@ def structured_provider(
         return SqlLiteStorageProvider(tmp_path / "test_db.sqllite")
     elif request.param == memory_arrow:
         return MemoryArrowProvider()
-    raise ValueError("invalid internal test config")
+    request.raiseerror("invalid internal test config")
 
 
 def pytest_generate_tests(metafunc: Any) -> Any:
@@ -66,7 +66,6 @@ class TestStructuredStorageProvider:
         data = {
             "visit_id": 2,
             "browser_id": 3,
-            "instance_id": 4,
             "site_url": "https://example.com",
         }
 
