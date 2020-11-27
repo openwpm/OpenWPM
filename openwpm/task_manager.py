@@ -115,9 +115,11 @@ class TaskManager:
         manager_params["log_file"] = os.path.join(
             manager_params["log_directory"], manager_params["log_file"]
         )
+        # TODO moved this assignment to ManagerParams dataclass so remove
         manager_params["screenshot_path"] = os.path.join(
             manager_params["data_directory"], "screenshots"
         )
+        # TODO moved this assignment to ManagerParams dataclass so remove
         manager_params["source_dump_path"] = os.path.join(
             manager_params["data_directory"], "sources"
         )
@@ -150,6 +152,7 @@ class TaskManager:
         self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
+        # TODO refactor this condtion to use falsy or truthy
         if manager_params["failure_limit"] is not None:
             self.failure_limit = manager_params["failure_limit"]
         else:
@@ -296,10 +299,7 @@ class TaskManager:
             self.data_aggregator = S3_aggregator.S3Aggregator(
                 self.manager_params, self.browser_params
             )
-        else:
-            raise Exception(
-                "Unrecognized output format: %s" % self.manager_params["output_format"]
-            )
+
         self.data_aggregator.launch()
         self.manager_params[
             "aggregator_address"

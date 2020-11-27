@@ -28,6 +28,7 @@ GENERAL_ERROR_STRING = (
     "Found invalid value `{value}` for {parameter_name} in {params_type}. "
     "Please look at docs/Configuration.md for more information"
 )
+OUTPUT_FORMAT_LIST = ["local", "s3"]
 
 ALL_RESOURCE_TYPES = {
     "beacon",
@@ -51,6 +52,21 @@ ALL_RESOURCE_TYPES = {
     "xslt",
     "other",
 }
+
+
+@dataclass
+class BrowserParamsInternal:
+    ...
+
+
+@dataclass
+class ManagerParamsInternal:
+    aggregator_address: tuple = ()
+    logger_address: tuple = ()
+
+    # TODO workout where ldb_address is being set
+    # ldb_address:
+    ...
 
 
 @dataclass_json
@@ -84,10 +100,12 @@ class BrowserParams:
 class ManagerParams:
     data_directory: str = "~/openwpm/"
     log_directory: str = "~/openwpm/"
+    screenshot_path: str = data_directory + "screenshots"
+    source_dump_path: str = data_directory + "sources"
     output_format: str = "local"
     database_name: str = "crawl-data.sqlite"
     log_file: str = "openwpm.log"
-    failure_limit: str = None
+    failure_limit: int = None
     testing: bool = False
     s3_bucket: str = None
     s3_directory: str = None
@@ -197,6 +215,40 @@ def validate_manager_params(manager_params: ManagerParams):
                 params_type="ManagerParams",
             )
         )
+
+    # This check is necessary to not cause any internal error because
+    # failure_limit gets set in TaskManager if its value is anything other than None
+    if not isinstance(manager_params.failure_limit, int):
+        raise ConfigError(
+            GENERAL_ERROR_STRING.format(
+                value=manager_params.failure_limit,
+                parameter_name="failure_limit",
+                params_type="ManagerParams",
+            ).replace(
+                "Please look at docs/Configuration.md for more information",
+                "failure_limit must be of type `int`",
+            )
+        )
+
+    if manager_params.output_format.lower() not in OUTPUT_FORMAT_LIST:
+        raise ConfigError(
+            CONFIG_ERROR_STRING.format(
+                value=manager_params.output_format,
+                parameter_name="output_format",
+                value_list=OUTPUT_FORMAT_LIST,
+            ).replace(
+                "Please look at docs/Configuration.md#browser-configuration-options for more information",
+                "",
+            )
+        )
+
+    # Checks to make sure screenshot_path and source_dump_path so is not changed
+    # Wrote these checks because screenshot_path and source_dump_path were being
+    # set internally prior to dataclasses
+    if manager_params.screenshot_path != manager_params.data_directory + "screenshots":
+        manager_params.screenshot_path = manager_params.data_directory + "screenshots"
+    if manager_params.source_dump_path != manager_params.data_directory + "sources":
+        manager_params.source_dump_path = manager_params.data_directory + "sources"
 
 
 def validate_crawl_configs(
