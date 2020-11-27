@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import pytest
 
 from openwpm import command_sequence, task_manager
+from openwpm.command_sequence import CommandSequence
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.utilities import db_utils
@@ -659,83 +660,6 @@ class TestHTTPInstrument(OpenWPMTest):
             observed_records.add((src, dst, location))
         assert HTTP_REDIRECTS == observed_records
 
-    def test_cache_hits_recorded(self):
-        """Verify all http responses are recorded, including cached responses
-
-        Note that we expect to see all of the same requests and responses
-        during the second vist (even if cached) except for images. Cached
-        images do not trigger Observer Notification events.
-        See Bug 634073: https://bugzilla.mozilla.org/show_bug.cgi?id=634073
-
-        The test page includes an image which does several permanent redirects
-        before returning a 404. We expect to see new requests and responses
-        for this image when the page is reloaded. Additionally, the redirects
-        should be cached.
-        """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(test_url, sleep=5)
-        manager.get(test_url, sleep=5)
-        manager.close()
-        db = manager_params["db"]
-
-        request_id_to_url = dict()
-
-        # HTTP Requests
-        rows = db_utils.query_db(db, "SELECT * FROM http_requests WHERE visit_id = 2")
-        observed_records = set()
-        for row in rows:
-            # HACK: favicon caching is unpredictable, don't bother checking it
-            if row["url"].split("?")[0].endswith("favicon.ico"):
-                continue
-            observed_records.add(
-                (
-                    row["url"].split("?")[0],
-                    row["top_level_url"],
-                    row["triggering_origin"],
-                    row["loading_origin"],
-                    row["loading_href"],
-                    row["is_XHR"],
-                    row["is_third_party_channel"],
-                    row["is_third_party_to_top_window"],
-                    row["resource_type"],
-                )
-            )
-            request_id_to_url[row["request_id"]] = row["url"]
-        assert HTTP_CACHED_REQUESTS == observed_records
-
-        # HTTP Responses
-        rows = db_utils.query_db(db, "SELECT * FROM http_responses WHERE visit_id = 2")
-        observed_records = set()
-        for row in rows:
-            # HACK: favicon caching is unpredictable, don't bother checking it
-            if row["url"].split("?")[0].endswith("favicon.ico"):
-                continue
-            observed_records.add(
-                (
-                    row["url"].split("?")[0],
-                    # TODO: referrer isn't available yet in the
-                    # webext instrumentation | row['referrer'],
-                    row["is_cached"],
-                )
-            )
-            assert row["request_id"] in request_id_to_url
-            assert request_id_to_url[row["request_id"]] == row["url"]
-        assert HTTP_CACHED_RESPONSES == observed_records
-
-        # HTTP Redirects
-        rows = db_utils.query_db(db, "SELECT * FROM http_redirects WHERE visit_id = 2")
-        observed_records = set()
-        for row in rows:
-            # TODO: new_request_id isn't supported yet
-            # src = request_id_to_url[row['old_request_id']].split('?')[0]
-            # dst = request_id_to_url[row['new_request_id']].split('?')[0]
-            src = row["old_request_url"].split("?")[0]
-            dst = row["new_request_url"].split("?")[0]
-            observed_records.add((src, dst))
-        assert HTTP_CACHED_REDIRECTS == observed_records
-
     def test_document_saving(self, tmpdir):
         """ check that document content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
@@ -1041,3 +965,106 @@ def test_javascript_saving(http_params, xpi, server):
         assert chash in expected_hashes
         expected_hashes.remove(chash)
     assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+
+def test_cache_hits_recorded(http_params, task_manager_creator):
+    """Verify all http responses are recorded, including cached responses
+
+    Note that we expect to see all of the same requests and responses
+    during the second vist (even if cached) except for images. Cached
+    images do not trigger Observer Notification events.
+    See Bug 634073: https://bugzilla.mozilla.org/show_bug.cgi?id=634073
+
+    The test page includes an image which does several permanent redirects
+    before returning a 404. We expect to see new requests and responses
+    for this image when the page is reloaded. Additionally, the redirects
+    should be cached.
+    """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+    # ensuring that we only spawn one browser
+    manager = task_manager_creator((manager_params, [browser_params[0]]))
+    for i in range(2):
+        cs = CommandSequence(test_url, site_rank=i)
+        cs.get(sleep=5)
+        manager.execute_command_sequence(cs)
+
+    manager.close()
+    db = manager_params["db"]
+
+    request_id_to_url = dict()
+
+    # HTTP Requests
+    rows = db_utils.query_db(
+        db,
+        """
+        SELECT hr.*
+        FROM http_requests as hr
+        JOIN site_visits sv ON sv.visit_id = hr.visit_id and sv.browser_id = hr.browser_id
+        WHERE sv.site_rank = 1""",
+    )
+    observed_records = set()
+    for row in rows:
+        # HACK: favicon caching is unpredictable, don't bother checking it
+        if row["url"].split("?")[0].endswith("favicon.ico"):
+            continue
+        observed_records.add(
+            (
+                row["url"].split("?")[0],
+                row["top_level_url"],
+                row["triggering_origin"],
+                row["loading_origin"],
+                row["loading_href"],
+                row["is_XHR"],
+                row["is_third_party_channel"],
+                row["is_third_party_to_top_window"],
+                row["resource_type"],
+            )
+        )
+        request_id_to_url[row["request_id"]] = row["url"]
+    assert observed_records == HTTP_CACHED_REQUESTS
+
+    # HTTP Responses
+    rows = db_utils.query_db(
+        db,
+        """
+         SELECT hp.*
+         FROM http_responses as hp
+         JOIN site_visits sv ON sv.visit_id = hp.visit_id and sv.browser_id = hp.browser_id
+         WHERE sv.site_rank = 1""",
+    )
+    observed_records = set()
+    for row in rows:
+        # HACK: favicon caching is unpredictable, don't bother checking it
+        if row["url"].split("?")[0].endswith("favicon.ico"):
+            continue
+        observed_records.add(
+            (
+                row["url"].split("?")[0],
+                # TODO: referrer isn't available yet in the
+                # webext instrumentation | row['referrer'],
+                row["is_cached"],
+            )
+        )
+        assert row["request_id"] in request_id_to_url
+        assert request_id_to_url[row["request_id"]] == row["url"]
+    assert HTTP_CACHED_RESPONSES == observed_records
+
+    # HTTP Redirects
+    rows = db_utils.query_db(
+        db,
+        """
+         SELECT hr.*
+         FROM http_redirects as hr
+         JOIN site_visits sv ON sv.visit_id = hr.visit_id and sv.browser_id = hr.browser_id
+         WHERE sv.site_rank = 1""",
+    )
+    observed_records = set()
+    for row in rows:
+        # TODO: new_request_id isn't supported yet
+        # src = request_id_to_url[row['old_request_id']].split('?')[0]
+        # dst = request_id_to_url[row['new_request_id']].split('?')[0]
+        src = row["old_request_url"].split("?")[0]
+        dst = row["new_request_url"].split("?")[0]
+        observed_records.add((src, dst))
+    assert HTTP_CACHED_REDIRECTS == observed_records

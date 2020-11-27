@@ -54,11 +54,12 @@ manager = TaskManager(
 )
 
 # Visits the sites
-for site in sites:
+for index, site in enumerate(sites):
 
     # Parallelize sites over all number of browsers set above.
     command_sequence = CommandSequence(
         site,
+        site_rank=index,
         reset=True,
         callback=lambda success, val=site: print("CommandSequence {} done".format(val)),
     )

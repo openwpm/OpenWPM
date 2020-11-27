@@ -435,7 +435,7 @@ def test_dump_page_source_valid(http_params, task_manager_creator, display_mode)
     # Source filename is of the follow structure:
     # `sources/<visit_id>-<md5_of_url>(-suffix).html`
     # thus for this test we expect `sources/1-<md5_of_test_url>-test.html`.
-    outfile = os.path.join(manager_params["data_directory"], "sources", "1-*-test.html")
+    outfile = os.path.join(manager_params["data_directory"], "sources", "*-*-test.html")
     source_file = glob.glob(outfile)[0]
     with open(source_file, "rb") as f:
         actual_source = f.read()
@@ -459,7 +459,7 @@ def test_recursive_dump_page_source_valid(
     manager.execute_command_sequence(cs)
     manager.close()
 
-    outfile = os.path.join(manager_params["data_directory"], "sources", "1-*.json.gz")
+    outfile = os.path.join(manager_params["data_directory"], "sources", "*-*.json.gz")
     src_file = glob.glob(outfile)[0]
     with gzip.GzipFile(src_file, "rb") as f:
         visit_source = json.loads(f.read().decode("utf-8"))
