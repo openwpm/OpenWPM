@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Tuple
 
 from dataclasses_json import dataclass_json
 
@@ -56,22 +56,22 @@ ALL_RESOURCE_TYPES = {
 
 @dataclass
 class BrowserParamsInternal:
-    ...
+    browser_id: int = None
+    profile_path: str = ""
 
 
 @dataclass
 class ManagerParamsInternal:
-    aggregator_address: tuple = ()
-    logger_address: tuple = ()
+    aggregator_address: Tuple[str] = ()
+    logger_address: Tuple[str] = ()
 
     # TODO workout where ldb_address is being set
     # ldb_address:
-    ...
 
 
 @dataclass_json
 @dataclass
-class BrowserParams:
+class BrowserParams(BrowserParamsInternal):
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
@@ -97,7 +97,7 @@ class BrowserParams:
 
 @dataclass_json
 @dataclass
-class ManagerParams:
+class ManagerParams(ManagerParamsInternal):
     data_directory: str = "~/openwpm/"
     log_directory: str = "~/openwpm/"
     screenshot_path: str = data_directory + "screenshots"
@@ -114,7 +114,7 @@ class ManagerParams:
     num_browsers: int = 1
 
 
-def validate_browser_params(browser_params: BrowserParams):
+def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
 
@@ -174,7 +174,7 @@ def validate_browser_params(browser_params: BrowserParams):
                 )
 
 
-def validate_manager_params(manager_params: ManagerParams):
+def validate_manager_params(manager_params: ManagerParams) -> None:
     if ManagerParams() == manager_params:
         return
 
@@ -253,5 +253,5 @@ def validate_manager_params(manager_params: ManagerParams):
 
 def validate_crawl_configs(
     manager_params: ManagerParams, browser_params_list: List[BrowserParams]
-):
+) -> None:
     ...
