@@ -1,6 +1,8 @@
 /* This file is sourced during the initialization
  * of the crawler. Make sure everything is CREATE
  * IF NOT EXISTS, otherwise there will be errors
+ * IF YOU CHANGE THIS FILE ALSO CHANGE test_values.py and parquet_schema.py
+ * AND Schema-Documentation.md
  */
 
 CREATE TABLE IF NOT EXISTS task (

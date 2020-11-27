@@ -7,6 +7,7 @@ from typing import Callable, List, Tuple
 import pytest
 
 from openwpm import task_manager
+from openwpm.mp_logger import MPLogger
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager
 from openwpm.types import BrowserParams, ManagerParams
@@ -96,3 +97,10 @@ def http_params(
         return manager_params, browser_params
 
     return parameterize
+
+
+@pytest.fixture()
+def mp_logger(tmp_path):
+    logger = MPLogger(tmp_path / "openwpm.log")
+    yield logger
+    logger.close()

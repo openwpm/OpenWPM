@@ -37,6 +37,10 @@ class StructuredStorageProvider(StorageProvider):
     def __init__(self) -> None:
         super().__init__()
 
+    # TODO: Discuss if we want visit_id here
+    # It will always be part of the record and make the interface bigger
+    # than it needs to be
+    # But not having to access the data is also convenient
     @abstractmethod
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]

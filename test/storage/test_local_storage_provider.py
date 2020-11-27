@@ -8,26 +8,25 @@ from openwpm.storage.local_storage import LocalArrowProvider
 from openwpm.storage.storage_providers import TableName
 from openwpm.types import VisitId
 
+from .test_values import TEST_VALUES
+
 
 @pytest.mark.asyncio
-async def test_local_arrow_storage_provider(tmp_path):
+async def test_local_arrow_storage_provider(tmp_path, mp_logger):
     structured_provider = LocalArrowProvider(tmp_path)
-    data = {
-        "visit_id": 2,
-        "browser_id": 3,
-        "site_url": "https://example.com",
-        "site_rank": 4,
-    }
-    await structured_provider.store_record(TableName("site_visits"), VisitId(2), data)
-    await asyncio.gather(
-        structured_provider.finalize_visit_id(VisitId(2)),
-        structured_provider.flush_cache(),
-    )
-    dataset = ParquetDataset(tmp_path / "site_visits")
-    df: DataFrame = dataset.read().to_pandas()
-    assert df.shape[0] == 1
-    for row in df.itertuples(index=False):
-        assert row.visit_id == 2
-        assert row.browser_id == 3
-        assert row.site_rank == 4
-        assert row.site_url == "https://example.com"
+    visit_ids = set()
+    for table_name, test_data in TEST_VALUES.items():
+        visit_id = VisitId(test_data["visit_id"])
+        visit_ids.add(visit_id)
+        await structured_provider.store_record(
+            TableName(table_name), visit_id, test_data
+        )
+    task_list = list(structured_provider.finalize_visit_id(i) for i in visit_ids)
+    task_list.append(structured_provider.flush_cache())
+    ret_vals = await asyncio.gather(*task_list)
+    for table_name, test_data in TEST_VALUES.items():
+        dataset = ParquetDataset(tmp_path / table_name)
+        df: DataFrame = dataset.read().to_pandas()
+        assert df.shape[0] == 1
+        for row in df.itertuples(index=False):
+            assert row._asdict() == test_data

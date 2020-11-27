@@ -1,3 +1,11 @@
+"""
+Arrow schema for our ArrowProvider.py
+
+IF YOU CHANGE THIS FILE ALSO CHANGE schema.sql and test_values.py
+AND Schema-Documentation.md
+
+"""
+
 import pyarrow as pa
 
 PQ_SCHEMAS = dict()
