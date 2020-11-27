@@ -54,24 +54,9 @@ ALL_RESOURCE_TYPES = {
 }
 
 
-@dataclass
-class BrowserParamsInternal:
-    browser_id: int = None
-    profile_path: str = ""
-
-
-@dataclass
-class ManagerParamsInternal:
-    aggregator_address: Tuple[str] = ()
-    logger_address: Tuple[str] = ()
-
-    # TODO workout where ldb_address is being set
-    # ldb_address:
-
-
 @dataclass_json
 @dataclass
-class BrowserParams(BrowserParamsInternal):
+class BrowserParams:
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
@@ -97,7 +82,7 @@ class BrowserParams(BrowserParamsInternal):
 
 @dataclass_json
 @dataclass
-class ManagerParams(ManagerParamsInternal):
+class ManagerParams:
     data_directory: str = "~/openwpm/"
     log_directory: str = "~/openwpm/"
     screenshot_path: str = data_directory + "screenshots"
@@ -112,6 +97,21 @@ class ManagerParams(ManagerParamsInternal):
     memory_watchdog: bool = False
     process_watchdog: bool = False
     num_browsers: int = 1
+
+
+@dataclass
+class BrowserParamsInternal(BrowserParams):
+    browser_id: int = None
+    profile_path: str = ""
+
+
+@dataclass
+class ManagerParamsInternal(ManagerParams):
+    aggregator_address: Tuple[str] = ()
+    logger_address: Tuple[str] = ()
+
+    # TODO workout where ldb_address is being set
+    # ldb_address:
 
 
 def validate_browser_params(browser_params: BrowserParams) -> None:
