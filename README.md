@@ -34,6 +34,7 @@ Table of Contents <!-- omit in toc -->
     * [Load a profile](#load-a-profile)
 * [Development pointers](#development-pointers)
   * [Types Annotations in Python](#types-annotations-in-python)
+  * [Creating custom commands] (#creating-custom-commands)
   * [Editing instrumentation](#editing-instrumentation)
   * [Debugging the platform](#debugging-the-platform)
   * [Managing requirements](#managing-requirements)
@@ -550,6 +551,45 @@ for the python part of this project to catch errors earlier, get better
 code completion and allow bigger changes down the line with more confidence.
 As such you should strive to add type annotations to all new code you add to
 the project as well as the one you plan to change fundamentally.
+
+### Creating custom commands
+
+If you'd like to create a custom command, you must create a new file with the details
+of your command. Suppose we want to make a command to take a screenshot of the page we are viewing.
+In `custom_command.py` we would define a class, `SaveScreenshotCommand` that derives from `BaseCommand`
+```python
+class SaveScreenshotCommand(BaseCommand)
+```
+Next, in our newly derived class, we would define the `___init___`, `execute` and `__repr__` functions.
+```python
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
+        return "SaveScreenshotCommand({})".format(self.suffix)
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outname = os.path.join(
+            manager_params["screenshot_path"],
+            "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix),
+        )
+        webdriver.save_screenshot(outname)
+```
+
+Finally, we must add our class to the command_sequence
+`command_sequence.append_command(SaveScreenShotCommand("my_suffix"))`
+
+Your command will now execute during the command sequence.
 
 ### Editing instrumentation
 
