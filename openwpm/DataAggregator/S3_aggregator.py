@@ -18,6 +18,8 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
+from openwpm.config import ManagerParamsInternal
+
 from .base_aggregator import (
     RECORD_TYPE_CONTENT,
     RECORD_TYPE_CREATE,
@@ -38,7 +40,7 @@ S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
 def listener_process_runner(
-    base_params: BaseParams, manager_params: Dict[str, Any], instance_id: int
+    base_params: BaseParams, manager_params: ManagerParamsInternal, instance_id: int
 ) -> None:
     """S3Listener runner. Pass to new process"""
     listener = S3Listener(base_params, manager_params, instance_id)
@@ -69,7 +71,10 @@ class S3Listener(BaseListener):
     """
 
     def __init__(
-        self, base_params: BaseParams, manager_params: Dict[str, Any], instance_id: int
+        self,
+        base_params: BaseParams,
+        manager_params: ManagerParamsInternal,
+        instance_id: int,
     ) -> None:
         self.dir = manager_params.s3_directory
 

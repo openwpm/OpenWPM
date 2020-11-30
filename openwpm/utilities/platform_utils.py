@@ -99,7 +99,7 @@ def get_configuration_string(manager_params, browser_params, versions):
         manager_params.__dict__, sort_keys=True, indent=2, separators=(",", ": ")
     )
     config_str += "\n\n========== Browser Configuration ==========\n"
-    print(browser_params)
+
     print_params = [deepcopy(x.__dict__) for x in browser_params]
     table_input = list()
     profile_dirs = OrderedDict()

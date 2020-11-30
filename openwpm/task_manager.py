@@ -77,7 +77,6 @@ class TaskManager:
         for bp in browser_params_temp:
             validate_browser_params(bp)
 
-        # Converting browser_params_obj_list and manager_params_obj to dictionaries
         manager_params = ManagerParamsInternal(**manager_params_temp.__dict__)
         browser_params = [
             BrowserParamsInternal(**bp.__dict__) for bp in browser_params_temp

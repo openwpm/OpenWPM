@@ -193,10 +193,10 @@ class BaseAggregator:
 
     Parameters
     ----------
-    manager_params : dict
+    manager_params : ManagerParamsInternal
         TaskManager configuration parameters
-    browser_params : list of dict
-        List of browser configuration dictionaries"""
+    browser_params : list of BrowserParamsInternal
+        List of browser configuration class<BrowserParams>"""
 
     __metaclass__ = abc.ABCMeta
 
