@@ -109,9 +109,7 @@ class BrowserParamsInternal(BrowserParams):
 class ManagerParamsInternal(ManagerParams):
     aggregator_address: Tuple[str] = ()
     logger_address: Tuple[str] = ()
-
-    # TODO workout where ldb_address is being set
-    # ldb_address:
+    ldb_address: Tuple[str] = ()
 
 
 def validate_browser_params(browser_params: BrowserParams) -> None:
@@ -218,7 +216,10 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
 
     # This check is necessary to not cause any internal error because
     # failure_limit gets set in TaskManager if its value is anything other than None
-    if not isinstance(manager_params.failure_limit, int):
+    if (
+        not isinstance(manager_params.failure_limit, int)
+        and manager_params.failure_limit is not None
+    ):
         raise ConfigError(
             GENERAL_ERROR_STRING.format(
                 value=manager_params.failure_limit,

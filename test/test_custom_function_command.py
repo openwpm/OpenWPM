@@ -50,7 +50,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
             current_url = driver.current_url
 
             sock = ClientSocket()
-            sock.connect(*manager_params["aggregator_address"])
+            sock.connect(*manager_params.aggregator_address)
 
             query = (
                 "CREATE TABLE IF NOT EXISTS %s ("
@@ -80,6 +80,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
         query_result = db_utils.query_db(
-            manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
+            manager_params.database_name,
+            "SELECT top_url, link FROM page_links;",
+            as_tuple=True,
         )
         assert PAGE_LINKS == set(query_result)

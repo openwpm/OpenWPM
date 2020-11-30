@@ -14,7 +14,9 @@ import tblib
 
 from openwpm.config import (
     BrowserParams,
+    BrowserParamsInternal,
     ManagerParams,
+    ManagerParamsInternal,
     validate_browser_params,
     validate_crawl_configs,
     validate_manager_params,
@@ -38,31 +40,6 @@ SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
-MEMORY_WATCHDOG = "memory_watchdog"
-PROCESS_WATCHDOG = "process_watchdog"
-
-
-# TODO remove this function if everything goes well with config.py implementation
-def load_default_params(
-    num_browsers: int = 1,
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """
-    Loads num_browsers copies of the default browser_params dictionary.
-    Also loads a single copy of the default TaskManager params dictionary.
-    """
-    with open(
-        os.path.join(os.path.dirname(__file__), "default_browser_params.json"), "r"
-    ) as fp:
-        preferences = json.load(fp)
-    browser_params = [copy.deepcopy(preferences) for i in range(0, num_browsers)]
-
-    with open(
-        os.path.join(os.path.dirname(__file__), "default_manager_params.json"), "r"
-    ) as fp:
-        manager_params = json.load(fp)
-    manager_params["num_browsers"] = num_browsers
-
-    return manager_params, browser_params
 
 
 class TaskManager:
@@ -77,92 +54,100 @@ class TaskManager:
 
     def __init__(
         self,
-        manager_params_obj: ManagerParams,
-        browser_params_obj_list: List[BrowserParams],
+        manager_params_temp: ManagerParams,
+        browser_params_temp: List[BrowserParams],
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
+        # TODO fix documentation
         """Initialize the TaskManager with browser and manager config params
 
         Parameters
         ----------
-        manager_params : dict
+        manager_params_temp : class<ManagerParams>
             Dictionary of TaskManager configuration parameters. See the
             default in `default_manager_params.json`.
-        browser_params : list of dict
+        browser_params_temp : list of class<ManagerParams>
             Browser configuration parameters. If this is given as a list, it
             includes individual configurations for each browser.
         logger_kwargs : dict, optional
             Keyword arguments to pass to MPLogger on initialization.
         """
 
-        validate_manager_params(manager_params_obj)
-        for bp in browser_params_obj_list:
+        validate_manager_params(manager_params_temp)
+        for bp in browser_params_temp:
             validate_browser_params(bp)
 
         # Converting browser_params_obj_list and manager_params_obj to dictionaries
-        manager_params = vars(manager_params_obj)
-        browser_params = []
-        for bp in browser_params_obj_list:
-            browser_params.append(vars(bp))
+        manager_params = ManagerParamsInternal(**manager_params_temp.__dict__)
+        browser_params = [
+            BrowserParamsInternal(**bp.__dict__) for bp in browser_params_temp
+        ]
 
         # Make paths absolute in manager_params
-        for path in ["data_directory", "log_directory"]:
-            if manager_params[path] is not None:
-                manager_params[path] = os.path.expanduser(manager_params[path])
-        manager_params["database_name"] = os.path.join(
-            manager_params["data_directory"], manager_params["database_name"]
+        if manager_params.data_directory:
+            manager_params.data_directory = os.path.expanduser(
+                manager_params.data_directory
+            )
+        if manager_params.log_directory:
+            manager_params.log_directory = os.path.expanduser(
+                manager_params.log_directory
+            )
+
+        manager_params.database_name = os.path.join(
+            manager_params.data_directory, manager_params.database_name
         )
-        manager_params["log_file"] = os.path.join(
-            manager_params["log_directory"], manager_params["log_file"]
+        manager_params.log_file = os.path.join(
+            manager_params.log_directory, manager_params.log_file
         )
-        # TODO moved this assignment to ManagerParams dataclass so remove
-        manager_params["screenshot_path"] = os.path.join(
-            manager_params["data_directory"], "screenshots"
-        )
-        # TODO moved this assignment to ManagerParams dataclass so remove
-        manager_params["source_dump_path"] = os.path.join(
-            manager_params["data_directory"], "sources"
-        )
+        # # TODO moved this assignment to ManagerParams dataclass so remove
+        # manager_params.screenshot_path = os.path.join(
+        #     manager_params.data_directory, "screenshots"
+        # )
+        # # TODO moved this assignment to ManagerParams dataclass so remove
+        # manager_params.source_dump_path = os.path.join(
+        #     manager_params.data_directory, "sources"
+        # )
         self.manager_params = manager_params
         self.browser_params = browser_params
         self._logger_kwargs = logger_kwargs
 
         # Create data directories if they do not exist
-        if not os.path.exists(manager_params["screenshot_path"]):
-            os.makedirs(manager_params["screenshot_path"])
-        if not os.path.exists(manager_params["source_dump_path"]):
-            os.makedirs(manager_params["source_dump_path"])
+        if not os.path.exists(manager_params.screenshot_path):
+            os.makedirs(manager_params.screenshot_path)
+        if not os.path.exists(manager_params.source_dump_path):
+            os.makedirs(manager_params.source_dump_path)
 
         # Check size of parameter dictionary
-        self.num_browsers = manager_params["num_browsers"]
+        self.num_browsers = manager_params.num_browsers
         if len(browser_params) != self.num_browsers:
             raise Exception(
-                "Number of <browser_params> dicts is not the same "
-                "as manager_params['num_browsers']"
+                "Number of <browser_params> class<BrowserParams> instances is not the same "
+                "as manager_params.num_browsers. Make sure you are assigning number of browsers "
+                "to be used to manager_params.num_browsers in your entry file"
             )
 
         # Parse and flesh out js_instrument_settings
         for a_browsers_params in self.browser_params:
-            js_settings = a_browsers_params["js_instrument_settings"]
+            js_settings = a_browsers_params.js_instrument_settings
             cleaned_js_settings = clean_js_instrumentation_settings(js_settings)
-            a_browsers_params["js_instrument_settings"] = cleaned_js_settings
+            a_browsers_params.js_instrument_settings = cleaned_js_settings
 
         # Flow control
         self.closing = False
         self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
         self.failurecount = 0
-        # TODO refactor this condtion to use falsy or truthy
-        if manager_params["failure_limit"] is not None:
-            self.failure_limit = manager_params["failure_limit"]
+
+        if manager_params.failure_limit:
+            self.failure_limit = manager_params.failure_limit
         else:
             self.failure_limit = self.num_browsers * 2 + 10
 
         # Start logging server thread
         self.logging_server = MPLogger(
-            self.manager_params["log_file"], self.manager_params, **self._logger_kwargs
+            self.manager_params.log_file, self.manager_params, **self._logger_kwargs
         )
-        self.manager_params["logger_address"] = self.logging_server.logger_address
+        self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
 
         # Initialize the data aggregators
@@ -194,12 +179,12 @@ class TaskManager:
         self.callback_thread.start()
 
     def _initialize_browsers(
-        self, browser_params: List[Dict[str, Any]]
+        self, browser_params: List[BrowserParamsInternal]
     ) -> List[Browser]:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
-            browser_params[i]["browser_id"] = self.data_aggregator.get_next_browser_id()
+            browser_params[i].browser_id = self.data_aggregator.get_next_browser_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -231,7 +216,7 @@ class TaskManager:
             time.sleep(10)
 
             # Check browser memory usage
-            if self.manager_params[MEMORY_WATCHDOG]:
+            if self.manager_params.memory_watchdog:
                 for browser in self.browsers:
                     try:
                         # Sum the memory used by the geckodriver process, the
@@ -260,7 +245,7 @@ class TaskManager:
             # Check for browsers or displays that were not closed correctly
             # 300 second buffer to avoid killing freshly launched browsers
             # TODO This buffer should correspond to the maximum spawn timeout
-            if self.manager_params[PROCESS_WATCHDOG]:
+            if self.manager_params.process_watchdog:
                 geckodriver_pids: Set[int] = set()
                 display_pids: Set[int] = set()
                 check_time = time.time()
@@ -291,23 +276,21 @@ class TaskManager:
     def _launch_aggregators(self) -> None:
         """Launch the necessary data aggregators"""
         self.data_aggregator: base_aggregator.BaseAggregator
-        if self.manager_params["output_format"] == "local":
+        if self.manager_params.output_format == "local":
             self.data_aggregator = local_aggregator.LocalAggregator(
                 self.manager_params, self.browser_params
             )
-        elif self.manager_params["output_format"] == "s3":
+        elif self.manager_params.output_format == "s3":
             self.data_aggregator = S3_aggregator.S3Aggregator(
                 self.manager_params, self.browser_params
             )
 
         self.data_aggregator.launch()
-        self.manager_params[
-            "aggregator_address"
-        ] = self.data_aggregator.listener_address
+        self.manager_params.aggregator_address = self.data_aggregator.listener_address
 
         # open connection to aggregator for saving crawl details
         self.sock = ClientSocket(serialization="dill")
-        self.sock.connect(*self.manager_params["aggregator_address"])
+        self.sock.connect(*self.manager_params.aggregator_address)
 
     def _shutdown_manager(
         self, during_init: bool = False, relaxed: bool = True

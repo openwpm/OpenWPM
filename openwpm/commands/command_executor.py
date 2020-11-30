@@ -48,7 +48,7 @@ def execute_command(
 
     elif type(command) is DumpProfCommand:
         profile_commands.dump_profile(
-            browser_profile_folder=browser_params["profile_path"],
+            browser_profile_folder=browser_params.profile_path,
             manager_params=manager_params,
             browser_params=browser_params,
             tar_location=command.dump_folder,

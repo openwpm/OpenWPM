@@ -26,7 +26,7 @@ def dump_profile(
     logger.debug(
         "BROWSER %i: Profile dumping is currently unsupported. "
         "See: https://github.com/mozilla/OpenWPM/projects/2."
-        % browser_params["browser_id"]
+        % browser_params.browser_id
     )
     return
 
@@ -62,7 +62,7 @@ def dump_profile(
     logger.debug(
         "BROWSER %i: Backing up full profile from %s to %s"
         % (
-            browser_params["browser_id"],
+            browser_params.browser_id,
             browser_profile_folder,
             tar_location + tar_name,
         )
@@ -91,7 +91,7 @@ def dump_profile(
         ):
             logger.critical(
                 "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                % (browser_params["browser_id"], full_path)
+                % (browser_params.browser_id, full_path)
             )
         elif not os.path.isfile(full_path) and (
             full_path[-3:] == "shm" or full_path[-3:] == "wal"
@@ -103,7 +103,7 @@ def dump_profile(
         if not os.path.isdir(full_path):
             logger.warning(
                 "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                % (browser_params["browser_id"], full_path)
+                % (browser_params.browser_id, full_path)
             )
             continue
         tar.add(full_path, arcname=item)
@@ -132,7 +132,7 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
         logger.debug(
             "BROWSER %i: Copying profile tar from %s to %s"
             % (
-                browser_params["browser_id"],
+                browser_params.browser_id,
                 tar_location + tar_name,
                 browser_profile_folder,
             )
@@ -146,11 +146,11 @@ def load_profile(browser_profile_folder, manager_params, browser_params, tar_loc
         f.extractall(browser_profile_folder)
         f.close()
         os.remove(browser_profile_folder + tar_name)
-        logger.debug("BROWSER %i: Tarfile extracted" % browser_params["browser_id"])
+        logger.debug("BROWSER %i: Tarfile extracted" % browser_params.browser_id)
 
     except Exception as ex:
         logger.critical(
             "BROWSER %i: Error: %s while attempting to load profile"
-            % (browser_params["browser_id"], str(ex))
+            % (browser_params.browser_id, str(ex))
         )
         raise ProfileLoadError("Profile Load not successful")

@@ -11,6 +11,7 @@ import boto3
 import sentry_sdk
 
 from openwpm.command_sequence import CommandSequence
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.mp_logger import parse_config_from_env
 from openwpm.task_manager import TaskManager, load_default_params
 from openwpm.utilities import rediswq
@@ -51,38 +52,39 @@ EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 # code below requires blocking commands. For more context see:
 # https://github.com/mozilla/OpenWPM/issues/470
 NUM_BROWSERS = 1
-manager_params, browser_params = load_default_params(NUM_BROWSERS)
+manager_params = ManagerParams()
+browser_params = [BrowserParams() for _ in range(NUM_BROWSERS)]
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
-    browser_params[i]["display_mode"] = DISPLAY_MODE
-    browser_params[i]["http_instrument"] = HTTP_INSTRUMENT
-    browser_params[i]["cookie_instrument"] = COOKIE_INSTRUMENT
-    browser_params[i]["navigation_instrument"] = NAVIGATION_INSTRUMENT
-    browser_params[i]["callstack_instrument"] = CALLSTACK_INSTRUMENT
-    browser_params[i]["js_instrument"] = JS_INSTRUMENT
-    browser_params[i]["js_instrument_settings"] = JS_INSTRUMENT_SETTINGS
+    browser_params[i].display_mode = DISPLAY_MODE
+    browser_params[i].http_instrument = HTTP_INSTRUMENT
+    browser_params[i].cookie_instrument = COOKIE_INSTRUMENT
+    browser_params[i].navigation_instrument = NAVIGATION_INSTRUMENT
+    browser_params[i].callstack_instrument = CALLSTACK_INSTRUMENT
+    browser_params[i].js_instrument = JS_INSTRUMENT
+    browser_params[i].js_instrument_settings = JS_INSTRUMENT_SETTINGS
     if SAVE_CONTENT == "1":
-        browser_params[i]["save_content"] = True
+        browser_params[i].save_content = True
     elif SAVE_CONTENT == "0":
-        browser_params[i]["save_content"] = False
+        browser_params[i].save_content = False
     else:
-        browser_params[i]["save_content"] = SAVE_CONTENT
+        browser_params[i].save_content = SAVE_CONTENT
     if PREFS:
-        browser_params[i]["prefs"] = json.loads(PREFS)
+        browser_params[i].prefs = json.loads(PREFS)
 
 # Manager configuration
-manager_params["data_directory"] = "~/Desktop/%s/" % CRAWL_DIRECTORY
-manager_params["log_directory"] = "~/Desktop/%s/" % CRAWL_DIRECTORY
-manager_params["output_format"] = "s3"
-manager_params["s3_bucket"] = S3_BUCKET
-manager_params["s3_directory"] = CRAWL_DIRECTORY
+manager_params.data_directory = "~/Desktop/%s/" % CRAWL_DIRECTORY
+manager_params.log_directory = "~/Desktop/%s/" % CRAWL_DIRECTORY
+manager_params.output_format = "s3"
+manager_params.s3_bucket = S3_BUCKET
+manager_params.s3_directory = CRAWL_DIRECTORY
 
 # Allow the use of localstack's mock s3 service
 S3_ENDPOINT = os.getenv("S3_ENDPOINT")
 if S3_ENDPOINT:
     boto3.DEFAULT_SESSION = LocalS3Session(endpoint_url=S3_ENDPOINT)
-    manager_params["s3_bucket"] = local_s3_bucket(boto3.resource("s3"), name=S3_BUCKET)
+    manager_params.s3_bucket = local_s3_bucket(boto3.resource("s3"), name=S3_BUCKET)
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds

@@ -250,7 +250,7 @@ DOCUMENT_COOKIE_READ_WRITE = set([DOCUMENT_COOKIE_READ, DOCUMENT_COOKIE_WRITE])
 class TestExtension(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["js_instrument"] = True
+        browser_params[0].js_instrument = True
         return manager_params, browser_params
 
     def test_property_enumeration(self):
@@ -290,7 +290,7 @@ class TestExtension(OpenWPMTest):
         manager.get(url_b)
         manager.close()
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+            manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
         )
 
         # Construct dict mapping site_url to visit_id
@@ -299,13 +299,13 @@ class TestExtension(OpenWPMTest):
             visit_ids[row[1]] = row[0]
 
         simple_a_visit_id = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM javascript WHERE " "symbol=?",
             ("window.navigator.userAgent",),
         )
 
         simple_b_visit_id = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM javascript WHERE " "symbol=?",
             ("window.navigator.platform",),
         )

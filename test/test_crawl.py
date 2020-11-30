@@ -48,10 +48,10 @@ class TestCrawl(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["profile_archive_dir"] = os.path.join(
-            manager_params["data_directory"], "browser_profile"
+        browser_params[0].profile_archive_dir = os.path.join(
+            manager_params.data_directory, "browser_profile"
         )
-        browser_params[0]["http_instrument"] = True
+        browser_params[0].http_instrument = True
         return manager_params, browser_params
 
     @pytest.mark.xfail(run=False)
@@ -70,17 +70,17 @@ class TestCrawl(OpenWPMTest):
         for site in TEST_SITES:
             manager.get(site)
         ff_db_tar = os.path.join(
-            browser_params[0]["profile_archive_dir"], "profile.tar.gz"
+            browser_params[0].profile_archive_dir, "profile.tar.gz"
         )
         manager.close()
 
         # Extract crawl profile
         with tarfile.open(ff_db_tar) as tar:
-            tar.extractall(browser_params[0]["profile_archive_dir"])
+            tar.extractall(browser_params[0].profile_archive_dir)
 
         # Output databases
-        ff_db = os.path.join(browser_params[0]["profile_archive_dir"], "places.sqlite")
-        crawl_db = manager_params["db"]
+        ff_db = os.path.join(browser_params[0].profile_archive_dir, "places.sqlite")
+        crawl_db = manager_params.database_name
 
         # Grab urls from crawl database
         rows = db_utils.query_db(crawl_db, "SELECT url FROM http_requests")

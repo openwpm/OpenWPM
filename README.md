@@ -188,7 +188,7 @@ Persistence Types
 #### Local Databases
 By default OpenWPM saves all data locally on disk in a variety of formats.
 Most of the instrumentation saves to a SQLite database specified
-by `manager_params['database_name']` in the main output directory. Response
+by `manager_params.database_name` in the main output directory. Response
 bodies are saved in a LevelDB database named `content.ldb`, and are keyed by
 the hash of the content. In addition, the browser commands that dump page
 source and save screenshots save them in the `sources` and `screenshots`
@@ -202,9 +202,9 @@ Parquet Dataset. This is currently experimental and hasn't been thoroughly
 tested. Screenshots, and page source saving is not currently supported and
 will still be stored in local databases and directories. To enable S3
 saving specify the following configuration parameters in `manager_params`:
-* Persistence Type: `manager_params['output_format'] = 's3'`
-* S3 bucket name: `manager_params['s3_bucket'] = 'openwpm-test-crawl'`
-* Directory within S3 bucket: `manager_params['s3_directory'] = '2018-09-09_test-crawl-new'`
+* Persistence Type: `manager_params.output_format = 's3'`
+* S3 bucket name: `manager_params.s3_bucket = 'openwpm-test-crawl'`
+* Directory within S3 bucket: `manager_params.s3_directory = '2018-09-09_test-crawl-new'`
 
 In order to save to S3 you must have valid access credentials stored in
 `~/.aws`. We do not currently allow you to specify an alternate storage

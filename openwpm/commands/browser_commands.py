@@ -143,7 +143,7 @@ def get_website(
 
     close_other_windows(webdriver)
 
-    if browser_params["bot_mitigation"]:
+    if browser_params.bot_mitigation:
         bot_mitigation(webdriver)
 
 
@@ -173,14 +173,14 @@ def browse_website(
         r = int(random.random() * len(links))
         logger.info(
             "BROWSER %i: visiting internal link %s"
-            % (browser_params["browser_id"], links[r].get_attribute("href"))
+            % (browser_params.browser_id, links[r].get_attribute("href"))
         )
 
         try:
             links[r].click()
             wait_until_loaded(webdriver, 300)
             time.sleep(max(1, sleep))
-            if browser_params["bot_mitigation"]:
+            if browser_params.bot_mitigation:
                 bot_mitigation(webdriver)
             webdriver.back()
             wait_until_loaded(webdriver, 300)
@@ -195,7 +195,7 @@ def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
 
     urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
     outname = os.path.join(
-        manager_params["screenshot_path"], "%i-%s%s.png" % (visit_id, urlhash, suffix)
+        manager_params.screenshot_path, "%i-%s%s.png" % (visit_id, urlhash, suffix)
     )
     driver.save_screenshot(outname)
 
@@ -209,7 +209,7 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
     parts = list()
     for f in glob(
         os.path.join(
-            manager_params["screenshot_path"], "parts", "%i*-part-*.png" % visit_id
+            manager_params.screenshot_path, "parts", "%i*-part-*.png" % visit_id
         )
     ):
 
@@ -237,7 +237,7 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
 
     # Output filename same for all parts, so we can just use last filename
     outname = outname + ".png"
-    outname = os.path.join(manager_params["screenshot_path"], outname)
+    outname = os.path.join(manager_params.screenshot_path, outname)
     output = Image.new("RGB", (max_width, total_height))
 
     # Compute dimensions for output image
@@ -264,7 +264,7 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
 
 def screenshot_full_page(visit_id, browser_id, driver, manager_params, suffix=""):
 
-    outdir = os.path.join(manager_params["screenshot_path"], "parts")
+    outdir = os.path.join(manager_params.screenshot_path, "parts")
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
     if suffix != "":
@@ -321,7 +321,7 @@ def dump_page_source(visit_id, driver, manager_params, suffix=""):
 
     outname = md5(driver.current_url.encode("utf-8")).hexdigest()
     outfile = os.path.join(
-        manager_params["source_dump_path"], "%i-%s%s.html" % (visit_id, outname, suffix)
+        manager_params.source_dump_path, "%i-%s%s.html" % (visit_id, outname, suffix)
     )
 
     with open(outfile, "wb") as f:
@@ -336,7 +336,7 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=""):
 
     outname = md5(driver.current_url.encode("utf-8")).hexdigest()
     outfile = os.path.join(
-        manager_params["source_dump_path"],
+        manager_params.source_dump_path,
         "%i-%s%s.json.gz" % (visit_id, outname, suffix),
     )
 

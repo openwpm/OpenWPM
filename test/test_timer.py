@@ -19,7 +19,7 @@ class TestCommandDuration(OpenWPMTest):
         manager.close()
 
         get_command = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT duration FROM crawl_history WHERE command = \"<class 'openwpm.commands.types.GetCommand'>\"",
             as_tuple=True,
         )[0]

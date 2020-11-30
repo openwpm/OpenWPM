@@ -132,7 +132,7 @@ and we'll try to assist you in writing that instrument.
 Below you'll find a description for every single instrument, however if you
 want to just look at the output schema look [here](Schema-Documentation.md)
 
-To activate a given instrument set `browser_params[i][instrument_name] = True`
+To activate a given instrument set `browser_params[i].instrument_name = True`
 
 ## `http_instrument`
 * HTTP Request and Response Headers, redirects, and POST request bodies
@@ -156,7 +156,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
 
 ## `js_instrument`
 * Records all method calls (with arguments) and property accesses for configured APIs
-* Configure `browser_params['js_instrument_settings']` to desired settings.
+* Configure `browser_params.js_instrument_settings` to desired settings.
 * Data is saved to the `javascript` table.
 * The full specification for `js_instrument_settings` is defined by a JSON schema.
   Details of that schema are available in [docs/schemas/README.md](../docs/schemas/README.md).
@@ -314,13 +314,13 @@ page load that are **not** reflected back into the seed profile.
 
 # Non instrument data gathering
 ## Log Files
-* Stored in the directory specified by `manager_params['data_directory']`.
-* Name specified by `manager_params['log_file']`.
+* Stored in the directory specified by `manager_params.data_directory`.
+* Name specified by `manager_params.log_file`.
 ## Browser Profile
 * Contains cookies, Flash objects, and so on that are dumped after a crawl
     is finished
 * Automatically saved when the platform closes or crashes by specifying
-    `browser_params['profile_archive_dir']`.
+    `browser_params.profile_archive_dir`.
 * Save on-demand with the `CommandSequence::dump_profile` command.
 ## Rendered Page Source
 * Save the top-level frame's rendered source with the
@@ -377,9 +377,9 @@ Response body content
     LevelDB content database.
 * NOTE: this instrumentation may lead to performance issues when a large
     number of browsers are in use.
-* Set `browser_params['save_content']` to a comma-separated list of
+* Set `browser_params.save_content` to a comma-separated list of
     [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
     to save only specific types of files, for instance
-    `browser_params['save_content'] = "script"` to save only Javascript
+    `browser_params.save_content = "script"` to save only Javascript
     files. This will lessen the performance impact of this instrumentation
     when a large number of browsers are used in parallel.
