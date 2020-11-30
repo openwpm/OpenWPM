@@ -115,61 +115,67 @@ class ManagerParamsInternal(ManagerParams):
 def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
-
-    if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
-        raise ConfigError(
-            CONFIG_ERROR_STRING.format(
-                value=browser_params.display_mode,
-                value_list=DISPLAY_MODE_VALIDATION_LIST,
-                parameter_name="display_mode",
-            )
-        )
-
-    if browser_params.browser.lower() not in SUPPORTED_BROWSER_LIST:
-        raise ConfigError(
-            CONFIG_ERROR_STRING.format(
-                value=browser_params.browser,
-                value_list=SUPPORTED_BROWSER_LIST,
-                parameter_name="browser",
-            )
-        )
-
-    if browser_params.tp_cookies.lower() not in TP_COOKIES_OPTIONALS_LIST:
-        raise ConfigError(
-            CONFIG_ERROR_STRING.format(
-                value=browser_params.tp_cookies,
-                value_list=TP_COOKIES_OPTIONALS_LIST,
-                parameter_name="tp_cookies",
-            )
-        )
-
-    if browser_params.callstack_instrument and not browser_params.js_instrument:
-        raise ConfigError(
-            "The callstacks instrument currently doesn't work without "
-            "the JS instrument enabled. see: "
-            "https://github.com/mozilla/OpenWPM/issues/557"
-        )
-
-    if not isinstance(browser_params.save_content, bool) and not isinstance(
-        browser_params.save_content, str
-    ):
-        raise ConfigError(
-            GENERAL_ERROR_STRING.format(
-                value=browser_params.save_content,
-                parameter_name="save_content",
-                params_type="BrowserParams",
-            )
-        )
-
-    if browser_params.save_content:
-        if isinstance(browser_params.save_content, str):
-            configured_types = set(browser_params.save_content.split(","))
-            if not configured_types.issubset(ALL_RESOURCE_TYPES):
-                diff = configured_types.difference(ALL_RESOURCE_TYPES)
-                raise ConfigError(
-                    "Unrecognized resource types provided ",
-                    "in browser_params.save_content (%s)" % diff,
+    try:
+        if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
+            raise ConfigError(
+                CONFIG_ERROR_STRING.format(
+                    value=browser_params.display_mode,
+                    value_list=DISPLAY_MODE_VALIDATION_LIST,
+                    parameter_name="display_mode",
                 )
+            )
+
+        if browser_params.browser.lower() not in SUPPORTED_BROWSER_LIST:
+            raise ConfigError(
+                CONFIG_ERROR_STRING.format(
+                    value=browser_params.browser,
+                    value_list=SUPPORTED_BROWSER_LIST,
+                    parameter_name="browser",
+                )
+            )
+
+        if browser_params.tp_cookies.lower() not in TP_COOKIES_OPTIONALS_LIST:
+            raise ConfigError(
+                CONFIG_ERROR_STRING.format(
+                    value=browser_params.tp_cookies,
+                    value_list=TP_COOKIES_OPTIONALS_LIST,
+                    parameter_name="tp_cookies",
+                )
+            )
+
+        if browser_params.callstack_instrument and not browser_params.js_instrument:
+            raise ConfigError(
+                "The callstacks instrument currently doesn't work without "
+                "the JS instrument enabled. see: "
+                "https://github.com/mozilla/OpenWPM/issues/557"
+            )
+
+        if not isinstance(browser_params.save_content, bool) and not isinstance(
+            browser_params.save_content, str
+        ):
+            raise ConfigError(
+                GENERAL_ERROR_STRING.format(
+                    value=browser_params.save_content,
+                    parameter_name="save_content",
+                    params_type="BrowserParams",
+                )
+            )
+
+        if browser_params.save_content:
+            if isinstance(browser_params.save_content, str):
+                configured_types = set(browser_params.save_content.split(","))
+                if not configured_types.issubset(ALL_RESOURCE_TYPES):
+                    diff = configured_types.difference(ALL_RESOURCE_TYPES)
+                    raise ConfigError(
+                        "Unrecognized resource types provided ",
+                        "in browser_params.save_content (%s)" % diff,
+                    )
+
+    except:
+        raise ConfigError(
+            "Something went wrong while validating BrowserParams. "
+            "Please check values provided for BrowserParams are of expected types"
+        )
 
 
 def validate_manager_params(manager_params: ManagerParams) -> None:
@@ -186,7 +192,7 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
                     parameter_name="log_file",
                 )
             )
-    except TypeError:
+    except (TypeError, AttributeError):
         raise ConfigError(
             GENERAL_ERROR_STRING.format(
                 value=manager_params.log_file,
@@ -205,7 +211,7 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
                     parameter_name="database_name",
                 )
             )
-    except TypeError:
+    except (TypeError, AttributeError):
         raise ConfigError(
             GENERAL_ERROR_STRING.format(
                 value=manager_params.database_name,
@@ -227,20 +233,26 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
                 params_type="ManagerParams",
             ).replace(
                 "Please look at docs/Configuration.md for more information",
-                "failure_limit must be of type `int`",
+                "failure_limit must be of type `int` or `None`",
             )
         )
 
-    if manager_params.output_format.lower() not in OUTPUT_FORMAT_LIST:
-        raise ConfigError(
-            CONFIG_ERROR_STRING.format(
-                value=manager_params.output_format,
-                parameter_name="output_format",
-                value_list=OUTPUT_FORMAT_LIST,
-            ).replace(
-                "Please look at docs/Configuration.md#browser-configuration-options for more information",
-                "",
+    try:
+        if manager_params.output_format.lower() not in OUTPUT_FORMAT_LIST:
+            raise ConfigError(
+                CONFIG_ERROR_STRING.format(
+                    value=manager_params.output_format,
+                    parameter_name="output_format",
+                    value_list=OUTPUT_FORMAT_LIST,
+                ).replace(
+                    "Please look at docs/Configuration.md#browser-configuration-options for more information",
+                    "Please look at docs/Configuration.md for more information",
+                )
             )
+    except:
+        raise ConfigError(
+            "Something went wrong while validating ManagerParams. "
+            "Please check values provided for ManagerParams are of expected types"
         )
 
 
