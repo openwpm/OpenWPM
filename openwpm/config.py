@@ -85,8 +85,8 @@ class BrowserParams:
 class ManagerParams:
     data_directory: str = "~/openwpm/"
     log_directory: str = "~/openwpm/"
-    screenshot_path: str = data_directory + "screenshots"
-    source_dump_path: str = data_directory + "sources"
+    screenshot_path: str = None
+    source_dump_path: str = None
     output_format: str = "local"
     database_name: str = "crawl-data.sqlite"
     log_file: str = "openwpm.log"
@@ -242,14 +242,6 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
                 "",
             )
         )
-
-    # Checks to make sure screenshot_path and source_dump_path so is not changed
-    # Wrote these checks because screenshot_path and source_dump_path were being
-    # set internally prior to dataclasses
-    if manager_params.screenshot_path != manager_params.data_directory + "screenshots":
-        manager_params.screenshot_path = manager_params.data_directory + "screenshots"
-    if manager_params.source_dump_path != manager_params.data_directory + "sources":
-        manager_params.source_dump_path = manager_params.data_directory + "sources"
 
 
 def validate_crawl_configs(

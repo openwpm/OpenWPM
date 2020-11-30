@@ -98,14 +98,12 @@ class TaskManager:
         manager_params.log_file = os.path.join(
             manager_params.log_directory, manager_params.log_file
         )
-        # # TODO moved this assignment to ManagerParams dataclass so remove
-        # manager_params.screenshot_path = os.path.join(
-        #     manager_params.data_directory, "screenshots"
-        # )
-        # # TODO moved this assignment to ManagerParams dataclass so remove
-        # manager_params.source_dump_path = os.path.join(
-        #     manager_params.data_directory, "sources"
-        # )
+        manager_params.screenshot_path = os.path.join(
+            manager_params.data_directory, "screenshots"
+        )
+        manager_params.source_dump_path = os.path.join(
+            manager_params.data_directory, "sources"
+        )
         self.manager_params = manager_params
         self.browser_params = browser_params
         self._logger_kwargs = logger_kwargs

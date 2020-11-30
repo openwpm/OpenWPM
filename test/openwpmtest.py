@@ -4,7 +4,7 @@ from os.path import isfile, join
 import pytest
 
 from openwpm import task_manager
-from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
+from openwpm.config import BrowserParams, ManagerParams
 
 from . import utilities
 
@@ -38,8 +38,8 @@ class OpenWPMTest(object):
         if not data_dir:
             data_dir = self.tmpdir
         # manager_params, browser_params = task_manager.load_default_params(num_browsers)
-        manager_params = ManagerParamsInternal()
-        browser_params = [BrowserParamsInternal() for _ in range(num_browsers)]
+        manager_params = ManagerParams()
+        browser_params = [BrowserParams() for _ in range(num_browsers)]
         manager_params.data_directory = data_dir
         manager_params.log_directory = data_dir
         manager_params.num_browsers = num_browsers

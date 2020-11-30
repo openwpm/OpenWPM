@@ -3,7 +3,7 @@ from openwpm.config import BrowserParams, ManagerParams
 from openwpm.task_manager import TaskManager
 
 # The list of sites that we wish to crawl
-NUM_BROWSERS = 2
+NUM_BROWSERS = 1
 sites = [
     "http://www.example.com",
     "http://www.princeton.edu",
@@ -60,6 +60,7 @@ for site in sites:
         reset=True,
         callback=lambda success, val=site: print("CommandSequence {} done".format(val)),
     )
+    command_sequence.get(sleep=1)
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
