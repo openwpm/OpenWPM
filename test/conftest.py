@@ -47,7 +47,7 @@ def default_params(
     tmp_path: Path, num_browsers: int = NUM_BROWSERS
 ) -> Tuple[ManagerParams, List[BrowserParams]]:
     """Just a simple wrapper around task_manager.load_default_params"""
-    assert len(tmp_path.iterdir()) == 0
+    assert len(list(tmp_path.iterdir())) == 0
     data_dir = str(tmp_path)
     manager_params, browser_params = task_manager.load_default_params(num_browsers)
     manager_params["data_directory"] = data_dir
