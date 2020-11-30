@@ -1,21 +1,32 @@
 # Browser and Platform Configuration <!-- omit in toc -->
 
-The browser and platform can be configured by two separate dictionaries. The
+The browser and platform can be configured by two separate classes. The
 platform configuration options can be set in `manager_params`, while the
 browser configuration options can be set in `browser_params`. The default
-settings are given in `openwpm/default_manager_params.json` and
-`openwpm/default_browser_params.json`.
+settings are given in `openwpm/config.py` in class `BrowserParams` and `ManagerParams`
 
-To load the default configuration parameter dictionaries we provide a helper
-function `TaskManager::load_default_params`. For example:
+To load the default configuration parameter just makes instances of `config::ManagerParams` and `config::BrowserPramas`. For example:
 
 ```python
-from openwpm import TaskManager
-manager_params, browser_params = TaskManager.load_default_params(num_browsers=5)
+from openwpm.config import BrowserParams, ManagerParams
+num_browsers=5
+manager_params = ManagerParams()
+browser_params = [BrowserParams() for _ in range(num_browsers)]
 ```
 
-where `manager_params` is a dictionary and `browser_params` is a length 5 list
-of configuration dictionaries.
+where `manager_params` is of type `class<ManagerParams>` and `browser_params` is a length 5 list
+of configurations of `class<BrowserParams>`.
+
+####Validations:
+To validate `browser_params` and `manager_params`, we have two methods each for type of params, `config::validate_browser_params` and `config::validate_manager_params`. For example:
+```python
+from openwpm.config import validate_browser_params, validate_manager_params
+
+for bp in browser_params:
+  validate_browser_params(bp)
+validate_manager_params(manager_params)
+```
+**NOTE**: If any validations fail, we raise `ConfigError`
 
 
 * [Platform Configuration Options](#platform-configuration-options)
@@ -47,11 +58,11 @@ of configuration dictionaries.
 * `log_directory`
   * The directory in which to output platform logs. The
     directory given will be created if it does not exist.
-* `log_file`
+* `log_file` -> suppored file extensions are `.log`
   * The name of the log file to be written to `log_directory`.
-* `database_name`
+* `database_name` -> suppored file extensions are `.db`, `.sqlite`
   * The name of the database file to be written to `data_directory`
-* `failure_limit`
+* `failure_limit` -> has to be either of type `int` or `None`
   * The number of successive command failures the platform will tolerate before
     raising a `CommandExecutionError` exception. Otherwise the default is set
     to 2 x the number of browsers plus 10.
@@ -110,8 +121,7 @@ left out of this section.
   * The following options are supported:
     * `always`: Accept all third-party cookies
     * `never`: Never accept any third-party cookies
-    * `from_visited`: Only accept third-party cookies from sites that have been
-      visited as a first party.
+    * `from_visited`: Only accept third-party cookies from sites that have been visited as a first party.
 * `donottrack`
   * Set to `True` to enable Do Not Track in the browser.
 * `tracking_protection`

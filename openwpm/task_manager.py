@@ -64,10 +64,10 @@ class TaskManager:
         Parameters
         ----------
         manager_params_temp : class<ManagerParams>
-            Dictionary of TaskManager configuration parameters. See the
-            default in `default_manager_params.json`.
+            class<ManagerParams> of TaskManager configuration parameters. See the
+            default in `openwpm/config.py`.
         browser_params_temp : list of class<ManagerParams>
-            Browser configuration parameters. If this is given as a list, it
+            Browser configuration parameters. It is a list which
             includes individual configurations for each browser.
         logger_kwargs : dict, optional
             Keyword arguments to pass to MPLogger on initialization.

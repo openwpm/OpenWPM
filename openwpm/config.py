@@ -23,7 +23,7 @@ EXTENSION_ERROR_STRING = (
     "Found {extension} extension for {parameter_name} in ManagerParams "
     "supported extensions are {value_list}. Please look at "
     "docs/Configuration.md#platform-configuration-options for more information"
-)  # TODO mention supported file extensions in file docs/Configuration.md#platform-configuration-options
+)
 GENERAL_ERROR_STRING = (
     "Found invalid value `{value}` for {parameter_name} in {params_type}. "
     "Please look at docs/Configuration.md for more information"

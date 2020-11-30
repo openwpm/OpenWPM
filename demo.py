@@ -13,12 +13,10 @@ sites = [
 # TODO Write documentation/tutorial on how to import custom browser and manager params
 
 # Loads the default manager params
-# and NUM_BROWSERS copies of the default browser params
+# and NUM_BROWSERS copies of the default BrowserParams
 manager_params = ManagerParams()
 
-browser_params = []
-for _ in range(NUM_BROWSERS):
-    browser_params.append(BrowserParams(display_mode="headless"))
+browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for i in range(NUM_BROWSERS):
@@ -60,7 +58,6 @@ for site in sites:
         reset=True,
         callback=lambda success, val=site: print("CommandSequence {} done".format(val)),
     )
-    command_sequence.get(sleep=1)
 
     # Start by visiting the page
     command_sequence.get(sleep=3, timeout=60)
