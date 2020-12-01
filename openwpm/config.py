@@ -99,12 +99,14 @@ class ManagerParams:
     num_browsers: int = 1
 
 
+@dataclass_json
 @dataclass
 class BrowserParamsInternal(BrowserParams):
     browser_id: int = None
     profile_path: str = ""
 
 
+@dataclass_json
 @dataclass
 class ManagerParamsInternal(ManagerParams):
     aggregator_address: Tuple[str] = ()

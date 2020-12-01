@@ -3,8 +3,7 @@ from os.path import isfile, join
 
 import pytest
 
-from openwpm import task_manager
-from openwpm.config import BrowserParams, ManagerParams
+from openwpm import TaskManager
 
 from . import utilities
 
@@ -24,12 +23,12 @@ class OpenWPMTest(object):
     def visit(self, page_url, data_dir="", sleep_after=0):
         """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager = TaskManager.TaskManager(manager_params, browser_params)
         if not page_url.startswith("http"):
             page_url = utilities.BASE_TEST_URL + page_url
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
-        return manager_params.database_name
+        return manager_params["db"]
 
     def get_test_config(
         self, data_dir="", num_browsers=NUM_BROWSERS, display_mode="headless"
@@ -37,16 +36,13 @@ class OpenWPMTest(object):
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
-        # manager_params, browser_params = task_manager.load_default_params(num_browsers)
-        manager_params = ManagerParams()
-        browser_params = [BrowserParams() for _ in range(num_browsers)]
-        manager_params.data_directory = data_dir
-        manager_params.log_directory = data_dir
-        manager_params.num_browsers = num_browsers
+        manager_params, browser_params = TaskManager.load_default_params(num_browsers)
+        manager_params["data_directory"] = data_dir
+        manager_params["log_directory"] = data_dir
         for i in range(num_browsers):
-            browser_params[i].display_mode = display_mode
-        manager_params.database_name = join(
-            manager_params.data_directory, manager_params.database_name
+            browser_params[i]["display_mode"] = display_mode
+        manager_params["db"] = join(
+            manager_params["data_directory"], manager_params["database_name"]
         )
         return manager_params, browser_params
 
