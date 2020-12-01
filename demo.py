@@ -10,9 +10,7 @@ sites = [
     "http://citp.princeton.edu/",
 ]
 
-# TODO Write documentation/tutorial on how to import custom browser and manager params
-
-# Loads the default manager params
+# Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
 manager_params = ManagerParams()
 
