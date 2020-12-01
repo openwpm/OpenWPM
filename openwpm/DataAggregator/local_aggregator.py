@@ -254,7 +254,7 @@ class LocalAggregator(BaseAggregator):
             "(manager_params, openwpm_version, browser_version) "
             "VALUES (?,?,?)",
             (
-                json.dumps(self.manager_params.__dict__),
+                self.manager_params.to_json(),
                 openwpm_version,
                 browser_version,
             ),
@@ -270,7 +270,7 @@ class LocalAggregator(BaseAggregator):
                 (
                     self.browser_params[i].browser_id,
                     self.task_id,
-                    json.dumps(self.browser_params[i].__dict__),
+                    self.browser_params[i].to_json(),
                 ),
             )
         self.db.commit()

@@ -37,7 +37,6 @@ class OpenWPMTest(object):
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
-        # manager_params, browser_params = task_manager.load_default_params(num_browsers)
         manager_params = ManagerParams()
         browser_params = [BrowserParams() for _ in range(num_browsers)]
         manager_params.data_directory = data_dir
