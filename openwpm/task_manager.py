@@ -58,6 +58,7 @@ class TaskManager:
         browser_params_temp: List[BrowserParams],
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
+        # TODO fix documentation
         """Initialize the TaskManager with browser and manager config params
 
         Parameters
@@ -76,9 +77,9 @@ class TaskManager:
         for bp in browser_params_temp:
             validate_browser_params(bp)
 
-        manager_params = ManagerParamsInternal(**manager_params_temp.to_dict())
+        manager_params = ManagerParamsInternal(**manager_params_temp.__dict__)
         browser_params = [
-            BrowserParamsInternal(**bp.to_dict()) for bp in browser_params_temp
+            BrowserParamsInternal(**bp.__dict__) for bp in browser_params_temp
         ]
 
         # Make paths absolute in manager_params
