@@ -58,7 +58,7 @@ validate_manager_params(manager_params)
 * `log_directory`
   * The directory in which to output platform logs. The
     directory given will be created if it does not exist.
-* `log_file` -> suppored file extensions are `.log`
+* `log_file` -> supported file extensions are `.log`
   * The name of the log file to be written to `log_directory`.
 * `database_name` -> suppored file extensions are `.db`, `.sqlite`
   * The name of the database file to be written to `data_directory`
