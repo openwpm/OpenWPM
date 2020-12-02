@@ -65,7 +65,7 @@ class BrowserParams:
     )
     http_instrument: bool = False
     navigation_instrument: bool = False
-    save_content: bool = False
+    save_content: Union[bool, str] = False
     callstack_instrument: bool = False
     dns_instrument: bool = False
     seed_tar: str = None
