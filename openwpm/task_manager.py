@@ -74,6 +74,7 @@ class TaskManager:
         validate_manager_params(manager_params_temp)
         for bp in browser_params_temp:
             validate_browser_params(bp)
+        validate_crawl_configs(manager_params_temp, browser_params_temp)
 
         manager_params = ManagerParamsInternal(**manager_params_temp.to_dict())
         browser_params = [
@@ -114,12 +115,6 @@ class TaskManager:
 
         # Check size of parameter dictionary
         self.num_browsers = manager_params.num_browsers
-        if len(browser_params) != self.num_browsers:
-            raise Exception(
-                "Number of <browser_params> class<BrowserParams> instances is not the same "
-                "as manager_params.num_browsers. Make sure you are assigning number of browsers "
-                "to be used to manager_params.num_browsers in your entry file"
-            )
 
         # Parse and flesh out js_instrument_settings
         for a_browsers_params in self.browser_params:

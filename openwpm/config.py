@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 
 from dataclasses_json import dataclass_json
 
@@ -60,7 +60,7 @@ class BrowserParams:
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
-    js_instrument_settings: list = field(
+    js_instrument_settings: List = field(
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
@@ -68,14 +68,14 @@ class BrowserParams:
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
     dns_instrument: bool = False
-    seed_tar: str = None
+    seed_tar: Optional[str] = None
     display_mode: str = "native"
     browser: str = "firefox"
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
-    profile_archive_dir: str = None
-    recovery_tar: str = None
+    profile_archive_dir: Optional[str] = None
+    recovery_tar: Optional[str] = None
     donottrack: str = False
     tracking_protection: bool = False
 
@@ -85,15 +85,15 @@ class BrowserParams:
 class ManagerParams:
     data_directory: str = "~/openwpm/"
     log_directory: str = "~/openwpm/"
-    screenshot_path: str = None
-    source_dump_path: str = None
+    screenshot_path: Optional[str] = None
+    source_dump_path: Optional[str] = None
     output_format: str = "local"
     database_name: str = "crawl-data.sqlite"
     log_file: str = "openwpm.log"
     failure_limit: Optional[int] = None
     testing: bool = False
-    s3_bucket: str = None
-    s3_directory: str = None
+    s3_bucket: Optional[str] = None
+    s3_directory: Optional[str] = None
     memory_watchdog: bool = False
     process_watchdog: bool = False
     num_browsers: int = 1
@@ -101,7 +101,7 @@ class ManagerParams:
 
 @dataclass
 class BrowserParamsInternal(BrowserParams):
-    browser_id: int = None
+    browser_id: Optional[int] = None
     profile_path: str = ""
 
 
@@ -257,7 +257,12 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
 
 
 def validate_crawl_configs(
-    manager_params: ManagerParams, browser_params_list: List[BrowserParams]
+    manager_params: ManagerParams, browser_params: List[BrowserParams]
 ) -> None:
-    # TODO Implement run configs
-    ...
+
+    if len(browser_params) != manager_params.num_browsers:
+        raise ConfigError(
+            "Number of BrowserParams instances is not the same "
+            "as manager_params.num_browsers. Make sure you are assigning number of browsers "
+            "to be used to manager_params.num_browsers in your entry file"
+        )
