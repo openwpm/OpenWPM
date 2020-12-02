@@ -4,9 +4,11 @@ import os
 import sqlite3
 import time
 from sqlite3 import IntegrityError, InterfaceError, OperationalError, ProgrammingError
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import plyvel
+
+from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
 
 from .base_aggregator import (
     RECORD_TYPE_CONTENT,
@@ -207,7 +209,11 @@ class LocalAggregator(BaseAggregator):
     If content saving is enabled, we write page content to a LevelDB database.
     """
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: List[BrowserParamsInternal],
+    ):
         super(LocalAggregator, self).__init__(manager_params, browser_params)
         db_path = self.manager_params.database_name
         if not os.path.exists(manager_params.data_directory):

@@ -12,8 +12,8 @@ Users can change the settings for task manager and individual browsers so that, 
 
 ```py
 from openwpm.config import BrowserParams, ManagerParams
-num_browsers=5
-manager_params = ManagerParams()
+
+manager_params = ManagerParams(num_browsers=5)
 browser_params = [BrowserParams() for _ in range(num_browsers)]
 ```
 

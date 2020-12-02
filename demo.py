@@ -12,7 +12,10 @@ sites = [
 
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
-manager_params = ManagerParams()
+
+manager_params = ManagerParams(
+    num_browsers=NUM_BROWSERS
+)  # num_browsers is necessary to let TaskManager know how many browsers to spawn
 
 browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
@@ -39,9 +42,6 @@ manager_params.log_directory = "~/Desktop/"
 # Please refer to docs/Configuration.md#platform-configuration-options for more information
 # manager_params.memory_watchdog = True
 # manager_params.process_watchdog = True
-
-# This assignment is necessary to let TaskManager know how many browsers to spawn
-manager_params.num_browsers = NUM_BROWSERS
 
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds

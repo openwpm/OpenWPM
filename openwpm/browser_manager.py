@@ -441,7 +441,7 @@ def BrowserManager(
 
         # Read the extension port -- if extension is enabled
         # TODO: Initial communication from extension to TM should use sockets
-        if browser_params.browser == "firefox" and browser_params.extension_enabled:
+        if browser_params.extension_enabled:
             logger.debug(
                 "BROWSER %i: Looking for extension port information "
                 "in %s" % (browser_params.browser_id, prof_folder)
