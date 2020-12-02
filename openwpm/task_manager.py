@@ -62,10 +62,9 @@ class TaskManager:
 
         Parameters
         ----------
-        manager_params_temp : class<ManagerParams>
-            class<ManagerParams> of TaskManager configuration parameters. See the
-            default in `openwpm/config.py`.
-        browser_params_temp : list of class<ManagerParams>
+        manager_params_temp : ManagerParams
+            TaskManager configuration parameters
+        browser_params_temp : list of BrowserParams
             Browser configuration parameters. It is a list which
             includes individual configurations for each browser.
         logger_kwargs : dict, optional
