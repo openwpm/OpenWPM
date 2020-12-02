@@ -90,7 +90,7 @@ class ManagerParams:
     output_format: str = "local"
     database_name: str = "crawl-data.sqlite"
     log_file: str = "openwpm.log"
-    failure_limit: int = None
+    failure_limit: Optional[int] = None
     testing: bool = False
     s3_bucket: str = None
     s3_directory: str = None
