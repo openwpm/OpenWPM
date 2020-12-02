@@ -5,7 +5,7 @@ platform configuration options can be set in `manager_params`, while the
 browser configuration options can be set in `browser_params`. The default
 settings are given in `openwpm/config.py` in class `BrowserParams` and `ManagerParams`
 
-To load the default configuration parameter just makes instances of `config::ManagerParams` and `config::BrowserPramas`. For example:
+To load the default configuration create instances of `config::ManagerParams` and `config::BrowserParams`. For example:
 
 ```python
 from openwpm.config import BrowserParams, ManagerParams
