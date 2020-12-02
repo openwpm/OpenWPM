@@ -153,7 +153,7 @@ class CommandSequence:
     def recursive_dump_page_source(self, suffix="", timeout=30):
         """Dumps rendered source of current page visit to 'sources' dir.
         Unlike `dump_page_source`, this includes iframe sources. Archive is
-        stored in `manager_params['source_dump_path']` and is keyed by the
+        stored in `manager_params.source_dump_path` and is keyed by the
         current `visit_id` and top-level url. The source dump is a gzipped json
         file with the following structure:
         {

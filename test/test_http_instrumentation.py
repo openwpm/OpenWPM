@@ -591,7 +591,7 @@ BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 class TestHTTPInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["http_instrument"] = True
+        browser_params[0].http_instrument = True
         return manager_params, browser_params
 
     def test_page_visit(self):
@@ -674,7 +674,7 @@ class TestHTTPInstrument(OpenWPMTest):
         manager.get(test_url, sleep=5)
         manager.get(test_url, sleep=5)
         manager.close()
-        db = manager_params["db"]
+        db = manager_params.database_name
 
         request_id_to_url = dict()
 
@@ -736,8 +736,8 @@ class TestHTTPInstrument(OpenWPMTest):
         """ check that javascript content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
         manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]["http_instrument"] = True
-        browser_params[0]["save_content"] = "script"
+        browser_params[0].http_instrument = True
+        browser_params[0].save_content = "script"
         manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
@@ -761,8 +761,8 @@ class TestHTTPInstrument(OpenWPMTest):
             "25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d",
         }
         manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]["http_instrument"] = True
-        browser_params[0]["save_content"] = "main_frame,sub_frame"
+        browser_params[0].http_instrument = True
+        browser_params[0].save_content = "main_frame,sub_frame"
         manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
@@ -778,12 +778,12 @@ class TestHTTPInstrument(OpenWPMTest):
         """ check that content is saved and hashed correctly """
         test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
         manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0]["http_instrument"] = True
-        browser_params[0]["save_content"] = True
+        browser_params[0].http_instrument = True
+        browser_params[0].save_content = True
         manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(url=test_url, sleep=1)
         manager.close()
-        db = manager_params["db"]
+        db = manager_params.database_name
         rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
         disk_content = dict()
         for row in rows:
@@ -891,7 +891,7 @@ class TestPOSTInstrument(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["http_instrument"] = True
+        browser_params[0].http_instrument = True
         return manager_params, browser_params
 
     def get_post_requests_from_db(self, db):
@@ -1015,7 +1015,7 @@ class TestPOSTInstrument(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
-        post_body = self.get_post_request_body_from_db(manager_params["db"])
+        post_body = self.get_post_request_body_from_db(manager_params.database_name)
         # Binary strings get put into the database as-if they were latin-1.
         with open(img_file_path, "rb") as f:
             img_file_content = f.read().strip().decode("latin-1")

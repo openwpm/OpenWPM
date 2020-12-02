@@ -96,10 +96,11 @@ def get_configuration_string(manager_params, browser_params, versions):
     config_str = "\n\nOpenWPM Version: %s\nFirefox Version: %s\n" % versions
     config_str += "\n========== Manager Configuration ==========\n"
     config_str += json.dumps(
-        manager_params, sort_keys=True, indent=2, separators=(",", ": ")
+        manager_params.to_dict(), sort_keys=True, indent=2, separators=(",", ": ")
     )
     config_str += "\n\n========== Browser Configuration ==========\n"
-    print_params = [deepcopy(x) for x in browser_params]
+
+    print_params = [deepcopy(x.to_dict()) for x in browser_params]
     table_input = list()
     profile_dirs = OrderedDict()
     archive_dirs = OrderedDict()

@@ -1,7 +1,6 @@
 import json
 import logging
 import os.path
-import random
 
 from easyprocess import EasyProcessError
 from pyvirtualdisplay import Display
@@ -9,34 +8,11 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
-from ..errors import BrowserConfigError
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
 
 DEFAULT_SCREEN_RES = (1366, 768)
-ALL_RESOURCE_TYPES = {
-    "beacon",
-    "csp_report",
-    "font",
-    "image",
-    "imageset",
-    "main_frame",
-    "media",
-    "object",
-    "object_subrequest",
-    "ping",
-    "script",
-    "stylesheet",
-    "sub_frame",
-    "web_manifest",
-    "websocket",
-    "xbl",
-    "xml_dtd",
-    "xmlhttprequest",
-    "xslt",
-    "other",
-}
 logger = logging.getLogger("openwpm")
 
 
@@ -57,31 +33,31 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # https://github.com/SeleniumHQ/selenium/issues/2106#issuecomment-320238039
     fo = Options()
 
-    if browser_params["seed_tar"] and not crash_recovery:
+    if browser_params.seed_tar and not crash_recovery:
         logger.info(
             "BROWSER %i: Loading initial browser profile from: %s"
-            % (browser_params["browser_id"], browser_params["seed_tar"])
+            % (browser_params.browser_id, browser_params.seed_tar)
         )
         load_profile(
             browser_profile_path,
             manager_params,
             browser_params,
-            browser_params["seed_tar"],
+            browser_params.seed_tar,
         )
-    elif browser_params["recovery_tar"]:
+    elif browser_params.recovery_tar:
         logger.debug(
             "BROWSER %i: Loading recovered browser profile from: %s"
-            % (browser_params["browser_id"], browser_params["recovery_tar"])
+            % (browser_params.browser_id, browser_params.recovery_tar)
         )
         load_profile(
             browser_profile_path,
             manager_params,
             browser_params,
-            browser_params["recovery_tar"],
+            browser_params.recovery_tar,
         )
     status_queue.put(("STATUS", "Profile Tar", None))
 
-    display_mode = browser_params["display_mode"]
+    display_mode = browser_params.display_mode
     display_pid = None
     display_port = None
     if display_mode == "headless":
@@ -104,43 +80,23 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))
 
-    if browser_params["callstack_instrument"] and not browser_params["js_instrument"]:
-        raise BrowserConfigError
-        (
-            "The callstacks instrument currently doesn't work without "
-            "the JS instrument enabled. see: "
-            "https://github.com/mozilla/OpenWPM/issues/557"
-        )
-
-    if browser_params["save_content"]:
-        if isinstance(browser_params["save_content"], str):
-            configured_types = set(browser_params["save_content"].split(","))
-            if not configured_types.issubset(ALL_RESOURCE_TYPES):
-                diff = configured_types.difference(ALL_RESOURCE_TYPES)
-                raise BrowserConfigError(
-                    (
-                        "Unrecognized resource types provided ",
-                        "in browser_params['save_content`] (%s)" % diff,
-                    )
-                )
-
-    if browser_params["extension_enabled"]:
+    if browser_params.extension_enabled:
         # Write config file
         extension_config = dict()
-        extension_config.update(browser_params)
-        extension_config["logger_address"] = manager_params["logger_address"]
-        extension_config["aggregator_address"] = manager_params["aggregator_address"]
-        if "ldb_address" in manager_params:
-            extension_config["leveldb_address"] = manager_params["ldb_address"]
+        extension_config.update(browser_params.to_dict())
+        extension_config["logger_address"] = manager_params.logger_address
+        extension_config["aggregator_address"] = manager_params.aggregator_address
+        if manager_params.ldb_address:
+            extension_config["leveldb_address"] = manager_params.ldb_address
         else:
             extension_config["leveldb_address"] = None
-        extension_config["testing"] = manager_params["testing"]
+        extension_config["testing"] = manager_params.testing
         ext_config_file = browser_profile_path + "browser_params.json"
         with open(ext_config_file, "w") as f:
             json.dump(extension_config, f)
         logger.debug(
             "BROWSER %i: Saved extension config file to: %s"
-            % (browser_params["browser_id"], ext_config_file)
+            % (browser_params.browser_id, ext_config_file)
         )
 
         # TODO restore detailed logging
@@ -155,17 +111,15 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.  This will also inform us where the real profile
     # directory is hiding.
-    interceptor = FirefoxLogInterceptor(
-        browser_params["browser_id"], browser_profile_path
-    )
+    interceptor = FirefoxLogInterceptor(browser_params.browser_id, browser_profile_path)
     interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow
     # our defaults to be overwritten.
-    for name, value in browser_params["prefs"].items():
+    for name, value in browser_params.prefs.items():
         logger.info(
             "BROWSER %i: Setting custom preference: %s = %s"
-            % (browser_params["browser_id"], name, value)
+            % (browser_params.browser_id, name, value)
         )
         fo.set_preference(name, value)
 
@@ -180,15 +134,14 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     )
 
     # Add extension
-    if browser_params["extension_enabled"]:
+    if browser_params.extension_enabled:
 
         # Install extension
         ext_loc = os.path.join(root_dir, "../Extension/firefox/openwpm.xpi")
         ext_loc = os.path.normpath(ext_loc)
         driver.install_addon(ext_loc, temporary=True)
         logger.debug(
-            "BROWSER %i: OpenWPM Firefox extension loaded"
-            % browser_params["browser_id"]
+            "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
         )
 
     # set window size

@@ -26,6 +26,14 @@ class BrowserConfigError(Exception):
         super(BrowserConfigError, self).__init__(message, *args)
 
 
+class ConfigError(Exception):
+    """ Raise for errors that occur from a misconfiguration of the browser and manager params """
+
+    def __init__(self, message, *args):
+        self.message = message
+        super(ConfigError, self).__init__(message, *args)
+
+
 class BrowserCrashError(Exception):
     """ Raise for non-critical crashes within the BrowserManager process """
 

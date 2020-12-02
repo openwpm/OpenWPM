@@ -7,7 +7,7 @@ class TestDNSInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
         for browser_param in browser_params:
-            browser_param["dns_instrument"] = True
+            browser_param.dns_instrument = True
         return manager_params, browser_params
 
     def test_name_resolution(self):

@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from multiprocess import Queue
 
+from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
+
 from ..socket_interface import ServerSocket
 from ..utilities.multiprocess_utils import Process
 
@@ -193,14 +195,18 @@ class BaseAggregator:
 
     Parameters
     ----------
-    manager_params : dict
+    manager_params : ManagerParamsInternal
         TaskManager configuration parameters
-    browser_params : list of dict
-        List of browser configuration dictionaries"""
+    browser_params : list of BrowserParamsInternal
+        List of browser configuration class<BrowserParams>"""
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: List[BrowserParamsInternal],
+    ):
         self.manager_params = manager_params
         self.browser_params = browser_params
         self.listener_address = None

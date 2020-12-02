@@ -1,21 +1,32 @@
 # Browser and Platform Configuration <!-- omit in toc -->
 
-The browser and platform can be configured by two separate dictionaries. The
+The browser and platform can be configured by two separate classes. The
 platform configuration options can be set in `manager_params`, while the
 browser configuration options can be set in `browser_params`. The default
-settings are given in `openwpm/default_manager_params.json` and
-`openwpm/default_browser_params.json`.
+settings are given in `openwpm/config.py` in class `BrowserParams` and `ManagerParams`
 
-To load the default configuration parameter dictionaries we provide a helper
-function `TaskManager::load_default_params`. For example:
+To load the default configuration create instances of `config::ManagerParams` and `config::BrowserParams`. For example:
 
 ```python
-from openwpm import TaskManager
-manager_params, browser_params = TaskManager.load_default_params(num_browsers=5)
+from openwpm.config import BrowserParams, ManagerParams
+
+manager_params = ManagerParams(num_browsers=5)
+browser_params = [BrowserParams() for _ in range(num_browsers)]
 ```
 
-where `manager_params` is a dictionary and `browser_params` is a length 5 list
-of configuration dictionaries.
+where `manager_params` is of type `class<ManagerParams>` and `browser_params` is a length 5 list
+of configurations of `class<BrowserParams>`.
+
+####Validations:
+To validate `browser_params` and `manager_params`, we have two methods each for type of params, `config::validate_browser_params` and `config::validate_manager_params`. For example:
+```python
+from openwpm.config import validate_browser_params, validate_manager_params
+
+for bp in browser_params:
+  validate_browser_params(bp)
+validate_manager_params(manager_params)
+```
+**NOTE**: If any validations fail, we raise `ConfigError`
 
 
 * [Platform Configuration Options](#platform-configuration-options)
@@ -47,11 +58,11 @@ of configuration dictionaries.
 * `log_directory`
   * The directory in which to output platform logs. The
     directory given will be created if it does not exist.
-* `log_file`
+* `log_file` -> supported file extensions are `.log`
   * The name of the log file to be written to `log_directory`.
-* `database_name`
+* `database_name` -> supported file extensions are `.db`, `.sqlite`
   * The name of the database file to be written to `data_directory`
-* `failure_limit`
+* `failure_limit` -> has to be either of type `int` or `None`
   * The number of successive command failures the platform will tolerate before
     raising a `CommandExecutionError` exception. Otherwise the default is set
     to 2 x the number of browsers plus 10.
@@ -110,11 +121,10 @@ left out of this section.
   * The following options are supported:
     * `always`: Accept all third-party cookies
     * `never`: Never accept any third-party cookies
-    * `from_visited`: Only accept third-party cookies from sites that have been
-      visited as a first party.
+    * `from_visited`: Only accept third-party cookies from sites that have been visited as a first party.
 * `donottrack`
   * Set to `True` to enable Do Not Track in the browser.
-* `tracking-protection`
+* `tracking_protection`
   * **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
@@ -132,7 +142,7 @@ and we'll try to assist you in writing that instrument.
 Below you'll find a description for every single instrument, however if you
 want to just look at the output schema look [here](Schema-Documentation.md)
 
-To activate a given instrument set `browser_params[i][instrument_name] = True`
+To activate a given instrument set `browser_params[i].instrument_name = True`
 
 ## `http_instrument`
 * HTTP Request and Response Headers, redirects, and POST request bodies
@@ -156,7 +166,7 @@ To activate a given instrument set `browser_params[i][instrument_name] = True`
 
 ## `js_instrument`
 * Records all method calls (with arguments) and property accesses for configured APIs
-* Configure `browser_params['js_instrument_settings']` to desired settings.
+* Configure `browser_params.js_instrument_settings` to desired settings.
 * Data is saved to the `javascript` table.
 * The full specification for `js_instrument_settings` is defined by a JSON schema.
   Details of that schema are available in [docs/schemas/README.md](../docs/schemas/README.md).
@@ -314,13 +324,13 @@ page load that are **not** reflected back into the seed profile.
 
 # Non instrument data gathering
 ## Log Files
-* Stored in the directory specified by `manager_params['data_directory']`.
-* Name specified by `manager_params['log_file']`.
+* Stored in the directory specified by `manager_params.data_directory`.
+* Name specified by `manager_params.log_file`.
 ## Browser Profile
 * Contains cookies, Flash objects, and so on that are dumped after a crawl
     is finished
 * Automatically saved when the platform closes or crashes by specifying
-    `browser_params['profile_archive_dir']`.
+    `browser_params.profile_archive_dir`.
 * Save on-demand with the `CommandSequence::dump_profile` command.
 ## Rendered Page Source
 * Save the top-level frame's rendered source with the
@@ -377,9 +387,9 @@ Response body content
     LevelDB content database.
 * NOTE: this instrumentation may lead to performance issues when a large
     number of browsers are in use.
-* Set `browser_params['save_content']` to a comma-separated list of
+* Set `browser_params.save_content` to a comma-separated list of
     [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
     to save only specific types of files, for instance
-    `browser_params['save_content'] = "script"` to save only Javascript
+    `browser_params.save_content = "script"` to save only Javascript
     files. This will lessen the performance impact of this instrumentation
     when a large number of browsers are used in parallel.

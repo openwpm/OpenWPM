@@ -18,7 +18,7 @@ from tblib import pickling_support
 
 from .commands import command_executor
 from .commands.types import ShutdownCommand
-from .deploy_browsers import deploy_browser
+from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .socket_interface import ClientSocket
 from .utilities.multiprocess_utils import (
@@ -48,8 +48,8 @@ class Browser:
 
         # manager parameters
         self.current_profile_path = None
-        self.db_socket_address = manager_params["aggregator_address"]
-        self.browser_id = browser_params["browser_id"]
+        self.db_socket_address = manager_params.aggregator_address
+        self.browser_id = browser_params.browser_id
         self.curr_visit_id: int = None
         self.browser_params = browser_params
         self.manager_params = manager_params
@@ -106,7 +106,7 @@ class Browser:
                 close_webdriver=False,
             )
             # make sure browser loads crashed profile
-            self.browser_params['recovery_tar'] = tempdir
+            self.browser_params.recovery_tar = tempdir
             
             crash_recovery = True
         else:
@@ -236,7 +236,7 @@ class Browser:
         if clear_profile and self.current_profile_path is not None:
             shutil.rmtree(self.current_profile_path, ignore_errors=True)
             self.current_profile_path = None
-            self.browser_params["recovery_tar"] = None
+            self.browser_params.recovery_tar = None
 
         return self.launch_browser_manager()
 
@@ -387,7 +387,7 @@ class Browser:
         self.close_browser_manager(force=force)
 
         # Archive browser profile (if requested)
-        if not during_init and self.browser_params["profile_archive_dir"] is not None:
+        if not during_init and self.browser_params.profile_archive_dir is not None:
             self.logger.warning(
                 "BROWSER %i: Archiving the browser profile directory is "
                 "currently unsupported. "
@@ -397,19 +397,19 @@ class Browser:
         self.logger.debug(
             "BROWSER %i: during_init=%s | profile_archive_dir=%s" % (
                 self.browser_id, str(during_init),
-                self.browser_params['profile_archive_dir'])
+                self.browser_params.profile_archive_dir)
         )
         if (not during_init and
-                self.browser_params['profile_archive_dir'] is not None):
+                self.browser_params.profile_archive_dir is not None):
             self.logger.debug(
                 "BROWSER %i: Archiving browser profile directory to %s" % (
                     self.browser_id,
-                    self.browser_params['profile_archive_dir']))
+                    self.browser_params.profile_archive_dir))
             profile_commands.dump_profile(
                 self.current_profile_path,
                 self.manager_params,
                 self.browser_params,
-                self.browser_params['profile_archive_dir'],
+                self.browser_params.profile_archive_dir,
                 close_webdriver=False,
                 compress=True
             )
@@ -433,7 +433,7 @@ def BrowserManager(
     logger = logging.getLogger("openwpm")
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder = deploy_browser.deploy_browser(
+        driver, prof_folder = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
         if prof_folder[-1] != "/":
@@ -441,13 +441,10 @@ def BrowserManager(
 
         # Read the extension port -- if extension is enabled
         # TODO: Initial communication from extension to TM should use sockets
-        if (
-            browser_params["browser"] == "firefox"
-            and browser_params["extension_enabled"]
-        ):
+        if browser_params.extension_enabled:
             logger.debug(
                 "BROWSER %i: Looking for extension port information "
-                "in %s" % (browser_params["browser_id"], prof_folder)
+                "in %s" % (browser_params.browser_id, prof_folder)
             )
             elapsed = 0
             port = None
@@ -469,19 +466,19 @@ def BrowserManager(
 
             logger.debug(
                 "BROWSER %i: Connecting to extension on port %i"
-                % (browser_params["browser_id"], port)
+                % (browser_params.browser_id, port)
             )
             extension_socket = ClientSocket(serialization="json")
             extension_socket.connect("127.0.0.1", int(port))
         else:
             extension_socket = None
 
-        logger.debug("BROWSER %i: BrowserManager ready." % browser_params["browser_id"])
+        logger.debug("BROWSER %i: BrowserManager ready." % browser_params.browser_id)
 
         # passes the profile folder back to the
         # TaskManager to signal a successful startup
         status_queue.put(("STATUS", "Browser Ready", (prof_folder, "READY")))
-        browser_params["profile_path"] = prof_folder
+        browser_params.profile_path = prof_folder
 
         # starts accepting arguments until told to die
         while True:
@@ -505,7 +502,7 @@ def BrowserManager(
 
             logger.info(
                 "BROWSER %i: EXECUTING COMMAND: %s"
-                % (browser_params["browser_id"], str(command))
+                % (browser_params.browser_id, str(command))
             )
 
             # attempts to perform an action and return an OK signal
@@ -532,7 +529,7 @@ def BrowserManager(
                 extra["exception"] = tb[-1]
                 logger.error(
                     "BROWSER %i: WebDriverException while executing command"
-                    % browser_params["browser_id"],
+                    % browser_params.browser_id,
                     exc_info=True,
                     extra=extra,
                 )
@@ -541,7 +538,7 @@ def BrowserManager(
     except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
         logger.error(
             "BROWSER %i: %s thrown, informing parent and raising"
-            % (browser_params["browser_id"], e.__class__.__name__)
+            % (browser_params.browser_id, e.__class__.__name__)
         )
         status_queue.put(("CRITICAL", pickle.dumps(sys.exc_info())))
         return
@@ -551,7 +548,7 @@ def BrowserManager(
         extra["exception"] = tb[-1]
         logger.error(
             "BROWSER %i: Crash in driver, restarting browser manager"
-            % browser_params["browser_id"],
+            % browser_params.browser_id,
             exc_info=True,
             extra=extra,
         )
