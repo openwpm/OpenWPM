@@ -60,7 +60,7 @@ validate_manager_params(manager_params)
     directory given will be created if it does not exist.
 * `log_file` -> supported file extensions are `.log`
   * The name of the log file to be written to `log_directory`.
-* `database_name` -> suppored file extensions are `.db`, `.sqlite`
+* `database_name` -> supported file extensions are `.db`, `.sqlite`
   * The name of the database file to be written to `data_directory`
 * `failure_limit` -> has to be either of type `int` or `None`
   * The number of successive command failures the platform will tolerate before
