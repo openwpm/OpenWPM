@@ -9,12 +9,10 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from openwpm import js_instrumentation as jsi
+
 from openwpm.config import BrowserParams
 from openwpm.deploy_browsers import configure_firefox
-<<<<<<< 586dbfc7f33ba80843cee8972b5a74ea59b8faa6
-=======
-from openwpm.config import BrowserParams
->>>>>>> manual test breaking post-#807
+
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import create_xpi
@@ -136,6 +134,7 @@ def start_webdriver(
                 browser_params.from_json(f.read())
         js_request = browser_params.js_instrument_settings
         js_request_as_string = jsi.clean_js_instrumentation_settings(js_request)
+
         browser_params.js_instrument_settings = js_request_as_string
 
         profile_dir = driver.capabilities["moz:profile"]
