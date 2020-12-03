@@ -176,7 +176,9 @@ class TestMPLogger(OpenWPMTest):
         child_process = Process(target=child_proc_logging_exception())
         child_process.daemon = True
         child_process.start()
-        openwpm_logger.close()
+        time.sleep(2)
         child_process.join()
+        print("Child processes joined...")
+        openwpm_logger.close()
         log_content = self.get_logfile_contents(log_file)
         assert "I'm logging an exception" in log_content
