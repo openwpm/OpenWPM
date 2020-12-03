@@ -10,7 +10,7 @@ from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from openwpm import js_instrumentation as jsi
 from openwpm.deploy_browsers import configure_firefox
-from openwpm.TaskManager import load_default_params
+from openwpm.config import BrowserParams
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import create_xpi
@@ -127,7 +127,7 @@ def start_webdriver(
         # what happens in TaskManager. But this lets
         # us pass some basic things.
 
-        browser_params = load_default_params()[1][0]
+        browser_params = [BrowserParams() for _ in range(num_browsers)]
         if browser_params_file is not None:
             with open(browser_params_file, "r") as f:
                 browser_params.update(json.loads(f.read()))
