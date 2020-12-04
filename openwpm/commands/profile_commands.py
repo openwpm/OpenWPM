@@ -46,7 +46,7 @@ class DumpProfileCommand(BaseCommand):
             % browser_params.browser_id
         )
         return
-        browser_profile_folder = browser_params["profile_path"]
+        browser_profile_folder = browser_params.profile_path
 
         # ensures that folder paths end with slashes
         if browser_profile_folder[-1] != "/":
@@ -80,7 +80,7 @@ class DumpProfileCommand(BaseCommand):
         logger.debug(
             "BROWSER %i: Backing up full profile from %s to %s"
             % (
-                browser_params["browser_id"],
+                browser_params.browser_id,
                 browser_profile_folder,
                 tar_location + tar_name,
             )
@@ -109,7 +109,7 @@ class DumpProfileCommand(BaseCommand):
             ):
                 logger.critical(
                     "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                    % (browser_params["browser_id"], full_path)
+                    % (browser_params.browser_id, full_path)
                 )
             elif not os.path.isfile(full_path) and (
                 full_path[-3:] == "shm" or full_path[-3:] == "wal"
@@ -121,7 +121,7 @@ class DumpProfileCommand(BaseCommand):
             if not os.path.isdir(full_path):
                 logger.warning(
                     "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                    % (browser_params["browser_id"], full_path)
+                    % (browser_params.browser_id, full_path)
                 )
                 continue
             tar.add(full_path, arcname=item)

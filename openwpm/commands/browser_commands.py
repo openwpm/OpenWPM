@@ -203,21 +203,21 @@ class BrowseCommand(BaseCommand):
             r = int(random.random() * len(links))
             logger.info(
                 "BROWSER %i: visiting internal link %s"
-                % (browser_params["browser_id"], links[r].get_attribute("href"))
+                % (browser_params.browser_id, links[r].get_attribute("href"))
             )
 
             try:
                 links[r].click()
                 wait_until_loaded(webdriver, 300)
                 time.sleep(max(1, self.sleep))
-                if browser_params["bot_mitigation"]:
+                if browser_params.bot_mitigation:
                     bot_mitigation(webdriver)
                 webdriver.back()
                 wait_until_loaded(webdriver, 300)
             except Exception as e:
                 logger.error(
                     "BROWSER %i: Error visitit internal link %s",
-                    browser_params["browser_id"],
+                    browser_params.browser_id,
                     links[r].get_attribute("href"),
                     exc_info=e,
                 )
@@ -243,7 +243,7 @@ class SaveScreenshotCommand(BaseCommand):
 
         urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outname = os.path.join(
-            manager_params["screenshot_path"],
+            manager_params.screenshot_path,
             "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix),
         )
         webdriver.save_screenshot(outname)
@@ -325,7 +325,7 @@ class ScreenshotFullPageCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-        self.outdir = os.path.join(manager_params["screenshot_path"], "parts")
+        self.outdir = os.path.join(manager_params.screenshot_path, "parts")
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
         if self.suffix != "":
@@ -403,7 +403,7 @@ class DumpPageSourceCommand(BaseCommand):
 
         outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outfile = os.path.join(
-            manager_params["source_dump_path"],
+            manager_params.source_dump_path,
             "%i-%s%s.html" % (self.visit_id, outname, self.suffix),
         )
 
@@ -433,7 +433,7 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
 
         outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
         outfile = os.path.join(
-            manager_params["source_dump_path"],
+            manager_params.source_dump_path,
             "%i-%s%s.json.gz" % (self.visit_id, outname, self.suffix),
         )
 
