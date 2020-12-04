@@ -34,80 +34,42 @@ for _ in range(num_browsers):
 
 ## Adding a new command
 
-OpenWPM commands exist as part of a command sequence object, which allows one to string together a sequence of actions for a browser to take and deploy that sequence to the first available browser from the manager. Adding a command to a `CommandSequence` object will cause the browser to execute it immediately after the previously added command as long as the previous command does not time out or fail.
-
-Suppose we want to add a top-level command to cause the browser to jiggle the mouse a few times. We may want to have the browser visit a site, jiggle the mouse, and extract the links from the site.
-
-To add a new command you need to modify the following four files:
-
-1. Define all required paramters in a type in `openwpm/commands/types.py`  
-  In our case this looks like this:
-  ```python
-    class JiggleCommand(BaseCommand):
-        def __init__(self, num_jiggles):
-            self.num_jiggles = num_jiggles
-
-        def __repr__(self):
-            return "JiggleCommand({})".format(self.num_jiggles)
-  ```
-
-2. Define the behaviour of our new command in `*_commands.py` in `openwpm/commands/`,
-   e.g. `browser_commands.py`.
-   Feel free to add a new module within `openwpm/commands/` for your own custom commands  
-    In our case this looks like this:
-  ```python
-    from selenium.webdriver.common.action_chains import ActionChains
-
-    def jiggle_mouse(webdriver, number_jiggles):
-        for i in xrange(0, number_jiggles):
-            x = random.randrange(0, 500)
-            y = random.randrange(0, 500)
-            action = ActionChains(webdriver)
-            action.move_by_offset(x, y)
-            action.perform()
-  ```
-
-3. Make our function be called when the command_sequence reaches our Command, by adding it to the
-    `execute_command` function in `openwpm/commands/command_executer.py`
-      In our case this looks like this:
-  ```python
-        elif type(command) is JiggleCommand:
-        browser_commands.jiggle_mouse(
-            webdriver=webdriver,
-            number_jiggles=self.num_jiggles)
-  ```
-
-4. Lastly we change ```openwpm/CommandSequence.py``` by adding a `jiggle_mouse` method to the `CommandSequence`
-  so we can add our command to the commands list  
-  In our case this looks like this:
-  ```python
-    def jiggle_mouse(self, num_jiggles, timeout=60):
-    """ jiggles mouse <num_jiggles> times """
-    self.total_timeout += timeout
-    if not self.contains_get_or_browse:
-        raise CommandExecutionError("No get or browse request preceding "
-                                    "the jiggle_mouse command", self)
-    command = JiggleCommand(num_jiggles)
-    self.commands_with_timeout.append((command, timeout))
-  ```
-   A timeout is given and set by default to 60 seconds. This is added to the overall sequence timeout. Finally, we check that the `CommandSequence` instance contains a `get` or a `browse` command prior to this command being added by checking `self.contains_get_or_browse`. This is necessary as it wouldn't make sense to have selenium jiggle the mouse before loading a page.
-
-
-
-Notice that any arguments to the command are added both to the command sequence top-level method, and are then stored in the `Command` object to be serialized and sent across the process boundary between the task manager and browser manager.
-
-Finally, the command sequence given to the Task Manager to visit a site, sleep for 10 seconds, jiggle the mouse 10 times, and takes a screenshot would look like this:
-
+If you'd like to create a custom command, you must create a new file with the details
+of your command. Suppose we want to make a command to take a screenshot of the page we are viewing.
+In `custom_command.py` we would define a class, `SaveScreenshotCommand` that derives from `BaseCommand`
 ```python
-site = 'http://www.example.com'
-
-command_sequence = CommandSequence.CommandSequence(site)
-command_sequence.get(sleep=10)
-command_sequence.jiggle_mouse(10)
-command_sequence.screenshot_full_page()
-
-manager.execute_command_sequence(command_sequence)
+class SaveScreenshotCommand(BaseCommand)
 ```
+Next, in our newly derived class, we would define the `___init___`, `execute` and `__repr__` functions.
+```python
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
+        return "SaveScreenshotCommand({})".format(self.suffix)
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outname = os.path.join(
+            manager_params["screenshot_path"],
+            "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix),
+        )
+        webdriver.save_screenshot(outname)
+```
+
+Finally, we must add our class to the command_sequence
+`command_sequence.append_command(SaveScreenShotCommand("my_suffix"))`
+
+Your command will now execute during the command sequence.
 
 ## Running a simple analysis
 
