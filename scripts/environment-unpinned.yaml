@@ -19,7 +19,7 @@ dependencies:
     - python
     - pyvirtualdisplay==0.2.5 # https://github.com/mozilla/OpenWPM/issues/694
     - redis-py
-    - s3fs==0.4.0 # https://github.com/mozilla/OpenWPM/issues/614
+    - s3fs
     - selenium
     - sentry-sdk
     - tabulate
