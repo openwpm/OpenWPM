@@ -2,6 +2,10 @@ import logging
 import os
 
 from openwpm.command_sequence import CommandSequence
+from openwpm.storage.cloud_storage.gcp_storage import (
+    GcsStructuredProvider,
+    GcsUnstructuredProvider,
+)
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager, load_default_params
 
@@ -43,13 +47,13 @@ manager_params["log_directory"] = "./datadir/"
 logging_params = {"log_level_console": logging.DEBUG}
 
 # Instantiates the measurement platform
+project = "senglehardt-openwpm-test-1"
+bucket_name = "openwpm-test-bucket"
 # Commands time out by default after 60 seconds
 manager = TaskManager(
     manager_params,
     browser_params,
-    SqlLiteStorageProvider(
-        os.path.expanduser(manager_params["data_directory"] + "crawl-data.sqlite")
-    ),
+    GcsStructuredProvider(project=project, bucket_name=bucket_name, base_path="visits"),
     None,
 )
 
