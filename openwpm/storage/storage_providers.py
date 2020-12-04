@@ -21,6 +21,15 @@ class StorageProvider(ABC):
     """
 
     @abstractmethod
+    async def init(self) -> None:
+        """Initializes the StorageProvider for use
+
+        Guaranteed to be called in the process the
+        StorageController runs in.
+        """
+        pass
+
+    @abstractmethod
     async def flush_cache(self) -> None:
         """ Blockingly write out any cached data to the respective storage """
         pass

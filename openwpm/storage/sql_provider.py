@@ -16,11 +16,16 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 class SqlLiteStorageProvider(StructuredStorageProvider):
     def __init__(self, db_path: PathLike) -> None:
         super().__init__()
-        self.db = sqlite3.connect(db_path, check_same_thread=False)
-        self.cur = self.db.cursor()
+        self.db_path = db_path
         self._sql_counter = 0
         self._sql_commit_time = 0
         self.logger = logging.getLogger("openwpm")
+        self.db = None
+        self.cur = None
+
+    async def init(self) -> None:
+        self.db = sqlite3.connect(self.db_path)
+        self.cur = self.db.cursor()
         self._create_tables()
 
     def _create_tables(self) -> None:

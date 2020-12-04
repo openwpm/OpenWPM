@@ -254,12 +254,15 @@ class StorageController:
                 await task
 
     async def _run(self) -> None:
+
+        await self.structured_storage.init()
+        if self.unstructured_storage:
+            await self.unstructured_storage.init()
         server: asyncio.AbstractServer = await asyncio.start_server(
             self._handler, "localhost", 0, family=socket.AF_INET
         )
         sockets = server.sockets
         assert sockets is not None
-        # assert len(sockets) == 1
         socketname = sockets[0].getsockname()
         self.status_queue.put(socketname)
         status_queue_update = asyncio.create_task(

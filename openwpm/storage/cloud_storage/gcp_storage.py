@@ -1,3 +1,4 @@
+from fs_gcsfs import GCSFS
 from pyarrow.lib import Table
 
 from ..arrow_storage import ArrowProvider
@@ -11,8 +12,9 @@ class GcsStructuredProvider(ArrowProvider):
     it is the easiest way forward.
     """
 
-    def __init__(self):
+    def __init__(self, bucket_name: str, path: str) -> None:
         super().__init__()
+        self.file_system = GCSFS(bucket_name)
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
         pass

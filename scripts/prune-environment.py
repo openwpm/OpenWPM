@@ -28,15 +28,26 @@ def iterate_deps(xs, ys, accumulator):
 
 deps_not_pip = []
 deps_pip = []
+
 iterate_deps(
     env_pinned["dependencies"][:-1],
     env_unpinned["dependencies"][:-1] + env_unpinned_dev["dependencies"][:-1],
     deps_not_pip,
 )
+
+# Checking if there are any pip dependencies
+try:
+    deps_pip_unpinned = env_unpinned["dependencies"][-1]["pip"]
+except:
+    deps_pip_unpinned = []
+try:
+    deps_pip_unpinned_dev = env_unpinned_dev["dependencies"][-1]["pip"]
+except:
+    deps_pip_unpinned_dev = []
+
 iterate_deps(
     env_pinned["dependencies"][-1]["pip"],
-    env_unpinned["dependencies"][-1]["pip"]
-    + env_unpinned_dev["dependencies"][-1]["pip"],
+    deps_pip_unpinned_dev + deps_pip_unpinned,
     deps_pip,
 )
 pruned_dependencies = [
