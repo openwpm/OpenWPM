@@ -4,9 +4,11 @@ import os
 import sqlite3
 import time
 from sqlite3 import IntegrityError, InterfaceError, OperationalError, ProgrammingError
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import plyvel
+
+from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
 
 from .base_aggregator import (
     RECORD_TYPE_CONTENT,
@@ -53,13 +55,13 @@ class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
 
     def __init__(self, base_params, manager_params, ldb_enabled):
-        db_path = manager_params["database_name"]
+        db_path = manager_params.database_name
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
         self.ldb_enabled = ldb_enabled
         if self.ldb_enabled:
             self.ldb = plyvel.DB(
-                os.path.join(manager_params["data_directory"], LDB_NAME),
+                os.path.join(manager_params.data_directory, LDB_NAME),
                 create_if_missing=True,
                 write_buffer_size=128 * 10 ** 6,
                 compression="snappy",
@@ -207,11 +209,15 @@ class LocalAggregator(BaseAggregator):
     If content saving is enabled, we write page content to a LevelDB database.
     """
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: List[BrowserParamsInternal],
+    ):
         super(LocalAggregator, self).__init__(manager_params, browser_params)
-        db_path = self.manager_params["database_name"]
-        if not os.path.exists(manager_params["data_directory"]):
-            os.mkdir(manager_params["data_directory"])
+        db_path = self.manager_params.database_name
+        if not os.path.exists(manager_params.data_directory):
+            os.mkdir(manager_params.data_directory)
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
         self._create_tables()
@@ -221,7 +227,7 @@ class LocalAggregator(BaseAggregator):
         # (if content saving is enabled on any browser)
         self.ldb_enabled = False
         for params in browser_params:
-            if params["save_content"]:
+            if params.save_content:
                 self.ldb_enabled = True
                 break
 
@@ -253,20 +259,24 @@ class LocalAggregator(BaseAggregator):
             "INSERT INTO task "
             "(manager_params, openwpm_version, browser_version) "
             "VALUES (?,?,?)",
-            (json.dumps(self.manager_params), openwpm_version, browser_version),
+            (
+                self.manager_params.to_json(),
+                openwpm_version,
+                browser_version,
+            ),
         )
         self.db.commit()
         self.task_id = self.cur.lastrowid
 
         # Record browser details for each brower
-        for i in range(self.manager_params["num_browsers"]):
+        for i in range(self.manager_params.num_browsers):
             self.cur.execute(
                 "INSERT INTO crawl (browser_id, task_id, browser_params) "
                 "VALUES (?,?,?)",
                 (
-                    self.browser_params[i]["browser_id"],
+                    self.browser_params[i].browser_id,
                     self.task_id,
-                    json.dumps(self.browser_params[i]),
+                    self.browser_params[i].to_json(),
                 ),
             )
         self.db.commit()

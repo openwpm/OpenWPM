@@ -35,7 +35,7 @@ class TestStorageVectors(OpenWPMTest):
         """ Check that profile cookies set by JS are saved """
         # Run the test crawl
         manager_params, browser_params = self.get_config()
-        browser_params[0]["cookie_instrument"] = True
+        browser_params[0].cookie_instrument = True
         manager = task_manager.TaskManager(manager_params, browser_params)
         url = utilities.BASE_TEST_URL + "/js_cookie.html"
         cs = command_sequence.CommandSequence(url)
@@ -44,7 +44,7 @@ class TestStorageVectors(OpenWPMTest):
         manager.close()
         # Check that the JS cookie we stored is recorded
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             (
                 "SELECT visit_id, record_type, change_cause, is_http_only, "
                 "is_host_only, is_session, host, is_secure, name, path, "

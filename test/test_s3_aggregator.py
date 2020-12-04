@@ -33,16 +33,16 @@ class TestS3Aggregator(OpenWPMTest):
         manager_params, browser_params = self.get_test_config(
             data_dir, num_browsers=num_browsers
         )
-        manager_params["output_format"] = "s3"
-        manager_params["s3_bucket"] = local_s3_bucket(self.s3_resource)
-        manager_params["s3_directory"] = "s3-aggregator-tests"
+        manager_params.output_format = "s3"
+        manager_params.s3_bucket = local_s3_bucket(self.s3_resource)
+        manager_params.s3_directory = "s3-aggregator-tests"
         for i in range(num_browsers):
-            browser_params[i]["http_instrument"] = True
-            browser_params[i]["js_instrument"] = True
-            browser_params[i]["cookie_instrument"] = True
-            browser_params[i]["navigation_instrument"] = True
-            browser_params[i]["callstack_instrument"] = True
-            browser_params[i]["dns_instrument"] = True
+            browser_params[i].http_instrument = True
+            browser_params[i].js_instrument = True
+            browser_params[i].cookie_instrument = True
+            browser_params[i].navigation_instrument = True
+            browser_params[i].callstack_instrument = True
+            browser_params[i].dns_instrument = True
         return manager_params, browser_params
 
     @pytest.mark.skipif(
@@ -59,9 +59,7 @@ class TestS3Aggregator(OpenWPMTest):
             manager.get(TEST_SITE, sleep=1)
         manager.close()
 
-        dataset = LocalS3Dataset(
-            manager_params["s3_bucket"], manager_params["s3_directory"]
-        )
+        dataset = LocalS3Dataset(manager_params.s3_bucket, manager_params.s3_directory)
 
         # Test visit_id consistency
         visit_ids = defaultdict(set)
@@ -99,18 +97,14 @@ class TestS3Aggregator(OpenWPMTest):
     def test_commit_on_timeout(self):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
         manager_params, browser_params = self.get_config(num_browsers=1)
-        manager_params["s3_directory"] = "s3-aggregator-tests-2"
+        manager_params.s3_directory = "s3-aggregator-tests-2"
         manager = task_manager.TaskManager(manager_params, browser_params)
         manager.get(TEST_SITE, sleep=1)
-        dataset = LocalS3Dataset(
-            manager_params["s3_bucket"], manager_params["s3_directory"]
-        )
+        dataset = LocalS3Dataset(manager_params.s3_bucket, manager_params.s3_directory)
         with pytest.raises((FileNotFoundError, OSError)):
             requests = dataset.load_table("http_requests")
         time.sleep(45)  # Current timeout
-        dataset2 = LocalS3Dataset(
-            manager_params["s3_bucket"], manager_params["s3_directory"]
-        )
+        dataset2 = LocalS3Dataset(manager_params.s3_bucket, manager_params.s3_directory)
         requests = dataset2.load_table("http_requests")
         assert TEST_SITE in requests.top_level_url.unique()
         manager.close()
@@ -122,9 +116,7 @@ class TestS3Aggregator(OpenWPMTest):
     def test_s3_callbacks(self):
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
         manager_params, browser_params = self.get_config()
-        dataset = LocalS3Dataset(
-            manager_params["s3_bucket"], manager_params["s3_directory"]
-        )
+        dataset = LocalS3Dataset(manager_params.s3_bucket, manager_params.s3_directory)
         manager = task_manager.TaskManager(manager_params, browser_params)
         queue = Queue()
 

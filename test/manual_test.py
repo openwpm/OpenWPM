@@ -131,13 +131,13 @@ def start_webdriver(
         if browser_params_file is not None:
             with open(browser_params_file, "r") as f:
                 browser_params.update(json.loads(f.read()))
-        js_request = browser_params["js_instrument_settings"]
+        js_request = browser_params.js_instrument_settings
         js_request_as_string = jsi.convert_browser_params_to_js_string(js_request)
-        browser_params["js_instrument_settings"] = js_request_as_string
+        browser_params.js_instrument_settings = js_request_as_string
 
         profile_dir = driver.capabilities["moz:profile"]
         with open(join(profile_dir, "browser_params.json"), "w") as f:
-            f.write(json.dumps(browser_params))
+            f.write(browser_params.to_json())
 
     if with_extension:
         # add openwpm extension to profile

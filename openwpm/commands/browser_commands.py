@@ -156,7 +156,7 @@ class GetCommand(BaseCommand):
 
         close_other_windows(webdriver)
 
-        if browser_params["bot_mitigation"]:
+        if browser_params.bot_mitigation:
             bot_mitigation(webdriver)
 
 
@@ -258,7 +258,7 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
     parts = list()
     for f in glob(
         os.path.join(
-            manager_params["screenshot_path"], "parts", "%i*-part-*.png" % visit_id
+            manager_params.screenshot_path, "parts", "%i*-part-*.png" % visit_id
         )
     ):
 
@@ -286,7 +286,7 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
 
     # Output filename same for all parts, so we can just use last filename
     outname = outname + ".png"
-    outname = os.path.join(manager_params["screenshot_path"], outname)
+    outname = os.path.join(manager_params.screenshot_path, outname)
     output = Image.new("RGB", (max_width, total_height))
 
     # Compute dimensions for output image

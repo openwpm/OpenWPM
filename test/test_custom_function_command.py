@@ -4,6 +4,12 @@ from selenium.webdriver import Firefox
 
 from openwpm import command_sequence, task_manager
 from openwpm.commands.types import BaseCommand
+from openwpm.config import (
+    BrowserParams,
+    BrowserParamsInternal,
+    ManagerParams,
+    ManagerParamsInternal,
+)
 from openwpm.socket_interface import ClientSocket
 from openwpm.utilities import db_utils
 
@@ -38,8 +44,8 @@ class CollectLinksCommand(BaseCommand):
     def execute(
         self,
         webdriver: Firefox,
-        browser_params: Dict[str, Any],
-        manager_params: Dict[str, Any],
+        browser_params: BrowserParamsInternal,
+        manager_params: ManagerParamsInternal,
         extension_socket: ClientSocket,
     ) -> None:
         link_urls = [
@@ -53,7 +59,7 @@ class CollectLinksCommand(BaseCommand):
         current_url = webdriver.current_url
 
         sock = ClientSocket()
-        sock.connect(*manager_params["aggregator_address"])
+        sock.connect(*manager_params.aggregator_address)
 
         query = (
             "CREATE TABLE IF NOT EXISTS %s ("
@@ -93,6 +99,8 @@ class TestCustomFunctionCommand(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
         query_result = db_utils.query_db(
-            manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
+            manager_params.database_name,
+            "SELECT top_url, link FROM page_links;",
+            as_tuple=True,
         )
         assert PAGE_LINKS == set(query_result)

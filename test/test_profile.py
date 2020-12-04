@@ -16,8 +16,8 @@ from .openwpmtest import OpenWPMTest
 class TestProfile(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["profile_archive_dir"] = join(
-            manager_params["data_directory"], "browser_profile"
+        browser_params[0].profile_archive_dir = join(
+            manager_params.data_directory, "browser_profile"
         )
         return manager_params, browser_params
 
@@ -27,12 +27,12 @@ class TestProfile(OpenWPMTest):
         manager = TaskManager(manager_params, browser_params)
         manager.get("http://example.com")
         manager.close()
-        assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
+        assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
 
     @pytest.mark.xfail(run=False)
     def test_crash(self):
         manager_params, browser_params = self.get_config()
-        manager_params["failure_limit"] = 0
+        manager_params.failure_limit = 0
         manager = TaskManager(manager_params, browser_params)
         with pytest.raises(CommandExecutionError):
             manager.get("http://example.com")  # So we have a profile
@@ -42,7 +42,7 @@ class TestProfile(OpenWPMTest):
     @pytest.mark.xfail(run=False)
     def test_crash_profile(self):
         manager_params, browser_params = self.get_config()
-        manager_params["failure_limit"] = 2
+        manager_params.failure_limit = 2
         manager = TaskManager(manager_params, browser_params)
         try:
             manager.get("http://example.com")  # So we have a profile
@@ -52,20 +52,20 @@ class TestProfile(OpenWPMTest):
             manager.get("example.com")  # Requires two commands to shut down
         except CommandExecutionError:
             pass
-        assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
+        assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
 
     @pytest.mark.xfail(run=False)
     def test_profile_error(self):
         manager_params, browser_params = self.get_config()
-        browser_params[0]["seed_tar"] = "/tmp/NOTREAL"
+        browser_params[0].seed_tar = "/tmp/NOTREAL"
         with pytest.raises(ProfileLoadError):
             TaskManager(manager_params, browser_params)  # noqa
 
     @pytest.mark.skip(reason="proxy no longer supported, need to update")
     def test_profile_saved_when_launch_crashes(self):
         manager_params, browser_params = self.get_config()
-        browser_params[0]["proxy"] = True
-        browser_params[0]["save_content"] = "script"
+        browser_params[0].proxy = True
+        browser_params[0].save_content = "script"
         manager = TaskManager(manager_params, browser_params)
         manager.get("http://example.com")
 
@@ -82,11 +82,11 @@ class TestProfile(OpenWPMTest):
         except CommandExecutionError:
             pass
         manager.close()
-        assert isfile(join(browser_params[0]["profile_archive_dir"], "profile.tar.gz"))
+        assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
 
     def test_seed_persistance(self):
         manager_params, browser_params = self.get_test_config(num_browsers=1)
-        browser_params[0]["seed_tar"] = "."
+        browser_params[0].seed_tar = "."
         command_sequences = []
         for _ in range(2):
             cs = CommandSequence(url="https://example.com", reset=True)
@@ -98,7 +98,7 @@ class TestProfile(OpenWPMTest):
             manager.execute_command_sequence(cs)
         manager.close()
         query_result = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT * FROM crawl_history;",
         )
         assert len(query_result) > 0
