@@ -53,7 +53,12 @@ bucket_name = "openwpm-test-bucket"
 manager = TaskManager(
     manager_params,
     browser_params,
-    GcsStructuredProvider(project=project, bucket_name=bucket_name, base_path="visits"),
+    GcsStructuredProvider(
+        project=project,
+        bucket_name=bucket_name,
+        base_path="visits",
+        token="/home/stefan/.config/gcloud/legacy_credentials/szabka@mozilla.com/adc.json",
+    ),
     None,
 )
 

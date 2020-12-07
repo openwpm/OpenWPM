@@ -7,7 +7,17 @@ import socket
 import threading
 import time
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Literal, NoReturn, Optional, Tuple
+from typing import (
+    Any,
+    Awaitable,
+    DefaultDict,
+    Dict,
+    List,
+    Literal,
+    NoReturn,
+    Optional,
+    Tuple,
+)
 
 from multiprocess import Queue
 
@@ -63,7 +73,6 @@ class StorageController:
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._relaxed = False
-        self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger("openwpm")
         self.current_tasks: DefaultDict[VisitId, List[asyncio.Task]] = defaultdict(list)
         self.structured_storage = structured_storage
@@ -81,7 +90,7 @@ class StorageController:
             await self.handler(reader, writer)
         except Exception as e:
             self.logger.error(
-                "An exception occured while listening for data", exc_info=e
+                "An exception occurred while processing for records", exc_info=e
             )
 
     async def handler(
@@ -145,7 +154,7 @@ class StorageController:
                 continue
 
             table_name = TableName(record_type)
-
+            # Turning these into task to be able to verify
             self.current_tasks[visit_id].append(
                 asyncio.create_task(
                     self.structured_storage.store_record(
@@ -161,29 +170,47 @@ class StorageController:
         Supported message types:
         - finalize: A message sent by the extension to
                     signal that a visit_id is complete.
+        - initialize: TODO: Start complaining if we receive data for a visit_id
+                      before the initialize event happened. (This might not be easy
+                      because of `site_visits`
         """
         action: str = data["action"]
         if action == ACTION_TYPE_INITIALIZE:
             return
         elif action == ACTION_TYPE_FINALIZE:
-            self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
             success = data["success"]
-            for task in self.current_tasks[visit_id]:
-                await task
-            self.logger.debug(
-                "Awaited all tasks for visit_id %d while finalizing", visit_id
-            )
-
-            await self.structured_storage.finalize_visit_id(
-                visit_id, interrupted=not success
-            )
+            completion_token = await self.finalize_visit_id(visit_id, success)
+            await completion_token
             self.completion_queue.put((visit_id, success))
             del self.current_tasks[visit_id]
         else:
             raise ValueError("Unexpected action: %s", action)
 
+    async def finalize_visit_id(
+        self, visit_id: VisitId, success: bool
+    ) -> Awaitable[None]:
+        """Makes sure all records for a given visit_id
+        have been processed before we invoke finalize_visit_id
+        on the structured_storage
+        """
+        self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
+
+        for task in self.current_tasks[visit_id]:
+            await task
+        self.logger.debug(
+            "Awaited all tasks for visit_id %d while finalizing", visit_id
+        )
+        completion_token = await self.structured_storage.finalize_visit_id(
+            visit_id, interrupted=not success
+        )
+        return completion_token
+
     async def update_status_queue(self) -> NoReturn:
-        """Send manager process a status update."""
+        """Send manager process a status update.
+
+        This coroutine will get cancelled with an exception
+        so there is no need for an orderly return
+        """
         while True:
             await asyncio.sleep(STATUS_UPDATE_INTERVAL)
             visit_id_count = len(self.current_tasks.keys())
@@ -280,6 +307,19 @@ class StorageController:
         await server.wait_closed()
 
         await self.finish_tasks()
+
+        finalization_tokens = {}
+        visit_ids = list(self.current_tasks.keys())
+        for visit_id in visit_ids:
+            finalization_tokens[visit_id] = await self.finalize_visit_id(
+                visit_id, success=False
+            )
+        await self.structured_storage.flush_cache()
+        for visit_id, token in finalization_tokens.items():
+            await token
+            self.completion_queue.put((visit_id, False))
+            del self.current_tasks[visit_id]
+
         await self.shutdown()
 
     def run(self) -> None:

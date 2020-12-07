@@ -1,6 +1,7 @@
+import asyncio
 import logging
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Tuple
+from typing import Any, Awaitable, DefaultDict, Dict, List, Tuple
 
 from multiprocess import Queue
 from pyarrow import Table
@@ -27,33 +28,63 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     """
     This storage provider passes all it's data to the MemoryStructuredProviderHandle in
     process safe way.
+
     This makes it ideal for testing and for small crawls where no persistence is required
+
+    It also aims to only save out data as late as possible to ensure that storage_controller
+    only relies on the guarantees given in the interface.
     """
+
+    async def init(self) -> None:
+        pass
 
     def __init__(self) -> None:
         super().__init__()
         self.queue = Queue()
         self.handle = MemoryProviderHandle(self.queue)
         self.logger = logging.getLogger("openwpm")
+        self.cache1: DefaultDict[
+            VisitId, DefaultDict[TableName, List[Dict[str, Any]]]
+        ] = defaultdict(lambda: defaultdict(list))
+        """The cache for entries before they are finalized"""
+        self.cache2: DefaultDict[TableName, List[Dict[str, Any]]] = defaultdict(list)
+        """For all entries that have been finalized but not yet flushed out to the queue"""
 
     async def flush_cache(self) -> None:
-        pass
+        self.logger.info("Flushing cache")
+
+        for table, record_list in self.cache2.items():
+            self.logger.info(f"Saving out {len(record_list)} entries for {table}")
+            for record in record_list:
+                self.queue.put((table, record))
+        self.cache2.clear()
 
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
-        self.logger.debug(
+        self.logger.info(
             "Saving into table %s for visit_id %d record %r", table, visit_id, record
         )
-        self.queue.put((table, record))
+        self.cache1[visit_id][table].append(record)
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> None:
-        pass
+    ) -> Awaitable[None]:
+        self.logger.info(
+            f"Finalizing visit_id {visit_id} which was {'' if interrupted else 'not'} interrupted"
+        )
+        for table, record_list in self.cache1[visit_id].items():
+            self.cache2[table].extend(record_list)
+
+        del self.cache1[visit_id]
+
+        fut = asyncio.get_event_loop().create_future()
+        fut.set_result(None)
+        return fut
 
     async def shutdown(self) -> None:
-        pass
+        if self.cache1 != {} or self.cache2 != {}:
+            self.logger.error("Shutting down with unsaved records")
 
 
 class MemoryProviderHandle:
@@ -77,6 +108,9 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
     from filename to content.
     Use this provider for writing tests and for small crawls where no persistence is required
     """
+
+    async def init(self) -> None:
+        pass
 
     def __init__(self) -> None:
         self.storage: Dict[str, bytes] = {}
@@ -103,6 +137,9 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
 
 
 class MemoryArrowProvider(ArrowProvider):
+    async def init(self) -> None:
+        pass
+
     def __init__(self) -> None:
         super().__init__()
         self.queue = Queue()

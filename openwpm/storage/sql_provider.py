@@ -3,8 +3,15 @@ import logging
 import os
 import sqlite3
 from os import PathLike
-from sqlite3 import IntegrityError, InterfaceError, OperationalError, ProgrammingError
-from typing import Any, Dict, List, Tuple
+from sqlite3 import (
+    Connection,
+    Cursor,
+    IntegrityError,
+    InterfaceError,
+    OperationalError,
+    ProgrammingError,
+)
+from typing import Any, AsyncGenerator, Awaitable, Dict, List, Optional, Tuple
 
 from openwpm.types import VisitId
 
@@ -20,8 +27,8 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         self._sql_counter = 0
         self._sql_commit_time = 0
         self.logger = logging.getLogger("openwpm")
-        self.db = None
-        self.cur = None
+        self.db: Optional[Connection] = None
+        self.cur: Optional[Cursor] = None
 
     async def init(self) -> None:
         self.db = sqlite3.connect(self.db_path)
@@ -30,11 +37,13 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
 
     def _create_tables(self) -> None:
         """Create tables (if this is a new database)"""
+        assert self.db is not None
         with open(SCHEMA_FILE, "r") as f:
             self.db.executescript(f.read())
         self.db.commit()
 
     async def flush_cache(self) -> None:
+        assert self.db is not None
         self.db.commit()
 
     async def store_record(
@@ -43,6 +52,7 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         """Submit a record to be stored
         The storing might not happen immediately
         """
+        assert self.cur is not None
         statement, args = self._generate_insert(table=table, data=record)
         for i in range(len(args)):
             if isinstance(args[i], bytes):
@@ -83,17 +93,27 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
-    def execute_statement(self, statement: str):
+    def execute_statement(self, statement: str) -> None:
+        assert self.cur is not None
+        assert self.db is not None
         self.cur.execute(statement)
         self.db.commit()
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> None:
+    ) -> Awaitable[None]:
+        assert self.cur is not None
+
         if interrupted:
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             self.cur.execute("INSERT INTO incomplete_visits VALUES (?)", (visit_id,))
 
+        async def done():
+            return
+
+        return done()
+
     async def shutdown(self) -> None:
+        assert self.db is not None
         self.db.commit()
         self.db.close()

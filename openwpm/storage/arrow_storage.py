@@ -3,7 +3,7 @@ import logging
 import random
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List
+from typing import Any, Awaitable, DefaultDict, Dict, List
 
 import pandas as pd
 import pyarrow as pa
@@ -40,9 +40,8 @@ class ArrowProvider(StructuredStorageProvider):
         self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = defaultdict(list)
 
         # Used to synchronize the finalizing and the flushing
-        self.storing_condition = asyncio.Condition()
-        self.flushing = False
-
+        self.storing_lock = asyncio.Lock()
+        self.flush_event = asyncio.Event()
         self._instance_id = random.getrandbits(32)
 
     async def store_record(
@@ -94,25 +93,22 @@ class ArrowProvider(StructuredStorageProvider):
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> None:
+    ) -> Awaitable[None]:
         if interrupted:
             await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
 
         # This code is pretty tricky as there are a number of things going on
         # 1. No finalize_visit_id shouldn't return unless the visit has been saved to storage
         # 2. No new batches should be created while saving out all the batches
-        async with self.storing_condition:
-            if self.flushing:
-                # This way we wait if there is an on going flush
-                await self.storing_condition.wait()
+        async with self.storing_lock:
             self._create_batch(visit_id)
-
             if self._is_cache_full():
-                self.flushing = True
-                await self.flush_cache(self.storing_condition)
-                self.flushing = False
-            else:
-                await self.storing_condition.wait()
+                await self.flush_cache(self.storing_lock)
+
+            async def wait_on_condition(event: asyncio.Event) -> None:
+                await event.wait()
+
+            return wait_on_condition(self.flush_event)
 
     @abstractmethod
     async def write_table(self, table_name: TableName, table: Table) -> None:
@@ -120,7 +116,7 @@ class ArrowProvider(StructuredStorageProvider):
         This should only return once it's actually saved out
         """
 
-    async def flush_cache(self, cond: asyncio.Condition = None) -> None:
+    async def flush_cache(self, cond: asyncio.Lock = None) -> None:
         """We need to hack around the fact that asyncio has no reentrant lock
         and which prevents us from creating a reentrant condition
         So we either grab the storing condition ourselves or the caller needs
@@ -128,13 +124,12 @@ class ArrowProvider(StructuredStorageProvider):
         """
         got_cond = cond is not None
         if not got_cond:
-            cond = self.storing_condition
+            cond = self.storing_lock
             await cond.acquire()
         assert cond.locked()
         for table_name, batches in self._batches.items():
             table = pa.Table.from_batches(batches)
             await self.write_table(table_name, table)
-        cond.notify_all()
-
+        self.flush_event.set()
         if not got_cond:
             cond.release()

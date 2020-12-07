@@ -14,7 +14,10 @@ async def test_gcp_structured(mp_logger):
     project = "senglehardt-openwpm-test-1"
     bucket_name = "openwpm-test-bucket"
     structured_provider = GcsStructuredProvider(
-        project=project, bucket_name=bucket_name, base_path="visits"
+        project=project,
+        bucket_name=bucket_name,
+        base_path="test/visits",
+        token="/home/stefan/.config/gcloud/legacy_credentials/szabka@mozilla.com/adc.json",
     )
     await structured_provider.init()
     visit_ids = set()

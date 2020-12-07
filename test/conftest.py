@@ -101,6 +101,11 @@ def http_params(
 
 @pytest.fixture()
 def mp_logger(tmp_path):
-    logger = MPLogger(tmp_path / "openwpm.log")
+    log_path = tmp_path / "openwpm.log"
+    logger = MPLogger(log_path)
     yield logger
     logger.close()
+    # The performance hit for this might be unacceptable but it might help us discover bugs
+    with log_path.open("r") as f:
+        for line in f:
+            assert "ERROR" not in line

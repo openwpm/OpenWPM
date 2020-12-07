@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, Set
 
 import pyarrow.parquet as pq
 from gcsfs import GCSFileSystem
@@ -34,11 +34,13 @@ class GcsStructuredProvider(ArrowProvider):
         self.base_path = f"{self.bucket_name}/{base_path}/{{table_name}}"
 
     async def init(self) -> None:
+        event_loop = asyncio.get_event_loop()
         self.file_system = GCSFileSystem(
             project=self.project,
             token=self.token,
             access="read_write",
-            check_connection=True,
+            loop=event_loop,
+            asynchronous=True,
         )
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
@@ -76,7 +78,7 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         self.file_system = None
         self.base_path = f"{bucket_name}/{base_path}/{{filename}}"
 
-        self.file_name_cache = set()
+        self.file_name_cache: Set[str] = set()
         """The set of all filenames ever uploaded, checked before uploading"""
         self.logger = logging.getLogger("openwpm")
 

@@ -223,3 +223,5 @@ fields = {
     "time_stamp": random_word(12),
 }
 TEST_VALUES["dns_responses"] = fields
+
+TEST_VISIT_IDS = [d["visit_id"] for d in TEST_VALUES.values()]

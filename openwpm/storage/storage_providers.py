@@ -1,7 +1,7 @@
 import gzip
 import io
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NewType, Tuple
+from typing import Any, AsyncGenerator, Awaitable, Dict, List, NewType, Tuple
 
 from openwpm.types import VisitId
 
@@ -62,11 +62,12 @@ class StructuredStorageProvider(StorageProvider):
     @abstractmethod
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> None:
-        """This method is invoked to inform the StrucuturedStorageProvider that no more
+    ) -> Awaitable[None]:
+        """This method is invoked to inform the StructuredStorageProvider that no more
         records for this visit_id will be submitted
-        It will only return once all records for this visit_id have been saved
-        to permanent storage.
+
+        This method returns an awaitable that will resolve once the records have been
+        saved out to persistent storage
         """
         pass
 
