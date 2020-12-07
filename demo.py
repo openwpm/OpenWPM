@@ -56,7 +56,7 @@ manager = TaskManager(
     GcsStructuredProvider(
         project=project,
         bucket_name=bucket_name,
-        base_path="visits",
+        base_path="demo/visits",
         token="/home/stefan/.config/gcloud/legacy_credentials/szabka@mozilla.com/adc.json",
     ),
     None,

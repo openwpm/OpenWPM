@@ -36,11 +36,7 @@ class GcsStructuredProvider(ArrowProvider):
     async def init(self) -> None:
         event_loop = asyncio.get_event_loop()
         self.file_system = GCSFileSystem(
-            project=self.project,
-            token=self.token,
-            access="read_write",
-            loop=event_loop,
-            asynchronous=True,
+            project=self.project, token=self.token, access="read_write"
         )
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
