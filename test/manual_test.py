@@ -9,8 +9,8 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from openwpm import js_instrumentation as jsi
+from openwpm.config import BrowserParams
 from openwpm.deploy_browsers import configure_firefox
-from openwpm.TaskManager import load_default_params
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import create_xpi
@@ -108,7 +108,7 @@ def start_webdriver(
             print("Cleanup before shutdown...")
             server.shutdown()
             thread.join()
-            print("...sever shutdown")
+            print("...server shutdown")
             driver.quit()
             print("...webdriver closed")
 
@@ -127,12 +127,12 @@ def start_webdriver(
         # what happens in TaskManager. But this lets
         # us pass some basic things.
 
-        browser_params = load_default_params()[1][0]
+        browser_params = BrowserParams()
         if browser_params_file is not None:
             with open(browser_params_file, "r") as f:
-                browser_params.update(json.loads(f.read()))
+                browser_params.from_json(f.read())
         js_request = browser_params.js_instrument_settings
-        js_request_as_string = jsi.convert_browser_params_to_js_string(js_request)
+        js_request_as_string = jsi.clean_js_instrumentation_settings(js_request)
         browser_params.js_instrument_settings = js_request_as_string
 
         profile_dir = driver.capabilities["moz:profile"]
