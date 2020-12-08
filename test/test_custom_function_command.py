@@ -1,3 +1,5 @@
+import sqlite3
+
 from openwpm import command_sequence, task_manager
 from openwpm.socket_interface import ClientSocket
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
@@ -61,13 +63,20 @@ def test_custom_function(default_params, xpi, server):
         sock.close()
 
     manager_params, browser_params = default_params
-    storage_provider = SqlLiteStorageProvider(manager_params["db"])
-    storage_provider.execute_statement(
+
+    db = sqlite3.connect(manager_params["db"])
+    cur = db.cursor()
+
+    cur.execute(
         """CREATE TABLE IF NOT EXISTS %s (
             top_url TEXT, link TEXT, 
             visit_id INTEGER, browser_id INTEGER);"""
         % table_name
     )
+    cur.close()
+    db.close()
+
+    storage_provider = SqlLiteStorageProvider(manager_params["db"])
     manager = TaskManager(manager_params, browser_params, storage_provider, None)
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=0, timeout=60)
