@@ -15,11 +15,7 @@ from .types import (
 
 
 def execute_command(
-    command,
-    webdriver,
-    browser_params,
-    manager_params,
-    extension_socket,
+    command, webdriver, browser_params, manager_params, extension_socket,
 ):
     """Executes BrowserManager commands
     commands are of form (COMMAND, ARG0, ARG1, ...)

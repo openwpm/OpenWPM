@@ -73,8 +73,7 @@ def child_proc_logging_exception():
         raise Exception("This is my generic Test Exception")
     except Exception:
         logger.error(
-            "I'm logging an exception",
-            exc_info=True,
+            "I'm logging an exception", exc_info=True,
         )
 
 

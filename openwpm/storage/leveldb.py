@@ -39,10 +39,7 @@ class LevelDbProvider(UnstructuredStorageProvider):
         print("Ldb is closed:", self.ldb.closed)
 
     async def store_blob(
-        self,
-        filename: str,
-        blob: bytes,
-        overwrite: bool = False,
+        self, filename: str, blob: bytes, overwrite: bool = False,
     ) -> None:
         assert self.ldb is not None
         assert self.content_batch is not None

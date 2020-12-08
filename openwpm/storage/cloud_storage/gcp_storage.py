@@ -19,11 +19,7 @@ class GcsStructuredProvider(ArrowProvider):
     """
 
     def __init__(
-        self,
-        project: str,
-        bucket_name: str,
-        base_path: str,
-        token: str = None,
+        self, project: str, bucket_name: str, base_path: str, token: str = None,
     ) -> None:
         super().__init__()
         self.project = project
@@ -60,11 +56,7 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
     """
 
     def __init__(
-        self,
-        project: str,
-        bucket_name: str,
-        base_path: str,
-        token: str = None,
+        self, project: str, bucket_name: str, base_path: str, token: str = None,
     ) -> None:
         super().__init__()
         self.project = project

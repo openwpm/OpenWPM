@@ -118,8 +118,7 @@ def test_seed_persistance(default_params, task_manager_creator):
         manager.execute_command_sequence(cs)
     manager.close()
     query_result = db_utils.query_db(
-        manager_params["db"],
-        "SELECT * FROM crawl_history;",
+        manager_params["db"], "SELECT * FROM crawl_history;",
     )
     assert len(query_result) > 0
     for row in query_result:

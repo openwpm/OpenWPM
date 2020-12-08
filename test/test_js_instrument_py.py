@@ -16,10 +16,7 @@ def test_python_to_js_lower_true_false():
     inpy = [
         {
             "object": "window",
-            "logSettings": {
-                "logCallStack": False,
-                "preventSets": True,
-            },
+            "logSettings": {"logCallStack": False, "preventSets": True,},
         }
     ]
     expected_out = _no_whitespace(

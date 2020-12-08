@@ -133,10 +133,7 @@ if SENTRY_DSN:
         if PREFS:
             scope.set_context("PREFS", json.loads(PREFS))
         scope.set_context(
-            "crawl_config",
-            {
-                "REDIS_QUEUE_NAME": REDIS_QUEUE_NAME,
-            },
+            "crawl_config", {"REDIS_QUEUE_NAME": REDIS_QUEUE_NAME,},
         )
     # Send a sentry error message (temporarily - to easily be able
     # to compare error frequencies to crawl worker instance count)

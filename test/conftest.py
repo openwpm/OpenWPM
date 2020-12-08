@@ -71,10 +71,7 @@ def task_manager_creator(
         manager_params, browser_params = params
         structured_provider = SqlLiteStorageProvider(manager_params["db"])
         manager = task_manager.TaskManager(
-            manager_params,
-            browser_params,
-            structured_provider,
-            None,
+            manager_params, browser_params, structured_provider, None,
         )
         return manager
 

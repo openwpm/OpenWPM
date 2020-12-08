@@ -514,11 +514,7 @@ def BrowserManager(
             # kill and restart its worker processes
             try:
                 command_executor.execute_command(
-                    command,
-                    driver,
-                    browser_params,
-                    manager_params,
-                    extension_socket,
+                    command, driver, browser_params, manager_params, extension_socket,
                 )
                 status_queue.put("OK")
             except WebDriverException:

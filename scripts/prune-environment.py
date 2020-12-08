@@ -3,20 +3,11 @@ from typing import Iterable, List
 import yaml
 
 with open("environment-unpinned.yaml", "r") as fp:
-    env_unpinned = yaml.load(
-        fp.read(),
-        Loader=yaml.SafeLoader,
-    )
+    env_unpinned = yaml.load(fp.read(), Loader=yaml.SafeLoader,)
 with open("environment-unpinned-dev.yaml", "r") as fp:
-    env_unpinned_dev = yaml.load(
-        fp.read(),
-        Loader=yaml.SafeLoader,
-    )
+    env_unpinned_dev = yaml.load(fp.read(), Loader=yaml.SafeLoader,)
 with open("../environment.yaml", "r") as fp:
-    env_pinned = yaml.load(
-        fp.read(),
-        Loader=yaml.SafeLoader,
-    )
+    env_pinned = yaml.load(fp.read(), Loader=yaml.SafeLoader,)
 
 # Only pin explicit dependencies
 

@@ -108,21 +108,9 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         }
         browser_params[0]["js_instrument_settings"] = [
             # Note that the string "window.document.cookie" does not work.
-            {
-                "window.document": [
-                    "cookie",
-                ]
-            },
-            {
-                "window.navigator": [
-                    "webdriver",
-                ]
-            },
-            {
-                "window": [
-                    "fetch",
-                ]
-            },
+            {"window.document": ["cookie",]},
+            {"window.navigator": ["webdriver",]},
+            {"window": ["fetch",]},
         ]
         return manager_params, browser_params
 
