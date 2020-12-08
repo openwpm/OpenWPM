@@ -1,3 +1,5 @@
+from typing import Iterable, List
+
 import yaml
 
 with open("environment-unpinned.yaml", "r") as fp:
@@ -19,15 +21,15 @@ with open("../environment.yaml", "r") as fp:
 # Only pin explicit dependencies
 
 
-def iterate_deps(xs, ys, accumulator):
+def iterate_deps(xs: Iterable[str], ys: Iterable[str], accumulator: List[str]) -> None:
     for x in xs:
         for y in ys:
             if x.split("=")[0] == y.split("=")[0]:
                 accumulator.append(x)
 
 
-deps_not_pip = []
-deps_pip = []
+deps_not_pip: List[str] = []
+deps_pip: List[str] = []
 
 iterate_deps(
     env_pinned["dependencies"][:-1],

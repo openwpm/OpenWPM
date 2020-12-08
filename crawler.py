@@ -7,36 +7,48 @@ import time
 from threading import Lock
 from typing import Any, Callable, List
 
-import boto3
 import sentry_sdk
 
-from openwpm import CommandSequence, MPLogger, TaskManager
+from openwpm import mp_logger
+from openwpm.command_sequence import CommandSequence
+from openwpm.storage.cloud_storage.gcp_storage import (
+    GcsStructuredProvider,
+    GcsUnstructuredProvider,
+)
+from openwpm.task_manager import TaskManager, load_default_params
 from openwpm.utilities import rediswq
-from test.utilities import LocalS3Session, local_s3_bucket
 
 # Configuration via environment variables
+# Crawler specific config
 REDIS_HOST = os.getenv("REDIS_HOST", "redis-box")
 REDIS_QUEUE_NAME = os.getenv("REDIS_QUEUE_NAME", "crawl-queue")
+MAX_JOB_RETRIES = int(os.getenv("MAX_JOB_RETRIES", "2"))
+DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))
+TIMEOUT = int(os.getenv("TIMEOUT", "60"))
+
+# Storage Provider Params
 CRAWL_DIRECTORY = os.getenv("CRAWL_DIRECTORY", "crawl-data")
-S3_BUCKET = os.getenv("S3_BUCKET", "openwpm-crawls")
+GCS_BUCKET = os.getenv("GCS_BUCKET", "openwpm-crawls")
+GCP_PROJECT = os.getenv("GCP_PROJECT", "senglehardt-openwpm-test-1")
+AUTH_TOKEN = os.getenv("GCP_AUTH_TOKEN", "cloud")
+
+# Browser Params
 DISPLAY_MODE = os.getenv("DISPLAY_MODE", "headless")
 HTTP_INSTRUMENT = os.getenv("HTTP_INSTRUMENT", "1") == "1"
 COOKIE_INSTRUMENT = os.getenv("COOKIE_INSTRUMENT", "1") == "1"
 NAVIGATION_INSTRUMENT = os.getenv("NAVIGATION_INSTRUMENT", "1") == "1"
 JS_INSTRUMENT = os.getenv("JS_INSTRUMENT", "1") == "1"
 CALLSTACK_INSTRUMENT = os.getenv("CALLSTACK_INSTRUMENT", "1") == "1"
-JS_INSTRUMENT_SETTINGS = os.getenv(
-    "JS_INSTRUMENT_SETTINGS", '["collection_fingerprinting"]'
+JS_INSTRUMENT_SETTINGS = json.loads(
+    os.getenv("JS_INSTRUMENT_SETTINGS", '["collection_fingerprinting"]')
 )
+
 SAVE_CONTENT = os.getenv("SAVE_CONTENT", "")
 PREFS = os.getenv("PREFS", None)
-DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))
-TIMEOUT = int(os.getenv("TIMEOUT", "60"))
-SENTRY_DSN = os.getenv("SENTRY_DSN", None)
-LOGGER_SETTINGS = MPLogger.parse_config_from_env()
-MAX_JOB_RETRIES = int(os.getenv("MAX_JOB_RETRIES", "2"))
 
-JS_INSTRUMENT_SETTINGS = json.loads(JS_INSTRUMENT_SETTINGS)
+
+SENTRY_DSN = os.getenv("SENTRY_DSN", None)
+LOGGER_SETTINGS = mp_logger.parse_config_from_env()
 
 if CALLSTACK_INSTRUMENT is True:
     # Must have JS_INSTRUMENT True for CALLSTACK_INSTRUMENT to work
@@ -49,7 +61,7 @@ EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 # code below requires blocking commands. For more context see:
 # https://github.com/mozilla/OpenWPM/issues/470
 NUM_BROWSERS = 1
-manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)
+manager_params, browser_params = load_default_params(NUM_BROWSERS)
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
@@ -73,19 +85,29 @@ for i in range(NUM_BROWSERS):
 manager_params["data_directory"] = "~/Desktop/%s/" % CRAWL_DIRECTORY
 manager_params["log_directory"] = "~/Desktop/%s/" % CRAWL_DIRECTORY
 manager_params["output_format"] = "s3"
-manager_params["s3_bucket"] = S3_BUCKET
+manager_params["s3_bucket"] = GCS_BUCKET
 manager_params["s3_directory"] = CRAWL_DIRECTORY
 
-# Allow the use of localstack's mock s3 service
-S3_ENDPOINT = os.getenv("S3_ENDPOINT")
-if S3_ENDPOINT:
-    boto3.DEFAULT_SESSION = LocalS3Session(endpoint_url=S3_ENDPOINT)
-    manager_params["s3_bucket"] = local_s3_bucket(boto3.resource("s3"), name=S3_BUCKET)
-
+structured = GcsStructuredProvider(
+    project=GCP_PROJECT,
+    bucket_name=GCS_BUCKET,
+    base_path=CRAWL_DIRECTORY,
+    token=AUTH_TOKEN,
+)
+unstructured = GcsUnstructuredProvider(
+    project=GCP_PROJECT,
+    bucket_name=GCS_BUCKET,
+    base_path=CRAWL_DIRECTORY,
+    token=AUTH_TOKEN,
+)
 # Instantiates the measurement platform
 # Commands time out by default after 60 seconds
-manager = TaskManager.TaskManager(
-    manager_params, browser_params, logger_kwargs=LOGGER_SETTINGS
+manager = TaskManager(
+    manager_params,
+    browser_params,
+    structured,
+    unstructured,
+    logger_kwargs=LOGGER_SETTINGS,
 )
 
 # At this point, Sentry should be initiated
@@ -94,7 +116,7 @@ if SENTRY_DSN:
     with sentry_sdk.configure_scope() as scope:
         # tags generate breakdown charts and search filters
         scope.set_tag("CRAWL_DIRECTORY", CRAWL_DIRECTORY)
-        scope.set_tag("S3_BUCKET", S3_BUCKET)
+        scope.set_tag("S3_BUCKET", GCS_BUCKET)
         scope.set_tag("DISPLAY_MODE", DISPLAY_MODE)
         scope.set_tag("HTTP_INSTRUMENT", HTTP_INSTRUMENT)
         scope.set_tag("COOKIE_INSTRUMENT", COOKIE_INSTRUMENT)
@@ -106,9 +128,10 @@ if SENTRY_DSN:
         scope.set_tag("DWELL_TIME", DWELL_TIME)
         scope.set_tag("TIMEOUT", TIMEOUT)
         scope.set_tag("MAX_JOB_RETRIES", MAX_JOB_RETRIES)
-        scope.set_tag("CRAWL_REFERENCE", "%s/%s" % (S3_BUCKET, CRAWL_DIRECTORY))
+        scope.set_tag("CRAWL_REFERENCE", "%s/%s" % (GCS_BUCKET, CRAWL_DIRECTORY))
         # context adds addition information that may be of interest
-        scope.set_context("PREFS", PREFS)
+        if PREFS:
+            scope.set_context("PREFS", json.loads(PREFS))
         scope.set_context(
             "crawl_config",
             {
@@ -133,7 +156,7 @@ shutting_down = False
 
 
 def on_shutdown(
-    manager: TaskManager.TaskManager, unsaved_jobs_lock: Lock
+    manager: TaskManager, unsaved_jobs_lock: Lock
 ) -> Callable[[signal.Signals, Any], None]:
     def actual_callback(s: signal.Signals, __: Any) -> None:
         global shutting_down
@@ -157,9 +180,9 @@ def get_job_completion_callback(
     job_queue: rediswq.RedisWQ,
     job: bytes,
 ) -> Callable[[bool], None]:
-    def callback(sucess: bool) -> None:
+    def callback(success: bool) -> None:
         with unsaved_jobs_lock:
-            if sucess:
+            if success:
                 logger.info("Job %r is done", job)
                 job_queue.complete(job)
             else:
@@ -194,7 +217,7 @@ while not job_queue.empty():
     callback = get_job_completion_callback(
         manager.logger, unsaved_jobs_lock, job_queue, job
     )
-    command_sequence = CommandSequence.CommandSequence(
+    command_sequence = CommandSequence(
         site,
         blocking=True,
         reset=True,

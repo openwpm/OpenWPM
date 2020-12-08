@@ -8,7 +8,7 @@ from netlib.odict import ODictCaseless
 
 # This should be the modified Cookie.py included
 # the standard lib Cookie.py has many bugs
-from . import Cookie
+from . import cookie as Cookie
 
 # Potential formats for expires timestamps
 DATE_FORMATS = [

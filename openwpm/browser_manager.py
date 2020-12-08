@@ -50,14 +50,14 @@ class Browser:
         self.current_profile_path = None
         self.db_socket_address = manager_params["aggregator_address"]
         self.browser_id = browser_params["browser_id"]
-        self.curr_visit_id: int = None
+        self.curr_visit_id: Optional[int] = None
         self.browser_params = browser_params
         self.manager_params = manager_params
 
         # Queues and process IDs for BrowserManager
 
         # thread to run commands issues from TaskManager
-        self.command_thread: threading.Thread = None
+        self.command_thread: Optional[threading.Thread] = None
         # queue for passing command tuples to BrowserManager
         self.command_queue: Optional[Queue] = None
         # queue for receiving command execution status from BrowserManager
@@ -75,7 +75,7 @@ class Browser:
         self.restart_required = False
 
         self.current_timeout: Optional[int] = None  # timeout of the current command
-        self.browser_manager = None  # process that controls browser
+        self.browser_manager: Optional[Process] = None  # process that controls browser
 
         self.logger = logging.getLogger("openwpm")
 
@@ -246,6 +246,7 @@ class Browser:
         If the browser manager process is unresponsive, the process is killed.
         """
         self.logger.debug("BROWSER %i: Closing browser..." % self.browser_id)
+        assert self.status_queue is not None
 
         if force:
             self.kill_browser_manager()
@@ -309,13 +310,13 @@ class Browser:
         # Verify that the browser process has closed (30 second timeout)
         if self.browser_manager is not None:
             self.browser_manager.join(30)
-        if self.browser_manager.is_alive():
-            self.logger.debug(
-                "BROWSER %i: Browser manager process still alive 30 seconds "
-                "after executing shutdown command." % self.browser_id
-            )
-            self.kill_browser_manager()
-            return
+            if self.browser_manager.is_alive():
+                self.logger.debug(
+                    "BROWSER %i: Browser manager process still alive 30 seconds "
+                    "after executing shutdown command." % self.browser_id
+                )
+                self.kill_browser_manager()
+                return
 
         self.logger.debug(
             "BROWSER %i: Browser manager closed successfully." % self.browser_id

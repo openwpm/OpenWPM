@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from functools import partial
-from typing import Any, Callable, Set
+from typing import Any, Callable, Optional, Set
 
 import pyarrow.parquet as pq
 from gcsfs import GCSFileSystem
@@ -30,16 +30,16 @@ class GcsStructuredProvider(ArrowProvider):
         self.bucket_name = bucket_name
         self.base_path = base_path
         self.token = token
-        self.file_system = None
+        self.file_system: Optional[GCSFileSystem] = None
         self.base_path = f"{self.bucket_name}/{base_path}/{{table_name}}"
 
     async def init(self) -> None:
-        event_loop = asyncio.get_event_loop()
         self.file_system = GCSFileSystem(
             project=self.project, token=self.token, access="read_write"
         )
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
+        assert self.file_system is not None
         self.file_system.start_transaction()
         pq.write_to_dataset(
             table,
@@ -71,7 +71,7 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         self.bucket_name = bucket_name
         self.base_path = base_path
         self.token = token
-        self.file_system = None
+        self.file_system: Optional[GCSFileSystem] = None
         self.base_path = f"{bucket_name}/{base_path}/{{filename}}"
 
         self.file_name_cache: Set[str] = set()
@@ -84,6 +84,7 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
     async def store_blob(
         self, filename: str, blob: bytes, overwrite: bool = False
     ) -> None:
+        assert self.file_system is not None
         target_path = self.base_path.format(filename=filename)
         if not overwrite and (
             filename in self.file_name_cache or self.file_system.exists(target_path)

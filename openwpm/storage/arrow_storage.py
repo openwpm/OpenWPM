@@ -144,7 +144,7 @@ class ArrowProvider(StructuredStorageProvider):
         if not got_cond:
             cond = self.storing_lock
             await cond.acquire()
-        assert cond.locked()
+        assert cond is not None and cond.locked()
         for table_name, batches in self._batches.items():
             table = pa.Table.from_batches(batches)
             await self.write_table(table_name, table)

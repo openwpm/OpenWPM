@@ -1,3 +1,5 @@
+from typing import Set, Tuple
+
 from openwpm.utilities import db_utils
 
 from . import utilities as util
@@ -21,7 +23,7 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMJSTest):
         ("window.nonExisting", "get", "undefined"),
     }
 
-    METHOD_CALLS = set()
+    METHOD_CALLS: Set[Tuple[str, str, str]] = set()
 
     TEST_PAGE = "instrument_non_existing_window_property.html"
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
@@ -64,7 +66,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
     # Note 1: nonExistingProp1 is not enumerable even after being set
     # Note 2: nonExistingMethod1 shows up as a get rather than call
 
-    METHOD_CALLS = set()  # Note 2
+    METHOD_CALLS: Set[Tuple[str, str, str]] = set()  # Note 2
 
     TEST_PAGE = "instrument_existing_window_property.html"
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
@@ -376,7 +378,7 @@ class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
         ("window.test.test.prop2", "get", "test_test_prop2"),
     }
 
-    METHOD_CALLS = set()
+    METHOD_CALLS: Set[Tuple[str, str, str]] = set()
 
     TEST_PAGE = "instrument_do_not_recurse_properties_to_instrument.html"
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)

@@ -1,7 +1,8 @@
 import asyncio
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import pytest
+from _pytest.fixtures import FixtureRequest
 
 from openwpm.storage.in_memory_storage import (
     MemoryArrowProvider,
@@ -41,6 +42,9 @@ def structured_provider(
         return SqlLiteStorageProvider(tmp_path / "test_db.sqllite")
     elif request.param == memory_arrow:
         return MemoryArrowProvider()
+    assert isinstance(
+        request, FixtureRequest
+    )  # See https://github.com/pytest-dev/pytest/issues/8073 for why this can't be type annotated
     request.raiseerror("invalid internal test config")
 
 
