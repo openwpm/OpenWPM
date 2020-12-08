@@ -94,6 +94,20 @@ class ArrowProvider(StructuredStorageProvider):
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> Awaitable[None]:
+        """This method is the reason the finalize_visit_id interface returns an awaitable.
+        This was necessary as we needed to enable the following pattern.
+        ```
+            token = await structured_storage.finalize_visit_id(1)
+            structured_storage.flush_cache()
+            await token
+        ```
+        If there was no token returned and the method would just block/yield after turning the
+        record into a batch, there would be no way to know, when it's save to flush_cache as
+        I couldn't find a way to run a coroutine until it yields and then run a different one.
+
+        With the current setup `token` aka a `wait_on_condition` coroutine will only return once
+        the event has been set.
+        """
         if interrupted:
             await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
 
@@ -101,6 +115,11 @@ class ArrowProvider(StructuredStorageProvider):
         # 1. No finalize_visit_id shouldn't return unless the visit has been saved to storage
         # 2. No new batches should be created while saving out all the batches
         async with self.storing_lock:
+            # After flush_cache has executed the event needs to be rearmed
+            # so that newly created wait_on_condition don't just complete
+            # instantly
+            if self.flush_event.is_set():
+                self.flush_event.clear()
             self._create_batch(visit_id)
             if self._is_cache_full():
                 await self.flush_cache(self.storing_lock)
@@ -118,9 +137,8 @@ class ArrowProvider(StructuredStorageProvider):
 
     async def flush_cache(self, cond: asyncio.Lock = None) -> None:
         """We need to hack around the fact that asyncio has no reentrant lock
-        and which prevents us from creating a reentrant condition
-        So we either grab the storing condition ourselves or the caller needs
-        to pass us the locked storing_condition
+        So we either grab the storing storing_lock ourselves or the caller needs
+        to pass us the locked storing_lock
         """
         got_cond = cond is not None
         if not got_cond:
