@@ -2,13 +2,14 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from os.path import isfile, join
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 import pytest
 
 from openwpm import task_manager
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
-from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
 
@@ -24,7 +25,7 @@ class OpenWPMTest:
         Based on:
         https://mail.python.org/pipermail/pytest-dev/2014-April/002484.html
         """
-        self.tmpdir = str(tmpdir)
+        self.tmpdir = tmpdir
 
     def get_config(self, data_dir) -> Tuple[ManagerParams, List[BrowserParams]]:
         pass
@@ -40,23 +41,27 @@ class OpenWPMTest:
             page_url = utilities.BASE_TEST_URL + page_url
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
-        return manager_params["db"]
+        return manager_params.database_name
 
     def get_test_config(
         self,
-        data_dir: str = "",
+        data_dir: Optional[Path] = None,
         num_browsers: int = NUM_BROWSERS,
         display_mode: str = "headless",
     ) -> Tuple[ManagerParams, List[BrowserParams]]:
         """Load and return the default test parameters."""
         if not data_dir:
             data_dir = self.tmpdir
-        manager_params, browser_params = task_manager.load_default_params(num_browsers)
-        manager_params["data_directory"] = data_dir
-        manager_params["log_directory"] = data_dir
+        assert data_dir is not None  # Mypy doesn't understand this without help
+        manager_params = ManagerParams(num_browsers=num_browsers)
+        browser_params = [BrowserParams() for _ in range(num_browsers)]
+        manager_params.data_directory = data_dir
+        manager_params.log_directory = data_dir
+        manager_params.num_browsers = num_browsers
         for i in range(num_browsers):
-            browser_params[i]["display_mode"] = display_mode
-        manager_params["db"] = join(
-            manager_params["data_directory"], manager_params["database_name"]
+            browser_params[i].display_mode = display_mode
+        manager_params.database_name = (
+            manager_params.data_directory / manager_params.database_name
         )
+
         return manager_params, browser_params

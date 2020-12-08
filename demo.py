@@ -1,13 +1,15 @@
 import logging
 import os
+from pathlib import Path
 
 from openwpm.command_sequence import CommandSequence
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.cloud_storage.gcp_storage import (
     GcsStructuredProvider,
     GcsUnstructuredProvider,
 )
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
-from openwpm.task_manager import TaskManager, load_default_params
+from openwpm.task_manager import TaskManager
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
@@ -17,34 +19,39 @@ sites = [
     "http://citp.princeton.edu/",
 ]
 
-# Loads the default manager params
-# and NUM_BROWSERS copies of the default browser params
-manager_params, browser_params = load_default_params(NUM_BROWSERS)
+# Loads the default ManagerParams
+# and NUM_BROWSERS copies of the default BrowserParams
+
+manager_params = ManagerParams(
+    num_browsers=NUM_BROWSERS
+)  # num_browsers is necessary to let TaskManager know how many browsers to spawn
+
+browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for i in range(NUM_BROWSERS):
     # Record HTTP Requests and Responses
-    browser_params[i]["http_instrument"] = True
+    browser_params[i].http_instrument = True
     # Record cookie changes
-    browser_params[i]["cookie_instrument"] = True
+    browser_params[i].cookie_instrument = True
     # Record Navigations
-    browser_params[i]["navigation_instrument"] = True
+    browser_params[i].navigation_instrument = True
     # Record JS Web API calls
-    browser_params[i]["js_instrument"] = True
+    browser_params[i].js_instrument = True
     # Record the callstack of all WebRequests made
-    browser_params[i]["callstack_instrument"] = True
+    browser_params[i].callstack_instrument = True
     # Record DNS resolution
-    browser_params[i]["dns_instrument"] = True
-
-
-# Launch only browser 0 headless
-# browser_params[0]["display_mode"] = "headless"
+    browser_params[i].dns_instrument = True
 
 # Update TaskManager configuration (use this for crawl-wide settings)
-manager_params["data_directory"] = "./datadir/"
-manager_params["log_directory"] = "./datadir/"
+manager_params.data_directory = Path("./datadir/")
+manager_params.log_directory = Path("./datadir/")
 
 logging_params = {"log_level_console": logging.DEBUG}
+# memory_watchdog and process_watchdog are useful for large scale cloud crawls.
+# Please refer to docs/Configuration.md#platform-configuration-options for more information
+# manager_params.memory_watchdog = True
+# manager_params.process_watchdog = True
 
 # Instantiates the measurement platform
 project = "senglehardt-openwpm-test-1"

@@ -30,3 +30,4 @@ dependencies:
       - jsonschema
       - plyvel
       - domain-utils
+      - dataclasses-json

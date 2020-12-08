@@ -17,7 +17,6 @@ import pytest
 from PIL import Image
 
 from openwpm import command_sequence, task_manager
-from openwpm.types import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 
 from . import utilities

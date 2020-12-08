@@ -5,14 +5,10 @@ NOTE: These tests are very basic and should be expanded
 on to check for completeness and correctness.
 """
 
-from typing import List, Tuple
-
-from openwpm import command_sequence, task_manager
-from openwpm.types import BrowserParams, ManagerParams
+from openwpm import command_sequence
 from openwpm.utilities import db_utils
 
 from . import utilities
-from .openwpmtest import OpenWPMTest
 
 expected_js_cookie = (
     u"added-or-changed",  # record_type
@@ -34,7 +30,7 @@ def test_js_profile_cookies(default_params, task_manager_creator):
     # Run the test crawl
     manager_params, browser_params = default_params
     for browser_param in browser_params:
-        browser_param["cookie_instrument"] = True
+        browser_param.cookie_instrument = True
     manager = task_manager_creator((manager_params, browser_params))
     url = utilities.BASE_TEST_URL + "/js_cookie.html"
     cs = command_sequence.CommandSequence(url)

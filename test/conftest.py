@@ -6,11 +6,10 @@ from typing import Callable, List, Tuple
 
 import pytest
 
-from openwpm import task_manager
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.mp_logger import MPLogger
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager
-from openwpm.types import BrowserParams, ManagerParams
 
 from . import utilities
 from .openwpmtest import NUM_BROWSERS
@@ -48,13 +47,18 @@ def default_params(
 ) -> Tuple[ManagerParams, List[BrowserParams]]:
     """Just a simple wrapper around task_manager.load_default_params"""
     assert len(list(tmp_path.iterdir())) == 0
-    data_dir = str(tmp_path)
-    manager_params, browser_params = task_manager.load_default_params(num_browsers)
-    manager_params["data_directory"] = data_dir
-    manager_params["log_directory"] = data_dir
+    manager_params = ManagerParams(
+        num_browsers=NUM_BROWSERS
+    )  # num_browsers is necessary to let TaskManager know how many browsers to spawn
+
+    browser_params = [
+        BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)
+    ]
+    manager_params.data_directory = tmp_path
+    manager_params.log_directory = tmp_path
     for i in range(num_browsers):
-        browser_params[i]["display_mode"] = "headless"
-    manager_params["db"] = str(tmp_path / manager_params["database_name"])
+        browser_params[i].display_mode = "headless"
+    manager_params.database_name = tmp_path / manager_params.database_name
     return manager_params, browser_params
 
 
@@ -69,8 +73,8 @@ def task_manager_creator(
         params: Tuple[ManagerParams, List[BrowserParams]]
     ) -> TaskManager:
         manager_params, browser_params = params
-        structured_provider = SqlLiteStorageProvider(manager_params["db"])
-        manager = task_manager.TaskManager(
+        structured_provider = SqlLiteStorageProvider(manager_params.database_name)
+        manager = TaskManager(
             manager_params, browser_params, structured_provider, None,
         )
         return manager

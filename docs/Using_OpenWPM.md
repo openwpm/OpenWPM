@@ -8,9 +8,29 @@ Have a look at [demo.py](../demo.py)
 Generally, measurement crawls should be able to be run using scripts with lengths on the order of 100 lines of code.
 Even within this short script, there are several different options that a user can change.
 
-Users can change the settings for task manager and individual browsers so that, for instance, certain browsers can run headless while others do not. We provide a method to read the default configuration settings into a dictionaries that can be passed to the `TaskManager` instance. Note that browser configuration is **per-browser**, so this command will return a list of dictionaries.
+Users can change the settings for task manager and individual browsers so that, for instance, certain browsers can run headless while others do not. We provide a method to read the default configuration settings into a classes that can be passed to the `TaskManager` instance. Note that browser configuration is **per-browser**, so this command will return a list of class<BrowserParams>.
 
-`manager_params, browser_params = TaskManager.load_default_params(NUM_BROWSERS)`
+```py
+from openwpm.config import BrowserParams, ManagerParams
+
+manager_params = ManagerParams(num_browsers=5)
+browser_params = [BrowserParams() for _ in range(num_browsers)]
+```
+
+#### Loading Custom Browser or Manager configs
+Users can load custom Browser and Platform/Manager configuration by writing them into a json file and then loading then into respective dataclasses. For example:
+```py
+from openwpm.config import BrowserParams, ManagerParams
+
+with open('<custom_manager_params>.json', 'r') as f:
+  manager_params = ManagerParams.from_json(f.read())
+
+browser_params = list()
+for _ in range(num_browsers):
+  with open('<custom_browser_params>.json', 'r') as file:
+      browser_params.append(BrowserParams.from_json(file.read()))
+```
+
 
 ## Adding a new command
 

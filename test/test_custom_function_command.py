@@ -47,7 +47,7 @@ def test_custom_function(default_params, xpi, server):
         current_url = driver.current_url
 
         sock = ClientSocket()
-        sock.connect(*manager_params["aggregator_address"])
+        sock.connect(*manager_params.aggregator_address)
 
         for link in link_urls:
             query = (

@@ -4,6 +4,7 @@ import os
 import signal
 import sys
 import time
+from pathlib import Path
 from threading import Lock
 from typing import Any, Callable, List
 
@@ -11,11 +12,12 @@ import sentry_sdk
 
 from openwpm import mp_logger
 from openwpm.command_sequence import CommandSequence
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.cloud_storage.gcp_storage import (
     GcsStructuredProvider,
     GcsUnstructuredProvider,
 )
-from openwpm.task_manager import TaskManager, load_default_params
+from openwpm.task_manager import TaskManager
 from openwpm.utilities import rediswq
 
 # Configuration via environment variables
@@ -61,32 +63,33 @@ EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 # code below requires blocking commands. For more context see:
 # https://github.com/mozilla/OpenWPM/issues/470
 NUM_BROWSERS = 1
-manager_params, browser_params = load_default_params(NUM_BROWSERS)
+manager_params = ManagerParams()
+browser_params = [BrowserParams() for _ in range(NUM_BROWSERS)]
 
 # Browser configuration
 for i in range(NUM_BROWSERS):
-    browser_params[i]["display_mode"] = DISPLAY_MODE
-    browser_params[i]["http_instrument"] = HTTP_INSTRUMENT
-    browser_params[i]["cookie_instrument"] = COOKIE_INSTRUMENT
-    browser_params[i]["navigation_instrument"] = NAVIGATION_INSTRUMENT
-    browser_params[i]["callstack_instrument"] = CALLSTACK_INSTRUMENT
-    browser_params[i]["js_instrument"] = JS_INSTRUMENT
-    browser_params[i]["js_instrument_settings"] = JS_INSTRUMENT_SETTINGS
+    browser_params[i].display_mode = DISPLAY_MODE
+    browser_params[i].http_instrument = HTTP_INSTRUMENT
+    browser_params[i].cookie_instrument = COOKIE_INSTRUMENT
+    browser_params[i].navigation_instrument = NAVIGATION_INSTRUMENT
+    browser_params[i].callstack_instrument = CALLSTACK_INSTRUMENT
+    browser_params[i].js_instrument = JS_INSTRUMENT
+    browser_params[i].js_instrument_settings = JS_INSTRUMENT_SETTINGS
     if SAVE_CONTENT == "1":
-        browser_params[i]["save_content"] = True
+        browser_params[i].save_content = True
     elif SAVE_CONTENT == "0":
-        browser_params[i]["save_content"] = False
+        browser_params[i].save_content = False
     else:
-        browser_params[i]["save_content"] = SAVE_CONTENT
+        browser_params[i].save_content = SAVE_CONTENT
     if PREFS:
-        browser_params[i]["prefs"] = json.loads(PREFS)
+        browser_params[i].prefs = json.loads(PREFS)
 
 # Manager configuration
-manager_params["data_directory"] = "~/Desktop/%s/" % CRAWL_DIRECTORY
-manager_params["log_directory"] = "~/Desktop/%s/" % CRAWL_DIRECTORY
-manager_params["output_format"] = "s3"
-manager_params["s3_bucket"] = GCS_BUCKET
-manager_params["s3_directory"] = CRAWL_DIRECTORY
+manager_params.data_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
+manager_params.log_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
+manager_params.output_format = "s3"
+manager_params.s3_bucket = GCS_BUCKET
+manager_params.s3_directory = CRAWL_DIRECTORY
 
 structured = GcsStructuredProvider(
     project=GCP_PROJECT,

@@ -11,19 +11,19 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
     """
 
     # Turns on Do Not Track
-    if browser_params["donottrack"]:
+    if browser_params.donottrack:
         fo.set_preference("privacy.donottrackheader.enabled", True)
 
     # Sets the third party cookie setting
-    if browser_params["tp_cookies"].lower() == "never":
+    if browser_params.tp_cookies.lower() == "never":
         fo.set_preference("network.cookie.cookieBehavior", 1)
-    elif browser_params["tp_cookies"].lower() == "from_visited":
+    elif browser_params.tp_cookies.lower() == "from_visited":
         fo.set_preference("network.cookie.cookieBehavior", 3)
     else:  # always allow third party cookies
         fo.set_preference("network.cookie.cookieBehavior", 0)
 
     # Tracking Protection
-    if browser_params["tracking-protection"]:
+    if browser_params.tracking_protection:
         raise RuntimeError(
             "Firefox Tracking Protection is not currently "
             "supported. See: "

@@ -596,7 +596,7 @@ BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 class TestHTTPInstrument(OpenWPMTest):
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["http_instrument"] = True
+        browser_params[0].http_instrument = True
         return manager_params, browser_params
 
     def test_page_visit(self):
@@ -747,7 +747,7 @@ class TestPOSTInstrument(OpenWPMTest):
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = self.get_test_config(data_dir)
-        browser_params[0]["http_instrument"] = True
+        browser_params[0].http_instrument = True
         return manager_params, browser_params
 
     def get_post_requests_from_db(self, db):
@@ -871,7 +871,7 @@ class TestPOSTInstrument(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
-        post_body = self.get_post_request_body_from_db(manager_params["db"])
+        post_body = self.get_post_request_body_from_db(manager_params.database_name)
         # Binary strings get put into the database as-if they were latin-1.
         with open(img_file_path, "rb") as f:
             img_file_content = f.read().strip().decode("latin-1")

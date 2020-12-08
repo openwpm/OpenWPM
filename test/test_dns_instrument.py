@@ -4,7 +4,7 @@ from openwpm.utilities import db_utils
 def test_name_resolution(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     for browser_param in browser_params:
-        browser_param["dns_instrument"] = True
+        browser_param.dns_instrument = True
 
     manager = task_manager_creator((manager_params, browser_params))
     manager.get("http://localtest.me:8000")

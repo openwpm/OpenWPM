@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import sqlite3
-from os import PathLike
+from pathlib import Path
 from sqlite3 import (
     Connection,
     Cursor,
@@ -21,7 +21,7 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
 class SqlLiteStorageProvider(StructuredStorageProvider):
-    def __init__(self, db_path: PathLike) -> None:
+    def __init__(self, db_path: Path) -> None:
         super().__init__()
         self.db_path = db_path
         self._sql_counter = 0
@@ -31,7 +31,7 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         self.cur: Optional[Cursor] = None
 
     async def init(self) -> None:
-        self.db = sqlite3.connect(self.db_path)
+        self.db = sqlite3.connect(str(self.db_path))
         self.cur = self.db.cursor()
         self._create_tables()
 
