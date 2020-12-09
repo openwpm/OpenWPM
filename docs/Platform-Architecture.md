@@ -23,8 +23,8 @@ manager_params = ManagerParams(num_browsers = number_of_browsers)
 browser_params = [BrowserParams() for bp in range(manager_params.num_browsers)]
 
 # These instances can be used to modify default values of both browser and manager params.
-manager_params.memory_watchdog = True
-manager_params.process_watchdog = True
+manager_params.data_directory = '~/Documents'
+manager_params.database_name = 'custom_name.sqlite'
 
 for i in range(len(browser_params)):
     browser_params[i].display_mode = 'headless'  # all 5 browsers will spawn in headless mode
