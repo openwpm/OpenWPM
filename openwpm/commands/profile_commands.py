@@ -61,11 +61,7 @@ def dump_profile(
         tar = tarfile.open(tar_location + tar_name, "w", errorlevel=1)
     logger.debug(
         "BROWSER %i: Backing up full profile from %s to %s"
-        % (
-            browser_params.browser_id,
-            browser_profile_folder,
-            tar_location + tar_name,
-        )
+        % (browser_params.browser_id, browser_profile_folder, tar_location + tar_name,)
     )
     storage_vector_files = [
         "cookies.sqlite",  # cookies
