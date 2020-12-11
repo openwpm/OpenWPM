@@ -182,7 +182,6 @@ class StorageController:
             completion_token = await self.finalize_visit_id(visit_id, success)
             await completion_token
             self.completion_queue.put((visit_id, success))
-            del self.current_tasks[visit_id]
         else:
             raise ValueError("Unexpected action: %s", action)
 
@@ -197,6 +196,8 @@ class StorageController:
 
         for task in self.current_tasks[visit_id]:
             await task
+        del self.current_tasks[visit_id]
+
         self.logger.debug(
             "Awaited all tasks for visit_id %d while finalizing", visit_id
         )
@@ -318,7 +319,6 @@ class StorageController:
         for visit_id, token in finalization_tokens.items():
             await token
             self.completion_queue.put((visit_id, False))
-            del self.current_tasks[visit_id]
 
         await self.shutdown()
 
