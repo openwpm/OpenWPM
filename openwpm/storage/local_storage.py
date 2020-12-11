@@ -38,7 +38,7 @@ class LocalGzipProvider(UnstructuredStorageProvider):
     async def store_blob(
         self, filename: str, blob: bytes, overwrite: bool = False
     ) -> None:
-        path = self.storage_path / (filename + "zip")
+        path = self.storage_path / (filename + ".zip")
         if path.exists() and not overwrite:
             self.logger.debug(
                 "File %s already exists on disk. Not overwriting", filename
