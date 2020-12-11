@@ -3,7 +3,7 @@ import logging
 import random
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, Awaitable, DefaultDict, Dict, List
+from typing import Any, Awaitable, DefaultDict, Dict, List, Optional
 
 import pandas as pd
 import pyarrow as pa
@@ -38,11 +38,15 @@ class ArrowProvider(StructuredStorageProvider):
 
         # Record batches by TableName
         self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = defaultdict(list)
+        self._instance_id = random.getrandbits(32)
 
+        self.storing_lock: Optional[asyncio.Lock] = None
+        self.flush_event: Optional[asyncio.Event] = None
+
+    async def init(self) -> None:
         # Used to synchronize the finalizing and the flushing
         self.storing_lock = asyncio.Lock()
         self.flush_event = asyncio.Event()
-        self._instance_id = random.getrandbits(32)
 
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
@@ -110,7 +114,8 @@ class ArrowProvider(StructuredStorageProvider):
         """
         if interrupted:
             await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
-
+        assert self.storing_lock is not None
+        assert self.flush_event is not None
         # This code is pretty tricky as there are a number of things going on
         # 1. No finalize_visit_id shouldn't return unless the visit has been saved to storage
         # 2. No new batches should be created while saving out all the batches
@@ -118,8 +123,7 @@ class ArrowProvider(StructuredStorageProvider):
             # After flush_cache has executed the event needs to be rearmed
             # so that newly created wait_on_condition don't just complete
             # instantly
-            if self.flush_event.is_set():
-                self.flush_event.clear()
+            self.flush_event.clear()
             self._create_batch(visit_id)
             if self._is_cache_full():
                 await self.flush_cache(self.storing_lock)
@@ -140,6 +144,8 @@ class ArrowProvider(StructuredStorageProvider):
         So we either grab the storing storing_lock ourselves or the caller needs
         to pass us the locked storing_lock
         """
+        assert self.storing_lock is not None
+        assert self.flush_event is not None
         got_cond = cond is not None
         if not got_cond:
             cond = self.storing_lock

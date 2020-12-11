@@ -12,9 +12,6 @@ from .storage_providers import TableName, UnstructuredStorageProvider
 class LocalArrowProvider(ArrowProvider):
     """ Stores Parquet files under storage_path/table_name/n.parquet"""
 
-    async def init(self) -> None:
-        pass
-
     def __init__(self, storage_path: Path) -> None:
         super().__init__()
         self.storage_path = storage_path

@@ -8,6 +8,7 @@ from openwpm.storage.cloud_storage.gcp_storage import (
     GcsStructuredProvider,
     GcsUnstructuredProvider,
 )
+from openwpm.storage.local_storage import LocalArrowProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
@@ -60,12 +61,7 @@ bucket_name = "openwpm-test-bucket"
 manager = TaskManager(
     manager_params,
     browser_params,
-    GcsStructuredProvider(
-        project=project,
-        bucket_name=bucket_name,
-        base_path="demo/visits",
-        token="/home/stefan/.config/gcloud/legacy_credentials/szabka@mozilla.com/adc.json",
-    ),
+    LocalArrowProvider(Path("./datadir/") / "parquet"),
     None,
 )
 

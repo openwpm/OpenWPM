@@ -54,7 +54,7 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         self.lock: Lock = asyncio.Lock()
 
     async def flush_cache(self) -> None:
-        with self.lock as _:
+        async with self.lock as _:
             self.logger.info("Flushing cache")
 
             for table, record_list in self.cache2.items():
@@ -75,7 +75,7 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> Awaitable[None]:
-        with self.lock as _:
+        async with self.lock as _:
             self.signal.clear()
             self.logger.info(
                 f"Finalizing visit_id {visit_id} which was {'' if interrupted else 'not'} interrupted"

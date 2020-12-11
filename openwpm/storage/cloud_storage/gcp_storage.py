@@ -30,6 +30,7 @@ class GcsStructuredProvider(ArrowProvider):
         self.base_path = f"{self.bucket_name}/{base_path}/{{table_name}}"
 
     async def init(self) -> None:
+        await super(GcsStructuredProvider, self).init()
         self.file_system = GCSFileSystem(
             project=self.project, token=self.token, access="read_write"
         )
