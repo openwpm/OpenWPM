@@ -36,8 +36,8 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     only relies on the guarantees given in the interface.
     """
 
-    async def init(self) -> None:
-        pass
+    lock: Lock
+    signal: Event
 
     def __init__(self) -> None:
         super().__init__()
@@ -50,8 +50,10 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         """The cache for entries before they are finalized"""
         self.cache2: DefaultDict[TableName, List[Dict[str, Any]]] = defaultdict(list)
         """For all entries that have been finalized but not yet flushed out to the queue"""
-        self.signal: Event = asyncio.Event()
-        self.lock: Lock = asyncio.Lock()
+
+    async def init(self) -> None:
+        self.signal = asyncio.Event()
+        self.lock = asyncio.Lock()
 
     async def flush_cache(self) -> None:
         async with self.lock as _:
