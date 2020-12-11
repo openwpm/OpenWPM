@@ -1006,6 +1006,7 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
     manager_params, browser_params = http_params()
     # ensuring that we only spawn one browser
+    manager_params.num_browsers = 1
     manager = task_manager_creator((manager_params, [browser_params[0]]))
     for i in range(2):
         cs = CommandSequence(test_url, site_rank=i)
