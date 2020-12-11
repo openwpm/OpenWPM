@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from asyncio import Event, Lock
 from collections import defaultdict
 from typing import Any, Awaitable, DefaultDict, Dict, List, Tuple
 
@@ -49,15 +50,19 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         """The cache for entries before they are finalized"""
         self.cache2: DefaultDict[TableName, List[Dict[str, Any]]] = defaultdict(list)
         """For all entries that have been finalized but not yet flushed out to the queue"""
+        self.signal: Event = asyncio.Event()
+        self.lock: Lock = asyncio.Lock()
 
     async def flush_cache(self) -> None:
-        self.logger.info("Flushing cache")
+        with self.lock as _:
+            self.logger.info("Flushing cache")
 
-        for table, record_list in self.cache2.items():
-            self.logger.info(f"Saving out {len(record_list)} entries for {table}")
-            for record in record_list:
-                self.queue.put((table, record))
-        self.cache2.clear()
+            for table, record_list in self.cache2.items():
+                self.logger.info(f"Saving out {len(record_list)} entries for {table}")
+                for record in record_list:
+                    self.queue.put((table, record))
+            self.cache2.clear()
+            self.signal.set()
 
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
@@ -70,17 +75,20 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> Awaitable[None]:
-        self.logger.info(
-            f"Finalizing visit_id {visit_id} which was {'' if interrupted else 'not'} interrupted"
-        )
-        for table, record_list in self.cache1[visit_id].items():
-            self.cache2[table].extend(record_list)
+        with self.lock as _:
+            self.signal.clear()
+            self.logger.info(
+                f"Finalizing visit_id {visit_id} which was {'' if interrupted else 'not'} interrupted"
+            )
+            for table, record_list in self.cache1[visit_id].items():
+                self.cache2[table].extend(record_list)
 
-        del self.cache1[visit_id]
+            del self.cache1[visit_id]
 
-        fut = asyncio.get_event_loop().create_future()
-        fut.set_result(None)
-        return fut
+            async def wait(signal: Event) -> None:
+                await signal.wait()
+
+            return wait(self.signal)
 
     async def shutdown(self) -> None:
         if self.cache1 != {} or self.cache2 != {}:

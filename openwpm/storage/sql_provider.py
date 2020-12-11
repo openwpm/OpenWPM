@@ -108,7 +108,7 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             self.cur.execute("INSERT INTO incomplete_visits VALUES (?)", (visit_id,))
 
-        async def done():
+        async def done() -> None:
             return
 
         return done()
