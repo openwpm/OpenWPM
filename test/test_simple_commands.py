@@ -112,7 +112,8 @@ def test_get_site_visits_table_valid(http_params, task_manager_creator, display_
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params["db"], "SELECT site_url FROM site_visits ORDER BY site_url"
+        manager_params.database_name,
+        "SELECT site_url FROM site_visits ORDER BY site_url",
     )
 
     # We had two separate page visits
@@ -140,7 +141,7 @@ def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+        manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
     )
 
     # Construct dict mapping site_url to visit_id
@@ -149,28 +150,28 @@ def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
         visit_ids[row[1]] = row[0]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_b,),
     )
     assert qry_res[0][0] == visit_ids[url_b]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_b,),
     )
@@ -197,7 +198,7 @@ def test_browse_site_visits_table_valid(
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT site_url, site_rank FROM site_visits ORDER BY site_rank",
     )
 
@@ -233,7 +234,7 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+        manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
     )
 
     # Construct dict mapping site_url to visit_id
@@ -242,28 +243,28 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
         visit_ids[row[1]] = row[0]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_b,),
     )
     assert qry_res[0][0] == visit_ids[url_b]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_b,),
     )
@@ -277,13 +278,13 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     # 5) A link to example.com?localtest.me
     # We should see page visits for 1 and 2, but not 3-5.
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_c,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_d,),
     )
@@ -291,7 +292,7 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
 
     # We expect 4 urls: a,c,d and a favicon request
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT COUNT(DISTINCT url) FROM http_responses WHERE visit_id = ?",
         (visit_ids[url_a],),
     )
@@ -319,7 +320,7 @@ def test_browse_wrapper_http_table_valid(
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+        manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
     )
 
     # Construct dict mapping site_url to visit_id
@@ -328,28 +329,28 @@ def test_browse_wrapper_http_table_valid(
         visit_ids[row[1]] = row[0]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_b,),
     )
     assert qry_res[0][0] == visit_ids[url_b]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_b,),
     )
@@ -363,13 +364,13 @@ def test_browse_wrapper_http_table_valid(
     # 5) A link to example.com?localtest.me
     # We should see page visits for 1 and 2, but not 3-5.
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_c,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_d,),
     )
@@ -377,7 +378,7 @@ def test_browse_wrapper_http_table_valid(
 
     # We expect 4 urls: a,c,d and a favicon request
     qry_res = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT COUNT(DISTINCT url) FROM http_responses WHERE visit_id = ?",
         (visit_ids[url_a],),
     )
@@ -399,9 +400,7 @@ def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
     manager.close()
 
     # Check that viewport image is not blank
-    pattern = os.path.join(
-        manager_params["data_directory"], "screenshots", "*-*-test.png"
-    )
+    pattern = os.path.join(manager_params.data_directory, "screenshots", "*-*-test.png")
     screenshot = glob.glob(pattern)[0]
     im = Image.open(screenshot)
     bands = im.split()
@@ -410,7 +409,7 @@ def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
 
     # Check that full page screenshot is not blank
     pattern = os.path.join(
-        manager_params["data_directory"], "screenshots", "*-*-test_full.png"
+        manager_params.data_directory, "screenshots", "*-*-test_full.png"
     )
     screenshot = glob.glob(pattern)[0]
     im = Image.open(screenshot)
@@ -435,7 +434,7 @@ def test_dump_page_source_valid(http_params, task_manager_creator, display_mode)
     # Source filename is of the follow structure:
     # `sources/<visit_id>-<md5_of_url>(-suffix).html`
     # thus for this test we expect `sources/1-<md5_of_test_url>-test.html`.
-    outfile = os.path.join(manager_params["data_directory"], "sources", "*-*-test.html")
+    outfile = os.path.join(manager_params.data_directory, "sources", "*-*-test.html")
     source_file = glob.glob(outfile)[0]
     with open(source_file, "rb") as f:
         actual_source = f.read()
@@ -459,7 +458,7 @@ def test_recursive_dump_page_source_valid(
     manager.execute_command_sequence(cs)
     manager.close()
 
-    outfile = os.path.join(manager_params["data_directory"], "sources", "*-*.json.gz")
+    outfile = os.path.join(manager_params.data_directory, "sources", "*-*.json.gz")
     src_file = glob.glob(outfile)[0]
     with gzip.GzipFile(src_file, "rb") as f:
         visit_source = json.loads(f.read().decode("utf-8"))

@@ -33,7 +33,7 @@ class OpenWPMTest:
     def visit(self, page_url, data_dir="", sleep_after=0):
         """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
-        structured_provider = SqlLiteStorageProvider(manager_params["db"])
+        structured_provider = SqlLiteStorageProvider(manager_params.database_name)
         manager = task_manager.TaskManager(
             manager_params, browser_params, structured_provider, None
         )

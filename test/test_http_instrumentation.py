@@ -893,10 +893,10 @@ def test_javascript_saving(http_params, xpi, server):
     manager_params, browser_params = http_params()
 
     for browser_param in browser_params:
-        browser_param["http_instrument"] = True
-        browser_param["save_content"] = "script"
-    structured_storage = SqlLiteStorageProvider(db_path=manager_params["db"])
-    ldb_path = Path(manager_params["data_directory"]) / "content.ldb"
+        browser_param.http_instrument = True
+        browser_param.save_content = "script"
+    structured_storage = SqlLiteStorageProvider(db_path=manager_params.database_name)
+    ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(
         manager_params, browser_params, structured_storage, unstructured_storage
@@ -925,11 +925,11 @@ def test_document_saving(http_params, xpi, server):
     }
     manager_params, browser_params = http_params()
     for browser_param in browser_params:
-        browser_param["http_instrument"] = True
-        browser_param["save_content"] = "main_frame,sub_frame"
+        browser_param.http_instrument = True
+        browser_param.save_content = "main_frame,sub_frame"
 
-    structured_storage = SqlLiteStorageProvider(db_path=manager_params["db"])
-    ldb_path = Path(manager_params["data_directory"]) / "content.ldb"
+    structured_storage = SqlLiteStorageProvider(db_path=manager_params.database_name)
+    ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(
         manager_params, browser_params, structured_storage, unstructured_storage
@@ -951,11 +951,11 @@ def test_content_saving(http_params, xpi, server):
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
     manager_params, browser_params = http_params()
     for browser_param in browser_params:
-        browser_param["http_instrument"] = True
-        browser_param["save_content"] = True
+        browser_param.http_instrument = True
+        browser_param.save_content = True
 
-    structured_storage = SqlLiteStorageProvider(db_path=manager_params["db"])
-    ldb_path = Path(manager_params["data_directory"]) / "content.ldb"
+    structured_storage = SqlLiteStorageProvider(db_path=manager_params.database_name)
+    ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(
         manager_params, browser_params, structured_storage, unstructured_storage
@@ -963,7 +963,7 @@ def test_content_saving(http_params, xpi, server):
     manager.get(url=test_url, sleep=1)
     manager.close()
 
-    db = manager_params["db"]
+    db = manager_params.database_name
     rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
     disk_content = dict()
     for row in rows:
@@ -1008,7 +1008,7 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
         manager.execute_command_sequence(cs)
 
     manager.close()
-    db = manager_params["db"]
+    db = manager_params.database_name
 
     request_id_to_url = dict()
 

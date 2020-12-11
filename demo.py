@@ -61,7 +61,7 @@ bucket_name = "openwpm-test-bucket"
 manager = TaskManager(
     manager_params,
     browser_params,
-    LocalArrowProvider(Path("./datadir/") / "parquet"),
+    GcsStructuredProvider(project, bucket_name, base_path="test3"),
     None,
 )
 

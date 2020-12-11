@@ -15,7 +15,7 @@ def test_command_duration(default_params, task_manager_creator):
     manager.close()
 
     get_command = db_utils.query_db(
-        manager_params["db"],
+        manager_params.database_name,
         "SELECT duration FROM crawl_history WHERE command = 'GetCommand'",
         as_tuple=True,
     )[0]

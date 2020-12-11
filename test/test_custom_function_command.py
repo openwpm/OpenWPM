@@ -64,7 +64,7 @@ def test_custom_function(default_params, xpi, server):
 
     manager_params, browser_params = default_params
 
-    db = sqlite3.connect(manager_params["db"])
+    db = sqlite3.connect(manager_params.database_name)
     cur = db.cursor()
 
     cur.execute(
@@ -76,7 +76,7 @@ def test_custom_function(default_params, xpi, server):
     cur.close()
     db.close()
 
-    storage_provider = SqlLiteStorageProvider(manager_params["db"])
+    storage_provider = SqlLiteStorageProvider(manager_params.database_name)
     manager = TaskManager(manager_params, browser_params, storage_provider, None)
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=0, timeout=60)
@@ -84,6 +84,8 @@ def test_custom_function(default_params, xpi, server):
     manager.execute_command_sequence(cs)
     manager.close()
     query_result = db_utils.query_db(
-        manager_params["db"], "SELECT top_url, link FROM page_links;", as_tuple=True
+        manager_params.database_name,
+        "SELECT top_url, link FROM page_links;",
+        as_tuple=True,
     )
     assert PAGE_LINKS == set(query_result)

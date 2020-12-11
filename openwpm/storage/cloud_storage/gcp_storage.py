@@ -16,18 +16,27 @@ class GcsStructuredProvider(ArrowProvider):
     This might not actually be the thing that we want to do
     long term but seeing as GCS is the S3 equivalent of GCP
     it is the easiest way forward.
+
+    Inspired by the old S3Aggregator structure the GcsStructuredProvider
+    will by default store into
+    base_path/visits/table_name in the given bucket.
+
+    Pass a different sub_dir to change this.
     """
 
     def __init__(
-        self, project: str, bucket_name: str, base_path: str, token: str = None,
+        self,
+        project: str,
+        bucket_name: str,
+        base_path: str,
+        token: str = None,
+        sub_dir: str = "visits",
     ) -> None:
         super().__init__()
         self.project = project
-        self.bucket_name = bucket_name
-        self.base_path = base_path
         self.token = token
         self.file_system: Optional[GCSFileSystem] = None
-        self.base_path = f"{self.bucket_name}/{base_path}/{{table_name}}"
+        self.base_path = f"{bucket_name}/{base_path}/{sub_dir}/{{table_name}}"
 
     async def init(self) -> None:
         await super(GcsStructuredProvider, self).init()
@@ -54,6 +63,9 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
     This might not actually be the thing that we want to do
     long term but seeing as GCS is the S3 equivalent of GCP
     it is the easiest way forward.
+
+
+
     """
 
     def __init__(
