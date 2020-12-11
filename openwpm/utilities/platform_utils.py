@@ -3,7 +3,9 @@ import os
 import subprocess
 from collections import OrderedDict
 from copy import deepcopy
+from pathlib import Path
 from sys import platform
+from typing import Any
 
 from tabulate import tabulate
 
@@ -95,8 +97,20 @@ def get_configuration_string(manager_params, browser_params, versions):
 
     config_str = "\n\nOpenWPM Version: %s\nFirefox Version: %s\n" % versions
     config_str += "\n========== Manager Configuration ==========\n"
+
+    def serialize_paths(obj: Any) -> Any:
+        if isinstance(obj, Path):
+            return str(obj)
+        raise TypeError(
+            f"Object of type {obj.__class__.__name__} is not JSON serializable"
+        )
+
     config_str += json.dumps(
-        manager_params.to_dict(), sort_keys=True, indent=2, separators=(",", ": ")
+        manager_params.to_dict(),
+        sort_keys=True,
+        indent=2,
+        separators=(",", ": "),
+        default=serialize_paths,
     )
     config_str += "\n\n========== Browser Configuration ==========\n"
 
@@ -116,13 +130,13 @@ def get_configuration_string(manager_params, browser_params, versions):
             archive_all_none = False
 
         # Separate out long profile directory strings
-        profile_dirs[browser_id] = item.pop("seed_tar")
-        archive_dirs[browser_id] = item.pop("profile_archive_dir")
+        profile_dirs[browser_id] = str(item.pop("seed_tar"))
+        archive_dirs[browser_id] = str(item.pop("profile_archive_dir"))
         js_config[browser_id] = item.pop("js_instrument_settings")
 
         # Copy items in sorted order
         dct = OrderedDict()
-        dct[u"browser_id"] = browser_id
+        dct["browser_id"] = browser_id
         for key in sorted(item.keys()):
             dct[key] = item[key]
         table_input.append(dct)

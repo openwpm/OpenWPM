@@ -1,3 +1,11 @@
+"""
+This module contains implementations for various kinds of storage providers
+that store their results in memory.
+These classes are designed to allow for easier parallel testing as there are
+no shared resources between tests. It also makes it easier to verify results
+by not having to do a round trip to a perstitent storage provider
+"""
+
 import asyncio
 import logging
 from asyncio import Event, Lock
@@ -15,14 +23,6 @@ from .storage_providers import (
     TableName,
     UnstructuredStorageProvider,
 )
-
-"""
-This module contains implementations for various kinds of storage providers
-that store their results in memory.
-These classes are designed to allow for easier parallel testing as there are
-no shared resources between tests. It also makes it easier to verify results
-by not having to do a round trip to a perstitent storage provider
-"""
 
 
 class MemoryStructuredProvider(StructuredStorageProvider):
