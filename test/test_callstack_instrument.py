@@ -61,11 +61,11 @@ CALL_STACK_INJECT_IMAGE = [
 def test_http_stacktrace(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     # Record HTTP Requests and Responses
-    browser_params[0]["http_instrument"] = True
+    browser_params[0].http_instrument = True
     # Record JS Web API calls
-    browser_params[0]["js_instrument"] = True
+    browser_params[0].js_instrument = True
     # Record the callstack of all WebRequests made
-    browser_params[0]["callstack_instrument"] = True
+    browser_params[0].callstack_instrument = True
     test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
     manager = task_manager_creator((manager_params, browser_params))
     manager.get(test_url, sleep=10)

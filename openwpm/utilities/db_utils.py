@@ -1,7 +1,7 @@
 import os
 import sqlite3
 from pathlib import Path
-from typing import AnyStr, Iterator, Tuple
+from typing import Any, AnyStr, Iterator, List, Tuple, Union
 
 import plyvel
 
@@ -36,7 +36,9 @@ def get_content(db_name: Path) -> Iterator[Tuple[AnyStr, AnyStr]]:
     db.close()
 
 
-def get_javascript_entries(db, all_columns=False, as_tuple=False):
+def get_javascript_entries(
+    db: Path, all_columns: bool = False, as_tuple: bool = False
+) -> List[Union[Tuple[Any, ...], sqlite3.Row]]:
     if all_columns:
         select_columns = "*"
     else:

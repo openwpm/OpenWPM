@@ -1,5 +1,7 @@
-from typing import Set, Tuple
+from pathlib import Path
+from typing import List, Optional, Set, Tuple
 
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 
 from . import utilities as util
@@ -101,7 +103,9 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         ("window.fetch", "call", '["https://example.org"]'),
     }
 
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = super().get_config(data_dir)
         browser_params[0].prefs = {
             "network.dns.localDomains": "example.com,example.org"

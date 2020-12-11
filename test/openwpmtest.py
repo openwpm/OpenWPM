@@ -25,12 +25,16 @@ class OpenWPMTest:
         Based on:
         https://mail.python.org/pipermail/pytest-dev/2014-April/002484.html
         """
-        self.tmpdir = tmpdir
+        self.tmpdir = Path(tmpdir)
 
-    def get_config(self, data_dir) -> Tuple[ManagerParams, List[BrowserParams]]:
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         pass
 
-    def visit(self, page_url, data_dir="", sleep_after=0):
+    def visit(
+        self, page_url: str, data_dir: Optional[Path] = None, sleep_after: int = 0
+    ) -> Path:
         """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
         structured_provider = SqlLiteStorageProvider(manager_params.database_name)

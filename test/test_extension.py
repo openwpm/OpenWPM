@@ -1,9 +1,13 @@
 import os
 from datetime import datetime
+from pathlib import Path
+from sqlite3 import Row
+from typing import List, Tuple
 
 import pytest
 
 from openwpm import task_manager
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -248,12 +252,14 @@ DOCUMENT_COOKIE_READ_WRITE = {DOCUMENT_COOKIE_READ, DOCUMENT_COOKIE_WRITE}
 
 
 class TestExtension(OpenWPMTest):
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Path = None
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].js_instrument = True
         return manager_params, browser_params
 
-    def test_property_enumeration(self):
+    def test_property_enumeration(self) -> None:
         test_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
         db = self.visit(test_url)
         rows = db_utils.query_db(db, "SELECT script_url, symbol FROM javascript")
@@ -263,12 +269,13 @@ class TestExtension(OpenWPMTest):
             observed_symbols.add(symbol)
         assert PROPERTIES == observed_symbols
 
-    def test_canvas_fingerprinting(self):
+    def test_canvas_fingerprinting(self) -> None:
         db = self.visit("/canvas_fingerprinting.html")
         # Check that all calls and methods are recorded
         rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for row in rows:
+            assert isinstance(row, Row)
             item = (
                 row["script_url"],
                 row["symbol"],
@@ -279,7 +286,7 @@ class TestExtension(OpenWPMTest):
             observed_rows.add(item)
         assert CANVAS_CALLS == observed_rows
 
-    def test_extension_gets_correct_visit_id(self):
+    def test_extension_gets_correct_visit_id(self) -> None:
         url_a = utilities.BASE_TEST_URL + "/simple_a.html"
         url_b = utilities.BASE_TEST_URL + "/simple_b.html"
         self.visit(url_a)
@@ -307,7 +314,7 @@ class TestExtension(OpenWPMTest):
         assert visit_ids[url_a] == simple_a_visit_id[0][0]
         assert visit_ids[url_b] == simple_b_visit_id[0][0]
 
-    def check_webrtc_sdp_offer(self, sdp_str):
+    def check_webrtc_sdp_offer(self, sdp_str: str) -> None:
         """Make sure the SDP offer includes expected fields/strings.
 
         SDP offer contains randomly generated strings (e.g. GUID). That's why
@@ -317,12 +324,13 @@ class TestExtension(OpenWPMTest):
         for expected_str in WEBRTC_SDP_OFFER_STRINGS:
             assert expected_str in sdp_str
 
-    def test_webrtc_localip(self):
+    def test_webrtc_localip(self) -> None:
         db = self.visit("/webrtc_localip.html")
         # Check that all calls and methods are recorded
         rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for row in rows:
+            assert isinstance(row, Row)
             if row["symbol"] == "RTCPeerConnection.setLocalDescription" and (
                 row["operation"] == "call"
             ):

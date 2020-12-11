@@ -1,10 +1,15 @@
+# type:ignore
+# As this file is no longer maintained, mypy shouldn't check this
 import os
 import tarfile
+from pathlib import Path
+from typing import List, Tuple
 
 import domain_utils as du
 import pytest
 
 from openwpm import task_manager
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest
@@ -46,7 +51,9 @@ class TestCrawl(OpenWPMTest):
     tests will be easier to debug
     """
 
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Path = None
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].profile_archive_dir = os.path.join(
             manager_params.data_directory, "browser_profile"
@@ -56,7 +63,7 @@ class TestCrawl(OpenWPMTest):
 
     @pytest.mark.xfail(run=False)
     @pytest.mark.slow
-    def test_browser_profile_coverage(self, tmpdir):
+    def test_browser_profile_coverage(self, tmpdir: Path) -> None:
         """Test the coverage of the browser's profile
 
         This verifies that Firefox's places.sqlite database contains
@@ -64,7 +71,7 @@ class TestCrawl(OpenWPMTest):
         it is likely the profile is lost at some point during the crawl
         """
         # Run the test crawl
-        data_dir = os.path.join(str(tmpdir), "data_dir")
+        data_dir = tmpdir / "data_dir"
         manager_params, browser_params = self.get_config(data_dir)
         manager = task_manager.TaskManager(manager_params, browser_params)
         for site in TEST_SITES:

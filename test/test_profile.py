@@ -1,9 +1,12 @@
 from os.path import isfile, join
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 import pytest
 
 from openwpm import task_manager
 from openwpm.command_sequence import CommandSequence
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
 
@@ -13,7 +16,9 @@ from .openwpmtest import OpenWPMTest
 
 
 class TestProfile(OpenWPMTest):
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].profile_archive_dir = join(
             manager_params.data_directory, "browser_profile"

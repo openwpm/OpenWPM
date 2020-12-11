@@ -7,13 +7,14 @@ import os
 from hashlib import sha256
 from pathlib import Path
 from time import sleep
-from typing import Set, Tuple
+from typing import List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 import pytest
 
 from openwpm import command_sequence, task_manager
 from openwpm.command_sequence import CommandSequence
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.utilities import db_utils
@@ -594,7 +595,9 @@ BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestHTTPInstrument(OpenWPMTest):
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].http_instrument = True
         return manager_params, browser_params
@@ -745,7 +748,9 @@ class TestPOSTInstrument(OpenWPMTest):
         "line2 line2_word2\r\n"
     )
 
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].http_instrument = True
         return manager_params, browser_params
