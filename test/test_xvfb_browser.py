@@ -19,15 +19,8 @@ class TestXVFBDisplay(OpenWPMTest):
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
         manager = TaskManager(manager_params, browser_params)
 
-        def callback(argument: List[int], success: bool):
-            argument.extend([1, 2, 3])
-
-        my_list = []
-        sequence = CommandSequence(
-            TEST_SITE, reset=True, blocking=True, callback=partial(callback, my_list)
-        )
+        sequence = CommandSequence(TEST_SITE)
         sequence.get()
-
+        sequence.save_screenshot()
         manager.execute_command_sequence(sequence)
         manager.close()
-        assert my_list == [1, 2, 3]
