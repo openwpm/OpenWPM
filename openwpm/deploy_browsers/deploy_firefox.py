@@ -60,6 +60,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     display_mode = browser_params.display_mode
     display_pid = None
     display_port = None
+    display = None
     if display_mode == "headless":
         fo.set_headless(True)
         fo.add_argument("--width={}".format(DEFAULT_SCREEN_RES[0]))
