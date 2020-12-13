@@ -68,7 +68,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         try:
             display = Display(visible=0, size=DEFAULT_SCREEN_RES)
             display.start()
-            display_pid, display_port = display.pid, display.cmd_param[-1][1:]
+            display_pid, display_port = display.pid, display.display
         except EasyProcessError:
             raise RuntimeError(
                 "Xvfb could not be started. \
@@ -157,4 +157,4 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
 
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
-    return driver, driver.capabilities["moz:profile"]
+    return driver, driver.capabilities["moz:profile"], display

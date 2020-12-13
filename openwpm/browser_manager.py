@@ -433,7 +433,7 @@ def BrowserManager(
     logger = logging.getLogger("openwpm")
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder = deploy_firefox.deploy_firefox(
+        driver, prof_folder, display = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
         if prof_folder[-1] != "/":
@@ -497,6 +497,7 @@ def BrowserManager(
                 if driver.profile and not os.path.isdir(driver.profile.path):
                     driver.profile = None
                 driver.quit()
+                display.stop()
                 status_queue.put("OK")
                 return
 
