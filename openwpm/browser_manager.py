@@ -497,7 +497,8 @@ def BrowserManager(
                 if driver.profile and not os.path.isdir(driver.profile.path):
                     driver.profile = None
                 driver.quit()
-                display.stop()
+                if browser_params.display_mode == "xvfb":
+                    display.stop()
                 status_queue.put("OK")
                 return
 
