@@ -89,7 +89,7 @@ def start_webdriver(
         Set to True to load browser_params
     browser_params_file : string
         Specify the browser_params.json to load.
-        If None, default_params will be loaded.
+        If None, default params form openwpm/config.py::BrowserParams will be loaded.
 
     Returns
     -------
