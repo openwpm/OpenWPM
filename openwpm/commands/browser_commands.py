@@ -135,7 +135,7 @@ def get_website(
     # Close modal dialog if exists
     try:
         WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
-        alert = webdriver.switch_to_alert()
+        alert = webdriver.switch_to.alert()
         alert.dismiss()
         time.sleep(1)
     except (TimeoutException, WebDriverException):
