@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+from typing import Any, List, Optional
 
 from easyprocess import EasyProcessError
 from pyvirtualdisplay import Display
@@ -8,6 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
+from ..config import BrowserParams, ManagerParams
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
@@ -16,7 +18,12 @@ DEFAULT_SCREEN_RES = (1366, 768)
 logger = logging.getLogger("openwpm")
 
 
-def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
+def deploy_firefox(
+    status_queue: Optional[Queue],
+    browser_params: List[BrowserParams],
+    manager_params: ManagerParams,
+    crash_recovery: bool,
+) -> (webdriver.Firefox, str, Optional[Display]):
     """
     launches a firefox instance with parameters set by the input dictionary
     """

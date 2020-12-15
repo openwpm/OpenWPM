@@ -166,10 +166,6 @@ class TestMPLogger(OpenWPMTest):
             assert log_content.count(CHILD_INFO_STR_2 % child) == 1
             assert log_content.count(CHILD_EXCEPTION_STR % child) == 1
 
-    @pytest.mark.skipif(
-        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-        reason="Flaky on Travis CI",
-    )
     def test_child_process_logging(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
         openwpm_logger = mp_logger.MPLogger(log_file)
