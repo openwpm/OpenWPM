@@ -20,7 +20,7 @@ logger = logging.getLogger("openwpm")
 
 
 def deploy_firefox(
-    status_queue: Optional[Queue],
+    status_queue: Queue,
     browser_params: List[BrowserParams],
     manager_params: ManagerParams,
     crash_recovery: bool,
