@@ -107,9 +107,9 @@ class MemoryProviderHandle:
         self.queue = queue
         self.storage: DefaultDict[str, List[Any]] = defaultdict(list)
 
-    def poll_queue(self) -> None:
+    def poll_queue(self, *args: Any, **kwargs: Any) -> None:
         while not self.queue.empty():
-            table, record = self.queue.get()
+            table, record = self.queue.get(*args, **kwargs)
             self.storage[table].append(record)
 
 
@@ -147,9 +147,6 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
 
 
 class MemoryArrowProvider(ArrowProvider):
-    async def init(self) -> None:
-        pass
-
     def __init__(self) -> None:
         super().__init__()
         self.queue = Queue()
