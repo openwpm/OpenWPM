@@ -4,6 +4,7 @@ import os.path
 from typing import Any, List, Optional
 
 from easyprocess import EasyProcessError
+from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile

@@ -2,10 +2,16 @@ from functools import partial
 from typing import List
 
 from openwpm.command_sequence import CommandSequence
+from openwpm.commands.types import BaseCommand
 from openwpm.task_manager import TaskManager
 
 from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL
+
+
+class ExceptionCommand(BaseCommand):
+    def execute(self):
+        raise Exception
 
 
 class TestXVFBDisplay(OpenWPMTest):
@@ -21,6 +27,6 @@ class TestXVFBDisplay(OpenWPMTest):
 
         sequence = CommandSequence(TEST_SITE)
         sequence.get()
-        sequence.save_screenshot()
+        sequence.append_command(ExceptionCommand)
         manager.execute_command_sequence(sequence)
         manager.close()
