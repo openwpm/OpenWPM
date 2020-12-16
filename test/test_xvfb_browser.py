@@ -11,7 +11,6 @@ from .utilities import BASE_TEST_URL
 
 
 class ExceptionCommand(BaseCommand):
-
     def execute(self):
         raise Exception
 
