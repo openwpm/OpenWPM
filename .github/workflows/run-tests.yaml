@@ -9,12 +9,15 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    env:
+      MINICONDA_PATH: "$HOME/miniconda"
+      OPENWPM_CONDA_PATH: "$MINICONDA_PATH/envs/openwpm"
     steps:
     # All of these steps are just setup
     - uses: actions/checkout@v2
     - name: Install conda
       run: $GITHUB_WORKSPACE/scripts/install-miniconda.sh
-    - run: echo "$HOME/miniconda/bin" >> $GITHUB_PATH
+    - run: echo "$MINICONDA_PATH/bin" >> $GITHUB_PATH
     - id: cache
       uses: actions/cache@v2
       with:
@@ -26,7 +29,12 @@ jobs:
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
     - name: Install.sh (cache hit)
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
-      run: conda info --envs
+      run: |
+        echo "$OPENWPM_CONDA_PATH" >> $MINICONDA_PATH/environments.txt
+        $GITHUB_WORKSPACE/install.sh --skip-create
 
+    - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
+    # Now we have a working OpenWPM environment
+    - run: pre-commit run --all
 
 
