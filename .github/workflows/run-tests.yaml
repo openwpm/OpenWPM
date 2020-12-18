@@ -13,9 +13,9 @@ jobs:
     # All of these steps are just setup
     - uses: actions/checkout@v2
     - name: Install conda
-      run: scripts/install-miniconda.sh
+      run: $GITHUB_WORKSPACE/scripts/install-miniconda.sh
     - run: echo "$HOME/miniconda/bin" >> $GITHUB_PATH
-    - run: install.sh
+    - run: $GITHUB_WORKSPACE/install.sh
     - run: echo "$HOME/miniconda/envs/openwpm/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
 
