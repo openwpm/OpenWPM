@@ -31,7 +31,7 @@ jobs:
     - name: Install.sh (cache hit)
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
       run: |
-        touch $MINICONDA_PATH/environments.txt
+        file $MINICONDA_PATH
         echo "$OPENWPM_CONDA_PATH" >> $MINICONDA_PATH/environments.txt
         $GITHUB_WORKSPACE/install.sh --skip-create
 
