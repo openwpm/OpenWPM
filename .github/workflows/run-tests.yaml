@@ -40,7 +40,8 @@ jobs:
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
       run: |
         conda info --envs
-        cat $MINICONDA_PATH/environments.txt
+        ls $MINICONDA_PATH
+        ls $MINICONDA_PATH/envs
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
     - uses: pre-commit/action@v2.0.0
