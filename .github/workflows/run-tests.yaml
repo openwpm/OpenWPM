@@ -1,13 +1,13 @@
 # This workflows will upload a Python Package using Twine when a release is created
 # For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
-name: Pre-commit
+name: On-push-pipeline
 
 on:
   [push]
 
 jobs:
-  setup:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
     # All of these steps are just setup
@@ -22,7 +22,7 @@ jobs:
       env:
         cache-name: conda-cache
       with:
-        path: $MINICONDA_PATH
+        path: ${{ env.MINICONDA_PATH }}
         key: ${{ env.cache-name }}-${{ hashFiles('environment.yaml') }}
 
     - name: Install conda
@@ -45,5 +45,6 @@ jobs:
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
     - uses: pre-commit/action@v2.0.0
+  test:
 
 
