@@ -45,6 +45,5 @@ jobs:
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
     - uses: pre-commit/action@v2.0.0
-  test:
 
 
