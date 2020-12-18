@@ -33,8 +33,9 @@ jobs:
 
     - name: Install.sh (cache miss)
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      run: $GITHUB_WORKSPACE/install.sh
-
+      run:|
+        $GITHUB_WORKSPACE/install.sh
+        conda info --envs
     - name: Install.sh (cache hit)
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
       run: |
