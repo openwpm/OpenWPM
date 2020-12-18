@@ -37,7 +37,9 @@ jobs:
 
     - name: Install.sh (cache hit)
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
-      run: $GITHUB_WORKSPACE/install.sh --skip-create
+      run: |
+      conda list --envs
+      cat $MINICONDA_PATH/environments.txt
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
     - uses: pre-commit/action@v2.0.0
