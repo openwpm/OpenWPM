@@ -1,7 +1,7 @@
 # This workflows will upload a Python Package using Twine when a release is created
 # For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
-name: Run tests
+name: Pre-commit
 
 on:
   [push]
@@ -15,8 +15,21 @@ jobs:
     - name: Install conda
       run: $GITHUB_WORKSPACE/scripts/install-miniconda.sh
     - run: echo "$HOME/miniconda/bin" >> $GITHUB_PATH
-    - run: $GITHUB_WORKSPACE/install.sh
+    - id: cache
+      uses: actions/cache@v2
+      with:
+        path: $HOME/miniconda/envs/openwpm
+        key: ${{ hashFiles('environment.yaml') }}
+
+    - name: Install.sh (cache miss)
+      run: $GITHUB_WORKSPACE/install.sh
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+    - name: Install.sh (cache hit)
+      if: ${{ steps.cache.outputs.cache-hit == 'true' }}
+      run: $GITHUB_WORKSPACE/install.sh --skip-create
+
     - run: echo "$HOME/miniconda/envs/openwpm/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
+    - run: pre-commit run --all
 
 
