@@ -40,6 +40,6 @@ jobs:
       run: $GITHUB_WORKSPACE/install.sh --skip-create
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
-    - run: pre-commit run --all
+    - uses: pre-commit/action@v2.0.0
 
 
