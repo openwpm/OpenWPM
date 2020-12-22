@@ -1,6 +1,8 @@
 from openwpm.command_sequence import CommandSequence
+from openwpm.commands.browser_commands import GetCommand
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.task_manager import TaskManager
+from simple_command import LinkCountingCommand
 
 # The list of sites that we wish to crawl
 NUM_BROWSERS = 1
@@ -58,7 +60,9 @@ for site in sites:
     )
 
     # Start by visiting the page
-    command_sequence.get(sleep=3, timeout=60)
+    command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
+    # Have a look at simple_command.py to see how to implement your own command
+    command_sequence.append_command(LinkCountingCommand())
 
     # Run commands across the three browsers (simple parallelization)
     manager.execute_command_sequence(command_sequence)
