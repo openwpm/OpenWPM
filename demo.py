@@ -10,9 +10,9 @@ sites = [
     "http://citp.princeton.edu/",
 ]
 
+
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
-
 manager_params = ManagerParams(
     num_browsers=NUM_BROWSERS
 )  # num_browsers is necessary to let TaskManager know how many browsers to spawn

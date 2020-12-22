@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 from selenium.webdriver import Firefox
 
+from ..config import BrowserParams, ManagerParams
 from ..socket_interface import ClientSocket
 
 
@@ -18,11 +18,11 @@ class BaseCommand(ABC):
     def execute(
         self,
         webdriver: Firefox,
-        browser_params: Dict[str, Any],
-        manager_params: Dict[str, Any],
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
         extension_socket: ClientSocket,
     ) -> None:
-        raise NotImplementedError()
+        pass
 
 
 class ShutdownSignal:
