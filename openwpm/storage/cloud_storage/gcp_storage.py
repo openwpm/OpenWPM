@@ -24,6 +24,8 @@ class GcsStructuredProvider(ArrowProvider):
     Pass a different sub_dir to change this.
     """
 
+    file_system: GCSFileSystem
+
     def __init__(
         self,
         project: str,
@@ -35,7 +37,6 @@ class GcsStructuredProvider(ArrowProvider):
         super().__init__()
         self.project = project
         self.token = token
-        self.file_system: Optional[GCSFileSystem] = None
         self.base_path = f"{bucket_name}/{base_path}/{sub_dir}/{{table_name}}"
 
     async def init(self) -> None:
@@ -45,7 +46,6 @@ class GcsStructuredProvider(ArrowProvider):
         )
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
-        assert self.file_system is not None
         self.file_system.start_transaction()
         pq.write_to_dataset(
             table,
@@ -63,10 +63,9 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
     This might not actually be the thing that we want to do
     long term but seeing as GCS is the S3 equivalent of GCP
     it is the easiest way forward.
-
-
-
     """
+
+    file_system: GCSFileSystem
 
     def __init__(
         self, project: str, bucket_name: str, base_path: str, token: str = None,
@@ -76,7 +75,6 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         self.bucket_name = bucket_name
         self.base_path = base_path
         self.token = token
-        self.file_system: Optional[GCSFileSystem] = None
         self.base_path = f"{bucket_name}/{base_path}/{{filename}}"
 
         self.file_name_cache: Set[str] = set()
@@ -89,16 +87,19 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
     async def store_blob(
         self, filename: str, blob: bytes, overwrite: bool = False
     ) -> None:
-        assert self.file_system is not None
         target_path = self.base_path.format(filename=filename)
         if not overwrite and (
             filename in self.file_name_cache or self.file_system.exists(target_path)
         ):
             self.logger.info("Not saving out file %s as it already exists", filename)
             return
+        self.file_system.start_transaction()
 
         with self.file_system.open(target_path, mode="wb") as f:
             f.write(blob)
+
+        self.file_system.end_transaction()
+
         self.file_name_cache.add(filename)
 
     async def flush_cache(self) -> None:

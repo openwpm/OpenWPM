@@ -24,6 +24,9 @@ class ArrowProvider(StructuredStorageProvider):
     serializes records into the arrow format
     """
 
+    storing_lock: asyncio.Lock
+    flush_event: asyncio.Event
+
     def __init__(self) -> None:
         super().__init__()
         self.logger = logging.getLogger("openwpm")
@@ -40,8 +43,7 @@ class ArrowProvider(StructuredStorageProvider):
         self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = defaultdict(list)
         self._instance_id = random.getrandbits(32)
 
-        self.storing_lock: Optional[asyncio.Lock] = None
-        self.flush_event: Optional[asyncio.Event] = None
+        self.flush_events: List[asyncio.Event] = list()
 
     async def init(self) -> None:
         # Used to synchronize the finalizing and the flushing
@@ -65,7 +67,7 @@ class ArrowProvider(StructuredStorageProvider):
         if visit_id not in self._records:
             # The batch for this `visit_id` was already created, skip
             self.logger.error(
-                "Trying to create batch for visit_id %d" "when one was already created",
+                "Trying to create batch for visit_id %d when one was already created",
                 visit_id,
             )
             return
@@ -106,7 +108,7 @@ class ArrowProvider(StructuredStorageProvider):
             await token
         ```
         If there was no token returned and the method would just block/yield after turning the
-        record into a batch, there would be no way to know, when it's save to flush_cache as
+        record into a batch, there would be no way to know, when it's safe to flush_cache as
         I couldn't find a way to run a coroutine until it yields and then run a different one.
 
         With the current setup `token` aka a `wait_on_condition` coroutine will only return once
@@ -114,24 +116,26 @@ class ArrowProvider(StructuredStorageProvider):
         """
         if interrupted:
             await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
-        assert self.storing_lock is not None
-        assert self.flush_event is not None
         # This code is pretty tricky as there are a number of things going on
-        # 1. No finalize_visit_id shouldn't return unless the visit has been saved to storage
+        # 1. The awaitable returned by finalize_visit_id should only
+        #    resolve once the data is saved to persistent storage
         # 2. No new batches should be created while saving out all the batches
         async with self.storing_lock:
             # After flush_cache has executed the event needs to be rearmed
             # so that newly created wait_on_condition don't just complete
             # instantly
-            self.flush_event.clear()
             self._create_batch(visit_id)
+
+            event = asyncio.Event()
+            self.flush_events.append(event)
+
             if self._is_cache_full():
                 await self.flush_cache(self.storing_lock)
 
-            async def wait_on_condition(event: asyncio.Event) -> None:
-                await event.wait()
+            async def wait_on_condition(e: asyncio.Event) -> None:
+                await e.wait()
 
-            return wait_on_condition(self.flush_event)
+            return wait_on_condition(event)
 
     @abstractmethod
     async def write_table(self, table_name: TableName, table: Table) -> None:
@@ -139,21 +143,26 @@ class ArrowProvider(StructuredStorageProvider):
         This should only return once it's actually saved out
         """
 
-    async def flush_cache(self, cond: asyncio.Lock = None) -> None:
+    async def flush_cache(self, lock: asyncio.Lock = None) -> None:
         """We need to hack around the fact that asyncio has no reentrant lock
-        So we either grab the storing storing_lock ourselves or the caller needs
+        So we either grab the storing_lock ourselves or the caller needs
         to pass us the locked storing_lock
         """
-        assert self.storing_lock is not None
-        assert self.flush_event is not None
-        got_cond = cond is not None
-        if not got_cond:
-            cond = self.storing_lock
-            await cond.acquire()
-        assert cond is not None and cond.locked()
+        got_lock = lock is not None
+        if not got_lock:
+            lock = self.storing_lock
+            await lock.acquire()
+
+        assert lock is not None and lock.locked()
+
         for table_name, batches in self._batches.items():
             table = pa.Table.from_batches(batches)
             await self.write_table(table_name, table)
-        self.flush_event.set()
-        if not got_cond:
-            cond.release()
+        self._batches.clear()
+
+        for event in self.flush_events:
+            event.set()
+        self.flush_events.clear()
+
+        if not got_lock:
+            lock.release()

@@ -1,7 +1,5 @@
-from openwpm import task_manager
 from openwpm.utilities import db_utils
 
-from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL
 
 TEST_FILE = "canvas_fingerprinting.html"

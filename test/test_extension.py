@@ -6,7 +6,6 @@ from typing import List, Tuple
 
 import pytest
 
-from openwpm import task_manager
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 

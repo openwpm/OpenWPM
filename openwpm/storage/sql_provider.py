@@ -11,7 +11,7 @@ from sqlite3 import (
     OperationalError,
     ProgrammingError,
 )
-from typing import Any, AsyncGenerator, Awaitable, Dict, List, Optional, Tuple
+from typing import Any, Awaitable, Dict, List, Optional, Tuple
 
 from openwpm.types import VisitId
 
@@ -21,14 +21,15 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
 class SqlLiteStorageProvider(StructuredStorageProvider):
+    db: Connection
+    cur: Cursor
+
     def __init__(self, db_path: Path) -> None:
         super().__init__()
         self.db_path = db_path
         self._sql_counter = 0
         self._sql_commit_time = 0
         self.logger = logging.getLogger("openwpm")
-        self.db: Optional[Connection] = None
-        self.cur: Optional[Cursor] = None
 
     async def init(self) -> None:
         self.db = sqlite3.connect(str(self.db_path))
@@ -37,13 +38,11 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
 
     def _create_tables(self) -> None:
         """Create tables (if this is a new database)"""
-        assert self.db is not None
         with open(SCHEMA_FILE, "r") as f:
             self.db.executescript(f.read())
         self.db.commit()
 
     async def flush_cache(self) -> None:
-        assert self.db is not None
         self.db.commit()
 
     async def store_record(
@@ -94,19 +93,17 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         return statement, values
 
     def execute_statement(self, statement: str) -> None:
-        assert self.cur is not None
-        assert self.db is not None
         self.cur.execute(statement)
         self.db.commit()
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> Awaitable[None]:
-        assert self.cur is not None
 
         if interrupted:
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             self.cur.execute("INSERT INTO incomplete_visits VALUES (?)", (visit_id,))
+        self.db.commit()
 
         async def done() -> None:
             return
@@ -114,6 +111,5 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
         return done()
 
     async def shutdown(self) -> None:
-        assert self.db is not None
         self.db.commit()
         self.db.close()

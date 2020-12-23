@@ -80,6 +80,7 @@ class TestStructuredStorageProvider:
         token = await structured_provider.finalize_visit_id(VisitId(2))
         await structured_provider.flush_cache()
         await token
+        await structured_provider.shutdown()
 
 
 # Unstructured Providers
@@ -122,3 +123,4 @@ class TestUnstructuredStorageProvide:
         await unstructured_provider.init()
         await unstructured_provider.store_blob("test", blob)
         await unstructured_provider.flush_cache()
+        await unstructured_provider.shutdown()

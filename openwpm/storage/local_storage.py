@@ -15,7 +15,6 @@ class LocalArrowProvider(ArrowProvider):
     def __init__(self, storage_path: Path) -> None:
         super().__init__()
         self.storage_path = storage_path
-        self.logger = logging.getLogger("openwpm")
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
         pq.write_to_dataset(table, str(self.storage_path / table_name))

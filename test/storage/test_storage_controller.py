@@ -24,20 +24,7 @@ from openwpm.storage.storage_controller import (
 from test.storage.test_values import TEST_VALUES, TEST_VISIT_IDS
 
 
-@pytest.fixture(scope="session")
-def logger() -> MPLogger:
-    """PyTest only captures logging events in the Main Process
-    so we need to log everything to console to have it show
-    up in our tests
-    """
-    return MPLogger(
-        "/dev/null",
-        None,  # We have no manager params here
-        log_level_console=logging.DEBUG,
-    )
-
-
-def test_startup_and_shutdown(logger: MPLogger) -> None:
+def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
 
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
@@ -64,7 +51,7 @@ def test_startup_and_shutdown(logger: MPLogger) -> None:
 
 
 @pytest.mark.asyncio
-async def test_arrow_provider(logger: MPLogger) -> None:
+async def test_arrow_provider(mp_logger: MPLogger) -> None:
     structured = MemoryArrowProvider()
     status_queue = Queue()
     completion_queue = Queue()

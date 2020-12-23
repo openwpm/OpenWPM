@@ -31,7 +31,7 @@ def xpi():
 
 
 @pytest.fixture(scope="session")
-def server(request):
+def server():
     """Run an HTTP server during the tests."""
     print("Starting local_http_server")
     server, server_thread = utilities.start_server()
@@ -46,7 +46,7 @@ def default_params(
     tmp_path: Path, num_browsers: int = NUM_BROWSERS
 ) -> Tuple[ManagerParams, List[BrowserParams]]:
     """Just a simple wrapper around task_manager.load_default_params"""
-    assert len(list(tmp_path.iterdir())) == 0
+
     manager_params = ManagerParams(
         num_browsers=NUM_BROWSERS
     )  # num_browsers is necessary to let TaskManager know how many browsers to spawn

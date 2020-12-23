@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import logging
+import math
 import queue
 import random
 import socket
@@ -165,14 +166,14 @@ class StorageController:
 
     async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
         """
-        Messages for the table RECORD_TYPE_SPECIAL are metainformation
+        Messages for the table RECORD_TYPE_SPECIAL are meta information
         communicated to the aggregator
         Supported message types:
         - finalize: A message sent by the extension to
                     signal that a visit_id is complete.
         - initialize: TODO: Start complaining if we receive data for a visit_id
                       before the initialize event happened. (This might not be easy
-                      because of `site_visits`
+                      because of `site_visits`)
         """
         action: str = data["action"]
         if action == ACTION_TYPE_INITIALIZE:
@@ -191,6 +192,9 @@ class StorageController:
         """Makes sure all records for a given visit_id
         have been processed before we invoke finalize_visit_id
         on the structured_storage
+
+        See StructuredStorageProvider::finalize_visit_id for additional
+        documentation
         """
         self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
 
@@ -231,8 +235,19 @@ class StorageController:
             )
 
     async def shutdown(self) -> None:
+        completion_tokens = {}
+        visit_ids = list(self.current_tasks.keys())
+        for visit_id in visit_ids:
+            completion_tokens[visit_id] = await self.finalize_visit_id(
+                visit_id, success=False
+            )
         await self.structured_storage.flush_cache()
+        for visit_id, token in completion_tokens.items():
+            await token
+            self.completion_queue.put((visit_id, False))
+
         await self.structured_storage.shutdown()
+
         if self.unstructured_storage is not None:
             await self.unstructured_storage.flush_cache()
             await self.unstructured_storage.shutdown()
@@ -257,32 +272,22 @@ class StorageController:
                 await asyncio.sleep(BATCH_COMMIT_TIMEOUT)
                 continue
 
-            time_until_timeout = (
-                time.time() - self._last_record_received - BATCH_COMMIT_TIMEOUT
-            )
-            if time_until_timeout > 0:
+            diff = time.time() - self._last_record_received
+            if diff < BATCH_COMMIT_TIMEOUT:
+                time_until_timeout = BATCH_COMMIT_TIMEOUT - diff
                 await asyncio.sleep(time_until_timeout)
                 continue
 
             self.logger.debug(
                 "Saving current records since no new data has "
-                "been written for %d seconds."
-                % (time.time() - self._last_record_received)
+                "been written for %d seconds." % diff
             )
             await self.structured_storage.flush_cache()
             if self.unstructured_storage:
                 await self.unstructured_storage.flush_cache()
             self._last_record_received = None
 
-    async def finish_tasks(self) -> None:
-        self.logger.info("Awaiting unfinished tasks before shutting down")
-        for visit_id, tasks in self.current_tasks.items():
-            self.logger.debug("Awaiting tasks for visit_id %d", visit_id)
-            for task in tasks:
-                await task
-
     async def _run(self) -> None:
-
         await self.structured_storage.init()
         if self.unstructured_storage:
             await self.unstructured_storage.init()
@@ -306,20 +311,6 @@ class StorageController:
         status_queue_update.cancel()
         timeout_check.cancel()
         await server.wait_closed()
-
-        await self.finish_tasks()
-
-        finalization_tokens = {}
-        visit_ids = list(self.current_tasks.keys())
-        for visit_id in visit_ids:
-            finalization_tokens[visit_id] = await self.finalize_visit_id(
-                visit_id, success=False
-            )
-        await self.structured_storage.flush_cache()
-        for visit_id, token in finalization_tokens.items():
-            await token
-            self.completion_queue.put((visit_id, False))
-
         await self.shutdown()
 
     def run(self) -> None:
@@ -346,7 +337,7 @@ class StorageControllerHandle:
         self._last_status = None
         self._last_status_received: Optional[float] = None
         self.logger = logging.getLogger("openwpm")
-        self.aggregator = StorageController(
+        self.storage_controller = StorageController(
             structured_storage,
             unstructured_storage,
             status_queue=self.status_queue,
@@ -383,7 +374,7 @@ class StorageControllerHandle:
         self.storage_controller = Process(
             name="StorageController",
             target=StorageController.run,
-            args=(self.aggregator,),
+            args=(self.storage_controller,),
         )
         self.storage_controller.daemon = True
         self.storage_controller.start()

@@ -1,7 +1,7 @@
 import gzip
 import io
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Awaitable, Dict, List, NewType, Tuple
+from typing import Any, AsyncGenerator, Awaitable, Dict, List, NewType, Optional, Tuple
 
 from openwpm.types import VisitId
 
@@ -36,7 +36,7 @@ class StorageProvider(ABC):
 
     @abstractmethod
     async def shutdown(self) -> None:
-        """Close all open ressources
+        """Close all open resources
         After this method has been called no further calls should be made to the object
         """
         pass
