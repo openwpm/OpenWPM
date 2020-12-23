@@ -34,7 +34,7 @@ for _ in range(num_browsers):
 
 ## Defining a new command
 
-Please have a look at [`simple_commands.py`](../simple_command.py)
+Please have a look at [`custom_command.py`](../custom_command.py)
 
 
 
