@@ -6,6 +6,7 @@ Steps to have a custom command run as part of a CommandSequence
 2. Implement the execute method
 3. Append it to the CommandSequence
 4. Execute the CommandSequence
+
 """
 import logging
 
@@ -28,6 +29,8 @@ class LinkCountingCommand(BaseCommand):
     def __repr__(self) -> str:
         return "LinkCountingCommand"
 
+    # Have a look at openwpm.commands.types.BaseCommand.execute to see
+    # an explanation of each parameter
     def execute(
         self,
         webdriver: Firefox,
