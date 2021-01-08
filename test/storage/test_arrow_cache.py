@@ -39,4 +39,6 @@ async def test_arrow_cache(mp_logger: MPLogger) -> None:
 
     df: DataFrame = table.to_pandas()
     for row in df.itertuples(index=False):
-        del d[row["visit_id"]]
+        del d[row.visit_id]
+
+    assert len(d) == 0

@@ -24,7 +24,7 @@ deps_pip: List[str] = []
 
 iterate_deps(
     env_pinned["dependencies"][:-1],
-    env_unpinned["dependencies"][:-1] + env_unpinned_dev["dependencies"][:-1],
+    env_unpinned["dependencies"][:-1] + env_unpinned_dev["dependencies"],
     deps_not_pip,
 )
 
