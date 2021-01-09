@@ -16,11 +16,10 @@ from selenium.common.exceptions import (
     WebDriverException,
 )
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ..socket_interface import ClientSocket
+from .types import BaseCommand
 from .utils.webdriver_utils import (
     execute_in_all_frames,
     execute_script_with_retry,
@@ -31,6 +30,7 @@ from .utils.webdriver_utils import (
 )
 
 # Constants for bot mitigation
+
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
 RANDOM_SLEEP_LOW = 1  # low (in sec) for random sleep between page loads
 RANDOM_SLEEP_HIGH = 7  # high (in sec) for random sleep between page loads
@@ -111,93 +111,141 @@ def tab_restart_browser(webdriver):
     webdriver.switch_to_window(webdriver.window_handles[0])
 
 
-def get_website(
-    url, sleep, visit_id, webdriver, browser_params, extension_socket: ClientSocket
-):
+class GetCommand(BaseCommand):
     """
     goes to <url> using the given <webdriver> instance
     """
 
-    tab_restart_browser(webdriver)
+    def __init__(self, url, sleep):
+        self.url = url
+        self.sleep = sleep
 
-    if extension_socket is not None:
-        extension_socket.send(visit_id)
+    def __repr__(self):
+        return "GetCommand({},{})".format(self.url, self.sleep)
 
-    # Execute a get through selenium
-    try:
-        webdriver.get(url)
-    except TimeoutException:
-        pass
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        tab_restart_browser(webdriver)
 
-    # Sleep after get returns
-    time.sleep(sleep)
+        if extension_socket is not None:
+            extension_socket.send(self.visit_id)
 
-    # Close modal dialog if exists
-    try:
-        WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
-        alert = webdriver.switch_to_alert()
-        alert.dismiss()
-        time.sleep(1)
-    except (TimeoutException, WebDriverException):
-        pass
-
-    close_other_windows(webdriver)
-
-    if browser_params.bot_mitigation:
-        bot_mitigation(webdriver)
-
-
-def browse_website(
-    url,
-    num_links,
-    sleep,
-    visit_id,
-    webdriver,
-    browser_params,
-    manager_params,
-    extension_socket,
-):
-    """Calls get_website before visiting <num_links> present on the page.
-
-    Note: the site_url in the site_visits table for the links visited will
-    be the site_url of the original page and NOT the url of the links visited.
-    """
-    # First get the site
-    get_website(url, sleep, visit_id, webdriver, browser_params, extension_socket)
-
-    # Then visit a few subpages
-    for _ in range(num_links):
-        links = [x for x in get_intra_links(webdriver, url) if is_displayed(x) is True]
-        if not links:
-            break
-        r = int(random.random() * len(links))
-        logger.info(
-            "BROWSER %i: visiting internal link %s"
-            % (browser_params.browser_id, links[r].get_attribute("href"))
-        )
-
+        # Execute a get through selenium
         try:
-            links[r].click()
-            wait_until_loaded(webdriver, 300)
-            time.sleep(max(1, sleep))
-            if browser_params.bot_mitigation:
-                bot_mitigation(webdriver)
-            webdriver.back()
-            wait_until_loaded(webdriver, 300)
-        except Exception:
+            webdriver.get(self.url)
+        except TimeoutException:
             pass
 
+        # Sleep after get returns
+        time.sleep(self.sleep)
 
-def save_screenshot(visit_id, browser_id, driver, manager_params, suffix=""):
-    """ Save a screenshot of the current viewport"""
-    if suffix != "":
-        suffix = "-" + suffix
+        # Close modal dialog if exists
+        try:
+            WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
+            alert = webdriver.switch_to_alert()
+            alert.dismiss()
+            time.sleep(1)
+        except (TimeoutException, WebDriverException):
+            pass
 
-    urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outname = os.path.join(
-        manager_params.screenshot_path, "%i-%s%s.png" % (visit_id, urlhash, suffix)
-    )
-    driver.save_screenshot(outname)
+        close_other_windows(webdriver)
+
+        if browser_params.bot_mitigation:
+            bot_mitigation(webdriver)
+
+
+class BrowseCommand(BaseCommand):
+    def __init__(self, url, num_links, sleep):
+        self.url = url
+        self.num_links = num_links
+        self.sleep = sleep
+
+    def __repr__(self):
+        return "BrowseCommand({},{},{})".format(self.url, self.num_links, self.sleep)
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        """Calls get_website before visiting <num_links> present on the page.
+
+        Note: the site_url in the site_visits table for the links visited will
+        be the site_url of the original page and NOT the url of the links visited.
+        """
+        # First get the site
+        get_command = GetCommand(self.url, self.sleep)
+        get_command.set_visit_browser_id(self.visit_id, self.browser_id)
+        get_command.execute(
+            webdriver,
+            browser_params,
+            manager_params,
+            extension_socket,
+        )
+
+        # Then visit a few subpages
+        for _ in range(self.num_links):
+            links = [
+                x
+                for x in get_intra_links(webdriver, self.url)
+                if is_displayed(x) is True
+            ]
+            if not links:
+                break
+            r = int(random.random() * len(links))
+            logger.info(
+                "BROWSER %i: visiting internal link %s"
+                % (browser_params.browser_id, links[r].get_attribute("href"))
+            )
+
+            try:
+                links[r].click()
+                wait_until_loaded(webdriver, 300)
+                time.sleep(max(1, self.sleep))
+                if browser_params.bot_mitigation:
+                    bot_mitigation(webdriver)
+                webdriver.back()
+                wait_until_loaded(webdriver, 300)
+            except Exception as e:
+                logger.error(
+                    "BROWSER %i: Error visitit internal link %s",
+                    browser_params.browser_id,
+                    links[r].get_attribute("href"),
+                    exc_info=e,
+                )
+                pass
+
+
+class SaveScreenshotCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
+        return "SaveScreenshotCommand({})".format(self.suffix)
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outname = os.path.join(
+            manager_params.screenshot_path,
+            "%i-%s%s.png" % (self.visit_id, urlhash, self.suffix),
+        )
+        webdriver.save_screenshot(outname)
 
 
 def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
@@ -262,127 +310,209 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
         pass
 
 
-def screenshot_full_page(visit_id, browser_id, driver, manager_params, suffix=""):
+class ScreenshotFullPageCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
 
-    outdir = os.path.join(manager_params.screenshot_path, "parts")
-    if not os.path.isdir(outdir):
-        os.mkdir(outdir)
-    if suffix != "":
-        suffix = "-" + suffix
-    urlhash = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outname = os.path.join(
-        outdir, "%i-%s%s-part-%%i-%%i.png" % (visit_id, urlhash, suffix)
-    )
+    def __repr__(self):
+        return "ScreenshotFullPageCommand({})".format(self.suffix)
 
-    try:
-        part = 0
-        max_height = execute_script_with_retry(
-            driver, "return document.body.scrollHeight;"
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        self.outdir = os.path.join(manager_params.screenshot_path, "parts")
+        if not os.path.isdir(self.outdir):
+            os.mkdir(self.outdir)
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+        urlhash = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outname = os.path.join(
+            self.outdir,
+            "%i-%s%s-part-%%i-%%i.png" % (self.visit_id, urlhash, self.suffix),
         )
-        inner_height = execute_script_with_retry(driver, "return window.innerHeight;")
-        curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
-        prev_scrollY = -1
-        driver.save_screenshot(outname % (part, curr_scrollY))
-        while (
-            curr_scrollY + inner_height
-        ) < max_height and curr_scrollY != prev_scrollY:
 
-            # Scroll down to bottom of previous viewport
-            try:
-                driver.execute_script("window.scrollBy(0, window.innerHeight)")
-            except WebDriverException:
-                logger.info(
-                    "BROWSER %i: WebDriverException while scrolling, "
-                    "screenshot may be misaligned!" % browser_id
+        try:
+            part = 0
+            max_height = execute_script_with_retry(
+                webdriver, "return document.body.scrollHeight;"
+            )
+            inner_height = execute_script_with_retry(
+                webdriver, "return window.innerHeight;"
+            )
+            curr_scrollY = execute_script_with_retry(
+                webdriver, "return window.scrollY;"
+            )
+            prev_scrollY = -1
+            webdriver.save_screenshot(outname % (part, curr_scrollY))
+            while (
+                curr_scrollY + inner_height
+            ) < max_height and curr_scrollY != prev_scrollY:
+
+                # Scroll down to bottom of previous viewport
+                try:
+                    webdriver.execute_script("window.scrollBy(0, window.innerHeight)")
+                except WebDriverException:
+                    logger.info(
+                        "BROWSER %i: WebDriverException while scrolling, "
+                        "screenshot may be misaligned!" % self.browser_id
+                    )
+                    pass
+
+                # Update control variables
+                part += 1
+                prev_scrollY = curr_scrollY
+                curr_scrollY = execute_script_with_retry(
+                    webdriver, "return window.scrollY;"
                 )
-                pass
 
-            # Update control variables
-            part += 1
-            prev_scrollY = curr_scrollY
-            curr_scrollY = execute_script_with_retry(driver, "return window.scrollY;")
-
-            # Save screenshot
-            driver.save_screenshot(outname % (part, curr_scrollY))
-    except WebDriverException:
-        excp = traceback.format_exception(*sys.exc_info())
-        logger.error(
-            "BROWSER %i: Exception while taking full page screenshot \n %s"
-            % (browser_id, "".join(excp))
-        )
-        return
-
-    _stitch_screenshot_parts(visit_id, browser_id, manager_params)
-
-
-def dump_page_source(visit_id, driver, manager_params, suffix=""):
-    if suffix != "":
-        suffix = "-" + suffix
-
-    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outfile = os.path.join(
-        manager_params.source_dump_path, "%i-%s%s.html" % (visit_id, outname, suffix)
-    )
-
-    with open(outfile, "wb") as f:
-        f.write(driver.page_source.encode("utf8"))
-        f.write(b"\n")
-
-
-def recursive_dump_page_source(visit_id, driver, manager_params, suffix=""):
-    """Dump a compressed html tree for the current page visit"""
-    if suffix != "":
-        suffix = "-" + suffix
-
-    outname = md5(driver.current_url.encode("utf-8")).hexdigest()
-    outfile = os.path.join(
-        manager_params.source_dump_path,
-        "%i-%s%s.json.gz" % (visit_id, outname, suffix),
-    )
-
-    def collect_source(driver, frame_stack, rv={}):
-        is_top_frame = len(frame_stack) == 1
-
-        # Gather frame information
-        doc_url = driver.execute_script("return window.document.URL;")
-        if is_top_frame:
-            page_source = rv
-        else:
-            page_source = dict()
-        page_source["doc_url"] = doc_url
-        source = driver.page_source
-        if type(source) != str:
-            source = str(source, "utf-8")
-        page_source["source"] = source
-        page_source["iframes"] = dict()
-
-        # Store frame info in correct area of return value
-        if is_top_frame:
+                # Save screenshot
+                webdriver.save_screenshot(outname % (part, curr_scrollY))
+        except WebDriverException:
+            excp = traceback.format_exception(*sys.exc_info())
+            logger.error(
+                "BROWSER %i: Exception while taking full page screenshot \n %s"
+                % (self.browser_id, "".join(excp))
+            )
             return
-        out_dict = rv["iframes"]
-        for frame in frame_stack[1:-1]:
-            out_dict = out_dict[frame.id]["iframes"]
-        out_dict[frame_stack[-1].id] = page_source
 
-    page_source = dict()
-    execute_in_all_frames(driver, collect_source, {"rv": page_source})
-
-    with gzip.GzipFile(outfile, "wb") as f:
-        f.write(json.dumps(page_source).encode("utf-8"))
+        _stitch_screenshot_parts(self.visit_id, self.browser_id, manager_params)
 
 
-def finalize(
-    visit_id: int, webdriver: WebDriver, extension_socket: ClientSocket, sleep: int
-) -> None:
-    """ Informs the extension that a visit is done """
-    tab_restart_browser(webdriver)
-    # This doesn't immediately stop data saving from the current
-    # visit so we sleep briefly before unsetting the visit_id.
-    time.sleep(sleep)
-    msg = {"action": "Finalize", "visit_id": visit_id}
-    extension_socket.send(msg)
+class DumpPageSourceCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
+        return "DumpPageSourceCommand({})".format(self.suffix)
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params.source_dump_path,
+            "%i-%s%s.html" % (self.visit_id, outname, self.suffix),
+        )
+
+        with open(outfile, "wb") as f:
+            f.write(webdriver.page_source.encode("utf8"))
+            f.write(b"\n")
 
 
-def initialize(visit_id: int, extension_socket: ClientSocket) -> None:
-    msg = {"action": "Initialize", "visit_id": visit_id}
-    extension_socket.send(msg)
+class RecursiveDumpPageSourceCommand(BaseCommand):
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __repr__(self):
+        return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        """Dump a compressed html tree for the current page visit"""
+        if self.suffix != "":
+            self.suffix = "-" + self.suffix
+
+        outname = md5(webdriver.current_url.encode("utf-8")).hexdigest()
+        outfile = os.path.join(
+            manager_params.source_dump_path,
+            "%i-%s%s.json.gz" % (self.visit_id, outname, self.suffix),
+        )
+
+        def collect_source(webdriver, frame_stack, rv={}):
+            is_top_frame = len(frame_stack) == 1
+
+            # Gather frame information
+            doc_url = webdriver.execute_script("return window.document.URL;")
+            if is_top_frame:
+                page_source = rv
+            else:
+                page_source = dict()
+            page_source["doc_url"] = doc_url
+            source = webdriver.page_source
+            if type(source) != str:
+                source = str(source, "utf-8")
+            page_source["source"] = source
+            page_source["iframes"] = dict()
+
+            # Store frame info in correct area of return value
+            if is_top_frame:
+                return
+            out_dict = rv["iframes"]
+            for frame in frame_stack[1:-1]:
+                out_dict = out_dict[frame.id]["iframes"]
+            out_dict[frame_stack[-1].id] = page_source
+
+        page_source = dict()
+        execute_in_all_frames(webdriver, collect_source, {"rv": page_source})
+
+        with gzip.GzipFile(outfile, "wb") as f:
+            f.write(json.dumps(page_source).encode("utf-8"))
+
+
+class FinalizeCommand(BaseCommand):
+    """This command is automatically appended to the end of a CommandSequence
+    It's apperance means there won't be any more commands for this
+    visit_id
+    """
+
+    def __init__(self, sleep):
+        self.sleep = sleep
+
+    def __repr__(self):
+        return f"FinalizeCommand({self.sleep})"
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        """ Informs the extension that a visit is done """
+        tab_restart_browser(webdriver)
+        # This doesn't immediately stop data saving from the current
+        # visit so we sleep briefly before unsetting the visit_id.
+        time.sleep(self.sleep)
+        msg = {"action": "Finalize", "visit_id": self.visit_id}
+        extension_socket.send(msg)
+
+
+class InitializeCommand(BaseCommand):
+    """The command is automatically prepended to the beginning of a
+    CommandSequence
+    It initializes state both in the extensions as well in as the
+    Aggregator
+    """
+
+    def __repr__(self):
+        return "IntitializeCommand()"
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+
+        msg = {"action": "Initialize", "visit_id": self.visit_id}
+        extension_socket.send(msg)
