@@ -16,11 +16,9 @@ from selenium.common.exceptions import (
     WebDriverException,
 )
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ..socket_interface import ClientSocket
 from .types import BaseCommand
 from .utils.webdriver_utils import (
     execute_in_all_frames,
@@ -32,6 +30,7 @@ from .utils.webdriver_utils import (
 )
 
 # Constants for bot mitigation
+
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
 RANDOM_SLEEP_LOW = 1  # low (in sec) for random sleep between page loads
 RANDOM_SLEEP_HIGH = 7  # high (in sec) for random sleep between page loads

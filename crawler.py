@@ -13,7 +13,7 @@ import sentry_sdk
 from openwpm.command_sequence import CommandSequence
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.mp_logger import parse_config_from_env
-from openwpm.task_manager import TaskManager, load_default_params
+from openwpm.task_manager import TaskManager
 from openwpm.utilities import rediswq
 from test.utilities import LocalS3Session, local_s3_bucket
 

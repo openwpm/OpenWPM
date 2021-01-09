@@ -1,5 +1,3 @@
-from typing import Any, Dict
-
 from selenium.webdriver import Firefox
 
 from openwpm import command_sequence, task_manager

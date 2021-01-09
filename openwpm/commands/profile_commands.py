@@ -1,9 +1,12 @@
 import logging
 import os
-import pickle
 import shutil
 import tarfile
 from typing import Any, Dict
+
+from selenium.webdriver import Firefox
+
+from openwpm.config import BrowserParams, ManagerParams
 
 from selenium.webdriver import Firefox
 
