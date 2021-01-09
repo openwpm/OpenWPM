@@ -9,8 +9,6 @@ from openwpm.config import (
 )
 from openwpm.errors import ConfigError
 
-from .openwpmtest import OpenWPMTest
-
 
 def test_display_mode():
     browser_params = BrowserParams()
