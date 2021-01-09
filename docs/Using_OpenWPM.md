@@ -6,7 +6,7 @@ In this section, we present three basic development demos for working on the Ope
 
 Have a look at [demo.py](../demo.py)
 Generally, measurement crawls should be able to be run using scripts with lengths on the order of 100 lines of code.
-Even within this short script, there are several different options that a user can change.
+Even within this short script, there are several options that a user can change.
 
 Users can change the settings for task manager and individual browsers so that, for instance, certain browsers can run headless while others do not. We provide a method to read the default configuration settings into a classes that can be passed to the `TaskManager` instance. Note that browser configuration is **per-browser**, so this command will return a list of class<BrowserParams>.
 
@@ -18,96 +18,27 @@ browser_params = [BrowserParams() for _ in range(manager_params.num_browsers)]
 ```
 
 #### Loading Custom Browser or Manager configs
-Users can load custom Browser and Platform/Manager configuration by writing them into a json file and then loading then into respective dataclasses. For example:
+Users can load custom Browser and Platform/Manager configuration by writing them into a json file and then loading them into respective dataclasses. For example:
 ```py
 from openwpm.config import BrowserParams, ManagerParams
 
-with open('<custom_manager_params>.json', 'r') as f:
+with open("<custom_manager_params>.json", 'r') as f:
   manager_params = ManagerParams.from_json(f.read())
 
 browser_params = list()
 for _ in range(num_browsers):
-  with open('<custom_browser_params>.json', 'r') as file:
+  with open("<custom_browser_params>.json", 'r') as file:
       browser_params.append(BrowserParams.from_json(file.read()))
 ```
 
 
-## Adding a new command
+## Defining a new command
 
-OpenWPM commands exist as part of a command sequence object, which allows one to string together a sequence of actions for a browser to take and deploy that sequence to the first available browser from the manager. Adding a command to a `CommandSequence` object will cause the browser to execute it immediately after the previously added command as long as the previous command does not time out or fail.
-
-Suppose we want to add a top-level command to cause the browser to jiggle the mouse a few times. We may want to have the browser visit a site, jiggle the mouse, and extract the links from the site.
-
-To add a new command you need to modify the following four files:
-
-1. Define all required paramters in a type in `openwpm/commands/types.py`  
-  In our case this looks like this:
-  ```python
-    class JiggleCommand(BaseCommand):
-        def __init__(self, num_jiggles):
-            self.num_jiggles = num_jiggles
-
-        def __repr__(self):
-            return "JiggleCommand({})".format(self.num_jiggles)
-  ```
-
-2. Define the behaviour of our new command in `*_commands.py` in `openwpm/commands/`,
-   e.g. `browser_commands.py`.
-   Feel free to add a new module within `openwpm/commands/` for your own custom commands  
-    In our case this looks like this:
-  ```python
-    from selenium.webdriver.common.action_chains import ActionChains
-
-    def jiggle_mouse(webdriver, number_jiggles):
-        for i in xrange(0, number_jiggles):
-            x = random.randrange(0, 500)
-            y = random.randrange(0, 500)
-            action = ActionChains(webdriver)
-            action.move_by_offset(x, y)
-            action.perform()
-  ```
-
-3. Make our function be called when the command_sequence reaches our Command, by adding it to the
-    `execute_command` function in `openwpm/commands/command_executer.py`
-      In our case this looks like this:
-  ```python
-        elif type(command) is JiggleCommand:
-        browser_commands.jiggle_mouse(
-            webdriver=webdriver,
-            number_jiggles=self.num_jiggles)
-  ```
-
-4. Lastly we change ```openwpm/CommandSequence.py``` by adding a `jiggle_mouse` method to the `CommandSequence`
-  so we can add our command to the commands list  
-  In our case this looks like this:
-  ```python
-    def jiggle_mouse(self, num_jiggles, timeout=60):
-    """ jiggles mouse <num_jiggles> times """
-    self.total_timeout += timeout
-    if not self.contains_get_or_browse:
-        raise CommandExecutionError("No get or browse request preceding "
-                                    "the jiggle_mouse command", self)
-    command = JiggleCommand(num_jiggles)
-    self.commands_with_timeout.append((command, timeout))
-  ```
-   A timeout is given and set by default to 60 seconds. This is added to the overall sequence timeout. Finally, we check that the `CommandSequence` instance contains a `get` or a `browse` command prior to this command being added by checking `self.contains_get_or_browse`. This is necessary as it wouldn't make sense to have selenium jiggle the mouse before loading a page.
+Please have a look at [`custom_command.py`](../custom_command.py). Note that custom commands must be
+defined in a separate module and imported. They can't be defined within the main crawl script.
+See [#837](https://github.com/mozilla/OpenWPM/issues/837).
 
 
-
-Notice that any arguments to the command are added both to the command sequence top-level method, and are then stored in the `Command` object to be serialized and sent across the process boundary between the task manager and browser manager.
-
-Finally, the command sequence given to the Task Manager to visit a site, sleep for 10 seconds, jiggle the mouse 10 times, and takes a screenshot would look like this:
-
-```python
-site = 'http://www.example.com'
-
-command_sequence = CommandSequence.CommandSequence(site)
-command_sequence.get(sleep=10)
-command_sequence.jiggle_mouse(10)
-command_sequence.screenshot_full_page()
-
-manager.execute_command_sequence(command_sequence)
-```
 
 ## Running a simple analysis
 
@@ -133,7 +64,7 @@ for url, top_url in cur.execute("SELECT DISTINCT h.url, v.site_url "
         fp_sites.add(top_url)
 
 # outputs the results
-print list(fp_sites)
+print(list(fp_sites))
 ````
 
 The variety of data stored in OpenWPM databases (with all instrumentation enabled) allows the above script to easily be expanded into a larger study. For instance, one step would be to see which parties are the recipients of the email address. Do these recipients later place cookies containing the email? Besides the site on which the original email leak was made, on which other first parties do these recipients appear as a third party? All of these questions are answerable through OpenWPM database instances.

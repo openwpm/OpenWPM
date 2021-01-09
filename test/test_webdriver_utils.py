@@ -28,7 +28,7 @@ class TestCustomFunctionCommand(OpenWPMTest):
 
         get_command = db_utils.query_db(
             manager_params.database_name,
-            "SELECT command_status, error FROM crawl_history WHERE command = \"<class 'openwpm.commands.types.GetCommand'>\"",
+            "SELECT command_status, error FROM crawl_history WHERE command = 'GetCommand'",
             as_tuple=True,
         )[0]
 
