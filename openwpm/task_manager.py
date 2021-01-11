@@ -167,6 +167,18 @@ class TaskManager:
         self.callback_thread.name = "OpenWPM-completion_handler"
         self.callback_thread.start()
 
+    def __enter__():
+        """
+        Execute starting procedure for TaskManager
+        """
+        return self
+
+    def __exit__():
+        """
+        Execute shutdown procedure for TaskManager
+        """
+        self.close()
+
     def _initialize_browsers(
         self, browser_params: List[BrowserParamsInternal]
     ) -> List[Browser]:
