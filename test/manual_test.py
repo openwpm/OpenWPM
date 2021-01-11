@@ -125,13 +125,13 @@ def start_webdriver(
         # to set more preferences and better emulate
         # what happens in TaskManager. But this lets
         # us pass some basic things.
-        browser_params = [BrowserParams() for _ in range(num_browsers)]
+
+        browser_params = BrowserParams()
         if browser_params_file is not None:
             with open(browser_params_file, "r") as f:
                 browser_params.from_json(f.read())
         js_request = browser_params.js_instrument_settings
         js_request_as_string = jsi.clean_js_instrumentation_settings(js_request)
-
         browser_params.js_instrument_settings = js_request_as_string
 
         profile_dir = driver.capabilities["moz:profile"]
