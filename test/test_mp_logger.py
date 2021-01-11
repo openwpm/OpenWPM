@@ -166,17 +166,15 @@ class TestMPLogger(OpenWPMTest):
             assert log_content.count(CHILD_INFO_STR_2 % child) == 1
             assert log_content.count(CHILD_EXCEPTION_STR % child) == 1
 
-    @pytest.mark.skipif(
-        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-        reason="Flaky on Travis CI",
-    )
     def test_child_process_logging(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
         openwpm_logger = mp_logger.MPLogger(log_file)
         child_process = Process(target=child_proc_logging_exception())
         child_process.daemon = True
         child_process.start()
-        openwpm_logger.close()
+        time.sleep(2)
         child_process.join()
+        print("Child processes joined...")
+        openwpm_logger.close()
         log_content = self.get_logfile_contents(log_file)
         assert "I'm logging an exception" in log_content
