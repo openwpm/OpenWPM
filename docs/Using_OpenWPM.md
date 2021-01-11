@@ -38,8 +38,6 @@ Please have a look at [`custom_command.py`](../custom_command.py). Note that cus
 defined in a separate module and imported. They can't be defined within the main crawl script.
 See [#837](https://github.com/mozilla/OpenWPM/issues/837).
 
-
-
 ## Running a simple analysis
 
 Suppose that we ran the platform over some set of sites while logged into several sites while using a particular email. During the crawl, we turned on the proxy option to log HTTP traffic. One possible threat is, perhaps due to sloppy coding, the first-party leaks the user's email as plaintext over HTTP traffic. Given an OpenWPM database, the following script logs the first-party sites on which such a leakage occurs.

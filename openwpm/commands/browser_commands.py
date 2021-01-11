@@ -78,9 +78,9 @@ def close_other_windows(webdriver):
     if len(windows) > 1:
         for window in windows:
             if window != main_handle:
-                webdriver.switch_to_window(window)
+                webdriver.switch_to.window(window)
                 webdriver.close()
-        webdriver.switch_to_window(main_handle)
+        webdriver.switch_to.window(main_handle)
 
 
 def tab_restart_browser(webdriver):
@@ -108,7 +108,7 @@ def tab_restart_browser(webdriver):
     # The only remaining window handle will be for the new window;
     # switch to it.
     assert len(webdriver.window_handles) == 1
-    webdriver.switch_to_window(webdriver.window_handles[0])
+    webdriver.switch_to.window(webdriver.window_handles[0])
 
 
 class GetCommand(BaseCommand):
@@ -147,7 +147,7 @@ class GetCommand(BaseCommand):
         # Close modal dialog if exists
         try:
             WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
-            alert = webdriver.switch_to_alert()
+            alert = webdriver.switch_to.alert()
             alert.dismiss()
             time.sleep(1)
         except (TimeoutException, WebDriverException):

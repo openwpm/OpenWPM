@@ -2,12 +2,7 @@ from selenium.webdriver import Firefox
 
 from openwpm import command_sequence, task_manager
 from openwpm.commands.types import BaseCommand
-from openwpm.config import (
-    BrowserParams,
-    BrowserParamsInternal,
-    ManagerParams,
-    ManagerParamsInternal,
-)
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.socket_interface import ClientSocket
 from openwpm.utilities import db_utils
 
@@ -42,8 +37,8 @@ class CollectLinksCommand(BaseCommand):
     def execute(
         self,
         webdriver: Firefox,
-        browser_params: BrowserParamsInternal,
-        manager_params: ManagerParamsInternal,
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
         extension_socket: ClientSocket,
     ) -> None:
         link_urls = [

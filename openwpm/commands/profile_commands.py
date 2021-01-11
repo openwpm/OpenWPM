@@ -8,10 +8,6 @@ from selenium.webdriver import Firefox
 
 from openwpm.config import BrowserParams, ManagerParams
 
-from selenium.webdriver import Firefox
-
-from openwpm.config import BrowserParams, ManagerParams
-
 from ..errors import ProfileLoadError
 from ..socket_interface import ClientSocket
 from .types import BaseCommand
