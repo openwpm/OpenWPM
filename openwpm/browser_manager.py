@@ -552,6 +552,6 @@ def BrowserManager(
         )
         status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
     finally:
-        if browser_params.display_mode == "xvfb":
+        if display is not None:
             display.stop()
         return
