@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import tarfile
+from typing import Any, Dict
 
 from selenium.webdriver import Firefox
 
