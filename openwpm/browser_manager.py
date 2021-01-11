@@ -430,9 +430,10 @@ def BrowserManager(
     to the TaskManager.
     """
     logger = logging.getLogger("openwpm")
+    display = None
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder = deploy_firefox.deploy_firefox(
+        driver, prof_folder, display = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
         if prof_folder[-1] != "/":
@@ -539,7 +540,6 @@ def BrowserManager(
             % (browser_params.browser_id, e.__class__.__name__)
         )
         status_queue.put(("CRITICAL", pickle.dumps(sys.exc_info())))
-        return
     except Exception:
         tb = traceback.format_exception(*sys.exc_info())
         extra = parse_traceback_for_sentry(tb)
@@ -551,4 +551,7 @@ def BrowserManager(
             extra=extra,
         )
         status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
+    finally:
+        if display is not None:
+            display.stop()
         return

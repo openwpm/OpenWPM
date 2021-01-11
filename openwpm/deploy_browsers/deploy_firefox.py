@@ -1,13 +1,16 @@
 import json
 import logging
 import os.path
+from typing import Any, List, Optional
 
 from easyprocess import EasyProcessError
+from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
+from ..config import BrowserParams, ManagerParams
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
@@ -16,7 +19,12 @@ DEFAULT_SCREEN_RES = (1366, 768)
 logger = logging.getLogger("openwpm")
 
 
-def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery):
+def deploy_firefox(
+    status_queue: Queue,
+    browser_params: List[BrowserParams],
+    manager_params: ManagerParams,
+    crash_recovery: bool,
+) -> (webdriver.Firefox, str, Optional[Display]):
     """
     launches a firefox instance with parameters set by the input dictionary
     """
@@ -60,6 +68,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
     display_mode = browser_params.display_mode
     display_pid = None
     display_port = None
+    display = None
     if display_mode == "headless":
         fo.set_headless(True)
         fo.add_argument("--width={}".format(DEFAULT_SCREEN_RES[0]))
@@ -68,7 +77,7 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
         try:
             display = Display(visible=0, size=DEFAULT_SCREEN_RES)
             display.start()
-            display_pid, display_port = display.pid, display.cmd_param[-1][1:]
+            display_pid, display_port = display.pid, display.display
         except EasyProcessError:
             raise RuntimeError(
                 "Xvfb could not be started. \
@@ -157,4 +166,4 @@ def deploy_firefox(status_queue, browser_params, manager_params, crash_recovery)
 
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
-    return driver, driver.capabilities["moz:profile"]
+    return driver, driver.capabilities["moz:profile"], display
