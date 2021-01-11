@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sphinx-apidoc -f -o source ../automation
+sphinx-apidoc -f -o source ../openwpm
 sphinx-build -M html . _build
