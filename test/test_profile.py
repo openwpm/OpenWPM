@@ -1,13 +1,14 @@
 from os.path import isfile, join
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import pytest
 
-from openwpm import task_manager
 from openwpm.command_sequence import CommandSequence
+from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.errors import CommandExecutionError, ProfileLoadError
+from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest
@@ -28,7 +29,7 @@ class TestProfile(OpenWPMTest):
     @pytest.mark.xfail(run=False)
     def test_saving(self):
         manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager = TaskManager(manager_params, browser_params)
         manager.get("http://example.com")
         manager.close()
         assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
@@ -37,7 +38,7 @@ class TestProfile(OpenWPMTest):
     def test_crash(self):
         manager_params, browser_params = self.get_config()
         manager_params.failure_limit = 0
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager = TaskManager(manager_params, browser_params)
         with pytest.raises(CommandExecutionError):
             manager.get("http://example.com")  # So we have a profile
             manager.get("example.com")  # Selenium requires scheme prefix
@@ -47,7 +48,7 @@ class TestProfile(OpenWPMTest):
     def test_crash_profile(self):
         manager_params, browser_params = self.get_config()
         manager_params.failure_limit = 2
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager = TaskManager(manager_params, browser_params)
         try:
             manager.get("http://example.com")  # So we have a profile
             manager.get("example.com")  # Selenium requires scheme prefix
@@ -63,14 +64,14 @@ class TestProfile(OpenWPMTest):
         manager_params, browser_params = self.get_config()
         browser_params[0].seed_tar = "/tmp/NOTREAL"
         with pytest.raises(ProfileLoadError):
-            task_manager.TaskManager(manager_params, browser_params)  # noqa
+            TaskManager(manager_params, browser_params)  # noqa
 
     @pytest.mark.skip(reason="proxy no longer supported, need to update")
     def test_profile_saved_when_launch_crashes(self):
         manager_params, browser_params = self.get_config()
         browser_params[0].proxy = True
         browser_params[0].save_content = "script"
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager = TaskManager(manager_params, browser_params)
         manager.get("http://example.com")
 
         # Kill the LevelDBAggregator
@@ -90,23 +91,6 @@ class TestProfile(OpenWPMTest):
 
 
 def test_seed_persistance(default_params, task_manager_creator):
-    def test_config_is_set(*args, **kwargs):
-        driver = kwargs["driver"]
-        driver.get("about:config")
-        result = driver.execute_script(
-            """
-            var prefs = Components
-                        .classes["@mozilla.org/preferences-service;1"]
-                        .getService(Components.interfaces.nsIPrefBranch);
-            try {
-                return prefs.getBoolPref("test_pref")
-            } catch (e) {
-                return false;
-            }
-        """
-        )
-        assert result
-
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.seed_tar = "."
@@ -116,7 +100,7 @@ def test_seed_persistance(default_params, task_manager_creator):
     for _ in range(2):
         cs = CommandSequence(url="https://example.com", reset=True)
         cs.get()
-        cs.run_custom_function(test_config_is_set)
+        cs.append_command(TestConfigSetCommand("test_pref", True))
         command_sequences.append(cs)
 
     for cs in command_sequences:
@@ -128,3 +112,27 @@ def test_seed_persistance(default_params, task_manager_creator):
     assert len(query_result) > 0
     for row in query_result:
         assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"
+
+
+class TestConfigSetCommand(BaseCommand):
+    def __init__(self, pref_name: str, expected_value: Any) -> None:
+        self.pref_name = pref_name
+        self.expected_value = expected_value
+
+    def execute(
+        self, webdriver, browser_params, manager_params, extension_socket,
+    ) -> None:
+        webdriver.get("about:config")
+        result = webdriver.execute_script(
+            f"""
+                var prefs = Components
+                            .classes["@mozilla.org/preferences-service;1"]
+                            .getService(Components.interfaces.nsIPrefBranch);
+                try {{
+                    return prefs.getBoolPref("{self.pref_name}")
+                }} catch (e) {{
+                    return false;
+                }}
+            """
+        )
+        assert result == self.expected_value

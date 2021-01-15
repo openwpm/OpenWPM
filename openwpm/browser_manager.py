@@ -9,15 +9,14 @@ import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Optional
+from typing import Optional, Union
 
 import psutil
 from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
-from .commands import command_executor
-from .commands.types import ShutdownCommand
+from .commands.types import BaseCommand, ShutdownSignal
 from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .socket_interface import ClientSocket
@@ -287,7 +286,7 @@ class Browser:
             return
 
         # Send the shutdown command
-        command = ShutdownCommand()
+        command = ShutdownSignal()
         self.command_queue.put((command))
 
         # Verify that webdriver has closed (30 second timeout)
@@ -432,9 +431,10 @@ def BrowserManager(
     to the TaskManager.
     """
     logger = logging.getLogger("openwpm")
+    display = None
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder = deploy_firefox.deploy_firefox(
+        driver, prof_folder, display = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
         if prof_folder[-1] != "/":
@@ -488,9 +488,9 @@ def BrowserManager(
                 time.sleep(0.001)
                 continue
 
-            command = command_queue.get()
+            command: Union[ShutdownSignal, BaseCommand] = command_queue.get()
 
-            if type(command) is ShutdownCommand:
+            if type(command) is ShutdownSignal:
                 # Geckodriver creates a copy of the profile (and the original
                 # temp file created by FirefoxProfile() is deleted).
                 # We clear the profile attribute here to prevent prints from:
@@ -510,8 +510,8 @@ def BrowserManager(
             # if command fails for whatever reason, tell the TaskManager to
             # kill and restart its worker processes
             try:
-                command_executor.execute_command(
-                    command, driver, browser_params, manager_params, extension_socket,
+                command.execute(
+                    driver, browser_params, manager_params, extension_socket,
                 )
                 status_queue.put("OK")
             except WebDriverException:
@@ -538,7 +538,6 @@ def BrowserManager(
             % (browser_params.browser_id, e.__class__.__name__)
         )
         status_queue.put(("CRITICAL", pickle.dumps(sys.exc_info())))
-        return
     except Exception:
         tb = traceback.format_exception(*sys.exc_info())
         extra = parse_traceback_for_sentry(tb)
@@ -550,4 +549,7 @@ def BrowserManager(
             extra=extra,
         )
         status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
+    finally:
+        if display is not None:
+            display.stop()
         return

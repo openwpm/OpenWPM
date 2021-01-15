@@ -58,6 +58,14 @@ ALL_RESOURCE_TYPES = {
 @dataclass_json
 @dataclass
 class BrowserParams:
+    """
+    Configuration that might differ per browser
+
+    OpenWPM allows you to run multiple browsers with different
+    configurations in parallel and this class allows you
+    to customize behaviour of an individual browser
+    """
+
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
@@ -69,14 +77,14 @@ class BrowserParams:
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
     dns_instrument: bool = False
-    seed_tar: Optional[str] = None
+    seed_tar: Optional[Path] = None
     display_mode: str = "native"
     browser: str = "firefox"
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
     profile_archive_dir: Optional[str] = None
-    recovery_tar: Optional[str] = None
+    recovery_tar: Optional[Path] = None
     donottrack: bool = False
     tracking_protection: bool = False
 
@@ -100,12 +108,14 @@ class ManagerParams:
     num_browsers: int = 1
 
 
+@dataclass_json
 @dataclass
 class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[int] = None
     profile_path: Optional[Path] = None
 
 
+@dataclass_json
 @dataclass
 class ManagerParamsInternal(ManagerParams):
     aggregator_address: Optional[Tuple[str, int]] = None

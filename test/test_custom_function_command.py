@@ -1,8 +1,13 @@
 import sqlite3
 
+from selenium.webdriver import Firefox
+
 from openwpm import command_sequence, task_manager
+from openwpm.commands.types import BaseCommand
+from openwpm.config import BrowserParams, ManagerParamsInternal
 from openwpm.socket_interface import ClientSocket
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
@@ -26,32 +31,39 @@ PAGE_LINKS = {
 }
 
 
-def test_custom_function(default_params, xpi, server):
-    """ Test `custom_function` with an inline func that collects links """
-    table_name = "page_links"
+class CollectLinksCommand(BaseCommand):
+    """ Collect links with `scheme` and save in table `table_name` """
 
-    def collect_links(table_name, scheme, **kwargs):
-        """ Collect links with `scheme` and save in table `table_name` """
-        driver = kwargs["driver"]
-        manager_params = kwargs["manager_params"]
-        browser_id = kwargs["command"].browser_id
-        visit_id = kwargs["command"].visit_id
+    def __init__(self, table_name: TableName, scheme: str) -> None:
+        self.scheme = scheme
+        self.table_name = table_name
+
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParams,
+        manager_params: ManagerParamsInternal,
+        extension_socket: ClientSocket,
+    ) -> None:
+        browser_id = self.browser_id
+        visit_id = self.visit_id
         link_urls = [
             x
             for x in (
                 element.get_attribute("href")
-                for element in driver.find_elements_by_tag_name("a")
+                for element in webdriver.find_elements_by_tag_name("a")
             )
-            if x.startswith(scheme + "://")
+            if x.startswith(self.scheme + "://")
         ]
-        current_url = driver.current_url
+        current_url = webdriver.current_url
 
         sock = ClientSocket()
+        assert manager_params.aggregator_address is not None
         sock.connect(*manager_params.aggregator_address)
 
         for link in link_urls:
             query = (
-                table_name,
+                self.table_name,
                 {
                     "top_url": current_url,
                     "link": link,
@@ -62,6 +74,11 @@ def test_custom_function(default_params, xpi, server):
             sock.send(query)
         sock.close()
 
+
+def test_custom_function(default_params, xpi, server):
+    """ Test `custom_function` with an inline func that collects links """
+    table_name = TableName("page_links")
+
     manager_params, browser_params = default_params
 
     db = sqlite3.connect(manager_params.database_name)
@@ -69,7 +86,7 @@ def test_custom_function(default_params, xpi, server):
 
     cur.execute(
         """CREATE TABLE IF NOT EXISTS %s (
-            top_url TEXT, link TEXT, 
+            top_url TEXT, link TEXT,
             visit_id INTEGER, browser_id INTEGER);"""
         % table_name
     )
@@ -80,7 +97,7 @@ def test_custom_function(default_params, xpi, server):
     manager = TaskManager(manager_params, browser_params, storage_provider, None)
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=0, timeout=60)
-    cs.run_custom_function(collect_links, (table_name, "http"))
+    cs.append_command(CollectLinksCommand(table_name, "http"))
     manager.execute_command_sequence(cs)
     manager.close()
     query_result = db_utils.query_db(

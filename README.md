@@ -82,8 +82,8 @@ Quick Start
 
 Once installed, it is very easy to run a quick test of OpenWPM. Check out
 `demo.py` for an example. This will use the default setting specified in
-`openwpm/default_manager_params.json` and
-`openwpm/default_browser_params.json`, with the exception of the changes
+`openwpm/config.py::ManagerParams` and
+`openwpm/config.py::BrowserParams`, with the exception of the changes
 specified in `demo.py`.
 
 More information on the instrumentation and configuration parameters is given

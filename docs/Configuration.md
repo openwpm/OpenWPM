@@ -11,7 +11,7 @@ To load the default configuration create instances of `config::ManagerParams` an
 from openwpm.config import BrowserParams, ManagerParams
 
 manager_params = ManagerParams(num_browsers=5)
-browser_params = [BrowserParams() for _ in range(num_browsers)]
+browser_params = [BrowserParams() for _ in range(manager_params.num_browsers)]
 ```
 
 where `manager_params` is of type `class<ManagerParams>` and `browser_params` is a length 5 list
@@ -20,11 +20,16 @@ of configurations of `class<BrowserParams>`.
 ####Validations:
 To validate `browser_params` and `manager_params`, we have two methods each for type of params, `config::validate_browser_params` and `config::validate_manager_params`. For example:
 ```python
-from openwpm.config import validate_browser_params, validate_manager_params
+from openwpm.config import (
+  validate_browser_params, 
+  validate_manager_params,
+  validate_crawl_configs,
+)
 
 for bp in browser_params:
   validate_browser_params(bp)
 validate_manager_params(manager_params)
+validate_crawl_configs(manager_params, browser_params)
 ```
 **NOTE**: If any validations fail, we raise `ConfigError`
 

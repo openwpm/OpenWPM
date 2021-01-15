@@ -113,10 +113,10 @@ def test_multiprocess(tmpdir):
 
     # Close the logging server
     time.sleep(2)  # give some time for logs to be sent
-    openwpm_logger.close()
     child_process_1.join()
     child_process_2.join()
     print("Child processes joined...")
+    openwpm_logger.close()
 
     log_content = get_logfile_contents(log_file)
     for child in range(2):
@@ -140,10 +140,6 @@ def test_multiple_instances(tmpdir):
     test_multiprocess(str(tmpdir) + "-2")
 
 
-@pytest.mark.skipif(
-    "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-    reason="Flaky on Travis CI",
-)
 def test_child_process_with_exception(tmpdir):
     log_file = get_logfile_path(str(tmpdir))
     openwpm_logger = mp_logger.MPLogger(log_file)
@@ -157,6 +153,7 @@ def test_child_process_with_exception(tmpdir):
 
     # Close the logging server
     time.sleep(2)  # give some time for logs to be sent
+
     child_process_1.join()
     child_process_2.join()
     print("Child processes joined...")
@@ -169,17 +166,13 @@ def test_child_process_with_exception(tmpdir):
         assert log_content.count(CHILD_EXCEPTION_STR % child) == 1
 
 
-@pytest.mark.skipif(
-    "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-    reason="Flaky on Travis CI",
-)
 def test_child_process_logging(tmpdir):
     log_file = get_logfile_path(str(tmpdir))
     openwpm_logger = mp_logger.MPLogger(log_file)
     child_process = Process(target=child_proc_logging_exception())
     child_process.daemon = True
     child_process.start()
-    openwpm_logger.close()
     child_process.join()
+    openwpm_logger.close()
     log_content = get_logfile_contents(log_file)
     assert "I'm logging an exception" in log_content

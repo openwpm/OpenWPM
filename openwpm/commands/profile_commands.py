@@ -1,147 +1,149 @@
 import logging
-import os
-import pickle
 import shutil
 import tarfile
+from pathlib import Path
+from typing import Any, Dict
 
-from ..errors import ProfileLoadError
+from selenium.webdriver import Firefox
+
+from openwpm.config import (
+    BrowserParams,
+    BrowserParamsInternal,
+    ManagerParams,
+    ManagerParamsInternal,
+)
+
+from ..errors import ConfigError, ProfileLoadError
+from ..socket_interface import ClientSocket
+from .types import BaseCommand
 from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 
 logger = logging.getLogger("openwpm")
 
 
-def dump_profile(
-    browser_profile_folder,
-    manager_params,
-    browser_params,
-    tar_location,
-    close_webdriver,
-    webdriver=None,
-    compress=False,
-):
+class DumpProfileCommand(BaseCommand):
     """
     dumps a browser profile currently stored in <browser_profile_folder> to
-    <tar_location> in which both folders are absolute paths.
+    <tar_path> in which both folders are absolute paths.
     """
-    logger.debug(
-        "BROWSER %i: Profile dumping is currently unsupported. "
-        "See: https://github.com/mozilla/OpenWPM/projects/2."
-        % browser_params.browser_id
-    )
-    return
 
-    # ensures that folder paths end with slashes
-    if browser_profile_folder[-1] != "/":
-        browser_profile_folder = browser_profile_folder + "/"
-    if tar_location[-1] != "/":
-        tar_location = tar_location + "/"
+    def __init__(self, tar_path: Path, close_webdriver: bool, compress: bool) -> None:
+        self.tar_path = tar_path
+        self.close_webdriver = close_webdriver
+        self.compress = compress
+        raise ConfigError(
+            "BROWSER %i: Profile dumping is currently unsupported. "
+            "See: https://github.com/mozilla/OpenWPM/projects/2." % self.browser_id
+        )
 
-    if not os.path.exists(tar_location):
-        os.makedirs(tar_location)
+    def __repr__(self):
+        return "DumpProfCommand({},{},{})".format(
+            self.tar_path, self.close_webdriver, self.compress
+        )
 
-    if compress:
-        tar_name = "profile.tar.gz"
-    else:
-        tar_name = "profile.tar"
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParamsInternal,
+        manager_params: ManagerParamsInternal,
+        extension_socket: ClientSocket,
+    ) -> None:
+        browser_profile_folder = browser_params.profile_path
+        assert browser_profile_folder is not None
 
-    # see if this file exists first
-    # if it does, delete it before we try to save the current session
-    if os.path.isfile(tar_location + tar_name):
-        os.remove(tar_location + tar_name)
+        # Creating the all folders if need be
+        self.tar_path.parent.mkdir(exist_ok=True, parents=True)
 
-    # if this is a dump on close, close the webdriver and wait for checkpoint
-    if close_webdriver:
-        webdriver.close()
-        sleep_until_sqlite_checkpoint(browser_profile_folder)
+        # see if this file exists first
+        # if it does, delete it before we try to save the current session
+        if self.tar_path.exists():
+            self.tar_path.unlink()  # IDK why it's called like this
+        # if this is a dump on close, close the webdriver and wait for checkpoint
+        if self.close_webdriver:
+            webdriver.close()
+            sleep_until_sqlite_checkpoint(browser_profile_folder)
 
-    # backup and tar profile
-    if compress:
-        tar = tarfile.open(tar_location + tar_name, "w:gz", errorlevel=1)
-    else:
-        tar = tarfile.open(tar_location + tar_name, "w", errorlevel=1)
-    logger.debug(
-        "BROWSER %i: Backing up full profile from %s to %s"
-        % (browser_params.browser_id, browser_profile_folder, tar_location + tar_name,)
-    )
-    storage_vector_files = [
-        "cookies.sqlite",  # cookies
-        "cookies.sqlite-shm",
-        "cookies.sqlite-wal",
-        "places.sqlite",  # history
-        "places.sqlite-shm",
-        "places.sqlite-wal",
-        "webappsstore.sqlite",  # localStorage
-        "webappsstore.sqlite-shm",
-        "webappsstore.sqlite-wal",
-    ]
-    storage_vector_dirs = [
-        "webapps",  # related to localStorage?
-        "storage",  # directory for IndexedDB
-    ]
-    for item in storage_vector_files:
-        full_path = os.path.join(browser_profile_folder, item)
-        if (
-            not os.path.isfile(full_path)
-            and full_path[-3:] != "shm"
-            and full_path[-3:] != "wal"
-        ):
-            logger.critical(
-                "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                % (browser_params.browser_id, full_path)
-            )
-        elif not os.path.isfile(full_path) and (
-            full_path[-3:] == "shm" or full_path[-3:] == "wal"
-        ):
-            continue  # These are just checkpoint files
-        tar.add(full_path, arcname=item)
-    for item in storage_vector_dirs:
-        full_path = os.path.join(browser_profile_folder, item)
-        if not os.path.isdir(full_path):
-            logger.warning(
-                "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                % (browser_params.browser_id, full_path)
-            )
-            continue
-        tar.add(full_path, arcname=item)
-    tar.close()
+        # backup and tar profile
+        if self.compress:
+            tar = tarfile.open(self.tar_path, "w:gz", errorlevel=1)
+        else:
+            tar = tarfile.open(self.tar_path, "w", errorlevel=1)
+        logger.debug(
+            "BROWSER %i: Backing up full profile from %s to %s"
+            % (self.browser_id, browser_profile_folder, self.tar_path,)
+        )
+        storage_vector_files = [
+            "cookies.sqlite",  # cookies
+            "cookies.sqlite-shm",
+            "cookies.sqlite-wal",
+            "places.sqlite",  # history
+            "places.sqlite-shm",
+            "places.sqlite-wal",
+            "webappsstore.sqlite",  # localStorage
+            "webappsstore.sqlite-shm",
+            "webappsstore.sqlite-wal",
+        ]
+        storage_vector_dirs = [
+            "webapps",  # related to localStorage?
+            "storage",  # directory for IndexedDB
+        ]
+        for item in storage_vector_files:
+            full_path = browser_profile_folder / item
+            if (
+                not full_path.is_file()
+                and full_path.name != "shm"
+                and full_path.name != "wal"
+            ):
+                logger.critical(
+                    "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
+                    % (self.browser_id, full_path)
+                )
+            elif not full_path.is_file() and (
+                full_path.name == "shm" or full_path.name == "wal"
+            ):
+                continue  # These are just checkpoint files
+            tar.add(full_path, arcname=item)
+        for item in storage_vector_dirs:
+            full_path = browser_profile_folder / item
+            if not full_path.is_dir():
+                logger.warning(
+                    "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
+                    % (self.browser_id, full_path)
+                )
+                continue
+            tar.add(full_path, arcname=item)
+        tar.close()
 
 
-def load_profile(browser_profile_folder, manager_params, browser_params, tar_location):
+def load_profile(
+    browser_profile_folder: Path,
+    manager_params: ManagerParamsInternal,
+    browser_params: BrowserParamsInternal,
+    tar_location: Path,
+) -> None:
     """
     loads a zipped cookie-based profile stored in <tar_location> and
     unzips it to <browser_profile_folder>. This will load whatever profile
     is in the folder, either full_profile.tar.gz or profile.tar.gz
     """
+
+    assert tar_location.is_file()
+    assert browser_params.browser_id is not None
     try:
-        # ensures that folder paths end with slashes
-        if browser_profile_folder[-1] != "/":
-            browser_profile_folder = browser_profile_folder + "/"
-        if tar_location[-1] != "/":
-            tar_location = tar_location + "/"
-
-        if os.path.isfile(tar_location + "profile.tar.gz"):
-            tar_name = "profile.tar.gz"
-        else:
-            tar_name = "profile.tar"
-
         # Copy and untar the loaded profile
         logger.debug(
             "BROWSER %i: Copying profile tar from %s to %s"
-            % (
-                browser_params.browser_id,
-                tar_location + tar_name,
-                browser_profile_folder,
-            )
+            % (browser_params.browser_id, tar_location, browser_profile_folder,)
         )
-        shutil.copy(tar_location + tar_name, browser_profile_folder)
+        shutil.copy(tar_location, browser_profile_folder)
 
-        if tar_name == "profile.tar.gz":
-            f = tarfile.open(browser_profile_folder + tar_name, "r:gz", errorlevel=1)
+        if tar_location.name.endswith("tar.gz"):
+            f = tarfile.open(tar_location, "r:gz", errorlevel=1)
         else:
-            f = tarfile.open(browser_profile_folder + tar_name, "r", errorlevel=1)
+            f = tarfile.open(tar_location, "r", errorlevel=1)
         f.extractall(browser_profile_folder)
         f.close()
-        os.remove(browser_profile_folder + tar_name)
+        tar_location.unlink
         logger.debug("BROWSER %i: Tarfile extracted" % browser_params.browser_id)
 
     except Exception as ex:

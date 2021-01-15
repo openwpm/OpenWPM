@@ -18,7 +18,7 @@ dependencies:
     - psutil
     - pyarrow
     - python
-    - pyvirtualdisplay==0.2.5 # https://github.com/mozilla/OpenWPM/issues/694
+    - pyvirtualdisplay
     - redis-py
     - s3fs
     - selenium
