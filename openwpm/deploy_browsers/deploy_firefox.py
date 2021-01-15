@@ -94,7 +94,9 @@ def deploy_firefox(
         extension_config = dict()
         extension_config.update(browser_params.to_dict())  # type: ignore
         extension_config["logger_address"] = manager_params.logger_address
-        extension_config["aggregator_address"] = manager_params.aggregator_address
+        extension_config[
+            "aggregator_address"
+        ] = manager_params.storage_controller_address
         if manager_params.ldb_address:
             extension_config["leveldb_address"] = manager_params.ldb_address
         else:

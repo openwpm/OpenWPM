@@ -3,6 +3,8 @@ import io
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Awaitable, Dict, List, NewType, Optional, Tuple
 
+from pyarrow.lib import Table
+
 from openwpm.types import VisitId
 
 """

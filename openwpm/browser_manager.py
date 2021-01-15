@@ -47,7 +47,7 @@ class Browser:
 
         # manager parameters
         self.current_profile_path = None
-        self.db_socket_address = manager_params.aggregator_address
+        self.db_socket_address = manager_params.storage_controller_address
         self.browser_id = browser_params.browser_id
         self.curr_visit_id: Optional[int] = None
         self.browser_params = browser_params

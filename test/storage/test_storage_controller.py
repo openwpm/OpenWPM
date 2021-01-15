@@ -28,11 +28,11 @@ def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
 
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
-    agg_handle = StorageControllerHandle(structured, unstructured)
-    agg_handle.launch()
-    assert agg_handle.listener_address is not None
+    controller_handle = StorageControllerHandle(structured, unstructured)
+    controller_handle.launch()
+    assert controller_handle.listener_address is not None
     cs = ClientSocket()
-    cs.connect(*agg_handle.listener_address)
+    cs.connect(*controller_handle.listener_address)
     for table, data in TEST_VALUES.items():
         cs.send((table, data))
 
@@ -43,7 +43,7 @@ def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
                 {"action": ACTION_TYPE_FINALIZE, "visit_id": visit_id, "success": True},
             )
         )
-    agg_handle.shutdown()
+    controller_handle.shutdown()
     handle = structured.handle
     handle.poll_queue()
     for table, data in TEST_VALUES.items():

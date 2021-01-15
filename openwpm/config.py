@@ -118,7 +118,7 @@ class BrowserParamsInternal(BrowserParams):
 @dataclass_json
 @dataclass
 class ManagerParamsInternal(ManagerParams):
-    aggregator_address: Optional[Tuple[str, int]] = None
+    storage_controller_address: Optional[Tuple[str, int]] = None
     logger_address: Optional[Tuple[str, ...]] = None
     ldb_address: Optional[Tuple[str, ...]] = None
 

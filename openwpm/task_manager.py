@@ -45,15 +45,15 @@ tblib.pickling_support.install()
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
-AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
+STORAGE_CONTROLLER_JOB_LIMIT = 10000  # number of records in the queue
 
 
 class TaskManager:
     """User-facing Class for interfacing with OpenWPM
 
     The TaskManager spawns several child processes to run the automation tasks.
-        - DataAggregator to aggregate data across browsers and save to the
-          database.
+        - StorageController to receive data from across browsers and save it to
+          the provided StorageProviders
         - MPLogger to aggregate logs across processes
         - BrowserManager processes to isolate Browsers in a separate process
     """
@@ -291,14 +291,14 @@ class TaskManager:
             structured_storage_provider, unstructured_storage_provider
         )
         self.storage_controler_handle.launch()
-        self.manager_params.aggregator_address = (
+        self.manager_params.storage_controller_address = (
             self.storage_controler_handle.listener_address
         )
 
         # open connection to aggregator for saving crawl details
         self.sock = ClientSocket(serialization="dill")
-        assert self.manager_params.aggregator_address is not None
-        self.sock.connect(*self.manager_params.aggregator_address)
+        assert self.manager_params.storage_controller_address is not None
+        self.sock.connect(*self.manager_params.storage_controller_address)
 
     def _shutdown_manager(
         self, during_init: bool = False, relaxed: bool = True
@@ -633,12 +633,12 @@ class TaskManager:
 
         # Block if the aggregator queue is too large
         agg_queue_size = self.storage_controler_handle.get_most_recent_status()
-        if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
-            while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+        if agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
+            while agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
                 self.logger.info(
                     "Blocking command submission until the DataAggregator "
                     "is below the max queue size of %d. Current queue "
-                    "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
+                    "length %d. " % (STORAGE_CONTROLLER_JOB_LIMIT, agg_queue_size)
                 )
                 agg_queue_size = self.storage_controler_handle.get_status()
 

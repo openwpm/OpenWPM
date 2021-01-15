@@ -58,8 +58,8 @@ class CollectLinksCommand(BaseCommand):
         current_url = webdriver.current_url
 
         sock = ClientSocket()
-        assert manager_params.aggregator_address is not None
-        sock.connect(*manager_params.aggregator_address)
+        assert manager_params.storage_controller_address is not None
+        sock.connect(*manager_params.storage_controller_address)
 
         for link in link_urls:
             query = (
