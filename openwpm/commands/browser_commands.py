@@ -124,11 +124,7 @@ class GetCommand(BaseCommand):
         return "GetCommand({},{})".format(self.url, self.sleep)
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
         tab_restart_browser(webdriver)
 
@@ -169,11 +165,7 @@ class BrowseCommand(BaseCommand):
         return "BrowseCommand({},{},{})".format(self.url, self.num_links, self.sleep)
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
         """Calls get_website before visiting <num_links> present on the page.
 
@@ -184,10 +176,7 @@ class BrowseCommand(BaseCommand):
         get_command = GetCommand(self.url, self.sleep)
         get_command.set_visit_browser_id(self.visit_id, self.browser_id)
         get_command.execute(
-            webdriver,
-            browser_params,
-            manager_params,
-            extension_socket,
+            webdriver, browser_params, manager_params, extension_socket,
         )
 
         # Then visit a few subpages
@@ -231,11 +220,7 @@ class SaveScreenshotCommand(BaseCommand):
         return "SaveScreenshotCommand({})".format(self.suffix)
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
         if self.suffix != "":
             self.suffix = "-" + self.suffix
@@ -318,11 +303,7 @@ class ScreenshotFullPageCommand(BaseCommand):
         return "ScreenshotFullPageCommand({})".format(self.suffix)
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
         self.outdir = os.path.join(manager_params.screenshot_path, "parts")
         if not os.path.isdir(self.outdir):
@@ -390,11 +371,7 @@ class DumpPageSourceCommand(BaseCommand):
         return "DumpPageSourceCommand({})".format(self.suffix)
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
 
         if self.suffix != "":
@@ -419,11 +396,7 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
         return "RecursiveDumpPageSourceCommand({})".format(self.suffix)
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
 
         """Dump a compressed html tree for the current page visit"""
@@ -480,11 +453,7 @@ class FinalizeCommand(BaseCommand):
         return f"FinalizeCommand({self.sleep})"
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
 
         """ Informs the extension that a visit is done """
@@ -507,11 +476,7 @@ class InitializeCommand(BaseCommand):
         return "IntitializeCommand()"
 
     def execute(
-        self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
+        self, webdriver, browser_params, manager_params, extension_socket,
     ):
 
         msg = {"action": "Initialize", "visit_id": self.visit_id}
