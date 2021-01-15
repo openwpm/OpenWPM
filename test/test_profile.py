@@ -93,14 +93,14 @@ class TestProfile(OpenWPMTest):
 def test_seed_persistance(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     for browser_param in browser_params:
-        browser_param.seed_tar = "."
+        browser_param.seed_tar = Path(".")
     manager = task_manager_creator(default_params)
 
     command_sequences = []
     for _ in range(2):
         cs = CommandSequence(url="https://example.com", reset=True)
         cs.get()
-        cs.append_command(TestConfigSetCommand("test_pref", True))
+        cs.append_command(AssertConfigSetCommand("test_pref", True))
         command_sequences.append(cs)
 
     for cs in command_sequences:
@@ -114,7 +114,7 @@ def test_seed_persistance(default_params, task_manager_creator):
         assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"
 
 
-class TestConfigSetCommand(BaseCommand):
+class AssertConfigSetCommand(BaseCommand):
     def __init__(self, pref_name: str, expected_value: Any) -> None:
         self.pref_name = pref_name
         self.expected_value = expected_value
