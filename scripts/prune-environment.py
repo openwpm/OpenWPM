@@ -26,11 +26,16 @@ env_unpinned_contains_pip = "pip" in env_unpinned["dependencies"][-1]
 env_unpinned_dev_contains_pip = "pip" in env_unpinned_dev["dependencies"][-1]
 iterate_deps(
     env_pinned["dependencies"][:-1],
-    env_unpinned["dependencies"][:-1]
-    if env_unpinned_contains_pip
-    else env_unpinned["dependencies"] + env_unpinned_dev["dependencies"][:-1]
-    if env_unpinned_dev_contains_pip
-    else env_unpinned_dev["dependencies"],
+    (
+        env_unpinned["dependencies"][:-1]
+        if env_unpinned_contains_pip
+        else env_unpinned["dependencies"]
+    )
+    + (
+        env_unpinned_dev["dependencies"][:-1]
+        if env_unpinned_dev_contains_pip
+        else env_unpinned_dev["dependencies"]
+    ),
     deps_not_pip,
 )
 
