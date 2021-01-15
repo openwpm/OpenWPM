@@ -36,7 +36,7 @@ class DumpProfileCommand(BaseCommand):
             "See: https://github.com/mozilla/OpenWPM/projects/2." % self.browser_id
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "DumpProfCommand({},{},{})".format(
             self.tar_path, self.close_webdriver, self.compress
         )
@@ -136,14 +136,14 @@ def load_profile(
             % (browser_params.browser_id, tar_location, browser_profile_folder,)
         )
         shutil.copy(tar_location, browser_profile_folder)
-
+        tar_location = browser_profile_folder / tar_location.name
         if tar_location.name.endswith("tar.gz"):
             f = tarfile.open(tar_location, "r:gz", errorlevel=1)
         else:
             f = tarfile.open(tar_location, "r", errorlevel=1)
         f.extractall(browser_profile_folder)
         f.close()
-        tar_location.unlink
+        tar_location.unlink()
         logger.debug("BROWSER %i: Tarfile extracted" % browser_params.browser_id)
 
     except Exception as ex:

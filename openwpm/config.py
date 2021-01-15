@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, field
+from json import JSONEncoder
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -277,3 +278,10 @@ def validate_crawl_configs(
             "as manager_params.num_browsers. Make sure you are assigning number of browsers "
             "to be used to manager_params.num_browsers in your entry file"
         )
+
+
+class ConfigEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj.resolve())
+        return JSONEncoder.default(self, obj)

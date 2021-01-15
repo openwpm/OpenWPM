@@ -79,7 +79,7 @@ class TestProfile(OpenWPMTest):
         manager.ldb_status_queue.put("DIE")
         manager.browsers[0]._SPAWN_TIMEOUT = 2  # Have timeout occur quickly
         manager.browsers[0]._UNSUCCESSFUL_SPAWN_LIMIT = 2  # Quick timeout
-        manager.get("example.com")  # Cause a selenium crasht
+        manager.get("example.com")  # Cause a selenium crash
 
         # The browser will fail to launch due to the proxy crashes
         try:
@@ -92,8 +92,9 @@ class TestProfile(OpenWPMTest):
 
 def test_seed_persistance(default_params, task_manager_creator):
     manager_params, browser_params = default_params
+    p = Path("profile.tar.gz")
     for browser_param in browser_params:
-        browser_param.seed_tar = Path(".")
+        browser_param.seed_tar = p
     manager = task_manager_creator(default_params)
 
     command_sequences = []

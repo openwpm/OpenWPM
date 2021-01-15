@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
 from easyprocess import EasyProcessError
@@ -10,7 +11,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
-from ..config import BrowserParamsInternal, ManagerParamsInternal
+from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
@@ -33,7 +34,7 @@ def deploy_firefox(
     root_dir = os.path.dirname(__file__)  # directory of this file
 
     fp = FirefoxProfile()
-    browser_profile_path = fp.path + "/"
+    browser_profile_path = Path(fp.path)
     status_queue.put(("STATUS", "Profile Created", browser_profile_path))
 
     # Use Options instead of FirefoxProfile to set preferences since the
@@ -102,9 +103,9 @@ def deploy_firefox(
         else:
             extension_config["leveldb_address"] = None
         extension_config["testing"] = manager_params.testing
-        ext_config_file = browser_profile_path + "browser_params.json"
+        ext_config_file = browser_profile_path / "browser_params.json"
         with open(ext_config_file, "w") as f:
-            json.dump(extension_config, f)
+            json.dump(extension_config, f, cls=ConfigEncoder)
         logger.debug(
             "BROWSER %i: Saved extension config file to: %s"
             % (browser_params.browser_id, ext_config_file)
