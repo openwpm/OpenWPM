@@ -4,7 +4,6 @@ from typing import Awaitable, Dict
 
 import pytest
 from pandas import DataFrame
-from pyarrow.parquet import ParquetDataset
 
 from openwpm.mp_logger import MPLogger
 from openwpm.storage.arrow_storage import CACHE_SIZE
