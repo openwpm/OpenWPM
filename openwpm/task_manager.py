@@ -96,10 +96,6 @@ class TaskManager:
         if manager_params.log_directory:
             manager_params.log_directory = manager_params.log_directory.expanduser()
 
-        manager_params.database_name = (
-            manager_params.data_directory / manager_params.database_name
-        )
-
         manager_params.log_file = manager_params.log_directory / manager_params.log_file
         manager_params.screenshot_path = manager_params.data_directory / "screenshots"
 

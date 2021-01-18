@@ -6,13 +6,11 @@ def test_name_resolution(default_params, task_manager_creator):
     for browser_param in browser_params:
         browser_param.dns_instrument = True
 
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
     manager.get("http://localtest.me:8000")
     manager.close()
 
-    result = db_utils.query_db(
-        manager_params.database_name, "SELECT * FROM dns_responses"
-    )
+    result = db_utils.query_db(db, "SELECT * FROM dns_responses")
     result = result[0]
     assert result["used_address"] == "127.0.0.1"
     assert result["addresses"] == "127.0.0.1"

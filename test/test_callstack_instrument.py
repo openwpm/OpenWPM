@@ -67,9 +67,8 @@ def test_http_stacktrace(default_params, task_manager_creator):
     # Record the callstack of all WebRequests made
     browser_params[0].callstack_instrument = True
     test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
     manager.get(test_url, sleep=10)
-    db = manager_params.database_name
     manager.close()
     rows = db_utils.query_db(
         db,

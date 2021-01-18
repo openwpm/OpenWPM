@@ -14,7 +14,6 @@ SUPPORTED_BROWSER_LIST = [
     "firefox"
 ]  # Using List instead of a str type to future proof the logic as OpenWPM may add support for more browsers in future
 TP_COOKIES_OPTIONALS_LIST = ["always", "never", "from_visited"]
-DB_EXTENSION_TYPE_LIST = [".db", ".sqlite"]
 LOG_EXTENSION_TYPE_LIST = [".log"]
 CONFIG_ERROR_STRING = (
     "Found {value} as value for {parameter_name} in BrowserParams. "
@@ -30,7 +29,6 @@ GENERAL_ERROR_STRING = (
     "Found invalid value `{value}` for {parameter_name} in {params_type}. "
     "Please look at docs/Configuration.md for more information"
 )
-OUTPUT_FORMAT_LIST = ["local", "s3"]
 
 ALL_RESOURCE_TYPES = {
     "beacon",
@@ -97,13 +95,9 @@ class ManagerParams:
     log_directory: Path = Path("~/openwpm/")
     screenshot_path: Optional[Path] = None
     source_dump_path: Optional[Path] = None
-    output_format: str = "local"
-    database_name: Path = Path("crawl-data.sqlite")
     log_file: Path = Path("openwpm.log")
     failure_limit: Optional[int] = None
     testing: bool = False
-    s3_bucket: Optional[str] = None
-    s3_directory: Optional[str] = None
     memory_watchdog: bool = False
     process_watchdog: bool = False
     num_browsers: int = 1
@@ -213,25 +207,6 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
             )
         )
 
-    try:
-        database_extension = os.path.splitext(manager_params.database_name)[1]
-        if database_extension.lower() not in DB_EXTENSION_TYPE_LIST:
-            raise ConfigError(
-                EXTENSION_ERROR_STRING.format(
-                    extension=database_extension or "no",
-                    value_list=DB_EXTENSION_TYPE_LIST,
-                    parameter_name="database_name",
-                )
-            )
-    except (TypeError, AttributeError):
-        raise ConfigError(
-            GENERAL_ERROR_STRING.format(
-                value=manager_params.database_name,
-                parameter_name="database_name",
-                params_type="ManagerParams",
-            )
-        )
-
     # This check is necessary to not cause any internal error because
     # failure_limit gets set in TaskManager if its value is anything other than None
     if (
@@ -247,24 +222,6 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
                 "Please look at docs/Configuration.md for more information",
                 "failure_limit must be of type `int` or `None`",
             )
-        )
-
-    try:
-        if manager_params.output_format.lower() not in OUTPUT_FORMAT_LIST:
-            raise ConfigError(
-                CONFIG_ERROR_STRING.format(
-                    value=manager_params.output_format,
-                    parameter_name="output_format",
-                    value_list=OUTPUT_FORMAT_LIST,
-                ).replace(
-                    "Please look at docs/Configuration.md#browser-configuration-options for more information",
-                    "Please look at docs/Configuration.md for more information",
-                )
-            )
-    except:
-        raise ConfigError(
-            "Something went wrong while validating ManagerParams. "
-            "Please check values provided for ManagerParams are of expected types"
         )
 
 

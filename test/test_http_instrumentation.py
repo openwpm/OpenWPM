@@ -892,7 +892,10 @@ def test_javascript_saving(http_params, xpi, server):
     for browser_param in browser_params:
         browser_param.http_instrument = True
         browser_param.save_content = "script"
-    structured_storage = SqlLiteStorageProvider(db_path=manager_params.database_name)
+
+    structured_storage = SqlLiteStorageProvider(
+        db_path=manager_params.data_directory / "crawl-data.sqlite"
+    )
     ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(
@@ -925,7 +928,9 @@ def test_document_saving(http_params, xpi, server):
         browser_param.http_instrument = True
         browser_param.save_content = "main_frame,sub_frame"
 
-    structured_storage = SqlLiteStorageProvider(db_path=manager_params.database_name)
+    structured_storage = SqlLiteStorageProvider(
+        db_path=manager_params.data_directory / "crawl-data.sqlite"
+    )
     ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(
@@ -950,8 +955,8 @@ def test_content_saving(http_params, xpi, server):
     for browser_param in browser_params:
         browser_param.http_instrument = True
         browser_param.save_content = True
-
-    structured_storage = SqlLiteStorageProvider(db_path=manager_params.database_name)
+    db = manager_params.data_directory / "crawl-data.sqlite"
+    structured_storage = SqlLiteStorageProvider(db_path=db)
     ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(
@@ -960,7 +965,6 @@ def test_content_saving(http_params, xpi, server):
     manager.get(url=test_url, sleep=1)
     manager.close()
 
-    db = manager_params.database_name
     rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
     disk_content = dict()
     for row in rows:
@@ -999,14 +1003,13 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
     manager_params, browser_params = http_params()
     # ensuring that we only spawn one browser
     manager_params.num_browsers = 1
-    manager = task_manager_creator((manager_params, [browser_params[0]]))
+    manager, db = task_manager_creator((manager_params, [browser_params[0]]))
     for i in range(2):
         cs = CommandSequence(test_url, site_rank=i)
         cs.get(sleep=5)
         manager.execute_command_sequence(cs)
 
     manager.close()
-    db = manager_params.database_name
 
     request_id_to_url = dict()
 
@@ -1092,7 +1095,11 @@ class FilenamesIntoFormCommand(BaseCommand):
         self.css_file_path = css_file_path
 
     def execute(
-        self, webdriver, browser_params, manager_params, extension_socket,
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
     ) -> None:
         img_file_upload_element = webdriver.find_element_by_id("upload-img")
         css_file_upload_element = webdriver.find_element_by_id("upload-css")

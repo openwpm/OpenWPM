@@ -77,7 +77,10 @@ class StructuredStorageProvider(StorageProvider):
 class UnstructuredStorageProvider(StorageProvider):
     @abstractmethod
     async def store_blob(
-        self, filename: str, blob: bytes, overwrite: bool = False,
+        self,
+        filename: str,
+        blob: bytes,
+        overwrite: bool = False,
     ) -> None:
         """Stores the given bytes under the provided filename"""
         pass

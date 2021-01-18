@@ -77,14 +77,6 @@ def test_log_file_extension():
         validate_manager_params(manager_params)
 
 
-def test_database_file_extension():
-    manager_params = ManagerParams()
-
-    manager_params.database_name = "something.unsupported"
-    with pytest.raises(ConfigError):
-        validate_manager_params(manager_params)
-
-
 def test_failure_limit():
     manager_params = ManagerParams()
 
@@ -96,17 +88,6 @@ def test_failure_limit():
     validate_manager_params(manager_params)
 
     manager_params.failure_limit = 2  # when failure_limit is set to int
-    validate_manager_params(manager_params)
-
-
-def test_output_format():
-    manager_params = ManagerParams()
-
-    manager_params.output_format = "not None and not int"
-    with pytest.raises(ConfigError):
-        validate_manager_params(manager_params)
-
-    manager_params.output_format = "s3"
     validate_manager_params(manager_params)
 
 

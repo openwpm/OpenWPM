@@ -95,7 +95,7 @@ def test_seed_persistance(default_params, task_manager_creator):
     p = Path("profile.tar.gz")
     for browser_param in browser_params:
         browser_param.seed_tar = p
-    manager = task_manager_creator(default_params)
+    manager, db = task_manager_creator(default_params)
 
     command_sequences = []
     for _ in range(2):
@@ -108,7 +108,8 @@ def test_seed_persistance(default_params, task_manager_creator):
         manager.execute_command_sequence(cs)
     manager.close()
     query_result = db_utils.query_db(
-        manager_params.database_name, "SELECT * FROM crawl_history;",
+        db,
+        "SELECT * FROM crawl_history;",
     )
     assert len(query_result) > 0
     for row in query_result:
@@ -121,7 +122,11 @@ class AssertConfigSetCommand(BaseCommand):
         self.expected_value = expected_value
 
     def execute(
-        self, webdriver, browser_params, manager_params, extension_socket,
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
     ) -> None:
         webdriver.get("about:config")
         result = webdriver.execute_script(

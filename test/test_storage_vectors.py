@@ -31,7 +31,7 @@ def test_js_profile_cookies(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.cookie_instrument = True
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
     url = utilities.BASE_TEST_URL + "/js_cookie.html"
     cs = command_sequence.CommandSequence(url)
     cs.get(sleep=3, timeout=120)

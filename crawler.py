@@ -87,9 +87,6 @@ for i in range(NUM_BROWSERS):
 # Manager configuration
 manager_params.data_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
 manager_params.log_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
-manager_params.output_format = "s3"
-manager_params.s3_bucket = GCS_BUCKET
-manager_params.s3_directory = CRAWL_DIRECTORY
 
 structured = GcsStructuredProvider(
     project=GCP_PROJECT,
@@ -136,7 +133,10 @@ if SENTRY_DSN:
         if PREFS:
             scope.set_context("PREFS", json.loads(PREFS))
         scope.set_context(
-            "crawl_config", {"REDIS_QUEUE_NAME": REDIS_QUEUE_NAME,},
+            "crawl_config",
+            {
+                "REDIS_QUEUE_NAME": REDIS_QUEUE_NAME,
+            },
         )
     # Send a sentry error message (temporarily - to easily be able
     # to compare error frequencies to crawl worker instance count)

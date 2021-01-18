@@ -11,7 +11,7 @@ from .utilities import BASE_TEST_URL
 def test_local_callbacks(default_params, task_manager_creator) -> None:
     """Test test the storage controller as well as the entire callback machinery
     to see if all callbacks get correctly called"""
-    manager = task_manager_creator(default_params)
+    manager, _ = task_manager_creator(default_params)
     TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
 
     def callback(argument: List[int], success: bool) -> None:

@@ -27,7 +27,7 @@ def test_display_shutdown(task_manager_creator, default_params):
     for browser_param in browser_params:
         browser_param.display_mode = "xvfb"
     TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
     port = manager.browsers[0].display_port
 
     sequence = CommandSequence(TEST_SITE)

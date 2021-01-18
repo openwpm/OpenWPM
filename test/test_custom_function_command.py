@@ -80,8 +80,8 @@ def test_custom_function(default_params, xpi, server):
     table_name = TableName("page_links")
 
     manager_params, browser_params = default_params
-
-    db = sqlite3.connect(manager_params.database_name)
+    path = manager_params.data_directory / "crawl-data.sqlite"
+    db = sqlite3.connect(path)
     cur = db.cursor()
 
     cur.execute(
@@ -93,7 +93,7 @@ def test_custom_function(default_params, xpi, server):
     cur.close()
     db.close()
 
-    storage_provider = SqlLiteStorageProvider(manager_params.database_name)
+    storage_provider = SqlLiteStorageProvider(path)
     manager = TaskManager(manager_params, browser_params, storage_provider, None)
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=0, timeout=60)
@@ -101,7 +101,7 @@ def test_custom_function(default_params, xpi, server):
     manager.execute_command_sequence(cs)
     manager.close()
     query_result = db_utils.query_db(
-        manager_params.database_name,
+        path,
         "SELECT top_url, link FROM page_links;",
         as_tuple=True,
     )

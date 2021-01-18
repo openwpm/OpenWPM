@@ -98,7 +98,7 @@ def test_get_site_visits_table_valid(http_params, task_manager_creator, display_
     """Check that get works and populates db correctly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential get commands to two URLS
     cs_a = command_sequence.CommandSequence(url_a)
@@ -112,7 +112,7 @@ def test_get_site_visits_table_valid(http_params, task_manager_creator, display_
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT site_url FROM site_visits ORDER BY site_url",
     )
 
@@ -128,7 +128,7 @@ def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
     """Check that get works and populates http tables correctly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential get commands to two URLS
     cs_a = command_sequence.CommandSequence(url_a)
@@ -140,9 +140,7 @@ def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
     manager.execute_command_sequence(cs_b)
     manager.close()
 
-    qry_res = db_utils.query_db(
-        manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
-    )
+    qry_res = db_utils.query_db(db, "SELECT visit_id, site_url FROM site_visits")
 
     # Construct dict mapping site_url to visit_id
     visit_ids = dict()
@@ -150,28 +148,28 @@ def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
         visit_ids[row[1]] = row[0]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_b,),
     )
     assert qry_res[0][0] == visit_ids[url_b]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_b,),
     )
@@ -185,7 +183,7 @@ def test_browse_site_visits_table_valid(
     """Check that CommandSequence.browse() populates db correctly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential browse commands to two URLS
     cs_a = command_sequence.CommandSequence(url_a, site_rank=0)
@@ -198,7 +196,7 @@ def test_browse_site_visits_table_valid(
     manager.close()
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT site_url, site_rank FROM site_visits ORDER BY site_rank",
     )
 
@@ -221,7 +219,7 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     """
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential browse commands to two URLS
     cs_a = command_sequence.CommandSequence(url_a)
@@ -233,9 +231,7 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     manager.execute_command_sequence(cs_b)
     manager.close()
 
-    qry_res = db_utils.query_db(
-        manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
-    )
+    qry_res = db_utils.query_db(db, "SELECT visit_id, site_url FROM site_visits")
 
     # Construct dict mapping site_url to visit_id
     visit_ids = dict()
@@ -243,28 +239,28 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
         visit_ids[row[1]] = row[0]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_b,),
     )
     assert qry_res[0][0] == visit_ids[url_b]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_b,),
     )
@@ -278,13 +274,13 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     # 5) A link to example.com?localtest.me
     # We should see page visits for 1 and 2, but not 3-5.
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_c,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_d,),
     )
@@ -292,7 +288,7 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
 
     # We expect 4 urls: a,c,d and a favicon request
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT COUNT(DISTINCT url) FROM http_responses WHERE visit_id = ?",
         (visit_ids[url_a],),
     )
@@ -312,16 +308,14 @@ def test_browse_wrapper_http_table_valid(
     """
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential browse commands to two URLS
     manager.browse(url_a, num_links=20, sleep=1)
     manager.browse(url_b, num_links=1, sleep=1)
     manager.close()
 
-    qry_res = db_utils.query_db(
-        manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
-    )
+    qry_res = db_utils.query_db(db, "SELECT visit_id, site_url FROM site_visits")
 
     # Construct dict mapping site_url to visit_id
     visit_ids = dict()
@@ -329,28 +323,28 @@ def test_browse_wrapper_http_table_valid(
         visit_ids[row[1]] = row[0]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
         (url_b,),
     )
     assert qry_res[0][0] == visit_ids[url_b]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_a,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
 
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_b,),
     )
@@ -364,13 +358,13 @@ def test_browse_wrapper_http_table_valid(
     # 5) A link to example.com?localtest.me
     # We should see page visits for 1 and 2, but not 3-5.
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_c,),
     )
     assert qry_res[0][0] == visit_ids[url_a]
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
         (url_d,),
     )
@@ -378,7 +372,7 @@ def test_browse_wrapper_http_table_valid(
 
     # We expect 4 urls: a,c,d and a favicon request
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT COUNT(DISTINCT url) FROM http_responses WHERE visit_id = ?",
         (visit_ids[url_a],),
     )
@@ -390,7 +384,7 @@ def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
     """Check that 'save_screenshot' works"""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, _ = task_manager_creator((manager_params, browser_params))
 
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=1)
@@ -423,7 +417,7 @@ def test_dump_page_source_valid(http_params, task_manager_creator, display_mode)
     """Check that 'dump_page_source' works and source is saved properly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
 
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=1)
@@ -451,7 +445,7 @@ def test_recursive_dump_page_source_valid(
     """Check that 'recursive_dump_page_source' works"""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
-    manager = task_manager_creator((manager_params, browser_params))
+    manager, db = task_manager_creator((manager_params, browser_params))
     cs = command_sequence.CommandSequence(NESTED_FRAMES_URL)
     cs.get(sleep=1)
     cs.recursive_dump_page_source()

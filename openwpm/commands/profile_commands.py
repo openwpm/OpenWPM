@@ -70,7 +70,11 @@ class DumpProfileCommand(BaseCommand):
             tar = tarfile.open(self.tar_path, "w", errorlevel=1)
         logger.debug(
             "BROWSER %i: Backing up full profile from %s to %s"
-            % (self.browser_id, browser_profile_folder, self.tar_path,)
+            % (
+                self.browser_id,
+                browser_profile_folder,
+                self.tar_path,
+            )
         )
         storage_vector_files = [
             "cookies.sqlite",  # cookies
@@ -133,7 +137,11 @@ def load_profile(
         # Copy and untar the loaded profile
         logger.debug(
             "BROWSER %i: Copying profile tar from %s to %s"
-            % (browser_params.browser_id, tar_location, browser_profile_folder,)
+            % (
+                browser_params.browser_id,
+                tar_location,
+                browser_profile_folder,
+            )
         )
         shutil.copy(tar_location, browser_profile_folder)
         tar_location = browser_profile_folder / tar_location.name

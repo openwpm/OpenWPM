@@ -58,26 +58,30 @@ def default_params(
     manager_params.log_directory = tmp_path
     for i in range(num_browsers):
         browser_params[i].display_mode = "headless"
-    manager_params.database_name = tmp_path / manager_params.database_name
     return manager_params, browser_params
 
 
 @pytest.fixture()
 def task_manager_creator(
-    server, xpi
-) -> Callable[[Tuple[ManagerParams, List[BrowserParams]]], TaskManager]:
+    server,
+    xpi,
+) -> Callable[[Tuple[ManagerParams, List[BrowserParams]]], Tuple[TaskManager, Path]]:
     """We create a callable that returns a TaskManager that has
     been configured with the Manager and BrowserParams"""
 
     def _create_task_manager(
         params: Tuple[ManagerParams, List[BrowserParams]]
-    ) -> TaskManager:
+    ) -> Tuple[TaskManager, Path]:
         manager_params, browser_params = params
-        structured_provider = SqlLiteStorageProvider(manager_params.database_name)
+        db_path = manager_params.data_directory / "crawl-data.sqlite"
+        structured_provider = SqlLiteStorageProvider(db_path)
         manager = TaskManager(
-            manager_params, browser_params, structured_provider, None,
+            manager_params,
+            browser_params,
+            structured_provider,
+            None,
         )
-        return manager
+        return manager, db_path
 
     return _create_task_manager
 

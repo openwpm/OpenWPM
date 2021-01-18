@@ -30,14 +30,18 @@ class OpenWPMTest:
     def get_config(
         self, data_dir: Optional[Path]
     ) -> Tuple[ManagerParams, List[BrowserParams]]:
-        pass
+        raise NotImplementedError()
 
     def visit(
         self, page_url: str, data_dir: Optional[Path] = None, sleep_after: int = 0
     ) -> Path:
         """Visit a test page with the given parameters."""
         manager_params, browser_params = self.get_config(data_dir)
-        structured_provider = SqlLiteStorageProvider(manager_params.database_name)
+        if data_dir:
+            db_path = data_dir / "crawl-data.sqlite"
+        else:
+            db_path = self.tmpdir / "crawl-data.sqlite"
+        structured_provider = SqlLiteStorageProvider(db_path)
         manager = task_manager.TaskManager(
             manager_params, browser_params, structured_provider, None
         )
@@ -45,7 +49,7 @@ class OpenWPMTest:
             page_url = utilities.BASE_TEST_URL + page_url
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
-        return manager_params.database_name
+        return db_path
 
     def get_test_config(
         self,
@@ -59,13 +63,8 @@ class OpenWPMTest:
         assert data_dir is not None  # Mypy doesn't understand this without help
         manager_params = ManagerParams(num_browsers=num_browsers)
         browser_params = [BrowserParams() for _ in range(num_browsers)]
-        manager_params.data_directory = data_dir
         manager_params.log_directory = data_dir
         manager_params.num_browsers = num_browsers
         for i in range(num_browsers):
             browser_params[i].display_mode = display_mode
-        manager_params.database_name = (
-            manager_params.data_directory / manager_params.database_name
-        )
-
         return manager_params, browser_params

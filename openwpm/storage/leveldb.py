@@ -36,7 +36,10 @@ class LevelDbProvider(UnstructuredStorageProvider):
         self.ldb.close()
 
     async def store_blob(
-        self, filename: str, blob: bytes, overwrite: bool = False,
+        self,
+        filename: str,
+        blob: bytes,
+        overwrite: bool = False,
     ) -> None:
 
         content_hash = str(filename).encode("ascii")
