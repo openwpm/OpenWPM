@@ -17,8 +17,7 @@ def test_parse_neterror():
 
 
 def test_parse_neterror_integration(default_params, task_manager_creator):
-    manager_params = default_params[0]
-    manager = task_manager_creator(default_params)
+    manager, db = task_manager_creator(default_params)
     manager.get("http://website.invalid")
     manager.close()
 

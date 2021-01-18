@@ -39,7 +39,7 @@ def test_js_profile_cookies(default_params, task_manager_creator):
     manager.close()
     # Check that the JS cookie we stored is recorded
     qry_res = db_utils.query_db(
-        manager_params.database_name,
+        db,
         (
             "SELECT record_type, change_cause, is_http_only, "
             "is_host_only, is_session, host, is_secure, name, path, "

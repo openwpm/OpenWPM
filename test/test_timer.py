@@ -7,13 +7,12 @@ TEST_URL = BASE_TEST_URL + "/" + TEST_FILE
 
 
 def test_command_duration(default_params, task_manager_creator):
-    manager_params = default_params[0]
-    manager = task_manager_creator(default_params)
+    manager, db = task_manager_creator(default_params)
     manager.get(url=TEST_URL, sleep=5)
     manager.close()
 
     get_command = db_utils.query_db(
-        manager_params.database_name,
+        db,
         "SELECT duration FROM crawl_history WHERE command = 'GetCommand'",
         as_tuple=True,
     )[0]
