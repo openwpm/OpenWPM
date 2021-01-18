@@ -31,7 +31,7 @@ TIMEOUT = int(os.getenv("TIMEOUT", "60"))
 # Storage Provider Params
 CRAWL_DIRECTORY = os.getenv("CRAWL_DIRECTORY", "crawl-data")
 GCS_BUCKET = os.getenv("GCS_BUCKET", "openwpm-crawls")
-GCP_PROJECT = os.getenv("GCP_PROJECT", "senglehardt-openwpm-test-1")
+GCP_PROJECT = os.getenv("GCP_PROJECT", "")
 AUTH_TOKEN = os.getenv("GCP_AUTH_TOKEN", "cloud")
 
 # Browser Params
