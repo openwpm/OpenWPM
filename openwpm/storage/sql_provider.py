@@ -98,17 +98,11 @@ class SqlLiteStorageProvider(StructuredStorageProvider):
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> Awaitable[None]:
-
+    ) -> None:
         if interrupted:
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             self.cur.execute("INSERT INTO incomplete_visits VALUES (?)", (visit_id,))
         self.db.commit()
-
-        async def done() -> None:
-            return
-
-        return done()
 
     async def shutdown(self) -> None:
         self.db.commit()

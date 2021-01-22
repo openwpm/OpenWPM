@@ -31,10 +31,12 @@ from .socket_interface import ClientSocket
 from .storage.storage_controller import (
     ACTION_TYPE_FINALIZE,
     RECORD_TYPE_META,
+    DataSocket,
     StorageControllerHandle,
 )
 from .storage.storage_providers import (
     StructuredStorageProvider,
+    TableName,
     UnstructuredStorageProvider,
 )
 from .utilities.multiprocess_utils import kill_process_and_children
@@ -155,7 +157,9 @@ class TaskManager:
 
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
-        self.storage_controler_handle.save_configuration(openwpm_v, browser_v)
+        self.storage_controller_handle.save_configuration(
+            manager_params, browser_params, openwpm_v, browser_v
+        )
         self.logger.info(
             get_configuration_string(
                 self.manager_params, browser_params, (openwpm_v, browser_v)
@@ -174,7 +178,7 @@ class TaskManager:
         """
         return self
 
-    def __exit__(self):
+    def __exit__(self) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
@@ -188,7 +192,7 @@ class TaskManager:
         for i in range(self.num_browsers):
             browser_params[
                 i
-            ].browser_id = self.storage_controler_handle.get_next_browser_id()
+            ].browser_id = self.storage_controller_handle.get_next_browser_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -283,18 +287,16 @@ class TaskManager:
         unstructured_storage_provider: Optional[UnstructuredStorageProvider],
     ) -> None:
         """Launch the necessary data aggregators"""
-        self.storage_controler_handle = StorageControllerHandle(
+        self.storage_controller_handle = StorageControllerHandle(
             structured_storage_provider, unstructured_storage_provider
         )
-        self.storage_controler_handle.launch()
+        self.storage_controller_handle.launch()
         self.manager_params.storage_controller_address = (
-            self.storage_controler_handle.listener_address
+            self.storage_controller_handle.listener_address
         )
-
-        # open connection to aggregator for saving crawl details
-        self.sock = ClientSocket(serialization="dill")
         assert self.manager_params.storage_controller_address is not None
-        self.sock.connect(*self.manager_params.storage_controller_address)
+        # open connection to storage controller for saving crawl details
+        self.sock = DataSocket(self.manager_params.storage_controller_address)
 
     def _shutdown_manager(
         self, during_init: bool = False, relaxed: bool = True
@@ -327,7 +329,7 @@ class TaskManager:
             browser.shutdown_browser(during_init, force=not relaxed)
 
         self.sock.close()  # close socket to data aggregator
-        self.storage_controler_handle.shutdown(relaxed=relaxed)
+        self.storage_controller_handle.shutdown(relaxed=relaxed)
         self.logging_server.close()
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
@@ -376,21 +378,20 @@ class TaskManager:
                 "Attempted to execute" " command on a closed TaskManager"
             )
         self._check_failure_status()
-        visit_id = self.storage_controler_handle.get_next_visit_id()
+        visit_id = self.storage_controller_handle.get_next_visit_id()
         browser.set_visit_id(visit_id)
         if command_sequence.callback:
             self.unsaved_command_sequences[visit_id] = command_sequence
 
-        self.sock.send(
-            (
-                "site_visits",
-                {
-                    "visit_id": visit_id,
-                    "browser_id": browser.browser_id,
-                    "site_url": command_sequence.url,
-                    "site_rank": command_sequence.site_rank,
-                },
-            )
+        self.sock.store_record(
+            TableName("site_visits"),
+            visit_id,
+            {
+                "visit_id": visit_id,
+                "browser_id": browser.browser_id,
+                "site_url": command_sequence.url,
+                "site_rank": command_sequence.site_rank,
+            },
         )
 
         # Start command execution thread
@@ -410,7 +411,7 @@ class TaskManager:
                 # we're shutting down and have no unprocessed callbacks
                 break
 
-            visit_id_list = self.storage_controler_handle.get_new_completed_visits()
+            visit_id_list = self.storage_controller_handle.get_new_completed_visits()
             if not visit_id_list:
                 time.sleep(1)
                 continue
@@ -435,7 +436,8 @@ class TaskManager:
         Sends CommandSequence to the BrowserManager one command at a time
         """
         browser.is_fresh = False
-
+        assert browser.browser_id is not None
+        assert browser.curr_visit_id is not None
         reset = command_sequence.reset
         if not reset:
             self.logger.warning(
@@ -519,36 +521,28 @@ class TaskManager:
             else:
                 raise ValueError("Unknown browser status message %s" % status)
 
-            self.sock.send(
-                (
-                    "crawl_history",
-                    {
-                        "browser_id": browser.browser_id,
-                        "visit_id": browser.curr_visit_id,
-                        "command": type(command).__name__,
-                        "arguments": json.dumps(
-                            command.__dict__, default=lambda x: repr(x)
-                        ).encode("utf-8"),
-                        "retry_number": command_sequence.retry_number,
-                        "command_status": command_status,
-                        "error": error_text,
-                        "traceback": tb,
-                        "duration": int((time.time_ns() - t1) / 1000000),
-                    },
-                )
+            self.sock.store_record(
+                TableName("crawl_history"),
+                browser.curr_visit_id,
+                {
+                    "browser_id": browser.browser_id,
+                    "visit_id": browser.curr_visit_id,
+                    "command": type(command).__name__,
+                    "arguments": json.dumps(
+                        command.__dict__, default=lambda x: repr(x)
+                    ).encode("utf-8"),
+                    "retry_number": command_sequence.retry_number,
+                    "command_status": command_status,
+                    "error": error_text,
+                    "traceback": tb,
+                    "duration": int((time.time_ns() - t1) / 1000000),
+                },
             )
 
             if command_status == "critical":
-                self.sock.send(
-                    (
-                        RECORD_TYPE_META,
-                        {
-                            "browser_id": browser.browser_id,
-                            "success": False,
-                            "action": ACTION_TYPE_FINALIZE,
-                            "visit_id": browser.curr_visit_id,
-                        },
-                    )
+                self.sock.finalize_visit_id(
+                    success=False,
+                    visit_id=browser.curr_visit_id,
                 )
                 return
 
@@ -576,16 +570,8 @@ class TaskManager:
                     self.failurecount = 0
 
             if browser.restart_required:
-                self.sock.send(
-                    (
-                        RECORD_TYPE_META,
-                        {
-                            "browser_id": browser.browser_id,
-                            "success": False,
-                            "action": ACTION_TYPE_FINALIZE,
-                            "visit_id": browser.curr_visit_id,
-                        },
-                    )
+                self.sock.finalize_visit_id(
+                    success=False, visit_id=browser.curr_visit_id
                 )
                 break
 
@@ -628,7 +614,7 @@ class TaskManager:
         """
 
         # Block if the aggregator queue is too large
-        agg_queue_size = self.storage_controler_handle.get_most_recent_status()
+        agg_queue_size = self.storage_controller_handle.get_most_recent_status()
         if agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
             while agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
                 self.logger.info(
@@ -636,7 +622,7 @@ class TaskManager:
                     "is below the max queue size of %d. Current queue "
                     "length %d. " % (STORAGE_CONTROLLER_JOB_LIMIT, agg_queue_size)
                 )
-                agg_queue_size = self.storage_controler_handle.get_status()
+                agg_queue_size = self.storage_controller_handle.get_status()
 
         # Distribute command
         if index is None:

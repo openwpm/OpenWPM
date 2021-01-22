@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple, Union
 from dataclasses_json import dataclass_json
 
 from .errors import ConfigError
+from .types import BrowserId
 
 BOOL_TYPE_VALIDATION_LIST = [True, False]
 DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
@@ -114,7 +115,7 @@ class ManagerParams:
 @dataclass_json
 @dataclass
 class BrowserParamsInternal(BrowserParams):
-    browser_id: Optional[int] = None
+    browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
 
 

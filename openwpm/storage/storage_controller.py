@@ -12,7 +12,8 @@ from multiprocess import Queue
 
 from openwpm.utilities.multiprocess_utils import Process
 
-from ..socket_interface import get_message_from_reader
+from ..config import BrowserParamsInternal, ManagerParamsInternal
+from ..socket_interface import ClientSocket, get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
@@ -32,6 +33,7 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
+FAKE_VISIT_ID = VisitId(-1)
 
 
 class StorageController:
@@ -142,14 +144,23 @@ class StorageController:
                 continue
 
             table_name = TableName(record_type)
-            # Turning these into task to be able to verify
-            self.current_tasks[visit_id].append(
-                asyncio.create_task(
-                    self.structured_storage.store_record(
-                        table=table_name, visit_id=visit_id, record=data
-                    )
+            await self.store_record(table_name, visit_id, data)
+
+    async def store_record(
+        self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
+    ) -> None:
+
+        if visit_id == FAKE_VISIT_ID:
+            # Hacking around the fact that task and crawl don't have a VisitID
+            del data["visit_id"]
+        # Turning these into task to be able to have them complete without blocking the socket
+        self.current_tasks[visit_id].append(
+            asyncio.create_task(
+                self.structured_storage.store_record(
+                    table=table_name, visit_id=visit_id, record=data
                 )
             )
+        )
 
     async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
         """
@@ -306,6 +317,36 @@ class StorageController:
         asyncio.run(self._run(), debug=True)
 
 
+class DataSocket:
+    """Wrapper around ClientSocket to make sending records to the StorageController more convenient"""
+
+    def __init__(self, listener_address: Tuple[str, int]) -> None:
+        self.socket = ClientSocket(serialization="dill")
+        self.socket.connect(*listener_address)
+
+    def store_record(
+        self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
+    ) -> None:
+        data["visit_id"] = visit_id
+        self.socket.send(
+            (
+                table_name,
+                data,
+            )
+        )
+
+    def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
+        self.socket.send(
+            (
+                RECORD_TYPE_META,
+                {"action": ACTION_TYPE_FINALIZE, visit_id: visit_id, success: success},
+            )
+        )
+
+    def close(self) -> None:
+        self.socket.close()
+
+
 class StorageControllerHandle:
     """This class contains all methods relevant for the TaskManager
     to interact with the DataAggregator
@@ -351,11 +392,38 @@ class StorageControllerHandle:
         """
         return BrowserId(random.getrandbits(32))
 
-    def save_configuration(self, openwpm_version: str, browser_version: str) -> None:
-        # FIXME I need to find a solution for this
-        self.logger.error(
-            "Can't log config as of yet, because it's still not implemented"
+    def save_configuration(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: List[BrowserParamsInternal],
+        openwpm_version: str,
+        browser_version: str,
+    ) -> None:
+        assert self.listener_address is not None
+        sock = DataSocket(self.listener_address)
+        task_id = random.getrandbits(32)
+        sock.store_record(
+            TableName("task"),
+            FAKE_VISIT_ID,
+            {
+                "task_id": task_id,
+                "manager_params": manager_params.to_json(),  # type:ignore
+                "openwpm_version": openwpm_version,
+                "browser_version": browser_version,
+            },
         )
+        # Record browser details for each brower
+        for browser_param in browser_params:
+            sock.store_record(
+                TableName("crawl"),
+                FAKE_VISIT_ID,
+                {
+                    "browser_id": browser_param.browser_id,
+                    "task_id": task_id,
+                    "browser_params": browser_param,
+                },
+            )
+        sock.finalize_visit_id(FAKE_VISIT_ID, success=True)
 
     def launch(self) -> None:
         """Starts the data aggregator"""

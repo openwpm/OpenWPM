@@ -17,9 +17,11 @@ from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
 from .commands.types import BaseCommand, ShutdownSignal
+from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .socket_interface import ClientSocket
+from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (
     Process,
     kill_process_and_children,
@@ -40,7 +42,11 @@ class Browser:
                      this browser is headless, etc.)
     """
 
-    def __init__(self, manager_params, browser_params) -> None:
+    def __init__(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: BrowserParamsInternal,
+    ) -> None:
         # Constants
         self._SPAWN_TIMEOUT = 120  # seconds
         self._UNSUCCESSFUL_SPAWN_LIMIT = 4
@@ -48,8 +54,9 @@ class Browser:
         # manager parameters
         self.current_profile_path = None
         self.db_socket_address = manager_params.storage_controller_address
-        self.browser_id = browser_params.browser_id
-        self.curr_visit_id: Optional[int] = None
+        assert browser_params.browser_id is not None
+        self.browser_id: BrowserId = browser_params.browser_id
+        self.curr_visit_id: Optional[VisitId] = None
         self.browser_params = browser_params
         self.manager_params = manager_params
 

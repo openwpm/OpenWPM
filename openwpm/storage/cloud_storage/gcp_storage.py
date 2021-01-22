@@ -1,7 +1,5 @@
-import asyncio
 import logging
-from functools import partial
-from typing import Any, Callable, Optional, Set
+from typing import Set
 
 import pyarrow.parquet as pq
 from gcsfs import GCSFileSystem
@@ -59,10 +57,8 @@ class GcsStructuredProvider(ArrowProvider):
 
 
 class GcsUnstructuredProvider(UnstructuredStorageProvider):
-    """This class allows you to upload Parquet files to GCS.
-    This might not actually be the thing that we want to do
-    long term but seeing as GCS is the S3 equivalent of GCP
-    it is the easiest way forward.
+    """This class allows you to upload arbitrary bytes to GCS.
+    They will be stored under bucket_name/base_path/filename
     """
 
     file_system: GCSFileSystem
