@@ -25,7 +25,6 @@ from test.storage.test_values import TEST_VALUES, TEST_VISIT_IDS
 
 
 def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
-
     structured = MemoryStructuredProvider()
     unstructured = MemoryUnstructuredProvider()
     controller_handle = StorageControllerHandle(structured, unstructured)
