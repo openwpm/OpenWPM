@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import logging
 import queue
 import random
@@ -12,7 +13,7 @@ from multiprocess import Queue
 
 from openwpm.utilities.multiprocess_utils import Process
 
-from ..config import BrowserParamsInternal, ManagerParamsInternal
+from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
 from ..socket_interface import ClientSocket, get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
@@ -420,7 +421,7 @@ class StorageControllerHandle:
                 {
                     "browser_id": browser_param.browser_id,
                     "task_id": task_id,
-                    "browser_params": browser_param,
+                    "browser_params": browser_param.to_json(),  # type:ignore
                 },
             )
         sock.finalize_visit_id(FAKE_VISIT_ID, success=True)
