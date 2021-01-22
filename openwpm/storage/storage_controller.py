@@ -159,8 +159,8 @@ class StorageController:
         - finalize: A message sent by the extension to
                     signal that a visit_id is complete.
         - initialize: TODO: Start complaining if we receive data for a visit_id
-                      before the initialize event happened. (This might not be easy
-                      because of `site_visits`)
+                      before the initialize event happened.
+                      See also https://github.com/mozilla/OpenWPM/issues/846
         """
         action: str = data["action"]
         if action == ACTION_TYPE_INITIALIZE:
