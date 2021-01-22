@@ -373,7 +373,7 @@ class StorageControllerHandle:
         """
         Returns a list of all visit ids that have been processed since
         the last time the method was called and whether or not they
-        have been interrupted.
+        ran successfully.
 
         This method will return an empty list in case no visit ids have
         been processed since the last time this method was called

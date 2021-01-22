@@ -56,7 +56,9 @@ manager = TaskManager(
 for index, site in enumerate(sites):
 
     def callback(success: bool, val: str = site) -> None:
-        print("CommandSequence {} done".format(val))
+        print(
+            f"CommandSequence for {val} ran {'successfully' if success else 'unsuccessfully'}"
+        )
 
     # Parallelize sites over all number of browsers set above.
     command_sequence = CommandSequence(

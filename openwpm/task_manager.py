@@ -415,11 +415,11 @@ class TaskManager:
                 time.sleep(1)
                 continue
 
-            for visit_id, interrupted in visit_id_list:
+            for visit_id, successful in visit_id_list:
                 self.logger.debug("Invoking callback of visit_id %d", visit_id)
                 cs = self.unsaved_command_sequences.pop(visit_id, None)
                 if cs:
-                    cs.mark_done(not interrupted)
+                    cs.mark_done(successful)
 
     def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into and error `message` and `tb` string."""
