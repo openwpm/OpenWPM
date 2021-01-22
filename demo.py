@@ -5,8 +5,6 @@ from custom_command import LinkCountingCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.browser_commands import GetCommand
 from openwpm.config import BrowserParams, ManagerParams
-from openwpm.storage.cloud_storage.gcp_storage import GcsStructuredProvider
-from openwpm.storage.local_storage import LocalArrowProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
@@ -40,20 +38,17 @@ for i in range(NUM_BROWSERS):
 manager_params.data_directory = Path("./datadir/")
 manager_params.log_directory = Path("./datadir/")
 
-logging_params = {"log_level_console": logging.DEBUG}
 # memory_watchdog and process_watchdog are useful for large scale cloud crawls.
 # Please refer to docs/Configuration.md#platform-configuration-options for more information
 # manager_params.memory_watchdog = True
 # manager_params.process_watchdog = True
 
-# Instantiates the measurement platform
-project = "senglehardt-openwpm-test-1"
-bucket_name = "openwpm-test-bucket"
+
 # Commands time out by default after 60 seconds
 manager = TaskManager(
     manager_params,
     browser_params,
-    GcsStructuredProvider(project, bucket_name, base_path="test3"),
+    SqlLiteStorageProvider(Path("./datadir/crawl-data.sqllite")),
     None,
 )
 
