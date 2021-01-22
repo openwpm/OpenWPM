@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path

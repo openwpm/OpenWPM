@@ -2,7 +2,7 @@ import json
 import logging
 import os.path
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Optional, Tuple
 
 from easyprocess import EasyProcessError
 from multiprocess import Queue
@@ -71,7 +71,7 @@ def deploy_firefox(
     display_port = None
     display = None
     if display_mode == "headless":
-        fo.set_headless(True)
+        fo.headless = True
         fo.add_argument("--width={}".format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument("--height={}".format(DEFAULT_SCREEN_RES[1]))
     if display_mode == "xvfb":
@@ -96,7 +96,7 @@ def deploy_firefox(
         extension_config.update(browser_params.to_dict())  # type: ignore
         extension_config["logger_address"] = manager_params.logger_address
         extension_config[
-            "aggregator_address"
+            "storage_controller_address"
         ] = manager_params.storage_controller_address
         if manager_params.ldb_address:
             extension_config["leveldb_address"] = manager_params.ldb_address

@@ -1,17 +1,16 @@
+"""
+This module contains all base classes of the storage provider hierarchy
+Any subclass of these classes should be able to be used in OpenWPM
+without any changes to the rest of the code base
+"""
 import gzip
 import io
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Awaitable, Dict, List, NewType, Optional, Tuple
+from typing import Any, Awaitable, Dict, NewType
 
 from pyarrow.lib import Table
 
 from openwpm.types import VisitId
-
-"""
-This module contains all base classes of the storage provider hierachy
-Any subclass of these classes should be able to be used in OpenWPM
-without any changes to the rest of the code base
-"""
 
 TableName = NewType("TableName", str)
 
@@ -48,10 +47,6 @@ class StructuredStorageProvider(StorageProvider):
     def __init__(self) -> None:
         super().__init__()
 
-    # TODO: Discuss if we want visit_id here
-    # It will always be part of the record and make the interface bigger
-    # than it needs to be
-    # But not having to access the data is also convenient
     @abstractmethod
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
@@ -68,7 +63,8 @@ class StructuredStorageProvider(StorageProvider):
         """This method is invoked to inform the StructuredStorageProvider that no more
         records for this visit_id will be submitted
 
-        This method returns an awaitable that will resolve once the records have been
+        This method returns once the data is ready to be written out.
+        The returned awaitable will resolve once the records have been
         saved out to persistent storage
         """
         pass

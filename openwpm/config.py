@@ -91,6 +91,14 @@ class BrowserParams:
 @dataclass_json
 @dataclass
 class ManagerParams:
+    """
+    Configuration for the TaskManager
+    The configuration will be the same for all browsers running on the same
+    TaskManager.
+    It can be used to control storage locations or which watchdogs should
+    run
+    """
+
     data_directory: Path = Path("~/openwpm/")
     log_directory: Path = Path("~/openwpm/")
     screenshot_path: Optional[Path] = None

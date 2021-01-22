@@ -1,24 +1,12 @@
 import asyncio
 import base64
 import logging
-import math
 import queue
 import random
 import socket
-import threading
 import time
 from collections import defaultdict
-from typing import (
-    Any,
-    Awaitable,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    NoReturn,
-    Optional,
-    Tuple,
-)
+from typing import Any, Awaitable, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
 
@@ -95,7 +83,7 @@ class StorageController:
             )
 
     async def handler(
-        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
         self.logger.debug("Initializing new handler")
@@ -121,9 +109,8 @@ class StorageController:
             if record_type == RECORD_TYPE_CREATE:
                 raise RuntimeError(
                     f"""{RECORD_TYPE_CREATE} is no longer supported.
-                    since the user now has access to the DB before it
-                    goes into use, they should set up all schemas before
-                    launching the DataAggregator
+                    Please change the schema before starting the StorageController.
+                    For an example of that see test/test_custom_function.py
                     """
                 )
 

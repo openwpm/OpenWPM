@@ -50,7 +50,7 @@ async function main() {
                 "the extension. Outputting all queries to console.", {config});
   }
 
-  await loggingDB.open(config['aggregator_address'],
+  await loggingDB.open(config['storage_controller_address'],
                        config['logger_address'],
                        config['browser_id']);
 

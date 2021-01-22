@@ -3,11 +3,10 @@ import logging
 import random
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, Awaitable, DefaultDict, Dict, List, Optional
+from typing import Any, Awaitable, DefaultDict, Dict, List
 
 import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 from pyarrow import Table
 
 from openwpm.types import VisitId
