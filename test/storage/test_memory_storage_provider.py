@@ -43,45 +43,30 @@ def structured_provider(
     request.raiseerror("invalid internal test config")
 
 
-def pytest_generate_tests(metafunc: Any) -> Any:
-    # Source: https://docs.pytest.org/en/latest/example/parametrize.html#a-quick-port-of-testscenarios  # noqa
-    idlist = []
-    argvalues = []
-    for scenario in metafunc.cls.scenarios:
-        idlist.append(scenario[0])
-        items = scenario[1].items()
-        argnames = [x[0] for x in items]
-        argvalues.append([x[1] for x in items])
-    metafunc.parametrize(argnames, argvalues, ids=idlist, scope="class", indirect=True)
+structured_scenarios: List[str] = [
+    memory_structured,
+    sqllite,
+    memory_arrow,
+]
 
 
+@pytest.mark.parametrize("structured_provider", structured_scenarios, indirect=True)
 @pytest.mark.asyncio
-class TestStructuredStorageProvider:
-    scenarios: List[Tuple[str, Dict[str, Any]]] = [
-        (memory_structured, {"structured_provider": memory_structured}),
-        (sqllite, {"structured_provider": sqllite}),
-        (memory_arrow, {"structured_provider": memory_arrow}),
-    ]
+async def test_basic_access(structured_provider: StructuredStorageProvider) -> None:
+    data = {
+        "visit_id": 2,
+        "browser_id": 3,
+        "site_url": "https://example.com",
+    }
 
-    async def test_basic_access(
-        self, structured_provider: StructuredStorageProvider
-    ) -> None:
-        data = {
-            "visit_id": 2,
-            "browser_id": 3,
-            "site_url": "https://example.com",
-        }
+    await structured_provider.init()
 
-        await structured_provider.init()
-
-        await structured_provider.store_record(
-            TableName("site_visits"), VisitId(2), data
-        )
-        token = await structured_provider.finalize_visit_id(VisitId(2))
-        await structured_provider.flush_cache()
-        if token is not None:
-            await token
-        await structured_provider.shutdown()
+    await structured_provider.store_record(TableName("site_visits"), VisitId(2), data)
+    token = await structured_provider.finalize_visit_id(VisitId(2))
+    await structured_provider.flush_cache()
+    if token is not None:
+        await token
+    await structured_provider.shutdown()
 
 
 # Unstructured Providers
@@ -108,20 +93,17 @@ def unstructured_provider(
     request.raiseerror("invalid internal test config")
 
 
-@pytest.mark.asyncio
-class TestUnstructuredStorageProvide:
-    scenarios: List[Tuple[str, Dict[str, Any]]] = [
-        (memory_unstructured, {"unstructured_provider": memory_unstructured}),
-        (leveldb, {"unstructured_provider": leveldb}),
-        (local_gzip, {"unstructured_provider": local_gzip}),
-    ]
+unstructured_scenarios: List[str] = [memory_unstructured, leveldb, local_gzip]
 
-    async def test_basic_unstructured_storing(
-        self, unstructured_provider: UnstructuredStorageProvider
-    ) -> None:
-        test_string = "This is my test string"
-        blob = test_string.encode()
-        await unstructured_provider.init()
-        await unstructured_provider.store_blob("test", blob)
-        await unstructured_provider.flush_cache()
-        await unstructured_provider.shutdown()
+
+@pytest.mark.parametrize("unstructured_provider", unstructured_scenarios, indirect=True)
+@pytest.mark.asyncio
+async def test_basic_unstructured_storing(
+    unstructured_provider: UnstructuredStorageProvider,
+) -> None:
+    test_string = "This is my test string"
+    blob = test_string.encode()
+    await unstructured_provider.init()
+    await unstructured_provider.store_blob("test", blob)
+    await unstructured_provider.flush_cache()
+    await unstructured_provider.shutdown()
