@@ -79,7 +79,8 @@ class TestStructuredStorageProvider:
         )
         token = await structured_provider.finalize_visit_id(VisitId(2))
         await structured_provider.flush_cache()
-        await token
+        if token is not None:
+            await token
         await structured_provider.shutdown()
 
 

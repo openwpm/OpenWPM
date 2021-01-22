@@ -166,12 +166,6 @@ def start_webext():
     thread.join()
 
 
-flag_opts = dict(
-    is_flag=True,
-    default=False,
-)
-
-
 @click.command()
 @click.option(
     "--selenium",

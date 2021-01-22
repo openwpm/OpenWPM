@@ -6,7 +6,7 @@ without any changes to the rest of the code base
 import gzip
 import io
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable, Dict, NewType
+from typing import Any, Awaitable, Dict, NewType, Optional
 
 from pyarrow.lib import Table
 
@@ -59,12 +59,13 @@ class StructuredStorageProvider(StorageProvider):
     @abstractmethod
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> Awaitable[None]:
+    ) -> Optional[Awaitable[None]]:
         """This method is invoked to inform the StructuredStorageProvider that no more
         records for this visit_id will be submitted
 
         This method returns once the data is ready to be written out.
-        The returned awaitable will resolve once the records have been
+        If the data is immediately written out nothing will be returned.
+        Otherwise an awaitable will returned that resolve onces the records have been
         saved out to persistent storage
         """
         pass

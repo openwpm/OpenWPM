@@ -168,14 +168,15 @@ class StorageController:
         elif action == ACTION_TYPE_FINALIZE:
             success = data["success"]
             completion_token = await self.finalize_visit_id(visit_id, success)
-            await completion_token
+            if completion_token is not None:
+                await completion_token
             self.completion_queue.put((visit_id, success))
         else:
             raise ValueError("Unexpected action: %s", action)
 
     async def finalize_visit_id(
         self, visit_id: VisitId, success: bool
-    ) -> Awaitable[None]:
+    ) -> Optional[Awaitable[None]]:
         """Makes sure all records for a given visit_id
         have been processed before we invoke finalize_visit_id
         on the structured_storage
@@ -225,9 +226,9 @@ class StorageController:
         completion_tokens = {}
         visit_ids = list(self.current_tasks.keys())
         for visit_id in visit_ids:
-            completion_tokens[visit_id] = await self.finalize_visit_id(
-                visit_id, success=False
-            )
+            t = await self.finalize_visit_id(visit_id, success=False)
+            if t is not None:
+                completion_tokens[visit_id] = t
         await self.structured_storage.flush_cache()
         for visit_id, token in completion_tokens.items():
             await token
