@@ -32,30 +32,6 @@ HTTP_STACKTRACES = {
     STACK_TRACE_INJECT_PIXEL,
     STACK_TRACE_INJECT_JS,
 }
-# parsed HTTP call stack dict
-CALL_STACK_INJECT_IMAGE = [
-    {
-        "func_name": "inject_image",
-        "filename": HTTP_STACKTRACE_TEST_URL,
-        "line_no": "18",
-        "col_no": "7",
-        "async_cause": "null",
-    },
-    {
-        "func_name": "inject_all",
-        "filename": HTTP_STACKTRACE_TEST_URL,
-        "line_no": "22",
-        "col_no": "7",
-        "async_cause": "null",
-    },
-    {
-        "func_name": "onload",
-        "filename": HTTP_STACKTRACE_TEST_URL,
-        "line_no": "1",
-        "col_no": "1",
-        "async_cause": "null",
-    },
-]
 
 
 def test_http_stacktrace(default_params, task_manager_creator):
@@ -94,20 +70,3 @@ def test_http_stacktrace(default_params, task_manager_creator):
         if url.endswith(test_urls):
             observed_records.add(call_stack)
     assert HTTP_STACKTRACES == observed_records
-
-
-def test_parse_http_stack_trace_str():
-    stacktrace = STACK_TRACE_INJECT_IMAGE
-    stack_frames = parse_http_stack_trace_str(stacktrace)
-    assert stack_frames == CALL_STACK_INJECT_IMAGE
-
-    # TODO: webext instrumentation doesn't support req_call_stack yet.
-    # def test_http_stacktrace_nonjs_loads(self):
-    #     # stacktrace should be empty for requests NOT triggered by scripts
-    #     test_url = utilities.BASE_TEST_URL + '/http_test_page.html'
-    #     db = self.visit(test_url, sleep_after=3)
-    #     rows = db_utils.query_db(db, (
-    #         "SELECT url, req_call_stack FROM http_requests"))
-    #     for row in rows:
-    #         _, stacktrace = row
-    #         assert stacktrace == ""
