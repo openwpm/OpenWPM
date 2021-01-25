@@ -17,6 +17,24 @@ def random_word(length):
     return "".join(random.choice(letters) for _ in range(length))
 
 
+# task
+fields = {
+    "task_id": random.randint(0, 2 ** 63 - 1),
+    "manager_params": random_word(12),
+    "openwpm_version": random_word(12),
+    "browser_version": random_word(12),
+}
+TEST_VALUES["task"] = fields
+
+
+# crawl
+fields = {
+    "browser_id": random.randint(0, 2 ** 31 - 1),
+    "task_id": random.randint(0, 2 ** 63 - 1),
+    "browser_params": random_word(12),
+}
+TEST_VALUES["crawl"] = fields
+
 # site_visits
 fields = {
     "visit_id": random.randint(0, 2 ** 63 - 1),
