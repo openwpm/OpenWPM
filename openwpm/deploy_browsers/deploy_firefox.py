@@ -2,7 +2,7 @@ import json
 import logging
 import os.path
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from easyprocess import EasyProcessError
 from multiprocess import Queue
@@ -92,8 +92,8 @@ def deploy_firefox(
 
     if browser_params.extension_enabled:
         # Write config file
-        extension_config = dict()
-        extension_config.update(browser_params.to_dict())  # type: ignore
+        extension_config: Dict[str, Any] = dict()
+        extension_config.update(browser_params.to_dict())
         extension_config["logger_address"] = manager_params.logger_address
         extension_config[
             "storage_controller_address"

@@ -340,7 +340,11 @@ class DataSocket:
         self.socket.send(
             (
                 RECORD_TYPE_META,
-                {"action": ACTION_TYPE_FINALIZE, visit_id: visit_id, success: success},
+                {
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": visit_id,
+                    "success": success,
+                },
             )
         )
 
@@ -408,12 +412,12 @@ class StorageControllerHandle:
             FAKE_VISIT_ID,
             {
                 "task_id": task_id,
-                "manager_params": manager_params.to_json(),  # type:ignore
+                "manager_params": manager_params.to_json(),
                 "openwpm_version": openwpm_version,
                 "browser_version": browser_version,
             },
         )
-        # Record browser details for each brower
+        # Record browser details for each browser
         for browser_param in browser_params:
             sock.store_record(
                 TableName("crawl"),
@@ -421,7 +425,7 @@ class StorageControllerHandle:
                 {
                     "browser_id": browser_param.browser_id,
                     "task_id": task_id,
-                    "browser_params": browser_param.to_json(),  # type:ignore
+                    "browser_params": browser_param.to_json(),
                 },
             )
         sock.finalize_visit_id(FAKE_VISIT_ID, success=True)

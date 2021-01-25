@@ -4,7 +4,8 @@ from json import JSONEncoder
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import config as DCJConfig
 
 from .errors import ConfigError
 from .types import BrowserId
@@ -55,9 +56,20 @@ ALL_RESOURCE_TYPES = {
 }
 
 
-@dataclass_json
+def str_to_path(string: Optional[str]) -> Optional[Path]:
+    if string is not None:
+        return Path(string)
+    return None
+
+
+def path_to_str(path: Optional[Path]) -> Optional[str]:
+    if path is not None:
+        return str(path.resolve())
+    return None
+
+
 @dataclass
-class BrowserParams:
+class BrowserParams(DataClassJsonMixin):
     """
     Configuration that might differ per browser
 
@@ -69,7 +81,7 @@ class BrowserParams:
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
-    js_instrument_settings: List = field(
+    js_instrument_settings: List[Union[str, dict]] = field(
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
@@ -77,7 +89,9 @@ class BrowserParams:
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
     dns_instrument: bool = False
-    seed_tar: Optional[Path] = None
+    seed_tar: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
     display_mode: str = "native"
     browser: str = "firefox"
     prefs: dict = field(default_factory=dict)
@@ -89,9 +103,8 @@ class BrowserParams:
     tracking_protection: bool = False
 
 
-@dataclass_json
 @dataclass
-class ManagerParams:
+class ManagerParams(DataClassJsonMixin):
     """
     Configuration for the TaskManager
     The configuration will be the same for all browsers running on the same
@@ -100,11 +113,24 @@ class ManagerParams:
     run
     """
 
-    data_directory: Path = Path("~/openwpm/")
-    log_directory: Path = Path("~/openwpm/")
-    screenshot_path: Optional[Path] = None
-    source_dump_path: Optional[Path] = None
-    log_file: Path = Path("openwpm.log")
+    data_directory: Path = field(
+        default=Path("~/openwpm/"),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
+    log_directory: Path = field(
+        default=Path("~/openwpm/"),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
+    screenshot_path: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
+    source_dump_path: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
+    log_file: Path = field(
+        default=Path("openwpm.log"),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
     failure_limit: Optional[int] = None
     testing: bool = False
     memory_watchdog: bool = False
@@ -112,14 +138,12 @@ class ManagerParams:
     num_browsers: int = 1
 
 
-@dataclass_json
 @dataclass
 class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
 
 
-@dataclass_json
 @dataclass
 class ManagerParamsInternal(ManagerParams):
     storage_controller_address: Optional[Tuple[str, int]] = None
