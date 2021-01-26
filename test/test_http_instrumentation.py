@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 import pytest
 
 from openwpm import command_sequence, task_manager
+from openwpm.commands.types import BaseCommand
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -997,21 +998,12 @@ class TestPOSTInstrument(OpenWPMTest):
         img_file_path = os.path.abspath("test_pages/shared/test_image.png")
         css_file_path = os.path.abspath("test_pages/shared/test_style.css")
 
-        def type_filenames_into_form(**kwargs):
-            """Simulate typing into the file upload input fields."""
-            driver = kwargs["driver"]
-            img_file_upload_element = driver.find_element_by_id("upload-img")
-            css_file_upload_element = driver.find_element_by_id("upload-css")
-            img_file_upload_element.send_keys(img_file_path)
-            css_file_upload_element.send_keys(css_file_path)
-            sleep(5)  # wait for the form submission (3 sec after onload)
-
         manager_params, browser_params = self.get_config()
         manager = task_manager.TaskManager(manager_params, browser_params)
         test_url = utilities.BASE_TEST_URL + "/post_file_upload.html"
         cs = command_sequence.CommandSequence(test_url)
         cs.get(sleep=0, timeout=60)
-        cs.run_custom_function(type_filenames_into_form, ())
+        cs.append_command(FilenamesIntoFormCommand(img_file_path, css_file_path))
         manager.execute_command_sequence(cs)
         manager.close()
 
@@ -1029,3 +1021,22 @@ class TestPOSTInstrument(OpenWPMTest):
             u"upload-img": img_file_content,
         }
         assert expected_body == post_body_decoded
+
+
+class FilenamesIntoFormCommand(BaseCommand):
+    def __init__(self, img_file_path, css_file_path) -> None:
+        self.img_file_path = img_file_path
+        self.css_file_path = css_file_path
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ) -> None:
+        img_file_upload_element = webdriver.find_element_by_id("upload-img")
+        css_file_upload_element = webdriver.find_element_by_id("upload-css")
+        img_file_upload_element.send_keys(self.img_file_path)
+        css_file_upload_element.send_keys(self.css_file_path)
+        sleep(5)  # wait for the form submission (3 sec after onload)

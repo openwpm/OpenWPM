@@ -1,18 +1,16 @@
 from typing import Callable, List, Tuple
 
-from .commands.types import (
-    BaseCommand,
+from .commands.browser_commands import (
     BrowseCommand,
     DumpPageSourceCommand,
-    DumpProfCommand,
     FinalizeCommand,
     GetCommand,
     InitializeCommand,
     RecursiveDumpPageSourceCommand,
-    RunCustomFunctionCommand,
     SaveScreenshotCommand,
     ScreenshotFullPageCommand,
 )
+from .commands.types import BaseCommand
 from .errors import CommandExecutionError
 
 
@@ -39,7 +37,7 @@ class CommandSequence:
         retry_number: int = None,
         site_rank: int = None,
         callback: Callable[[bool], None] = None,
-    ):
+    ) -> None:
         """Initialize command sequence.
 
         Parameters
@@ -179,15 +177,7 @@ class CommandSequence:
         command = RecursiveDumpPageSourceCommand(suffix)
         self._commands_with_timeout.append((command, timeout))
 
-    def run_custom_function(self, function_handle, func_args=(), timeout=30):
-        """Run a custom by passing the function handle"""
-        self.total_timeout += timeout
-        if not self.contains_get_or_browse:
-            raise CommandExecutionError(
-                "No get or browse request preceding " "the dump page source command",
-                self,
-            )
-        command = RunCustomFunctionCommand(function_handle, func_args)
+    def append_command(self, command: BaseCommand, timeout: int = 30) -> None:
         self._commands_with_timeout.append((command, timeout))
 
     def mark_done(self, success: bool):

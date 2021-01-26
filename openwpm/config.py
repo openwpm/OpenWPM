@@ -57,6 +57,14 @@ ALL_RESOURCE_TYPES = {
 @dataclass_json
 @dataclass
 class BrowserParams:
+    """
+    Configuration that might differ per browser
+
+    OpenWPM allows you to run multiple browsers with different
+    configurations in parallel and this class allows you
+    to customize behaviour of an individual browser
+    """
+
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
@@ -83,6 +91,15 @@ class BrowserParams:
 @dataclass_json
 @dataclass
 class ManagerParams:
+    """
+    Configuration for the TaskManager
+
+    The configuration will be the same for all browsers running on the same
+    TaskManager.
+    It can be used to control storage locations or which watchdogs should
+    run
+    """
+
     data_directory: str = "~/openwpm/"
     log_directory: str = "~/openwpm/"
     screenshot_path: Optional[str] = None

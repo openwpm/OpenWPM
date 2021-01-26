@@ -1,5 +1,4 @@
 import atexit
-import json
 import subprocess
 from os.path import dirname, join, realpath
 
