@@ -1,4 +1,4 @@
-# This workflows will run all test as well as pre-commit 
+# This workflow will run all tests as well as pre-commit 
 
 name: Tests and linting
 on:
@@ -93,4 +93,3 @@ jobs:
       env:
         DISPLAY: ":99.0"
         TESTS: ${{ matrix.test-groups }}
-
