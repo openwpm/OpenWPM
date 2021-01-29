@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-groups: ["test_[a-e]*", "test_[f-h]*", "test_[i-r,t-z]*", "test_[s]*", "webextension" ]
+        test-groups: ["test_[a-e]*", "test_[f-h]*", "test_[i-r,t-z]*", "test_[s]*"]
     steps:
     # All of these steps are just setup, maybe we should wrap them in an action
     - uses: actions/checkout@v2
@@ -90,14 +90,7 @@ jobs:
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
 
-    - run: ./scripts/travis.sh
+    - run: ./scripts/ci.sh
       env:
         DISPLAY: ":99.0"
         TESTS: ${{ matrix.test-groups }}
-    # As soon as a step fails no further steps will be executed, so we know the tests passed here
-    - name: Upload JS coverage checks
-      if:   ${{ matrix.test-groups }} == "webextension"
-      run: |
-        npm run cov:check;
-        npm run cov:send;
-
