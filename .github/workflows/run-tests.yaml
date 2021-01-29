@@ -31,15 +31,13 @@ jobs:
 
     - name: Install.sh (cache miss)
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      run: |
-        $GITHUB_WORKSPACE/install.sh
+      run: $GITHUB_WORKSPACE/install.sh
     - name: Install.sh (cache hit)
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
-      run: |
-        conda info --envs
+      run: $GITHUB_WORKSPACE/install.sh --skip-create
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
-   
+
     - uses: pre-commit/action@v2.0.0
 
   tests:
@@ -88,8 +86,15 @@ jobs:
 
     - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
-      
+
     - run: ./scripts/travis.sh
       env:
         DISPLAY: ":99.0"
         TESTS: ${{ matrix.test-groups }}
+    # As soon as a step fails no further steps will be executed, so we know the tests passed here
+    - name: Upload JS coverage checks
+      if:   ${{ matrix.test-groups }} == "webextension"
+      run: |
+        npm run cov:check;
+        npm run cov:send;
+
