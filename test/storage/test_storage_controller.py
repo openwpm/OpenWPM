@@ -40,7 +40,9 @@ def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
 
     for visit_id in [*TEST_VISIT_IDS, INVALID_VISIT_ID]:
         cs.finalize_visit_id(visit_id, True)
+    cs.close()
     controller_handle.shutdown()
+
     handle = structured.handle
     handle.poll_queue()
     for table, data in TEST_VALUES.items():
@@ -61,8 +63,8 @@ def test_arrow_provider(mp_logger: MPLogger) -> None:
             table, visit_id, dict(**data)
         )  # cloning to avoid the modifications in store_record
 
-    # This sleep needs to be here because otherwise it is executing blockingly on the single thread,
-    # so the server doesn't ever wake up
+    for visit_id in [*TEST_VISIT_IDS, INVALID_VISIT_ID]:
+        cs.finalize_visit_id(visit_id, True)
     cs.close()
     controller_handle.shutdown()
 
