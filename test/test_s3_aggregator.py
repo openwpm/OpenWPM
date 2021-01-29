@@ -46,8 +46,8 @@ class TestS3Aggregator(OpenWPMTest):
         return manager_params, browser_params
 
     @pytest.mark.skipif(
-        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-        reason="Localstack fails to start on Travis",
+        "CI" in os.environ and os.environ["CI"] == "true",
+        reason="Localstack fails to start on CI",
     )
     def test_basic_properties(self):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
@@ -91,8 +91,8 @@ class TestS3Aggregator(OpenWPMTest):
         assert len(config["browser_params"]) == NUM_BROWSERS
 
     @pytest.mark.skipif(
-        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-        reason="Localstack fails to start on Travis",
+        "CI" in os.environ and os.environ["CI"] == "true",
+        reason="Localstack fails to start on CI",
     )
     def test_commit_on_timeout(self):
         TEST_SITE = "%s/s3_aggregator.html" % BASE_TEST_URL
@@ -110,8 +110,8 @@ class TestS3Aggregator(OpenWPMTest):
         manager.close()
 
     @pytest.mark.skipif(
-        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-        reason="Localstack fails to start on Travis",
+        "CI" in os.environ and os.environ["CI"] == "true",
+        reason="Localstack fails to start on CI",
     )
     def test_s3_callbacks(self):
         TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"

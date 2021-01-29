@@ -139,8 +139,8 @@ class TestMPLogger(OpenWPMTest):
         self.test_multiprocess(str(tmpdir) + "-2")
 
     @pytest.mark.skipif(
-        "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-        reason="Flaky on Travis CI",
+        "CI" in os.environ and os.environ["CI"] == "true",
+        reason="Flaky on CI",
     )
     def test_child_process_with_exception(self, tmpdir):
         log_file = self.get_logfile_path(str(tmpdir))
