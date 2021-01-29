@@ -1,5 +1,4 @@
-import asyncio
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, List
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -14,12 +13,8 @@ from openwpm.storage.local_storage import LocalGzipProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
 from openwpm.storage.storage_providers import (
     StructuredStorageProvider,
-    TableName,
     UnstructuredStorageProvider,
 )
-from openwpm.types import VisitId
-
-from ..openwpmtest import OpenWPMTest
 
 memory_structured = "memory_structured"
 sqllite = "sqllite"
@@ -49,26 +44,6 @@ structured_scenarios: List[str] = [
     memory_arrow,
 ]
 
-
-@pytest.mark.parametrize("structured_provider", structured_scenarios, indirect=True)
-@pytest.mark.asyncio
-async def test_basic_access(structured_provider: StructuredStorageProvider) -> None:
-    data = {
-        "visit_id": 2,
-        "browser_id": 3,
-        "site_url": "https://example.com",
-    }
-
-    await structured_provider.init()
-
-    await structured_provider.store_record(TableName("site_visits"), VisitId(2), data)
-    token = await structured_provider.finalize_visit_id(VisitId(2))
-    await structured_provider.flush_cache()
-    if token is not None:
-        await token
-    await structured_provider.shutdown()
-
-
 # Unstructured Providers
 memory_unstructured = "memory_unstructured"
 leveldb = "leveldb"
@@ -94,16 +69,3 @@ def unstructured_provider(
 
 
 unstructured_scenarios: List[str] = [memory_unstructured, leveldb, local_gzip]
-
-
-@pytest.mark.parametrize("unstructured_provider", unstructured_scenarios, indirect=True)
-@pytest.mark.asyncio
-async def test_basic_unstructured_storing(
-    unstructured_provider: UnstructuredStorageProvider,
-) -> None:
-    test_string = "This is my test string"
-    blob = test_string.encode()
-    await unstructured_provider.init()
-    await unstructured_provider.store_blob("test", blob)
-    await unstructured_provider.flush_cache()
-    await unstructured_provider.shutdown()

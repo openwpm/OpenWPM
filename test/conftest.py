@@ -21,6 +21,7 @@ EXTENSION_DIR = os.path.join(
     "Extension",
     "firefox",
 )
+pytest_plugins = "test.storage.fixtures"
 
 
 @pytest.fixture(scope="session")

@@ -294,7 +294,7 @@ class Browser:
 
         # Send the shutdown command
         command = ShutdownSignal()
-        self.command_queue.put((command))
+        self.command_queue.put(command)
 
         # Verify that webdriver has closed (30 second timeout)
         try:

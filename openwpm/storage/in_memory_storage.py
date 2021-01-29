@@ -8,9 +8,9 @@ by not having to do a round trip to a perstitent storage provider
 
 import asyncio
 import logging
-from asyncio import Event, Lock
+from asyncio import Event, Lock, Task
 from collections import defaultdict
-from typing import Any, Awaitable, DefaultDict, Dict, List, Tuple
+from typing import Any, DefaultDict, Dict, List
 
 from multiprocess import Queue
 from pyarrow import Table
@@ -76,7 +76,7 @@ class MemoryStructuredProvider(StructuredStorageProvider):
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> Awaitable[None]:
+    ) -> Task[None]:
         async with self.lock as _:
             self.signal.clear()
             self.logger.info(
@@ -90,7 +90,7 @@ class MemoryStructuredProvider(StructuredStorageProvider):
             async def wait(signal: Event) -> None:
                 await signal.wait()
 
-            return wait(self.signal)
+            return asyncio.create_task(wait(self.signal))
 
     async def shutdown(self) -> None:
         if self.cache1 != {} or self.cache2 != {}:

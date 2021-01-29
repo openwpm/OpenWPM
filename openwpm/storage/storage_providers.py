@@ -6,6 +6,7 @@ without any changes to the rest of the code base
 import gzip
 import io
 from abc import ABC, abstractmethod
+from asyncio import Task
 from typing import Any, Awaitable, Dict, NewType, Optional
 
 from pyarrow.lib import Table
@@ -13,6 +14,7 @@ from pyarrow.lib import Table
 from openwpm.types import VisitId
 
 TableName = NewType("TableName", str)
+INCOMPLETE_VISITS = TableName("incomplete_visits")
 
 
 class StorageProvider(ABC):
@@ -59,7 +61,7 @@ class StructuredStorageProvider(StorageProvider):
     @abstractmethod
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> Optional[Awaitable[None]]:
+    ) -> Optional[Task[None]]:
         """This method is invoked to inform the StructuredStorageProvider that no more
         records for this visit_id will be submitted
 

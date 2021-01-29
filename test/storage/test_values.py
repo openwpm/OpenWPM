@@ -8,8 +8,11 @@ AND Schema-Documentation.md
 
 import random
 import string
+from typing import Any, Dict
 
-TEST_VALUES = dict()
+from openwpm.storage.storage_providers import TableName
+
+TEST_VALUES: Dict[TableName, Dict[str, Any]] = dict()
 
 
 def random_word(length):
@@ -24,7 +27,7 @@ fields = {
     "openwpm_version": random_word(12),
     "browser_version": random_word(12),
 }
-TEST_VALUES["task"] = fields
+TEST_VALUES[TableName("task")] = fields
 
 
 # crawl
@@ -33,7 +36,7 @@ fields = {
     "task_id": random.randint(0, 2 ** 63 - 1),
     "browser_params": random_word(12),
 }
-TEST_VALUES["crawl"] = fields
+TEST_VALUES[TableName("crawl")] = fields
 
 # site_visits
 fields = {
@@ -42,7 +45,7 @@ fields = {
     "site_url": random_word(12),
     "site_rank": random.randint(0, 2 ** 31 - 1),
 }
-TEST_VALUES["site_visits"] = fields
+TEST_VALUES[TableName("site_visits")] = fields
 
 # crawl_history
 fields = {
@@ -56,7 +59,7 @@ fields = {
     "traceback": random_word(12),
     "duration": random.randint(0, 2 ** 63 - 1),
 }
-TEST_VALUES["crawl_history"] = fields
+TEST_VALUES[TableName("crawl_history")] = fields
 
 # http_requests
 fields = {
@@ -88,7 +91,7 @@ fields = {
     "post_body_raw": random_word(12),
     "time_stamp": random_word(12),
 }
-TEST_VALUES["http_requests"] = fields
+TEST_VALUES[TableName("http_requests")] = fields
 
 # http_responses
 fields = {
@@ -111,7 +114,7 @@ fields = {
     "time_stamp": random_word(12),
     "content_hash": random_word(12),
 }
-TEST_VALUES["http_responses"] = fields
+TEST_VALUES[TableName("http_responses")] = fields
 
 # http_redirects
 fields = {
@@ -132,7 +135,7 @@ fields = {
     "headers": random_word(12),
     "time_stamp": random_word(12),
 }
-TEST_VALUES["http_redirects"] = fields
+TEST_VALUES[TableName("http_redirects")] = fields
 
 # javascript
 fields = {
@@ -159,7 +162,7 @@ fields = {
     "arguments": random_word(12),
     "time_stamp": random_word(12),
 }
-TEST_VALUES["javascript"] = fields
+TEST_VALUES[TableName("javascript")] = fields
 
 # javascript_cookies
 fields = {
@@ -183,7 +186,7 @@ fields = {
     "store_id": random_word(12),
     "time_stamp": random_word(12),
 }
-TEST_VALUES["javascript_cookies"] = fields
+TEST_VALUES[TableName("javascript_cookies")] = fields
 
 # navigations
 fields = {
@@ -212,7 +215,7 @@ fields = {
     "committed_event_ordinal": random.randint(0, 2 ** 63 - 1),
     "time_stamp": random_word(12),
 }
-TEST_VALUES["navigations"] = fields
+TEST_VALUES[TableName("navigations")] = fields
 
 # callstacks
 fields = {
@@ -221,13 +224,13 @@ fields = {
     "browser_id": random.randint(0, 2 ** 31 - 1),
     "call_stack": random_word(12),
 }
-TEST_VALUES["callstacks"] = fields
+TEST_VALUES[TableName("callstacks")] = fields
 
 # incomplete_visits
 fields = {
     "visit_id": random.randint(0, 2 ** 63 - 1),
 }
-TEST_VALUES["incomplete_visits"] = fields
+TEST_VALUES[TableName("incomplete_visits")] = fields
 
 # dns_responses
 fields = {
@@ -240,6 +243,8 @@ fields = {
     "is_TRR": random.choice([True, False]),
     "time_stamp": random_word(12),
 }
-TEST_VALUES["dns_responses"] = fields
+TEST_VALUES[TableName("dns_responses")] = fields
 
-TEST_VISIT_IDS = [d["visit_id"] for d in TEST_VALUES.values()]
+TEST_VISIT_IDS = [
+    d["visit_id"] for d in filter(lambda d: "visit_id" in d, TEST_VALUES.values())
+]

@@ -5,6 +5,7 @@ import queue
 import random
 import socket
 import time
+from asyncio import Task
 from collections import defaultdict
 from typing import Any, Awaitable, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
@@ -33,7 +34,7 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
-FAKE_VISIT_ID = VisitId(-1)
+INVALID_VISIT_ID = VisitId(-1)
 
 
 class StorageController:
@@ -65,7 +66,12 @@ class StorageController:
         self._shutdown_flag = False
         self._relaxed = False
         self.logger = logging.getLogger("openwpm")
-        self.current_tasks: DefaultDict[VisitId, List[asyncio.Task]] = defaultdict(list)
+        self.store_record_tasks: DefaultDict[VisitId, List[Task[None]]] = defaultdict(
+            list
+        )
+        """Contains all store_record tasks for a given visit_id"""
+        self.finalize_tasks: List[Tuple[VisitId, Optional[Task[None]], bool]] = []
+        """Contains all information required for update_completion_queue to work"""
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
@@ -105,8 +111,6 @@ class StorageController:
 
             self._last_record_received = time.time()
             record_type, data = record
-
-            self.logger.debug("Received record for record_type %s", record_type)
 
             if record_type == RECORD_TYPE_CREATE:
                 raise RuntimeError(
@@ -150,11 +154,11 @@ class StorageController:
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
 
-        if visit_id == FAKE_VISIT_ID:
+        if visit_id == INVALID_VISIT_ID:
             # Hacking around the fact that task and crawl don't have a VisitID
             del data["visit_id"]
         # Turning these into task to be able to have them complete without blocking the socket
-        self.current_tasks[visit_id].append(
+        self.store_record_tasks[visit_id].append(
             asyncio.create_task(
                 self.structured_storage.store_record(
                     table=table_name, visit_id=visit_id, record=data
@@ -177,17 +181,15 @@ class StorageController:
         if action == ACTION_TYPE_INITIALIZE:
             return
         elif action == ACTION_TYPE_FINALIZE:
-            success = data["success"]
+            success: bool = data["success"]
             completion_token = await self.finalize_visit_id(visit_id, success)
-            if completion_token is not None:
-                await completion_token
-            self.completion_queue.put((visit_id, success))
+            self.finalize_tasks.append((visit_id, completion_token, success))
         else:
             raise ValueError("Unexpected action: %s", action)
 
     async def finalize_visit_id(
         self, visit_id: VisitId, success: bool
-    ) -> Optional[Awaitable[None]]:
+    ) -> Optional[Task[None]]:
         """Makes sure all records for a given visit_id
         have been processed before we invoke finalize_visit_id
         on the structured_storage
@@ -197,9 +199,9 @@ class StorageController:
         """
         self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
 
-        for task in self.current_tasks[visit_id]:
+        for task in self.store_record_tasks[visit_id]:
             await task
-        del self.current_tasks[visit_id]
+        del self.store_record_tasks[visit_id]
 
         self.logger.debug(
             "Awaited all tasks for visit_id %d while finalizing", visit_id
@@ -217,9 +219,9 @@ class StorageController:
         """
         while True:
             await asyncio.sleep(STATUS_UPDATE_INTERVAL)
-            visit_id_count = len(self.current_tasks.keys())
+            visit_id_count = len(self.store_record_tasks.keys())
             task_count = 0
-            for task_list in self.current_tasks.values():
+            for task_list in self.store_record_tasks.values():
                 for task in task_list:
                     if not task.done():
                         task_count += 1
@@ -233,14 +235,15 @@ class StorageController:
                 visit_id_count,
             )
 
-    async def shutdown(self) -> None:
+    async def shutdown(self, completion_queue_task: Task[None]) -> None:
         completion_tokens = {}
-        visit_ids = list(self.current_tasks.keys())
+        visit_ids = list(self.store_record_tasks.keys())
         for visit_id in visit_ids:
             t = await self.finalize_visit_id(visit_id, success=False)
             if t is not None:
                 completion_tokens[visit_id] = t
         await self.structured_storage.flush_cache()
+        await completion_queue_task
         for visit_id, token in completion_tokens.items():
             await token
             self.completion_queue.put((visit_id, False))
@@ -286,6 +289,20 @@ class StorageController:
                 await self.unstructured_storage.flush_cache()
             self._last_record_received = None
 
+    async def update_completion_queue(self) -> None:
+        """ All completed finalize_visit_id tasks get put into the completion_queue here """
+        while not (self._shutdown_flag and len(self.finalize_tasks) == 0):
+            # This list is needed because iterating over a list and changing it at the same time
+            # is forbidden
+            new_finalize_tasks: List[Tuple[VisitId, Optional[Task[None]], bool]] = []
+            for visit_id, token, success in self.finalize_tasks:
+                if not token or token.done():
+                    self.completion_queue.put((visit_id, success))
+                else:
+                    new_finalize_tasks.append((visit_id, token, success))
+            self.finalize_tasks = new_finalize_tasks
+            await asyncio.sleep(5)
+
     async def _run(self) -> None:
         await self.structured_storage.init()
         if self.unstructured_storage:
@@ -303,6 +320,10 @@ class StorageController:
         timeout_check = asyncio.create_task(
             self.save_batch_if_past_timeout(), name="TimeoutCheck"
         )
+
+        update_completion_queue = asyncio.create_task(
+            self.update_completion_queue(), name="CompletionQueueFeeder"
+        )
         # Blocks until we should shutdown
         await self.should_shutdown()
 
@@ -310,7 +331,7 @@ class StorageController:
         status_queue_update.cancel()
         timeout_check.cancel()
         await server.wait_closed()
-        await self.shutdown()
+        await self.shutdown(update_completion_queue)
 
     def run(self) -> None:
         logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -323,6 +344,7 @@ class DataSocket:
     def __init__(self, listener_address: Tuple[str, int]) -> None:
         self.socket = ClientSocket(serialization="dill")
         self.socket.connect(*listener_address)
+        self.logger = logging.getLogger("openwpm")
 
     def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -408,7 +430,7 @@ class StorageControllerHandle:
         task_id = random.getrandbits(32)
         sock.store_record(
             TableName("task"),
-            FAKE_VISIT_ID,
+            INVALID_VISIT_ID,
             {
                 "task_id": task_id,
                 "manager_params": manager_params.to_json(),
@@ -420,14 +442,14 @@ class StorageControllerHandle:
         for browser_param in browser_params:
             sock.store_record(
                 TableName("crawl"),
-                FAKE_VISIT_ID,
+                INVALID_VISIT_ID,
                 {
                     "browser_id": browser_param.browser_id,
                     "task_id": task_id,
                     "browser_params": browser_param.to_json(),
                 },
             )
-        sock.finalize_visit_id(FAKE_VISIT_ID, success=True)
+        sock.finalize_visit_id(INVALID_VISIT_ID, success=True)
 
     def launch(self) -> None:
         """Starts the data aggregator"""

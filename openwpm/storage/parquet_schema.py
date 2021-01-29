@@ -14,7 +14,8 @@ fields = [
     pa.field("task_id", pa.int64(), nullable=False),
     pa.field("manager_params", pa.string(), nullable=False),
     pa.field("openwpm_version", pa.string(), nullable=False),
-    pa.field("browser_version", pa.string(), nullable=False)
+    pa.field("browser_version", pa.string(), nullable=False),
+    pa.field("instance_id", pa.uint32(), nullable=False),
     # Omitting start_time as I couldn't figure out how to implement it
 ]
 PQ_SCHEMAS["task"] = pa.schema(fields)
@@ -23,6 +24,7 @@ fields = [
     pa.field("browser_id", pa.uint32(), nullable=False),
     pa.field("task_id", pa.int64(), nullable=False),
     pa.field("browser_params", pa.string(), nullable=False),
+    pa.field("instance_id", pa.uint32(), nullable=False),
     # Omitting start_time as I couldn't figure out how to implement it
 ]
 PQ_SCHEMAS["crawl"] = pa.schema(fields)

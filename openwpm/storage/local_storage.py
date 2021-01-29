@@ -19,9 +19,6 @@ class LocalArrowProvider(ArrowProvider):
     async def write_table(self, table_name: TableName, table: Table) -> None:
         pq.write_to_dataset(table, str(self.storage_path / table_name))
 
-    async def shutdown(self) -> None:
-        pass
-
 
 class LocalGzipProvider(UnstructuredStorageProvider):
     """ Stores files as storage_path/hash.zip """

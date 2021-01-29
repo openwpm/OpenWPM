@@ -17,7 +17,7 @@ from test.storage.test_values import TEST_VALUES
 async def test_arrow_cache(mp_logger: MPLogger) -> None:
     prov = MemoryArrowProvider()
     await prov.init()
-    site_visit = TEST_VALUES["site_visits"]
+    site_visit = TEST_VALUES[TableName("site_visits")]
     for j in range(5):  # Testing that the cache works repeatedly
         d: Dict[VisitId, Awaitable[None]] = {}
         for i in range(CACHE_SIZE + 1):

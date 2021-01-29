@@ -16,8 +16,10 @@ from openwpm.storage.in_memory_storage import (
 )
 from openwpm.storage.storage_controller import (
     ACTION_TYPE_FINALIZE,
+    INVALID_VISIT_ID,
     RECORD_TYPE_META,
     SHUTDOWN_SIGNAL,
+    DataSocket,
     StorageController,
     StorageControllerHandle,
 )
@@ -26,22 +28,18 @@ from test.storage.test_values import TEST_VALUES, TEST_VISIT_IDS
 
 def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
     structured = MemoryStructuredProvider()
-    unstructured = MemoryUnstructuredProvider()
-    controller_handle = StorageControllerHandle(structured, unstructured)
+    controller_handle = StorageControllerHandle(structured, None)
     controller_handle.launch()
     assert controller_handle.listener_address is not None
-    cs = ClientSocket()
-    cs.connect(*controller_handle.listener_address)
+    cs = DataSocket(controller_handle.listener_address)
     for table, data in TEST_VALUES.items():
-        cs.send((table, data))
+        visit_id = data["visit_id"] if "visit_id" in data else INVALID_VISIT_ID
+        cs.store_record(
+            table, visit_id, dict(**data)
+        )  # cloning to avoid the modifications in store_record
 
-    for visit_id in TEST_VISIT_IDS:
-        cs.send(
-            (
-                RECORD_TYPE_META,
-                {"action": ACTION_TYPE_FINALIZE, "visit_id": visit_id, "success": True},
-            )
-        )
+    for visit_id in [*TEST_VISIT_IDS, INVALID_VISIT_ID]:
+        cs.finalize_visit_id(visit_id, True)
     controller_handle.shutdown()
     handle = structured.handle
     handle.poll_queue()
@@ -49,42 +47,29 @@ def test_startup_and_shutdown(mp_logger: MPLogger) -> None:
         assert handle.storage[table] == [data]
 
 
-@pytest.mark.asyncio
-async def test_arrow_provider(mp_logger: MPLogger) -> None:
+def test_arrow_provider(mp_logger: MPLogger) -> None:
     structured = MemoryArrowProvider()
-    status_queue = Queue()
-    completion_queue = Queue()
-    shutdown_queue = Queue()
+    controller_handle = StorageControllerHandle(structured, None)
+    controller_handle.launch()
 
-    storage_controller = StorageController(
-        structured,
-        None,
-        status_queue=status_queue,
-        completion_queue=completion_queue,
-        shutdown_queue=shutdown_queue,
-    )
-    task = asyncio.create_task(storage_controller._run())
-    cs = ClientSocket()
-    while status_queue.empty():
-        await asyncio.sleep(5)
-
-    cs.connect(*status_queue.get())
+    assert controller_handle.listener_address is not None
+    cs = DataSocket(controller_handle.listener_address)
 
     for table, data in TEST_VALUES.items():
-        cs.send((table, data))
+        visit_id = data["visit_id"] if "visit_id" in data else INVALID_VISIT_ID
+        cs.store_record(
+            table, visit_id, dict(**data)
+        )  # cloning to avoid the modifications in store_record
 
     # This sleep needs to be here because otherwise it is executing blockingly on the single thread,
     # so the server doesn't ever wake up
-    await asyncio.sleep(1)
-    shutdown_queue.put((SHUTDOWN_SIGNAL, True))
-    await task
+    cs.close()
+    controller_handle.shutdown()
 
     handle = structured.handle
     handle.poll_queue()
     for table, data in TEST_VALUES.items():
-        if table == "incomplete_visits":
-            # We currently mark all of them as failed, because we don't bother sending a finalize command
-            continue
+
         t1 = handle.storage[table][0].to_pandas().drop(columns=["instance_id"])
         t2 = pd.DataFrame({k: [v] for k, v in data.items()})
         # Since t2 doesn't get created schema the inferred types are different

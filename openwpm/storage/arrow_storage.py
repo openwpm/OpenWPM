@@ -2,8 +2,9 @@ import asyncio
 import logging
 import random
 from abc import abstractmethod
+from asyncio import Task
 from collections import defaultdict
-from typing import Any, Awaitable, DefaultDict, Dict, List
+from typing import Any, DefaultDict, Dict, List
 
 import pandas as pd
 import pyarrow as pa
@@ -12,9 +13,8 @@ from pyarrow import Table
 from openwpm.types import VisitId
 
 from .parquet_schema import PQ_SCHEMAS
-from .storage_providers import StructuredStorageProvider, TableName
+from .storage_providers import INCOMPLETE_VISITS, StructuredStorageProvider, TableName
 
-INCOMPLETE_VISITS = TableName("incomplete_visits")
 CACHE_SIZE = 500
 
 
@@ -47,7 +47,6 @@ class ArrowProvider(StructuredStorageProvider):
     async def init(self) -> None:
         # Used to synchronize the finalizing and the flushing
         self.storing_lock = asyncio.Lock()
-        self.flush_event = asyncio.Event()
 
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
@@ -98,7 +97,7 @@ class ArrowProvider(StructuredStorageProvider):
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
-    ) -> Awaitable[None]:
+    ) -> Task[None]:
         """This method is the reason the finalize_visit_id interface returns an awaitable.
         This was necessary as we needed to enable the following pattern.
         ```
@@ -134,7 +133,7 @@ class ArrowProvider(StructuredStorageProvider):
             async def wait_on_condition(e: asyncio.Event) -> None:
                 await e.wait()
 
-            return wait_on_condition(event)
+            return asyncio.create_task(wait_on_condition(event))
 
     @abstractmethod
     async def write_table(self, table_name: TableName, table: Table) -> None:
@@ -165,3 +164,12 @@ class ArrowProvider(StructuredStorageProvider):
 
         if not got_lock:
             lock.release()
+
+    async def shutdown(self) -> None:
+        for table_name, batches in self._batches.items():
+            if len(batches) != 0:
+                self.logger.error(
+                    "While shutting down there were %d cached entries for table %s",
+                    len(batches),
+                    table_name,
+                )
