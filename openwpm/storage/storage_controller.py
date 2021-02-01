@@ -169,7 +169,7 @@ class StorageController:
     async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are meta information
-        communicated to the aggregator
+        communicated to the storage controller
         Supported message types:
         - finalize: A message sent by the extension to
                     signal that a visit_id is complete.
@@ -375,7 +375,7 @@ class DataSocket:
 
 class StorageControllerHandle:
     """This class contains all methods relevant for the TaskManager
-    to interact with the DataAggregator
+    to interact with the StorageController
     """
 
     def __init__(
@@ -452,7 +452,7 @@ class StorageControllerHandle:
         sock.finalize_visit_id(INVALID_VISIT_ID, success=True)
 
     def launch(self) -> None:
-        """Starts the data aggregator"""
+        """Starts the storage controller"""
         self.storage_controller = Process(
             name="StorageController",
             target=StorageController.run,
@@ -478,7 +478,7 @@ class StorageControllerHandle:
         return finished_visit_ids
 
     def shutdown(self, relaxed: bool = True) -> None:
-        """ Terminate the aggregator listener process"""
+        """ Terminate the storage controller process"""
         assert isinstance(self.storage_controller, Process)
         self.logger.debug("Sending the shutdown signal to the Storage Controller...")
         self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
@@ -504,7 +504,7 @@ class StorageControllerHandle:
         # Check last status signal
         if (time.time() - self._last_status_received) > STATUS_TIMEOUT:
             raise RuntimeError(
-                "No status update from DataAggregator listener process "
+                "No status update from the storage controller process "
                 "for %d seconds." % (time.time() - self._last_status_received)
             )
 
@@ -520,7 +520,7 @@ class StorageControllerHandle:
         except queue.Empty:
             assert self._last_status_received is not None
             raise RuntimeError(
-                "No status update from DataAggregator listener process "
+                "No status update from the storage controller process "
                 "for %d seconds." % (time.time() - self._last_status_received)
             )
         assert isinstance(self._last_status, int)

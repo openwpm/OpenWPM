@@ -37,7 +37,6 @@ class MemoryStructuredProvider(StructuredStorageProvider):
     """
 
     lock: Lock
-    signal: Event
 
     def __init__(self) -> None:
         super().__init__()
@@ -50,9 +49,9 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         """The cache for entries before they are finalized"""
         self.cache2: DefaultDict[TableName, List[Dict[str, Any]]] = defaultdict(list)
         """For all entries that have been finalized but not yet flushed out to the queue"""
+        self.signal_list: List[Event] = []
 
     async def init(self) -> None:
-        self.signal = asyncio.Event()
         self.lock = asyncio.Lock()
 
     async def flush_cache(self) -> None:
@@ -64,7 +63,8 @@ class MemoryStructuredProvider(StructuredStorageProvider):
                 for record in record_list:
                     self.queue.put((table, record))
             self.cache2.clear()
-            self.signal.set()
+            for ev in self.signal_list:
+                ev.set()
 
     async def store_record(
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
@@ -78,7 +78,6 @@ class MemoryStructuredProvider(StructuredStorageProvider):
         self, visit_id: VisitId, interrupted: bool = False
     ) -> Task[None]:
         async with self.lock as _:
-            self.signal.clear()
             self.logger.info(
                 f"Finalizing visit_id {visit_id} which was {'' if interrupted else 'not'} interrupted"
             )
@@ -90,7 +89,9 @@ class MemoryStructuredProvider(StructuredStorageProvider):
             async def wait(signal: Event) -> None:
                 await signal.wait()
 
-            return asyncio.create_task(wait(self.signal))
+            ev = Event()
+            self.signal_list.append(ev)
+            return asyncio.create_task(wait(ev))
 
     async def shutdown(self) -> None:
         if self.cache1 != {} or self.cache2 != {}:
@@ -124,6 +125,8 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
 
     def __init__(self) -> None:
         self.storage: Dict[str, bytes] = {}
+        self.queue = Queue()
+        self.handle = MemoryProviderHandle(self.queue)
 
     async def store_blob(
         self,
@@ -138,6 +141,7 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
             bytesIO = self._compress(blob)
             blob = bytesIO.getvalue()
         self.storage[filename] = blob
+        self.queue.put((filename, blob))
 
     async def flush_cache(self) -> None:
         pass

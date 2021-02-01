@@ -142,8 +142,8 @@ class TaskManager:
         self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
 
-        # Initialize the data aggregators
-        self._launch_aggregators(
+        # Initialize the storage controller
+        self._launch_storage_controller(
             structured_storage_provider, unstructured_storage_provider
         )
 
@@ -283,12 +283,11 @@ class TaskManager:
                         )
                         kill_process_and_children(process, self.logger)
 
-    def _launch_aggregators(
+    def _launch_storage_controller(
         self,
         structured_storage_provider: StructuredStorageProvider,
         unstructured_storage_provider: Optional[UnstructuredStorageProvider],
     ) -> None:
-        """Launch the necessary data aggregators"""
         self.storage_controller_handle = StorageControllerHandle(
             structured_storage_provider, unstructured_storage_provider
         )
@@ -330,7 +329,7 @@ class TaskManager:
                 browser.command_thread.join()
             browser.shutdown_browser(during_init, force=not relaxed)
 
-        self.sock.close()  # close socket to data aggregator
+        self.sock.close()  # close socket to storage controller
         self.storage_controller_handle.shutdown(relaxed=relaxed)
         self.logging_server.close()
         if hasattr(self, "callback_thread"):
@@ -405,7 +404,7 @@ class TaskManager:
         return thread
 
     def _mark_command_sequences_complete(self) -> None:
-        """Polls the data aggregator for saved records
+        """Polls the storage controller for saved records
         and calls their callbacks
         """
         while True:
@@ -615,12 +614,13 @@ class TaskManager:
         int  -> index of browser to send command to
         """
 
-        # Block if the aggregator queue is too large
+        # Block if the storage controller has too many unfinished records
+        # TODO create tests that these numbers are still meaningful
         agg_queue_size = self.storage_controller_handle.get_most_recent_status()
         if agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
             while agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
                 self.logger.info(
-                    "Blocking command submission until the DataAggregator "
+                    "Blocking command submission until the storage controller "
                     "is below the max queue size of %d. Current queue "
                     "length %d. " % (STORAGE_CONTROLLER_JOB_LIMIT, agg_queue_size)
                 )
