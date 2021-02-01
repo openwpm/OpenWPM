@@ -207,16 +207,6 @@ class MPLogger(object):
         )
         self._event_handler = EventHandler(level=self._log_level_sentry_event)
         sentry_sdk.init(dsn=self._sentry_dsn, before_send=self._sentry_before_send)
-        with sentry_sdk.configure_scope() as scope:
-            if self._crawl_context:
-                scope.set_tag(
-                    "CRAWL_REFERENCE",
-                    "%s/%s"
-                    % (
-                        self._crawl_context.get("s3_bucket", "UNKNOWN"),
-                        self._crawl_context.get("s3_directory", "UNKNOWN"),
-                    ),
-                )
 
     def _start_listener(self):
         """Start listening socket for remote logs from extension"""
