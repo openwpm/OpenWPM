@@ -82,7 +82,10 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         self.logger = logging.getLogger("openwpm")
 
     async def init(self) -> None:
-        pass
+        await super(GcsUnstructuredProvider, self).init()
+        self.file_system = GCSFileSystem(
+            project=self.project, token=self.token, access="read_write"
+        )
 
     async def store_blob(
         self, filename: str, blob: bytes, overwrite: bool = False
