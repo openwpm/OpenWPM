@@ -245,6 +245,6 @@ fields = {
 }
 TEST_VALUES[TableName("dns_responses")] = fields
 
-TEST_VISIT_IDS = [
+TEST_VISIT_IDS = set(
     d["visit_id"] for d in filter(lambda d: "visit_id" in d, TEST_VALUES.values())
-]
+)
