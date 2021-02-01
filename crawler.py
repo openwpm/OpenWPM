@@ -97,7 +97,7 @@ structured = GcsStructuredProvider(
 unstructured = GcsUnstructuredProvider(
     project=GCP_PROJECT,
     bucket_name=GCS_BUCKET,
-    base_path=CRAWL_DIRECTORY,
+    base_path=CRAWL_DIRECTORY + "/data",
     token=AUTH_TOKEN,
 )
 # Instantiates the measurement platform
