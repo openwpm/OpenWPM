@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List, Set, Tuple
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -11,10 +11,14 @@ from openwpm.storage.in_memory_storage import (
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.local_storage import LocalGzipProvider
 from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.storage_controller import INVALID_VISIT_ID
 from openwpm.storage.storage_providers import (
     StructuredStorageProvider,
+    TableName,
     UnstructuredStorageProvider,
 )
+from openwpm.types import VisitId
+from test.storage.test_values import dt_test_values, generate_test_values
 
 memory_structured = "memory_structured"
 sqllite = "sqllite"
@@ -69,3 +73,14 @@ def unstructured_provider(
 
 
 unstructured_scenarios: List[str] = [memory_unstructured, leveldb, local_gzip]
+
+
+@pytest.fixture
+def test_values() -> dt_test_values:
+    data, visit_ids = generate_test_values()
+    for table in data.values():
+        table["visit_id"] = (
+            table["visit_id"] if "visit_id" in table else INVALID_VISIT_ID
+        )
+    visit_ids.add(INVALID_VISIT_ID)
+    return data, visit_ids

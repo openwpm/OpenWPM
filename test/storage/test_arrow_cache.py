@@ -1,5 +1,4 @@
 import asyncio
-import random
 from typing import Awaitable, Dict
 
 import pytest
@@ -10,14 +9,14 @@ from openwpm.storage.arrow_storage import CACHE_SIZE
 from openwpm.storage.in_memory_storage import MemoryArrowProvider
 from openwpm.storage.storage_providers import TableName
 from openwpm.types import VisitId
-from test.storage.test_values import TEST_VALUES
+from test.storage.test_values import dt_test_values
 
 
 @pytest.mark.asyncio
-async def test_arrow_cache(mp_logger: MPLogger) -> None:
+async def test_arrow_cache(mp_logger: MPLogger, test_values: dt_test_values) -> None:
     prov = MemoryArrowProvider()
     await prov.init()
-    site_visit = TEST_VALUES[TableName("site_visits")]
+    site_visit = test_values[0][TableName("site_visits")]
     for j in range(5):  # Testing that the cache works repeatedly
         d: Dict[VisitId, Awaitable[None]] = {}
         for i in range(CACHE_SIZE + 1):

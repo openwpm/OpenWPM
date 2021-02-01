@@ -2,7 +2,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import Any, Callable, Generator, List, Tuple
 
 import pytest
 
@@ -89,7 +89,7 @@ def task_manager_creator(
 
 @pytest.fixture()
 def http_params(
-    default_params,
+    default_params: Tuple[ManagerParams, List[BrowserParams]],
 ) -> Callable[[str], Tuple[ManagerParams, List[BrowserParams]]]:
     manager_params, browser_params = default_params
     for browser_param in browser_params:
@@ -106,7 +106,7 @@ def http_params(
 
 
 @pytest.fixture()
-def mp_logger(tmp_path):
+def mp_logger(tmp_path: Path) -> Generator[MPLogger, Any, None]:
     log_path = tmp_path / "openwpm.log"
     logger = MPLogger(log_path, log_level_console=logging.DEBUG)
     yield logger

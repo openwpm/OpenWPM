@@ -14,33 +14,32 @@ from openwpm.storage.storage_providers import (
 from openwpm.types import VisitId
 
 from .fixtures import structured_scenarios, unstructured_scenarios
-from .test_values import TEST_VALUES
+from .test_values import dt_test_values
 
 
 @pytest.mark.asyncio
-async def test_local_arrow_storage_provider(tmp_path, mp_logger):
+async def test_local_arrow_storage_provider(
+    tmp_path, mp_logger, test_values: dt_test_values
+):
+    test_table, visit_ids = test_values
     structured_provider = LocalArrowProvider(tmp_path)
     await structured_provider.init()
-    visit_ids = set()
-    for table_name, test_data in TEST_VALUES.items():
-        try:
-            visit_id = VisitId(test_data["visit_id"])
-        except KeyError:
-            visit_id = INVALID_VISIT_ID
-        visit_ids.add(visit_id)
+    for table_name, test_data in test_table.items():
         await structured_provider.store_record(
-            TableName(table_name), visit_id, test_data
+            TableName(table_name), test_data["visit_id"], test_data
         )
     token_list = []
     for i in visit_ids:
         token_list.append(await structured_provider.finalize_visit_id(i))
     await structured_provider.flush_cache()
     await asyncio.gather(*token_list)
-    for table_name, test_data in TEST_VALUES.items():
+    for table_name, test_data in test_table.items():
         dataset = ParquetDataset(tmp_path / table_name)
         df: DataFrame = dataset.read().to_pandas()
         assert df.shape[0] == 1
         for row in df.itertuples(index=False):
+            if test_data["visit_id"] == INVALID_VISIT_ID:
+                del test_data["visit_id"]
             assert row._asdict() == test_data
 
 

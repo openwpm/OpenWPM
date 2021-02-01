@@ -5,12 +5,12 @@ import pytest
 from openwpm.storage.cloud_storage.gcp_storage import GcsStructuredProvider
 from openwpm.storage.storage_providers import TableName
 from openwpm.types import VisitId
-from test.storage.test_values import TEST_VALUES, TEST_VISIT_IDS
 
 
 @pytest.mark.skip
 @pytest.mark.asyncio
-async def test_gcp_structured(mp_logger):
+async def test_gcp_structured(mp_logger, test_values):
+    tables, visit_ids = test_values
     project = "senglehardt-openwpm-test-1"
     bucket_name = "openwpm-test-bucket"
     structured_provider = GcsStructuredProvider(
@@ -21,14 +21,12 @@ async def test_gcp_structured(mp_logger):
     )
     await structured_provider.init()
 
-    for table_name, test_data in TEST_VALUES.items():
+    for table_name, test_data in tables.items():
         visit_id = VisitId(test_data["visit_id"])
         await structured_provider.store_record(
             TableName(table_name), visit_id, test_data
         )
-    finalize_token = [
-        await structured_provider.finalize_visit_id(i) for i in TEST_VISIT_IDS
-    ]
+    finalize_token = [await structured_provider.finalize_visit_id(i) for i in visit_ids]
     await structured_provider.flush_cache()
     for token in finalize_token:
         await token
