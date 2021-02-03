@@ -5,7 +5,7 @@ from custom_command import LinkCountingCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.browser_commands import GetCommand
 from openwpm.config import BrowserParams, ManagerParams
-from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
 # The list of sites that we wish to crawl
@@ -16,7 +16,10 @@ sites = [
     "http://citp.princeton.edu/",
 ]
 
-manager_params = ManagerParams()
+# Loads the default ManagerParams
+# and NUM_BROWSERS copies of the default BrowserParams
+
+manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
 browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
@@ -48,7 +51,7 @@ manager_params.log_directory = Path("./datadir/")
 manager = TaskManager(
     manager_params,
     browser_params,
-    SqlLiteStorageProvider(Path("./datadir/crawl-data.sqllite")),
+    SQLiteStorageProvider(Path("./datadir/crawl-data.sqlite")),
     None,
 )
 
