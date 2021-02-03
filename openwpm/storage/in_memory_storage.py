@@ -3,7 +3,7 @@ This module contains implementations for various kinds of storage providers
 that store their results in memory.
 These classes are designed to allow for easier parallel testing as there are
 no shared resources between tests. It also makes it easier to verify results
-by not having to do a round trip to a perstitent storage provider
+by not having to do a round trip through a persistent storage provider
 """
 
 import asyncio
@@ -27,10 +27,10 @@ from .storage_providers import (
 
 class MemoryStructuredProvider(StructuredStorageProvider):
     """
-    This storage provider passes all it's data to the MemoryStructuredProviderHandle in
+    This storage provider passes all it's data to the MemoryStructuredProviderHandle in a
     process safe way.
 
-    This makes it ideal for testing and for small crawls where no persistence is required
+    This makes it ideal for testing
 
     It also aims to only save out data as late as possible to ensure that storage_controller
     only relies on the guarantees given in the interface.

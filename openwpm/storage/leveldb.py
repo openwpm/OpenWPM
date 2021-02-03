@@ -50,3 +50,4 @@ class LevelDbProvider(UnstructuredStorageProvider):
 
         if self._ldb_counter >= LDB_BATCH_SIZE:
             await self.flush_cache()
+            self._ldb_counter = 0
