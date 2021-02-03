@@ -38,6 +38,13 @@ INVALID_VISIT_ID = VisitId(-1)
 
 
 class StorageController:
+    """
+    Manages incoming data and it's saving to disk
+
+    Provides it's status to the task manager via the completion and status queue.
+    Can be shut down via a shutdown signal in the shutdown queue
+    """
+
     def __init__(
         self,
         structured_storage: StructuredStorageProvider,
@@ -47,8 +54,6 @@ class StorageController:
         shutdown_queue: Queue,
     ) -> None:
         """
-        Creates a BaseListener instance
-
         Parameters
         ----------
         status_queue
