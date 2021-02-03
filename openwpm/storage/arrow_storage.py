@@ -147,7 +147,7 @@ class ArrowProvider(StructuredStorageProvider):
             lock = self.storing_lock
             await lock.acquire()
 
-        assert lock is not None and lock.locked()
+        assert lock == self.storing_lock and lock.locked()
 
         for table_name, batches in self._batches.items():
             table = pa.Table.from_batches(batches)
