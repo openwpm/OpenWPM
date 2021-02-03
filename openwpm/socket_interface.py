@@ -190,7 +190,7 @@ def _parse(serialization: bytes, msg: bytes) -> Any:
         return json.loads(msg.decode("utf-8"))
     if serialization == b"u":  # utf-8 serialization
         return msg.decode("utf-8")
-    raise ValueError("Unkown Encoding")
+    raise ValueError("Unknown Encoding")
 
 
 def main():
