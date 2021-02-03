@@ -10,7 +10,7 @@ from openwpm.storage.in_memory_storage import (
 )
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.local_storage import LocalGzipProvider
-from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_controller import INVALID_VISIT_ID
 from openwpm.storage.storage_providers import (
     StructuredStorageProvider,
@@ -21,7 +21,7 @@ from openwpm.types import VisitId
 from test.storage.test_values import dt_test_values, generate_test_values
 
 memory_structured = "memory_structured"
-sqllite = "sqllite"
+sqlite = "sqlite"
 memory_arrow = "memory_arrow"
 
 
@@ -31,9 +31,9 @@ def structured_provider(
 ) -> StructuredStorageProvider:
     if request.param == memory_structured:
         return MemoryStructuredProvider()
-    elif request.param == sqllite:
-        tmp_path = tmp_path_factory.mktemp("sqllite")
-        return SqlLiteStorageProvider(tmp_path / "test_db.sqllite")
+    elif request.param == sqlite:
+        tmp_path = tmp_path_factory.mktemp("sqlite")
+        return SQLiteStorageProvider(tmp_path / "test_db.sqlite")
     elif request.param == memory_arrow:
         return MemoryArrowProvider()
     assert isinstance(
@@ -44,7 +44,7 @@ def structured_provider(
 
 structured_scenarios: List[str] = [
     memory_structured,
-    sqllite,
+    sqlite,
     memory_arrow,
 ]
 

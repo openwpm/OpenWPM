@@ -6,7 +6,7 @@ from openwpm import command_sequence, task_manager
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParamsInternal
 from openwpm.socket_interface import ClientSocket
-from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
@@ -93,7 +93,7 @@ def test_custom_function(default_params, xpi, server):
     cur.close()
     db.close()
 
-    storage_provider = SqlLiteStorageProvider(path)
+    storage_provider = SQLiteStorageProvider(path)
     manager = TaskManager(manager_params, browser_params, storage_provider, None)
     cs = command_sequence.CommandSequence(url_a)
     cs.get(sleep=0, timeout=60)

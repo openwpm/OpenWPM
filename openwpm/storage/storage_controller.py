@@ -197,15 +197,21 @@ class StorageController:
         See StructuredStorageProvider::finalize_visit_id for additional
         documentation
         """
-        self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
 
+        if visit_id not in self.store_record_tasks:
+            self.logger.error(
+                "Visit_id %d got finalized multiple times, skipping...", visit_id
+            )
+            return None
+
+        self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
         for task in self.store_record_tasks[visit_id]:
             await task
         del self.store_record_tasks[visit_id]
-
         self.logger.debug(
             "Awaited all tasks for visit_id %d while finalizing", visit_id
         )
+
         completion_token = await self.structured_storage.finalize_visit_id(
             visit_id, interrupted=not success
         )

@@ -17,7 +17,7 @@ from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.leveldb import LevelDbProvider
-from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -893,7 +893,7 @@ def test_javascript_saving(http_params, xpi, server):
         browser_param.http_instrument = True
         browser_param.save_content = "script"
 
-    structured_storage = SqlLiteStorageProvider(
+    structured_storage = SQLiteStorageProvider(
         db_path=manager_params.data_directory / "crawl-data.sqlite"
     )
     ldb_path = Path(manager_params.data_directory) / "content.ldb"
@@ -928,7 +928,7 @@ def test_document_saving(http_params, xpi, server):
         browser_param.http_instrument = True
         browser_param.save_content = "main_frame,sub_frame"
 
-    structured_storage = SqlLiteStorageProvider(
+    structured_storage = SQLiteStorageProvider(
         db_path=manager_params.data_directory / "crawl-data.sqlite"
     )
     ldb_path = Path(manager_params.data_directory) / "content.ldb"
@@ -956,7 +956,7 @@ def test_content_saving(http_params, xpi, server):
         browser_param.http_instrument = True
         browser_param.save_content = True
     db = manager_params.data_directory / "crawl-data.sqlite"
-    structured_storage = SqlLiteStorageProvider(db_path=db)
+    structured_storage = SQLiteStorageProvider(db_path=db)
     ldb_path = Path(manager_params.data_directory) / "content.ldb"
     unstructured_storage = LevelDbProvider(db_path=ldb_path)
     manager = task_manager.TaskManager(

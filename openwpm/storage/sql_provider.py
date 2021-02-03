@@ -20,7 +20,7 @@ from .storage_providers import StructuredStorageProvider, TableName
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
-class SqlLiteStorageProvider(StructuredStorageProvider):
+class SQLiteStorageProvider(StructuredStorageProvider):
     db: Connection
     cur: Cursor
 

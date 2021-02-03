@@ -8,7 +8,7 @@ import pytest
 
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.mp_logger import MPLogger
-from openwpm.storage.sql_provider import SqlLiteStorageProvider
+from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
 from . import utilities
@@ -75,7 +75,7 @@ def task_manager_creator(
     ) -> Tuple[TaskManager, Path]:
         manager_params, browser_params = params
         db_path = manager_params.data_directory / "crawl-data.sqlite"
-        structured_provider = SqlLiteStorageProvider(db_path)
+        structured_provider = SQLiteStorageProvider(db_path)
         manager = TaskManager(
             manager_params,
             browser_params,
