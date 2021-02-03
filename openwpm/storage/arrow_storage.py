@@ -97,19 +97,19 @@ class ArrowProvider(StructuredStorageProvider):
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
     ) -> Task[None]:
-        """This method is the reason the finalize_visit_id interface returns an awaitable.
+        """This method is the reason the finalize_visit_id interface returns a task.
         This was necessary as we needed to enable the following pattern.
         ```
             token = await structured_storage.finalize_visit_id(1)
             structured_storage.flush_cache()
             await token
         ```
-        If there was no token returned and the method would just block/yield after turning the
+        If there was no task returned and the method would just block/yield after turning the
         record into a batch, there would be no way to know, when it's safe to flush_cache as
         I couldn't find a way to run a coroutine until it yields and then run a different one.
 
         With the current setup `token` aka a `wait_on_condition` coroutine will only return once
-        the event has been set.
+        it's respective event has been set.
         """
         if interrupted:
             await self.store_record(INCOMPLETE_VISITS, visit_id, {"visit_id": visit_id})
@@ -118,9 +118,6 @@ class ArrowProvider(StructuredStorageProvider):
         #    resolve once the data is saved to persistent storage
         # 2. No new batches should be created while saving out all the batches
         async with self.storing_lock:
-            # After flush_cache has executed the event needs to be rearmed
-            # so that newly created wait_on_condition don't just complete
-            # instantly
             self._create_batch(visit_id)
 
             event = asyncio.Event()
