@@ -51,7 +51,7 @@ class DumpProfileCommand(BaseCommand):
         browser_profile_folder = browser_params.profile_path
         assert browser_profile_folder is not None
 
-        # Creating the all folders if need be
+        # Creating the folders if need be
         self.tar_path.parent.mkdir(exist_ok=True, parents=True)
 
         # see if this file exists first
