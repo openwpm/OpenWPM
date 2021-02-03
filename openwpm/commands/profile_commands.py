@@ -24,7 +24,7 @@ logger = logging.getLogger("openwpm")
 class DumpProfileCommand(BaseCommand):
     """
     dumps a browser profile currently stored in <browser_profile_folder> to
-    <tar_path> in which both folders are absolute paths.
+    <tar_path>,  where both paths are absolute.
     """
 
     def __init__(self, tar_path: Path, close_webdriver: bool, compress: bool) -> None:
@@ -95,15 +95,15 @@ class DumpProfileCommand(BaseCommand):
             full_path = browser_profile_folder / item
             if (
                 not full_path.is_file()
-                and full_path.name != "shm"
-                and full_path.name != "wal"
+                and not full_path.name.endswith("shm")
+                and not full_path.name.endswith("wal")
             ):
                 logger.critical(
                     "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
                     % (self.browser_id, full_path)
                 )
             elif not full_path.is_file() and (
-                full_path.name == "shm" or full_path.name == "wal"
+                full_path.name.endswith("shm") or full_path.name.endswith("wal")
             ):
                 continue  # These are just checkpoint files
             tar.add(full_path, arcname=item)
