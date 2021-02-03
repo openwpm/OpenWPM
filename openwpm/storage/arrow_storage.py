@@ -24,7 +24,6 @@ class ArrowProvider(StructuredStorageProvider):
     """
 
     storing_lock: asyncio.Lock
-    flush_event: asyncio.Event
 
     def __init__(self) -> None:
         super().__init__()

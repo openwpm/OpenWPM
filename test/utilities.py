@@ -5,11 +5,6 @@ from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
 from urllib.parse import parse_qs, urlparse
 
-import pyarrow.parquet as pq
-import s3fs
-from botocore.credentials import Credentials
-from pyarrow.filesystem import S3FSWrapper  # noqa
-
 LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localtest.me"
 BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN, LOCAL_WEBSERVER_PORT)

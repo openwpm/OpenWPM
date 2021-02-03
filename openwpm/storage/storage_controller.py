@@ -7,13 +7,13 @@ import socket
 import time
 from asyncio import Task
 from collections import defaultdict
-from typing import Any, Awaitable, DefaultDict, Dict, List, NoReturn, Optional, Tuple
+from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
 
 from openwpm.utilities.multiprocess_utils import Process
 
-from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
+from ..config import BrowserParamsInternal, ManagerParamsInternal
 from ..socket_interface import ClientSocket, get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
