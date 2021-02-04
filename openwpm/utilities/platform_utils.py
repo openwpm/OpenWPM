@@ -9,6 +9,8 @@ from typing import Any
 
 from tabulate import tabulate
 
+from openwpm.config import ConfigEncoder
+
 
 def parse_http_stack_trace_str(trace_str):
     """Parse a stacktrace string and return an array of dict."""
@@ -98,19 +100,12 @@ def get_configuration_string(manager_params, browser_params, versions):
     config_str = "\n\nOpenWPM Version: %s\nFirefox Version: %s\n" % versions
     config_str += "\n========== Manager Configuration ==========\n"
 
-    def serialize_paths(obj: Any) -> Any:
-        if isinstance(obj, Path):
-            return str(obj)
-        raise TypeError(
-            f"Object of type {obj.__class__.__name__} is not JSON serializable"
-        )
-
     config_str += json.dumps(
         manager_params.to_dict(),
         sort_keys=True,
         indent=2,
         separators=(",", ": "),
-        default=serialize_paths,
+        cls=ConfigEncoder,
     )
     config_str += "\n\n========== Browser Configuration ==========\n"
 
