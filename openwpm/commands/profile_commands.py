@@ -23,17 +23,17 @@ logger = logging.getLogger("openwpm")
 
 class DumpProfileCommand(BaseCommand):
     """
-    dumps a browser profile currently stored in <browser_profile_folder> to
-    <tar_path>,  where both paths are absolute.
+    Dumps a browser profile currently stored in <browser_profile_folder> to
+    <tar_path>
     """
 
     def __init__(self, tar_path: Path, close_webdriver: bool, compress: bool) -> None:
         self.tar_path = tar_path
         self.close_webdriver = close_webdriver
         self.compress = compress
-        raise ConfigError(
-            "BROWSER %i: Profile dumping is currently unsupported. "
-            "See: https://github.com/mozilla/OpenWPM/projects/2." % self.browser_id
+        raise NotImplementedError(
+            "Profile dumping is currently unsupported. "
+            "See: https://github.com/mozilla/OpenWPM/projects/2."
         )
 
     def __repr__(self) -> str:
@@ -123,15 +123,15 @@ def load_profile(
     browser_profile_folder: Path,
     manager_params: ManagerParamsInternal,
     browser_params: BrowserParamsInternal,
-    tar_location: Path,
+    tar_path: Path,
 ) -> None:
     """
-    loads a zipped cookie-based profile stored in <tar_location> and
-    unzips it to <browser_profile_folder>. This will load whatever profile
-    is in the folder, either full_profile.tar.gz or profile.tar.gz
+    loads a zipped cookie-based profile stored at <tar_location> and
+    unzips it to <browser_profile_folder>.
+    The tar will remain unmodified.
     """
 
-    assert tar_location.is_file()
+    assert tar_path.is_file()
     assert browser_params.browser_id is not None
     try:
         # Copy and untar the loaded profile
@@ -139,19 +139,19 @@ def load_profile(
             "BROWSER %i: Copying profile tar from %s to %s"
             % (
                 browser_params.browser_id,
-                tar_location,
+                tar_path,
                 browser_profile_folder,
             )
         )
-        shutil.copy(tar_location, browser_profile_folder)
-        tar_location = browser_profile_folder / tar_location.name
-        if tar_location.name.endswith("tar.gz"):
-            f = tarfile.open(tar_location, "r:gz", errorlevel=1)
+        shutil.copy(tar_path, browser_profile_folder)
+        tar_path = browser_profile_folder / tar_path.name
+        if tar_path.name.endswith("tar.gz"):
+            f = tarfile.open(tar_path, "r:gz", errorlevel=1)
         else:
-            f = tarfile.open(tar_location, "r", errorlevel=1)
+            f = tarfile.open(tar_path, "r", errorlevel=1)
         f.extractall(browser_profile_folder)
         f.close()
-        tar_location.unlink()
+        tar_path.unlink()
         logger.debug("BROWSER %i: Tarfile extracted" % browser_params.browser_id)
 
     except Exception as ex:
