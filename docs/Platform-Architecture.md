@@ -2,39 +2,11 @@
 
 ## Overview
 
-The user-facing component of the OpenWPM platform is the Task Manager. The Task Manager oversees multiple browser instances and passes them commands. The Task Manager also ensures that crawls continue despite browser crashes for freezes. In particular, it checks whether a given browser fails to complete a command within a given timeout (or has died) and kills/restarts this browser as necessary.
-
-## Instantiating a Task Manager
-
-All automation code is contained within the `openwpm` folder; the Task Manager code is contained in `openwpm/task_manager.py`.
-
-Task Managers can be instantiated in the following way:
-```python
-from openwpm.task_manager import TaskManager
-from openwpm.config import (
-    BrowserParams,
-    ManagerParams,
-)
-
-number_of_browsers = 5    #  Number of browsers to spawn
-
-# Instantiating Browser and Manager Params with default values.
-manager_params = ManagerParams(num_browsers = number_of_browsers)
-browser_params = [BrowserParams() for bp in range(manager_params.num_browsers)]
-
-# These instances can be used to modify default values of both browser and manager params.
-manager_params.data_directory = '~/Documents'
-manager_params.database_name = 'custom_name.sqlite'
-
-for i in range(len(browser_params)):
-    browser_params[i].display_mode = 'headless'  # all 5 browsers will spawn in headless mode
-
-# Instantiating TaskManager
-manager = TaskManager(manager_params, browser_params)
-
-```
-
-To learn more about the `manager_params` and `browser_params` have a look at [Configuration.md](Configuration.md)
+The user-facing component of the OpenWPM platform is the Task Manager.
+The Task Manager oversees multiple browser instances and passes them commands.
+The Task Manager also ensures that crawls continue despite browser crashes for freezes.
+In particular, it checks whether a given browser fails to complete a command within a given timeout (or has died) and 
+kills/restarts this browser as necessary.
 
 ## Watchdogs
 In OpenWPM we have a watchdog thread that tries to ensure two things.
@@ -77,9 +49,7 @@ Please note that you need to close the manager, because by default CommandSequen
 
 ## Adding new commands
 
-Currently the easiest way to execute a user defined function as part of a CommandSequence is to use the
-`run_custom_function` method on the CommandSequence, however we hope to significantly improve this process
-with https://github.com/mozilla/OpenWPM/issues/743.
+Have a look at [`custom_command.py`](../custom_command.py)
 
 # Browser Manager
 
