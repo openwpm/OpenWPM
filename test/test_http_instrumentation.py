@@ -750,7 +750,7 @@ class TestPOSTInstrument(OpenWPMTest):
     )
 
     def get_config(
-        self, data_dir: Optional[Path]
+        self, data_dir: Optional[Path] = None
     ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].http_instrument = True
@@ -839,7 +839,7 @@ class TestPOSTInstrument(OpenWPMTest):
         reason="Firefox is currently not able to return the "
         "file content for an upload, only the filename"
     )
-    def test_record_file_upload(self):
+    def test_record_file_upload(self, task_manager_creator):
         """Test that we correctly capture the uploaded file contents.
 
         We upload a CSS file and a PNG file to test both text based and
@@ -860,7 +860,7 @@ class TestPOSTInstrument(OpenWPMTest):
         css_file_path = os.path.abspath("test_pages/shared/test_style.css")
 
         manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager, db_path = task_manager_creator((manager_params, browser_params))
         test_url = utilities.BASE_TEST_URL + "/post_file_upload.html"
         cs = command_sequence.CommandSequence(test_url)
         cs.get(sleep=0, timeout=60)
@@ -868,7 +868,7 @@ class TestPOSTInstrument(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
-        post_body = self.get_post_request_body_from_db(manager_params.database_name)
+        post_body = self.get_post_request_body_from_db(db_path)
         # Binary strings get put into the database as-if they were latin-1.
         with open(img_file_path, "rb") as f:
             img_file_content = f.read().strip().decode("latin-1")
@@ -1090,7 +1090,7 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
 
 
 class FilenamesIntoFormCommand(BaseCommand):
-    def __init__(self, img_file_path, css_file_path) -> None:
+    def __init__(self, img_file_path: str, css_file_path: str) -> None:
         self.img_file_path = img_file_path
         self.css_file_path = css_file_path
 
@@ -1100,7 +1100,7 @@ class FilenamesIntoFormCommand(BaseCommand):
         browser_params,
         manager_params,
         extension_socket,
-    ) -> None:
+    ):
         img_file_upload_element = webdriver.find_element_by_id("upload-img")
         css_file_upload_element = webdriver.find_element_by_id("upload-css")
         img_file_upload_element.send_keys(self.img_file_path)

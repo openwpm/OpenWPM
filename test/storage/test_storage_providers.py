@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 import pytest
 from pandas import DataFrame
@@ -17,10 +18,11 @@ from .fixtures import structured_scenarios, unstructured_scenarios
 from .test_values import dt_test_values
 
 
+@pytest.mark.usefixtures("mp_logger")
 @pytest.mark.asyncio
 async def test_local_arrow_storage_provider(
-    tmp_path, mp_logger, test_values: dt_test_values
-):
+    tmp_path: Path, test_values: dt_test_values
+) -> None:
     test_table, visit_ids = test_values
     structured_provider = LocalArrowProvider(tmp_path)
     await structured_provider.init()

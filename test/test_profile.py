@@ -127,7 +127,7 @@ class AssertConfigSetCommand(BaseCommand):
         browser_params,
         manager_params,
         extension_socket,
-    ) -> None:
+    ):
         webdriver.get("about:config")
         result = webdriver.execute_script(
             f"""

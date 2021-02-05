@@ -8,7 +8,7 @@ from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL
 
 
-def test_local_callbacks(default_params, task_manager_creator) -> None:
+def test_local_callbacks(default_params, task_manager_creator):
     """Test test the storage controller as well as the entire callback machinery
     to see if all callbacks get correctly called"""
     manager, _ = task_manager_creator(default_params)

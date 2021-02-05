@@ -64,12 +64,11 @@ def default_params(
 
 @pytest.fixture()
 def task_manager_creator(
-    server,
-    xpi,
+    server: None, xpi: None
 ) -> Callable[[Tuple[ManagerParams, List[BrowserParams]]], Tuple[TaskManager, Path]]:
     """We create a callable that returns a TaskManager that has
     been configured with the Manager and BrowserParams"""
-
+    # We need to create the fixtures like this because usefixtures doesn't work on fixtures
     def _create_task_manager(
         params: Tuple[ManagerParams, List[BrowserParams]]
     ) -> Tuple[TaskManager, Path]:

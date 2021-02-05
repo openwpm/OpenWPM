@@ -63,7 +63,7 @@ class TestCrawl(OpenWPMTest):
 
     @pytest.mark.xfail(run=False)
     @pytest.mark.slow
-    def test_browser_profile_coverage(self, tmpdir: Path) -> None:
+    def test_browser_profile_coverage(self, tmpdir: Path, task_manager_creator) -> None:
         """Test the coverage of the browser's profile
 
         This verifies that Firefox's places.sqlite database contains
@@ -73,7 +73,7 @@ class TestCrawl(OpenWPMTest):
         # Run the test crawl
         data_dir = tmpdir / "data_dir"
         manager_params, browser_params = self.get_config(data_dir)
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager, crawl_db = task_manager_creator((manager_params, browser_params))
         for site in TEST_SITES:
             manager.get(site)
         ff_db_tar = os.path.join(
@@ -87,7 +87,6 @@ class TestCrawl(OpenWPMTest):
 
         # Output databases
         ff_db = os.path.join(browser_params[0].profile_archive_dir, "places.sqlite")
-        crawl_db = manager_params.database_name
 
         # Grab urls from crawl database
         rows = db_utils.query_db(crawl_db, "SELECT url FROM http_requests")
