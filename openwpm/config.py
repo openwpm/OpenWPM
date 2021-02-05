@@ -121,12 +121,6 @@ class ManagerParams(DataClassJsonMixin):
         default=Path("~/openwpm/"),
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
-    screenshot_path: Optional[Path] = field(
-        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
-    )
-    source_dump_path: Optional[Path] = field(
-        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
-    )
     log_file: Path = field(
         default=Path("openwpm.log"),
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
@@ -148,7 +142,12 @@ class BrowserParamsInternal(BrowserParams):
 class ManagerParamsInternal(ManagerParams):
     storage_controller_address: Optional[Tuple[str, int]] = None
     logger_address: Optional[Tuple[str, ...]] = None
-    ldb_address: Optional[Tuple[str, ...]] = None
+    screenshot_path: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
+    source_dump_path: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
 
 
 def validate_browser_params(browser_params: BrowserParams) -> None:

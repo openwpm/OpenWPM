@@ -98,10 +98,6 @@ def deploy_firefox(
         extension_config[
             "storage_controller_address"
         ] = manager_params.storage_controller_address
-        if manager_params.ldb_address:
-            extension_config["leveldb_address"] = manager_params.ldb_address
-        else:
-            extension_config["leveldb_address"] = None
         extension_config["testing"] = manager_params.testing
         ext_config_file = browser_profile_path / "browser_params.json"
         with open(ext_config_file, "w") as f:

@@ -85,7 +85,6 @@ OpenWPM's tests are build on [pytest](https://docs.pytest.org/en/latest/). Execu
 in the test directory to run all tests:
 
     $ conda activate openwpm
-    $ cd test
     $ py.test -vv
 
 See the [pytest docs](https://docs.pytest.org/en/latest/) for more information on selecting
