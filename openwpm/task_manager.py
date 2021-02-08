@@ -127,10 +127,7 @@ class TaskManager:
         self.threadlock = threading.Lock()
         self.failurecount = 0
 
-        if manager_params.failure_limit:
-            self.failure_limit = manager_params.failure_limit
-        else:
-            self.failure_limit = self.num_browsers * 2 + 10
+        self.failure_limit = manager_params.failure_limit
 
         # Start logging server thread
         self.logging_server = MPLogger(
