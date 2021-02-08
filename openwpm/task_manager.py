@@ -125,7 +125,7 @@ class TaskManager:
         self.closing = False
         self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
-        self.failurecount = 0
+        self.failure_count = 0
 
         self.failure_limit = manager_params.failure_limit
 
@@ -545,8 +545,8 @@ class TaskManager:
 
             if command_status != "ok":
                 with self.threadlock:
-                    self.failurecount += 1
-                if self.failurecount > self.failure_limit:
+                    self.failure_count += 1
+                if self.failure_count > self.failure_limit:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
@@ -564,7 +564,7 @@ class TaskManager:
 
             else:
                 with self.threadlock:
-                    self.failurecount = 0
+                    self.failure_count = 0
 
             if browser.restart_required:
                 self.sock.send(
