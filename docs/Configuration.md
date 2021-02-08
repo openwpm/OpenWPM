@@ -18,7 +18,7 @@ where `manager_params` is of type `class<ManagerParams>` and `browser_params` is
 of configurations of `class<BrowserParams>`.
 
 ####Validations:
-To validate `browser_params` and `manager_params`, we have two methods each for type of params, `config::validate_browser_params` and `config::validate_manager_params`. For example:
+To validate `browser_params` and `manager_params`, we have two methods, one for each type of params: `config::validate_browser_params` and `config::validate_manager_params`. For example:
 ```python
 from openwpm.config import (
   validate_browser_params, 
@@ -85,7 +85,7 @@ validate_crawl_configs(manager_params, browser_params)
   * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
 * `memory_watchdog`
   * It is part of default manager_params. It is set to false by default which can manually be set to true.
-  * A watchdog that tries to ensure that no Firefox instance takes up to much memory. It is set to false by default
+  * A watchdog that tries to ensure that no Firefox instance takes up too much memory. It is set to false by default
   * It is mostly useful for long running cloud crawls
 
 # Browser Configuration Options
@@ -322,7 +322,7 @@ but will not be used during crash recovery. Specifically:
 profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
 restart for some reason during the crawl, it will use the profile from
 the most recent page visit (pre-crash) rather than the `seed_tar` profile.
-Note that stateful crawl are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
+Note that stateful crawls are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
 * For stateless crawls, the initial `seed_tar` will be loaded during each
 new page visit. Note that this means the profile will very likely be
 _incomplete_, as cookies or storage may have been set or changed during the

@@ -347,7 +347,7 @@ class TaskManager:
                 "execution failures.",
                 self.failure_status["CommandSequence"],
             )
-        elif self.failure_status["ErrorType"] == ("ExceedLaunch" "FailureLimit"):
+        elif self.failure_status["ErrorType"] == "ExceedLaunchFailureLimit":
             raise CommandExecutionError(
                 "TaskManager failed to launch browser within allowable "
                 "failure limit.",
@@ -367,9 +367,7 @@ class TaskManager:
         # Check status flags before starting thread
         if self.closing:
             self.logger.error("Attempted to execute command on a closed TaskManager")
-            raise RuntimeError(
-                "Attempted to execute" " command on a closed TaskManager"
-            )
+            raise RuntimeError("Attempted to execute command on a closed TaskManager")
         self._check_failure_status()
         visit_id = self.data_aggregator.get_next_visit_id()
         browser.set_visit_id(visit_id)
@@ -416,8 +414,8 @@ class TaskManager:
                 if cs:
                     cs.mark_done(not interrupted)
 
-    def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
-        """Unpacks `pickled_error` into and error `message` and `tb` string."""
+    def _unpack_pickled_error(self, pickled_error: bytes) -> Tuple[str, str]:
+        """Unpacks `pickled_error` into an error `message` and `tb` string."""
         exc = pickle.loads(pickled_error)
         message = traceback.format_exception(*exc)[-1]
         tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
@@ -492,17 +490,17 @@ class TaskManager:
                     "CommandSequence": command_sequence,
                     "Exception": status[1],
                 }
-                error_text, tb = self._unpack_picked_error(status[1])
+                error_text, tb = self._unpack_pickled_error(status[1])
             elif status[0] == "FAILED":
                 command_status = "error"
-                error_text, tb = self._unpack_picked_error(status[1])
+                error_text, tb = self._unpack_pickled_error(status[1])
                 self.logger.info(
                     "BROWSER %i: Received failure status while executing "
                     "command: %s" % (browser.browser_id, repr(command))
                 )
             elif status[0] == "NETERROR":
                 command_status = "neterror"
-                error_text, tb = self._unpack_picked_error(status[1])
+                error_text, tb = self._unpack_pickled_error(status[1])
                 error_text = parse_neterror(error_text)
                 self.logger.info(
                     "BROWSER %i: Received neterror %s while executing "
