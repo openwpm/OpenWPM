@@ -68,9 +68,10 @@ validate_crawl_configs(manager_params, browser_params)
 * `database_name` -> supported file extensions are `.db`, `.sqlite`
   * The name of the database file to be written to `data_directory`
 * `failure_limit` -> has to be either of type `int` or `None`
-  * The number of successive command failures the platform will tolerate before
-    raising a `CommandExecutionError` exception. Otherwise the default is set
-    to 2 x the number of browsers plus 10.
+  * The number of command failures the platform will tolerate before raising a
+    `CommandExecutionError` exception. Otherwise the default is set to 2 x the
+    number of browsers plus 10. The failure counter is reset at the end of each
+    successfully completed command sequence.
 * `testing`
   * A platform wide flag that can be used to only run certain functionality
     while testing. For example, the Javascript instrumentation

@@ -23,6 +23,7 @@ from openwpm.config import (
 
 from .browser_manager import Browser
 from .command_sequence import CommandSequence
+from .commands.browser_commands import FinalizeCommand
 from .commands.utils.webdriver_utils import parse_neterror
 from .DataAggregator import S3_aggregator, base_aggregator, local_aggregator
 from .DataAggregator.base_aggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
@@ -561,8 +562,8 @@ class TaskManager:
                 self.logger.debug(
                     "BROWSER %i: Browser restart required" % (browser.browser_id)
                 )
-
-            else:
+            # Reset failure_count at the end of each successful command sequence
+            elif type(command) is FinalizeCommand:
                 with self.threadlock:
                     self.failure_count = 0
 
