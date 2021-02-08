@@ -29,7 +29,6 @@ class TestProfile(OpenWPMTest):
         manager.close()
         assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
 
-    @pytest.mark.xfail(run=False)
     def test_crash(self):
         manager_params, browser_params = self.get_config()
         manager_params.failure_limit = 0
