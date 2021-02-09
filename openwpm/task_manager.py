@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 import os
@@ -167,6 +166,18 @@ class TaskManager:
         )
         self.callback_thread.name = "OpenWPM-completion_handler"
         self.callback_thread.start()
+
+    def __enter__():
+        """
+        Execute starting procedure for TaskManager
+        """
+        return self
+
+    def __exit__():
+        """
+        Execute shutdown procedure for TaskManager
+        """
+        self.close()
 
     def _initialize_browsers(
         self, browser_params: List[BrowserParamsInternal]
@@ -418,7 +429,7 @@ class TaskManager:
         self, browser: Browser, command_sequence: CommandSequence
     ) -> None:
         """
-        sends command tuple to the BrowserManager
+        Sends CommandSequence to the BrowserManager one command at a time
         """
         browser.is_fresh = False
 
@@ -508,7 +519,7 @@ class TaskManager:
                     {
                         "browser_id": browser.browser_id,
                         "visit_id": browser.curr_visit_id,
-                        "command": type(command),
+                        "command": type(command).__name__,
                         "arguments": json.dumps(
                             command.__dict__, default=lambda x: repr(x)
                         ).encode("utf-8"),

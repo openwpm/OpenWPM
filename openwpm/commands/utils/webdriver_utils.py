@@ -142,17 +142,17 @@ def wait_and_find(driver, locator_type, locator, timeout=3, check_iframes=True):
         return driver.find_element(locator_type, locator)
     else:
         if check_iframes:  # this may return the browser with an iframe active
-            driver.switch_to_default_content()
+            driver.switch_to.default_content()
             iframes = driver.find_elements_by_tag_name("iframe")
 
             for iframe in iframes:
-                driver.switch_to_default_content()
-                driver.switch_to_frame(iframe)
+                driver.switch_to.default_content()
+                driver.switch_to.frame(iframe)
                 if is_found(driver, locator_type, locator, timeout=0):
                     return driver.find_element(locator_type, locator)
 
             # If we get here, search also fails in iframes
-            driver.switch_to_default_content()
+            driver.switch_to.default_content()
         raise NoSuchElementException("Element not found during wait_and_find")
 
 
@@ -269,12 +269,12 @@ def get_button_text(element):
 
 def iter_frames(driver):
     """Return a generator for iframes."""
-    driver.switch_to_default_content()
+    driver.switch_to.default_content()
     iframes = driver.find_elements_by_tag_name("iframe")
     for iframe in iframes:
-        driver.switch_to_default_content()
+        driver.switch_to.default_content()
         yield iframe
-    driver.switch_to_default_content()
+    driver.switch_to.default_content()
 
 
 def switch_to_parent_frame(driver, frame_stack):
@@ -293,10 +293,10 @@ def switch_to_parent_frame(driver, frame_stack):
     frame_stack : list of selenium.webdriver.remote.webelement.WebElement
         list of parent frame handles (including current frame)
     """
-    driver.switch_to_default_content()  # start at top frame
+    driver.switch_to.default_content()  # start at top frame
     # First item is 'default', last item is current frame
     for frame in frame_stack[1:-1]:
-        driver.switch_to_frame(frame)
+        driver.switch_to.frame(frame)
 
 
 def execute_in_all_frames(
@@ -350,7 +350,7 @@ def execute_in_all_frames(
     """
     # Ensure we start at the top level frame
     if len(frame_stack) == 1:
-        driver.switch_to_default_content()
+        driver.switch_to.default_content()
 
     # Bail if past depth cutoff
     if len(frame_stack) - 1 > max_depth:
@@ -366,7 +366,7 @@ def execute_in_all_frames(
     for frame in frames:
         frame_stack.append(frame)
         try:
-            driver.switch_to_frame(frame)
+            driver.switch_to.frame(frame)
         except StaleElementReferenceException:
             if logger is not None:
                 logger.error(
