@@ -163,22 +163,10 @@ class ClientSocket:
 
 
 async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
-    msg = await get_n_bytes_from_reader(reader, 5)
+    msg = await reader.readexactly(5)
     msglen, serialization = struct.unpack(">Lc", msg)
-    msg = await get_n_bytes_from_reader(reader, msglen)
+    msg = await reader.readexactly(msglen)
     return _parse(serialization, msg)
-
-
-async def get_n_bytes_from_reader(reader: asyncio.StreamReader, n: int) -> bytes:
-    b = b""
-    while True:
-        try:
-            return await reader.readexactly(n)
-        except IncompleteReadError as e:
-            b += e.partial
-            n -= len(e.partial)
-            if reader.at_eof():
-                raise IOError("Socket Connection closed")
 
 
 def _parse(serialization: bytes, msg: bytes) -> Any:

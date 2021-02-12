@@ -2,7 +2,7 @@ import {
   WebRequestOnBeforeRequestEventDetails,
   WebRequestOnCompletedEventDetails,
 } from "../types/browser-web-request-event-details";
-import { ResponseBodyListener } from "./response-body-listener";
+import {ResponseBodyListener} from "./response-body-listener";
 
 /**
  * Ties together the two separate events that together holds information about both response headers and body

@@ -3,9 +3,7 @@ import os
 import subprocess
 from collections import OrderedDict
 from copy import deepcopy
-from pathlib import Path
 from sys import platform
-from typing import Any
 
 from tabulate import tabulate
 

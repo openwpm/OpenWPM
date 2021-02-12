@@ -1,5 +1,4 @@
 import logging
-from abc import ABC
 from pathlib import Path
 
 import pyarrow.parquet as pq

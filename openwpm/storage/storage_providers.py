@@ -7,9 +7,7 @@ import gzip
 import io
 from abc import ABC, abstractmethod
 from asyncio import Task
-from typing import Any, Awaitable, Dict, NewType, Optional
-
-from pyarrow.lib import Table
+from typing import Any, Dict, NewType, Optional
 
 from openwpm.types import VisitId
 

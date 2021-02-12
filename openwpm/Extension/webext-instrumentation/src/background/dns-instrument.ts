@@ -1,12 +1,8 @@
-import { PendingResponse } from "../lib/pending-response";
-import { DnsResolved } from "../schema";
+import {PendingResponse} from "../lib/pending-response";
+import {DnsResolved} from "../schema";
+import {WebRequestOnCompletedEventDetails,} from "../types/browser-web-request-event-details";
+import {allTypes} from "./http-instrument";
 import RequestFilter = browser.webRequest.RequestFilter;
-import {
-  WebRequestOnCompletedEventDetails,
-} from "../types/browser-web-request-event-details";
-import {
-  allTypes
-} from "./http-instrument";
 
 
 export class DnsInstrument {
@@ -15,48 +11,48 @@ export class DnsInstrument {
   private pendingResponses: {
     [requestId: number]: PendingResponse;
   } = {};
-  
+
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
   }
-  
+
   public run(crawlID){
 
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
-    
+
     const requestStemsFromExtension = details => {
         return (
-          details.originUrl && 
-            details.originUrl.indexOf("moz-extension://") > -1 && 
+          details.originUrl &&
+            details.originUrl.indexOf("moz-extension://") > -1 &&
             details.originUrl.includes("fakeRequest")
         );
     };
-    
+
     /*
      * Attach handlers to event listeners
      */
     this.onCompleteListener = (
       details: WebRequestOnCompletedEventDetails,
-    ) => {      
+    ) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
       }
       const pendingResponse = this.getPendingResponse(details.requestId);
-      pendingResponse.resolveOnCompletedEventDetails(details); 
-               
+      pendingResponse.resolveOnCompletedEventDetails(details);
+
       this.onCompleteDnsHandler(
         details,
         crawlID,
       );
     };
-    
+
     browser.webRequest.onCompleted.addListener(
       this.onCompleteListener,
       filter,
     );
   }
-    
+
   public cleanup() {
     if (this.onCompleteListener) {
       browser.webRequest.onCompleted.removeListener(
@@ -64,7 +60,7 @@ export class DnsInstrument {
       );
     }
   }
-  
+
   private getPendingResponse(requestId): PendingResponse {
     if (!this.pendingResponses[requestId]) {
       this.pendingResponses[requestId] = new PendingResponse();
@@ -77,14 +73,14 @@ export class DnsInstrument {
     return function(record) {
       // Get data from API call
       dnsRecordObj.addresses = record.addresses.toString()
-      dnsRecordObj.canonical_name = record.canonicalName 
+      dnsRecordObj.canonical_name = record.canonicalName
       dnsRecordObj.is_TRR = record.isTRR
 
       // Send data to main OpenWPM data aggregator.
       dataReceiver.saveRecord("dns_responses", dnsRecordObj);
     }
   }
-  
+
   private async onCompleteDnsHandler(
     details: WebRequestOnCompletedEventDetails,
     crawlID,
@@ -96,12 +92,12 @@ export class DnsInstrument {
       dnsRecord.used_address = details.ip;
       const currentTime = new Date(details.timeStamp);
       dnsRecord.time_stamp = currentTime.toISOString();
-      
+
       // Query DNS API
       const url = new URL(details.url);
       dnsRecord.hostname = url.hostname;
       const dnsResolve = browser.dns.resolve(dnsRecord.hostname, ["canonical_name"]);
       dnsResolve.then(this.handleResolvedDnsData(dnsRecord, this.dataReceiver));
     }
-    
+
 }

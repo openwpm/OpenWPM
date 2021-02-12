@@ -11,7 +11,7 @@ from sqlite3 import (
     OperationalError,
     ProgrammingError,
 )
-from typing import Any, Awaitable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from openwpm.types import VisitId
 

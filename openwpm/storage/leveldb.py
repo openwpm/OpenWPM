@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import plyvel
 from plyvel._plyvel import WriteBatch

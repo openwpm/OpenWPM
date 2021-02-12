@@ -27,13 +27,7 @@ from .commands.utils.webdriver_utils import parse_neterror
 from .errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .mp_logger import MPLogger
-from .socket_interface import ClientSocket
-from .storage.storage_controller import (
-    ACTION_TYPE_FINALIZE,
-    RECORD_TYPE_META,
-    DataSocket,
-    StorageControllerHandle,
-)
+from .storage.storage_controller import DataSocket, StorageControllerHandle
 from .storage.storage_providers import (
     StructuredStorageProvider,
     TableName,

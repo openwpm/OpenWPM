@@ -101,14 +101,14 @@ class StorageController:
         """Created for every new connection to the Server"""
         self.logger.debug("Initializing new handler")
         while True:
-            try:
-                record: Tuple[str, Any] = await get_message_from_reader(reader)
-            except IOError as e:
+            if reader.at_eof():
+                # the socket is closed
                 self.logger.debug(
                     "Terminating handler, because the underlying socket closed",
-                    exc_info=e,
                 )
                 break
+
+            record: Tuple[str, Any] = await get_message_from_reader(reader)
 
             if len(record) != 2:
                 self.logger.error("Query is not the correct length %s", repr(record))
