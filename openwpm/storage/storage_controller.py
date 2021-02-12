@@ -57,13 +57,13 @@ class StorageController:
         Parameters
         ----------
         status_queue
-            queue that the current amount of records to be processed will
-            be sent to
-            also used for initialization
+            queue through which the StorageControllerHandler
+            receives updates on the current amount of records to be processed.
+            Also used for initialization
         completion_queue
-            queue containing the visitIDs of saved records
+            queue containing the visit_ids of saved records
         shutdown_queue
-            queue that the main process can use to shut down the listener
+            queue that the main process can use to shut down the StorageController
         """
         self.status_queue = status_queue
         self.completion_queue = completion_queue
@@ -92,7 +92,7 @@ class StorageController:
             await self.handler(reader, writer)
         except Exception as e:
             self.logger.error(
-                "An exception occurred while processing for records", exc_info=e
+                "An exception occurred while processing records", exc_info=e
             )
 
     async def handler(
@@ -205,7 +205,8 @@ class StorageController:
 
         if visit_id not in self.store_record_tasks:
             self.logger.error(
-                "Visit_id %d got finalized multiple times, skipping...", visit_id
+                "There are no records to be stored for visit_id %d, skipping...",
+                visit_id,
             )
             return None
 
