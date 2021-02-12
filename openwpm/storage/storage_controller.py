@@ -76,7 +76,9 @@ class StorageController:
         )
         """Contains all store_record tasks for a given visit_id"""
         self.finalize_tasks: List[Tuple[VisitId, Optional[Task[None]], bool]] = []
-        """Contains all information required for update_completion_queue to work"""
+        """Contains all information required for update_completion_queue to work
+            Tuple structure is: VisitId, optional completion token, success
+        """
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
@@ -280,7 +282,11 @@ class StorageController:
         """Save the current batch of records if no new data has been received.
 
         If we aren't receiving new data for this batch we commit early
-        regardless of the current batch size."""
+        regardless of the current batch size.
+
+        This coroutine will get cancelled with an exception
+        so there is no need for an orderly return
+        """
         while True:
             if self._last_record_received is None:
                 await asyncio.sleep(BATCH_COMMIT_TIMEOUT)
@@ -308,7 +314,9 @@ class StorageController:
             # is forbidden
             new_finalize_tasks: List[Tuple[VisitId, Optional[Task[None]], bool]] = []
             for visit_id, token, success in self.finalize_tasks:
-                if not token or token.done():
+                if (
+                    not token or token.done()
+                ):  # Either way all data for the visit_id was saved out
                     self.completion_queue.put((visit_id, success))
                 else:
                     new_finalize_tasks.append((visit_id, token, success))
@@ -502,7 +510,7 @@ class StorageControllerHandle:
         )
 
     def get_most_recent_status(self) -> int:
-        """Return the most recent queue size sent from the listener process"""
+        """Return the most recent queue size sent from the Storage Controller process"""
 
         # Block until we receive the first status update
         if self._last_status is None:
