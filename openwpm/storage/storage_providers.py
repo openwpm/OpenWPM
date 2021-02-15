@@ -44,6 +44,17 @@ class StorageProvider(ABC):
 
 
 class StructuredStorageProvider(StorageProvider):
+    """Structured Storage Providers are responsible for handling all structured data
+    that OpenWPM emits.
+    This includes:
+    - All data that is collected by the WebExtension instrumentation
+    - Data about browser configuration and
+    - Any data that custom commands send to the Storage Controller
+
+    See docs/Schema-Documentation.md to see what an unmodified OpenWPM will attempt
+    to store
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -72,6 +83,14 @@ class StructuredStorageProvider(StorageProvider):
 
 
 class UnstructuredStorageProvider(StorageProvider):
+    """Unstructured Storage Providers are responsible for handling the unstructured data
+    that OpenWPM emits.
+    This is primarily content loaded by websites.
+    Don't make any assumptions about the data (especially don't assume it's valid unicode)
+
+    In the future this interface will be expanded to address the needs of https://github.com/mozilla/OpenWPM/issues/232
+    """
+
     @abstractmethod
     async def store_blob(
         self,
