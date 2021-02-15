@@ -116,13 +116,13 @@ class ManagerParams:
     _failure_limit: Optional[int] = None
 
     @property
-    def failure_limit(self):
+    def failure_limit(self) -> int:
         if self._failure_limit is None:
             return 2 * self.num_browsers + 10
         return self._failure_limit
 
     @failure_limit.setter
-    def failure_limit(self, value):
+    def failure_limit(self, value) -> None:
         self._failure_limit = value
 
 
