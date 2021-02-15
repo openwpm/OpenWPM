@@ -4,6 +4,7 @@ from openwpm.errors import CommandExecutionError
 from openwpm.task_manager import TaskManager
 
 from .openwpmtest import OpenWPMTest
+from .utilities import BASE_TEST_URL
 
 
 class TestTaskManager(OpenWPMTest):
@@ -34,9 +35,9 @@ class TestTaskManager(OpenWPMTest):
         manager_params.failure_limit = 1
         manager = TaskManager(manager_params, browser_params)
         manager.get("example.com")  # Selenium requires scheme prefix
-        manager.get("http://example.com")  # Successful command sequence
+        manager.get(BASE_TEST_URL)  # Successful command sequence
         # Now failure_count should be reset to 0 and the following command
         # failure should not raise a CommandExecutionError
         manager.get("example.com")  # Selenium requires scheme prefix
-        manager.get("https://example.com")  # Requires two commands to shut down
+        manager.get(BASE_TEST_URL)  # Requires two commands to shut down
         manager.close()
