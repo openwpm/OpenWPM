@@ -125,11 +125,21 @@ class ManagerParams(DataClassJsonMixin):
         default=Path("openwpm.log"),
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
-    failure_limit: Optional[int] = None
     testing: bool = False
     memory_watchdog: bool = False
     process_watchdog: bool = False
     num_browsers: int = 1
+    _failure_limit: Optional[int] = None
+
+    @property
+    def failure_limit(self) -> int:
+        if self._failure_limit is None:
+            return 2 * self.num_browsers + 10
+        return self._failure_limit
+
+    @failure_limit.setter
+    def failure_limit(self, value: int) -> None:
+        self._failure_limit = value
 
 
 @dataclass
@@ -239,12 +249,8 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
             )
         )
 
-    # This check is necessary to not cause any internal error because
-    # failure_limit gets set in TaskManager if its value is anything other than None
-    if (
-        not isinstance(manager_params.failure_limit, int)
-        and manager_params.failure_limit is not None
-    ):
+    # This check is necessary to not cause any internal error
+    if not isinstance(manager_params.failure_limit, int):
         raise ConfigError(
             GENERAL_ERROR_STRING.format(
                 value=manager_params.failure_limit,
