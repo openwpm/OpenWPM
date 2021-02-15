@@ -72,6 +72,9 @@ validate_crawl_configs(manager_params, browser_params)
     `CommandExecutionError` exception. Otherwise the default is set to 2 x the
     number of browsers plus 10. The failure counter is reset at the end of each
     successfully completed command sequence.
+  * For non-blocking command sequences that cause the number of failures to
+    exceed `failure_limit` the `CommandExecutionError` is raised when
+    attempting to execute the next command sequence.
 * `testing`
   * A platform wide flag that can be used to only run certain functionality
     while testing. For example, the Javascript instrumentation
