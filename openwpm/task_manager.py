@@ -23,6 +23,7 @@ from openwpm.config import (
 
 from .browser_manager import Browser
 from .command_sequence import CommandSequence
+from .commands.browser_commands import FinalizeCommand
 from .commands.utils.webdriver_utils import parse_neterror
 from .DataAggregator import S3_aggregator, base_aggregator, local_aggregator
 from .DataAggregator.base_aggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
@@ -125,12 +126,9 @@ class TaskManager:
         self.closing = False
         self.failure_status: Optional[Dict[str, Any]] = None
         self.threadlock = threading.Lock()
-        self.failurecount = 0
+        self.failure_count = 0
 
-        if manager_params.failure_limit:
-            self.failure_limit = manager_params.failure_limit
-        else:
-            self.failure_limit = self.num_browsers * 2 + 10
+        self.failure_limit = manager_params.failure_limit
 
         # Start logging server thread
         self.logging_server = MPLogger(
@@ -349,7 +347,7 @@ class TaskManager:
                 "execution failures.",
                 self.failure_status["CommandSequence"],
             )
-        elif self.failure_status["ErrorType"] == ("ExceedLaunch" "FailureLimit"):
+        elif self.failure_status["ErrorType"] == "ExceedLaunchFailureLimit":
             raise CommandExecutionError(
                 "TaskManager failed to launch browser within allowable "
                 "failure limit.",
@@ -369,9 +367,7 @@ class TaskManager:
         # Check status flags before starting thread
         if self.closing:
             self.logger.error("Attempted to execute command on a closed TaskManager")
-            raise RuntimeError(
-                "Attempted to execute" " command on a closed TaskManager"
-            )
+            raise RuntimeError("Attempted to execute command on a closed TaskManager")
         self._check_failure_status()
         visit_id = self.data_aggregator.get_next_visit_id()
         browser.set_visit_id(visit_id)
@@ -418,8 +414,8 @@ class TaskManager:
                 if cs:
                     cs.mark_done(not interrupted)
 
-    def _unpack_picked_error(self, pickled_error: bytes) -> Tuple[str, str]:
-        """Unpacks `pickled_error` into and error `message` and `tb` string."""
+    def _unpack_pickled_error(self, pickled_error: bytes) -> Tuple[str, str]:
+        """Unpacks `pickled_error` into an error `message` and `tb` string."""
         exc = pickle.loads(pickled_error)
         message = traceback.format_exception(*exc)[-1]
         tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
@@ -494,17 +490,17 @@ class TaskManager:
                     "CommandSequence": command_sequence,
                     "Exception": status[1],
                 }
-                error_text, tb = self._unpack_picked_error(status[1])
+                error_text, tb = self._unpack_pickled_error(status[1])
             elif status[0] == "FAILED":
                 command_status = "error"
-                error_text, tb = self._unpack_picked_error(status[1])
+                error_text, tb = self._unpack_pickled_error(status[1])
                 self.logger.info(
                     "BROWSER %i: Received failure status while executing "
                     "command: %s" % (browser.browser_id, repr(command))
                 )
             elif status[0] == "NETERROR":
                 command_status = "neterror"
-                error_text, tb = self._unpack_picked_error(status[1])
+                error_text, tb = self._unpack_pickled_error(status[1])
                 error_text = parse_neterror(error_text)
                 self.logger.info(
                     "BROWSER %i: Received neterror %s while executing "
@@ -548,8 +544,8 @@ class TaskManager:
 
             if command_status != "ok":
                 with self.threadlock:
-                    self.failurecount += 1
-                if self.failurecount > self.failure_limit:
+                    self.failure_count += 1
+                if self.failure_count > self.failure_limit:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
@@ -564,10 +560,10 @@ class TaskManager:
                 self.logger.debug(
                     "BROWSER %i: Browser restart required" % (browser.browser_id)
                 )
-
-            else:
+            # Reset failure_count at the end of each successful command sequence
+            elif type(command) is FinalizeCommand:
                 with self.threadlock:
-                    self.failurecount = 0
+                    self.failure_count = 0
 
             if browser.restart_required:
                 self.sock.send(

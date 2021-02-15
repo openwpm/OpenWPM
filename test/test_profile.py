@@ -30,16 +30,6 @@ class TestProfile(OpenWPMTest):
         assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
 
     @pytest.mark.xfail(run=False)
-    def test_crash(self):
-        manager_params, browser_params = self.get_config()
-        manager_params.failure_limit = 0
-        manager = TaskManager(manager_params, browser_params)
-        with pytest.raises(CommandExecutionError):
-            manager.get("http://example.com")  # So we have a profile
-            manager.get("example.com")  # Selenium requires scheme prefix
-            manager.get("example.com")  # Requires two commands to shut down
-
-    @pytest.mark.xfail(run=False)
     def test_crash_profile(self):
         manager_params, browser_params = self.get_config()
         manager_params.failure_limit = 2
