@@ -28,7 +28,7 @@ dependencies:
 - redis-py=3.5.3
 - s3fs=0.5.2
 - selenium=3.141.0
-- sentry-sdk=0.20.0
+- sentry-sdk=0.20.2
 - tabulate=0.8.7
 - tblib=1.6.0
 - wget=1.20.1
