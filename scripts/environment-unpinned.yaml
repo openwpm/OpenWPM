@@ -16,7 +16,7 @@ dependencies:
     - pillow
     - psutil
     - pyarrow
-    - python
+    - python==3.8.6
     - pyvirtualdisplay
     - redis-py
     - s3fs==0.4.0 # https://github.com/mozilla/OpenWPM/issues/614
