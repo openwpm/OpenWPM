@@ -17,7 +17,7 @@ dependencies:
     - pillow
     - psutil
     - pyarrow
-    - python==3.8.6
+    - python
     - pyvirtualdisplay
     - redis-py
     - s3fs
