@@ -7,6 +7,7 @@ dependencies:
     - click
     - dill
     # - firefox-unbranded - when it's available
+    - gcsfs
     - geckodriver
     - leveldb
     - multiprocess
@@ -19,7 +20,7 @@ dependencies:
     - python
     - pyvirtualdisplay
     - redis-py
-    - s3fs==0.4.0 # https://github.com/mozilla/OpenWPM/issues/614
+    - s3fs
     - selenium
     - sentry-sdk
     - tabulate

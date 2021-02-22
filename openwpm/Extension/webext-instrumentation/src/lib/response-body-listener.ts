@@ -1,5 +1,5 @@
-import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-request-event-details";
-import { digestMessage } from "./sha256";
+import {WebRequestOnBeforeRequestEventDetails} from "../types/browser-web-request-event-details";
+import {digestMessage} from "./sha256";
 
 export class ResponseBodyListener {
   private readonly responseBody: Promise<Uint8Array>;

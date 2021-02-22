@@ -2,11 +2,13 @@ import json
 import logging
 import os
 import pickle
+import sys
 import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Any, Dict, List, Optional, Set, Tuple
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
 import psutil
 import tblib
@@ -25,12 +27,15 @@ from .browser_manager import Browser
 from .command_sequence import CommandSequence
 from .commands.browser_commands import FinalizeCommand
 from .commands.utils.webdriver_utils import parse_neterror
-from .DataAggregator import S3_aggregator, base_aggregator, local_aggregator
-from .DataAggregator.base_aggregator import ACTION_TYPE_FINALIZE, RECORD_TYPE_SPECIAL
 from .errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
 from .mp_logger import MPLogger
-from .socket_interface import ClientSocket
+from .storage.storage_controller import DataSocket, StorageControllerHandle
+from .storage.storage_providers import (
+    StructuredStorageProvider,
+    TableName,
+    UnstructuredStorageProvider,
+)
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 
@@ -39,15 +44,15 @@ tblib.pickling_support.install()
 SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
-AGGREGATOR_QUEUE_LIMIT = 10000  # number of records in the queue
+STORAGE_CONTROLLER_JOB_LIMIT = 10000  # number of records in the queue
 
 
 class TaskManager:
     """User-facing Class for interfacing with OpenWPM
 
     The TaskManager spawns several child processes to run the automation tasks.
-        - DataAggregator to aggregate data across browsers and save to the
-          database.
+        - StorageController to receive data from across browsers and save it to
+          the provided StorageProviders
         - MPLogger to aggregate logs across processes
         - BrowserManager processes to isolate Browsers in a separate process
     """
@@ -56,6 +61,8 @@ class TaskManager:
         self,
         manager_params_temp: ManagerParams,
         browser_params_temp: List[BrowserParams],
+        structured_storage_provider: StructuredStorageProvider,
+        unstructured_storage_provider: Optional[UnstructuredStorageProvider],
         logger_kwargs: Dict[Any, Any] = {},
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
@@ -71,38 +78,26 @@ class TaskManager:
             Keyword arguments to pass to MPLogger on initialization.
         """
 
-        validate_manager_params(manager_params_temp)
-        for bp in browser_params_temp:
-            validate_browser_params(bp)
         validate_crawl_configs(manager_params_temp, browser_params_temp)
-
-        manager_params = ManagerParamsInternal(**manager_params_temp.to_dict())
+        manager_params = ManagerParamsInternal.from_dict(manager_params_temp.to_dict())
         browser_params = [
-            BrowserParamsInternal(**bp.to_dict()) for bp in browser_params_temp
+            BrowserParamsInternal.from_dict(bp.to_dict()) for bp in browser_params_temp
         ]
 
         # Make paths absolute in manager_params
         if manager_params.data_directory:
-            manager_params.data_directory = os.path.expanduser(
-                manager_params.data_directory
-            )
-        if manager_params.log_directory:
-            manager_params.log_directory = os.path.expanduser(
-                manager_params.log_directory
-            )
+            manager_params.data_directory = manager_params.data_directory.expanduser()
 
-        manager_params.database_name = os.path.join(
-            manager_params.data_directory, manager_params.database_name
+        if manager_params.log_directory:
+            manager_params.log_directory = manager_params.log_directory.expanduser()
+
+        manager_params.log_file = (
+            manager_params.log_directory / manager_params.log_file.name
         )
-        manager_params.log_file = os.path.join(
-            manager_params.log_directory, manager_params.log_file
-        )
-        manager_params.screenshot_path = os.path.join(
-            manager_params.data_directory, "screenshots"
-        )
-        manager_params.source_dump_path = os.path.join(
-            manager_params.data_directory, "sources"
-        )
+        manager_params.screenshot_path = manager_params.data_directory / "screenshots"
+
+        manager_params.source_dump_path = manager_params.data_directory / "sources"
+
         self.manager_params = manager_params
         self.browser_params = browser_params
         self._logger_kwargs = logger_kwargs
@@ -129,16 +124,19 @@ class TaskManager:
         self.failure_count = 0
 
         self.failure_limit = manager_params.failure_limit
-
         # Start logging server thread
         self.logging_server = MPLogger(
-            self.manager_params.log_file, self.manager_params, **self._logger_kwargs
+            self.manager_params.log_file,
+            str(structured_storage_provider),
+            **self._logger_kwargs
         )
         self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
 
-        # Initialize the data aggregators
-        self._launch_aggregators()
+        # Initialize the storage controller
+        self._launch_storage_controller(
+            structured_storage_provider, unstructured_storage_provider
+        )
 
         # Sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)
@@ -152,7 +150,9 @@ class TaskManager:
 
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
-        self.data_aggregator.save_configuration(openwpm_v, browser_v)
+        self.storage_controller_handle.save_configuration(
+            manager_params, browser_params, openwpm_v, browser_v
+        )
         self.logger.info(
             get_configuration_string(
                 self.manager_params, browser_params, (openwpm_v, browser_v)
@@ -165,13 +165,18 @@ class TaskManager:
         self.callback_thread.name = "OpenWPM-completion_handler"
         self.callback_thread.start()
 
-    def __enter__():
+    def __enter__(self):
         """
         Execute starting procedure for TaskManager
         """
         return self
 
-    def __exit__():
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
@@ -183,7 +188,9 @@ class TaskManager:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
-            browser_params[i].browser_id = self.data_aggregator.get_next_browser_id()
+            browser_params[
+                i
+            ].browser_id = self.storage_controller_handle.get_next_browser_id()
             browsers.append(Browser(self.manager_params, browser_params[i]))
 
         return browsers
@@ -272,24 +279,21 @@ class TaskManager:
                         )
                         kill_process_and_children(process, self.logger)
 
-    def _launch_aggregators(self) -> None:
-        """Launch the necessary data aggregators"""
-        self.data_aggregator: base_aggregator.BaseAggregator
-        if self.manager_params.output_format == "local":
-            self.data_aggregator = local_aggregator.LocalAggregator(
-                self.manager_params, self.browser_params
-            )
-        elif self.manager_params.output_format == "s3":
-            self.data_aggregator = S3_aggregator.S3Aggregator(
-                self.manager_params, self.browser_params
-            )
-
-        self.data_aggregator.launch()
-        self.manager_params.aggregator_address = self.data_aggregator.listener_address
-
-        # open connection to aggregator for saving crawl details
-        self.sock = ClientSocket(serialization="dill")
-        self.sock.connect(*self.manager_params.aggregator_address)
+    def _launch_storage_controller(
+        self,
+        structured_storage_provider: StructuredStorageProvider,
+        unstructured_storage_provider: Optional[UnstructuredStorageProvider],
+    ) -> None:
+        self.storage_controller_handle = StorageControllerHandle(
+            structured_storage_provider, unstructured_storage_provider
+        )
+        self.storage_controller_handle.launch()
+        self.manager_params.storage_controller_address = (
+            self.storage_controller_handle.listener_address
+        )
+        assert self.manager_params.storage_controller_address is not None
+        # open connection to storage controller for saving crawl details
+        self.sock = DataSocket(self.manager_params.storage_controller_address)
 
     def _shutdown_manager(
         self, during_init: bool = False, relaxed: bool = True
@@ -321,8 +325,8 @@ class TaskManager:
                 browser.command_thread.join()
             browser.shutdown_browser(during_init, force=not relaxed)
 
-        self.sock.close()  # close socket to data aggregator
-        self.data_aggregator.shutdown(relaxed=relaxed)
+        self.sock.close()  # close socket to storage controller
+        self.storage_controller_handle.shutdown(relaxed=relaxed)
         self.logging_server.close()
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
@@ -369,21 +373,20 @@ class TaskManager:
             self.logger.error("Attempted to execute command on a closed TaskManager")
             raise RuntimeError("Attempted to execute command on a closed TaskManager")
         self._check_failure_status()
-        visit_id = self.data_aggregator.get_next_visit_id()
+        visit_id = self.storage_controller_handle.get_next_visit_id()
         browser.set_visit_id(visit_id)
         if command_sequence.callback:
             self.unsaved_command_sequences[visit_id] = command_sequence
 
-        self.sock.send(
-            (
-                "site_visits",
-                {
-                    "visit_id": visit_id,
-                    "browser_id": browser.browser_id,
-                    "site_url": command_sequence.url,
-                    "site_rank": command_sequence.site_rank,
-                },
-            )
+        self.sock.store_record(
+            TableName("site_visits"),
+            visit_id,
+            {
+                "visit_id": visit_id,
+                "browser_id": browser.browser_id,
+                "site_url": command_sequence.url,
+                "site_rank": command_sequence.site_rank,
+            },
         )
 
         # Start command execution thread
@@ -395,7 +398,7 @@ class TaskManager:
         return thread
 
     def _mark_command_sequences_complete(self) -> None:
-        """Polls the data aggregator for saved records
+        """Polls the storage controller for saved records
         and calls their callbacks
         """
         while True:
@@ -403,16 +406,16 @@ class TaskManager:
                 # we're shutting down and have no unprocessed callbacks
                 break
 
-            visit_id_list = self.data_aggregator.get_new_completed_visits()
+            visit_id_list = self.storage_controller_handle.get_new_completed_visits()
             if not visit_id_list:
                 time.sleep(1)
                 continue
 
-            for visit_id, interrupted in visit_id_list:
+            for visit_id, successful in visit_id_list:
                 self.logger.debug("Invoking callback of visit_id %d", visit_id)
                 cs = self.unsaved_command_sequences.pop(visit_id, None)
                 if cs:
-                    cs.mark_done(not interrupted)
+                    cs.mark_done(successful)
 
     def _unpack_pickled_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into an error `message` and `tb` string."""
@@ -428,7 +431,8 @@ class TaskManager:
         Sends CommandSequence to the BrowserManager one command at a time
         """
         browser.is_fresh = False
-
+        assert browser.browser_id is not None
+        assert browser.curr_visit_id is not None
         reset = command_sequence.reset
         if not reset:
             self.logger.warning(
@@ -447,6 +451,9 @@ class TaskManager:
             browser.curr_visit_id,
             browser.browser_id,
         )
+        assert browser.command_queue is not None
+        assert browser.status_queue is not None
+
         for command_and_timeout in command_sequence.get_commands_with_timeout():
             command, timeout = command_and_timeout
             command.set_visit_browser_id(browser.curr_visit_id, browser.browser_id)
@@ -466,7 +473,6 @@ class TaskManager:
             try:
                 status = browser.status_queue.get(True, browser.current_timeout)
             except EmptyQueue:
-                command_status = "timeout"
                 self.logger.info(
                     "BROWSER %i: Timeout while executing command, %s, killing "
                     "browser manager" % (browser.browser_id, repr(command))
@@ -475,6 +481,7 @@ class TaskManager:
             if status is None:
                 # allows us to skip this entire block without having to bloat
                 # every if statement
+                command_status = "timeout"
                 pass
             elif status == "OK":
                 command_status = "ok"
@@ -509,36 +516,28 @@ class TaskManager:
             else:
                 raise ValueError("Unknown browser status message %s" % status)
 
-            self.sock.send(
-                (
-                    "crawl_history",
-                    {
-                        "browser_id": browser.browser_id,
-                        "visit_id": browser.curr_visit_id,
-                        "command": type(command).__name__,
-                        "arguments": json.dumps(
-                            command.__dict__, default=lambda x: repr(x)
-                        ).encode("utf-8"),
-                        "retry_number": command_sequence.retry_number,
-                        "command_status": command_status,
-                        "error": error_text,
-                        "traceback": tb,
-                        "duration": int((time.time_ns() - t1) / 1000000),
-                    },
-                )
+            self.sock.store_record(
+                TableName("crawl_history"),
+                browser.curr_visit_id,
+                {
+                    "browser_id": browser.browser_id,
+                    "visit_id": browser.curr_visit_id,
+                    "command": type(command).__name__,
+                    "arguments": json.dumps(
+                        command.__dict__, default=lambda x: repr(x)
+                    ).encode("utf-8"),
+                    "retry_number": command_sequence.retry_number,
+                    "command_status": command_status,
+                    "error": error_text,
+                    "traceback": tb,
+                    "duration": int((time.time_ns() - t1) / 1000000),
+                },
             )
 
             if command_status == "critical":
-                self.sock.send(
-                    (
-                        RECORD_TYPE_SPECIAL,
-                        {
-                            "browser_id": browser.browser_id,
-                            "success": False,
-                            "action": ACTION_TYPE_FINALIZE,
-                            "visit_id": browser.curr_visit_id,
-                        },
-                    )
+                self.sock.finalize_visit_id(
+                    success=False,
+                    visit_id=browser.curr_visit_id,
                 )
                 return
 
@@ -566,16 +565,8 @@ class TaskManager:
                     self.failure_count = 0
 
             if browser.restart_required:
-                self.sock.send(
-                    (
-                        RECORD_TYPE_SPECIAL,
-                        {
-                            "browser_id": browser.browser_id,
-                            "success": False,
-                            "action": ACTION_TYPE_FINALIZE,
-                            "visit_id": browser.curr_visit_id,
-                        },
-                    )
+                self.sock.finalize_visit_id(
+                    success=False, visit_id=browser.curr_visit_id
                 )
                 break
 
@@ -617,16 +608,16 @@ class TaskManager:
         int  -> index of browser to send command to
         """
 
-        # Block if the aggregator queue is too large
-        agg_queue_size = self.data_aggregator.get_most_recent_status()
-        if agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
-            while agg_queue_size >= AGGREGATOR_QUEUE_LIMIT:
+        # Block if the storage controller has too many unfinished records
+        agg_queue_size = self.storage_controller_handle.get_most_recent_status()
+        if agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
+            while agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
                 self.logger.info(
-                    "Blocking command submission until the DataAggregator "
+                    "Blocking command submission until the storage controller "
                     "is below the max queue size of %d. Current queue "
-                    "length %d. " % (AGGREGATOR_QUEUE_LIMIT, agg_queue_size)
+                    "length %d. " % (STORAGE_CONTROLLER_JOB_LIMIT, agg_queue_size)
                 )
-                agg_queue_size = self.data_aggregator.get_status()
+                agg_queue_size = self.storage_controller_handle.get_status()
 
         # Distribute command
         if index is None:

@@ -3,7 +3,7 @@ import * as socket from "./socket.js";
 let crawlID = null;
 let visitID = null;
 let debugging = false;
-let dataAggregator = null;
+let storageController = null;
 let logAggregator = null;
 let listeningSocket = null;
 
@@ -19,19 +19,19 @@ let listeningSocketCallback =  async (data) => {
             }
             visitID = _visitID;
             data["browser_id"] = crawlID;
-            dataAggregator.send(JSON.stringify(["meta_information", data]));
+            storageController.send(JSON.stringify(["meta_information", data]));
             break;
         case "Finalize":
             if (!visitID) {
                 logWarn("Send Finalize while no visit_id was set")
             }
-            if (_visitID != visitID ) {
+            if (_visitID !== visitID ) {
                 logError("Send Finalize but visit_id didn't match. " +
                 `Current visit_id ${visit_id}, sent visit_id ${_visit_id}.`);
             }
             data["browser_id"] = crawlID;
             data["success"] = true;
-            dataAggregator.send(JSON.stringify(["meta_information", data]));
+            storageController.send(JSON.stringify(["meta_information", data]));
             visitID = null;
             break;
         default:
@@ -43,8 +43,8 @@ let listeningSocketCallback =  async (data) => {
     }
 
 }
-export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
-    if (aggregatorAddress == null && logAddress == null && curr_crawlID == '') {
+export let open = async function(storageControllerAddress, logAddress, curr_crawlID) {
+    if (storageControllerAddress == null && logAddress == null && curr_crawlID === '') {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
@@ -61,10 +61,10 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
     }
 
     // Connect to databases for saving data
-    if (aggregatorAddress != null) {
-        dataAggregator = new socket.SendingSocket();
-        let rv = await dataAggregator.connect(aggregatorAddress[0], aggregatorAddress[1]);
-        console.log("sqliteSocket started?",rv);
+    if (storageControllerAddress != null) {
+        storageController = new socket.SendingSocket();
+        let rv = await storageController.connect(storageControllerAddress[0], storageControllerAddress[1]);
+        console.log("StorageController started?",rv);
     }
 
     // Listen for incoming urls as visit ids
@@ -76,8 +76,8 @@ export let open = async function(aggregatorAddress, logAddress, curr_crawlID) {
 };
 
 export let close = function() {
-    if (dataAggregator != null) {
-        dataAggregator.close();
+    if (storageController != null) {
+        storageController.close();
     }
     if (logAggregator != null) {
         logAggregator.close();
@@ -189,7 +189,7 @@ export let saveRecord = function(instrument, record) {
       console.log("EXTENSION", instrument, record);
       return;
     }
-    dataAggregator.send(JSON.stringify([instrument, record]));
+    storageController.send(JSON.stringify([instrument, record]));
 };
 
 // Stub for now
@@ -203,7 +203,7 @@ export let saveContent = async function(content, contentHash) {
   // Since the content might not be a valid utf8 string and it needs to be
   // json encoded later, it is encoded using base64 first.
   const b64 = Uint8ToBase64(content);
-  dataAggregator.send(JSON.stringify(['page_content', [b64, contentHash]]));
+  storageController.send(JSON.stringify(['page_content', [b64, contentHash]]));
 };
 
 function encode_utf8(s) {

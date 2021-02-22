@@ -5,13 +5,19 @@ import base64
 import json
 import os
 from hashlib import sha256
+from pathlib import Path
 from time import sleep
+from typing import List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 import pytest
 
 from openwpm import command_sequence, task_manager
+from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
+from openwpm.config import BrowserParams, ManagerParams
+from openwpm.storage.leveldb import LevelDbProvider
+from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -590,7 +596,9 @@ BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestHTTPInstrument(OpenWPMTest):
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].http_instrument = True
         return manager_params, browser_params
@@ -624,7 +632,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
         # HTTP Responses
         rows = db_utils.query_db(db, "SELECT * FROM http_responses")
-        observed_records = set()
+        observed_records: Set[Tuple[str, str]] = set()
         for row in rows:
             observed_records.add(
                 (
@@ -655,155 +663,6 @@ class TestHTTPInstrument(OpenWPMTest):
                     break
             observed_records.add((src, dst, location))
         assert HTTP_REDIRECTS == observed_records
-
-    def test_cache_hits_recorded(self):
-        """Verify all http responses are recorded, including cached responses
-
-        Note that we expect to see all of the same requests and responses
-        during the second vist (even if cached) except for images. Cached
-        images do not trigger Observer Notification events.
-        See Bug 634073: https://bugzilla.mozilla.org/show_bug.cgi?id=634073
-
-        The test page includes an image which does several permanent redirects
-        before returning a 404. We expect to see new requests and responses
-        for this image when the page is reloaded. Additionally, the redirects
-        should be cached.
-        """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(test_url, sleep=5)
-        manager.get(test_url, sleep=5)
-        manager.close()
-        db = manager_params.database_name
-
-        request_id_to_url = dict()
-
-        # HTTP Requests
-        rows = db_utils.query_db(db, "SELECT * FROM http_requests WHERE visit_id = 2")
-        observed_records = set()
-        for row in rows:
-            # HACK: favicon caching is unpredictable, don't bother checking it
-            if row["url"].split("?")[0].endswith("favicon.ico"):
-                continue
-            observed_records.add(
-                (
-                    row["url"].split("?")[0],
-                    row["top_level_url"],
-                    row["triggering_origin"],
-                    row["loading_origin"],
-                    row["loading_href"],
-                    row["is_XHR"],
-                    row["is_third_party_channel"],
-                    row["is_third_party_to_top_window"],
-                    row["resource_type"],
-                )
-            )
-            request_id_to_url[row["request_id"]] = row["url"]
-        assert HTTP_CACHED_REQUESTS == observed_records
-
-        # HTTP Responses
-        rows = db_utils.query_db(db, "SELECT * FROM http_responses WHERE visit_id = 2")
-        observed_records = set()
-        for row in rows:
-            # HACK: favicon caching is unpredictable, don't bother checking it
-            if row["url"].split("?")[0].endswith("favicon.ico"):
-                continue
-            observed_records.add(
-                (
-                    row["url"].split("?")[0],
-                    # TODO: referrer isn't available yet in the
-                    # webext instrumentation | row['referrer'],
-                    row["is_cached"],
-                )
-            )
-            assert row["request_id"] in request_id_to_url
-            assert request_id_to_url[row["request_id"]] == row["url"]
-        assert HTTP_CACHED_RESPONSES == observed_records
-
-        # HTTP Redirects
-        rows = db_utils.query_db(db, "SELECT * FROM http_redirects WHERE visit_id = 2")
-        observed_records = set()
-        for row in rows:
-            # TODO: new_request_id isn't supported yet
-            # src = request_id_to_url[row['old_request_id']].split('?')[0]
-            # dst = request_id_to_url[row['new_request_id']].split('?')[0]
-            src = row["old_request_url"].split("?")[0]
-            dst = row["new_request_url"].split("?")[0]
-            observed_records.add((src, dst))
-        assert HTTP_CACHED_REDIRECTS == observed_records
-
-    def test_javascript_saving(self, tmpdir):
-        """ check that javascript content is saved and hashed correctly """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0].http_instrument = True
-        browser_params[0].save_content = "script"
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=test_url, sleep=1)
-        manager.close()
-        expected_hashes = {
-            "0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc",
-            "b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08",
-        }
-        for chash, content in db_utils.get_content(str(tmpdir)):
-            chash = chash.decode("ascii").lower()
-            pyhash = sha256(content).hexdigest().lower()
-            assert pyhash == chash  # Verify expected key (sha256 of content)
-            assert chash in expected_hashes
-            expected_hashes.remove(chash)
-        assert len(expected_hashes) == 0  # All expected hashes have been seen
-
-    def test_document_saving(self, tmpdir):
-        """ check that document content is saved and hashed correctly """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        expected_hashes = {
-            "2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966",
-            "25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d",
-        }
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0].http_instrument = True
-        browser_params[0].save_content = "main_frame,sub_frame"
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=test_url, sleep=1)
-        manager.close()
-        for chash, content in db_utils.get_content(str(tmpdir)):
-            chash = chash.decode("ascii").lower()
-            pyhash = sha256(content).hexdigest().lower()
-            assert pyhash == chash  # Verify expected key (sha256 of content)
-            assert chash in expected_hashes
-            expected_hashes.remove(chash)
-        assert len(expected_hashes) == 0  # All expected hashes have been seen
-
-    def test_content_saving(self, tmpdir):
-        """ check that content is saved and hashed correctly """
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        manager_params, browser_params = self.get_test_config(str(tmpdir))
-        browser_params[0].http_instrument = True
-        browser_params[0].save_content = True
-        manager = task_manager.TaskManager(manager_params, browser_params)
-        manager.get(url=test_url, sleep=1)
-        manager.close()
-        db = manager_params.database_name
-        rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
-        disk_content = dict()
-        for row in rows:
-            if "MAGIC_REDIRECT" in row["url"] or "404" in row["url"]:
-                continue
-            path = urlparse(row["url"]).path
-            with open(os.path.join(BASE_PATH, path[1:]), "rb") as f:
-                content = f.read()
-            chash = sha256(content).hexdigest()
-            assert chash == row["content_hash"]
-            disk_content[chash] = content
-
-        ldb_content = dict()
-        for chash, content in db_utils.get_content(str(tmpdir)):
-            chash = chash.decode("ascii")
-            ldb_content[chash] = content
-
-        for k, v in disk_content.items():
-            assert v == ldb_content[k]
 
     def test_worker_script_requests(self):
         """Check correct URL attribution for requests made by worker script"""
@@ -890,7 +749,9 @@ class TestPOSTInstrument(OpenWPMTest):
         "line2 line2_word2\r\n"
     )
 
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path] = None
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].http_instrument = True
         return manager_params, browser_params
@@ -978,7 +839,7 @@ class TestPOSTInstrument(OpenWPMTest):
         reason="Firefox is currently not able to return the "
         "file content for an upload, only the filename"
     )
-    def test_record_file_upload(self):
+    def test_record_file_upload(self, task_manager_creator):
         """Test that we correctly capture the uploaded file contents.
 
         We upload a CSS file and a PNG file to test both text based and
@@ -999,7 +860,7 @@ class TestPOSTInstrument(OpenWPMTest):
         css_file_path = os.path.abspath("test_pages/shared/test_style.css")
 
         manager_params, browser_params = self.get_config()
-        manager = task_manager.TaskManager(manager_params, browser_params)
+        manager, db_path = task_manager_creator((manager_params, browser_params))
         test_url = utilities.BASE_TEST_URL + "/post_file_upload.html"
         cs = command_sequence.CommandSequence(test_url)
         cs.get(sleep=0, timeout=60)
@@ -1007,7 +868,7 @@ class TestPOSTInstrument(OpenWPMTest):
         manager.execute_command_sequence(cs)
         manager.close()
 
-        post_body = self.get_post_request_body_from_db(manager_params.database_name)
+        post_body = self.get_post_request_body_from_db(db_path)
         # Binary strings get put into the database as-if they were latin-1.
         with open(img_file_path, "rb") as f:
             img_file_content = f.read().strip().decode("latin-1")
@@ -1023,8 +884,213 @@ class TestPOSTInstrument(OpenWPMTest):
         assert expected_body == post_body_decoded
 
 
+def test_javascript_saving(http_params, xpi, server):
+    """ check that javascript content is saved and hashed correctly """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+
+    for browser_param in browser_params:
+        browser_param.http_instrument = True
+        browser_param.save_content = "script"
+
+    structured_storage = SQLiteStorageProvider(
+        db_path=manager_params.data_directory / "crawl-data.sqlite"
+    )
+    ldb_path = Path(manager_params.data_directory) / "content.ldb"
+    unstructured_storage = LevelDbProvider(db_path=ldb_path)
+    manager = task_manager.TaskManager(
+        manager_params, browser_params, structured_storage, unstructured_storage
+    )
+    manager.get(url=test_url, sleep=1)
+    manager.close()
+    expected_hashes = {
+        "0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc",
+        "b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08",
+    }
+    for chash, content in db_utils.get_content(ldb_path):
+        chash = chash.decode("ascii").lower()
+        pyhash = sha256(content).hexdigest().lower()
+        assert pyhash == chash  # Verify expected key (sha256 of content)
+        assert chash in expected_hashes
+        expected_hashes.remove(chash)
+    assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+
+def test_document_saving(http_params, xpi, server):
+    """ check that document content is saved and hashed correctly """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    expected_hashes = {
+        "2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966",
+        "25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d",
+    }
+    manager_params, browser_params = http_params()
+    for browser_param in browser_params:
+        browser_param.http_instrument = True
+        browser_param.save_content = "main_frame,sub_frame"
+
+    structured_storage = SQLiteStorageProvider(
+        db_path=manager_params.data_directory / "crawl-data.sqlite"
+    )
+    ldb_path = Path(manager_params.data_directory) / "content.ldb"
+    unstructured_storage = LevelDbProvider(db_path=ldb_path)
+    manager = task_manager.TaskManager(
+        manager_params, browser_params, structured_storage, unstructured_storage
+    )
+
+    manager.get(url=test_url, sleep=1)
+    manager.close()
+    for chash, content in db_utils.get_content(ldb_path):
+        chash = chash.decode("ascii").lower()
+        pyhash = sha256(content).hexdigest().lower()
+        assert pyhash == chash  # Verify expected key (sha256 of content)
+        assert chash in expected_hashes
+        expected_hashes.remove(chash)
+    assert len(expected_hashes) == 0  # All expected hashes have been seen
+
+
+def test_content_saving(http_params, xpi, server):
+    """ check that content is saved and hashed correctly """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+    for browser_param in browser_params:
+        browser_param.http_instrument = True
+        browser_param.save_content = True
+    db = manager_params.data_directory / "crawl-data.sqlite"
+    structured_storage = SQLiteStorageProvider(db_path=db)
+    ldb_path = Path(manager_params.data_directory) / "content.ldb"
+    unstructured_storage = LevelDbProvider(db_path=ldb_path)
+    manager = task_manager.TaskManager(
+        manager_params, browser_params, structured_storage, unstructured_storage
+    )
+    manager.get(url=test_url, sleep=1)
+    manager.close()
+
+    rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
+    disk_content = dict()
+    for row in rows:
+        if "MAGIC_REDIRECT" in row["url"] or "404" in row["url"]:
+            continue
+        path = urlparse(row["url"]).path
+        with open(os.path.join(BASE_PATH, path[1:]), "rb") as f:
+            content = f.read()
+        chash = sha256(content).hexdigest()
+        assert chash == row["content_hash"]
+        disk_content[chash] = content
+
+    ldb_content = dict()
+    for chash, content in db_utils.get_content(ldb_path):
+        chash = chash.decode("ascii")
+        ldb_content[chash] = content
+
+    for k, v in disk_content.items():
+        assert v == ldb_content[k]
+
+
+def test_cache_hits_recorded(http_params, task_manager_creator):
+    """Verify all http responses are recorded, including cached responses
+
+    Note that we expect to see all of the same requests and responses
+    during the second vist (even if cached) except for images. Cached
+    images do not trigger Observer Notification events.
+    See Bug 634073: https://bugzilla.mozilla.org/show_bug.cgi?id=634073
+
+    The test page includes an image which does several permanent redirects
+    before returning a 404. We expect to see new requests and responses
+    for this image when the page is reloaded. Additionally, the redirects
+    should be cached.
+    """
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+    # ensuring that we only spawn one browser
+    manager_params.num_browsers = 1
+    manager, db = task_manager_creator((manager_params, [browser_params[0]]))
+    for i in range(2):
+        cs = CommandSequence(test_url, site_rank=i)
+        cs.get(sleep=5)
+        manager.execute_command_sequence(cs)
+
+    manager.close()
+
+    request_id_to_url = dict()
+
+    # HTTP Requests
+    rows = db_utils.query_db(
+        db,
+        """
+        SELECT hr.*
+        FROM http_requests as hr
+        JOIN site_visits sv ON sv.visit_id = hr.visit_id and sv.browser_id = hr.browser_id
+        WHERE sv.site_rank = 1""",
+    )
+    observed_records = set()
+    for row in rows:
+        # HACK: favicon caching is unpredictable, don't bother checking it
+        if row["url"].split("?")[0].endswith("favicon.ico"):
+            continue
+        observed_records.add(
+            (
+                row["url"].split("?")[0],
+                row["top_level_url"],
+                row["triggering_origin"],
+                row["loading_origin"],
+                row["loading_href"],
+                row["is_XHR"],
+                row["is_third_party_channel"],
+                row["is_third_party_to_top_window"],
+                row["resource_type"],
+            )
+        )
+        request_id_to_url[row["request_id"]] = row["url"]
+    assert observed_records == HTTP_CACHED_REQUESTS
+
+    # HTTP Responses
+    rows = db_utils.query_db(
+        db,
+        """
+         SELECT hp.*
+         FROM http_responses as hp
+         JOIN site_visits sv ON sv.visit_id = hp.visit_id and sv.browser_id = hp.browser_id
+         WHERE sv.site_rank = 1""",
+    )
+    observed_records = set()
+    for row in rows:
+        # HACK: favicon caching is unpredictable, don't bother checking it
+        if row["url"].split("?")[0].endswith("favicon.ico"):
+            continue
+        observed_records.add(
+            (
+                row["url"].split("?")[0],
+                # TODO: referrer isn't available yet in the
+                # webext instrumentation | row['referrer'],
+                row["is_cached"],
+            )
+        )
+        assert row["request_id"] in request_id_to_url
+        assert request_id_to_url[row["request_id"]] == row["url"]
+    assert HTTP_CACHED_RESPONSES == observed_records
+
+    # HTTP Redirects
+    rows = db_utils.query_db(
+        db,
+        """
+         SELECT hr.*
+         FROM http_redirects as hr
+         JOIN site_visits sv ON sv.visit_id = hr.visit_id and sv.browser_id = hr.browser_id
+         WHERE sv.site_rank = 1""",
+    )
+    observed_records = set()
+    for row in rows:
+        # TODO: new_request_id isn't supported yet
+        # src = request_id_to_url[row['old_request_id']].split('?')[0]
+        # dst = request_id_to_url[row['new_request_id']].split('?')[0]
+        src = row["old_request_url"].split("?")[0]
+        dst = row["new_request_url"].split("?")[0]
+        observed_records.add((src, dst))
+    assert HTTP_CACHED_REDIRECTS == observed_records
+
+
 class FilenamesIntoFormCommand(BaseCommand):
-    def __init__(self, img_file_path, css_file_path) -> None:
+    def __init__(self, img_file_path: str, css_file_path: str) -> None:
         self.img_file_path = img_file_path
         self.css_file_path = css_file_path
 
@@ -1034,7 +1100,7 @@ class FilenamesIntoFormCommand(BaseCommand):
         browser_params,
         manager_params,
         extension_socket,
-    ) -> None:
+    ):
         img_file_upload_element = webdriver.find_element_by_id("upload-img")
         css_file_upload_element = webdriver.find_element_by_id("upload-css")
         img_file_upload_element.send_keys(self.img_file_path)

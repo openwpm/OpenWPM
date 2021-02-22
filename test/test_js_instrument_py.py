@@ -1,17 +1,15 @@
+"""
+Test function that converts our python
+objects to our JS string
+"""
 import pytest
 from jsonschema.exceptions import ValidationError
 
 from openwpm import js_instrumentation as jsi
 
-pytestmark = pytest.mark.pyonly
-
 
 def _no_whitespace(x):
     return "".join(x.split())
-
-
-# Test function that converts our python
-# objects to our JS string
 
 
 def test_python_to_js_lower_true_false():

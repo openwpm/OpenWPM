@@ -1,35 +1,38 @@
 import os
-from functools import partial
-from typing import List
+
+from selenium.webdriver import Firefox
 
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
-from openwpm.task_manager import TaskManager
+from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
+from openwpm.socket_interface import ClientSocket
 
-from .openwpmtest import OpenWPMTest
 from .utilities import BASE_TEST_URL
 
 
 class ExceptionCommand(BaseCommand):
-    def execute(self):
-        raise Exception
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParamsInternal,
+        manager_params: ManagerParamsInternal,
+        extension_socket: ClientSocket,
+    ) -> None:
+        raise RuntimeError("We simulate a Command failing")
 
 
-class TestXVFBDisplay(OpenWPMTest):
+def test_display_shutdown(task_manager_creator, default_params):
     """Test the XVFB display option to see if it runs and deletes the lockfile upon shutdown"""
+    manager_params, browser_params = default_params
+    for browser_param in browser_params:
+        browser_param.display_mode = "xvfb"
+    TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
+    manager, db = task_manager_creator((manager_params, browser_params))
+    port = manager.browsers[0].display_port
 
-    def get_config(self, data_dir=""):
-        return self.get_test_config(data_dir, display_mode="xvfb")
-
-    def test_display_shutdown(self):
-        manager_params, browser_params = self.get_config()
-        TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
-        manager = TaskManager(manager_params, browser_params)
-        port = manager.browsers[0].display_port
-
-        sequence = CommandSequence(TEST_SITE)
-        sequence.get()
-        sequence.append_command(ExceptionCommand)
-        manager.execute_command_sequence(sequence)
-        manager.close()
-        assert not os.path.exists("/tmp/.X%s-lock" % port)
+    sequence = CommandSequence(TEST_SITE)
+    sequence.get()
+    sequence.append_command(ExceptionCommand())
+    manager.execute_command_sequence(sequence)
+    manager.close()
+    assert not os.path.exists("/tmp/.X%s-lock" % port)

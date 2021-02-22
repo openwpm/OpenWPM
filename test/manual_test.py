@@ -12,15 +12,15 @@ from openwpm.config import BrowserParams
 from openwpm.deploy_browsers import configure_firefox
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
-from .conftest import create_xpi
+from .conftest import xpi
 from .utilities import BASE_TEST_URL, start_server
 
 # import commonly used modules and utilities so they can be easily accessed
 # in the interactive session
 from openwpm.commands.utils import webdriver_utils as wd_util  # noqa isort:skip
 import domain_utils as du  # noqa isort:skip
-from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 from selenium.common.exceptions import *  # noqa isort:skip
+from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
@@ -140,7 +140,7 @@ def start_webdriver(
 
     if with_extension:
         # add openwpm extension to profile
-        create_xpi()
+        xpi()
         ext_xpi = join(EXT_PATH, "dist", "openwpm-1.0.zip")
         driver.install_addon(ext_xpi, temporary=True)
 
@@ -166,28 +166,27 @@ def start_webext():
     thread.join()
 
 
-flag_opts = dict(
-    is_flag=True,
-    default=False,
-)
-
-
 @click.command()
 @click.option(
     "--selenium",
     help="""
     Run a selenium webdriver instance, and drop into an IPython shell""",
-    **flag_opts,
+    is_flag=True,
+    default=False,
 )
 @click.option(
     "--no-extension",
     help="""
     Use this to prevent the openwpm webextension being loaded.
     Only applies if --selenium is being used.""",
-    **flag_opts,
+    is_flag=True,
+    default=False,
 )
 @click.option(
-    "--browser-params", help="""Set flag to load browser_params.""", **flag_opts
+    "--browser-params",
+    help="""Set flag to load browser_params.""",
+    is_flag=True,
+    default=False,
 )
 @click.option(
     "--browser-params-file",

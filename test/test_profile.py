@@ -1,9 +1,12 @@
 from os.path import isfile, join
+from pathlib import Path
+from typing import Any, List, Optional, Tuple
 
 import pytest
 
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
@@ -14,7 +17,9 @@ from .openwpmtest import OpenWPMTest
 
 
 class TestProfile(OpenWPMTest):
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].profile_archive_dir = join(
             manager_params.data_directory, "browser_profile"
@@ -64,7 +69,7 @@ class TestProfile(OpenWPMTest):
         manager.ldb_status_queue.put("DIE")
         manager.browsers[0]._SPAWN_TIMEOUT = 2  # Have timeout occur quickly
         manager.browsers[0]._UNSUCCESSFUL_SPAWN_LIMIT = 2  # Quick timeout
-        manager.get("example.com")  # Cause a selenium crasht
+        manager.get("example.com")  # Cause a selenium crash
 
         # The browser will fail to launch due to the proxy crashes
         try:
@@ -74,30 +79,35 @@ class TestProfile(OpenWPMTest):
         manager.close()
         assert isfile(join(browser_params[0].profile_archive_dir, "profile.tar.gz"))
 
-    def test_seed_persistance(self):
-        manager_params, browser_params = self.get_test_config(num_browsers=1)
-        browser_params[0].seed_tar = "."
-        command_sequences = []
-        for _ in range(2):
-            cs = CommandSequence(url="https://example.com", reset=True)
-            cs.get()
-            cs.append_command(TestConfigSetCommand("test_pref", True))
-            command_sequences.append(cs)
-        manager = TaskManager(manager_params, browser_params)
-        for cs in command_sequences:
-            manager.execute_command_sequence(cs)
-        manager.close()
-        query_result = db_utils.query_db(
-            manager_params.database_name,
-            "SELECT * FROM crawl_history;",
-        )
-        assert len(query_result) > 0
-        for row in query_result:
-            assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"
+
+def test_seed_persistance(default_params, task_manager_creator):
+    manager_params, browser_params = default_params
+    p = Path("profile.tar.gz")
+    for browser_param in browser_params:
+        browser_param.seed_tar = p
+    manager, db = task_manager_creator(default_params)
+
+    command_sequences = []
+    for _ in range(2):
+        cs = CommandSequence(url="https://example.com", reset=True)
+        cs.get()
+        cs.append_command(AssertConfigSetCommand("test_pref", True))
+        command_sequences.append(cs)
+
+    for cs in command_sequences:
+        manager.execute_command_sequence(cs)
+    manager.close()
+    query_result = db_utils.query_db(
+        db,
+        "SELECT * FROM crawl_history;",
+    )
+    assert len(query_result) > 0
+    for row in query_result:
+        assert row["command_status"] == "ok", f"Command {tuple(row)} was not ok"
 
 
-class TestConfigSetCommand(BaseCommand):
-    def __init__(self, pref_name, expected_value) -> None:
+class AssertConfigSetCommand(BaseCommand):
+    def __init__(self, pref_name: str, expected_value: Any) -> None:
         self.pref_name = pref_name
         self.expected_value = expected_value
 
@@ -107,7 +117,7 @@ class TestConfigSetCommand(BaseCommand):
         browser_params,
         manager_params,
         extension_socket,
-    ) -> None:
+    ):
         webdriver.get("about:config")
         result = webdriver.execute_script(
             f"""
