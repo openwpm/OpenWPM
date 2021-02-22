@@ -107,8 +107,7 @@ class StorageController:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
             except IncompleteReadError:
                 self.logger.info(
-                    "Terminating handler, because the underlying socket closed",
-                    exc_info=True,
+                    "Terminating handler, because the underlying socket closed"
                 )
                 break
             if len(record) != 2:

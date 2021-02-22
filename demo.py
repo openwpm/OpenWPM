@@ -47,36 +47,32 @@ manager_params.log_directory = Path("./datadir/")
 
 
 # Commands time out by default after 60 seconds
-manager = TaskManager(
+with TaskManager(
     manager_params,
     browser_params,
     SQLiteStorageProvider(Path("./datadir/crawl-data.sqlite")),
     None,
-)
+) as manager:
+    # Visits the sites
+    for index, site in enumerate(sites):
 
-# Visits the sites
-for index, site in enumerate(sites):
+        def callback(success: bool, val: str = site) -> None:
+            print(
+                f"CommandSequence for {val} ran {'successfully' if success else 'unsuccessfully'}"
+            )
 
-    def callback(success: bool, val: str = site) -> None:
-        print(
-            f"CommandSequence for {val} ran {'successfully' if success else 'unsuccessfully'}"
+        # Parallelize sites over all number of browsers set above.
+        command_sequence = CommandSequence(
+            site,
+            site_rank=index,
+            reset=True,
+            callback=callback,
         )
 
-    # Parallelize sites over all number of browsers set above.
-    command_sequence = CommandSequence(
-        site,
-        site_rank=index,
-        reset=True,
-        callback=callback,
-    )
+        # Start by visiting the page
+        command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
+        # Have a look at custom_command.py to see how to implement your own command
+        command_sequence.append_command(LinkCountingCommand())
 
-    # Start by visiting the page
-    command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
-    # Have a look at custom_command.py to see how to implement your own command
-    command_sequence.append_command(LinkCountingCommand())
-
-    # Run commands across the three browsers (simple parallelization)
-    manager.execute_command_sequence(command_sequence)
-
-# Shuts down the browsers and waits for the data to finish logging
-manager.close()
+        # Run commands across the three browsers (simple parallelization)
+        manager.execute_command_sequence(command_sequence)

@@ -2,11 +2,13 @@ import json
 import logging
 import os
 import pickle
+import sys
 import threading
 import time
 import traceback
 from queue import Empty as EmptyQueue
-from typing import Any, Dict, List, Optional, Set, Tuple
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
 import psutil
 import tblib
@@ -172,7 +174,12 @@ class TaskManager:
         """
         return self
 
-    def __exit__(self) -> None:
+    def __exit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         """
         Execute shutdown procedure for TaskManager
         """
