@@ -5,7 +5,7 @@ import queue
 import random
 import socket
 import time
-from asyncio import Task
+from asyncio import IncompleteReadError, Task
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
@@ -103,15 +103,14 @@ class StorageController:
         """Created for every new connection to the Server"""
         self.logger.debug("Initializing new handler")
         while True:
-            if reader.at_eof():
-                # the socket is closed
-                self.logger.debug(
+            try:
+                record: Tuple[str, Any] = await get_message_from_reader(reader)
+            except IncompleteReadError:
+                self.logger.info(
                     "Terminating handler, because the underlying socket closed",
+                    exc_info=True,
                 )
                 break
-
-            record: Tuple[str, Any] = await get_message_from_reader(reader)
-
             if len(record) != 2:
                 self.logger.error("Query is not the correct length %s", repr(record))
                 continue

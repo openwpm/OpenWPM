@@ -144,7 +144,9 @@ class ClientSocket:
             msg = json.dumps(msg).encode("utf-8")
             serialization = b"j"
         else:
-            raise ValueError("Unsupported serialization type set: %s" % serialization)
+            raise ValueError(
+                "Unsupported serialization type set: %s" % self.serialization
+            )
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
 
@@ -162,6 +164,19 @@ class ClientSocket:
 
 
 async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
+    """
+    Reads a message from the StreamReader
+    :exception IncompleteReadError if the underlying socket is closed
+
+    To safely use this method, you should guard against the exception
+    like this:
+    ```
+        try:
+            record: Tuple[str, Any] = await get_message_from_reader(reader)
+        except IncompleteReadError as e:
+            print("The underlying socket closed", repr(e))
+    ```
+    """
     msg = await reader.readexactly(5)
     msglen, serialization = struct.unpack(">Lc", msg)
     msg = await reader.readexactly(msglen)
