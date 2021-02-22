@@ -1,4 +1,4 @@
-import { Navigation } from "../schema";
+import {Navigation} from "../schema";
 
 /**
  * Ties together the two separate navigation events that together holds information about both parent frame id and transition-related attributes

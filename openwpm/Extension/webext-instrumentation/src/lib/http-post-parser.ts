@@ -1,12 +1,8 @@
 // Incorporates code from: https://github.com/redline13/selenium-jmeter/blob/6966d4b326cd78261e31e6e317076569051cac37/content/library/recorder/HttpPostParser.js
 
-import {
-  WebRequestOnBeforeRequestEventDetails,
-  // WebRequestOnBeforeSendHeadersEventDetails,
-} from "../types/browser-web-request-event-details";
+import {WebRequestOnBeforeRequestEventDetails,} from "../types/browser-web-request-event-details";
 // import { escapeString, escapeUrl } from "./string-utils";
-
-import { escapeString, Uint8ToBase64 } from "./string-utils";
+import {escapeString, Uint8ToBase64} from "./string-utils";
 
 // const components: any = {};
 

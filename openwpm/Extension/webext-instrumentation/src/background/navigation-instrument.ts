@@ -1,9 +1,9 @@
-import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
-import { extensionSessionUuid } from "../lib/extension-session-uuid";
-import { PendingNavigation } from "../lib/pending-navigation";
-import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
-import { makeUUID } from "../lib/uuid";
-import { Navigation } from "../schema";
+import {incrementedEventOrdinal} from "../lib/extension-session-event-ordinal";
+import {extensionSessionUuid} from "../lib/extension-session-uuid";
+import {PendingNavigation} from "../lib/pending-navigation";
+import {boolToInt, escapeString, escapeUrl} from "../lib/string-utils";
+import {makeUUID} from "../lib/uuid";
+import {Navigation} from "../schema";
 import {
   WebNavigationBaseEventDetails,
   WebNavigationOnBeforeNavigateEventDetails,

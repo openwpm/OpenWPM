@@ -1,12 +1,14 @@
-import os
 import sqlite3
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any, AnyStr, Iterator, List, Tuple, Union
 
 import plyvel
 
-CONTENT_DB_NAME = "content.ldb"
 
-
-def query_db(db, query, params=None, as_tuple=False):
+def query_db(
+    db: Path, query: str, params: Iterable = None, as_tuple: bool = False
+) -> List[Union[sqlite3.Row, tuple]]:
     """Run a query against the given db.
 
     If params is not None, securely construct a query from the given
@@ -22,34 +24,36 @@ def query_db(db, query, params=None, as_tuple=False):
     return rows
 
 
-def get_content(data_directory):
+def get_content(db_name: Path) -> Iterator[Tuple[AnyStr, AnyStr]]:
     """Yield key, value pairs from the deduplicated leveldb content database
 
     Parameters
     ----------
-    data_directory : string
-        root directory of the crawl files containing the content database
+    db_name : Path
+        The full path to the current db
     """
-    db_path = os.path.join(data_directory, CONTENT_DB_NAME)
-    db = plyvel.DB(db_path, create_if_missing=False, compression="snappy")
+    db = plyvel.DB(str(db_name), create_if_missing=False, compression="snappy")
     for content_hash, content in db.iterator():
         yield content_hash, content
     db.close()
 
 
-def get_javascript_entries(db, all_columns=False, as_tuple=False):
+def get_javascript_entries(
+    db: Path, all_columns: bool = False, as_tuple: bool = False
+) -> List[Union[Tuple[Any, ...], sqlite3.Row]]:
     if all_columns:
         select_columns = "*"
     else:
         select_columns = "script_url, symbol, operation, value, arguments"
 
-    return query_db(db, "SELECT %s FROM javascript" % select_columns, as_tuple=as_tuple)
+    return query_db(db, f"SELECT {select_columns} FROM javascript", as_tuple=as_tuple)
 
 
-def any_command_failed(db):
+def any_command_failed(db: Path) -> bool:
     """Returns True if any command in a given database failed"""
     rows = query_db(db, "SELECT * FROM crawl_history;")
     for row in rows:
+        assert isinstance(row, sqlite3.Row)
         if row["command_status"] != "ok":
             return True
     return False

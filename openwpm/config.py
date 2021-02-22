@@ -1,10 +1,14 @@
 import os
 from dataclasses import dataclass, field
+from json import JSONEncoder
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import config as DCJConfig
 
 from .errors import ConfigError
+from .types import BrowserId
 
 BOOL_TYPE_VALIDATION_LIST = [True, False]
 DISPLAY_MODE_VALIDATION_LIST = ["native", "headless", "xvfb"]
@@ -12,7 +16,6 @@ SUPPORTED_BROWSER_LIST = [
     "firefox"
 ]  # Using List instead of a str type to future proof the logic as OpenWPM may add support for more browsers in future
 TP_COOKIES_OPTIONALS_LIST = ["always", "never", "from_visited"]
-DB_EXTENSION_TYPE_LIST = [".db", ".sqlite"]
 LOG_EXTENSION_TYPE_LIST = [".log"]
 CONFIG_ERROR_STRING = (
     "Found {value} as value for {parameter_name} in BrowserParams. "
@@ -28,7 +31,6 @@ GENERAL_ERROR_STRING = (
     "Found invalid value `{value}` for {parameter_name} in {params_type}. "
     "Please look at docs/Configuration.md for more information"
 )
-OUTPUT_FORMAT_LIST = ["local", "s3"]
 
 ALL_RESOURCE_TYPES = {
     "beacon",
@@ -54,9 +56,20 @@ ALL_RESOURCE_TYPES = {
 }
 
 
-@dataclass_json
+def str_to_path(string: Optional[str]) -> Optional[Path]:
+    if string is not None:
+        return Path(string)
+    return None
+
+
+def path_to_str(path: Optional[Path]) -> Optional[str]:
+    if path is not None:
+        return str(path.resolve())
+    return None
+
+
 @dataclass
-class BrowserParams:
+class BrowserParams(DataClassJsonMixin):
     """
     Configuration that might differ per browser
 
@@ -68,7 +81,7 @@ class BrowserParams:
     extension_enabled: bool = True
     cookie_instrument: bool = True
     js_instrument: bool = False
-    js_instrument_settings: List = field(
+    js_instrument_settings: List[Union[str, dict]] = field(
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
@@ -76,40 +89,43 @@ class BrowserParams:
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
     dns_instrument: bool = False
-    seed_tar: Optional[str] = None
+    seed_tar: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
     display_mode: str = "native"
     browser: str = "firefox"
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
     profile_archive_dir: Optional[str] = None
-    recovery_tar: Optional[str] = None
-    donottrack: str = False
+    recovery_tar: Optional[Path] = None
+    donottrack: bool = False
     tracking_protection: bool = False
 
 
-@dataclass_json
 @dataclass
-class ManagerParams:
+class ManagerParams(DataClassJsonMixin):
     """
     Configuration for the TaskManager
-
     The configuration will be the same for all browsers running on the same
     TaskManager.
     It can be used to control storage locations or which watchdogs should
     run
     """
 
-    data_directory: str = "~/openwpm/"
-    log_directory: str = "~/openwpm/"
-    screenshot_path: Optional[str] = None
-    source_dump_path: Optional[str] = None
-    output_format: str = "local"
-    database_name: str = "crawl-data.sqlite"
-    log_file: str = "openwpm.log"
+    data_directory: Path = field(
+        default=Path("~/openwpm/"),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
+    log_directory: Path = field(
+        default=Path("~/openwpm/"),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
+    log_file: Path = field(
+        default=Path("openwpm.log"),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
     testing: bool = False
-    s3_bucket: Optional[str] = None
-    s3_directory: Optional[str] = None
     memory_watchdog: bool = False
     process_watchdog: bool = False
     num_browsers: int = 1
@@ -122,21 +138,26 @@ class ManagerParams:
         return self._failure_limit
 
     @failure_limit.setter
-    def failure_limit(self, value) -> None:
+    def failure_limit(self, value: int) -> None:
         self._failure_limit = value
 
 
 @dataclass
 class BrowserParamsInternal(BrowserParams):
-    browser_id: Optional[int] = None
-    profile_path: str = ""
+    browser_id: Optional[BrowserId] = None
+    profile_path: Optional[Path] = None
 
 
 @dataclass
 class ManagerParamsInternal(ManagerParams):
-    aggregator_address: Tuple[str] = ()
-    logger_address: Tuple[str] = ()
-    ldb_address: Tuple[str] = ()
+    storage_controller_address: Optional[Tuple[str, int]] = None
+    logger_address: Optional[Tuple[str, ...]] = None
+    screenshot_path: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
+    source_dump_path: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
 
 
 def validate_browser_params(browser_params: BrowserParams) -> None:
@@ -228,25 +249,6 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
             )
         )
 
-    try:
-        database_extension = os.path.splitext(manager_params.database_name)[1]
-        if database_extension.lower() not in DB_EXTENSION_TYPE_LIST:
-            raise ConfigError(
-                EXTENSION_ERROR_STRING.format(
-                    extension=database_extension or "no",
-                    value_list=DB_EXTENSION_TYPE_LIST,
-                    parameter_name="database_name",
-                )
-            )
-    except (TypeError, AttributeError):
-        raise ConfigError(
-            GENERAL_ERROR_STRING.format(
-                value=manager_params.database_name,
-                parameter_name="database_name",
-                params_type="ManagerParams",
-            )
-        )
-
     # This check is necessary to not cause any internal error
     if not isinstance(manager_params.failure_limit, int):
         raise ConfigError(
@@ -260,28 +262,13 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
             )
         )
 
-    try:
-        if manager_params.output_format.lower() not in OUTPUT_FORMAT_LIST:
-            raise ConfigError(
-                CONFIG_ERROR_STRING.format(
-                    value=manager_params.output_format,
-                    parameter_name="output_format",
-                    value_list=OUTPUT_FORMAT_LIST,
-                ).replace(
-                    "Please look at docs/Configuration.md#browser-configuration-options for more information",
-                    "Please look at docs/Configuration.md for more information",
-                )
-            )
-    except:
-        raise ConfigError(
-            "Something went wrong while validating ManagerParams. "
-            "Please check values provided for ManagerParams are of expected types"
-        )
-
 
 def validate_crawl_configs(
     manager_params: ManagerParams, browser_params: List[BrowserParams]
 ) -> None:
+    validate_manager_params(manager_params)
+    for bp in browser_params:
+        validate_browser_params(bp)
 
     if len(browser_params) != manager_params.num_browsers:
         raise ConfigError(
@@ -289,3 +276,10 @@ def validate_crawl_configs(
             "as manager_params.num_browsers. Make sure you are assigning number of browsers "
             "to be used to manager_params.num_browsers in your entry file"
         )
+
+
+class ConfigEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj.resolve())
+        return JSONEncoder.default(self, obj)

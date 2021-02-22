@@ -1,13 +1,13 @@
 import {
-  CookieInstrument,
-  JavascriptInstrument,
-  HttpInstrument,
-  NavigationInstrument,
-  DnsInstrument
+    CookieInstrument,
+    DnsInstrument,
+    HttpInstrument,
+    JavascriptInstrument,
+    NavigationInstrument
 } from "openwpm-webext-instrumentation";
 
 import * as loggingDB from "./loggingdb.js";
-import { CallstackInstrument } from "./callstack-instrument.js";
+import {CallstackInstrument} from "./callstack-instrument.js";
 
 async function main() {
   // Read the browser configuration from file
@@ -50,7 +50,7 @@ async function main() {
                 "the extension. Outputting all queries to console.", {config});
   }
 
-  await loggingDB.open(config['aggregator_address'],
+  await loggingDB.open(config['storage_controller_address'],
                        config['logger_address'],
                        config['browser_id']);
 

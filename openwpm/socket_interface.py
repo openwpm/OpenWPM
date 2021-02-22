@@ -1,9 +1,11 @@
+import asyncio
 import json
 import socket
 import struct
 import threading
 import traceback
 from queue import Queue
+from typing import Any
 
 import dill
 
@@ -47,9 +49,7 @@ class ServerSocket:
                 thread.start()
             except ConnectionAbortedError:
                 # Workaround for #278
-                print(
-                    "A connection establish request was performed " "on a closed socket"
-                )
+                print("A connection establish request was performed on a closed socket")
                 return
 
     def _handle_conn(self, client, address):
@@ -76,27 +76,22 @@ class ServerSocket:
                         % (msglen, serialization)
                     )
                 msg = self.receive_msg(client, msglen)
-                if serialization != b"n":
-                    try:
-                        if serialization == b"d":  # dill serialization
-                            msg = dill.loads(msg)
-                        elif serialization == b"j":  # json serialization
-                            msg = json.loads(msg.decode("utf-8"))
-                        elif serialization == b"u":  # utf-8 serialization
-                            msg = msg.decode("utf-8")
-                        else:
-                            print("Unrecognized serialization type: %r" % serialization)
-                            continue
-                    except (UnicodeDecodeError, ValueError) as e:
-                        print(
-                            "Error de-serializing message: %s \n %s"
-                            % (msg, traceback.format_exc(e))
-                        )
-                        continue
-                self.queue.put(msg)
+                try:
+                    msg = _parse(serialization, msg)
+                except (UnicodeDecodeError, ValueError) as e:
+                    print(
+                        "Error de-serializing message: %s \n %s"
+                        % (msg, traceback.format_exc(e))
+                    )
+                    continue
+                self._put_into_queue(msg)
         except RuntimeError:
             if self.verbose:
                 print("Client socket: " + str(address) + " closed")
+
+    def _put_into_queue(self, msg):
+        """Put the parsed message into a queue from where it can be read by consumers"""
+        self.queue.put(msg)
 
     def receive_msg(self, client, msglen):
         msg = b""
@@ -149,7 +144,9 @@ class ClientSocket:
             msg = json.dumps(msg).encode("utf-8")
             serialization = b"j"
         else:
-            raise ValueError("Unsupported serialization type set: %s" % serialization)
+            raise ValueError(
+                "Unsupported serialization type set: %s" % self.serialization
+            )
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
 
@@ -166,15 +163,47 @@ class ClientSocket:
         self.sock.close()
 
 
+async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
+    """
+    Reads a message from the StreamReader
+    :exception IncompleteReadError if the underlying socket is closed
+
+    To safely use this method, you should guard against the exception
+    like this:
+    ```
+        try:
+            record: Tuple[str, Any] = await get_message_from_reader(reader)
+        except IncompleteReadError as e:
+            print("The underlying socket closed", repr(e))
+    ```
+    """
+    msg = await reader.readexactly(5)
+    msglen, serialization = struct.unpack(">Lc", msg)
+    msg = await reader.readexactly(msglen)
+    return _parse(serialization, msg)
+
+
+def _parse(serialization: bytes, msg: bytes) -> Any:
+    if serialization == b"n":
+        return msg
+    if serialization == b"d":  # dill serialization
+        return dill.loads(msg)
+    if serialization == b"j":  # json serialization
+        return json.loads(msg.decode("utf-8"))
+    if serialization == b"u":  # utf-8 serialization
+        return msg.decode("utf-8")
+    raise ValueError("Unknown Encoding")
+
+
 def main():
     import sys
 
     # Just for testing
     if sys.argv[1] == "s":
-        sock = ServerSocket(verbose=True)
-        sock.start_accepting()
+        ssock = ServerSocket(verbose=True)
+        ssock.start_accepting()
         input("Press enter to exit...")
-        sock.close()
+        ssock.close()
     elif sys.argv[1] == "c":
         host = input("Enter the host name:\n")
         port = input("Enter the port:\n")

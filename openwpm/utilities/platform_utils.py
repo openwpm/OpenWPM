@@ -7,6 +7,8 @@ from sys import platform
 
 from tabulate import tabulate
 
+from openwpm.config import ConfigEncoder
+
 
 def parse_http_stack_trace_str(trace_str):
     """Parse a stacktrace string and return an array of dict."""
@@ -95,8 +97,13 @@ def get_configuration_string(manager_params, browser_params, versions):
 
     config_str = "\n\nOpenWPM Version: %s\nFirefox Version: %s\n" % versions
     config_str += "\n========== Manager Configuration ==========\n"
+
     config_str += json.dumps(
-        manager_params.to_dict(), sort_keys=True, indent=2, separators=(",", ": ")
+        manager_params.to_dict(),
+        sort_keys=True,
+        indent=2,
+        separators=(",", ": "),
+        cls=ConfigEncoder,
     )
     config_str += "\n\n========== Browser Configuration ==========\n"
 
@@ -116,13 +123,13 @@ def get_configuration_string(manager_params, browser_params, versions):
             archive_all_none = False
 
         # Separate out long profile directory strings
-        profile_dirs[browser_id] = item.pop("seed_tar")
-        archive_dirs[browser_id] = item.pop("profile_archive_dir")
+        profile_dirs[browser_id] = str(item.pop("seed_tar"))
+        archive_dirs[browser_id] = str(item.pop("profile_archive_dir"))
         js_config[browser_id] = item.pop("js_instrument_settings")
 
         # Copy items in sorted order
         dct = OrderedDict()
-        dct[u"browser_id"] = browser_id
+        dct["browser_id"] = browser_id
         for key in sorted(item.keys()):
             dct[key] = item[key]
         table_input.append(dct)

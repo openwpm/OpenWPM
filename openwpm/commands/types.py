@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from selenium.webdriver import Firefox
 
-from ..config import BrowserParams, ManagerParams
+from ..config import BrowserParamsInternal, ManagerParamsInternal
 from ..socket_interface import ClientSocket
 
 
@@ -26,8 +26,8 @@ class BaseCommand(ABC):
     def execute(
         self,
         webdriver: Firefox,
-        browser_params: BrowserParams,
-        manager_params: ManagerParams,
+        browser_params: BrowserParamsInternal,
+        manager_params: ManagerParamsInternal,
         extension_socket: ClientSocket,
     ) -> None:
         """

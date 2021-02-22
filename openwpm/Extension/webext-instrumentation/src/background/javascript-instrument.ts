@@ -1,8 +1,8 @@
 import MessageSender = browser.runtime.MessageSender;
-import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
-import { extensionSessionUuid } from "../lib/extension-session-uuid";
-import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
-import { JavascriptOperation } from "../schema";
+import {incrementedEventOrdinal} from "../lib/extension-session-event-ordinal";
+import {extensionSessionUuid} from "../lib/extension-session-uuid";
+import {boolToInt, escapeString, escapeUrl} from "../lib/string-utils";
+import {JavascriptOperation} from "../schema";
 
 export class JavascriptInstrument {
   /**

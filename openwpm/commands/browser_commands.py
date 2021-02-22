@@ -500,7 +500,7 @@ class InitializeCommand(BaseCommand):
     """The command is automatically prepended to the beginning of a
     CommandSequence
     It initializes state both in the extensions as well in as the
-    Aggregator
+    StorageController
     """
 
     def __repr__(self):

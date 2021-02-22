@@ -99,13 +99,13 @@ class MPLogger(object):
     def __init__(
         self,
         log_file,
-        crawl_context=None,
+        crawl_reference: str = None,
         log_level_console=logging.INFO,
         log_level_file=logging.DEBUG,
         log_level_sentry_breadcrumb=logging.DEBUG,
         log_level_sentry_event=logging.ERROR,
-    ):
-        self._crawl_context = crawl_context
+    ) -> None:
+        self._crawl_reference = crawl_reference
         self._log_level_console = log_level_console
         self._log_level_file = log_level_file
         self._log_level_sentry_breadcrumb = log_level_sentry_breadcrumb
@@ -206,14 +206,10 @@ class MPLogger(object):
         self._event_handler = EventHandler(level=self._log_level_sentry_event)
         sentry_sdk.init(dsn=self._sentry_dsn, before_send=self._sentry_before_send)
         with sentry_sdk.configure_scope() as scope:
-            if self._crawl_context:
+            if self._crawl_reference:
                 scope.set_tag(
                     "CRAWL_REFERENCE",
-                    "%s/%s"
-                    % (
-                        self._crawl_context.get("s3_bucket", "UNKNOWN"),
-                        self._crawl_context.get("s3_directory", "UNKNOWN"),
-                    ),
+                    self._crawl_reference,
                 )
 
     def _start_listener(self):
