@@ -2,7 +2,6 @@
 import pytest
 
 from openwpm.errors import CommandExecutionError
-from openwpm.task_manager import TaskManager
 
 from .utilities import BASE_TEST_URL
 

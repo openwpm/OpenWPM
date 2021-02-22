@@ -8,7 +8,6 @@ from typing import List, Tuple
 import domain_utils as du
 import pytest
 
-from openwpm import task_manager
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 

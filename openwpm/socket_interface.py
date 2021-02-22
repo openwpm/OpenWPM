@@ -4,7 +4,6 @@ import socket
 import struct
 import threading
 import traceback
-from asyncio import IncompleteReadError
 from queue import Queue
 from typing import Any
 

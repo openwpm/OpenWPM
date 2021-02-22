@@ -10,17 +10,15 @@ import gzip
 import json
 import os
 import re
-from typing import Callable, List, Tuple
 from urllib.parse import urlparse
 
 import pytest
 from PIL import Image
 
-from openwpm import command_sequence, task_manager
+from openwpm import command_sequence
 from openwpm.utilities import db_utils
 
 from . import utilities
-from .openwpmtest import OpenWPMTest
 
 url_a = utilities.BASE_TEST_URL + "/simple_a.html"
 url_b = utilities.BASE_TEST_URL + "/simple_b.html"

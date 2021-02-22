@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, List
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -14,10 +14,8 @@ from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_controller import INVALID_VISIT_ID
 from openwpm.storage.storage_providers import (
     StructuredStorageProvider,
-    TableName,
     UnstructuredStorageProvider,
 )
-from openwpm.types import VisitId
 from test.storage.test_values import dt_test_values, generate_test_values
 
 memory_structured = "memory_structured"

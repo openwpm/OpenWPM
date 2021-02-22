@@ -1,8 +1,5 @@
-from openwpm import task_manager
 from openwpm.commands.utils.webdriver_utils import parse_neterror
 from openwpm.utilities import db_utils
-
-from .openwpmtest import OpenWPMTest
 
 
 def test_parse_neterror():

@@ -19,8 +19,8 @@ from .utilities import BASE_TEST_URL, start_server
 # in the interactive session
 from openwpm.commands.utils import webdriver_utils as wd_util  # noqa isort:skip
 import domain_utils as du  # noqa isort:skip
-from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 from selenium.common.exceptions import *  # noqa isort:skip
+from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"

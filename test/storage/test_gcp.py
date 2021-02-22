@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 
 from openwpm.storage.cloud_storage.gcp_storage import GcsStructuredProvider

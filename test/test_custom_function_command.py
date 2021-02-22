@@ -2,7 +2,7 @@ import sqlite3
 
 from selenium.webdriver import Firefox
 
-from openwpm import command_sequence, task_manager
+from openwpm import command_sequence
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParamsInternal
 from openwpm.socket_interface import ClientSocket

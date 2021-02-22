@@ -113,7 +113,7 @@ class Browser:
             )
             # make sure browser loads crashed profile
             self.browser_params.recovery_tar = tempdir
-            
+
             crash_recovery = True
         else:
         """

@@ -1,9 +1,6 @@
-from openwpm import task_manager
 from openwpm.utilities import db_utils
-from openwpm.utilities.platform_utils import parse_http_stack_trace_str
 
 from . import utilities
-from .openwpmtest import OpenWPMTest
 
 # HTTP request call stack instrumentation
 # Expected stack frames

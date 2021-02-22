@@ -2,12 +2,8 @@ import logging
 import os
 import time
 
-import pytest
-
 from openwpm import mp_logger
 from openwpm.utilities.multiprocess_utils import Process
-
-from .openwpmtest import OpenWPMTest
 
 CHILD_INFO_STR_1 = "Child %d - INFO1"
 CHILD_INFO_STR_2 = "Child %d - INFO2"

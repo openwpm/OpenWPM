@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 
 from custom_command import LinkCountingCommand
