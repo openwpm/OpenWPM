@@ -609,7 +609,6 @@ class TaskManager:
         """
 
         # Block if the storage controller has too many unfinished records
-        # TODO create tests that these numbers are still meaningful
         agg_queue_size = self.storage_controller_handle.get_most_recent_status()
         if agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
             while agg_queue_size >= STORAGE_CONTROLLER_JOB_LIMIT:
