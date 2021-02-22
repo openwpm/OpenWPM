@@ -1,7 +1,8 @@
 import json
 import logging
 import os.path
-from typing import Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 from easyprocess import EasyProcessError
 from multiprocess import Queue
@@ -10,7 +11,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
-from ..config import BrowserParams, ManagerParams
+from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
 from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
@@ -21,10 +22,10 @@ logger = logging.getLogger("openwpm")
 
 def deploy_firefox(
     status_queue: Queue,
-    browser_params: List[BrowserParams],
-    manager_params: ManagerParams,
+    browser_params: BrowserParamsInternal,
+    manager_params: ManagerParamsInternal,
     crash_recovery: bool,
-) -> (webdriver.Firefox, str, Optional[Display]):
+) -> Tuple[webdriver.Firefox, str, Optional[Display]]:
     """
     launches a firefox instance with parameters set by the input dictionary
     """
@@ -33,14 +34,14 @@ def deploy_firefox(
     root_dir = os.path.dirname(__file__)  # directory of this file
 
     fp = FirefoxProfile()
-    browser_profile_path = fp.path + "/"
+    browser_profile_path = Path(fp.path)
     status_queue.put(("STATUS", "Profile Created", browser_profile_path))
 
     # Use Options instead of FirefoxProfile to set preferences since the
     # Options method has no "frozen"/restricted options.
     # https://github.com/SeleniumHQ/selenium/issues/2106#issuecomment-320238039
     fo = Options()
-
+    assert browser_params.browser_id is not None
     if browser_params.seed_tar and not crash_recovery:
         logger.info(
             "BROWSER %i: Loading initial browser profile from: %s"
@@ -70,7 +71,7 @@ def deploy_firefox(
     display_port = None
     display = None
     if display_mode == "headless":
-        fo.set_headless(True)
+        fo.headless = True
         fo.add_argument("--width={}".format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument("--height={}".format(DEFAULT_SCREEN_RES[1]))
     if display_mode == "xvfb":
@@ -91,18 +92,16 @@ def deploy_firefox(
 
     if browser_params.extension_enabled:
         # Write config file
-        extension_config = dict()
+        extension_config: Dict[str, Any] = dict()
         extension_config.update(browser_params.to_dict())
         extension_config["logger_address"] = manager_params.logger_address
-        extension_config["aggregator_address"] = manager_params.aggregator_address
-        if manager_params.ldb_address:
-            extension_config["leveldb_address"] = manager_params.ldb_address
-        else:
-            extension_config["leveldb_address"] = None
+        extension_config[
+            "storage_controller_address"
+        ] = manager_params.storage_controller_address
         extension_config["testing"] = manager_params.testing
-        ext_config_file = browser_profile_path + "browser_params.json"
+        ext_config_file = browser_profile_path / "browser_params.json"
         with open(ext_config_file, "w") as f:
-            json.dump(extension_config, f)
+            json.dump(extension_config, f, cls=ConfigEncoder)
         logger.debug(
             "BROWSER %i: Saved extension config file to: %s"
             % (browser_params.browser_id, ext_config_file)

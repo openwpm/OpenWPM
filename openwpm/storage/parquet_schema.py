@@ -1,6 +1,31 @@
+"""
+Arrow schema for our ArrowProvider.py
+
+IF YOU CHANGE THIS FILE ALSO CHANGE schema.sql and test_values.py
+AND Schema-Documentation.md
+
+"""
+
 import pyarrow as pa
 
 PQ_SCHEMAS = dict()
+
+fields = [
+    pa.field("task_id", pa.int64(), nullable=False),
+    pa.field("manager_params", pa.string(), nullable=False),
+    pa.field("openwpm_version", pa.string(), nullable=False),
+    pa.field("browser_version", pa.string(), nullable=False),
+    pa.field("instance_id", pa.uint32(), nullable=False),
+]
+PQ_SCHEMAS["task"] = pa.schema(fields)
+
+fields = [
+    pa.field("browser_id", pa.uint32(), nullable=False),
+    pa.field("task_id", pa.int64(), nullable=False),
+    pa.field("browser_params", pa.string(), nullable=False),
+    pa.field("instance_id", pa.uint32(), nullable=False),
+]
+PQ_SCHEMAS["crawl"] = pa.schema(fields)
 
 # site_visits
 fields = [

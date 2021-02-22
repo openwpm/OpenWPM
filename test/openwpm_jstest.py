@@ -1,12 +1,17 @@
 import re
+from pathlib import Path
+from typing import List, Optional, Tuple
 
+from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
 
 from .openwpmtest import OpenWPMTest
 
 
 class OpenWPMJSTest(OpenWPMTest):
-    def get_config(self, data_dir=""):
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].js_instrument = True
         manager_params.testing = True

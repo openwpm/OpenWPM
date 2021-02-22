@@ -58,15 +58,13 @@ validate_crawl_configs(manager_params, browser_params)
 # Platform Configuration Options
 
 * `data_directory`
-  * The directory in which to output the crawl database and related files. The
-    directory given will be created if it does not exist.
+  * The directory into which screenshots and page dumps will be saved
+  * [Intended to be removed by #232](https://github.com/mozilla/OpenWPM/issues/232)
 * `log_directory`
   * The directory in which to output platform logs. The
     directory given will be created if it does not exist.
 * `log_file` -> supported file extensions are `.log`
   * The name of the log file to be written to `log_directory`.
-* `database_name` -> supported file extensions are `.db`, `.sqlite`
-  * The name of the database file to be written to `data_directory`
 * `failure_limit` -> has to be either of type `int` or `None`
   * The number of command failures the platform will tolerate before raising a
     `CommandExecutionError` exception. Otherwise the default is set to 2 x the

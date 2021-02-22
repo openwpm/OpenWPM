@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-groups: ["test_[a-e]*", "test_[f-h]*", "test_[i-r,t-z]*", "test_[s]*"]
+        test-groups: ["test/test_[a-e]*", "test/test_[f-h]*", "test/test_[i-r,t-z]*", "test/test_[s]*", "test/storage/*"]
       fail-fast: false
     steps:
     # All of these steps are just setup, maybe we should wrap them in an action

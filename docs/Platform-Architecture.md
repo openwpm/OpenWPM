@@ -2,48 +2,21 @@
 
 ## Overview
 
-The user-facing component of the OpenWPM platform is the Task Manager. The Task Manager oversees multiple browser instances and passes them commands. The Task Manager also ensures that crawls continue despite browser crashes for freezes. In particular, it checks whether a given browser fails to complete a command within a given timeout (or has died) and kills/restarts this browser as necessary.
-
-## Instantiating a Task Manager
-
-All automation code is contained within the `openwpm` folder; the Task Manager code is contained in `openwpm/task_manager.py`.
-
-Task Managers can be instantiated in the following way:
-```python
-from opemwpm.task_manager import TaskManager
-from openwpm.config import (
-    BrowserParams,
-    ManagerParams,
-)
-
-number_of_browser = 5    #  Number of browsers to spawn
-
-# Instantiating Browser and Manager Params with default values.
-manager_params = ManagerParams(num_browsers = number_of_browsers)
-browser_params = [BrowserParams() for bp in range(manager_params.num_browsers)]
-
-# These instances can be used to modify default values of both browser and manager params.
-manager_params.data_directory = '~/Documents'
-manager_params.database_name = 'custom_name.sqlite'
-
-for i in range(len(browser_params)):
-    browser_params[i].display_mode = 'headless'  # all 5 browsers will spawn in headless mode
-
-# Instantiating TaskManager
-manager = TaskManager(manager_params, browser_params)
-
-```
-
-To learn more about the `manager_params` and `browser_params` have a look at [Configuration.md](Configuration.md)
+The user-facing component of the OpenWPM platform is the Task Manager.
+The Task Manager oversees multiple browser instances and passes them commands.
+The Task Manager also ensures that crawls continue despite browser crashes for freezes.
+In particular, it checks whether a given browser fails to complete a command within a given timeout (or has died) and 
+kills/restarts this browser as necessary.
 
 ## Watchdogs
-In OpenWPM we have a so called watchdog that tries to ensure two things.
+In OpenWPM we have a watchdog thread that tries to ensure two things.
 - `process_watchdog`
     * It is part of default manager_params. It is set to false by default which can manually be set to true.
-    * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that aren't currently controlled by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
+    * It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that aren't currently controlled by OpenWPM.
+      (GeckoDriver is used by Selenium to control Firefox and Xvfb is a "virtual display" we use to simulate having graphics when running on a server).
 - `memory_watchdog`
     * It is part of default manager_params. It is set to false by default which can manually be set to true.
-    * It is a watchdog that tries to ensure that no Firefox instance takes up to much memory.
+    * It is a watchdog that tries to ensure that no Firefox instance takes up too much memory.
     * It is mostly useful for long running cloud crawls.
 
 ## Issuing commands
@@ -60,8 +33,8 @@ For example you could wire up a `CommandSequence` to go to a given url and take 
     command_sequence.save_screenshot()
 ```
 
-But this on it's own would do nothing, because `CommandSequence`s are not automatically scheduled.
-Instead you need to submit them to a `TaskManager` by calling:
+But this on its own would do nothing, because `CommandSequence`s are not automatically scheduled.
+Instead, you need to submit them to a `TaskManager` by calling:
 ```python
     manager.execute_command_sequence(command_sequence)
     manager.close()
@@ -76,9 +49,7 @@ Please note that you need to close the manager, because by default CommandSequen
 
 ## Adding new commands
 
-Currently the easiest way to execute a user defined function as part of a CommandSequence is to use the
-`run_custom_function` method on the CommandSequence, however we hope to significantly improve this process
-with https://github.com/mozilla/OpenWPM/issues/743.
+Have a look at [`custom_command.py`](../custom_command.py)
 
 # Browser Manager
 
@@ -94,7 +65,9 @@ The Browser class, contained in the same file, is the Task Manager's wrapper aro
 
 ## Browser Information Logging
 
-Throughout the course of a measurement, the Browser Managers' commands (along with timestamps and the status of the commands) are logged by the Task Manager, which contributes the the reproducibility of individual experiments. The data are sent to the Data Aggregator process, which provides stability in logging data despite the possibility of individual browser crashes.
+Throughout the course of a measurement, the Browser Managers' commands (along with timestamps and the status of the commands)
+are logged by the Task Manager, which contributes to the reproducibility of individual experiments.
+The data is sent to the Storage Controller process, which provides stability in logging data despite the possibility of individual browser crashes.
 
 # The WebExtension
 

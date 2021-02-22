@@ -1,5 +1,5 @@
-import { getInstrumentJS } from "../lib/js-instruments";
-import { pageScript } from "./javascript-instrument-page-scope";
+import {getInstrumentJS} from "../lib/js-instruments";
+import {pageScript} from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString(
   jsInstrumentationSettingsString: string,
