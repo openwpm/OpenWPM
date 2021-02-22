@@ -37,6 +37,9 @@ class GcsStructuredProvider(ArrowProvider):
         self.token = token
         self.base_path = f"{bucket_name}/{base_path}/{sub_dir}/{{table_name}}"
 
+    def __str__(self) -> str:
+        return f"GCS:{self.base_path.removesuffix('/{table_name}')}"
+
     async def init(self) -> None:
         await super(GcsStructuredProvider, self).init()
         self.file_system = GCSFileSystem(

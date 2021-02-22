@@ -16,9 +16,8 @@ from multiprocess import JoinableQueue
 from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from tblib import pickling_support
 
-from openwpm.config import ManagerParams
-
 from .commands.utils.webdriver_utils import parse_neterror
+from .config import ManagerParamsInternal
 from .socket_interface import ServerSocket
 
 pickling_support.install()
@@ -101,13 +100,13 @@ class MPLogger(object):
     def __init__(
         self,
         log_file,
-        crawl_context: ManagerParams = None,
+        crawl_reference: str = None,
         log_level_console=logging.INFO,
         log_level_file=logging.DEBUG,
         log_level_sentry_breadcrumb=logging.DEBUG,
         log_level_sentry_event=logging.ERROR,
     ) -> None:
-        self._crawl_context = crawl_context
+        self._crawl_reference = crawl_reference
         self._log_level_console = log_level_console
         self._log_level_file = log_level_file
         self._log_level_sentry_breadcrumb = log_level_sentry_breadcrumb
@@ -207,6 +206,12 @@ class MPLogger(object):
         )
         self._event_handler = EventHandler(level=self._log_level_sentry_event)
         sentry_sdk.init(dsn=self._sentry_dsn, before_send=self._sentry_before_send)
+        with sentry_sdk.configure_scope() as scope:
+            if self._crawl_reference:
+                scope.set_tag(
+                    "CRAWL_REFERENCE",
+                    self._crawl_reference,
+                )
 
     def _start_listener(self):
         """Start listening socket for remote logs from extension"""

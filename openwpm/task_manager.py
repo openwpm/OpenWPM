@@ -125,10 +125,11 @@ class TaskManager:
         self.failure_count = 0
 
         self.failure_limit = manager_params.failure_limit
-
         # Start logging server thread
         self.logging_server = MPLogger(
-            self.manager_params.log_file, self.manager_params, **self._logger_kwargs
+            self.manager_params.log_file,
+            str(structured_storage_provider),
+            **self._logger_kwargs
         )
         self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
