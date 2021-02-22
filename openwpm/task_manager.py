@@ -78,9 +78,6 @@ class TaskManager:
             Keyword arguments to pass to MPLogger on initialization.
         """
 
-        validate_manager_params(manager_params_temp)
-        for bp in browser_params_temp:
-            validate_browser_params(bp)
         validate_crawl_configs(manager_params_temp, browser_params_temp)
         manager_params = ManagerParamsInternal.from_dict(manager_params_temp.to_dict())
         browser_params = [
@@ -176,9 +173,9 @@ class TaskManager:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         """
         Execute shutdown procedure for TaskManager

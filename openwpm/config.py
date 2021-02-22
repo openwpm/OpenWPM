@@ -266,6 +266,9 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
 def validate_crawl_configs(
     manager_params: ManagerParams, browser_params: List[BrowserParams]
 ) -> None:
+    validate_manager_params(manager_params)
+    for bp in browser_params:
+        validate_browser_params(bp)
 
     if len(browser_params) != manager_params.num_browsers:
         raise ConfigError(
