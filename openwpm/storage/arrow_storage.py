@@ -142,8 +142,8 @@ class ArrowProvider(StructuredStorageProvider):
         So we either grab the storing_lock ourselves or the caller needs
         to pass us the locked storing_lock
         """
-        got_lock = lock is not None
-        if not got_lock:
+        has_lock_arg = lock is not None
+        if not has_lock_arg:
             lock = self.storing_lock
             await lock.acquire()
 
@@ -158,7 +158,7 @@ class ArrowProvider(StructuredStorageProvider):
             event.set()
         self.flush_events.clear()
 
-        if not got_lock:
+        if not has_lock_arg:
             lock.release()
 
     async def shutdown(self) -> None:
