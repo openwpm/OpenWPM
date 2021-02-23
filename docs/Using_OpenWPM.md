@@ -1,3 +1,4 @@
+# Using OpenWPM
 ## Overview
 
 In this section, we present three basic development demos for working on the OpenWPM platform. In the first, we show how to run a basic crawl from scratch. In the second, we show how to add a new command to the platform. In the third, we provide a small example of data analysis that can be performed on the platform

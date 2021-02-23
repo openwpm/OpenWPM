@@ -1,4 +1,4 @@
-# TaskManager
+# Platform Architecture
 
 ## Overview
 
@@ -51,9 +51,9 @@ Please note that you need to close the manager, because by default CommandSequen
 
 Have a look at [`custom_command.py`](../custom_command.py)
 
-# Browser Manager
+## Browser Manager
 
-## Overview
+### Overview
 
 Contained in `openwpm/BrowserManager.py`, Browser Managers provide a wrapper around the drivers used to automate full browser instances. In particular, we opted to use [Selenium](http://docs.seleniumhq.org/) to drive full browser instances as bot detection frameworks can more easily detect lightweight alternatives such as PhantomJS. 
 
@@ -63,13 +63,13 @@ The Browser class, contained in the same file, is the Task Manager's wrapper aro
 
 **Important Programming Note** The Browser Managers are designed to isolate the Task Manager from the underlying browser instances. As part of this approach, no data from the browsers should flow up to the Task Manager (beyond basic metadata such as the browsers' process IDs). For instance, if the Browser Manager is assigned the task of collecting and parsing XPath data, this parsing should be completed by Browser Managers and **not** passed up to the Task Manager for post-processing.
 
-## Browser Information Logging
+### Browser Information Logging
 
 Throughout the course of a measurement, the Browser Managers' commands (along with timestamps and the status of the commands)
 are logged by the Task Manager, which contributes to the reproducibility of individual experiments.
 The data is sent to the Storage Controller process, which provides stability in logging data despite the possibility of individual browser crashes.
 
-# The WebExtension
+## The WebExtension
 
 All of our data collection happens in the OpenWPM WebExtension, which can be found under [openwpm/Extension](../openwpm/Extension).
 The Extension makes heavy use of priviliged APIs and can only be installed on unbranded or custom builds of Firefox with add-on security disabled.
@@ -77,13 +77,13 @@ The Extension makes heavy use of priviliged APIs and can only be installed on un
 The currently supported instruments can be found in [Configuration.md](Configuration.md#Instruments)
 
 
-# Data Aggregator
+## Data Aggregator
 
-## Overview
+### Overview
 
 One of the Data Aggregators, contained in `openwpm/DataAggregator`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. We as previously mentioned we support both local as well as remote data saving.
 The most useful feature of the Data Aggregator is the fact that it is isolated from the other processes through a network socket interface (see `openwpm/SocketInterface.py`).
 
-## Data Logged
+### Data Logged
 
 The full schema for the platform's output is contained in the [schema documentation](Schema-Documentation.md)

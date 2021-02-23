@@ -23,7 +23,7 @@ from openwpm.config import (
     validate_manager_params,
 )
 
-from .browser_manager import Browser
+from .browser_manager import BrowserManagerHandle
 from .command_sequence import CommandSequence
 from .commands.browser_commands import FinalizeCommand
 from .commands.utils.webdriver_utils import parse_neterror
@@ -184,14 +184,16 @@ class TaskManager:
 
     def _initialize_browsers(
         self, browser_params: List[BrowserParamsInternal]
-    ) -> List[Browser]:
+    ) -> List[BrowserManagerHandle]:
         """ initialize the browser classes, each its unique set of params """
         browsers = list()
         for i in range(self.num_browsers):
             browser_params[
                 i
             ].browser_id = self.storage_controller_handle.get_next_browser_id()
-            browsers.append(Browser(self.manager_params, browser_params[i]))
+            browsers.append(
+                BrowserManagerHandle(self.manager_params, browser_params[i])
+            )
 
         return browsers
 
@@ -364,7 +366,7 @@ class TaskManager:
     # CRAWLER COMMAND CODE
 
     def _start_thread(
-        self, browser: Browser, command_sequence: CommandSequence
+        self, browser: BrowserManagerHandle, command_sequence: CommandSequence
     ) -> threading.Thread:
         """  starts the command execution thread """
 
@@ -425,7 +427,7 @@ class TaskManager:
         return message, tb
 
     def _issue_command(
-        self, browser: Browser, command_sequence: CommandSequence
+        self, browser: BrowserManagerHandle, command_sequence: CommandSequence
     ) -> None:
         """
         Sends CommandSequence to the BrowserManager one command at a time

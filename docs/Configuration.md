@@ -1,4 +1,4 @@
-# Browser and Platform Configuration <!-- omit in toc -->
+# Browser and Platform Configuration
 
 The browser and platform can be configured by two separate classes. The
 platform configuration options can be set in `manager_params`, while the
@@ -17,8 +17,10 @@ browser_params = [BrowserParams() for _ in range(manager_params.num_browsers)]
 where `manager_params` is of type `class<ManagerParams>` and `browser_params` is a length 5 list
 of configurations of `class<BrowserParams>`.
 
-####Validations:
+## Validations:
+
 To validate `browser_params` and `manager_params`, we have two methods, one for each type of params: `config::validate_browser_params` and `config::validate_manager_params`. For example:
+
 ```python
 from openwpm.config import (
   validate_browser_params, 
@@ -31,31 +33,31 @@ for bp in browser_params:
 validate_manager_params(manager_params)
 validate_crawl_configs(manager_params, browser_params)
 ```
+
 **NOTE**: If any validations fail, we raise `ConfigError`
 
+- [Platform Configuration Options](#platform-configuration-options)
+- [Browser Configuration Options](#browser-configuration-options)
+- [Instruments](#instruments)
+  - [`http_instrument`](#http_instrument)
+  - [`js_instrument`](#js_instrument)
+  - [`navigation_instrument`](#navigation_instrument)
+  - [`callstack_instrument`](#callstack_instrument)
+  - [`dns_instrument`](#dns_instrument)
+  - [`cookie_instrument`](#cookie_instrument)
+- [Browser Profile Support](#browser-profile-support)
+  - [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
+  - [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+    - [Save a profile](#save-a-profile)
+    - [Load a profile](#load-a-profile)
+- [Non instrument data gathering](#non-instrument-data-gathering)
+  - [Log Files](#log-files)
+  - [Browser Profile](#browser-profile)
+  - [Rendered Page Source](#rendered-page-source)
+  - [Screenshots](#screenshots)
+  - [`save_content`](#save_content)
 
-* [Platform Configuration Options](#platform-configuration-options)
-* [Browser Configuration Options](#browser-configuration-options)
-* [Instruments](#instruments)
-  * [`http_instrument`](#http_instrument)
-  * [`js_instrument`](#js_instrument)
-  * [`navigation_instrument`](#navigation_instrument)
-  * [`callstack_instrument`](#callstack_instrument)
-  * [`dns_instrument`](#dns_instrument)
-  * [`cookie_instrument`](#cookie_instrument)
-* [Browser Profile Support](#browser-profile-support)
-  * [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
-  * [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
-    * [Save a profile](#save-a-profile)
-    * [Load a profile](#load-a-profile)
-* [Non instrument data gathering](#non-instrument-data-gathering)
-  * [Log Files](#log-files)
-  * [Browser Profile](#browser-profile)
-  * [Rendered Page Source](#rendered-page-source)
-  * [Screenshots](#screenshots)
-  * [`save_content`](#save_content)
-
-# Platform Configuration Options
+## Platform Configuration Options
 
 * `data_directory`
   * The directory into which screenshots and page dumps will be saved
@@ -89,7 +91,7 @@ validate_crawl_configs(manager_params, browser_params)
   * A watchdog that tries to ensure that no Firefox instance takes up too much memory. It is set to false by default
   * It is mostly useful for long running cloud crawls
 
-# Browser Configuration Options
+## Browser Configuration Options
 
 Note: Instrumentation configuration options are described in the
 *Instrumentation and Data Access* section and profile configuration options are
@@ -136,7 +138,7 @@ left out of this section.
   * Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
 
-# Instruments
+## Instruments
 
 Instruments are the core of the data collection infrastructure that OpenWPM provides.
 They allow to collect various types of data that is labeled per visit and aim to capture as
@@ -151,7 +153,7 @@ want to just look at the output schema look [here](Schema-Documentation.md)
 
 To activate a given instrument set `browser_params[i].instrument_name = True`
 
-## `http_instrument`
+### `http_instrument`
 * HTTP Request and Response Headers, redirects, and POST request bodies
 * Data is saved to the `http_requests`, `http_responses`, and `http_redirects`  tables.
     * `http_requests` schema
@@ -171,7 +173,7 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
     with the exception of images.
     See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
 
-## `js_instrument`
+### `js_instrument`
 * Records all method calls (with arguments) and property accesses for configured APIs
 * Configure `browser_params.js_instrument_settings` to desired settings.
 * Data is saved to the `javascript` table.
@@ -234,27 +236,27 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
       In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
       in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
 
-## `navigation_instrument`
+###  `navigation_instrument`
 TODO
 
-## `callstack_instrument`
+### `callstack_instrument`
 TODO
 
-## `dns_instrument`
+### `dns_instrument`
 TODO
 
-## `cookie_instrument`
+### `cookie_instrument`
 * Data is saved to the `javascript_cookies` table.
 * Will record cookies set both by Javascript and via HTTP Responses
 
-# Browser Profile Support
+## Browser Profile Support
 
 **WARNING: Stateful crawls are currently not supported. Attempts to run
 stateful crawls will throw `NotImplementedError`s. The work required to
 restore support is tracked in
 [this project](https://github.com/mozilla/OpenWPM/projects/2).**
 
-## Stateful vs Stateless crawls
+### Stateful vs Stateless crawls
 
 By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
 browser profile between page visits in the same browser. If the browser
@@ -279,7 +281,7 @@ In this example, the browser will `get` the requested `site`, sleep for 30
 seconds, dump the profile cookies to the crawl database, and then restart the
 browser before visiting the next `site` in `sites`.
 
-## Loading and saving a browser profile
+### Loading and saving a browser profile
 
 It's possible to load and save profiles during stateful crawls. Profile dumps
 currently consist of the following browser storage items:
@@ -293,7 +295,7 @@ Other browser state, such as the browser cache, is not saved. In
 [Issue #62](https://github.com/citp/OpenWPM/issues/62) we plan to expand
 profiles to include all browser storage.
 
-### Save a profile
+#### Save a profile
 
 A browser's profile can be saved to disk for use in later crawls. This can be
 done using a browser command or by setting a browser configuration parameter.
@@ -307,7 +309,7 @@ parameter to a directory where the browser profile should be saved. The profile
 will be automatically saved when `TaskManager::close` is called or when a
 platform-level crash occurs.
 
-### Load a profile
+#### Load a profile
 
 To load a profile, specify the `seed_tar` browser parameter in the browser
 configuration dictionary. This should point to the location of the
@@ -329,17 +331,17 @@ new page visit. Note that this means the profile will very likely be
 _incomplete_, as cookies or storage may have been set or changed during the
 page load that are **not** reflected back into the seed profile.
 
-# Non instrument data gathering
-## Log Files
+## Non instrument data gathering
+### Log Files
 * Stored in the directory specified by `manager_params.data_directory`.
 * Name specified by `manager_params.log_file`.
-## Browser Profile
+### Browser Profile
 * Contains cookies, Flash objects, and so on that are dumped after a crawl
     is finished
 * Automatically saved when the platform closes or crashes by specifying
     `browser_params.profile_archive_dir`.
 * Save on-demand with the `CommandSequence::dump_profile` command.
-## Rendered Page Source
+### Rendered Page Source
 * Save the top-level frame's rendered source with the
 `CommandSequence::dump_page_source` command.
 * Save the full rendered source (including all nested iframes) with the
@@ -360,7 +362,7 @@ page load that are **not** reflected back into the seed profile.
             }
         }
         ```
-## Screenshots
+### Screenshots
 * Selenium 3 can be used to screenshot an individual element. None of the
     built-in commands offer this functionality, but you can use it when
     [writing your own](Using_OpenWPM.md#adding-a-new-command). See the [Selenium documentation](https://seleniumhq.github.io/selenium/docs/api/py/webdriver_remote/selenium.webdriver.remote.webelement.html?highlight=element#selenium.webdriver.remote.webelement.WebElement.screenshot).
@@ -385,7 +387,7 @@ page load that are **not** reflected back into the seed profile.
           command will cause any future element-only screenshots to be
           misaligned.
 
-## `save_content`
+### `save_content`
 Response body content
 * Saves all files encountered during the crawl to a `LevelDB`
     database de-duplicated by the md5 hash of the content.

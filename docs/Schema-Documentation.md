@@ -1,4 +1,5 @@
-# Schema Documentation <!-- omit in toc -->
+# Schema Documentation
+
 * [site_visits](#site_visits)
 * [crawl_history](#crawl_history)
 * [http_requests](#http_requests)
@@ -15,7 +16,7 @@ a description for all fields and tables here.
 If you have any questions on any field, please file an issue or ask in the [OpenWPM riot channel](https://matrix.to/#/#OpenWPM:mozilla.org?via=mozilla.org) and we'll
 update the description of the field here.
 
-# site_visits
+## site_visits
 
 | Column Name | Type   | nullable | Description |
 | ----------- | ------ | -------- | ----------- |
@@ -26,7 +27,7 @@ update the description of the field here.
 | site_rank   | uint32 |          |
 
 
-# crawl_history
+## crawl_history
 | Column Name    | Type   | nullable | Description |
 | -------------- | ------ | -------- | ----------- |
 | crawl_id       | uint32 | False    |
@@ -40,7 +41,7 @@ update the description of the field here.
 | traceback      | string |          |
 | duration       | int64  |          | A timer that logs how long a command took (in milliseconds)|
 
-# http_requests
+## http_requests
 | Column Name                  | Type   | nullable | Description |
 | ---------------------------- | ------ | -------- | ----------- |
 | incognito                    | int32  |          |             |
@@ -73,7 +74,7 @@ update the description of the field here.
 | time_stamp                   | string | False    |             |
 
 
-# http_responses
+## http_responses
 | Column Name            | Type   | nullable | Description |
 | ---------------------- | ------ | -------- | ----------- |
 | incognito              | int32  |          |             |
@@ -97,7 +98,7 @@ update the description of the field here.
 | content_hash           | string |          |
 
 
-# http_redirects
+## http_redirects
 | Column Name            | Type   | nullable | Description |
 | ---------------------- | ------ | -------- | ----------- |
 | incognito              | int32  |          |             |
@@ -119,7 +120,7 @@ update the description of the field here.
 | time_stamp             | string | False    |
 
 
-# javascript
+## javascript
 | Column Name               | Type   | nullable | Description |
 | ------------------------- | ------ | -------- | ----------- |
 | incognito                 | int32  |          |             |
@@ -147,7 +148,7 @@ update the description of the field here.
 | time_stamp                | string | False    |
 
 
-# javascript_cookies
+## javascript_cookies
 | Column Name            | Type   | nullable | Description |
 | ---------------------- | ------ | -------- | ----------- |
 | crawl_id               | uint32 |          |             |
@@ -172,7 +173,7 @@ update the description of the field here.
 | time_stamp             | string |          |
 
 
-# navigations
+## navigations
 | Column Name                   | Type   | nullable | Description |
 | ----------------------------- | ------ | -------- | ----------- |
 | incognito                     | int32  |          |             |
@@ -201,7 +202,7 @@ update the description of the field here.
 | committed_event_ordinal       | int64  |          |             |
 | time_stamp                    | string |          |
 
-# callstacks
+## callstacks
 | Column Name | Type   | nullable | Description |
 | ----------- | ------ | -------- | ----------- |
 | visit_id    | int64  | False    |             |
@@ -211,7 +212,7 @@ update the description of the field here.
 | call_stack  | string |          |
 
 
-# incomplete_visits
+## incomplete_visits
 | Column Name | Type   | nullable | Description |
 | ----------- | ------ | -------- | ----------- |
 | visit_id    | int64  | False    |             |
