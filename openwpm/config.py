@@ -97,7 +97,9 @@ class BrowserParams(DataClassJsonMixin):
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
-    profile_archive_dir: Optional[str] = None
+    profile_archive_dir: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
     recovery_tar: Optional[Path] = None
     donottrack: bool = False
     tracking_protection: bool = False

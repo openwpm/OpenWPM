@@ -5,9 +5,11 @@ import pickle
 import shutil
 import signal
 import sys
+import tempfile
 import threading
 import time
 import traceback
+from pathlib import Path
 from queue import Empty as EmptyQueue
 from typing import Optional, Union
 
@@ -16,6 +18,7 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
+from .commands.profile_commands import DumpProfileCommand
 from .commands.types import BaseCommand, ShutdownSignal
 from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
@@ -33,7 +36,7 @@ pickling_support.install()
 
 class Browser:
     """
-    The Browser class is responsbile for holding all of the
+    The Browser class is responsible for holding all of the
     configuration and status information on BrowserManager process
     it corresponds to. It also includes a set of methods for managing
     the BrowserManager process and its child processes/threads.
@@ -52,7 +55,7 @@ class Browser:
         self._UNSUCCESSFUL_SPAWN_LIMIT = 4
 
         # manager parameters
-        self.current_profile_path = None
+        self.current_profile_path: Optional[Path] = None
         self.db_socket_address = manager_params.storage_controller_address
         assert browser_params.browser_id is not None
         self.browser_id: BrowserId = browser_params.browser_id
@@ -97,29 +100,33 @@ class Browser:
         sets up the BrowserManager and gets the process id, browser pid and,
         if applicable, screen pid. loads associated user profile if necessary
         """
-        # Unsupported. See https://github.com/mozilla/OpenWPM/projects/2
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
-        """
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
-            tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_") + "/"
-            profile_commands.dump_profile(
-                self.current_profile_path,
-                self.manager_params,
-                self.browser_params,
-                tempdir,
-                close_webdriver=False,
+            tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_")
+            tar_path = Path(tempdir) / "profile.tar.gz"
+
+            self.browser_params.profile_path = self.current_profile_path
+            dump_profile_command = DumpProfileCommand(
+                tar_path=tar_path, close_webdriver=False, compress=True
             )
+            dump_profile_command.execute(
+                webdriver=None,
+                browser_params=self.browser_params,
+                manager_params=self.manager_params,
+                extension_socket=None,
+            )
+
             # make sure browser loads crashed profile
-            self.browser_params.recovery_tar = tempdir
+            self.browser_params.recovery_tar = tar_path
 
             crash_recovery = True
         else:
-        """
+            tempdir = None
+            crash_recovery = False
+
         self.logger.info("BROWSER %i: Launching browser..." % self.browser_id)
-        tempdir = None
-        crash_recovery = False
         self.is_fresh = not crash_recovery
 
         # Try to spawn the browser within the timelimit
@@ -210,7 +217,7 @@ class Browser:
         if success:
             self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.browser_id)
             previous_profile_path = self.current_profile_path
-            self.current_profile_path = driver_profile_path
+            self.current_profile_path = Path(driver_profile_path)
             if driver_profile_path != spawned_profile_path:
                 shutil.rmtree(spawned_profile_path, ignore_errors=True)
             if previous_profile_path is not None:
@@ -394,33 +401,32 @@ class Browser:
         self.close_browser_manager(force=force)
 
         # Archive browser profile (if requested)
-        if not during_init and self.browser_params.profile_archive_dir is not None:
-            self.logger.warning(
-                "BROWSER %i: Archiving the browser profile directory is "
-                "currently unsupported. "
-                "See: https://github.com/mozilla/OpenWPM/projects/2" % self.browser_id
-            )
-        """
         self.logger.debug(
-            "BROWSER %i: during_init=%s | profile_archive_dir=%s" % (
-                self.browser_id, str(during_init),
-                self.browser_params.profile_archive_dir)
-        )
-        if (not during_init and
-                self.browser_params.profile_archive_dir is not None):
-            self.logger.debug(
-                "BROWSER %i: Archiving browser profile directory to %s" % (
-                    self.browser_id,
-                    self.browser_params.profile_archive_dir))
-            profile_commands.dump_profile(
-                self.current_profile_path,
-                self.manager_params,
-                self.browser_params,
+            "BROWSER %i: during_init=%s | profile_archive_dir=%s"
+            % (
+                self.browser_id,
+                str(during_init),
                 self.browser_params.profile_archive_dir,
-                close_webdriver=False,
-                compress=True
             )
-        """
+        )
+        if not during_init and self.browser_params.profile_archive_dir is not None:
+            self.logger.debug(
+                "BROWSER %i: Archiving browser profile directory to %s"
+                % (self.browser_id, self.browser_params.profile_archive_dir)
+            )
+
+            self.browser_params.profile_path = self.current_profile_path
+            dump_profile_command = DumpProfileCommand(
+                tar_path=self.browser_params.profile_archive_dir,
+                close_webdriver=False,
+                compress=True,
+            )
+            dump_profile_command.execute(
+                webdriver=None,
+                browser_params=self.browser_params,
+                manager_params=self.manager_params,
+                extension_socket=None,
+            )
 
         # Clean up temporary files
         if self.current_profile_path is not None:

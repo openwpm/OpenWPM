@@ -10,6 +10,7 @@ from .commands.browser_commands import (
     SaveScreenshotCommand,
     ScreenshotFullPageCommand,
 )
+from .commands.profile_commands import DumpProfileCommand
 from .commands.types import BaseCommand
 from .errors import CommandExecutionError
 
@@ -86,16 +87,10 @@ class CommandSequence:
         self._commands_with_timeout.append((command, timeout))
         self.contains_get_or_browse = True
 
-    def dump_profile(
-        self, dump_folder, close_webdriver=False, compress=True, timeout=120
-    ):
+    def dump_profile(self, tar_path, close_webdriver=False, compress=True, timeout=120):
         """ dumps from the profile path to a given file (absolute path) """
-        raise NotImplementedError(
-            "Profile saving is currently unsupported. "
-            "See: https://github.com/mozilla/OpenWPM/projects/2."
-        )
         self.total_timeout += timeout
-        command = DumpProfCommand(dump_folder, close_webdriver, compress)
+        command = DumpProfileCommand(tar_path, close_webdriver, compress)
         self._commands_with_timeout.append((command, timeout))
 
     def save_screenshot(self, suffix="", timeout=30):
@@ -131,7 +126,7 @@ class CommandSequence:
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
             raise CommandExecutionError(
-                "No get or browse request preceding " "the dump page source command",
+                "No get or browse request preceding the dump page source command",
                 self,
             )
         command = ScreenshotFullPageCommand(suffix)

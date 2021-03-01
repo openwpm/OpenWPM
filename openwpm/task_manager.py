@@ -305,8 +305,8 @@ class TaskManager:
         Parameters
         ----------
         during_init :
-            flag to indicator if this shutdown is occuring during
-          the TaskManager initialization
+            flag to indicate if this shutdown is occuring during
+            the TaskManager initialization
         relaxed :
             If `True` the function will wait for all active
             `CommandSequences` to finish before shutting down
@@ -434,17 +434,6 @@ class TaskManager:
         assert browser.browser_id is not None
         assert browser.curr_visit_id is not None
         reset = command_sequence.reset
-        if not reset:
-            self.logger.warning(
-                "BROWSER %i: Browser will not reset after CommandSequence "
-                "executes. OpenWPM does not currently support stateful crawls "
-                "(see: https://github.com/mozilla/OpenWPM/projects/2). "
-                "The next command issued to this browser may or may not "
-                "use the same profile (depending on the failure status of "
-                "this command). To prevent this warning, initialize the "
-                "CommandSequence with `reset` set to `True` to use a fresh "
-                "profile for each command." % browser.browser_id
-            )
         self.logger.info(
             "Starting to work on CommandSequence with "
             "visit_id %d on browser with id %d",

@@ -2,6 +2,7 @@ import logging
 import shutil
 import tarfile
 from pathlib import Path
+from typing import Optional
 
 from selenium.webdriver import Firefox
 
@@ -25,13 +26,9 @@ class DumpProfileCommand(BaseCommand):
         self.tar_path = tar_path
         self.close_webdriver = close_webdriver
         self.compress = compress
-        raise NotImplementedError(
-            "Profile dumping is currently unsupported. "
-            "See: https://github.com/mozilla/OpenWPM/projects/2."
-        )
 
     def __repr__(self) -> str:
-        return "DumpProfCommand({},{},{})".format(
+        return "DumpProfileCommand({},{},{})".format(
             self.tar_path, self.close_webdriver, self.compress
         )
 
@@ -40,10 +37,11 @@ class DumpProfileCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: BrowserParamsInternal,
         manager_params: ManagerParamsInternal,
-        extension_socket: ClientSocket,
+        extension_socket: Optional[ClientSocket],
     ) -> None:
         browser_profile_folder = browser_params.profile_path
         assert browser_profile_folder is not None
+        assert browser_params.browser_id is not None
 
         # Creating the folders if need be
         self.tar_path.parent.mkdir(exist_ok=True, parents=True)
@@ -65,7 +63,7 @@ class DumpProfileCommand(BaseCommand):
         logger.debug(
             "BROWSER %i: Backing up full profile from %s to %s"
             % (
-                self.browser_id,
+                browser_params.browser_id,
                 browser_profile_folder,
                 self.tar_path,
             )
@@ -94,7 +92,7 @@ class DumpProfileCommand(BaseCommand):
             ):
                 logger.critical(
                     "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                    % (self.browser_id, full_path)
+                    % (browser_params.browser_id, full_path)
                 )
             elif not full_path.is_file() and (
                 full_path.name.endswith("shm") or full_path.name.endswith("wal")
@@ -106,7 +104,7 @@ class DumpProfileCommand(BaseCommand):
             if not full_path.is_dir():
                 logger.warning(
                     "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                    % (self.browser_id, full_path)
+                    % (browser_params.browser_id, full_path)
                 )
                 continue
             tar.add(full_path, arcname=item)
@@ -125,9 +123,9 @@ def load_profile(
     The tar will remain unmodified.
     """
 
-    assert tar_path.is_file()
     assert browser_params.browser_id is not None
     try:
+        assert tar_path.is_file()
         # Copy and untar the loaded profile
         logger.debug(
             "BROWSER %i: Copying profile tar from %s to %s"
