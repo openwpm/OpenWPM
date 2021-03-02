@@ -217,7 +217,7 @@ class Browser:
         if success:
             self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.browser_id)
             previous_profile_path = self.current_profile_path
-            self.current_profile_path = Path(driver_profile_path)
+            self.current_profile_path = driver_profile_path
             if driver_profile_path != spawned_profile_path:
                 shutil.rmtree(spawned_profile_path, ignore_errors=True)
             if previous_profile_path is not None:
@@ -414,10 +414,10 @@ class Browser:
                 "BROWSER %i: Archiving browser profile directory to %s"
                 % (self.browser_id, self.browser_params.profile_archive_dir)
             )
-
+            tar_path = self.browser_params.profile_archive_dir / "profile.tar.gz"
             self.browser_params.profile_path = self.current_profile_path
             dump_profile_command = DumpProfileCommand(
-                tar_path=self.browser_params.profile_archive_dir,
+                tar_path=tar_path,
                 close_webdriver=False,
                 compress=True,
             )
@@ -450,8 +450,6 @@ def BrowserManager(
         driver, prof_folder, display = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
-        if prof_folder[-1] != "/":
-            prof_folder += "/"
 
         # Read the extension port -- if extension is enabled
         # TODO: Initial communication from extension to TM should use sockets
@@ -462,7 +460,7 @@ def BrowserManager(
             )
             elapsed = 0
             port = None
-            ep_filename = os.path.join(prof_folder, "extension_port.txt")
+            ep_filename = prof_folder / "extension_port.txt"
             while elapsed < 5:
                 try:
                     with open(ep_filename, "rt") as f:
@@ -504,12 +502,6 @@ def BrowserManager(
             command: Union[ShutdownSignal, BaseCommand] = command_queue.get()
 
             if type(command) is ShutdownSignal:
-                # Geckodriver creates a copy of the profile (and the original
-                # temp file created by FirefoxProfile() is deleted).
-                # We clear the profile attribute here to prevent prints from:
-                # https://github.com/SeleniumHQ/selenium/blob/4e4160dd3d2f93757cafb87e2a1c20d6266f5554/py/selenium/webdriver/firefox/webdriver.py#L193-L199
-                if driver.profile and not os.path.isdir(driver.profile.path):
-                    driver.profile = None
                 driver.quit()
                 status_queue.put("OK")
                 return

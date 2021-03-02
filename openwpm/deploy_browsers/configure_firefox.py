@@ -1,7 +1,7 @@
 """ Set prefs and load extensions in Firefox """
 
 
-def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
+def privacy(browser_params, fo):
     """
     Configure the privacy settings in Firefox. This includes:
     * DNT

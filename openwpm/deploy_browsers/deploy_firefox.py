@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -8,7 +9,6 @@ from easyprocess import EasyProcessError
 from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ..commands.profile_commands import load_profile
 from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
@@ -25,7 +25,7 @@ def deploy_firefox(
     browser_params: BrowserParamsInternal,
     manager_params: ManagerParamsInternal,
     crash_recovery: bool,
-) -> Tuple[webdriver.Firefox, str, Optional[Display]]:
+) -> Tuple[webdriver.Firefox, Path, Optional[Display]]:
     """
     launches a firefox instance with parameters set by the input dictionary
     """
@@ -33,14 +33,20 @@ def deploy_firefox(
 
     root_dir = os.path.dirname(__file__)  # directory of this file
 
-    fp = FirefoxProfile()
-    browser_profile_path = Path(fp.path)
+    browser_profile_path = Path(tempfile.mkdtemp(".firefox_profile"))
     status_queue.put(("STATUS", "Profile Created", browser_profile_path))
 
     # Use Options instead of FirefoxProfile to set preferences since the
     # Options method has no "frozen"/restricted options.
     # https://github.com/SeleniumHQ/selenium/issues/2106#issuecomment-320238039
     fo = Options()
+    # Set a custom profile that is used in-place and is not deleted by geckodriver.
+    # https://firefox-source-docs.mozilla.org/testing/geckodriver/CrashReports.html
+    # Using FirefoxProfile breaks stateful crawling:
+    # https://github.com/mozilla/OpenWPM/issues/423#issuecomment-521018093
+    fo.add_argument("-profile")
+    fo.add_argument(str(browser_profile_path))
+
     assert browser_params.browser_id is not None
     if browser_params.seed_tar and not crash_recovery:
         logger.info(
@@ -111,7 +117,7 @@ def deploy_firefox(
         # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
 
     # Configure privacy settings
-    configure_firefox.privacy(browser_params, fp, fo, root_dir, browser_profile_path)
+    configure_firefox.privacy(browser_params, fo)
 
     # Set various prefs to improve speed and eliminate traffic to Mozilla
     configure_firefox.optimize_prefs(fo)
@@ -135,9 +141,8 @@ def deploy_firefox(
     status_queue.put(("STATUS", "Launch Attempted", None))
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
     driver = webdriver.Firefox(
-        firefox_profile=fp,
         firefox_binary=fb,
-        firefox_options=fo,
+        options=fo,
         log_path=interceptor.fifo,
     )
 
@@ -165,4 +170,4 @@ def deploy_firefox(
 
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
-    return driver, driver.capabilities["moz:profile"], display
+    return driver, Path(driver.capabilities["moz:profile"]), display
