@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import socket
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -116,11 +117,26 @@ def deploy_firefox(
         # TODO restore detailed logging
         # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
 
+    # Geckodriver currently places the user.js file in the wrong profile
+    # directory, so we have to create it manually here.
+    # TODO: Remove this workaround once
+    # https://github.com/mozilla/geckodriver/issues/1844 is fixed.
+    # Load existing preferences from the profile's user.js file
+    prefs = configure_firefox.load_existing_prefs(browser_profile_path)
+    # Load default geckodriver preferences
+    prefs.update(configure_firefox.DEFAULT_GECKODRIVER_PREFS)
+    # Pick an available port for Marionette (https://stackoverflow.com/a/2838309)
+    s = socket.socket()
+    s.bind(("", 0))
+    marionette_port = s.getsockname()[1]
+    s.close()
+    prefs["marionette.port"] = marionette_port
+
     # Configure privacy settings
-    configure_firefox.privacy(browser_params, fo)
+    configure_firefox.privacy(browser_params, prefs)
 
     # Set various prefs to improve speed and eliminate traffic to Mozilla
-    configure_firefox.optimize_prefs(fo)
+    configure_firefox.optimize_prefs(prefs)
 
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.  This will also inform us where the real profile
@@ -135,7 +151,10 @@ def deploy_firefox(
             "BROWSER %i: Setting custom preference: %s = %s"
             % (browser_params.browser_id, name, value)
         )
-        fo.set_preference(name, value)
+        prefs[name] = value
+
+    # Write all preferences to the profile's user.js file
+    configure_firefox.save_prefs_to_profile(prefs, browser_profile_path)
 
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
@@ -144,6 +163,9 @@ def deploy_firefox(
         firefox_binary=fb,
         options=fo,
         log_path=interceptor.fifo,
+        # TODO: Remove when https://github.com/mozilla/geckodriver/issues/1844
+        # is fixed
+        service_args=["--marionette-port", str(marionette_port)],
     )
 
     # Add extension
