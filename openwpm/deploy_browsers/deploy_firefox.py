@@ -139,9 +139,8 @@ def deploy_firefox(
     configure_firefox.optimize_prefs(prefs)
 
     # Intercept logging at the Selenium level and redirect it to the
-    # main logger.  This will also inform us where the real profile
-    # directory is hiding.
-    interceptor = FirefoxLogInterceptor(browser_params.browser_id, browser_profile_path)
+    # main logger.
+    interceptor = FirefoxLogInterceptor(browser_params.browser_id)
     interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow
