@@ -310,9 +310,15 @@ platform-level crash occurs.
 ### Load a profile
 
 To load a profile, specify the `seed_tar` browser parameter in the browser
-configuration dictionary. This should point to the location of the
-`profile.tar` or (`profile.tar.gz` if compressed) file produced by OpenWPM
+configuration dictionary. This should be a `Path` object pointing to the
+`.tar` (or `.tar.gz` if compressed) file produced by OpenWPM
 or by manually tarring a firefox profile directory.
+
+> Please note that you must tar the contents of the profile directory
+> and not the directory itself.  
+> (For an example of the difference please see
+> [here](https://github.com/mozilla/OpenWPM/issues/790#issuecomment-791316632))
+
 The profile will be automatically extracted and loaded into the browser
 instance for which the configuration parameter was set.
 
