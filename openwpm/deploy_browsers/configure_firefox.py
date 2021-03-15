@@ -5,8 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
-# TODO: Remove hardcoded geckodriver default preferences once
-# https://github.com/mozilla/geckodriver/issues/1844 is fixed.
+# TODO: Remove hardcoded geckodriver default preferences. See
+# https://github.com/mozilla/OpenWPM/issues/867
 # Source of preferences:
 # https://hg.mozilla.org/mozilla-central/file/tip/testing/geckodriver/src/prefs.rs
 # https://hg.mozilla.org/mozilla-central/file/tip/testing/geckodriver/src/marionette.rs

@@ -119,8 +119,8 @@ def deploy_firefox(
 
     # Geckodriver currently places the user.js file in the wrong profile
     # directory, so we have to create it manually here.
-    # TODO: Remove this workaround once
-    # https://github.com/mozilla/geckodriver/issues/1844 is fixed.
+    # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for when
+    # to remove this workaround.
     # Load existing preferences from the profile's user.js file
     prefs = configure_firefox.load_existing_prefs(browser_profile_path)
     # Load default geckodriver preferences
@@ -162,8 +162,8 @@ def deploy_firefox(
         firefox_binary=fb,
         options=fo,
         log_path=interceptor.fifo,
-        # TODO: Remove when https://github.com/mozilla/geckodriver/issues/1844
-        # is fixed
+        # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for
+        # when to remove this
         service_args=["--marionette-port", str(marionette_port)],
     )
 
