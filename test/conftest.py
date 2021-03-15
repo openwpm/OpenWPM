@@ -24,11 +24,15 @@ EXTENSION_DIR = os.path.join(
 pytest_plugins = "test.storage.fixtures"
 
 
-@pytest.fixture(scope="session")
 def xpi():
     # Creates a new xpi using npm run build.
     print("Building new xpi")
     subprocess.check_call(["npm", "run", "build"], cwd=EXTENSION_DIR)
+
+
+@pytest.fixture(name="xpi", scope="session")
+def xpi_fixture():
+    return xpi()
 
 
 @pytest.fixture(scope="session")
