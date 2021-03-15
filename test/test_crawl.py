@@ -5,6 +5,7 @@ This should be avoided if possible, as controlled tests will be easier
 to debug.
 """
 
+import os
 import tarfile
 
 import domain_utils as du
@@ -41,6 +42,10 @@ def get_public_suffix(url):
     return url_parts[-1]
 
 
+@pytest.mark.skipif(
+    "CI" not in os.environ or os.environ["CI"] == "false",
+    reason="Makes remote connections",
+)
 @pytest.mark.slow
 def test_browser_profile_coverage(default_params, task_manager_creator):
     """Test the coverage of the browser's profile.
