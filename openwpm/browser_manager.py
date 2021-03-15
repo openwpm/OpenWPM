@@ -104,7 +104,7 @@ class Browser:
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
-            tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_")
+            tempdir = tempfile.mkdtemp(prefix="openwpm_profile_archive_")
             tar_path = Path(tempdir) / "profile.tar.gz"
 
             self.browser_params.profile_path = self.current_profile_path
