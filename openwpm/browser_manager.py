@@ -190,7 +190,6 @@ class Browser:
                 unsuccessful_spawns += 1
                 error_string = ""
                 status_strings = [
-                    "Proxy Ready",
                     "Profile Created",
                     "Profile Tar",
                     "Display",
