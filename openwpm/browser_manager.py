@@ -166,8 +166,8 @@ class Browser:
             # Read success status of browser manager
             launch_status = dict()
             try:
-                # 1. Selenium profile created
-                spawned_profile_path = check_queue(launch_status)
+                # 1. Browser profile created
+                browser_profile_path = check_queue(launch_status)
                 # 2. Profile tar loaded (if necessary)
                 check_queue(launch_status)
                 # 3. Display launched (if necessary)
@@ -177,7 +177,7 @@ class Browser:
                 # 5. Browser launched
                 self.geckodriver_pid = check_queue(launch_status)
 
-                (driver_profile_path, ready) = check_queue(launch_status)
+                ready = check_queue(launch_status)
                 if ready != "READY":
                     self.logger.error(
                         "BROWSER %i: Mismatch of status queue return values, "
@@ -209,7 +209,7 @@ class Browser:
                 )
                 self.close_browser_manager()
                 if "Profile Created" in launch_status:
-                    shutil.rmtree(spawned_profile_path, ignore_errors=True)
+                    shutil.rmtree(browser_profile_path, ignore_errors=True)
 
         # If the browser spawned successfully, we should update the
         # current profile path class variable and clean up the tempdir
@@ -217,9 +217,7 @@ class Browser:
         if success:
             self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.browser_id)
             previous_profile_path = self.current_profile_path
-            self.current_profile_path = driver_profile_path
-            if driver_profile_path != spawned_profile_path:
-                shutil.rmtree(spawned_profile_path, ignore_errors=True)
+            self.current_profile_path = browser_profile_path
             if previous_profile_path is not None:
                 shutil.rmtree(previous_profile_path, ignore_errors=True)
             if tempdir is not None:
@@ -447,7 +445,7 @@ def BrowserManager(
     display = None
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder, display = deploy_firefox.deploy_firefox(
+        driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
 
@@ -456,11 +454,11 @@ def BrowserManager(
         if browser_params.extension_enabled:
             logger.debug(
                 "BROWSER %i: Looking for extension port information "
-                "in %s" % (browser_params.browser_id, prof_folder)
+                "in %s" % (browser_params.browser_id, browser_profile_path)
             )
             elapsed = 0
             port = None
-            ep_filename = prof_folder / "extension_port.txt"
+            ep_filename = browser_profile_path / "extension_port.txt"
             while elapsed < 5:
                 try:
                     with open(ep_filename, "rt") as f:
@@ -487,10 +485,9 @@ def BrowserManager(
 
         logger.debug("BROWSER %i: BrowserManager ready." % browser_params.browser_id)
 
-        # passes the profile folder back to the
-        # TaskManager to signal a successful startup
-        status_queue.put(("STATUS", "Browser Ready", (prof_folder, "READY")))
-        browser_params.profile_path = prof_folder
+        # passes "READY" to the TaskManager to signal a successful startup
+        status_queue.put(("STATUS", "Browser Ready", "READY"))
+        browser_params.profile_path = browser_profile_path
 
         # starts accepting arguments until told to die
         while True:

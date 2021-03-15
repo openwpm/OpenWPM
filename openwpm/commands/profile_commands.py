@@ -18,8 +18,8 @@ logger = logging.getLogger("openwpm")
 
 class DumpProfileCommand(BaseCommand):
     """
-    Dumps a browser profile currently stored in <browser_profile_folder> to
-    <tar_path>
+    Dumps a browser profile currently stored in <browser_params.profile_path> to
+    <tar_path>.
     """
 
     def __init__(self, tar_path: Path, close_webdriver: bool, compress: bool) -> None:
@@ -39,8 +39,8 @@ class DumpProfileCommand(BaseCommand):
         manager_params: ManagerParamsInternal,
         extension_socket: Optional[ClientSocket],
     ) -> None:
-        browser_profile_folder = browser_params.profile_path
-        assert browser_profile_folder is not None
+        browser_profile_path = browser_params.profile_path
+        assert browser_profile_path is not None
         assert browser_params.browser_id is not None
 
         # Creating the folders if need be
@@ -53,7 +53,7 @@ class DumpProfileCommand(BaseCommand):
         # if this is a dump on close, close the webdriver and wait for checkpoint
         if self.close_webdriver:
             webdriver.close()
-            sleep_until_sqlite_checkpoint(browser_profile_folder)
+            sleep_until_sqlite_checkpoint(browser_profile_path)
 
         # backup and tar profile
         if self.compress:
@@ -64,7 +64,7 @@ class DumpProfileCommand(BaseCommand):
             "BROWSER %i: Backing up full profile from %s to %s"
             % (
                 browser_params.browser_id,
-                browser_profile_folder,
+                browser_profile_path,
                 self.tar_path,
             )
         )
@@ -84,7 +84,7 @@ class DumpProfileCommand(BaseCommand):
             "storage",  # directory for IndexedDB
         ]
         for item in storage_vector_files:
-            full_path = browser_profile_folder / item
+            full_path = browser_profile_path / item
             if (
                 not full_path.is_file()
                 and not full_path.name.endswith("shm")
@@ -100,7 +100,7 @@ class DumpProfileCommand(BaseCommand):
                 continue  # These are just checkpoint files
             tar.add(full_path, arcname=item)
         for item in storage_vector_dirs:
-            full_path = browser_profile_folder / item
+            full_path = browser_profile_path / item
             if not full_path.is_dir():
                 logger.warning(
                     "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
@@ -112,15 +112,14 @@ class DumpProfileCommand(BaseCommand):
 
 
 def load_profile(
-    browser_profile_folder: Path,
+    browser_profile_path: Path,
     manager_params: ManagerParamsInternal,
     browser_params: BrowserParamsInternal,
     tar_path: Path,
 ) -> None:
     """
-    loads a zipped cookie-based profile stored at <tar_location> and
-    unzips it to <browser_profile_folder>.
-    The tar will remain unmodified.
+    Loads a zipped cookie-based profile stored at <tar_path> and unzips
+    it to <browser_profile_path>. The tar will remain unmodified.
     """
 
     assert browser_params.browser_id is not None
@@ -132,16 +131,16 @@ def load_profile(
             % (
                 browser_params.browser_id,
                 tar_path,
-                browser_profile_folder,
+                browser_profile_path,
             )
         )
-        shutil.copy(tar_path, browser_profile_folder)
-        tar_path = browser_profile_folder / tar_path.name
+        shutil.copy(tar_path, browser_profile_path)
+        tar_path = browser_profile_path / tar_path.name
         if tar_path.name.endswith("tar.gz"):
             f = tarfile.open(tar_path, "r:gz", errorlevel=1)
         else:
             f = tarfile.open(tar_path, "r", errorlevel=1)
-        f.extractall(browser_profile_folder)
+        f.extractall(browser_profile_path)
         f.close()
         tar_path.unlink()
         logger.debug("BROWSER %i: Tarfile extracted" % browser_params.browser_id)
