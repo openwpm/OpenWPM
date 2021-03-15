@@ -27,7 +27,7 @@ Here are the highlights:
   Users are now empowered to provide their own storage backend if need be and can
   easily pick and choose between provided implementations.
 
-Minor changes:
+Additional changes:
 
 - #844 Switched to Github Actions
 - #854 Fix behavior of failure_limit (by [@boolean5](https://github.com/boolean5))
