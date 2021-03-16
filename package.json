@@ -10,7 +10,9 @@
   },
   "scripts-info": {
     "jsonschema2md": "Display the help for jsonschema2md",
-    "render_schema_docs": "Render the JSON schemas in `schemas` folder to documentation in `docs/schemas`."
+    "render_schema_docs": "Render the JSON schemas in `schemas` folder to documentation in `docs/schemas`.",
+    "validate_markdown_links": "Checks if all links referred to in the documentation are still working. Tends to get rate limited by github",
+    "lint_markdown": "Warnings about markdown styling. Should not be taken as an absolute source of truth"
   },
   "license": "MPL-2.0",
   "private": true,
