@@ -18,7 +18,7 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
-from .commands.profile_commands import DumpProfileCommand
+from .commands.profile_commands import dump_profile
 from .commands.types import BaseCommand, ShutdownSignal
 from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
@@ -105,17 +105,13 @@ class Browser:
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
             tempdir = tempfile.mkdtemp(prefix="openwpm_profile_archive_")
-            tar_path = Path(tempdir) / "profile.tar.gz"
+            tar_path = Path(tempdir) / "profile.tar"
 
-            self.browser_params.profile_path = self.current_profile_path
-            dump_profile_command = DumpProfileCommand(
-                tar_path=tar_path, close_webdriver=False, compress=True
-            )
-            dump_profile_command.execute(
-                webdriver=None,
+            dump_profile(
+                browser_profile_path=self.current_profile_path,
+                tar_path=tar_path,
+                compress=False,
                 browser_params=self.browser_params,
-                manager_params=self.manager_params,
-                extension_socket=None,
             )
 
             # make sure browser loads crashed profile
@@ -412,17 +408,12 @@ class Browser:
                 % (self.browser_id, self.browser_params.profile_archive_dir)
             )
             tar_path = self.browser_params.profile_archive_dir / "profile.tar.gz"
-            self.browser_params.profile_path = self.current_profile_path
-            dump_profile_command = DumpProfileCommand(
+            assert self.current_profile_path is not None
+            dump_profile(
+                browser_profile_path=self.current_profile_path,
                 tar_path=tar_path,
-                close_webdriver=False,
                 compress=True,
-            )
-            dump_profile_command.execute(
-                webdriver=None,
                 browser_params=self.browser_params,
-                manager_params=self.manager_params,
-                extension_socket=None,
             )
 
         # Clean up temporary files
