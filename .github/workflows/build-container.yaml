@@ -11,6 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
+        name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=openwpm/openwpm
+          TAGS="${DOCKER_IMAGE}:${GITHUB_SHA}"
+          # If it's a tagged build it should get published as such
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/v}
+              TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          fi
+          # If it is on master it should get tagged as latest
+          if [[ $GITHUB_REF == refs/heads/master ]]; then
+              TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          fi
+          echo ::set-output name=tags::${TAGS}
+      - 
         name: Checkout
         uses: actions/checkout@v2
       -       
@@ -39,7 +55,7 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: openwpm/openwpm:latest
+          tags: ${{ steps.prep.outputs.tags }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
       -
