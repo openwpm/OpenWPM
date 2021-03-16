@@ -9,6 +9,7 @@ We aim to release a new version of OpenWPM with each new Firefox release (~1 rel
 2. Update extension dependencies.
     1. Run `npm update` in `openwpm/Extension/firefox`.
     2. Run `npm update` in `openwpm/Extension/webext-instrumentation`.
+    3. Run `npm update` in the base directory
 3. Update python and system dependencies by following the ["managing requirements" instructions](../CONTRIBUTING.md#managing-requirements).
 4. Increment the version number in [VERSION](../VERSION)
 5. Add a summary of changes since the last version to [CHANGELOG](../CHANGELOG.md)

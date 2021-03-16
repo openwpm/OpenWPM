@@ -28,8 +28,8 @@
     "cov:send": "nyc report --reporter=lcov > coverage.lcov && codecov",
     "cov:check": "nyc report && nyc check-coverage --lines 100 --functions 100 --branches 100",
     "doc": "run-s doc:html && opn build/docs/index.html",
-    "doc:html": "typedoc src/ --target ES6 --mode file --out build/docs",
-    "doc:json": "typedoc src/ --target ES6 --mode file --json build/docs/typedoc.json",
+    "doc:html": "typedoc src/ --out build/docs",
+    "doc:json": "typedoc src/ --json build/docs/typedoc.json",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
     "version-major": "git stash && run-s prepare && standard-version --release-as major",
     "version-minor": "git stash && run-s prepare && standard-version --release-as minor",
@@ -75,7 +75,7 @@
     "tslint": "^6.1.3",
     "tslint-config-prettier": "^1.18.0",
     "tslint-immutable": "^6.0.1",
-    "typedoc": "^0.19.2",
+    "typedoc": "^0.20.32",
     "typescript": "^4.1.5"
   },
   "ava": {

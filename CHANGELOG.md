@@ -1,5 +1,61 @@
 # Changelog
 
+## v0.14.0 - 2021-03-12
+
+Firefox 86.0.1
+
+This release is defined by a major push towards a more typed and
+easier to extend OpenWPM
+
+Here are the highlights:
+
+- Refactored BrowserParams and ManagerParams into Dataclasses (#807)  
+  By [@Ankushduacodes](https://github.com/Ankushduacodes)  
+  This PR replaced the manager_params and browser `dict`s with objects
+  allowing for property access and type annotations.
+  This change makes it a lot harder to use invalid configuration options.
+
+- Turned Commands into Objects inheriting from a BaseCommand (#750)  
+  This change allows users to easily write their own commands without having to
+  touch OpenWPM internals.
+  It restructured a lot of internal code to bundle the definition of a command
+  with its implementation
+
+- Data Aggregator Rewrite (#753)  
+  This PR rewrote the way we do data saving from the ground up to enable a more
+  modular and scalable design.
+  Users are now empowered to provide their own storage backend if need be and can
+  easily pick and choose between provided implementations.
+
+Additional changes:
+
+- #844 Switched to Github Actions
+- #854 Fix behavior of failure_limit (by [@boolean5](https://github.com/boolean5))
+
+Thanks to all the external contributors that worked on this release.
+Besides the people mentioned above we also merged contributions from:
+
+[@LordReigns](https://github.com/LordReigns)
+
+- #803 Removed unneccessary List unpacking
+- #804 Updated stored commands in test_webdriver_utils.py
+
+[@FukurouMakoto](https://github.com/FukurouMakoto)
+
+- #806 Module & Imports conformed to PEP8
+
+[@Ankushduacodes](https://github.com/Ankushduacodes)
+
+- #811 Changed imports to avoid errors
+- #815 Fixed nodejs version typo
+- #822 Removed references and leftovers from #807
+- #841 Updated webdriver syntax
+
+[@MollieBakal](https://github.com/MollieBakal)
+
+- #817 Fixed `manual_test.py`
+- #844 Pyvirtualdisplay update
+
 ## v0.13.0 - 2020-11-16
 
 Firefox 83 release
@@ -7,6 +63,7 @@ Firefox 83 release
 There has been a lot happening in OpenWPM over the last three months.
 
 Here are the highlights:
+
 - Introduced `seed_profile` ([#735](https://github.com/mozilla/OpenWPM/issues/735))  
   As part of our long-standing effort to restore stateful crawling support we now allow
   specifying a `seed_profile` that gets loaded for each fresh start of a browser.  
@@ -29,9 +86,9 @@ Internal changes:
 - [@Ankushduacodes](https://github.com/Ankushduacodes) removed the `browser_settings` as they required a lot of code for very little benefit [#775](https://github.com/mozilla/OpenWPM/issues/775)
 - [@Ankushduacodes](https://github.com/Ankushduacodes) made the `memory_watchdog` and `process_watchdog` part of the `manager_params` [#785](https://github.com/mozilla/OpenWPM/issues/785) [#787](https://github.com/mozilla/OpenWPM/issues/787)
 
-
 Thanks to all the external contributors that worked on this release.
 Besides the people mentioned above we also merged contributions from:
+
 - [@jyothisjagan](https://github.com/jyothisjagan) [#769](https://github.com/mozilla/OpenWPM/issues/769)
 - [@Prajwal7842](https://github.com/Prajwal7842) [#760](https://github.com/mozilla/OpenWPM/issues/760)
 - [@7brokenmirrors](https://github.com/7brokenmirrors) [#776](https://github.com/mozilla/OpenWPM/issues/776)
@@ -58,7 +115,8 @@ Firefox 78.0.1 scheduled release. This release contains some minor bug fixes
 and one new feature: Arbitrary JS Instrumentation.
 
 New features:
-  * Arbitrary JS Instrumentation allows users to specify, python side the set
+
+- Arbitrary JS Instrumentation allows users to specify, python side the set
     APIs they would like to instrument in their crawl. The default remains the
     set of fingerprinting apis, now called ``collection_fingerprinting``. This has
     meant a number of API changes including the renaming of the browser_param
@@ -68,13 +126,14 @@ New features:
     new ``js_instrument_settings`` are in the
     [Instrumentation and Data Access section of the README](./README.md#instrumentation-and-data-access).
 
-    - [Issue 641](https://github.com/mozilla/OpenWPM/issues/641)
-    - [PR 642](https://github.com/mozilla/OpenWPM/pull/642)
+- [Issue 641](https://github.com/mozilla/OpenWPM/issues/641)
+- [PR 642](https://github.com/mozilla/OpenWPM/pull/642)
 
 Minor fixes:
-  * Asserting that unpickled exception is an exception [PR 705](https://github.com/mozilla/OpenWPM/pull/705)
-  * Minor fixes [PR 703](https://github.com/mozilla/OpenWPM/pull/703)
-  * Better crawling experience [PR 696](https://github.com/mozilla/OpenWPM/pull/696)
+
+- Asserting that unpickled exception is an exception [PR 705](https://github.com/mozilla/OpenWPM/pull/705)
+- Minor fixes [PR 703](https://github.com/mozilla/OpenWPM/pull/703)
+- Better crawling experience [PR 696](https://github.com/mozilla/OpenWPM/pull/696)
 
 No OpenWPM release was made with Firefox 78.0.
 
