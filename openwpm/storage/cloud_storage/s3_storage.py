@@ -12,10 +12,8 @@ from ..storage_providers import TableName, UnstructuredStorageProvider
 class S3StructuredProvider(ArrowProvider):
     """This class allows you to upload Parquet files to S3.
 
-    Inspired by the old S3Aggregator structure the S3StructuredProvider
-    will by default store into
+    S3StructuredProvider will by default store into
     base_path/visits/table_name in the given bucket.
-
     Pass a different sub_dir to change this.
 
     **kwargs get passed on to S3FileSystem.__init__
@@ -47,9 +45,6 @@ class S3StructuredProvider(ArrowProvider):
             filesystem=self.file_system,
         )
         self.file_system.end_transaction()
-
-    async def shutdown(self) -> None:
-        pass
 
 
 class S3UnstructuredProvider(UnstructuredStorageProvider):
