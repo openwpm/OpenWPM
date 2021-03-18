@@ -57,7 +57,6 @@ export class JavascriptInstrument {
    */
   public listen() {
     this.onMessageListener = (message, sender) => {
-      // console.debug("javascript-instrumentation background listener", {message, sender}, this.configured);
       if (
         message.namespace &&
         message.namespace === "javascript-instrumentation"
