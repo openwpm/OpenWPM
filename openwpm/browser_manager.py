@@ -65,7 +65,7 @@ class Browser:
 
         # Queues and process IDs for BrowserManager
 
-        # thread to run commands issues from TaskManager
+        # thread to run commands issued from TaskManager
         self.command_thread: Optional[threading.Thread] = None
         # queue for passing command tuples to BrowserManager
         self.command_queue: Optional[Queue] = None
@@ -78,7 +78,7 @@ class Browser:
         # the port of the display for the Xvfb display (if it exists)
         self.display_port: Optional[int] = None
 
-        # boolean that says if the BrowserManager new (to optimize restarts)
+        # boolean that says if the BrowserManager is new (to optimize restarts)
         self.is_fresh = True
         # boolean indicating if the browser should be restarted
         self.restart_required = False
@@ -210,7 +210,7 @@ class Browser:
         # current profile path class variable and clean up the tempdir
         # and previous profile path.
         if success:
-            self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.browser_id)
+            self.logger.debug("BROWSER %i: Browser spawn successful!" % self.browser_id)
             previous_profile_path = self.current_profile_path
             self.current_profile_path = browser_profile_path
             if previous_profile_path is not None:
@@ -360,7 +360,7 @@ class Browser:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(
-                    "BROWSER %i: Display process does not " "exit" % self.browser_id
+                    "BROWSER %i: Display process does not exit" % self.browser_id
                 )
                 pass
             except TypeError:
@@ -368,7 +368,7 @@ class Browser:
                     "BROWSER %i: PID may not be the correct "
                     "type %s" % (self.browser_id, str(self.display_pid))
                 )
-        if self.display_port is not None:  # xvfb diplay lock
+        if self.display_port is not None:  # xvfb display lock
             lockfile = "/tmp/.X%s-lock" % self.display_port
             try:
                 os.remove(lockfile)

@@ -78,7 +78,7 @@ def test_profile_saved_when_launch_crashes(default_params, task_manager_creator)
     assert (browser_params[0].profile_archive_dir / "profile.tar.gz").is_file()
 
 
-def test_seed_persistance(default_params, task_manager_creator):
+def test_seed_persistence(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     p = Path("profile.tar.gz")
     for browser_param in browser_params:

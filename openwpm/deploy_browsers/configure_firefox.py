@@ -241,7 +241,7 @@ def optimize_prefs(prefs: Dict[str, Any]) -> None:
     prefs["app.shield.optoutstudies.enabled"] = False
     prefs["extensions.shield-recipe-client.enabled"] = False
 
-    # Disable Source Pragams
+    # Disable Source Pragmas
     # As per https://bugzilla.mozilla.org/show_bug.cgi?id=1628853
     # sourceURL can be used to obfuscate the original origin of
     # a script, we disable it.
