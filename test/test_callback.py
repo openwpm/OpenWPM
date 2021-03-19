@@ -17,7 +17,7 @@ def test_local_callbacks(default_params, task_manager_creator):
 
     my_list: List[int] = []
     sequence = CommandSequence(
-        TEST_SITE, reset=True, blocking=True, callback=partial(callback, my_list)
+        TEST_SITE, blocking=True, callback=partial(callback, my_list)
     )
     sequence.get()
 

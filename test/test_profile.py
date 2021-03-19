@@ -87,7 +87,7 @@ def test_seed_persistance(default_params, task_manager_creator):
 
     command_sequences = []
     for _ in range(2):
-        cs = CommandSequence(url="https://example.com", reset=True)
+        cs = CommandSequence(url="https://example.com")
         cs.get()
         cs.append_command(AssertConfigSetCommand("test_pref", True))
         command_sequences.append(cs)
