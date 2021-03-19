@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
+from ..config import BrowserParams
+
 # TODO: Remove hardcoded geckodriver default preferences. See
 # https://github.com/mozilla/OpenWPM/issues/867
 # Source of preferences:
@@ -97,7 +99,7 @@ def save_prefs_to_profile(prefs: Dict[str, Any], browser_profile_path: Path) -> 
             f.write('user_pref("%s", %s);\n' % (key, json.dumps(value)))
 
 
-def privacy(browser_params, prefs):
+def privacy(browser_params: BrowserParams, prefs: Dict[str, Any]) -> None:
     """
     Configure the privacy settings in Firefox. This includes:
     * DNT
@@ -127,7 +129,7 @@ def privacy(browser_params, prefs):
         )
 
 
-def optimize_prefs(prefs):
+def optimize_prefs(prefs: Dict[str, Any]) -> None:
     """
     Disable various features and checks the browser will do on startup.
     Some of these (e.g. disabling the newtab page) are required to prevent

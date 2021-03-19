@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Callable, List, Tuple
 
 from .commands.browser_commands import (
@@ -87,7 +88,13 @@ class CommandSequence:
         self._commands_with_timeout.append((command, timeout))
         self.contains_get_or_browse = True
 
-    def dump_profile(self, tar_path, close_webdriver=False, compress=True, timeout=120):
+    def dump_profile(
+        self,
+        tar_path: Path,
+        close_webdriver: bool = False,
+        compress: bool = True,
+        timeout: int = 120,
+    ) -> None:
         """ dumps from the profile path to a given file (absolute path) """
         self.total_timeout += timeout
         command = DumpProfileCommand(tar_path, close_webdriver, compress)
