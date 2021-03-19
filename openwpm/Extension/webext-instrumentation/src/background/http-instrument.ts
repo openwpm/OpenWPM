@@ -38,7 +38,7 @@ const allTypes: ResourceType[] = [
       "object_subrequest",
       "ping",
       "script",
-      // "speculative",
+      "speculative",
       "stylesheet",
       "sub_frame",
       "web_manifest",
@@ -241,13 +241,6 @@ export class HttpInstrument {
     crawlID,
     eventOrdinal: number,
   ) {
-    /*
-    console.log(
-      "onBeforeSendHeadersHandler (previously httpRequestHandler)",
-      details,
-      crawlID,
-    );
-    */
 
     const tab =
       details.tabId > -1
@@ -314,14 +307,10 @@ export class HttpInstrument {
 
         if (requestBody) {
           const postParser = new HttpPostParser(
-            // details,
             onBeforeRequestEventDetails,
             this.dataReceiver,
           );
-          const postObj: ParsedPostRequest = postParser
-            .parsePostRequest
-            /*encodingType,*/
-            ();
+          const postObj: ParsedPostRequest = postParser.parsePostRequest();
 
           // Add (POST) request headers from upload stream
           if ("post_headers" in postObj) {
