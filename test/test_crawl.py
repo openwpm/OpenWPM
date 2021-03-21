@@ -5,6 +5,7 @@ This should be avoided if possible, as controlled tests will be easier
 to debug.
 """
 
+import json
 import os
 import tarfile
 
@@ -35,11 +36,6 @@ TEST_SITES = [
     "http://yandex.ru",
     "http://yahoo.co.jp",
 ]
-
-
-def get_public_suffix(url):
-    url_parts = du.hostname_subparts(url, include_ps=True)
-    return url_parts[-1]
 
 
 @pytest.mark.skipif(
@@ -78,16 +74,18 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     rows = db_utils.query_db(crawl_db, "SELECT url FROM http_requests")
     req_ps = set()  # visited domains from http_requests table
     for (url,) in rows:
-        req_ps.add(get_public_suffix(url))
+        req_ps.add(du.get_ps_plus_1(url))
 
     hist_ps = set()  # visited domains from crawl_history Table
     statuses = dict()
     rows = db_utils.query_db(
         crawl_db,
-        "SELECT arguments, command_status FROM crawl_history WHERE command='GET'",
+        "SELECT arguments, command_status FROM crawl_history WHERE"
+        " command='GetCommand'",
     )
-    for url, command_status in rows:
-        ps = get_public_suffix(url)
+    for arguments, command_status in rows:
+        url = json.loads(arguments)["url"]
+        ps = du.get_ps_plus_1(url)
         hist_ps.add(ps)
         statuses[ps] = command_status
 
@@ -96,7 +94,7 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     rows = db_utils.query_db(ff_db, "SELECT url FROM moz_places")
     for (host,) in rows:
         try:
-            profile_ps.add(get_public_suffix(host))
+            profile_ps.add(du.get_ps_plus_1(host))
         except AttributeError:
             pass
 
