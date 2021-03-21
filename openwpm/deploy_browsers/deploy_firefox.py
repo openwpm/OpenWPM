@@ -126,6 +126,8 @@ def deploy_firefox(
     # Load default geckodriver preferences
     prefs.update(configure_firefox.DEFAULT_GECKODRIVER_PREFS)
     # Pick an available port for Marionette (https://stackoverflow.com/a/2838309)
+    # This has a race condition, as another process may get the port
+    # before Marionette, but we don't expect it to happen often
     s = socket.socket()
     s.bind(("", 0))
     marionette_port = s.getsockname()[1]
