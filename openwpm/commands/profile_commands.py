@@ -134,28 +134,16 @@ def load_profile(
     Loads a zipped cookie-based profile stored at <tar_path> and unzips
     it to <browser_profile_path>. The tar will remain unmodified.
     """
-
     assert browser_params.browser_id is not None
     try:
         assert tar_path.is_file()
-        # Copy and untar the loaded profile
-        logger.debug(
-            "BROWSER %i: Copying profile tar from %s to %s"
-            % (
-                browser_params.browser_id,
-                tar_path,
-                browser_profile_path,
-            )
-        )
-        shutil.copy(tar_path, browser_profile_path)
-        tar_path = browser_profile_path / tar_path.name
+        # Untar the loaded profile
         if tar_path.name.endswith("tar.gz"):
             f = tarfile.open(tar_path, "r:gz", errorlevel=1)
         else:
             f = tarfile.open(tar_path, "r", errorlevel=1)
         f.extractall(browser_profile_path)
         f.close()
-        tar_path.unlink()
         logger.debug("BROWSER %i: Tarfile extracted" % browser_params.browser_id)
 
     except Exception as ex:
