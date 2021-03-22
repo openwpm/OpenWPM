@@ -8,6 +8,8 @@ from openwpm.commands.types import BaseCommand
 from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
 
+from .utilities import BASE_TEST_URL
+
 # TODO update these tests to make use of blocking commands
 
 
@@ -18,7 +20,7 @@ def test_saving(default_params, task_manager_creator):
         manager_params.data_directory / "browser_profile"
     )
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
-    manager.get("http://example.com")
+    manager.get(BASE_TEST_URL)
     manager.close()
     assert (browser_params[0].profile_archive_dir / "profile.tar.gz").is_file()
 
@@ -32,7 +34,7 @@ def test_crash_profile(default_params, task_manager_creator):
     )
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
     try:
-        manager.get("http://example.com")  # So we have a profile
+        manager.get(BASE_TEST_URL)  # So we have a profile
         manager.get("example.com")  # Selenium requires scheme prefix
         manager.get("example.com")  # Selenium requires scheme prefix
         manager.get("example.com")  # Selenium requires scheme prefix
@@ -60,7 +62,7 @@ def test_profile_saved_when_launch_crashes(default_params, task_manager_creator)
     browser_params[0].proxy = True
     browser_params[0].save_content = "script"
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
-    manager.get("http://example.com")
+    manager.get(BASE_TEST_URL)
 
     # Kill the LevelDBAggregator
     # This will cause the proxy launch to crash
@@ -71,7 +73,7 @@ def test_profile_saved_when_launch_crashes(default_params, task_manager_creator)
 
     # The browser will fail to launch due to the proxy crashes
     try:
-        manager.get("http://example.com")
+        manager.get(BASE_TEST_URL)
     except CommandExecutionError:
         pass
     manager.close()
@@ -87,7 +89,7 @@ def test_seed_persistence(default_params, task_manager_creator):
 
     command_sequences = []
     for _ in range(2):
-        cs = CommandSequence(url="https://example.com")
+        cs = CommandSequence(url=BASE_TEST_URL)
         cs.get()
         cs.append_command(AssertConfigSetCommand("test_pref", True))
         command_sequences.append(cs)
