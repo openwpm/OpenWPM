@@ -18,15 +18,16 @@ jobs:
           DOCKER_IMAGE=openwpm/openwpm
           TAGS="${DOCKER_IMAGE}:${GITHUB_SHA}"
           # If it's a tagged build it should get published as such
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-              VERSION=${GITHUB_REF#refs/tags/v}
-              TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            TAGS="$TAGS,${DOCKER_IMAGE}:$VERSION"
           fi
           # If it is on master it should get tagged as latest
           if [[ $GITHUB_REF == refs/heads/master ]]; then
               TAGS="$TAGS,${DOCKER_IMAGE}:latest"
           fi
           echo ::set-output name=tags::${TAGS}
+
       - 
         name: Checkout
         uses: actions/checkout@v2
