@@ -13,6 +13,7 @@ from selenium.webdriver.common.service import Service as BaseService
 from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service as FirefoxService
 
 __all__ = ["FirefoxBinary", "FirefoxLogInterceptor", "Options"]
 
@@ -76,7 +77,7 @@ class FirefoxLogInterceptor(threading.Thread):
                 self.fifo = None
 
 
-class PatchedGeckoDriverService(BaseService):
+class PatchedGeckoDriverService(FirefoxService):
     """Object that manages the starting and stopping of the GeckoDriver.
     Modified from the original (selenium.webdriver.firefox.service.Service)
     for Py3 compat in the presence of log FIFOs, and for potential future
@@ -120,12 +121,6 @@ class PatchedGeckoDriverService(BaseService):
             self, executable_path, port=port, log_file=log_file, env=env
         )
         self.service_args = service_args or []
-
-    def command_line_args(self):
-        return ["--port", "%d" % self.port] + self.service_args
-
-    def send_remote_shutdown_command(self):
-        pass
 
 
 FirefoxDriverModule.Service = PatchedGeckoDriverService
