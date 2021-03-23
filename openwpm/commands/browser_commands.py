@@ -15,10 +15,13 @@ from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
 )
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from ..config import BrowserParams, ManagerParams
+from ..socket_interface import ClientSocket
 from .types import BaseCommand
 from .utils.webdriver_utils import (
     execute_in_all_frames,
@@ -30,7 +33,6 @@ from .utils.webdriver_utils import (
 )
 
 # Constants for bot mitigation
-
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
 RANDOM_SLEEP_LOW = 1  # low (in sec) for random sleep between page loads
 RANDOM_SLEEP_HIGH = 7  # high (in sec) for random sleep between page loads
@@ -125,11 +127,11 @@ class GetCommand(BaseCommand):
 
     def execute(
         self,
-        webdriver,
-        browser_params,
-        manager_params,
-        extension_socket,
-    ):
+        webdriver: Firefox,
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
+        extension_socket: ClientSocket,
+    ) -> None:
         tab_restart_browser(webdriver)
 
         if extension_socket is not None:
@@ -147,7 +149,7 @@ class GetCommand(BaseCommand):
         # Close modal dialog if exists
         try:
             WebDriverWait(webdriver, 0.5).until(EC.alert_is_present())
-            alert = webdriver.switch_to.alert()
+            alert = webdriver.switch_to.alert
             alert.dismiss()
             time.sleep(1)
         except (TimeoutException, WebDriverException):

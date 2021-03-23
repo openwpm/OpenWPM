@@ -30,7 +30,7 @@ dependencies:
 - selenium=3.141.0
 - sentry-sdk=0.20.3
 - tabulate=0.8.9
-- tblib=1.6.0
+- tblib=1.7.0
 - wget=1.20.1
 - pip:
   - dataclasses-json==0.5.2
