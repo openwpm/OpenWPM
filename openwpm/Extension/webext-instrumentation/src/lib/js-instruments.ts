@@ -14,7 +14,7 @@ interface LogSettings {
 }
 
 interface JSInstrumentRequest {
-  object: string;
+  object: any;
   instrumentedName: string;
   logSettings: LogSettings;
 }

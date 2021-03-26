@@ -2,6 +2,8 @@
 Test function that converts our python
 objects to our JS string
 """
+from typing import Any, Dict, List
+
 import pytest
 from jsonschema.exceptions import ValidationError
 
@@ -10,55 +12,6 @@ from openwpm import js_instrumentation as jsi
 
 def _no_whitespace(x):
     return "".join(x.split())
-
-
-def test_python_to_js_lower_true_false():
-    inpy = [
-        {
-            "object": "window",
-            "logSettings": {
-                "logCallStack": False,
-                "preventSets": True,
-            },
-        }
-    ]
-    expected_out = _no_whitespace(
-        """
-    [{
-        "object": window,
-        "logSettings": {
-            "logCallStack": false,
-            "preventSets": true
-        }
-    }]
-    """
-    )
-    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
-    assert actual_out == expected_out
-
-
-def test_python_to_js_no_quote_object():
-    inpy = [{"object": "window", "logSettings": {}}]
-    expected_out = _no_whitespace('[{"object": window, "logSettings": {}}]')
-    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
-    assert actual_out == expected_out
-
-
-def test_python_to_js_no_quote_object_two_matching_objects():
-    inpy = [
-        {"object": "window", "logSettings": {}},
-        {"object": "window", "logSettings": {}},
-        {"object": "window2", "logSettings": {}},
-    ]
-    expected_out = _no_whitespace(
-        """[
-        {"object": window, "logSettings": {}},
-        {"object": window, "logSettings": {}},
-        {"object": window2, "logSettings": {}}
-    ]"""
-    )
-    actual_out = _no_whitespace(jsi._python_to_js_string(inpy))
-    assert actual_out == expected_out
 
 
 # Test our validation
@@ -387,12 +340,27 @@ def test_api_collection_fingerprinting():
     # check fingeprinting instrumentation in more detail
     shortcut_input = ["collection_fingerprinting"]
     output = jsi.clean_js_instrumentation_settings(shortcut_input)
-    assert "window.document" in output
-    assert "window['AudioContext'].prototype" in output
+    assert settings_contain(output, "object", "window.document")
+    assert settings_contain(output, "object", "window['AudioContext'].prototype")
+
+
+def settings_contain(
+    settings: List[Dict[str, Any]],
+    key: str,
+    value: Any,
+    check_log_settings: bool = False,
+) -> bool:
+    if not check_log_settings:
+        return len(list(filter(lambda item: item[key] == value, settings))) > 0
+    else:
+        return (
+            len(list(filter(lambda item: item["logSettings"][key] == value, settings)))
+            > 0
+        )
 
 
 def test_complete_pass():
     shortcut_input = [{"window": {"recursive": True}}]
     output = jsi.clean_js_instrumentation_settings(shortcut_input)
-    assert '"recursive": true' in output
-    assert '"instrumentedName": "window"' in output
+    assert settings_contain(output, "instrumentedName", "window")
+    assert settings_contain(output, "recursive", True, True)
