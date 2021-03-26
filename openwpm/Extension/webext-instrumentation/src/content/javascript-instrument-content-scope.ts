@@ -12,7 +12,7 @@ ${getInstrumentJS}
 // End of js-instruments.
 
 // Start of custom instrumentRequests.
-const jsInstrumentationSettings = ${jsInstrumentationSettingsString};
+const jsInstrumentationSettings = ${JSON.stringify(jsInstrumentationSettingsString)};
 // End of custom instrumentRequests.
 
 // Start of anonymous function from javascript-instrument-page-scope.ts

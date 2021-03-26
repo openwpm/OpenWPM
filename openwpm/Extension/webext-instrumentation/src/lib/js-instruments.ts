@@ -767,7 +767,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     // More details about how this function is invoked are in
     // content/javascript-instrument-content-scope.ts
     JSInstrumentRequests.forEach(function(item) {
-      instrumentObject(item.object, item.instrumentedName, item.logSettings);
+      instrumentObject(eval(item.object), item.instrumentedName, item.logSettings);
     });
   }
 

@@ -24,7 +24,7 @@ async function main() {
       cleaned_js_instrument_settings:
       [
         {
-          object: window.CanvasRenderingContext2D.prototype,
+          object: `window.CanvasRenderingContext2D.prototype`,
           instrumentedName: "CanvasRenderingContext2D",
           logSettings: {
             propertiesToInstrument: [],
