@@ -44,7 +44,7 @@ let listeningSocketCallback =  async (data) => {
 
 }
 export let open = async function(storageControllerAddress, logAddress, curr_crawlID) {
-    if (storageControllerAddress == null && logAddress == null && curr_crawlID === '') {
+    if (storageControllerAddress == null && logAddress == null && curr_crawlID === 0) {
         console.log("Debugging, everything will output to console");
         debugging = true;
         return;
