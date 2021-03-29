@@ -1,11 +1,15 @@
 import atexit
+import shutil
 import subprocess
+import tempfile
 from os.path import dirname, join, realpath
+from pathlib import Path
 
 import click
 import IPython
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from selenium.webdriver.firefox.options import Options
 
 from openwpm import js_instrumentation as jsi
 from openwpm.config import BrowserParams
@@ -88,7 +92,7 @@ def start_webdriver(
         Set to True to load browser_params
     browser_params_file : string
         Specify the browser_params.json to load.
-        If None, default params form openwpm/config.py::BrowserParams will be loaded.
+        If None, default params from openwpm/config.py::BrowserParams will be loaded.
 
     Returns
     -------
@@ -110,16 +114,35 @@ def start_webdriver(
             print("...server shutdown")
             driver.quit()
             print("...webdriver closed")
+            shutil.rmtree(driver.capabilities["moz:profile"], ignore_errors=True)
+            print("...browser profile removed")
 
         atexit.register(cleanup_server)
         return driver
 
-    fp = webdriver.FirefoxProfile()
+    browser_profile_path = Path(tempfile.mkdtemp(prefix="firefox_profile_"))
+    fo = Options()
+    fo.add_argument("-profile")
+    fo.add_argument(str(browser_profile_path))
+    # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for when
+    # to remove manually creating user.js
+    prefs = configure_firefox.load_existing_prefs(browser_profile_path)
+    prefs.update(configure_firefox.DEFAULT_GECKODRIVER_PREFS)
+
     if with_extension:
         # TODO: Restore preference for log level in a way that works in Fx 57+
         # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-        configure_firefox.optimize_prefs(fp)
-    driver = webdriver.Firefox(firefox_binary=fb, firefox_profile=fp)
+        configure_firefox.optimize_prefs(prefs)
+
+    configure_firefox.save_prefs_to_profile(prefs, browser_profile_path)
+    driver = webdriver.Firefox(
+        firefox_binary=fb,
+        options=fo,
+        # Use the default Marionette port.
+        # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for
+        # when to remove this
+        service_args=["--marionette-port", "2828"],
+    )
     if load_browser_params is True:
         # There's probably more we could do here
         # to set more preferences and better emulate
@@ -134,8 +157,7 @@ def start_webdriver(
         js_request_as_string = jsi.clean_js_instrumentation_settings(js_request)
         browser_params.js_instrument_settings = js_request_as_string
 
-        profile_dir = driver.capabilities["moz:profile"]
-        with open(join(profile_dir, "browser_params.json"), "w") as f:
+        with open(browser_profile_path / "browser_params.json", "w") as f:
             f.write(browser_params.to_json())
 
     if with_extension:
@@ -192,9 +214,9 @@ def start_webext():
     "--browser-params-file",
     help="""
     Specify a browser_params.json file. If none provided and
-    --browser-params is enabled. Default browser_params.json
-    will be used. Pass an absolute path or a path relative
-    to the test directory.""",
+    --browser-params is enabled the default params from
+    openwpm/config.py::BrowserParams will be loaded. Pass an
+    absolute path or a path relative to the test directory.""",
 )
 def main(selenium, no_extension, browser_params, browser_params_file):
 

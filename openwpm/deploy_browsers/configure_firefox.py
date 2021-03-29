@@ -1,7 +1,105 @@
 """ Set prefs and load extensions in Firefox """
 
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict
 
-def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
+from ..config import BrowserParams
+
+# TODO: Remove hardcoded geckodriver default preferences. See
+# https://github.com/mozilla/OpenWPM/issues/867
+# Source of preferences:
+# https://hg.mozilla.org/mozilla-central/file/tip/testing/geckodriver/src/prefs.rs
+# https://hg.mozilla.org/mozilla-central/file/tip/testing/geckodriver/src/marionette.rs
+DEFAULT_GECKODRIVER_PREFS = {
+    "app.normandy.api_url": "",
+    "app.update.checkInstallTime": False,
+    "app.update.disabledForTesting": True,
+    "app.update.auto": False,
+    "browser.dom.window.dump.enabled": True,
+    "devtools.console.stdout.chrome": True,
+    "browser.safebrowsing.blockedURIs.enabled": False,
+    "browser.safebrowsing.downloads.enabled": False,
+    "browser.safebrowsing.passwords.enabled": False,
+    "browser.safebrowsing.malware.enabled": False,
+    "browser.safebrowsing.phishing.enabled": False,
+    "browser.sessionstore.resume_from_crash": False,
+    "browser.shell.checkDefaultBrowser": False,
+    "browser.startup.homepage_override.mstone": "ignore",
+    "browser.startup.page": 0,
+    "browser.tabs.closeWindowWithLastTab": False,
+    "browser.tabs.warnOnClose": False,
+    "browser.uitour.enabled": False,
+    "browser.warnOnQuit": False,
+    "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
+    "datareporting.healthreport.logging.consoleEnabled": False,
+    "datareporting.healthreport.service.enabled": False,
+    "datareporting.healthreport.service.firstRun": False,
+    "datareporting.healthreport.uploadEnabled": False,
+    "datareporting.policy.dataSubmissionEnabled": False,
+    "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
+    "dom.ipc.reportProcessHangs": False,
+    "extensions.autoDisableScopes": 0,
+    "extensions.enabledScopes": 5,
+    "extensions.installDistroAddons": False,
+    "extensions.update.enabled": False,
+    "extensions.update.notifyUser": False,
+    "focusmanager.testmode": True,
+    "general.useragent.updates.enabled": False,
+    "geo.provider.testing": True,
+    "geo.wifi.scan": False,
+    "hangmonitor.timeout": 0,
+    "idle.lastDailyNotification": -1,
+    "javascript.options.showInConsole": True,
+    "media.gmp-manager.updateEnabled": False,
+    "media.sanity-test.disabled": True,
+    "network.http.phishy-userpass-length": 255,
+    "network.manage-offline-status": False,
+    "network.sntp.pools": "%(server)s",
+    "plugin.state.flash": 0,
+    "security.certerrors.mitm.priming.enabled": False,
+    "services.settings.server": "http://%(server)s/dummy/blocklist/",
+    "startup.homepage_welcome_url": "about:blank",
+    "startup.homepage_welcome_url.additional": "",
+    "toolkit.startup.max_resumed_crashes": -1,
+    "marionette.log.level": "Info",
+}
+
+
+def load_existing_prefs(browser_profile_path: Path) -> Dict[str, Any]:
+    """Load existing user preferences.
+
+    If the browser profile contains a user.js file, load the preferences
+    specified inside it into a dictionary.
+    """
+    prefs: Dict[str, Any] = {}
+    prefs_path = browser_profile_path / "user.js"
+    if not prefs_path.is_file():
+        return prefs
+    # Regular expression from https://stackoverflow.com/a/24563687
+    r = re.compile(r"\s*user_pref\(([\"'])(.+?)\1,\s*(.+?)\);")
+    with open(prefs_path, "r") as f:
+        for line in f:
+            m = r.match(line)
+            if m:
+                key, value = m.group(2), m.group(3)
+                prefs[key] = json.loads(value)
+    return prefs
+
+
+def save_prefs_to_profile(prefs: Dict[str, Any], browser_profile_path: Path) -> None:
+    """Save all preferences to the browser profile.
+
+    Write preferences from the prefs dictionary to a user.js file in the
+    profile directory.
+    """
+    with open(browser_profile_path / "user.js", "w") as f:
+        for key, value in prefs.items():
+            f.write('user_pref("%s", %s);\n' % (key, json.dumps(value)))
+
+
+def privacy(browser_params: BrowserParams, prefs: Dict[str, Any]) -> None:
     """
     Configure the privacy settings in Firefox. This includes:
     * DNT
@@ -12,15 +110,15 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
 
     # Turns on Do Not Track
     if browser_params.donottrack:
-        fo.set_preference("privacy.donottrackheader.enabled", True)
+        prefs["privacy.donottrackheader.enabled"] = True
 
     # Sets the third party cookie setting
     if browser_params.tp_cookies.lower() == "never":
-        fo.set_preference("network.cookie.cookieBehavior", 1)
+        prefs["network.cookie.cookieBehavior"] = 1
     elif browser_params.tp_cookies.lower() == "from_visited":
-        fo.set_preference("network.cookie.cookieBehavior", 3)
+        prefs["network.cookie.cookieBehavior"] = 3
     else:  # always allow third party cookies
-        fo.set_preference("network.cookie.cookieBehavior", 0)
+        prefs["network.cookie.cookieBehavior"] = 0
 
     # Tracking Protection
     if browser_params.tracking_protection:
@@ -31,7 +129,7 @@ def privacy(browser_params, fp, fo, root_dir, browser_profile_path):
         )
 
 
-def optimize_prefs(fo):
+def optimize_prefs(prefs: Dict[str, Any]) -> None:
     """
     Disable various features and checks the browser will do on startup.
     Some of these (e.g. disabling the newtab page) are required to prevent
@@ -42,113 +140,113 @@ def optimize_prefs(fo):
     * https://github.com/pyllyukko/user.js/blob/master/user.js
     """  # noqa
     # Startup / Speed
-    fo.set_preference("browser.shell.checkDefaultBrowser", False)
-    fo.set_preference("browser.slowStartup.notificationDisabled", True)
-    fo.set_preference("browser.slowStartup.maxSamples", 0)
-    fo.set_preference("browser.slowStartup.samples", 0)
-    fo.set_preference("extensions.checkCompatibility.nightly", False)
-    fo.set_preference("browser.rights.3.shown", True)
-    fo.set_preference("reader.parse-on-load.enabled", False)
-    fo.set_preference("browser.pagethumbnails.capturing_disabled", True)
-    fo.set_preference("browser.uitour.enabled", False)
-    fo.set_preference("dom.flyweb.enabled", False)
+    prefs["browser.shell.checkDefaultBrowser"] = False
+    prefs["browser.slowStartup.notificationDisabled"] = True
+    prefs["browser.slowStartup.maxSamples"] = 0
+    prefs["browser.slowStartup.samples"] = 0
+    prefs["extensions.checkCompatibility.nightly"] = False
+    prefs["browser.rights.3.shown"] = True
+    prefs["reader.parse-on-load.enabled"] = False
+    prefs["browser.pagethumbnails.capturing_disabled"] = True
+    prefs["browser.uitour.enabled"] = False
+    prefs["dom.flyweb.enabled"] = False
 
     # Disable health reports / telemetry / crash reports
-    fo.set_preference("datareporting.policy.dataSubmissionEnabled", False)
-    fo.set_preference("datareporting.healthreport.uploadEnabled", False)
-    fo.set_preference("datareporting.healthreport.service.enabled", False)
-    fo.set_preference("toolkit.telemetry.archive.enabled", False)
-    fo.set_preference("toolkit.telemetry.enabled", False)
-    fo.set_preference("toolkit.telemetry.unified", False)
-    fo.set_preference("breakpad.reportURL", "")
-    fo.set_preference("dom.ipc.plugins.reportCrashURL", False)
-    fo.set_preference("browser.selfsupport.url", "")
-    fo.set_preference("browser.tabs.crashReporting.sendReport", False)
-    fo.set_preference("browser.crashReports.unsubmittedCheck.enabled", False)
-    fo.set_preference("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", False)
+    prefs["datareporting.policy.dataSubmissionEnabled"] = False
+    prefs["datareporting.healthreport.uploadEnabled"] = False
+    prefs["datareporting.healthreport.service.enabled"] = False
+    prefs["toolkit.telemetry.archive.enabled"] = False
+    prefs["toolkit.telemetry.enabled"] = False
+    prefs["toolkit.telemetry.unified"] = False
+    prefs["breakpad.reportURL"] = ""
+    prefs["dom.ipc.plugins.reportCrashURL"] = False
+    prefs["browser.selfsupport.url"] = ""
+    prefs["browser.tabs.crashReporting.sendReport"] = False
+    prefs["browser.crashReports.unsubmittedCheck.enabled"] = False
+    prefs["dom.ipc.plugins.flash.subprocess.crashreporter.enabled"] = False
 
     # Predictive Actions / Prefetch
-    fo.set_preference("network.predictor.enabled", False)
-    fo.set_preference("network.dns.disablePrefetch", True)
-    fo.set_preference("network.prefetch-next", False)
-    fo.set_preference("browser.search.suggest.enabled", False)
-    fo.set_preference("network.http.speculative-parallel-limit", 0)
-    fo.set_preference("keyword.enabled", False)  # location bar using search
-    fo.set_preference("browser.urlbar.userMadeSearchSuggestionsChoice", True)
-    fo.set_preference("browser.casting.enabled", False)
+    prefs["network.predictor.enabled"] = False
+    prefs["network.dns.disablePrefetch"] = True
+    prefs["network.prefetch-next"] = False
+    prefs["browser.search.suggest.enabled"] = False
+    prefs["network.http.speculative-parallel-limit"] = 0
+    prefs["keyword.enabled"] = False  # location bar using search
+    prefs["browser.urlbar.userMadeSearchSuggestionsChoice"] = True
+    prefs["browser.casting.enabled"] = False
 
     # Disable pinging Mozilla for geoip
-    fo.set_preference("browser.search.geoip.url", "")
-    fo.set_preference("browser.search.countryCode", "US")
-    fo.set_preference("browser.search.region", "US")
+    prefs["browser.search.geoip.url"] = ""
+    prefs["browser.search.countryCode"] = "US"
+    prefs["browser.search.region"] = "US"
 
     # Disable pinging Mozilla for geo-specific search
-    fo.set_preference("browser.search.geoSpecificDefaults", False)
-    fo.set_preference("browser.search.geoSpecificDefaults.url", "")
+    prefs["browser.search.geoSpecificDefaults"] = False
+    prefs["browser.search.geoSpecificDefaults.url"] = ""
 
     # Disable auto-updating
-    fo.set_preference("app.update.enabled", False)  # browser
-    fo.set_preference("app.update.url", "")  # browser
-    fo.set_preference("browser.search.update", False)  # search
-    fo.set_preference("extensions.update.enabled", False)  # extensions
-    fo.set_preference("extensions.update.autoUpdateDefault", False)
-    fo.set_preference("extensions.getAddons.cache.enabled", False)
-    fo.set_preference("lightweightThemes.update.enabled", False)  # Personas
+    prefs["app.update.enabled"] = False  # browser
+    prefs["app.update.url"] = ""  # browser
+    prefs["browser.search.update"] = False  # search
+    prefs["extensions.update.enabled"] = False  # extensions
+    prefs["extensions.update.autoUpdateDefault"] = False
+    prefs["extensions.getAddons.cache.enabled"] = False
+    prefs["lightweightThemes.update.enabled"] = False  # Personas
 
     # Disable Safebrowsing and other security features
     # that require on remote content
-    fo.set_preference("browser.safebrowsing.phising.enabled", False)
-    fo.set_preference("browser.safebrowsing.malware.enabled", False)
-    fo.set_preference("browser.safebrowsing.downloads.enabled", False)
-    fo.set_preference("browser.safebrowsing.downloads.remote.enabled", False)
-    fo.set_preference("browser.safebrowsing.blockedURIs.enabled", False)
-    fo.set_preference("browser.safebrowsing.provider.mozilla.gethashURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google.gethashURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google4.gethashURL", "")
-    fo.set_preference("browser.safebrowsing.provider.mozilla.updateURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google.updateURL", "")
-    fo.set_preference("browser.safebrowsing.provider.google4.updateURL", "")
-    fo.set_preference("browser.safebrowsing.provider.mozilla.lists", "")  # TP
-    fo.set_preference("browser.safebrowsing.provider.google.lists", "")  # TP
-    fo.set_preference("browser.safebrowsing.provider.google4.lists", "")  # TP
-    fo.set_preference("extensions.blocklist.enabled", False)  # extensions
-    fo.set_preference("security.OCSP.enabled", 0)
+    prefs["browser.safebrowsing.phising.enabled"] = False
+    prefs["browser.safebrowsing.malware.enabled"] = False
+    prefs["browser.safebrowsing.downloads.enabled"] = False
+    prefs["browser.safebrowsing.downloads.remote.enabled"] = False
+    prefs["browser.safebrowsing.blockedURIs.enabled"] = False
+    prefs["browser.safebrowsing.provider.mozilla.gethashURL"] = ""
+    prefs["browser.safebrowsing.provider.google.gethashURL"] = ""
+    prefs["browser.safebrowsing.provider.google4.gethashURL"] = ""
+    prefs["browser.safebrowsing.provider.mozilla.updateURL"] = ""
+    prefs["browser.safebrowsing.provider.google.updateURL"] = ""
+    prefs["browser.safebrowsing.provider.google4.updateURL"] = ""
+    prefs["browser.safebrowsing.provider.mozilla.lists"] = ""  # TP
+    prefs["browser.safebrowsing.provider.google.lists"] = ""  # TP
+    prefs["browser.safebrowsing.provider.google4.lists"] = ""  # TP
+    prefs["extensions.blocklist.enabled"] = False  # extensions
+    prefs["security.OCSP.enabled"] = 0
 
     # Disable Content Decryption Module and OpenH264 related downloads
-    fo.set_preference("media.gmp-manager.url", "")
-    fo.set_preference("media.gmp-provider.enabled", False)
-    fo.set_preference("media.gmp-widevinecdm.enabled", False)
-    fo.set_preference("media.gmp-widevinecdm.visible", False)
-    fo.set_preference("media.gmp-gmpopenh264.enabled", False)
+    prefs["media.gmp-manager.url"] = ""
+    prefs["media.gmp-provider.enabled"] = False
+    prefs["media.gmp-widevinecdm.enabled"] = False
+    prefs["media.gmp-widevinecdm.visible"] = False
+    prefs["media.gmp-gmpopenh264.enabled"] = False
 
     # Disable Experiments
-    fo.set_preference("experiments.enabled", False)
-    fo.set_preference("experiments.manifest.uri", "")
-    fo.set_preference("experiments.supported", False)
-    fo.set_preference("experiments.activeExperiment", False)
-    fo.set_preference("network.allow-experiments", False)
+    prefs["experiments.enabled"] = False
+    prefs["experiments.manifest.uri"] = ""
+    prefs["experiments.supported"] = False
+    prefs["experiments.activeExperiment"] = False
+    prefs["network.allow-experiments"] = False
 
     # Disable pinging Mozilla for newtab
-    fo.set_preference("browser.newtabpage.directory.ping", "")
-    fo.set_preference("browser.newtabpage.directory.source", "")
-    fo.set_preference("browser.newtabpage.enabled", False)
-    fo.set_preference("browser.newtabpage.enhanced", False)
-    fo.set_preference("browser.newtabpage.introShown", True)
-    fo.set_preference("browser.aboutHomeSnippets.updateUrl", "")
+    prefs["browser.newtabpage.directory.ping"] = ""
+    prefs["browser.newtabpage.directory.source"] = ""
+    prefs["browser.newtabpage.enabled"] = False
+    prefs["browser.newtabpage.enhanced"] = False
+    prefs["browser.newtabpage.introShown"] = True
+    prefs["browser.aboutHomeSnippets.updateUrl"] = ""
 
     # Disable Pocket
-    fo.set_preference("extensions.pocket.enabled", False)
+    prefs["extensions.pocket.enabled"] = False
 
     # Disable Shield
-    fo.set_preference("app.shield.optoutstudies.enabled", False)
-    fo.set_preference("extensions.shield-recipe-client.enabled", False)
+    prefs["app.shield.optoutstudies.enabled"] = False
+    prefs["extensions.shield-recipe-client.enabled"] = False
 
-    # Disable Source Pragams
+    # Disable Source Pragmas
     # As per https://bugzilla.mozilla.org/show_bug.cgi?id=1628853
     # sourceURL can be used to obfuscate the original origin of
     # a script, we disable it.
-    fo.set_preference("javascript.options.source_pragmas", False)
+    prefs["javascript.options.source_pragmas"] = False
 
     # Enable extensions and disable extension signing
-    fo.set_preference("extensions.experiments.enabled", True)
-    fo.set_preference("xpinstall.signatures.required", False)
+    prefs["extensions.experiments.enabled"] = True
+    prefs["xpinstall.signatures.required"] = False

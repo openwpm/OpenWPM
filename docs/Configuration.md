@@ -249,11 +249,6 @@ TODO
 
 # Browser Profile Support
 
-**WARNING: Stateful crawls are currently not supported. Attempts to run
-stateful crawls will throw `NotImplementedError`s. The work required to
-restore support is tracked in
-[this project](https://github.com/mozilla/OpenWPM/projects/2).**
-
 ## Stateful vs Stateless crawls
 
 By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
@@ -329,7 +324,6 @@ but will not be used during crash recovery. Specifically:
 profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
 restart for some reason during the crawl, it will use the profile from
 the most recent page visit (pre-crash) rather than the `seed_tar` profile.
-Note that stateful crawls are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
 * For stateless crawls, the initial `seed_tar` will be loaded during each
 new page visit. Note that this means the profile will very likely be
 _incomplete_, as cookies or storage may have been set or changed during the

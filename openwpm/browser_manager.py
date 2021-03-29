@@ -5,9 +5,11 @@ import pickle
 import shutil
 import signal
 import sys
+import tempfile
 import threading
 import time
 import traceback
+from pathlib import Path
 from queue import Empty as EmptyQueue
 from typing import Optional, Union
 
@@ -16,6 +18,7 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import pickling_support
 
+from .commands.profile_commands import dump_profile
 from .commands.types import BaseCommand, ShutdownSignal
 from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
@@ -33,7 +36,7 @@ pickling_support.install()
 
 class Browser:
     """
-    The Browser class is responsbile for holding all of the
+    The Browser class is responsible for holding all of the
     configuration and status information on BrowserManager process
     it corresponds to. It also includes a set of methods for managing
     the BrowserManager process and its child processes/threads.
@@ -52,7 +55,7 @@ class Browser:
         self._UNSUCCESSFUL_SPAWN_LIMIT = 4
 
         # manager parameters
-        self.current_profile_path = None
+        self.current_profile_path: Optional[Path] = None
         self.db_socket_address = manager_params.storage_controller_address
         assert browser_params.browser_id is not None
         self.browser_id: BrowserId = browser_params.browser_id
@@ -62,7 +65,7 @@ class Browser:
 
         # Queues and process IDs for BrowserManager
 
-        # thread to run commands issues from TaskManager
+        # thread to run commands issued from TaskManager
         self.command_thread: Optional[threading.Thread] = None
         # queue for passing command tuples to BrowserManager
         self.command_queue: Optional[Queue] = None
@@ -75,7 +78,7 @@ class Browser:
         # the port of the display for the Xvfb display (if it exists)
         self.display_port: Optional[int] = None
 
-        # boolean that says if the BrowserManager new (to optimize restarts)
+        # boolean that says if the BrowserManager is new (to optimize restarts)
         self.is_fresh = True
         # boolean indicating if the browser should be restarted
         self.restart_required = False
@@ -97,29 +100,29 @@ class Browser:
         sets up the BrowserManager and gets the process id, browser pid and,
         if applicable, screen pid. loads associated user profile if necessary
         """
-        # Unsupported. See https://github.com/mozilla/OpenWPM/projects/2
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
-        """
         if self.current_profile_path is not None:
             # tar contents of crashed profile to a temp dir
-            tempdir = tempfile.mkdtemp(prefix="owpm_profile_archive_") + "/"
-            profile_commands.dump_profile(
-                self.current_profile_path,
-                self.manager_params,
-                self.browser_params,
-                tempdir,
-                close_webdriver=False,
+            tempdir = tempfile.mkdtemp(prefix="openwpm_profile_archive_")
+            tar_path = Path(tempdir) / "profile.tar"
+
+            dump_profile(
+                browser_profile_path=self.current_profile_path,
+                tar_path=tar_path,
+                compress=False,
+                browser_params=self.browser_params,
             )
+
             # make sure browser loads crashed profile
-            self.browser_params.recovery_tar = tempdir
+            self.browser_params.recovery_tar = tar_path
 
             crash_recovery = True
         else:
-        """
+            tempdir = None
+            crash_recovery = False
+
         self.logger.info("BROWSER %i: Launching browser..." % self.browser_id)
-        tempdir = None
-        crash_recovery = False
         self.is_fresh = not crash_recovery
 
         # Try to spawn the browser within the timelimit
@@ -159,8 +162,8 @@ class Browser:
             # Read success status of browser manager
             launch_status = dict()
             try:
-                # 1. Selenium profile created
-                spawned_profile_path = check_queue(launch_status)
+                # 1. Browser profile created
+                browser_profile_path = check_queue(launch_status)
                 # 2. Profile tar loaded (if necessary)
                 check_queue(launch_status)
                 # 3. Display launched (if necessary)
@@ -170,7 +173,7 @@ class Browser:
                 # 5. Browser launched
                 self.geckodriver_pid = check_queue(launch_status)
 
-                (driver_profile_path, ready) = check_queue(launch_status)
+                ready = check_queue(launch_status)
                 if ready != "READY":
                     self.logger.error(
                         "BROWSER %i: Mismatch of status queue return values, "
@@ -183,7 +186,6 @@ class Browser:
                 unsuccessful_spawns += 1
                 error_string = ""
                 status_strings = [
-                    "Proxy Ready",
                     "Profile Created",
                     "Profile Tar",
                     "Display",
@@ -202,17 +204,15 @@ class Browser:
                 )
                 self.close_browser_manager()
                 if "Profile Created" in launch_status:
-                    shutil.rmtree(spawned_profile_path, ignore_errors=True)
+                    shutil.rmtree(browser_profile_path, ignore_errors=True)
 
         # If the browser spawned successfully, we should update the
         # current profile path class variable and clean up the tempdir
         # and previous profile path.
         if success:
-            self.logger.debug("BROWSER %i: Browser spawn sucessful!" % self.browser_id)
+            self.logger.debug("BROWSER %i: Browser spawn successful!" % self.browser_id)
             previous_profile_path = self.current_profile_path
-            self.current_profile_path = driver_profile_path
-            if driver_profile_path != spawned_profile_path:
-                shutil.rmtree(spawned_profile_path, ignore_errors=True)
+            self.current_profile_path = browser_profile_path
             if previous_profile_path is not None:
                 shutil.rmtree(previous_profile_path, ignore_errors=True)
             if tempdir is not None:
@@ -360,7 +360,7 @@ class Browser:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(
-                    "BROWSER %i: Display process does not " "exit" % self.browser_id
+                    "BROWSER %i: Display process does not exit" % self.browser_id
                 )
                 pass
             except TypeError:
@@ -368,7 +368,7 @@ class Browser:
                     "BROWSER %i: PID may not be the correct "
                     "type %s" % (self.browser_id, str(self.display_pid))
                 )
-        if self.display_port is not None:  # xvfb diplay lock
+        if self.display_port is not None:  # xvfb display lock
             lockfile = "/tmp/.X%s-lock" % self.display_port
             try:
                 os.remove(lockfile)
@@ -394,33 +394,27 @@ class Browser:
         self.close_browser_manager(force=force)
 
         # Archive browser profile (if requested)
-        if not during_init and self.browser_params.profile_archive_dir is not None:
-            self.logger.warning(
-                "BROWSER %i: Archiving the browser profile directory is "
-                "currently unsupported. "
-                "See: https://github.com/mozilla/OpenWPM/projects/2" % self.browser_id
-            )
-        """
         self.logger.debug(
-            "BROWSER %i: during_init=%s | profile_archive_dir=%s" % (
-                self.browser_id, str(during_init),
-                self.browser_params.profile_archive_dir)
-        )
-        if (not during_init and
-                self.browser_params.profile_archive_dir is not None):
-            self.logger.debug(
-                "BROWSER %i: Archiving browser profile directory to %s" % (
-                    self.browser_id,
-                    self.browser_params.profile_archive_dir))
-            profile_commands.dump_profile(
-                self.current_profile_path,
-                self.manager_params,
-                self.browser_params,
+            "BROWSER %i: during_init=%s | profile_archive_dir=%s"
+            % (
+                self.browser_id,
+                str(during_init),
                 self.browser_params.profile_archive_dir,
-                close_webdriver=False,
-                compress=True
             )
-        """
+        )
+        if not during_init and self.browser_params.profile_archive_dir is not None:
+            self.logger.debug(
+                "BROWSER %i: Archiving browser profile directory to %s"
+                % (self.browser_id, self.browser_params.profile_archive_dir)
+            )
+            tar_path = self.browser_params.profile_archive_dir / "profile.tar.gz"
+            assert self.current_profile_path is not None
+            dump_profile(
+                browser_profile_path=self.current_profile_path,
+                tar_path=tar_path,
+                compress=True,
+                browser_params=self.browser_params,
+            )
 
         # Clean up temporary files
         if self.current_profile_path is not None:
@@ -441,22 +435,20 @@ def BrowserManager(
     display = None
     try:
         # Start Xvfb (if necessary), webdriver, and browser
-        driver, prof_folder, display = deploy_firefox.deploy_firefox(
+        driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery
         )
-        if prof_folder[-1] != "/":
-            prof_folder += "/"
 
         # Read the extension port -- if extension is enabled
         # TODO: Initial communication from extension to TM should use sockets
         if browser_params.extension_enabled:
             logger.debug(
                 "BROWSER %i: Looking for extension port information "
-                "in %s" % (browser_params.browser_id, prof_folder)
+                "in %s" % (browser_params.browser_id, browser_profile_path)
             )
             elapsed = 0
             port = None
-            ep_filename = os.path.join(prof_folder, "extension_port.txt")
+            ep_filename = browser_profile_path / "extension_port.txt"
             while elapsed < 5:
                 try:
                     with open(ep_filename, "rt") as f:
@@ -483,10 +475,9 @@ def BrowserManager(
 
         logger.debug("BROWSER %i: BrowserManager ready." % browser_params.browser_id)
 
-        # passes the profile folder back to the
-        # TaskManager to signal a successful startup
-        status_queue.put(("STATUS", "Browser Ready", (prof_folder, "READY")))
-        browser_params.profile_path = prof_folder
+        # passes "READY" to the TaskManager to signal a successful startup
+        status_queue.put(("STATUS", "Browser Ready", "READY"))
+        browser_params.profile_path = browser_profile_path
 
         # starts accepting arguments until told to die
         while True:
@@ -498,12 +489,6 @@ def BrowserManager(
             command: Union[ShutdownSignal, BaseCommand] = command_queue.get()
 
             if type(command) is ShutdownSignal:
-                # Geckodriver creates a copy of the profile (and the original
-                # temp file created by FirefoxProfile() is deleted).
-                # We clear the profile attribute here to prevent prints from:
-                # https://github.com/SeleniumHQ/selenium/blob/4e4160dd3d2f93757cafb87e2a1c20d6266f5554/py/selenium/webdriver/firefox/webdriver.py#L193-L199
-                if driver.profile and not os.path.isdir(driver.profile.path):
-                    driver.profile = None
                 driver.quit()
                 status_queue.put("OK")
                 return
