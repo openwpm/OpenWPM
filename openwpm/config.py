@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass, field
 from json import JSONEncoder
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dataclasses_json import DataClassJsonMixin
 from dataclasses_json import config as DCJConfig
@@ -148,6 +148,7 @@ class ManagerParams(DataClassJsonMixin):
 class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
+    cleaned_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass

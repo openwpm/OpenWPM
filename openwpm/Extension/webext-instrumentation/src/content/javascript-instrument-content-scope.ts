@@ -2,7 +2,7 @@ import {getInstrumentJS} from "../lib/js-instruments";
 import {pageScript} from "./javascript-instrument-page-scope";
 
 function getPageScriptAsString(
-  jsInstrumentationSettingsString: string,
+  jsInstrumentationSettings: object,
 ): string {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
@@ -12,7 +12,7 @@ ${getInstrumentJS}
 // End of js-instruments.
 
 // Start of custom instrumentRequests.
-const jsInstrumentationSettings = ${jsInstrumentationSettingsString};
+const jsInstrumentationSettings = ${JSON.stringify(jsInstrumentationSettings)};
 // End of custom instrumentRequests.
 
 // Start of anonymous function from javascript-instrument-page-scope.ts
@@ -63,7 +63,7 @@ document.addEventListener(eventId, function(e: CustomEvent) {
 
 export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
   insertScript(
-    getPageScriptAsString(contentScriptConfig.jsInstrumentationSettingsString),
+    getPageScriptAsString(contentScriptConfig.jsInstrumentationSettings),
     eventId,
     contentScriptConfig.testing,
   );

@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any, Dict, List
 
 import jsonschema
 
@@ -18,23 +19,6 @@ shortcut_specs = {
         curdir, "js_instrumentation_collections", "fingerprinting.json"
     )
 }
-
-
-def _python_to_js_string(py_in):
-    """Takes python in and converts it to a string
-    of the equivalent JS object.
-
-    Customized for our specific needs:
-    * expects a list
-    * object is de-quoted
-    """
-    objects = [x["object"] for x in py_in]
-    out = json.dumps(py_in)
-    for o in objects:
-        obj_str_before = f'"object": "{o}",'
-        obj_str_after = f'"object": {o},'
-        out = out.replace(obj_str_before, obj_str_after)
-    return out
 
 
 def _validate(python_list_to_validate):
@@ -136,8 +120,6 @@ def _build_full_settings_object(setting):
         propertiesToInstrument property of a new LogSettings object.
     We must also create the instrumentedName value.
     """
-    obj = None
-    instrumentedName = None
     logSettings = get_default_log_settings()
 
     if isinstance(setting, str):
@@ -207,7 +189,9 @@ def get_default_log_settings():
     }
 
 
-def clean_js_instrumentation_settings(user_requested_settings):
+def clean_js_instrumentation_settings(
+    user_requested_settings: List[Any],
+) -> List[Dict[str, Any]]:
     """Convert user input JSinstrumentation settings to full settings object.
 
     Accepts a list. From the list we need to parse each item.
@@ -260,4 +244,4 @@ def clean_js_instrumentation_settings(user_requested_settings):
             settings.append(_build_full_settings_object(setting))
     settings = _merge_settings(settings)
     _validate(settings)
-    return _python_to_js_string(settings)
+    return settings
