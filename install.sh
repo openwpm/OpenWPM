@@ -5,7 +5,7 @@
 # in the docker file and on travis, but it's not
 # necessary for individual users to use it.
 
-# Developers are encourage to only run scripts
+# Developers are encouraged to only run scripts
 # that they fully understand, and may prefer to
 # run aspects of this script manually to set-up
 # openwpm.
