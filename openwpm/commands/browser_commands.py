@@ -506,7 +506,7 @@ class InitializeCommand(BaseCommand):
     """
 
     def __repr__(self):
-        return "IntitializeCommand()"
+        return "InitializeCommand()"
 
     def execute(
         self,
