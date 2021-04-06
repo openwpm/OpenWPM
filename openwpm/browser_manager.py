@@ -12,7 +12,7 @@ import time
 import traceback
 from pathlib import Path
 from queue import Empty as EmptyQueue
-from typing import Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 import psutil
 import tblib
@@ -30,7 +30,10 @@ from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
-from .task_manager import TaskManager
+
+if TYPE_CHECKING:
+    from .task_manager import TaskManager
+
 from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (
     Process,
@@ -43,7 +46,7 @@ pickling_support.install()
 
 class BrowserManagerHandle:
     """
-    The Browser class is responsible for holding all of the
+    The BrowserManagerHandle class is responsible for holding all of the
     configuration and status information on BrowserManager process
     it corresponds to. It also includes a set of methods for managing
     the BrowserManager process and its child processes/threads.
@@ -336,7 +339,9 @@ class BrowserManagerHandle:
         )
 
     def execute_command_sequence(
-        self, tm: TaskManager, command_sequence: CommandSequence
+        self,
+        tm: "TaskManager",  # Quoting to break cyclic import, see https://stackoverflow.com/a/39757388
+        command_sequence: CommandSequence,
     ) -> None:
         """
         Sends CommandSequence to the BrowserManager one command at a time
