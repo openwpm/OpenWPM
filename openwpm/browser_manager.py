@@ -34,7 +34,7 @@ from .utilities.multiprocess_utils import (
 pickling_support.install()
 
 
-class Browser:
+class BrowserManagerHandle:
     """
     The Browser class is responsible for holding all of the
     configuration and status information on BrowserManager process
