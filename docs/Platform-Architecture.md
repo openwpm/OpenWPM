@@ -1,6 +1,7 @@
 # Platform Architecture
 
-## Overview
+## TaskManager
+### Overview
 
 The user-facing component of the OpenWPM platform is the Task Manager.
 The Task Manager oversees multiple browser instances and passes them commands.
@@ -8,7 +9,7 @@ The Task Manager also ensures that crawls continue despite browser crashes for f
 In particular, it checks whether a given browser fails to complete a command within a given timeout (or has died) and 
 kills/restarts this browser as necessary.
 
-## Watchdogs
+### Watchdogs
 In OpenWPM we have a watchdog thread that tries to ensure two things.
 - `process_watchdog`
     * It is part of default manager_params. It is set to false by default which can manually be set to true.
@@ -19,7 +20,7 @@ In OpenWPM we have a watchdog thread that tries to ensure two things.
     * It is a watchdog that tries to ensure that no Firefox instance takes up too much memory.
     * It is mostly useful for long running cloud crawls.
 
-## Issuing commands
+### Issuing commands
 
 OpenWPM uses the `CommandSequence` as a fundamental unit of work.
 A `CommandSequence` describes as series of steps that will execute in order on a particular browser.
@@ -47,7 +48,7 @@ Please note that you need to close the manager, because by default CommandSequen
 * `None`: the command is executed by a browser on a first-come, first-serve basis
 * `<index>`: the command is executed by the `<index>`th browser instance
 
-## Adding new commands
+### Adding new commands
 
 Have a look at [`custom_command.py`](../custom_command.py)
 
