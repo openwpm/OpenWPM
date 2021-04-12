@@ -217,7 +217,7 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
         * A dictionary - with non default log settings. Items missing from this dictionary
           will be filled in with the default log settings.
     * Here are some examples:
-        ```
+        ```json
         // Collections
         "collection_fingerprinting",
         // APIs, with or without settings details
@@ -354,13 +354,13 @@ page load that are **not** reflected back into the seed profile.
             "doc_url": "http://example.com",
             "source": "<html> ... </html>",
             "iframes": {
-                "frame_1": {"doc_url": ...,
-                            "source": ...,
-                            "iframes": { ... }},
-                "frame_2": {"doc_url": ...,
-                            "source": ...,
-                            "iframes": { ... }},
-                "frame_3": { ... }
+                "frame_1": {"doc_url": "...",
+                            "source": "...",
+                            "iframes": { "...": "..." }},
+                "frame_2": {"doc_url": "...",
+                            "source": "...",
+                            "iframes": { "...": "..." }},
+                "frame_3": { "...": "..." }
             }
         }
         ```
