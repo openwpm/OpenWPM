@@ -26,9 +26,6 @@ C:\\nppdf32Log\\debuglog.txt
 */idea
 .Trash-0
 
-#Docs
-docs/source
-
 #VSCode
 .vscode
 
@@ -88,6 +85,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/source/
 
 # npm packages
 node_modules
