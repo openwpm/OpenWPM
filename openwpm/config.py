@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass, field
 from json import JSONEncoder
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dataclasses_json import DataClassJsonMixin
 from dataclasses_json import config as DCJConfig
@@ -97,7 +97,9 @@ class BrowserParams(DataClassJsonMixin):
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
-    profile_archive_dir: Optional[str] = None
+    profile_archive_dir: Optional[Path] = field(
+        default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
+    )
     recovery_tar: Optional[Path] = None
     donottrack: bool = False
     tracking_protection: bool = False
@@ -146,6 +148,7 @@ class ManagerParams(DataClassJsonMixin):
 class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
+    cleaned_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass

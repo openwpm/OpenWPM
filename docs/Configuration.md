@@ -36,26 +36,28 @@ validate_crawl_configs(manager_params, browser_params)
 
 **NOTE**: If any validations fail, we raise `ConfigError`
 
-- [Platform Configuration Options](#platform-configuration-options)
-- [Browser Configuration Options](#browser-configuration-options)
-- [Instruments](#instruments)
-  - [`http_instrument`](#http_instrument)
-  - [`js_instrument`](#js_instrument)
-  - [`navigation_instrument`](#navigation_instrument)
-  - [`callstack_instrument`](#callstack_instrument)
-  - [`dns_instrument`](#dns_instrument)
-  - [`cookie_instrument`](#cookie_instrument)
-- [Browser Profile Support](#browser-profile-support)
+- [Browser and Platform Configuration](#browser-and-platform-configuration)
+  - [Validations:](#validations)
+  - [Platform Configuration Options](#platform-configuration-options)
+  - [Browser Configuration Options](#browser-configuration-options)
+  - [Instruments](#instruments)
+    - [`http_instrument`](#http_instrument)
+    - [`js_instrument`](#js_instrument)
+    - [`navigation_instrument`](#navigation_instrument)
+    - [`callstack_instrument`](#callstack_instrument)
+    - [`dns_instrument`](#dns_instrument)
+    - [`cookie_instrument`](#cookie_instrument)
+  - [Browser Profile Support](#browser-profile-support)
   - [Stateful vs Stateless crawls](#stateful-vs-stateless-crawls)
-  - [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
-    - [Save a profile](#save-a-profile)
-    - [Load a profile](#load-a-profile)
-- [Non instrument data gathering](#non-instrument-data-gathering)
-  - [Log Files](#log-files)
-  - [Browser Profile](#browser-profile)
-  - [Rendered Page Source](#rendered-page-source)
-  - [Screenshots](#screenshots)
-  - [`save_content`](#save_content)
+    - [Loading and saving a browser profile](#loading-and-saving-a-browser-profile)
+      - [Save a profile](#save-a-profile)
+      - [Load a profile](#load-a-profile)
+  - [Non instrument data gathering](#non-instrument-data-gathering)
+    - [Log Files](#log-files)
+    - [Browser Profile](#browser-profile)
+    - [Rendered Page Source](#rendered-page-source)
+    - [Screenshots](#screenshots)
+    - [`save_content`](#save_content)
 
 ## Platform Configuration Options
 
@@ -251,12 +253,7 @@ TODO
 
 ## Browser Profile Support
 
-**WARNING: Stateful crawls are currently not supported. Attempts to run
-stateful crawls will throw `NotImplementedError`s. The work required to
-restore support is tracked in
-[this project](https://github.com/mozilla/OpenWPM/projects/2).**
-
-### Stateful vs Stateless crawls
+## Stateful vs Stateless crawls
 
 By default OpenWPM performs a "stateful" crawl, in that it keeps a consistent
 browser profile between page visits in the same browser. If the browser
@@ -312,9 +309,15 @@ platform-level crash occurs.
 #### Load a profile
 
 To load a profile, specify the `seed_tar` browser parameter in the browser
-configuration dictionary. This should point to the location of the
-`profile.tar` or (`profile.tar.gz` if compressed) file produced by OpenWPM
+configuration dictionary. This should be a `Path` object pointing to the
+`.tar` (or `.tar.gz` if compressed) file produced by OpenWPM
 or by manually tarring a firefox profile directory.
+
+> Please note that you must tar the contents of the profile directory
+> and not the directory itself.  
+> (For an example of the difference please see
+> [here](https://github.com/mozilla/OpenWPM/issues/790#issuecomment-791316632))
+
 The profile will be automatically extracted and loaded into the browser
 instance for which the configuration parameter was set.
 
@@ -325,7 +328,6 @@ but will not be used during crash recovery. Specifically:
 profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
 restart for some reason during the crawl, it will use the profile from
 the most recent page visit (pre-crash) rather than the `seed_tar` profile.
-Note that stateful crawls are currently [unsupported](https://github.com/mozilla/OpenWPM/projects/2)).
 * For stateless crawls, the initial `seed_tar` will be loaded during each
 new page visit. Note that this means the profile will very likely be
 _incomplete_, as cookies or storage may have been set or changed during the
@@ -402,3 +404,4 @@ Response body content
     `browser_params.save_content = "script"` to save only Javascript
     files. This will lessen the performance impact of this instrumentation
     when a large number of browsers are used in parallel.
+q

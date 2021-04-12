@@ -57,7 +57,6 @@ export class JavascriptInstrument {
    */
   public listen() {
     this.onMessageListener = (message, sender) => {
-      // console.debug("javascript-instrumentation background listener", {message, sender}, this.configured);
       if (
         message.namespace &&
         message.namespace === "javascript-instrumentation"
@@ -112,11 +111,11 @@ export class JavascriptInstrument {
 
   public async registerContentScript(
     testing: boolean,
-    jsInstrumentationSettingsString: string,
+    jsInstrumentationSettings: object,
   ) {
     const contentScriptConfig = {
       testing,
-      jsInstrumentationSettingsString,
+      jsInstrumentationSettings,
     };
     if (contentScriptConfig) {
       // TODO: Avoid using window to pass the content script config

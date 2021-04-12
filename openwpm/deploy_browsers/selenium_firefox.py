@@ -46,15 +46,13 @@ class FirefoxLogInterceptor(threading.Thread):
     """
     Intercept logs from Selenium and/or geckodriver, using a named pipe
     and a detached thread, and feed them to the primary logger for this
-    instance.  Also responsible for extracting the _real_ profile location
-    from geckodriver's log output (geckodriver copies the profile).
+    instance.
     """
 
-    def __init__(self, browser_id, profile_path):
+    def __init__(self, browser_id):
         threading.Thread.__init__(self, name="log-interceptor-%i" % browser_id)
         self.browser_id = browser_id
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
-        self.profile_path = profile_path
         self.daemon = True
         self.logger = logging.getLogger("openwpm")
 
@@ -68,11 +66,6 @@ class FirefoxLogInterceptor(threading.Thread):
                     self.logger.debug(
                         "BROWSER %i: driver: %s" % (self.browser_id, line.strip())
                     )
-                    if "Using profile path" in line:
-                        self.profile_path = line.partition("Using profile path")[
-                            -1
-                        ].strip()
-
                     if self.fifo is not None:
                         os.unlink(self.fifo)
                         self.fifo = None
@@ -83,7 +76,7 @@ class FirefoxLogInterceptor(threading.Thread):
                 self.fifo = None
 
 
-class PatchedGeckoDriverService(BaseService):
+class PatchedGeckoDriverService(FirefoxDriverModule.Service):
     """Object that manages the starting and stopping of the GeckoDriver.
     Modified from the original (selenium.webdriver.firefox.service.Service)
     for Py3 compat in the presence of log FIFOs, and for potential future
@@ -127,12 +120,6 @@ class PatchedGeckoDriverService(BaseService):
             self, executable_path, port=port, log_file=log_file, env=env
         )
         self.service_args = service_args or []
-
-    def command_line_args(self):
-        return ["--port", "%d" % self.port]
-
-    def send_remote_shutdown_command(self):
-        pass
 
 
 FirefoxDriverModule.Service = PatchedGeckoDriverService

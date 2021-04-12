@@ -65,7 +65,6 @@ with TaskManager(
         command_sequence = CommandSequence(
             site,
             site_rank=index,
-            reset=True,
             callback=callback,
         )
 
@@ -74,5 +73,5 @@ with TaskManager(
         # Have a look at custom_command.py to see how to implement your own command
         command_sequence.append_command(LinkCountingCommand())
 
-        # Run commands across the three browsers (simple parallelization)
+        # Run commands across all browsers (simple parallelization)
         manager.execute_command_sequence(command_sequence)
