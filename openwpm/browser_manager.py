@@ -18,7 +18,6 @@ import psutil
 import tblib
 from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
-from tblib import pickling_support
 
 from .command_sequence import CommandSequence
 from .commands.browser_commands import FinalizeCommand
@@ -41,7 +40,7 @@ from .utilities.multiprocess_utils import (
     parse_traceback_for_sentry,
 )
 
-pickling_support.install()
+tblib.pickling_support.install()
 
 
 class BrowserManagerHandle:
@@ -340,7 +339,8 @@ class BrowserManagerHandle:
 
     def execute_command_sequence(
         self,
-        tm: "TaskManager",  # Quoting to break cyclic import, see https://stackoverflow.com/a/39757388
+        # Quoting to break cyclic import, see https://stackoverflow.com/a/39757388
+        tm: "TaskManager", 
         command_sequence: CommandSequence,
     ) -> None:
         """
@@ -408,7 +408,7 @@ class BrowserManagerHandle:
                     "process while executing command %s. Setting failure "
                     "status." % (self.browser_id, str(command))
                 )
-                self.failure_status = {
+                tm.failure_status = {
                     "ErrorType": "CriticalChildException",
                     "CommandSequence": command_sequence,
                     "Exception": status[1],
@@ -466,7 +466,7 @@ class BrowserManagerHandle:
                         "count above the allowable limit. Setting "
                         "failure_status." % self.browser_id
                     )
-                    self.failure_status = {
+                    tm.failure_status = {
                         "ErrorType": "ExceedCommandFailureLimit",
                         "CommandSequence": command_sequence,
                     }
