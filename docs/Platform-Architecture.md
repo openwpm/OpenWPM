@@ -22,7 +22,7 @@ In OpenWPM we have a watchdog thread that tries to ensure two things.
 ## Issuing commands
 
 OpenWPM uses the `CommandSequence` as a fundamental unit of work.
-A `CommandSequence` describes as series of steps that will execute in order on a particular Browser.
+A `CommandSequence` describes as series of steps that will execute in order on a particular browser.
 All available Commands are visible by inspecting the `CommandSequence` API.
 
 For example you could wire up a `CommandSequence` to go to a given url and take a screenshot of it by writing:
@@ -57,17 +57,26 @@ Have a look at [`custom_command.py`](../custom_command.py)
 
 Contained in `openwpm/BrowserManager.py`, Browser Managers provide a wrapper around the drivers used to automate full browser instances. In particular, we opted to use [Selenium](http://docs.seleniumhq.org/) to drive full browser instances as bot detection frameworks can more easily detect lightweight alternatives such as PhantomJS. 
 
-Browser Managers receive commands from the Task Manager, which they then pass to the command executor (located in `openwpm/commands/command_executor.py`), which receives a command object and converts it into web driver actions. Browser Managers also receive browser parameters which they use to instantiate the Selenium web driver using one of the browser initialization functions contained in `openwpm/deploy_browsers`.
+Browser Managers receive the commands in a CommandSequence from the Task Manager one by one, calling the `execute`
+method on each of them and stopping if one command should fail.
+Browser Managers also receive browser parameters which they use to instantiate the Selenium web driver using one of
+the browser initialization functions contained in `openwpm/deploy_browsers`.
 
-The Browser class, contained in the same file, is the Task Manager's wrapper around Browser Managers, which allow it to cleanly kill and restart Browser Managers as necessary.
+The BrowserManagerHandle class, contained in the same file, is the Task Manager's wrapper around Browser Managers,
+which allow it to cleanly kill and restart Browser Managers as necessary.
 
-**Important Programming Note** The Browser Managers are designed to isolate the Task Manager from the underlying browser instances. As part of this approach, no data from the browsers should flow up to the Task Manager (beyond basic metadata such as the browsers' process IDs). For instance, if the Browser Manager is assigned the task of collecting and parsing XPath data, this parsing should be completed by Browser Managers and **not** passed up to the Task Manager for post-processing.
+**Important Programming Note** The Browser Managers are designed to isolate the Task Manager from the underlying browser
+instances. As part of this approach, no data from the browsers should flow up to the Task Manager
+(beyond basic metadata such as the browsers' process IDs). For instance, if the Browser Manager is assigned the task of
+collecting and parsing XPath data, this parsing should be completed by Browser Managers
+and **not** passed up to the Task Manager for post-processing.
 
 ## Browser Information Logging
 
 Throughout the course of a measurement, the Browser Managers' commands (along with timestamps and the status of the commands)
 are logged by the Task Manager, which contributes to the reproducibility of individual experiments.
-The data is sent to the Storage Controller process, which provides stability in logging data despite the possibility of individual browser crashes.
+The data is sent to the Storage Controller process,
+which provides stability in logging data despite the possibility of individual browser crashes.
 
 # The WebExtension
 
