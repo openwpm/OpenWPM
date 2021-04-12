@@ -340,7 +340,7 @@ class BrowserManagerHandle:
     def execute_command_sequence(
         self,
         # Quoting to break cyclic import, see https://stackoverflow.com/a/39757388
-        tm: "TaskManager", 
+        task_manager: "TaskManager",
         command_sequence: CommandSequence,
     ) -> None:
         """
@@ -348,7 +348,7 @@ class BrowserManagerHandle:
         """
         assert self.browser_id is not None
         assert self.curr_visit_id is not None
-        tm.sock.store_record(
+        task_manager.sock.store_record(
             TableName("site_visits"),
             self.curr_visit_id,
             {
@@ -408,7 +408,7 @@ class BrowserManagerHandle:
                     "process while executing command %s. Setting failure "
                     "status." % (self.browser_id, str(command))
                 )
-                tm.failure_status = {
+                task_manager.failure_status = {
                     "ErrorType": "CriticalChildException",
                     "CommandSequence": command_sequence,
                     "Exception": status[1],
@@ -432,7 +432,7 @@ class BrowserManagerHandle:
             else:
                 raise ValueError("Unknown browser status message %s" % status)
 
-            tm.sock.store_record(
+            task_manager.sock.store_record(
                 TableName("crawl_history"),
                 self.curr_visit_id,
                 {
@@ -451,22 +451,22 @@ class BrowserManagerHandle:
             )
 
             if command_status == "critical":
-                tm.sock.finalize_visit_id(
+                task_manager.sock.finalize_visit_id(
                     success=False,
                     visit_id=self.curr_visit_id,
                 )
                 return
 
             if command_status != "ok":
-                with tm.threadlock:
-                    tm.failure_count += 1
-                if tm.failure_count > tm.failure_limit:
+                with task_manager.threadlock:
+                    task_manager.failure_count += 1
+                if task_manager.failure_count > task_manager.failure_limit:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
                         "failure_status." % self.browser_id
                     )
-                    tm.failure_status = {
+                    task_manager.failure_status = {
                         "ErrorType": "ExceedCommandFailureLimit",
                         "CommandSequence": command_sequence,
                     }
@@ -477,11 +477,13 @@ class BrowserManagerHandle:
                 )
             # Reset failure_count at the end of each successful command sequence
             elif type(command) is FinalizeCommand:
-                with tm.threadlock:
-                    tm.failure_count = 0
+                with task_manager.threadlock:
+                    task_manager.failure_count = 0
 
             if self.restart_required:
-                tm.sock.finalize_visit_id(success=False, visit_id=self.curr_visit_id)
+                task_manager.sock.finalize_visit_id(
+                    success=False, visit_id=self.curr_visit_id
+                )
                 break
 
         self.logger.info(
@@ -494,7 +496,7 @@ class BrowserManagerHandle:
         # internal buffers to drain. Stopgap in support of #135
         time.sleep(2)
 
-        if tm.closing:
+        if task_manager.closing:
             return
 
         if self.restart_required or reset:
@@ -504,7 +506,7 @@ class BrowserManagerHandle:
                     "BROWSER %i: Exceeded the maximum allowable consecutive "
                     "browser launch failures. Setting failure_status." % self.browser_id
                 )
-                tm.failure_status = {
+                task_manager.failure_status = {
                     "ErrorType": "ExceedLaunchFailureLimit",
                     "CommandSequence": command_sequence,
                 }
