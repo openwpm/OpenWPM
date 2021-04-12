@@ -404,4 +404,3 @@ Response body content
     `browser_params.save_content = "script"` to save only Javascript
     files. This will lessen the performance impact of this instrumentation
     when a large number of browsers are used in parallel.
-q
