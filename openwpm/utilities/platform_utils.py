@@ -145,7 +145,7 @@ def get_configuration_string(manager_params, browser_params, versions):
     config_str += tabulate(table_input, headers=key_dict)
 
     config_str += "\n\n========== JS Instrument Settings ==========\n"
-    config_str += json.dumps(js_config, indent=2, separators=(",", ": "))
+    config_str += json.dumps(js_config, indent=None, separators=(",", ":"))
 
     config_str += "\n\n========== Input profile tar files ==========\n"
     if profile_all_none:

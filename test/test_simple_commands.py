@@ -30,11 +30,11 @@ rendered_js_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
 # Expected nested page source
 NESTED_TEST_DIR = "/recursive_iframes/"
 NESTED_FRAMES_URL = utilities.BASE_TEST_URL + NESTED_TEST_DIR + "parent.html"
-D1_BASE = "http://d1." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D2_BASE = "http://d2." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D3_BASE = "http://d3." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D4_BASE = "http://d4." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D5_BASE = "http://d5." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D1_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D2_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D3_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D4_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D5_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
 EXPECTED_PARENTS = {
     NESTED_FRAMES_URL: [],
     D1_BASE + "child1a.html": [NESTED_FRAMES_URL],
