@@ -26,7 +26,7 @@ PAGE_LINKS = {
     ),
     (
         f"{utilities.BASE_TEST_URL}/simple_a.html",
-        "http://example.com/test.html?localtest.me",
+        "http://example.com/test.html?localhost",
     ),
 }
 

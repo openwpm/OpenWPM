@@ -215,42 +215,42 @@ HTTP_RESPONSES = {
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_style.css",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_script.js",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_image.png",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        # u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        # u'http://localhost:8000/test_pages/http_test_page_2.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
-        # u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        # u'http://localhost:8000/test_pages/http_test_page_2.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        # u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        # u'http://localhost:8000/test_pages/http_test_page_2.html',
         "",
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         "",
     ),
 }
@@ -419,22 +419,22 @@ HTTP_CACHED_RESPONSES = {
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_script.js",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         1,
     ),
     (
         f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        # u'http://localtest.me:8000/test_pages/http_test_page.html',
+        # u'http://localhost:8000/test_pages/http_test_page.html',
         1,
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
-        # u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        # u'http://localhost:8000/test_pages/http_test_page_2.html',
         1,
     ),
     (
         f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        # u'http://localtest.me:8000/test_pages/http_test_page_2.html',
+        # u'http://localhost:8000/test_pages/http_test_page_2.html',
         1,
     ),
     (f"{utilities.BASE_TEST_URL}/shared/test_image_2.png", 1),
@@ -524,8 +524,6 @@ HTTP_WORKER_SCRIPT_REQUESTS = {
 }
 
 # Test URL-attribution for Service Worker requests.
-# localhost URLs are used instead of localtest.me because service workers
-# are only loaded from secure contexts.
 HTTP_SERVICE_WORKER_REQUESTS = {
     (
         "http://localhost:8000/test_pages/http_service_worker_page.html",

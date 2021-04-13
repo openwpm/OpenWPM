@@ -93,7 +93,7 @@ def start_server():
 
     We need this since page-mod events in the extension
     don't fire on `file://*`. Instead, point test code to
-    `http://localtest.me:8000/test_pages/...`
+    `http://localhost:8000/test_pages/...`
     """
     print("Starting HTTP Server in a separate thread")
     # switch to test dir, this is where the test files are
