@@ -17,16 +17,16 @@ url_a = utilities.BASE_TEST_URL + "/simple_a.html"
 
 PAGE_LINKS = {
     (
-        u"http://localtest.me:8000/test_pages/simple_a.html",
-        u"http://localtest.me:8000/test_pages/simple_c.html",
+        f"{utilities.BASE_TEST_URL}/simple_a.html",
+        f"{utilities.BASE_TEST_URL}/simple_c.html",
     ),
     (
-        u"http://localtest.me:8000/test_pages/simple_a.html",
-        u"http://localtest.me:8000/test_pages/simple_d.html",
+        f"{utilities.BASE_TEST_URL}/simple_a.html",
+        f"{utilities.BASE_TEST_URL}/simple_d.html",
     ),
     (
-        u"http://localtest.me:8000/test_pages/simple_a.html",
-        u"http://example.com/test.html?localtest.me",
+        f"{utilities.BASE_TEST_URL}/simple_a.html",
+        "http://example.com/test.html?localhost",
     ),
 }
 

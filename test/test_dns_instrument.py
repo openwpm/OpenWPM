@@ -1,6 +1,14 @@
+import os
+
+import pytest
+
 from openwpm.utilities import db_utils
 
 
+@pytest.mark.skipif(
+    "CI" not in os.environ or os.environ["CI"] == "false",
+    reason="Makes remote connections",
+)
 def test_name_resolution(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     for browser_param in browser_params:
