@@ -15,9 +15,9 @@ from queue import Empty as EmptyQueue
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 import psutil
-import tblib
 from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
+from tblib import Traceback, pickling_support
 
 from .command_sequence import CommandSequence
 from .commands.browser_commands import FinalizeCommand
@@ -29,10 +29,6 @@ from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
-
-if TYPE_CHECKING:
-    from .task_manager import TaskManager
-
 from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (
     Process,
@@ -40,7 +36,10 @@ from .utilities.multiprocess_utils import (
     parse_traceback_for_sentry,
 )
 
-tblib.pickling_support.install()
+pickling_support.install()
+
+if TYPE_CHECKING:
+    from .task_manager import TaskManager
 
 
 class BrowserManagerHandle:
@@ -517,7 +516,7 @@ class BrowserManagerHandle:
         """Unpacks `pickled_error` into an error `message` and `tb` string."""
         exc = pickle.loads(pickled_error)
         message = traceback.format_exception(*exc)[-1]
-        tb = json.dumps(tblib.Traceback(exc[2]).to_dict())
+        tb = json.dumps(Traceback(exc[2]).to_dict())
         return message, tb
 
     def kill_browser_manager(self):

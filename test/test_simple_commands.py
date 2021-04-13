@@ -28,13 +28,15 @@ url_d = utilities.BASE_TEST_URL + "/simple_d.html"
 rendered_js_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
 
 # Expected nested page source
+# This needs to be changed back once #887 is addressed
+
 NESTED_TEST_DIR = "/recursive_iframes/"
 NESTED_FRAMES_URL = utilities.BASE_TEST_URL + NESTED_TEST_DIR + "parent.html"
-D1_BASE = "http://d1." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D2_BASE = "http://d2." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D3_BASE = "http://d3." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D4_BASE = "http://d4." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
-D5_BASE = "http://d5." + utilities.BASE_TEST_URL_NOSCHEME + NESTED_TEST_DIR
+D1_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D2_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D3_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D4_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
+D5_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
 EXPECTED_PARENTS = {
     NESTED_FRAMES_URL: [],
     D1_BASE + "child1a.html": [NESTED_FRAMES_URL],
@@ -269,7 +271,7 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     # 2) A relative link to simple_d.html
     # 3) A javascript: link
     # 4) A link to www.google.com
-    # 5) A link to example.com?localtest.me
+    # 5) A link to example.com?localhost
     # We should see page visits for 1 and 2, but not 3-5.
     qry_res = db_utils.query_db(
         db,
@@ -353,7 +355,7 @@ def test_browse_wrapper_http_table_valid(
     # 2) A relative link to simple_d.html
     # 3) A javascript: link
     # 4) A link to www.google.com
-    # 5) A link to example.com?localtest.me
+    # 5) A link to example.com?localhost
     # We should see page visits for 1 and 2, but not 3-5.
     qry_res = db_utils.query_db(
         db,

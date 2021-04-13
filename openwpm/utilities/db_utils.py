@@ -8,7 +8,7 @@ import plyvel
 
 def query_db(
     db: Path, query: str, params: Iterable = None, as_tuple: bool = False
-) -> List[Union[sqlite3.Row, tuple]]:
+) -> List[Union[sqlite3.Row, Tuple[Any, ...]]]:
     """Run a query against the given db.
 
     If params is not None, securely construct a query from the given
