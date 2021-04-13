@@ -80,7 +80,7 @@ of configurations of `class<BrowserParams>`.
 ## Browser Configuration Options
 
 Note: Instrumentation configuration options are described in the
-*Instrumentation and Data Access* section and profile configuration options are
+*Instruments* section and profile configuration options are
 described in the *Browser Profile Support* section. As such, these options are
 left out of this section.
 
@@ -98,17 +98,17 @@ left out of this section.
         background on a local machine.
   - `xvfb`:
     - Launch the browser using the X virtual frame buffer. In this mode, Firefox
-      is not running in it's own headless mode, but no GUI will be displayed.
+      is not running in its own headless mode, but no GUI will be displayed.
     - This mode requires `Xvfb` to be on your path. On Ubuntu that is achieved by running
       `sudo apt-get install xvfb`. For other platforms check [www.X.org](http://www.X.org).
   - `headless` mode and `xvfb` are not equivalent. `xvfb` is a full browser, but you get
     "headless" browsing because you do not need to be in a full X environment e.g. on a
     server. `headless` mode is supported on all platforms and is implemented by the browser
-    but has some differences. For example webGL is not supported in headless mode.
+    but has some differences. For example WebGL is not supported in headless mode.
     <https://github.com/mozilla/OpenWPM/issues/448> discusses additional factors to consider
     when picking a `display_mode`.
 - `browser`
-  - Used to specify which browser to launch. Currently only `firefox` is
+  - Used to specify which browser to launch. Currently, only `firefox` is
     supported.
   - Other browsers may be added in the future.
 - `tp_cookies`
@@ -159,7 +159,7 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 ### `http_instrument`
 
 - HTTP Request and Response Headers, redirects, and POST request bodies
-- Data is saved to the `http_requests`, `http_responses`, and `http_redirects`  tables.
+- Data is saved to the `http_requests`, `http_responses`, and `http_redirects` tables.
   - `http_requests` schema
         [documentation](Schema-Documentation.md#http-requests)
   - `channel_id` can be used to link a request saved in the
