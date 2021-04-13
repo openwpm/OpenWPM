@@ -20,9 +20,9 @@ of configurations of `class<BrowserParams>`.
 **NOTE**: If any validations fail, we raise `ConfigError`
 
 - [Browser and Platform Configuration](#browser-and-platform-configuration)
-  - [Validations](#validations)
   - [Platform Configuration Options](#platform-configuration-options)
   - [Browser Configuration Options](#browser-configuration-options)
+  - [Validations](#validations)
   - [Instruments](#instruments)
     - [`http_instrument`](#http_instrument)
     - [`js_instrument`](#js_instrument)
@@ -42,22 +42,6 @@ of configurations of `class<BrowserParams>`.
     - [Screenshots](#screenshots)
     - [`save_content`](#save_content)
 
-## Validations
-
-To validate `browser_params` and `manager_params`, we have two methods, one for each type of params: `config::validate_browser_params` and `config::validate_manager_params`. For example:
-
-```python
-from openwpm.config import (
-  validate_browser_params,
-  validate_manager_params,
-  validate_crawl_configs,
-)
-
-for bp in browser_params:
-  validate_browser_params(bp)
-validate_manager_params(manager_params)
-validate_crawl_configs(manager_params, browser_params)
-```
 
 ## Platform Configuration Options
 
@@ -139,6 +123,23 @@ left out of this section.
   - **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   - Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
+
+## Validations
+
+To validate `browser_params` and `manager_params`, we have two methods, one for each type of params: `config::validate_browser_params` and `config::validate_manager_params`. For example:
+
+```python
+from openwpm.config import (
+  validate_browser_params,
+  validate_manager_params,
+  validate_crawl_configs,
+)
+
+for bp in browser_params:
+  validate_browser_params(bp)
+validate_manager_params(manager_params)
+validate_crawl_configs(manager_params, browser_params)
+```
 
 ## Instruments
 
