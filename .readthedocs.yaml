@@ -1,0 +1,11 @@
+# Required
+version: 2
+
+# Dependencies to be installed using conda package manager
+conda:
+  environment: environment.yaml
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  builder: html
+  configuration: docs/conf.py

@@ -33,12 +33,13 @@ HTTP_STACKTRACES = {
 
 def test_http_stacktrace(default_params, task_manager_creator):
     manager_params, browser_params = default_params
-    # Record HTTP Requests and Responses
-    browser_params[0].http_instrument = True
-    # Record JS Web API calls
-    browser_params[0].js_instrument = True
-    # Record the callstack of all WebRequests made
-    browser_params[0].callstack_instrument = True
+    for browser_param in browser_params:
+        # Record HTTP Requests and Responses
+        browser_param.http_instrument = True
+        # Record JS Web API calls
+        browser_param.js_instrument = True
+        # Record the callstack of all WebRequests made
+        browser_param.callstack_instrument = True
     test_url = utilities.BASE_TEST_URL + "/http_stacktrace.html"
     manager, db = task_manager_creator((manager_params, browser_params))
     manager.get(test_url, sleep=10)
