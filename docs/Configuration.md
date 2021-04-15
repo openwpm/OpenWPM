@@ -17,8 +17,6 @@ browser_params = [BrowserParams() for _ in range(manager_params.num_browsers)]
 where `manager_params` is of type `class<ManagerParams>` and `browser_params` is a length 5 list
 of configurations of `class<BrowserParams>`.
 
-**NOTE**: If any validations fail, we raise `ConfigError`
-
 - [Browser and Platform Configuration](#browser-and-platform-configuration)
   - [Platform Configuration Options](#platform-configuration-options)
   - [Browser Configuration Options](#browser-configuration-options)
@@ -140,6 +138,8 @@ for bp in browser_params:
 validate_manager_params(manager_params)
 validate_crawl_configs(manager_params, browser_params)
 ```
+
+**NOTE**: If any validations fail, we raise `ConfigError`
 
 ## Instruments
 
