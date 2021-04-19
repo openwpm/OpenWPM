@@ -52,26 +52,23 @@ def test_profile_error(default_params, task_manager_creator):
         task_manager_creator((manager_params, browser_params[:1]))
 
 
-@pytest.mark.skip(reason="proxy no longer supported, need to update")
-def test_profile_saved_when_launch_crashes(default_params, task_manager_creator):
+def test_profile_saved_when_launch_crashes(
+    monkeypatch, default_params, task_manager_creator
+):
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     browser_params[0].profile_archive_dir = (
         manager_params.data_directory / "browser_profile"
     )
-    browser_params[0].proxy = True
-    browser_params[0].save_content = "script"
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
     manager.get(BASE_TEST_URL)
 
-    # Kill the LevelDBAggregator
-    # This will cause the proxy launch to crash
-    manager.ldb_status_queue.put("DIE")
+    # This will cause browser restarts to fail
+    monkeypatch.setenv("FIREFOX_BINARY", "/tmp/NOTREAL")
     manager.browsers[0]._SPAWN_TIMEOUT = 2  # Have timeout occur quickly
     manager.browsers[0]._UNSUCCESSFUL_SPAWN_LIMIT = 2  # Quick timeout
-    manager.get("example.com")  # Cause a selenium crash
+    manager.get("example.com")  # Cause a selenium crash to force browser to restart
 
-    # The browser will fail to launch due to the proxy crashes
     try:
         manager.get(BASE_TEST_URL)
     except CommandExecutionError:
