@@ -14,10 +14,10 @@ dependencies:
 - multiprocess=0.70.11.1
 - mypy=0.812
 - nodejs=14.15.4
-- pandas=1.2.3
+- pandas=1.2.4
 - pillow=8.1.2
 - pip=21.0.1
-- pre-commit=2.12.0
+- pre-commit=2.12.1
 - psutil=5.8.0
 - pyarrow=3.0.0
 - pytest-asyncio=0.14.0
