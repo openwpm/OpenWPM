@@ -10,4 +10,7 @@ dependencies:
     - pytest
     - mypy
     - pytest-asyncio
+    - sphinx
+    - recommonmark
+    - sphinx-markdown-tables
 
