@@ -161,6 +161,38 @@ class GetCommand(BaseCommand):
             bot_mitigation(webdriver)
 
 
+class DelayedGetCommand(GetCommand):
+    """
+    uses the get command with a delay to temporarily avoid
+    a flaky data collection (see issue #892)
+    """
+
+    def __init__(self, url, sleep, delay=5):
+        self.delay = delay
+        super().__init__(url=url, sleep=sleep)
+
+    def __repr__(self):
+        return "DelayedGetCommand({},{})".format(self.url, self.sleep)
+
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
+        extension_socket: ClientSocket,
+    ) -> None:
+        # Introduce a delay at the start
+        time.sleep(self.delay)
+
+        # Execute original GetCommand
+        super().execute(
+            webdriver,
+            browser_params,
+            manager_params,
+            extension_socket,
+        )
+
+
 class BrowseCommand(BaseCommand):
     def __init__(self, url, num_links, sleep):
         self.url = url
