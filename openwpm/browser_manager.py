@@ -661,6 +661,8 @@ def BrowserManager(
             )
             extension_socket = ClientSocket(serialization="json")
             extension_socket.connect("127.0.0.1", int(port))
+            # Gives the extension additional time to start up (see issue #892)
+            time.sleep(5)
         else:
             extension_socket = None
 
