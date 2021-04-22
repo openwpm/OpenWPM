@@ -225,15 +225,15 @@ class MPLogger(object):
                 self._status_queue.get()
                 socket.close()
                 time.sleep(3)  # TODO: the socket needs a better way of closing
-                while not socket.queue.empty():
-                    obj = socket.queue.get()
+                while not socket.recv_msg_queue.empty():
+                    obj = socket.recv_msg_queue.get()
                     self._process_record(obj)
                 self._status_queue.task_done()
                 break
 
             # Process logs
             try:
-                obj = socket.queue.get(True, 10)
+                obj = socket.recv_msg_queue.get(True, 10)
                 self._process_record(obj)
             except EmptyQueue:
                 pass
