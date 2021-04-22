@@ -5,7 +5,7 @@ import struct
 import threading
 import traceback
 from queue import Queue
-from typing import Any
+from typing import Any, Literal, Optional
 
 import dill
 
@@ -13,17 +13,74 @@ import dill
 # see: https://stackoverflow.com/a/1148237
 
 
-class ServerSocket:
+class AbstractSocket:
+    def __init__(self, verbose: bool) -> None:
+        self.verbose = verbose
+
+    def read_message(self, client: socket.socket) -> Optional[Any]:
+        header = recv_chunk(client, 5)
+        message_length, serialization = struct.unpack(">Lc", header)
+        if self.verbose:
+            print(
+                "Received message, length %d, serialization %r"
+                % (message_length, serialization)
+            )
+        chunk = recv_chunk(client, message_length)
+        try:
+            message = _parse(serialization, chunk)
+        except (UnicodeDecodeError, ValueError):
+            print(
+                "Error de-serializing message: %r \n %s"
+                % (chunk, traceback.format_exc())
+            )
+            return None
+        return message
+
+    def send_message(
+        self, sock: socket.socket, message: Any, serialization: Literal["json", "dill"]
+    ) -> None:
+        """
+        Sends an arbitrary python object to the connected socket. Serializes
+        using dill if not string, and prepends message len (4-bytes) and
+        serialization type (1-byte).
+        """
+        if isinstance(message, bytes):
+            prefix = b"n"
+        elif isinstance(message, str):
+            prefix = b"u"
+            message = message.encode("utf-8")
+        elif serialization == "dill":
+            message = dill.dumps(message, dill.HIGHEST_PROTOCOL)
+            prefix = b"d"
+        elif serialization == "json":
+            message = json.dumps(message).encode("utf-8")
+            prefix = b"j"
+        else:
+            raise ValueError("Unsupported serialization type set: %s" % serialization)
+        if self.verbose:
+            print("Sending message with serialization %r" % prefix)
+
+        # prepend with message length
+        message = struct.pack(">Lc", len(message), prefix) + message
+        totalsent = 0
+        while totalsent < len(message):
+            sent = sock.send(message[totalsent:])
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            totalsent = totalsent + sent
+
+
+class ServerSocket(AbstractSocket):
     """
     A server socket to receive and process string messages
     from client sockets to a central queue
     """
 
     def __init__(self, name=None, verbose=False):
+        super().__init__(verbose)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(("localhost", 0))
         self.sock.listen(10)  # queue a max of n connect requests
-        self.verbose = verbose
         self.name = name
         self.queue = Queue()
         if self.verbose:
@@ -52,7 +109,7 @@ class ServerSocket:
                 print("A connection establish request was performed on a closed socket")
                 return
 
-    def _handle_conn(self, client, address):
+    def _handle_conn(self, client: socket.socket, address: Any) -> None:
         """
         Receive messages and pass to queue. Messages are prefixed with
         a 4-byte integer to specify the message length and 1-byte character
@@ -68,98 +125,57 @@ class ServerSocket:
             print("Thread: %s connected to: %s" % (threading.current_thread(), address))
         try:
             while True:
-                msg = self.receive_msg(client, 5)
-                msglen, serialization = struct.unpack(">Lc", msg)
-                if self.verbose:
-                    print(
-                        "Received message, length %d, serialization %r"
-                        % (msglen, serialization)
-                    )
-                msg = self.receive_msg(client, msglen)
-                try:
-                    msg = _parse(serialization, msg)
-                except (UnicodeDecodeError, ValueError) as e:
-                    print(
-                        "Error de-serializing message: %s \n %s"
-                        % (msg, traceback.format_exc(e))
-                    )
-                    continue
-                self._put_into_queue(msg)
+                if (msg := self.read_message(client)) is not None:
+                    self.queue.put(msg)
+
         except RuntimeError:
             if self.verbose:
                 print("Client socket: " + str(address) + " closed")
 
-    def _put_into_queue(self, msg):
-        """Put the parsed message into a queue from where it can be read by consumers"""
-        self.queue.put(msg)
-
-    def receive_msg(self, client, msglen):
-        msg = b""
-        while len(msg) < msglen:
-            chunk = client.recv(msglen - len(msg))
-            if not chunk:
-                raise RuntimeError("socket connection broken")
-            msg = msg + chunk
-        return msg
-
-    def close(self):
+    def close(self) -> None:
         self.sock.close()
 
 
-class ClientSocket:
+def recv_chunk(client: socket.socket, chunk_length: int) -> bytes:
+    chunk = b""
+    while len(chunk) < chunk_length:
+        chunk = client.recv(chunk_length - len(chunk))
+        if not chunk:
+            raise RuntimeError("socket connection broken")
+        chunk = chunk + chunk
+    return chunk
+
+
+class ClientSocket(AbstractSocket):
     """A client socket for sending messages"""
 
-    def __init__(self, serialization="json", verbose=False):
+    def __init__(
+        self, serialization: Literal["json", "dill"] = "json", verbose: bool = False
+    ) -> None:
         """`serialization` specifies the type of serialization to use for
         non-string messages. Supported formats:
             * 'json' uses the json module. Cross-language support. (default)
             * 'dill' uses the dill pickle module. Python only.
         """
+        super().__init__(verbose)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if serialization != "json" and serialization != "dill":
             raise ValueError("Unsupported serialization type: %s" % serialization)
         self.serialization = serialization
         self.verbose = verbose
 
-    def connect(self, host, port):
+    def connect(self, host: str, port: int) -> None:
         if self.verbose:
             print("Connecting to: %s:%i" % (host, port))
         self.sock.connect((host, port))
 
-    def send(self, msg):
-        """
-        Sends an arbitrary python object to the connected socket. Serializes
-        using dill if not string, and prepends msg len (4-bytes) and
-        serialization type (1-byte).
-        """
-        if isinstance(msg, bytes):
-            serialization = b"n"
-        elif isinstance(msg, str):
-            serialization = b"u"
-            msg = msg.encode("utf-8")
-        elif self.serialization == "dill":
-            msg = dill.dumps(msg, dill.HIGHEST_PROTOCOL)
-            serialization = b"d"
-        elif self.serialization == "json":
-            msg = json.dumps(msg).encode("utf-8")
-            serialization = b"j"
-        else:
-            raise ValueError(
-                "Unsupported serialization type set: %s" % self.serialization
-            )
-        if self.verbose:
-            print("Sending message with serialization %s" % serialization)
+    def send(self, msg: Any) -> None:
+        self.send_message(self.sock, msg, self.serialization)
 
-        # prepend with message length
-        msg = struct.pack(">Lc", len(msg), serialization) + msg
-        totalsent = 0
-        while totalsent < len(msg):
-            sent = self.sock.send(msg[totalsent:])
-            if sent == 0:
-                raise RuntimeError("socket connection broken")
-            totalsent = totalsent + sent
+    def recv(self) -> Any:
+        return self.read_message(self.sock)
 
-    def close(self):
+    def close(self) -> None:
         self.sock.close()
 
 
@@ -177,21 +193,21 @@ async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
             print("The underlying socket closed", repr(e))
     ```
     """
-    msg = await reader.readexactly(5)
-    msglen, serialization = struct.unpack(">Lc", msg)
-    msg = await reader.readexactly(msglen)
-    return _parse(serialization, msg)
+    message = await reader.readexactly(5)
+    message_length, serialization = struct.unpack(">Lc", message)
+    message = await reader.readexactly(message_length)
+    return _parse(serialization, message)
 
 
-def _parse(serialization: bytes, msg: bytes) -> Any:
+def _parse(serialization: bytes, message: bytes) -> Any:
     if serialization == b"n":
-        return msg
+        return message
     if serialization == b"d":  # dill serialization
-        return dill.loads(msg)
+        return dill.loads(message)
     if serialization == b"j":  # json serialization
-        return json.loads(msg.decode("utf-8"))
+        return json.loads(message.decode("utf-8"))
     if serialization == b"u":  # utf-8 serialization
-        return msg.decode("utf-8")
+        return message.decode("utf-8")
     raise ValueError("Unknown Encoding")
 
 
@@ -210,31 +226,32 @@ def main():
         serialization = input("Enter the serialization type (default: 'json'):\n")
         if serialization == "":
             serialization = "json"
+        assert serialization
         sock = ClientSocket(serialization=serialization)
         sock.connect(host, int(port))
-        msg = None
+        message = None
 
         # some predefined messages
-        tuple_msg = ("hello", "world")
-        list_msg = ["hello", "world"]
-        dict_msg = {"hello": "world"}
+        tuple_message = ("hello", "world")
+        list_message = ["hello", "world"]
+        dict_message = {"hello": "world"}
 
-        def function_msg(x):
+        def function_message(x):
             return x
 
         # read user input
-        while msg != "quit":
-            msg = input("Enter a message to send:\n")
-            if msg == "tuple":
-                sock.send(tuple_msg)
-            elif msg == "list":
-                sock.send(list_msg)
-            elif msg == "dict":
-                sock.send(dict_msg)
-            elif msg == "function":
-                sock.send(function_msg)
+        while message != "quit":
+            message = input("Enter a message to send:\n")
+            if message == "tuple":
+                sock.send(tuple_message)
+            elif message == "list":
+                sock.send(list_message)
+            elif message == "dict":
+                sock.send(dict_message)
+            elif message == "function":
+                sock.send(function_message)
             else:
-                sock.send(msg)
+                sock.send(message)
         sock.close()
 
 
