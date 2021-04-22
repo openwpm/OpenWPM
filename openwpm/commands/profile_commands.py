@@ -1,14 +1,13 @@
 import logging
-import shutil
 import tarfile
 from pathlib import Path
 
 from selenium.webdriver import Firefox
 
 from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
+from openwpm.utilities.socket_interface import ClientSocket
 
 from ..errors import ProfileLoadError
-from ..socket_interface import ClientSocket
 from .types import BaseCommand
 from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 

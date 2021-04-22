@@ -5,11 +5,11 @@ from selenium.webdriver import Firefox
 from openwpm import command_sequence
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParamsInternal
-from openwpm.socket_interface import ClientSocket
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
+from openwpm.utilities.socket_interface import ClientSocket
 
 from . import utilities
 

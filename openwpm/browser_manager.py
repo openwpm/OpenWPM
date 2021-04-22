@@ -19,6 +19,8 @@ from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
+from openwpm.utilities.socket_interface import ClientSocket
+
 from .command_sequence import CommandSequence
 from .commands.browser_commands import FinalizeCommand
 from .commands.profile_commands import dump_profile
@@ -27,7 +29,6 @@ from .commands.utils.webdriver_utils import parse_neterror
 from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
-from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (

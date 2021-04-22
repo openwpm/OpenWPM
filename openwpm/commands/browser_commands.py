@@ -20,8 +20,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from openwpm.utilities.socket_interface import ClientSocket
+
 from ..config import BrowserParams, ManagerParams
-from ..socket_interface import ClientSocket
 from .types import BaseCommand
 from .utils.webdriver_utils import (
     execute_in_all_frames,

@@ -12,9 +12,9 @@ from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 from multiprocess import Queue
 
 from openwpm.utilities.multiprocess_utils import Process
+from openwpm.utilities.socket_interface import ClientSocket, get_message_from_reader
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket, get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,

@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 
 from selenium.webdriver import Firefox
 
+from openwpm.utilities.socket_interface import ClientSocket
+
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket
 
 
 class BaseCommand(ABC):

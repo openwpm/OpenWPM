@@ -15,7 +15,7 @@ from selenium.webdriver.common.by import By
 
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParams
-from openwpm.socket_interface import ClientSocket
+from openwpm.utilities.socket_interface import ClientSocket
 
 
 class LinkCountingCommand(BaseCommand):

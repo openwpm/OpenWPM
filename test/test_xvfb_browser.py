@@ -5,7 +5,7 @@ from selenium.webdriver import Firefox
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
-from openwpm.socket_interface import ClientSocket
+from openwpm.utilities.socket_interface import ClientSocket
 
 from .utilities import BASE_TEST_URL
 
