@@ -162,10 +162,10 @@ class ServerSocket(AbstractSocket):
 def recv_chunk(client: socket.socket, chunk_length: int) -> bytes:
     chunk = b""
     while len(chunk) < chunk_length:
-        chunk = client.recv(chunk_length - len(chunk))
-        if not chunk:
+        part = client.recv(chunk_length - len(chunk))
+        if not part:
             raise RuntimeError("socket connection broken")
-        chunk = chunk + chunk
+        chunk = chunk + part
     return chunk
 
 
@@ -246,7 +246,7 @@ def main():
         if serialization == "":
             serialization = "json"
         assert serialization
-        sock = ClientSocket(serialization=serialization)
+        sock = ClientSocket(serialization=serialization, verbose=True)
         sock.connect(host, int(port))
         message = None
 
