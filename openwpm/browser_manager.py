@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import psutil
 from multiprocess import Process, Queue
+from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
@@ -637,6 +638,9 @@ class BrowserManager(Process):
         self.crash_recovery = crash_recovery
 
     def _start_extension(self, browser_profile_path: Path) -> ClientSocket:
+        """Start up the extension
+        Only returns once the extension has fully started up
+        """
         assert self.browser_params.browser_id is not None
         self.logger.debug(
             "BROWSER %i: Looking for extension port information "
@@ -666,6 +670,23 @@ class BrowserManager(Process):
         )
         extension_socket = ClientSocket(serialization="json")
         extension_socket.connect("127.0.0.1", int(port))
+
+        success_filename = browser_profile_path / "OPENWPM_STARTUP_SUCCESS.txt"
+        startup_successful = False
+        while elapsed < 10:
+            if success_filename.exists():
+                startup_successful = True
+                break
+            time.sleep(0.1)
+            elapsed += 0.1
+
+        if not startup_successful:
+            self.logger.error(
+                "BROWSER %i: Failed to complete extension startup in time",
+                self.browser_params.browser_id,
+            )
+            assert startup_successful is True
+        success_filename.unlink()
         return extension_socket
 
     def run(self) -> None:
