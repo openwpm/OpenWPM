@@ -1,8 +1,0 @@
-channels:
-- conda-forge
-- main
-dependencies:
-- recommonmark=0.7.1
-- sphinx-markdown-tables=0.0.15
-- sphinx=3.5.4
-name: openwpm
