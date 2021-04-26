@@ -9,7 +9,9 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
+# type: ignore
+
 import os
 import sys
 
@@ -78,6 +80,7 @@ def run_apidoc(_):
     output_path = os.path.join(project_root, "docs", "apidoc")
     module_path = os.path.join(project_root, "openwpm")
     apidoc.main(["-o", output_path, module_path, "--separate", "--force"])
+
 
 def setup(app):
     app.connect("builder-inited", run_apidoc)
