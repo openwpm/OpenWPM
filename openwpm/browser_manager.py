@@ -12,7 +12,7 @@ import time
 import traceback
 from pathlib import Path
 from queue import Empty as EmptyQueue
-from typing import TYPE_CHECKING, Any, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import psutil
 from multiprocess import Process, Queue
@@ -102,11 +102,13 @@ class BrowserManagerHandle:
     def set_visit_id(self, visit_id):
         self.curr_visit_id = visit_id
 
-    def launch_browser_manager(self):
+    def launch_browser_manager(self) -> bool:
         """
         sets up the BrowserManager and gets the process id, browser pid and,
         if applicable, screen pid. loads associated user profile if necessary
         """
+        tempdir: Optional[str] = None
+        crash_recovery = False
         # if this is restarting from a crash, update the tar location
         # to be a tar of the crashed browser's history
         if self.current_profile_path is not None:
@@ -125,9 +127,6 @@ class BrowserManagerHandle:
             self.browser_params.recovery_tar = tar_path
 
             crash_recovery = True
-        else:
-            tempdir = None
-            crash_recovery = False
 
         self.logger.info("BROWSER %i: Launching browser..." % self.browser_id)
         self.is_fresh = not crash_recovery
@@ -136,7 +135,8 @@ class BrowserManagerHandle:
         unsuccessful_spawns = 0
         success = False
 
-        def check_queue(launch_status):
+        def check_queue(launch_status: Dict[Any, Any]) -> Any:
+            assert self.status_queue is not None
             result = self.status_queue.get(True, self._SPAWN_TIMEOUT)
             if result[0] == "STATUS":
                 launch_status[result[1]] = True
@@ -155,19 +155,19 @@ class BrowserManagerHandle:
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
             # builds and launches the browser_manager
-            args = (
+
+            self.browser_manager = BrowserManager(
                 self.command_queue,
                 self.status_queue,
                 self.browser_params,
                 self.manager_params,
                 crash_recovery,
             )
-            self.browser_manager = Process(target=BrowserManager, args=args)
             self.browser_manager.daemon = True
             self.browser_manager.start()
 
             # Read success status of browser manager
-            launch_status = dict()
+            launch_status: Dict[Any, Any] = dict()
             try:
                 # 1. Browser profile created
                 browser_profile_path = check_queue(launch_status)
@@ -636,6 +636,38 @@ class BrowserManager(Process):
         self.manager_params = manager_params
         self.crash_recovery = crash_recovery
 
+    def _start_extension(self, browser_profile_path: Path) -> ClientSocket:
+        assert self.browser_params.browser_id is not None
+        self.logger.debug(
+            "BROWSER %i: Looking for extension port information "
+            "in %s" % (self.browser_params.browser_id, browser_profile_path)
+        )
+        elapsed = 0.0
+        port = None
+        ep_filename = browser_profile_path / "extension_port.txt"
+        while elapsed < 5:
+            try:
+                with open(ep_filename, "rt") as f:
+                    port = int(f.read().strip())
+                    break
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+            time.sleep(0.1)
+            elapsed += 0.1
+        if port is None:
+            # try one last time, allowing all exceptions to propagate
+            with open(ep_filename, "rt") as f:
+                port = int(f.read().strip())
+
+        self.logger.debug(
+            "BROWSER %i: Connecting to extension on port %i"
+            % (self.browser_params.browser_id, port)
+        )
+        extension_socket = ClientSocket(serialization="json")
+        extension_socket.connect("127.0.0.1", int(port))
+        return extension_socket
+
     def run(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
@@ -651,34 +683,7 @@ class BrowserManager(Process):
             extension_socket: Optional[ClientSocket] = None
 
             if self.browser_params.extension_enabled:
-                self.logger.debug(
-                    "BROWSER %i: Looking for extension port information "
-                    "in %s" % (self.browser_params.browser_id, browser_profile_path)
-                )
-                elapsed = 0.0
-                port = None
-                ep_filename = browser_profile_path / "extension_port.txt"
-                while elapsed < 5:
-                    try:
-                        with open(ep_filename, "rt") as f:
-                            port = int(f.read().strip())
-                            break
-                    except IOError as e:
-                        if e.errno != errno.ENOENT:
-                            raise
-                    time.sleep(0.1)
-                    elapsed += 0.1
-                if port is None:
-                    # try one last time, allowing all exceptions to propagate
-                    with open(ep_filename, "rt") as f:
-                        port = int(f.read().strip())
-
-                self.logger.debug(
-                    "BROWSER %i: Connecting to extension on port %i"
-                    % (self.browser_params.browser_id, port)
-                )
-                extension_socket = ClientSocket(serialization="json")
-                extension_socket.connect("127.0.0.1", int(port))
+                extension_socket = self._start_extension(browser_profile_path)
 
             self.logger.debug(
                 "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
