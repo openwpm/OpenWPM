@@ -116,11 +116,11 @@ class ManagerParams(DataClassJsonMixin):
     """
 
     data_directory: Path = field(
-        default=Path("~/openwpm/"),
+        default=Path.home() / "openwpm",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
     log_directory: Path = field(
-        default=Path("~/openwpm/"),
+        default=Path.home() / "openwpm",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
     log_file: Path = field(
