@@ -60,7 +60,7 @@ def kill_process_and_children(
             kill_process_and_children(child, logger)
 
         parent_process.kill()
-        parent_process.wait(timeout=20)
+        parent_process.wait(timeout=timeout)
     except psutil.NoSuchProcess:
         logger.debug("Process %i has already exited", parent_process.pid)
         pass

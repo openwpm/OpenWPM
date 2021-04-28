@@ -21,7 +21,12 @@ def dump_profile(
     compress: bool,
     browser_params: BrowserParamsInternal,
 ) -> None:
-    """Dumps a browser profile to a tar file."""
+    """Dumps a browser profile to a tar file.
+
+    Should only be called when the browser is closed, to prevent
+    database corruption in the archived profile (see section 1.2
+    of https://www.sqlite.org/howtocorrupt.html).
+    """
     assert browser_params.browser_id is not None
 
     # Creating the folders if need be

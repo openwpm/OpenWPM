@@ -47,8 +47,8 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     """Test the coverage of the browser's profile.
 
     This verifies that Firefox's places.sqlite database contains all
-    visited sites (with a few exceptions). If it does not, it is likely
-    the profile is lost at some point during the crawl.
+    visited sites. If it does not, it is likely the profile is lost at
+    some point during the crawl.
     """
     # Run the test crawl
     manager_params, browser_params = default_params
@@ -77,17 +77,14 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
         req_ps.add(du.get_ps_plus_1(url))
 
     hist_ps = set()  # visited domains from crawl_history Table
-    statuses = dict()
     rows = db_utils.query_db(
         crawl_db,
-        "SELECT arguments, command_status FROM crawl_history WHERE"
-        " command='GetCommand'",
+        "SELECT arguments FROM crawl_history WHERE command='GetCommand'",
     )
-    for arguments, command_status in rows:
+    for (arguments,) in rows:
         url = json.loads(arguments)["url"]
         ps = du.get_ps_plus_1(url)
         hist_ps.add(ps)
-        statuses[ps] = command_status
 
     # Grab urls from Firefox database
     profile_ps = set()  # visited domains from firefox profile
@@ -101,42 +98,12 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # We expect a url to be in the Firefox profile if:
     # 1. We've made requests to it
     # 2. The url is a top_url we entered into the address bar
+    #
+    # Previously, we expected some missing urls if the following
+    # conditions were not met, but this is no longer the case:
     # 3. The url successfully loaded (see: Issue #40)
     # 4. The site does not respond to the initial request with a 204
     #    (won't show in FF DB)
+    # See PR #893 to restore this behavior in case this test fails.
     missing_urls = req_ps.intersection(hist_ps).difference(profile_ps)
-    unexpected_missing_urls = set()
-    for url in missing_urls:
-        if command_status[url] != "ok":
-            continue
-
-        # Get the visit id for the url
-        rows = db_utils.query_db(
-            crawl_db,
-            "SELECT visit_id FROM site_visits WHERE site_url = ?",
-            ("http://" + url,),
-        )
-        visit_id = rows[0]
-
-        rows = db_utils.query_db(
-            crawl_db,
-            "SELECT COUNT(*) FROM http_responses WHERE visit_id = ?",
-            (visit_id,),
-        )
-        if rows[0] > 1:
-            continue
-
-        rows = db_utils.query_db(
-            crawl_db,
-            "SELECT response_status, location FROM "
-            "http_responses WHERE visit_id = ?",
-            (visit_id,),
-        )
-        response_status, location = rows[0]
-        if response_status == 204:
-            continue
-        if location == "http://":  # site returned a blank redirect
-            continue
-        unexpected_missing_urls.add(url)
-
-    assert len(unexpected_missing_urls) == 0
+    assert len(missing_urls) == 0

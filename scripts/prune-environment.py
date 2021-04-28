@@ -78,3 +78,12 @@ env_pinned.pop("prefix")
 
 with open("../environment.yaml", "w") as f:
     f.write(yaml.dump(env_pinned))
+
+# See https://github.com/mozilla/OpenWPM/issues/890
+for i, pinned_dep in enumerate(env_pinned["dependencies"]):
+    if pinned_dep.split("=")[0] == "geckodriver":
+        env_pinned["dependencies"][i] = "geckodriver=0.26.0"
+        break
+
+with open("../docs/environment-rtd.yaml", "w") as f:
+    f.write(yaml.dump(env_pinned))
