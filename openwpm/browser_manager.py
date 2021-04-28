@@ -135,7 +135,7 @@ class BrowserManagerHandle:
         unsuccessful_spawns = 0
         success = False
 
-        def check_queue(launch_status: Dict[Any, Any]) -> Any:
+        def check_queue(launch_status: Dict[str, bool]) -> Any:
             assert self.status_queue is not None
             result = self.status_queue.get(True, self._SPAWN_TIMEOUT)
             if result[0] == "STATUS":
@@ -167,7 +167,7 @@ class BrowserManagerHandle:
             self.browser_manager.start()
 
             # Read success status of browser manager
-            launch_status: Dict[Any, Any] = dict()
+            launch_status: Dict[str, bool] = dict()
             try:
                 # 1. Browser profile created
                 browser_profile_path = check_queue(launch_status)
