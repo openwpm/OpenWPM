@@ -574,9 +574,15 @@ class BrowserManagerHandle:
             """`geckodriver_pid` is the geckodriver process. We first kill
             the child processes (i.e. firefox) and then kill the geckodriver
             process."""
-            kill_process_and_children(
-                psutil.Process(pid=self.geckodriver_pid), self.logger
-            )
+            try:
+                geckodriver_process = psutil.Process(pid=self.geckodriver_pid)
+            except psutil.NoSuchProcess:
+                self.logger.debug(
+                    "BROWSER %i: geckodriver process with pid %i has already"
+                    " exited" % (self.browser_id, self.geckodriver_pid)
+                )
+                return
+            kill_process_and_children(geckodriver_process, self.logger)
 
     def shutdown_browser(self, during_init: bool, force: bool = False) -> None:
         """ Runs the closing tasks for this Browser/BrowserManager """
