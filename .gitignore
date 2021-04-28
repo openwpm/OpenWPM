@@ -85,7 +85,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
-docs/source/
+docs/apidoc/
 
 # npm packages
 node_modules
