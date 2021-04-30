@@ -103,6 +103,7 @@ class BrowserParams(DataClassJsonMixin):
     recovery_tar: Optional[Path] = None
     donottrack: bool = False
     tracking_protection: bool = False
+    custom_params: Dict[Any, Any] = field(default_factory=lambda: {})
 
 
 @dataclass
@@ -119,12 +120,8 @@ class ManagerParams(DataClassJsonMixin):
         default=Path.home() / "openwpm",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
-    log_directory: Path = field(
-        default=Path.home() / "openwpm",
-        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
-    )
-    log_file: Path = field(
-        default=Path("openwpm.log"),
+    log_path: Path = field(
+        default=Path.home() / "openwpm" / "openwpm.log",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
     testing: bool = False
@@ -234,7 +231,7 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
         return
 
     try:
-        log_file_extension = os.path.splitext(manager_params.log_file)[1]
+        log_file_extension = manager_params.log_path.suffix
         if log_file_extension.lower() not in LOG_EXTENSION_TYPE_LIST:
             raise ConfigError(
                 EXTENSION_ERROR_STRING.format(
@@ -246,7 +243,7 @@ def validate_manager_params(manager_params: ManagerParams) -> None:
     except (TypeError, AttributeError):
         raise ConfigError(
             GENERAL_ERROR_STRING.format(
-                value=manager_params.log_file,
+                value=manager_params.log_path,
                 parameter_name="log_file",
                 params_type="ManagerParams",
             )
