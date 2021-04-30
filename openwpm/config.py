@@ -103,7 +103,7 @@ class BrowserParams(DataClassJsonMixin):
     recovery_tar: Optional[Path] = None
     donottrack: bool = False
     tracking_protection: bool = False
-    extra: Dict[Any, Any] = field(default_factory=lambda: {})
+    custom_params: Dict[Any, Any] = field(default_factory=lambda: {})
 
 
 @dataclass

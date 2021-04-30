@@ -4,7 +4,7 @@ def test_extension_logging(task_manager_creator, default_params, tmp_path):
     manager_params, browser_params = default_params
     manager_params.log_path = log_path
     for browser_param in browser_params:
-        browser_param.extra[
+        browser_param.custom_params[
             "pre_instrumentation_code"
         ] = f"""
             // Weird name needed due to webpack name mangling
