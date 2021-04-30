@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import psutil
 from multiprocess import Process, Queue
-from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
@@ -77,22 +76,24 @@ class BrowserManagerHandle:
         self.command_thread: Optional[threading.Thread] = None
         # queue for passing command tuples to BrowserManager
         self.command_queue: Optional[Queue] = None
-        # queue for receiving command execution status from BrowserManager
+        """queue for receiving command execution status from BrowserManager"""
         self.status_queue: Optional[Queue] = None
-        # pid for browser instance controlled by BrowserManager
+        """pid for browser instance controlled by BrowserManager"""
         self.geckodriver_pid: Optional[int] = None
-        # the pid of the display for the Xvfb display (if it exists)
+        """the pid of the display for the Xvfb display (if it exists)"""
         self.display_pid: Optional[int] = None
-        # the port of the display for the Xvfb display (if it exists)
+        """the port of the display for the Xvfb display (if it exists)"""
         self.display_port: Optional[int] = None
 
-        # boolean that says if the BrowserManager is new (to optimize restarts)
         self.is_fresh = True
-        # boolean indicating if the browser should be restarted
+        """boolean that says if the BrowserManager is new (to optimize restarts)"""
         self.restart_required = False
+        """boolean indicating if the browser should be restarted"""
 
-        self.current_timeout: Optional[int] = None  # timeout of the current command
-        self.browser_manager: Optional[Process] = None  # process that controls browser
+        self.current_timeout: Optional[int] = None
+        """timeout of the current command"""
+        self.browser_manager: Optional[Process] = None
+        """process that controls browser"""
 
         self.logger = logging.getLogger("openwpm")
 
@@ -254,87 +255,89 @@ class BrowserManagerHandle:
 
         return self.launch_browser_manager()
 
-    def close_browser_manager(self, force: bool = False):
+    def close_browser_manager(self, force: bool = False) -> None:
         """Attempt to close the webdriver and browser manager processes
         from this thread.
         If the browser manager process is unresponsive, the process is killed.
         """
         self.logger.debug("BROWSER %i: Closing browser..." % self.browser_id)
-        assert self.status_queue is not None
-
-        if force:
-            self.kill_browser_manager()
-            return
-
-        # Join current command thread (if it exists)
-        in_command_thread = threading.current_thread() == self.command_thread
-        if not in_command_thread and self.command_thread is not None:
-            self.logger.debug("BROWSER %i: Joining command thread" % self.browser_id)
-            start_time = time.time()
-            if self.current_timeout is not None:
-                self.command_thread.join(self.current_timeout + 10)
-            else:
-                self.command_thread.join(60)
-
-            # If command thread is still alive, process is locked
-            if self.command_thread.is_alive():
-                self.logger.debug(
-                    "BROWSER %i: command thread failed to join during close. "
-                    "Assuming the browser process is locked..." % self.browser_id
-                )
-                self.kill_browser_manager()
-                return
-
-            self.logger.debug(
-                "BROWSER %i: %f seconds to join command thread"
-                % (self.browser_id, time.time() - start_time)
-            )
-
-        # If command queue doesn't exist, this likely means the browser
-        # failed to launch properly. Let's kill any child processes that
-        # we can find.
-        if self.command_queue is None:
-            self.logger.debug(
-                "BROWSER %i: Command queue not found while closing." % self.browser_id
-            )
-            self.kill_browser_manager()
-            return
-
-        # Send the shutdown command
-        command = ShutdownSignal()
-        self.command_queue.put(command)
-
-        # Verify that webdriver has closed (30 second timeout)
+        shutdown_complete = False
         try:
-            status = self.status_queue.get(True, 30)
-        except EmptyQueue:
-            self.logger.debug(
-                "BROWSER %i: Status queue timeout while closing browser."
-                % self.browser_id
-            )
-            self.kill_browser_manager()
-            return
-        if status != "OK":
-            self.logger.debug(
-                "BROWSER %i: Command failure while closing browser." % self.browser_id
-            )
-            self.kill_browser_manager()
-            return
-
-        # Verify that the browser process has closed (30 second timeout)
-        if self.browser_manager is not None:
-            self.browser_manager.join(30)
-            if self.browser_manager.is_alive():
-                self.logger.debug(
-                    "BROWSER %i: Browser manager process still alive 30 seconds "
-                    "after executing shutdown command." % self.browser_id
-                )
-                self.kill_browser_manager()
+            if force:
                 return
 
-        self.logger.debug(
-            "BROWSER %i: Browser manager closed successfully." % self.browser_id
-        )
+            # Join current command thread (if it exists)
+            in_command_thread = threading.current_thread() == self.command_thread
+            if not in_command_thread and self.command_thread is not None:
+                self.logger.debug(
+                    "BROWSER %i: Joining command thread" % self.browser_id
+                )
+                start_time = time.time()
+                if self.current_timeout is not None:
+                    self.command_thread.join(self.current_timeout + 10)
+                else:
+                    self.command_thread.join(60)
+
+                # If command thread is still alive, process is locked
+                if self.command_thread.is_alive():
+                    self.logger.debug(
+                        "BROWSER %i: command thread failed to join during close. "
+                        "Assuming the browser process is locked..." % self.browser_id
+                    )
+                    return
+
+                self.logger.debug(
+                    "BROWSER %i: %f seconds to join command thread"
+                    % (self.browser_id, time.time() - start_time)
+                )
+
+            # If command queue doesn't exist, this likely means the browser
+            # failed to launch properly. Let's kill any child processes that
+            # we can find.
+            if self.command_queue is None:
+                self.logger.debug(
+                    "BROWSER %i: Command queue not found while closing."
+                    % self.browser_id
+                )
+                return
+
+            # Send the shutdown command
+            command = ShutdownSignal()
+            self.command_queue.put(command)
+            if self.status_queue:
+                # Verify that webdriver has closed (30 second timeout)
+                try:
+                    status = self.status_queue.get(True, 30)
+                except EmptyQueue:
+                    self.logger.debug(
+                        "BROWSER %i: Status queue timeout while closing browser."
+                        % self.browser_id
+                    )
+                    return
+                if status != "OK":
+                    self.logger.debug(
+                        "BROWSER %i: Command failure while closing browser."
+                        % self.browser_id
+                    )
+                    return
+
+            # Verify that the browser process has closed (30 second timeout)
+            if self.browser_manager is not None:
+                self.browser_manager.join(30)
+                if self.browser_manager.is_alive():
+                    self.logger.debug(
+                        "BROWSER %i: Browser manager process still alive 30 seconds "
+                        "after executing shutdown command." % self.browser_id
+                    )
+                    return
+
+            self.logger.debug(
+                "BROWSER %i: Browser manager closed successfully." % self.browser_id
+            )
+            shutdown_complete = True
+        finally:
+            if not shutdown_complete:
+                self.kill_browser_manager()
 
     def execute_command_sequence(
         self,
