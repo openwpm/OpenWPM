@@ -151,6 +151,9 @@ def optimize_prefs(prefs: Dict[str, Any]) -> None:
     prefs["browser.uitour.enabled"] = False
     prefs["dom.flyweb.enabled"] = False
 
+    # Enabling callstack capture across async APIs e.g. setTimeout
+    prefs["javascript.option.asyncstack"] = True
+
     # Disable health reports / telemetry / crash reports
     prefs["datareporting.policy.dataSubmissionEnabled"] = False
     prefs["datareporting.healthreport.uploadEnabled"] = False
