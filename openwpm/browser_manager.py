@@ -85,10 +85,10 @@ class BrowserManagerHandle:
         """the port of the display for the Xvfb display (if it exists)"""
         self.display_port: Optional[int] = None
 
-        self.is_fresh = True
-        """boolean that says if the BrowserManager is new (to optimize restarts)"""
-        self.restart_required = False
-        """boolean indicating if the browser should be restarted"""
+        self.is_fresh: bool = True
+        """indicates if the BrowserManager is new (to optimize restarts)"""
+        self.restart_required: bool = False
+        """indicates if the browser should be restarted"""
 
         self.current_timeout: Optional[int] = None
         """timeout of the current command"""
@@ -291,10 +291,10 @@ class BrowserManagerHandle:
                     % (self.browser_id, time.time() - start_time)
                 )
 
-            # If command queue doesn't exist, this likely means the browser
-            # failed to launch properly. Let's kill any child processes that
-            # we can find.
-            if self.command_queue is None:
+            # If the command queue or status queue doesn't exist,
+            # it is likely that the browser failed to launch properly.
+            # Let's kill any child processes that we can find.
+            if self.command_queue is None or self.status_queue is None:
                 self.logger.debug(
                     "BROWSER %i: Command queue not found while closing."
                     % self.browser_id
@@ -304,22 +304,22 @@ class BrowserManagerHandle:
             # Send the shutdown command
             command = ShutdownSignal()
             self.command_queue.put(command)
-            if self.status_queue:
-                # Verify that webdriver has closed (30 second timeout)
-                try:
-                    status = self.status_queue.get(True, 30)
-                except EmptyQueue:
-                    self.logger.debug(
-                        "BROWSER %i: Status queue timeout while closing browser."
-                        % self.browser_id
-                    )
-                    return
-                if status != "OK":
-                    self.logger.debug(
-                        "BROWSER %i: Command failure while closing browser."
-                        % self.browser_id
-                    )
-                    return
+
+            # Verify that webdriver has closed (30 second timeout)
+            try:
+                status = self.status_queue.get(True, 30)
+            except EmptyQueue:
+                self.logger.debug(
+                    "BROWSER %i: Status queue timeout while closing browser."
+                    % self.browser_id
+                )
+                return
+            if status != "OK":
+                self.logger.debug(
+                    "BROWSER %i: Command failure while closing browser."
+                    % self.browser_id
+                )
+                return
 
             # Verify that the browser process has closed (30 second timeout)
             if self.browser_manager is not None:
