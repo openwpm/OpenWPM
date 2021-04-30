@@ -296,7 +296,7 @@ class BrowserManagerHandle:
             # Let's kill any child processes that we can find.
             if self.command_queue is None or self.status_queue is None:
                 self.logger.debug(
-                    "BROWSER %i: Command queue not found while closing."
+                    "BROWSER %i: Command queue or status queue not found while closing."
                     % self.browser_id
                 )
                 return
