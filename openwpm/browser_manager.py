@@ -691,7 +691,7 @@ class BrowserManager(Process):
                 "BROWSER %i: Failed to complete extension startup in time",
                 self.browser_params.browser_id,
             )
-            assert startup_successful is True
+            raise BrowserConfigError("The extension did not boot up in time")
         success_filename.unlink()
         return extension_socket
 
