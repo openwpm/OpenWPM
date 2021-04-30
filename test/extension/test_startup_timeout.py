@@ -9,5 +9,6 @@ def test_extension_startup_timeout(task_manager_creator, default_params):
                 resolve();
               }, 30000); // Delaying for 30 seconds
             });
+            await myPromise;
         """
     tm, _ = task_manager_creator((manager_params, browser_params))

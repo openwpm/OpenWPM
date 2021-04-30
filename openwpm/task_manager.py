@@ -75,16 +75,6 @@ class TaskManager:
             BrowserParamsInternal.from_dict(bp.to_dict()) for bp in browser_params_temp
         ]
 
-        # Make paths absolute in manager_params
-        if manager_params.data_directory:
-            manager_params.data_directory = manager_params.data_directory.expanduser()
-
-        if manager_params.log_directory:
-            manager_params.log_directory = manager_params.log_directory.expanduser()
-
-        manager_params.log_file = (
-            manager_params.log_directory / manager_params.log_file.name
-        )
         manager_params.screenshot_path = manager_params.data_directory / "screenshots"
 
         manager_params.source_dump_path = manager_params.data_directory / "sources"
@@ -117,7 +107,7 @@ class TaskManager:
         self.failure_limit = manager_params.failure_limit
         # Start logging server thread
         self.logging_server = MPLogger(
-            self.manager_params.log_file,
+            self.manager_params.log_path,
             str(structured_storage_provider),
             **self._logger_kwargs
         )

@@ -827,6 +827,7 @@ def test_page_visit(task_manager_creator, http_params, delayed):
                     resolve();
                   }, 5000); // Delaying for 5 seconds
                 });
+                await myPromise;
             """
     tm, db = task_manager_creator((manager_params, browser_params))
     with tm as tm:
