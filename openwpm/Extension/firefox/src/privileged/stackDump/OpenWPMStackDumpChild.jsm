@@ -116,7 +116,7 @@ class Controller {
       } catch(e) {
         return;
       }
-      if (!this.actor.isDestroyed || !this.matchRequest(channel, { window: this.actor.contentWindow })) {
+      if (!this.matchRequest(channel, { window: this.actor.contentWindow })) {
         return;
       }
       let frame = Components.stack;
@@ -168,7 +168,6 @@ class OpenWPMStackDumpChild extends JSWindowActorChild {
   }
   willDestroy() {
     this.controller.willDestroy();
-    this.isDestroyed = true;
   }
   observe() {
     // stuff
