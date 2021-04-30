@@ -111,7 +111,7 @@ this.sockets = class extends ExtensionAPI {
 
           try {
             let socket = gManager.sendingSocketMap.get(id);
-            var transport = socketService.createTransport([], host, port, null);
+            var transport = socketService.createTransport([], host, port, null, null);
             socket.stream = transport.openOutputStream(1, 4096, 1048575);
             socket.bOutputStream.setOutputStream(socket.stream);
             return true;
