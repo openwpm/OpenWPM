@@ -648,7 +648,7 @@ class BrowserManager(Process):
 
     def _start_extension(self, browser_profile_path: Path) -> ClientSocket:
         """Start up the extension
-        Only returns once the extension has fully started up
+        Blocks until the extension has fully started up
         """
         assert self.browser_params.browser_id is not None
         self.logger.debug(
