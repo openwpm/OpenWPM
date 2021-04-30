@@ -53,6 +53,10 @@ async function main() {
                        config['logger_address'],
                        config['browser_id']);
 
+  if (config["extra"]["pre_instrumentation_code"]) {
+    eval(config["extra"]["pre_instrumentation_code"])
+
+  }
   if (config["navigation_instrument"]) {
     loggingDB.logDebug("Navigation instrumentation enabled");
     let navigationInstrument = new NavigationInstrument(loggingDB);
