@@ -38,7 +38,7 @@ for i in range(NUM_BROWSERS):
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params.data_directory = Path("./datadir/")
-manager_params.log_directory = Path("./datadir/")
+manager_params.log_path = Path("./datadir/openwpm.log")
 
 # memory_watchdog and process_watchdog are useful for large scale cloud crawls.
 # Please refer to docs/Configuration.md#platform-configuration-options for more information

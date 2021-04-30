@@ -59,7 +59,7 @@ class OpenWPMTest:
         assert data_dir is not None  # Mypy doesn't understand this without help
         manager_params = ManagerParams(num_browsers=num_browsers)
         browser_params = [BrowserParams() for _ in range(num_browsers)]
-        manager_params.log_directory = data_dir
+        manager_params.log_path = data_dir / "openwpm.log"
         manager_params.num_browsers = num_browsers
         for i in range(num_browsers):
             browser_params[i].display_mode = display_mode

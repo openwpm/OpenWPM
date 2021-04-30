@@ -86,7 +86,7 @@ for i in range(NUM_BROWSERS):
 
 # Manager configuration
 manager_params.data_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
-manager_params.log_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
+manager_params.log_path = Path("~/Desktop/") / CRAWL_DIRECTORY / "openwpm.log"
 
 structured = GcsStructuredProvider(
     project=GCP_PROJECT,

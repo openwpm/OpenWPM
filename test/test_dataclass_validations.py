@@ -68,11 +68,11 @@ def test_save_content_type():
 def test_log_file_extension():
     manager_params = ManagerParams()
 
-    manager_params.log_file = "something.unsupported"
+    manager_params.log_path = "something.unsupported"
     with pytest.raises(ConfigError):
         validate_manager_params(manager_params)
 
-    manager_params.log_file = []
+    manager_params.log_path = []
     with pytest.raises(ConfigError):
         validate_manager_params(manager_params)
 
