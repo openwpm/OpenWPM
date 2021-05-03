@@ -223,7 +223,7 @@ while not job_queue.empty():
         reset=True,
         retry_number=retry_number,
         callback=callback,
-        site_rank=site_rank,
+        site_rank=int(site_rank),
     )
     command_sequence.get(sleep=DWELL_TIME, timeout=TIMEOUT)
     manager.execute_command_sequence(command_sequence)
