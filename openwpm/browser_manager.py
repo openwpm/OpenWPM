@@ -524,11 +524,7 @@ class BrowserManagerHandle:
 
     def kill_browser_manager(self):
         """Kill the BrowserManager process and all of its children"""
-        self.logger.debug(
-            "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
-            "Browser PID: %s"
-            % (self.browser_id, self.browser_manager.pid, self.geckodriver_pid)
-        )
+
         if self.display_pid is not None:
             self.logger.debug(
                 "BROWSER {browser_id}: Attempting to kill display "
@@ -540,6 +536,11 @@ class BrowserManagerHandle:
             )
 
         if self.browser_manager is not None and self.browser_manager.pid is not None:
+            self.logger.debug(
+                "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
+                "Browser PID: %s"
+                % (self.browser_id, self.browser_manager.pid, self.geckodriver_pid)
+            )
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
