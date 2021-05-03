@@ -593,67 +593,6 @@ class TestHTTPInstrument(OpenWPMTest):
         browser_params[0].http_instrument = True
         return manager_params, browser_params
 
-    def test_page_visit(self):
-        test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
-        db = self.visit(test_url)
-
-        request_id_to_url = dict()
-
-        # HTTP Requests
-        rows = db_utils.query_db(db, "SELECT * FROM http_requests")
-        observed_records = set()
-        for row in rows:
-            observed_records.add(
-                (
-                    row["url"].split("?")[0],
-                    row["top_level_url"],
-                    row["triggering_origin"],
-                    row["loading_origin"],
-                    row["loading_href"],
-                    row["is_XHR"],
-                    row["is_third_party_channel"],
-                    row["is_third_party_to_top_window"],
-                    row["resource_type"],
-                )
-            )
-
-            request_id_to_url[row["request_id"]] = row["url"]
-        assert HTTP_REQUESTS == observed_records
-
-        # HTTP Responses
-        rows = db_utils.query_db(db, "SELECT * FROM http_responses")
-        observed_records: Set[Tuple[str, str]] = set()
-        for row in rows:
-            observed_records.add(
-                (
-                    row["url"].split("?")[0],
-                    # TODO: webext-instrumentation doesn't support referrer
-                    # yet | row['referrer'],
-                    row["location"],
-                )
-            )
-            assert row["request_id"] in request_id_to_url
-            assert request_id_to_url[row["request_id"]] == row["url"]
-        assert HTTP_RESPONSES == observed_records
-
-        # HTTP Redirects
-        rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
-        observed_records = set()
-        for row in rows:
-            # TODO: webext instrumentation doesn't support new_request_id yet
-            # src = request_id_to_url[row['old_request_id']].split('?')[0]
-            # dst = request_id_to_url[row['new_request_id']].split('?')[0]
-            src = row["old_request_url"].split("?")[0]
-            dst = row["new_request_url"].split("?")[0]
-            headers = json.loads(row["headers"])
-            location = None
-            for header, value in headers:
-                if header.lower() == "location":
-                    location = value
-                    break
-            observed_records.add((src, dst, location))
-        assert HTTP_REDIRECTS == observed_records
-
     def test_worker_script_requests(self):
         """Check correct URL attribution for requests made by worker script"""
         test_url = utilities.BASE_TEST_URL + "/http_worker_page.html"
@@ -872,6 +811,87 @@ class TestPOSTInstrument(OpenWPMTest):
             "upload-img": img_file_content,
         }
         assert expected_body == post_body_decoded
+
+
+@pytest.mark.parametrize("delayed", [True, False])
+def test_page_visit(task_manager_creator, http_params, delayed):
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+    if delayed:
+        for browser_param in browser_params:
+            browser_param.custom_params[
+                "pre_instrumentation_code"
+            ] = """
+                (async () => {
+                    const myPromise = new Promise((resolve, reject) => {
+                      setTimeout(() => {
+                        resolve();
+                      }, 5000); // Delaying for 5 seconds
+                    });
+                    await myPromise;
+                })()
+            """
+
+    tm, db = task_manager_creator((manager_params, browser_params))
+    with tm as tm:
+        tm.get(test_url)
+
+    request_id_to_url = dict()
+
+    # HTTP Requests
+    rows = db_utils.query_db(db, "SELECT * FROM http_requests")
+    observed_records = set()
+    for row in rows:
+        observed_records.add(
+            (
+                row["url"].split("?")[0],
+                row["top_level_url"],
+                row["triggering_origin"],
+                row["loading_origin"],
+                row["loading_href"],
+                row["is_XHR"],
+                row["is_third_party_channel"],
+                row["is_third_party_to_top_window"],
+                row["resource_type"],
+            )
+        )
+
+        request_id_to_url[row["request_id"]] = row["url"]
+    assert HTTP_REQUESTS == observed_records
+
+    # HTTP Responses
+    rows = db_utils.query_db(db, "SELECT * FROM http_responses")
+    observed_records: Set[Tuple[str, str]] = set()
+    for row in rows:
+        observed_records.add(
+            (
+                row["url"].split("?")[0],
+                # TODO: webext-instrumentation doesn't support referrer
+                # yet | row['referrer'],
+                row["location"],
+            )
+        )
+        assert row["request_id"] in request_id_to_url
+        assert request_id_to_url[row["request_id"]] == row["url"]
+    assert HTTP_RESPONSES == observed_records
+
+    # HTTP Redirects
+    rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
+    observed_records = set()
+    for row in rows:
+        # TODO: webext instrumentation doesn't support new_request_id yet
+        # src = request_id_to_url[row['old_request_id']].split('?')[0]
+        # dst = request_id_to_url[row['new_request_id']].split('?')[0]
+        src = row["old_request_url"].split("?")[0]
+        dst = row["new_request_url"].split("?")[0]
+        headers = json.loads(row["headers"])
+        location = None
+        for header, value in headers:
+            if header.lower() == "location":
+                location = value
+                break
+        observed_records.add((src, dst, location))
+    assert HTTP_REDIRECTS == observed_records
 
 
 def test_javascript_saving(http_params, xpi, server):
