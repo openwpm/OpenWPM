@@ -822,13 +822,16 @@ def test_page_visit(task_manager_creator, http_params, delayed):
             browser_param.custom_params[
                 "pre_instrumentation_code"
             ] = """
-                const myPromise = new Promise((resolve, reject) => {
-                  setTimeout(() => {
-                    resolve();
-                  }, 5000); // Delaying for 5 seconds
-                });
-                await myPromise;
+                (async () => {
+                    const myPromise = new Promise((resolve, reject) => {
+                      setTimeout(() => {
+                        resolve();
+                      }, 5000); // Delaying for 5 seconds
+                    });
+                    await myPromise;
+                })()
             """
+
     tm, db = task_manager_creator((manager_params, browser_params))
     with tm as tm:
         tm.get(test_url)
