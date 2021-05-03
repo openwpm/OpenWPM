@@ -166,7 +166,7 @@ class TaskManager:
     def _initialize_browsers(
         self, browser_params: List[BrowserParamsInternal]
     ) -> List[BrowserManagerHandle]:
-        """initialize the browser classes, each its unique set of params"""
+        """initialize the browser classes, each with its unique set of params"""
         browsers = list()
         for i in range(self.num_browsers):
             browser_params[
