@@ -72,18 +72,18 @@ class BrowserManagerHandle:
 
         # Queues and process IDs for BrowserManager
 
-        # thread to run commands issued from TaskManager
         self.command_thread: Optional[threading.Thread] = None
-        # queue for passing command tuples to BrowserManager
+        """thread to run commands issued from TaskManager"""
         self.command_queue: Optional[Queue] = None
-        """queue for receiving command execution status from BrowserManager"""
+        """queue for passing command objects to BrowserManager"""
         self.status_queue: Optional[Queue] = None
-        """pid for browser instance controlled by BrowserManager"""
+        """queue for receiving command execution status from BrowserManager"""
         self.geckodriver_pid: Optional[int] = None
-        """the pid of the display for the Xvfb display (if it exists)"""
+        """pid for browser instance controlled by BrowserManager"""
         self.display_pid: Optional[int] = None
-        """the port of the display for the Xvfb display (if it exists)"""
+        """the pid of the display for the Xvfb display (if it exists)"""
         self.display_port: Optional[int] = None
+        """the port of the display for the Xvfb display (if it exists)"""
 
         self.is_fresh: bool = True
         """indicates if the BrowserManager is new (to optimize restarts)"""
