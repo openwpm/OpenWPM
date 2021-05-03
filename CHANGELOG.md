@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.15.0 - 2020-05-03
+## v0.15.0 - 2021-05-03
 
 Updates OpenWPM to Firefox 88
 
@@ -15,8 +15,8 @@ Other things that happened since last release:
 - OpenWPM now monitors speculative connections (#872)
 - We introduced sphinx and publish our documentation to RTD (#863, #894 and #900)
 - Combined log_directory and log_file to log_path (#911)
-- Fixed a bug in the socket code the WebExtension  
- Thanks @shashigharti for the excellent bug report! (#912)
+- Fixed a bug in the socket code of the WebExtension  
+  Thanks @shashigharti for the excellent bug report! (#912)
 - Fixed data loss issue reported by @bkrumnow (#902)
 
 ## v0.14.0 - 2021-03-12
