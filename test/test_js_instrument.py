@@ -31,7 +31,7 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMJSTest):
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
-        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        """Ensure instrumentObject logs all property gets, sets, and calls"""
         db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
         self._check_calls(
             db=db,
@@ -74,7 +74,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
-        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        """Ensure instrumentObject logs all property gets, sets, and calls"""
         db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
         self._check_calls(
             db=db,
@@ -131,7 +131,7 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         return manager_params, browser_params
 
     def test_instrument_object(self):
-        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        """Ensure instrumentObject logs all property gets, sets, and calls"""
         db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
         self._check_calls(
             db=db,
@@ -201,7 +201,7 @@ class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
-        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        """Ensure instrumentObject logs all property gets, sets, and calls"""
         db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
 
         self._check_calls(
@@ -291,7 +291,7 @@ class TestJSInstrument(OpenWPMJSTest):
     FRAME2_URL = u"%s/js_instrument/framed2.html" % util.BASE_TEST_URL
 
     def test_instrument_object(self):
-        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        """Ensure instrumentObject logs all property gets, sets, and calls"""
         db = self.visit("/js_instrument/instrument_object.html")
         self._check_calls(
             db=db,
@@ -388,7 +388,7 @@ class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
     TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
-        """ Ensure instrumentObject logs all property gets, sets, and calls """
+        """Ensure instrumentObject logs all property gets, sets, and calls"""
         db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
         self._check_calls(
             db=db,

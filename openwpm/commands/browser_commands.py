@@ -489,7 +489,7 @@ class FinalizeCommand(BaseCommand):
         extension_socket,
     ):
 
-        """ Informs the extension that a visit is done """
+        """Informs the extension that a visit is done"""
         tab_restart_browser(webdriver)
         # This doesn't immediately stop data saving from the current
         # visit so we sleep briefly before unsetting the visit_id.

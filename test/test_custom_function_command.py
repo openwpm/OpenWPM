@@ -32,7 +32,7 @@ PAGE_LINKS = {
 
 
 class CollectLinksCommand(BaseCommand):
-    """ Collect links with `scheme` and save in table `table_name` """
+    """Collect links with `scheme` and save in table `table_name`"""
 
     def __init__(self, table_name: TableName, scheme: str) -> None:
         self.scheme = scheme
@@ -76,7 +76,7 @@ class CollectLinksCommand(BaseCommand):
 
 
 def test_custom_function(default_params, xpi, server):
-    """ Test `custom_function` with an inline func that collects links """
+    """Test `custom_function` with an inline func that collects links"""
     table_name = TableName("page_links")
 
     manager_params, browser_params = default_params

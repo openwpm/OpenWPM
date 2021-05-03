@@ -98,7 +98,7 @@ class BrowserManagerHandle:
         self.logger = logging.getLogger("openwpm")
 
     def ready(self):
-        """ return if the browser is ready to accept a command """
+        """return if the browser is ready to accept a command"""
         return self.command_thread is None or not self.command_thread.is_alive()
 
     def set_visit_id(self, visit_id):
@@ -589,7 +589,7 @@ class BrowserManagerHandle:
             kill_process_and_children(geckodriver_process, self.logger)
 
     def shutdown_browser(self, during_init: bool, force: bool = False) -> None:
-        """ Runs the closing tasks for this Browser/BrowserManager """
+        """Runs the closing tasks for this Browser/BrowserManager"""
         # Close BrowserManager process and children
         self.logger.debug("BROWSER %i: Closing browser manager..." % self.browser_id)
         self.close_browser_manager(force=force)

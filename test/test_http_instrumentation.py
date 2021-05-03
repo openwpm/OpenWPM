@@ -895,7 +895,7 @@ def test_page_visit(task_manager_creator, http_params, delayed):
 
 
 def test_javascript_saving(http_params, xpi, server):
-    """ check that javascript content is saved and hashed correctly """
+    """check that javascript content is saved and hashed correctly"""
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
     manager_params, browser_params = http_params()
 
@@ -927,7 +927,7 @@ def test_javascript_saving(http_params, xpi, server):
 
 
 def test_document_saving(http_params, xpi, server):
-    """ check that document content is saved and hashed correctly """
+    """check that document content is saved and hashed correctly"""
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
     expected_hashes = {
         "2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966",
@@ -959,7 +959,7 @@ def test_document_saving(http_params, xpi, server):
 
 
 def test_content_saving(http_params, xpi, server):
-    """ check that content is saved and hashed correctly """
+    """check that content is saved and hashed correctly"""
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
     manager_params, browser_params = http_params()
     for browser_param in browser_params:
