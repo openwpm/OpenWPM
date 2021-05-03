@@ -93,6 +93,8 @@ async function main() {
     let dnsInstrument = new DnsInstrument(loggingDB);
     dnsInstrument.run(config['browser_id']);
   }
+
+  await browser.profileDirIO.writeFile("OPENWPM_STARTUP_SUCCESS.txt", "");
 }
 
 main();
