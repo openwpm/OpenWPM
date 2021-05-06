@@ -46,7 +46,7 @@ of configurations of `class<BrowserParams>`.
 - `data_directory`
   - The directory into which screenshots and page dumps will be saved
   - [Intended to be removed by #232](https://github.com/mozilla/OpenWPM/issues/232)
-- `log_directory` -> supported file extensions are `.log`
+- `log_path` -> supported file extensions are `.log`
   - The path to the file in which OpenWPM will log. The
     directory given will be created if it does not exist.
 - `failure_limit` -> has to be either of type `int` or `None`
@@ -287,17 +287,7 @@ browser before visiting the next `site` in `sites`.
 
 ### Loading and saving a browser profile
 
-It's possible to load and save profiles during stateful crawls. Profile dumps
-currently consist of the following browser storage items:
-
-- cookies
-- localStorage
-- IndexedDB
-- browser history
-
-Other browser state, such as the browser cache, is not saved. In
-[Issue #62](https://github.com/citp/OpenWPM/issues/62) we plan to expand
-profiles to include all browser storage.
+It's possible to load and save profiles during stateful crawls.
 
 #### Save a profile
 

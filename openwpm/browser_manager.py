@@ -674,6 +674,7 @@ class BrowserManager(Process):
             with open(ep_filename, "rt") as f:
                 port = int(f.read().strip())
 
+        ep_filename.unlink()
         self.logger.debug(
             "BROWSER %i: Connecting to extension on port %i"
             % (self.browser_params.browser_id, port)
