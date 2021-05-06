@@ -1,3 +1,4 @@
+import tarfile
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,36 @@ def test_saving(default_params, task_manager_creator):
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
     manager.get(BASE_TEST_URL)
     manager.close()
-    assert (browser_params[0].profile_archive_dir / "profile.tar.gz").is_file()
+    tar_path = browser_params[0].profile_archive_dir / "profile.tar.gz"
+    assert tar_path.is_file()
+    # Test that the archived profile contains some basic items
+    profile_items = [
+        "cookies.sqlite",
+        "places.sqlite",
+        "webappsstore.sqlite",
+        "prefs.js",
+        "bookmarkbackups",
+        "cache2",
+        "storage",
+    ]
+    with tarfile.open(tar_path, "r:gz") as tar:
+        archive_items = tar.getnames()
+    for item in profile_items:
+        assert item in archive_items
+
+
+def test_save_incomplete_profile_error(default_params, task_manager_creator):
+    manager_params, browser_params = default_params
+    manager_params.num_browsers = 1
+    browser_params[0].profile_archive_dir = (
+        manager_params.data_directory / "browser_profile"
+    )
+    manager, _ = task_manager_creator((manager_params, browser_params[:1]))
+    manager.get(BASE_TEST_URL)
+    (manager.browsers[0].current_profile_path / "cookies.sqlite").unlink()
+    with pytest.raises(RuntimeError) as error:
+        manager.close()
+    assert str(error.value) == "Profile dump not successful"
 
 
 def test_crash_profile(default_params, task_manager_creator):
