@@ -3,13 +3,13 @@ channels:
 - main
 dependencies:
 - beautifulsoup4=4.9.3
-- black=21.4b2
+- black=21.5b0
 - click=7.1.2
 - codecov=2.1.11
 - dill=0.3.3
 - gcsfs=2021.4.0
 - geckodriver=0.26.0
-- ipython=7.23.0
+- ipython=7.23.1
 - leveldb=1.23
 - multiprocess=0.70.11.1
 - mypy=0.812
@@ -22,7 +22,7 @@ dependencies:
 - pyarrow=4.0.0
 - pytest-asyncio=0.14.0
 - pytest-cov=2.11.1
-- pytest=6.2.3
+- pytest=6.2.4
 - python=3.9.2
 - pyvirtualdisplay=2.1
 - recommonmark=0.7.1
