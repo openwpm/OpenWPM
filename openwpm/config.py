@@ -116,19 +116,44 @@ class ManagerParams(DataClassJsonMixin):
     run
     """
 
-    data_directory: Path = field(
+    data_directory:
+    """The directory into which screenshots and page dumps will be saved"""
+     Path = field(
         default=Path.home() / "openwpm",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
-    log_path: Path = field(
+    log_path:
+    """The path to the file in which OpenWPM will log. The
+    directory given will be created if it does not exist."""
+     Path = field(
         default=Path.home() / "openwpm" / "openwpm.log",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
-    testing: bool = False
-    memory_watchdog: bool = False
-    process_watchdog: bool = False
+    testing:
+    """A platform wide flag that can be used to only run certain functionality
+    while testing. For example, the Javascript instrumentation"""
+     bool = False
+    memory_watchdog:
+    """- It is part of default manager_params. It is set to false by default which can manually be set to true.
+       - A watchdog that tries to ensure that no Firefox instance takes up too much memory. It is set to false by default
+       - It is mostly useful for long running cloud crawls"""
+     bool = False
+    process_watchdog:
+    """- It is part of default manager_params. It is set to false by default which can manually be set to true.
+       - It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by
+         Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server)."""
+     bool = False
     num_browsers: int = 1
-    _failure_limit: Optional[int] = None
+    _failure_limit:
+    """has to be either of type `int` or `None`
+       - The number of command failures the platform will tolerate before raising a
+        `CommandExecutionError` exception. Otherwise the default is set to 2 x the
+         number of browsers plus 10. The failure counter is reset at the end of each
+         successfully completed command sequence.
+       - For non-blocking command sequences that cause the number of failures to
+         exceed `failure_limit` the `CommandExecutionError` is raised when
+         attempting to execute the next command sequence."""
+     Optional[int] = None
 
     @property
     def failure_limit(self) -> int:
