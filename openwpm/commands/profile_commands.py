@@ -1,5 +1,4 @@
 import logging
-import shutil
 import tarfile
 from pathlib import Path
 
@@ -47,47 +46,22 @@ def dump_profile(
         % (browser_params.browser_id, browser_profile_path, tar_path)
     )
 
-    storage_vector_files = [
-        "cookies.sqlite",  # cookies
-        "cookies.sqlite-shm",
-        "cookies.sqlite-wal",
-        "places.sqlite",  # history
-        "places.sqlite-shm",
-        "places.sqlite-wal",
-        "webappsstore.sqlite",  # localStorage
-        "webappsstore.sqlite-shm",
-        "webappsstore.sqlite-wal",
-    ]
-    storage_vector_dirs = [
-        "webapps",  # related to localStorage?
-        "storage",  # directory for IndexedDB
-    ]
-    for item in storage_vector_files:
-        full_path = browser_profile_path / item
-        if (
-            not full_path.is_file()
-            and not full_path.name.endswith("shm")
-            and not full_path.name.endswith("wal")
-        ):
-            logger.critical(
-                "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                % (browser_params.browser_id, full_path)
-            )
-        elif not full_path.is_file() and (
-            full_path.name.endswith("shm") or full_path.name.endswith("wal")
-        ):
-            continue  # These are just checkpoint files
-        tar.add(full_path, arcname=item)
-    for item in storage_vector_dirs:
-        full_path = browser_profile_path / item
-        if not full_path.is_dir():
-            logger.warning(
-                "BROWSER %i: %s NOT FOUND IN profile folder, skipping."
-                % (browser_params.browser_id, full_path)
-            )
-            continue
-        tar.add(full_path, arcname=item)
+    tar.add(browser_profile_path, arcname="")
+    archived_items = tar.getnames()
     tar.close()
+
+    required_items = [
+        "cookies.sqlite",  # cookies
+        "places.sqlite",  # history
+        "webappsstore.sqlite",  # localStorage
+    ]
+    for item in required_items:
+        if item not in archived_items:
+            logger.critical(
+                "BROWSER %i: %s NOT FOUND IN profile folder"
+                % (browser_params.browser_id, item)
+            )
+            raise RuntimeError("Profile dump not successful")
 
 
 class DumpProfileCommand(BaseCommand):
