@@ -120,15 +120,31 @@ class ManagerParams(DataClassJsonMixin):
         default=Path.home() / "openwpm",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
+    """The directory into which screenshots and page dumps will be saved"""
     log_path: Path = field(
         default=Path.home() / "openwpm" / "openwpm.log",
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
+    """The path to the file in which OpenWPM will log. The
+    directory given will be created if it does not exist."""
     testing: bool = False
+    """A platform wide flag that can be used to only run certain functionality
+    while testing. For example, the Javascript instrumentation"""
     memory_watchdog: bool = False
+    """A watchdog that tries to ensure that no Firefox instance takes up too much memory.
+    It is mostly useful for long running cloud crawls"""
     process_watchdog: bool = False
+    """- It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by
+         Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server)."""
     num_browsers: int = 1
     _failure_limit: Optional[int] = None
+    """- The number of command failures the platform will tolerate before raising a
+        `CommandExecutionError` exception. Otherwise the default is set to 2 x the
+         number of browsers plus 10. The failure counter is reset at the end of each
+         successfully completed command sequence.
+       - For non-blocking command sequences that cause the number of failures to
+         exceed `failure_limit` the `CommandExecutionError` is raised when
+         attempting to execute the next command sequence."""
 
     @property
     def failure_limit(self) -> int:

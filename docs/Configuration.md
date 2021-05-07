@@ -41,37 +41,7 @@ of configurations of `class<BrowserParams>`.
     - [`save_content`](#save_content)
 
 
-## Platform Configuration Options
-
-- `data_directory`
-  - The directory into which screenshots and page dumps will be saved
-  - [Intended to be removed by #232](https://github.com/mozilla/OpenWPM/issues/232)
-- `log_path` -> supported file extensions are `.log`
-  - The path to the file in which OpenWPM will log. The
-    directory given will be created if it does not exist.
-- `failure_limit` -> has to be either of type `int` or `None`
-  - The number of command failures the platform will tolerate before raising a
-    `CommandExecutionError` exception. Otherwise the default is set to 2 x the
-    number of browsers plus 10. The failure counter is reset at the end of each
-    successfully completed command sequence.
-  - For non-blocking command sequences that cause the number of failures to
-    exceed `failure_limit` the `CommandExecutionError` is raised when
-    attempting to execute the next command sequence.
-- `testing`
-  - A platform wide flag that can be used to only run certain functionality
-    while testing. For example, the Javascript instrumentation
-    [exposes its instrumentation function](https://github.com/mozilla/OpenWPM/blob/91751831647c37b769f0039d99d0a164384c76ae/automation/Extension/firefox/data/content.js#L447-L449)
-    on the page script global to allow test scripts to instrument objects
-    on-the-fly. Depending on where you would like to add test functionality,
-    you may need to propagate the flag.
-  - This is not something you should enable during normal crawls.
-- `process_watchdog`
-  - It is part of default manager_params. It is set to false by default which can manually be set to true.
-  - It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
-- `memory_watchdog`
-  - It is part of default manager_params. It is set to false by default which can manually be set to true.
-  - A watchdog that tries to ensure that no Firefox instance takes up too much memory. It is set to false by default
-  - It is mostly useful for long running cloud crawls
+<!--- ## Platform Configuration Options -->
 
 ## Browser Configuration Options
 
