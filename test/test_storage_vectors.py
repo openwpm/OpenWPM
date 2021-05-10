@@ -26,7 +26,7 @@ expected_js_cookie = (
 
 
 def test_js_profile_cookies(default_params, task_manager_creator):
-    """ Check that profile cookies set by JS are saved """
+    """Check that profile cookies set by JS are saved"""
     # Run the test crawl
     manager_params, browser_params = default_params
     for browser_param in browser_params:

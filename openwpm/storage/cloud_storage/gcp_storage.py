@@ -47,13 +47,11 @@ class GcsStructuredProvider(ArrowProvider):
         )
 
     async def write_table(self, table_name: TableName, table: Table) -> None:
-        self.file_system.start_transaction()
         pq.write_to_dataset(
             table,
             self.base_path.format(table_name=table_name),
             filesystem=self.file_system,
         )
-        self.file_system.end_transaction()
 
     async def shutdown(self) -> None:
         pass
@@ -99,12 +97,9 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         ):
             self.logger.info("Not saving out file %s as it already exists", filename)
             return
-        self.file_system.start_transaction()
 
         with self.file_system.open(target_path, mode="wb") as f:
             f.write(blob)
-
-        self.file_system.end_transaction()
 
         self.file_name_cache.add(filename)
 

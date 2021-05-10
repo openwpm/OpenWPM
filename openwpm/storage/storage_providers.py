@@ -32,7 +32,7 @@ class StorageProvider(ABC):
 
     @abstractmethod
     async def flush_cache(self) -> None:
-        """ Blockingly write out any cached data to the respective storage """
+        """Blockingly write out any cached data to the respective storage"""
         pass
 
     @abstractmethod

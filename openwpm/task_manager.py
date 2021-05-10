@@ -166,7 +166,7 @@ class TaskManager:
     def _initialize_browsers(
         self, browser_params: List[BrowserParamsInternal]
     ) -> List[BrowserManagerHandle]:
-        """ initialize the browser classes, each its unique set of params """
+        """initialize the browser classes, each with its unique set of params"""
         browsers = list()
         for i in range(self.num_browsers):
             browser_params[
@@ -179,7 +179,7 @@ class TaskManager:
         return browsers
 
     def _launch_browsers(self) -> None:
-        """ launch each browser manager process / browser """
+        """launch each browser manager process / browser"""
         for browser in self.browsers:
             try:
                 success = browser.launch_browser_manager()
@@ -349,7 +349,7 @@ class TaskManager:
     def _start_thread(
         self, browser: BrowserManagerHandle, command_sequence: CommandSequence
     ) -> threading.Thread:
-        """  starts the command execution thread """
+        """starts the command execution thread"""
 
         # Check status flags before starting thread
         if self.closing:
@@ -455,7 +455,7 @@ class TaskManager:
         sleep: int = 0,
         reset: bool = False,
     ) -> None:
-        """ goes to a url """
+        """goes to a url"""
         command_sequence = CommandSequence(url)
         command_sequence.get(timeout=timeout, sleep=sleep)
         command_sequence.reset = reset
@@ -470,7 +470,7 @@ class TaskManager:
         timeout: int = 60,
         reset: bool = False,
     ) -> None:
-        """ browse a website and visit <num_links> links on the page """
+        """browse a website and visit <num_links> links on the page"""
         command_sequence = CommandSequence(url)
         command_sequence.browse(num_links=num_links, sleep=sleep, timeout=timeout)
         command_sequence.reset = reset

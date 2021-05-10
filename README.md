@@ -3,12 +3,6 @@ OpenWPM
 [![Build Status](https://github.com/mozilla/openwpm/workflows/Tests%20and%20linting/badge.svg?branch=master)](https://github.com/mozilla/openwpm/actions?query=branch%3Amaster)
 [![OpenWPM Matrix Channel](https://img.shields.io/matrix/OpenWPM:mozilla.org?label=Join%20us%20on%20matrix&server_fqdn=mozilla.modular.im)](https://matrix.to/#/#OpenWPM:mozilla.org?via=mozilla.org) <!-- omit in toc -->
 =======
- :exclamation:  **WARNING: OpenWPM version 0.14.0 and 0.14.1 are loosing data!  
-We have noticed ourselves and heard from others that the two most recent versions of OpenWPM are loosing both structured and unstructured data.  
-Until this is resolved we recommend using OpenWPM v0.13.0.  
-If you also experienced data loss please file an issue to aid the investigation**
-
-
 
 OpenWPM is a web privacy measurement framework which makes it easy to
 collect data for privacy studies on a scale of thousands to millions

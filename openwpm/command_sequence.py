@@ -75,14 +75,14 @@ class CommandSequence:
         self.callback = callback
 
     def get(self, sleep=0, timeout=60):
-        """ goes to a url """
+        """goes to a url"""
         self.total_timeout += timeout
         command = GetCommand(self.url, sleep)
         self._commands_with_timeout.append((command, timeout))
         self.contains_get_or_browse = True
 
     def browse(self, num_links=2, sleep=0, timeout=60):
-        """ browse a website and visit <num_links> links on the page """
+        """browse a website and visit <num_links> links on the page"""
         self.total_timeout += timeout
         command = BrowseCommand(self.url, num_links, sleep)
         self._commands_with_timeout.append((command, timeout))
@@ -95,7 +95,7 @@ class CommandSequence:
         compress: bool = True,
         timeout: int = 120,
     ) -> None:
-        """ dumps from the profile path to a given file (absolute path) """
+        """dumps from the profile path to a given file (absolute path)"""
         self.total_timeout += timeout
         command = DumpProfileCommand(tar_path, close_webdriver, compress)
         self._commands_with_timeout.append((command, timeout))

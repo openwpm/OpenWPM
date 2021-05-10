@@ -24,9 +24,9 @@
   },
   "homepage": "",
   "devDependencies": {
-    "@adobe/jsonschema2md": "^4.2.2",
+    "@adobe/jsonschema2md": "^6.0.3",
     "markdown-link-check": "^3.8.7",
-    "markdownlint-cli": "^0.23.2",
+    "markdownlint-cli": "^0.27.1",
     "npm-scripts-info": "^0.3.9"
   }
 }

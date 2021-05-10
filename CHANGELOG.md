@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.15.0 - 2021-05-03
+
+Updates OpenWPM to Firefox 88
+
+This release reenables the support for stateful crawling
+
+If you are unsure what this means please have a look at our documentation on
+[ReadTheDocs](https://openwpm.readthedocs.io/en/latest/Configuration.html#stateful-vs-stateless-crawls)
+
+Other things that happened since last release:
+
+- Restored Docker build (#871) - All of our releases are now available on Dockerhub again
+- OpenWPM now monitors speculative connections (#872)
+- We introduced sphinx and publish our documentation to RTD (#863, #894 and #900)
+- Combined log_directory and log_file to log_path (#911)
+- Fixed a bug in the socket code of the WebExtension  
+  Thanks @shashigharti for the excellent bug report! (#912)
+- Fixed data loss issue reported by @bkrumnow (#902)
+
 ## v0.14.0 - 2021-03-12
 
 Firefox 86.0.1

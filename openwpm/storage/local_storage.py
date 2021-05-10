@@ -9,7 +9,7 @@ from .storage_providers import TableName, UnstructuredStorageProvider
 
 
 class LocalArrowProvider(ArrowProvider):
-    """ Stores Parquet files under storage_path/table_name/n.parquet"""
+    """Stores Parquet files under storage_path/table_name/n.parquet"""
 
     def __init__(self, storage_path: Path) -> None:
         super().__init__()
@@ -20,7 +20,7 @@ class LocalArrowProvider(ArrowProvider):
 
 
 class LocalGzipProvider(UnstructuredStorageProvider):
-    """ Stores files as storage_path/hash.zip """
+    """Stores files as storage_path/hash.zip"""
 
     async def init(self) -> None:
         pass
