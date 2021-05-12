@@ -189,6 +189,21 @@ def test_load_tar_file(tmp_path):
     assert modified_time_before_load == tar_path.stat().st_mtime
 
 
+def test_crash_during_init(default_params, task_manager_creator):
+    """Test that no profile is saved when Task Manager initialization crashes."""
+    manager_params, browser_params = default_params
+    manager_params.num_browsers = 1
+    browser_params[0].profile_archive_dir = (
+        manager_params.data_directory / "browser_profile"
+    )
+    # This will cause the browser launch to fail
+    browser_params[0].seed_tar = Path("/tmp/NOTREAL")
+    with pytest.raises(ProfileLoadError):
+        manager, _ = task_manager_creator((manager_params, browser_params[:1]))
+    tar_path = browser_params[0].profile_archive_dir / "profile.tar.gz"
+    assert not tar_path.is_file()
+
+
 @pytest.mark.parametrize(
     "seed_tar",
     [None, Path("profile.tar.gz")],
