@@ -105,7 +105,6 @@ class DumpProfileCommand(BaseCommand):
 
 def load_profile(
     browser_profile_path: Path,
-    manager_params: ManagerParamsInternal,
     browser_params: BrowserParamsInternal,
     tar_path: Path,
 ) -> None:
