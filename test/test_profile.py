@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 
 from openwpm.command_sequence import CommandSequence
-from openwpm.commands.profile_commands import DumpProfileCommand
 from openwpm.commands.types import BaseCommand
 from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
@@ -164,6 +163,20 @@ class AssertConfigSetCommand(BaseCommand):
         assert result == self.expected_value
 
 
+def test_dump_profile_command(default_params, task_manager_creator):
+    """Test saving the browser profile using a command."""
+    manager_params, browser_params = default_params
+    manager_params.num_browsers = 1
+    manager, _ = task_manager_creator((manager_params, browser_params[:1]))
+    cs = CommandSequence(url=BASE_TEST_URL)
+    cs.get()
+    tar_path = manager_params.data_directory / "profile.tar.gz"
+    cs.dump_profile(tar_path, True)
+    manager.execute_command_sequence(cs)
+    manager.close()
+    assert tar_path.is_file()
+
+
 @pytest.mark.parametrize(
     "seed_tar",
     [None, Path("profile.tar.gz")],
@@ -211,7 +224,7 @@ def test_profile_recovery(
     cs.append_command(AssertConfigSetCommand("test_pref", expected_value))
     tar_directory = manager_params.data_directory / "browser_profile"
     tar_path = tar_directory / "profile.tar.gz"
-    cs.append_command(DumpProfileCommand(tar_path, True))
+    cs.dump_profile(tar_path, True)
     manager.execute_command_sequence(cs)
     manager.close()
 
