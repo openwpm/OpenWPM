@@ -22,19 +22,19 @@ manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
 browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
-for i in range(NUM_BROWSERS):
+for browser_param in browser_params:
     # Record HTTP Requests and Responses
-    browser_params[i].http_instrument = True
+    browser_param.http_instrument = True
     # Record cookie changes
-    browser_params[i].cookie_instrument = True
+    browser_param.cookie_instrument = True
     # Record Navigations
-    browser_params[i].navigation_instrument = True
+    browser_param.navigation_instrument = True
     # Record JS Web API calls
-    browser_params[i].js_instrument = True
+    browser_param.js_instrument = True
     # Record the callstack of all WebRequests made
-    browser_params[i].callstack_instrument = True
+    browser_param.callstack_instrument = True
     # Record DNS resolution
-    browser_params[i].dns_instrument = True
+    browser_param.dns_instrument = True
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params.data_directory = Path("./datadir/")

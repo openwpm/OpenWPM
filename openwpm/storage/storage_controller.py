@@ -306,7 +306,7 @@ class StorageController:
             self._last_record_received = None
 
     async def update_completion_queue(self) -> None:
-        """ All completed finalize_visit_id tasks get put into the completion_queue here """
+        """All completed finalize_visit_id tasks get put into the completion_queue here"""
         while not (self._shutdown_flag and len(self.finalize_tasks) == 0):
             # This list is needed because iterating over a list and changing it at the same time
             # is forbidden
@@ -496,7 +496,7 @@ class StorageControllerHandle:
         return finished_visit_ids
 
     def shutdown(self, relaxed: bool = True) -> None:
-        """ Terminate the storage controller process"""
+        """Terminate the storage controller process"""
         assert isinstance(self.storage_controller, Process)
         self.logger.debug("Sending the shutdown signal to the Storage Controller...")
         self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))

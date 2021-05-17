@@ -30,7 +30,7 @@ class ServerSocket:
             print("Server bound to: " + str(self.sock.getsockname()))
 
     def start_accepting(self):
-        """ Start the listener thread """
+        """Start the listener thread"""
         thread = threading.Thread(target=self._accept, args=())
         thread.daemon = True  # stops from blocking shutdown
         if self.name is not None:
@@ -38,7 +38,7 @@ class ServerSocket:
         thread.start()
 
     def _accept(self):
-        """ Listen for connections and pass handling to a new thread """
+        """Listen for connections and pass handling to a new thread"""
         while True:
             try:
                 (client, address) = self.sock.accept()

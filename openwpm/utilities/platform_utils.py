@@ -67,7 +67,7 @@ def get_firefox_binary_path():
 
 
 def get_version():
-    """Return OpenWPM version tag/current commit and Firefox version """
+    """Return OpenWPM version tag/current commit and Firefox version"""
     try:
         openwpm = subprocess.check_output(
             ["git", "describe", "--tags", "--always"]
