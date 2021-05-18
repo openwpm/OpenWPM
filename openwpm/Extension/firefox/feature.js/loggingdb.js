@@ -70,7 +70,7 @@ export let open = async function(storageControllerAddress, logAddress, curr_craw
     // Listen for incoming urls as visit ids
     listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
     console.log("Starting socket listening for incoming connections.");
-    listeningSocket.startListening().then(() => {
+    await listeningSocket.startListening().then(() => {
         browser.profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
     });
 };

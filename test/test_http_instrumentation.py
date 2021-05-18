@@ -822,14 +822,10 @@ def test_page_visit(task_manager_creator, http_params, delayed):
             browser_param.custom_params[
                 "pre_instrumentation_code"
             ] = """
-                (async () => {
-                    const myPromise = new Promise((resolve, reject) => {
-                      setTimeout(() => {
-                        resolve();
-                      }, 5000); // Delaying for 5 seconds
-                    });
-                    await myPromise;
-                })()
+                const startTime = Date.now();
+                while (Date.now() - startTime < 5000) { // Delaying for 5s
+                    console.log("delaying startup");
+                };
             """
 
     tm, db = task_manager_creator((manager_params, browser_params))
