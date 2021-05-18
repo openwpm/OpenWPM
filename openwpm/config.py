@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass, field
 from json import JSONEncoder
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from dataclasses_json import DataClassJsonMixin
 from dataclasses_json import config as DCJConfig
@@ -92,7 +92,7 @@ class BrowserParams(DataClassJsonMixin):
     seed_tar: Optional[Path] = field(
         default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
     )
-    display_mode: str = "native"
+    display_mode: Literal["native", "headless", "xvfb"] = "native"
     browser: str = "firefox"
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"

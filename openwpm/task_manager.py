@@ -89,7 +89,6 @@ class TaskManager:
         if not os.path.exists(manager_params.source_dump_path):
             os.makedirs(manager_params.source_dump_path)
 
-        # Check size of parameter dictionary
         self.num_browsers = manager_params.num_browsers
 
         # Parse and flesh out js_instrument_settings
