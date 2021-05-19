@@ -205,11 +205,14 @@ def test_crash_during_init(default_params, task_manager_creator):
 
 
 @pytest.mark.parametrize(
-    "seed_tar",
-    [None, Path("profile.tar.gz")],
-    ids=["without_seed_tar", "with_seed_tar"],
+    "stateful,seed_tar",
+    [(True, None), (True, Path("profile.tar.gz")), (False, Path("profile.tar.gz"))],
+    ids=[
+        "stateful-without_seed_tar",
+        "stateful-with_seed_tar",
+        "stateless-with_seed_tar",
+    ],
 )
-@pytest.mark.parametrize("stateful", [True, False], ids=["stateful", "stateless"])
 @pytest.mark.parametrize(
     "testcase",
     ["on_normal_operation", "on_crash", "on_crash_during_launch", "on_timeout"],
