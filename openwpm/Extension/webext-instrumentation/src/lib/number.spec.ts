@@ -1,4 +1,4 @@
-// tslint:disable:no-expression-statement
+/* eslint-disable  */
 import test from "ava";
 import {double, power} from "./number";
 
