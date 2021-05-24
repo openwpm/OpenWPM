@@ -56,7 +56,6 @@ def deploy_firefox(
         )
         load_profile(
             browser_profile_path,
-            manager_params,
             browser_params,
             browser_params.seed_tar,
         )
@@ -67,7 +66,6 @@ def deploy_firefox(
         )
         load_profile(
             browser_profile_path,
-            manager_params,
             browser_params,
             browser_params.recovery_tar,
         )
