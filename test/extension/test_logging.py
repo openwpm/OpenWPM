@@ -19,4 +19,4 @@ def test_extension_logging(task_manager_creator, default_params, tmp_path):
             if test_msg in log_line:
                 log_list.append(log_line)
     # We expect to see it once when printing the config and once when printing the log message
-    assert len(log_line) == 2 * manager_params.num_browsers
+    assert len(log_list) == 2 * manager_params.num_browsers

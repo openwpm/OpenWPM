@@ -2,7 +2,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Any, Callable, Generator, List, Tuple
+from typing import Any, Callable, Generator, List, Literal, Tuple
 
 import pytest
 
@@ -93,13 +93,13 @@ def task_manager_creator(
 @pytest.fixture()
 def http_params(
     default_params: Tuple[ManagerParams, List[BrowserParams]],
-) -> Callable[[str], Tuple[ManagerParams, List[BrowserParams]]]:
+) -> Callable[[Literal["headless", "xvfb"]], Tuple[ManagerParams, List[BrowserParams]]]:
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.http_instrument = True
 
     def parameterize(
-        display_mode: str = "headless",
+        display_mode: Literal["headless", "xvfb"] = "headless",
     ) -> Tuple[ManagerParams, List[BrowserParams]]:
         for browser_param in browser_params:
             browser_param.display_mode = display_mode

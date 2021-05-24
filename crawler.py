@@ -4,9 +4,10 @@ import os
 import signal
 import sys
 import time
+import typing
 from pathlib import Path
 from threading import Lock
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Literal
 
 import sentry_sdk
 
@@ -36,6 +37,8 @@ AUTH_TOKEN = os.getenv("GCP_AUTH_TOKEN", "cloud")
 
 # Browser Params
 DISPLAY_MODE = os.getenv("DISPLAY_MODE", "headless")
+assert DISPLAY_MODE in ["headless", "xvfb", "native"]
+DISPLAY_MODE = typing.cast(Literal["headless", "xvfb", "native"], DISPLAY_MODE)
 HTTP_INSTRUMENT = os.getenv("HTTP_INSTRUMENT", "1") == "1"
 COOKIE_INSTRUMENT = os.getenv("COOKIE_INSTRUMENT", "1") == "1"
 NAVIGATION_INSTRUMENT = os.getenv("NAVIGATION_INSTRUMENT", "1") == "1"
