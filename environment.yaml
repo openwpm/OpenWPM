@@ -4,10 +4,10 @@ channels:
 dependencies:
 - beautifulsoup4=4.9.3
 - black=21.5b0
-- click=7.1.2
+- click=8.0.0
 - codecov=2.1.11
 - dill=0.3.3
-- gcsfs=2021.4.0
+- gcsfs=2021.5.0
 - geckodriver=0.29.0
 - ipython=7.23.1
 - leveldb=1.23
@@ -21,17 +21,17 @@ dependencies:
 - psutil=5.8.0
 - pyarrow=4.0.0
 - pytest-asyncio=0.14.0
-- pytest-cov=2.11.1
+- pytest-cov=2.12.0
 - pytest=6.2.4
-- python=3.9.2
+- python=3.9.4
 - pyvirtualdisplay=2.1
 - recommonmark=0.7.1
 - redis-py=3.5.3
-- s3fs=2021.4.0
+- s3fs=2021.5.0
 - selenium=3.141.0
-- sentry-sdk=0.20.3
+- sentry-sdk=1.1.0
 - sphinx-markdown-tables=0.0.15
-- sphinx=3.5.4
+- sphinx=4.0.1
 - tabulate=0.8.9
 - tblib=1.7.0
 - wget=1.20.1

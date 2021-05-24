@@ -43,7 +43,8 @@ async function main() {
       callstack_instrument:true,
       save_content:false,
       testing:true,
-      browser_id:0
+      browser_id:0,
+      custom_params: {}
     };
     console.log("WARNING: config not found. Assuming this is a test run of",
                 "the extension. Outputting all queries to console.", {config});
