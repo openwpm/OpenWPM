@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.16.0 - 2021-06-10
+
+Updates OpenWPM to Firefox 89
+
+This release didn't introduce any new functionality.
+
+Things that happened in the last release:
+
+- Enabled extension tests (#929)
+- Fixed deault extension config (#927)
+- Expanded profile tests (#924)
 ## v0.15.0 - 2021-05-03
 
 Updates OpenWPM to Firefox 88
