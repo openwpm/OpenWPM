@@ -86,7 +86,7 @@ which provides stability in logging data despite the possibility of individual b
 
 ## The WebExtension
 
-All of our data collection happens in the OpenWPM WebExtension, which can be found under [openwpm/Extension](../openwpm/Extension).
+All of our data collection happens in the OpenWPM WebExtension, which can be found under [Extension](../Extension).
 The Extension makes heavy use of priviliged APIs and can only be installed on unbranded or custom builds of Firefox with add-on security disabled.
 
 The currently supported instruments can be found in [Configuration.md](Configuration.md#Instruments)

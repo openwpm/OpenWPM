@@ -1,15 +1,15 @@
 # Contributing <!-- omit in toc -->
 
 
-* [Setting up a dev enviroment](#setting-up-a-dev-enviroment)
-* [General Hints and Guidelines](#general-hints-and-guidelines)
-  * [Avoid failing tests for PRs caused by formatting/linting issues](#avoid-failing-tests-for-prs-caused-by-formattinglinting-issues)
-  * [Types Annotations in Python](#types-annotations-in-python)
-  * [Editing instrumentation](#editing-instrumentation)
-  * [Debugging the platform](#debugging-the-platform)
-  * [Managing requirements](#managing-requirements)
-  * [Running tests](#running-tests)
-  * [Updating schema docs](#updating-schema-docs)
+- [Setting up a dev enviroment](#setting-up-a-dev-enviroment)
+- [General Hints and Guidelines](#general-hints-and-guidelines)
+  - [Avoid failing tests for PRs caused by formatting/linting issues](#avoid-failing-tests-for-prs-caused-by-formattinglinting-issues)
+  - [Types Annotations in Python](#types-annotations-in-python)
+  - [Editing instrumentation](#editing-instrumentation)
+  - [Debugging the platform](#debugging-the-platform)
+  - [Managing requirements](#managing-requirements)
+  - [Running tests](#running-tests)
+  - [Updating schema docs](#updating-schema-docs)
 
 ## Setting up a dev enviroment
 Dev dependencies are installed by using the main `environment.yaml` (which
@@ -35,12 +35,12 @@ the project as well as the one you plan to change fundamentally.
 
 ### Editing instrumentation
 
-The instrumentation extension is included in `/openwpm/Extension/firefox/`.
+The instrumentation extension is included in `/Extension/firefox/`.
 The instrumentation itself (used by the above extension) is included in
-`/openwpm/Extension/webext-instrumentation/`.
+`/Extension/webext-instrumentation/`.
 Any edits within these directories will require the extension to be re-built to produce
 a new `openwpm.xpi` with your updates. You can use `./scripts/build-extension.sh` to do this,
-or you can run `npm run build` from `openwpm/Extension/firefox/`.
+or you can run `npm run build` from `Extension/firefox/`.
 
 ### Debugging the platform
 

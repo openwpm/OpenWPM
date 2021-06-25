@@ -17,4 +17,4 @@ popd
 npm run build
 popd
 
-echo "Success: openwpm/Extension/firefox/openwpm.xpi has been built"
+echo "Success: Extension/firefox/openwpm.xpi has been built"
