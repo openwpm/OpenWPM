@@ -91,9 +91,9 @@ docs/apidoc/
 node_modules
 
 # built extension artifacts
-openwpm/Extension/firefox/dist
-openwpm/Extension/firefox/openwpm.xpi
-openwpm/Extension/firefox/src/content.js
-openwpm/Extension/firefox/src/feature.js
+Extension/firefox/dist
+Extension/firefox/openwpm.xpi
+Extension/firefox/src/content.js
+Extension/firefox/src/feature.js
 
 datadir
