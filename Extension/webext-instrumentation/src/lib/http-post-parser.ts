@@ -1,5 +1,5 @@
-import {WebRequestOnBeforeRequestEventDetails,} from "../types/browser-web-request-event-details";
-import {escapeString, Uint8ToBase64} from "./string-utils";
+import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-request-event-details";
+import { escapeString, Uint8ToBase64 } from "./string-utils";
 
 export interface ParsedPostRequest {
   post_headers?: any;
@@ -34,7 +34,7 @@ export class HttpPostParser {
     if (requestBody.raw) {
       return {
         post_body_raw: JSON.stringify(
-          requestBody.raw.map(x => [
+          requestBody.raw.map((x) => [
             x.file,
             Uint8ToBase64(new Uint8Array(x.bytes)),
           ]),

@@ -2,7 +2,10 @@
 // Also, no webpack/es6 imports may be used in this file since the script
 // is exported as a page script as a string
 
-export const pageScript = function(getInstrumentJS, jsInstrumentationSettings) {
+export const pageScript = function (
+  getInstrumentJS,
+  jsInstrumentationSettings,
+) {
   // messages the injected script
   function sendMessagesToLogger(eventId, messages) {
     document.dispatchEvent(

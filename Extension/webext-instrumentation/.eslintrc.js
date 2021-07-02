@@ -17,8 +17,7 @@ module.exports = {
         "es6": true
     },
     "extends": [
-        "prettier",
-        "prettier/@typescript-eslint"
+        "prettier"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -30,9 +29,7 @@ module.exports = {
         "eslint-plugin-import",
         "eslint-plugin-jsdoc",
         "eslint-plugin-unicorn",
-        "eslint-plugin-react",
         "@typescript-eslint",
-        "@typescript-eslint/tslint"
     ],
     "rules": {
         "@typescript-eslint/adjacent-overload-signatures": "error",
@@ -83,7 +80,6 @@ module.exports = {
                 }
             }
         ],
-        "@typescript-eslint/naming-convention": "error",
         "@typescript-eslint/no-empty-function": "warn",
         "@typescript-eslint/no-empty-interface": "error",
         "@typescript-eslint/no-explicit-any": "off",
@@ -194,16 +190,6 @@ module.exports = {
         "prefer-object-spread": "error",
         "quote-props": "off",
         "radix": "error",
-        "react/jsx-curly-spacing": "off",
-        "react/jsx-equals-spacing": "off",
-        "react/jsx-tag-spacing": [
-            "off",
-            {
-                "afterOpening": "allow",
-                "closingSlash": "allow"
-            }
-        ],
-        "react/jsx-wrap-multilines": "off",
         "space-before-function-paren": "off",
         "space-in-parens": [
             "off",
@@ -220,14 +206,6 @@ module.exports = {
         ],
         "unicorn/prefer-ternary": "error",
         "use-isnan": "error",
-        "valid-typeof": "off",
-        "@typescript-eslint/tslint/config": [
-            "error",
-            {
-                "rules": {
-                    "object-literal-sort-keys": true
-                }
-            }
-        ]
+        "valid-typeof": "off"
     }
 };

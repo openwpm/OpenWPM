@@ -1,7 +1,7 @@
-import {incrementedEventOrdinal} from "../lib/extension-session-event-ordinal";
-import {extensionSessionUuid} from "../lib/extension-session-uuid";
-import {boolToInt, escapeString} from "../lib/string-utils";
-import {JavascriptCookie, JavascriptCookieRecord} from "../schema";
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
+import { boolToInt, escapeString } from "../lib/string-utils";
+import { JavascriptCookie, JavascriptCookieRecord } from "../schema";
 import Cookie = browser.cookies.Cookie;
 import OnChangedCause = browser.cookies.OnChangedCause;
 

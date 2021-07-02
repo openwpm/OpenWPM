@@ -13,6 +13,7 @@ export interface WebNavigationBaseEventDetails {
   url: string;
   /**
    * The ID of the process runs the renderer for this tab.
+   *
    * @deprecated Unsupported on Firefox at this time.
    */
   processId?: number;
@@ -35,11 +36,13 @@ export interface WebNavigationOnCommittedEventDetails
   extends WebNavigationBaseEventDetails {
   /**
    * Cause of the navigation.
+   *
    * @deprecated Unsupported on Firefox at this time.
    */
   transitionType?: TransitionType;
   /**
    * A list of transition qualifiers.
+   *
    * @deprecated Unsupported on Firefox at this time.
    */
   transitionQualifiers?: TransitionQualifier[];
@@ -57,6 +60,7 @@ export interface WebNavigationOnErrorOccurredEventDetails
   extends WebNavigationBaseEventDetails {
   /**
    * The error description.
+   *
    * @deprecated Unsupported on Firefox at this time.
    */
   error?: string;
