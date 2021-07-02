@@ -3,6 +3,7 @@ import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal"
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { JavascriptOperation } from "../schema";
+import { JSInstrumentRequest } from "../lib/js-instruments";
 
 export class JavascriptInstrument {
   /**
@@ -114,7 +115,7 @@ export class JavascriptInstrument {
 
   public async registerContentScript(
     testing: boolean,
-    jsInstrumentationSettings: object,
+    jsInstrumentationSettings: JSInstrumentRequest[],
   ) {
     const contentScriptConfig = {
       testing,

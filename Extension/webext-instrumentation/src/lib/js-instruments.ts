@@ -13,7 +13,7 @@ interface LogSettings {
   depth: number;
 }
 
-interface JSInstrumentRequest {
+export interface JSInstrumentRequest {
   object: string;
   instrumentedName: string;
   logSettings: LogSettings;
