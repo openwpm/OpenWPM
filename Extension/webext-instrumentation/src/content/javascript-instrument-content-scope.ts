@@ -1,9 +1,9 @@
-import { getInstrumentJS } from "../lib/js-instruments";
+import { getInstrumentJS, JSInstrumentRequest } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 import { openWpmContentScriptConfig } from "../types/javascript-instrument";
 
 const getPageScriptAsString = (
-  jsInstrumentationSettings: openWpmContentScriptConfig,
+  jsInstrumentationSettings: JSInstrumentRequest[],
 ): string => {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
@@ -50,11 +50,11 @@ const emitMsg = (type, msg) => {
 const eventId = Math.random().toString();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(eventId, function (e: CustomEvent) {
+document.addEventListener(eventId, (e: CustomEvent) => {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
-    msgs.forEach(function (msg) {
+    msgs.forEach((msg) => {
       emitMsg(msg.type, msg.content);
     });
   } else {
@@ -62,7 +62,7 @@ document.addEventListener(eventId, function (e: CustomEvent) {
   }
 });
 
-export function injectJavascriptInstrumentPageScript(contentScriptConfig) {
+export const injectJavascriptInstrumentPageScript = (contentScriptConfig: openWpmContentScriptConfig) => {
   insertScript(
     getPageScriptAsString(contentScriptConfig.jsInstrumentationSettings),
     eventId,
