@@ -2,10 +2,10 @@ import { JSInstrumentRequest } from "../lib/js-instruments";
 
 export interface openWpmContentScriptConfig {
   testing: boolean;
-  jsInstrumentationSettings: JSInstrumentRequest;
+  jsInstrumentationSettings: JSInstrumentRequest[];
 }
 declare global {
   interface Window {
-    openWpmContentScriptConfig: openWpmContentScriptConfig;
+    openWpmContentScriptConfig: JSInstrumentRequest[];
   }
 }
