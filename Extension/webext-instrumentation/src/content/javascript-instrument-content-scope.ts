@@ -2,9 +2,9 @@ import { getInstrumentJS, JSInstrumentRequest } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 import { openWpmContentScriptConfig } from "../types/javascript-instrument";
 
-const getPageScriptAsString = (
+function getPageScriptAsString (
   jsInstrumentationSettings: JSInstrumentRequest[],
-): string => {
+): string {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
   const pageScriptString = `
@@ -23,11 +23,11 @@ const jsInstrumentationSettings = ${JSON.stringify(jsInstrumentationSettings)};
   return pageScriptString;
 };
 
-const insertScript = (
+function insertScript(
   pageScriptString: string,
   eventId: string,
   testing: boolean = false,
-) => {
+) {
   const parent = document.documentElement;
   const script = document.createElement("script");
   script.text = pageScriptString;
@@ -38,7 +38,7 @@ const insertScript = (
   parent.removeChild(script);
 };
 
-const emitMsg = (type, msg) => {
+function emitMsg (type, msg)  {
   msg.timeStamp = new Date().toISOString();
   browser.runtime.sendMessage({
     namespace: "javascript-instrumentation",
