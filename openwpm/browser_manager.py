@@ -12,7 +12,7 @@ import time
 import traceback
 from pathlib import Path
 from queue import Empty as EmptyQueue
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 import psutil
 from multiprocess import Process, Queue
@@ -647,6 +647,13 @@ class BrowserManager(Process):
         self.manager_params = manager_params
         self.crash_recovery = crash_recovery
 
+        self.critical_exceptions: Tuple[Type[BaseException], ...] = (
+            ProfileLoadError,
+            BrowserConfigError,
+        )
+        if self.manager_params.testing:
+            self.critical_exceptions += (AssertionError,)
+
     def _start_extension(self, browser_profile_path: Path) -> ClientSocket:
         """Start up the extension
         Blocks until the extension has fully started up
@@ -703,6 +710,7 @@ class BrowserManager(Process):
     def run(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
+
         try:
             # Start Xvfb (if necessary), webdriver, and browser
             driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
@@ -777,7 +785,7 @@ class BrowserManager(Process):
                     )
                     self.status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
 
-        except (ProfileLoadError, BrowserConfigError, AssertionError) as e:
+        except self.critical_exceptions as e:
             self.logger.error(
                 "BROWSER %i: %s thrown, informing parent and raising"
                 % (self.browser_params.browser_id, e.__class__.__name__)
