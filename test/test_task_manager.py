@@ -1,6 +1,10 @@
 """Test TaskManager functionality."""
+from contextlib import nullcontext as does_not_raise
+
 import pytest
 
+from openwpm.command_sequence import CommandSequence
+from openwpm.commands.types import BaseCommand
 from openwpm.errors import CommandExecutionError
 
 from .utilities import BASE_TEST_URL
@@ -41,3 +45,39 @@ def test_failure_limit_reset(task_manager_creator, default_params):
     manager.get("example.com")  # Selenium requires scheme prefix
     manager.get(BASE_TEST_URL)  # Requires two commands to shut down
     manager.close()
+
+
+class CrashingAssertionCommand(BaseCommand):
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        assert False, "From inside the command"
+
+    def __repr__(self) -> str:
+        return "CrashingAssertionCommand"
+
+
+@pytest.mark.parametrize(
+    "testing,expectation",
+    [
+        (False, does_not_raise()),
+        (True, pytest.raises(AssertionError, match="From inside the command")),
+    ],
+)
+def test_assertion_error_propagation(
+    task_manager_creator, default_params, testing, expectation
+):
+    """Test that assertion errors bubble up through the TaskManager when running tests"""
+    manager_params, browser_params = default_params
+    manager_params.num_browsers = 1
+    manager_params.testing = testing
+    manager, _ = task_manager_creator((manager_params, browser_params[:1]))
+    cs = CommandSequence("http://example.com", blocking=True)
+    cs.append_command(CrashingAssertionCommand())
+    with expectation:
+        with manager:
+            manager.execute_command_sequence(cs)
