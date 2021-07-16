@@ -1,16 +1,17 @@
+/* eslint-disable no-console */
 // Code below is not a content script: no Firefox APIs should be used
 // Also, no webpack/es6 imports may be used in this file since the script
 // is exported as a page script as a string
 
-export const pageScript = function(getInstrumentJS, jsInstrumentationSettings) {
+export function pageScript (getInstrumentJS, jsInstrumentationSettings) {
   // messages the injected script
-  function sendMessagesToLogger(eventId, messages) {
+  const sendMessagesToLogger = (eventId, messages) => {
     document.dispatchEvent(
       new CustomEvent(eventId, {
         detail: messages,
       }),
     );
-  }
+  };
 
   const eventId = document.currentScript.getAttribute("data-event-id");
   const testing = document.currentScript.getAttribute("data-testing");

@@ -1,13 +1,15 @@
 import MessageSender = browser.runtime.MessageSender;
-import {incrementedEventOrdinal} from "../lib/extension-session-event-ordinal";
-import {extensionSessionUuid} from "../lib/extension-session-uuid";
-import {boolToInt, escapeString, escapeUrl} from "../lib/string-utils";
-import {JavascriptOperation} from "../schema";
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
+import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
+import { JavascriptOperation } from "../schema";
+import { JSInstrumentRequest } from "../lib/js-instruments";
 
 export class JavascriptInstrument {
   /**
    * Converts received call and values data from the JS Instrumentation
    * into the format that the schema expects.
+   *
    * @param data
    * @param sender
    */
@@ -70,6 +72,7 @@ export class JavascriptInstrument {
   /**
    * Either sends the log data to the dataReceiver or store it in memory
    * as a pending record if the JS instrumentation is not yet configured
+   *
    * @param message
    * @param sender
    */
@@ -95,6 +98,7 @@ export class JavascriptInstrument {
    * Starts listening if haven't done so already, sets the crawl ID,
    * marks the JS instrumentation as configured and sends any pending
    * records that have been received up until this point.
+   *
    * @param crawlID
    */
   public run(crawlID) {
@@ -103,7 +107,7 @@ export class JavascriptInstrument {
     }
     this.crawlID = crawlID;
     this.configured = true;
-    this.pendingRecords.map(update => {
+    this.pendingRecords.map((update) => {
       update.browser_id = this.crawlID;
       this.dataReceiver.saveRecord("javascript", update);
     });
@@ -111,7 +115,7 @@ export class JavascriptInstrument {
 
   public async registerContentScript(
     testing: boolean,
-    jsInstrumentationSettings: object,
+    jsInstrumentationSettings: JSInstrumentRequest[],
   ) {
     const contentScriptConfig = {
       testing,

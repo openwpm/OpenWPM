@@ -1,4 +1,4 @@
-import {makeUUID} from "./uuid";
+import { makeUUID } from "./uuid";
 
 /**
  * This enables us to access a unique reference to this browser

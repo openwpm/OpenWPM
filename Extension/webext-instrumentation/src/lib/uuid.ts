@@ -1,4 +1,4 @@
-/* tslint:disable:no-bitwise */
+/* eslint-disable no-bitwise */
 
 // from https://gist.github.com/jed/982883#gistcomment-2403369
 const hex = [];
