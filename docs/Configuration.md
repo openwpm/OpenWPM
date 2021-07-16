@@ -383,4 +383,4 @@ Response body content
     `browser_params.save_content = "script"` to save only Javascript
     files. This will lessen the performance impact of this instrumentation
     when a large number of browsers are used in parallel. An example can be "image,script,imageset"
-- You will also need to import levelDBprovider from openwpm/storage/leveldb.py and instantiate it in the TaskManager in demo.py
+- You will also need to import LevelDbProvider from openwpm/storage/leveldb.py and instantiate it in the TaskManager in demo.py
