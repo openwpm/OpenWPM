@@ -53,6 +53,7 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # Run the test crawl
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
+    manager_params.testing = False
     browser_params[0].profile_archive_dir = (
         manager_params.data_directory / "browser_profile"
     )
