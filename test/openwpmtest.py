@@ -44,7 +44,6 @@ class OpenWPMTest:
             browser_params,
             structured_provider,
             None,
-            logger_kwargs={"log_level_console": logging.DEBUG},
         )
         if not page_url.startswith("http"):
             page_url = utilities.BASE_TEST_URL + page_url

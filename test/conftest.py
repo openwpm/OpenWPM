@@ -84,7 +84,6 @@ def task_manager_creator(
             browser_params,
             structured_provider,
             None,
-            logger_kwargs={"log_level_console": logging.DEBUG},
         )
         return manager, db_path
 

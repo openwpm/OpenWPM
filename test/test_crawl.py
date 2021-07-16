@@ -105,5 +105,4 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # 4. The site does not respond to the initial request with a 204
     #    (won't show in FF DB)
     # See PR #893 to restore this behavior in case this test fails.
-    missing_urls = req_ps.intersection(hist_ps).difference(profile_ps)
-    assert len(missing_urls) == 0
+    assert req_ps.intersection(hist_ps).difference(profile_ps) == set()
