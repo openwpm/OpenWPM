@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import List, Literal, Optional, Tuple
 
@@ -39,7 +40,10 @@ class OpenWPMTest:
             db_path = self.tmpdir / "crawl-data.sqlite"
         structured_provider = SQLiteStorageProvider(db_path)
         manager = task_manager.TaskManager(
-            manager_params, browser_params, structured_provider, None
+            manager_params,
+            browser_params,
+            structured_provider,
+            None,
         )
         if not page_url.startswith("http"):
             page_url = utilities.BASE_TEST_URL + page_url
@@ -61,6 +65,7 @@ class OpenWPMTest:
         browser_params = [BrowserParams() for _ in range(num_browsers)]
         manager_params.log_path = data_dir / "openwpm.log"
         manager_params.num_browsers = num_browsers
+        manager_params.testing = True
         for i in range(num_browsers):
             browser_params[i].display_mode = display_mode
         return manager_params, browser_params

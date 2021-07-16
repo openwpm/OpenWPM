@@ -13,4 +13,8 @@ dependencies:
     - sphinx
     - recommonmark
     - sphinx-markdown-tables
+    - pip:
+        - types-pyyaml
+        - types-redis
+        - types-tabulate
 

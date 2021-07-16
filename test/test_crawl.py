@@ -53,6 +53,7 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # Run the test crawl
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
+    manager_params.testing = False
     browser_params[0].profile_archive_dir = (
         manager_params.data_directory / "browser_profile"
     )
@@ -105,5 +106,4 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # 4. The site does not respond to the initial request with a 204
     #    (won't show in FF DB)
     # See PR #893 to restore this behavior in case this test fails.
-    missing_urls = req_ps.intersection(hist_ps).difference(profile_ps)
-    assert len(missing_urls) == 0
+    assert req_ps.intersection(hist_ps).difference(profile_ps) == set()

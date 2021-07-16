@@ -60,6 +60,7 @@ def default_params(
     ]
     manager_params.data_directory = tmp_path
     manager_params.log_path = tmp_path / "openwpm.log"
+    manager_params.testing = True
     for i in range(num_browsers):
         browser_params[i].display_mode = "headless"
     return manager_params, browser_params
