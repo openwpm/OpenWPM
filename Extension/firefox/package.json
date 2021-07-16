@@ -38,16 +38,14 @@
   },
   "scripts": {
     "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
-    "postinstall": "cd ../webext-instrumentation && npm install",
-    "postbuild": "cp dist/openwpm-1.0.zip openwpm.xpi",
     "build": "web-ext build",
+    "postbuild": "cp dist/openwpm-1.0.zip openwpm.xpi",
+    "postinstall": "cd ../webext-instrumentation && npm install",
     "eslint": "eslint . --ext jsm,js,json",
     "lint": "npm-run-all lint:*",
     "lint:eslint": "npm run eslint",
     "lint:web-ext-lint": "web-ext lint",
-    "sign": "echo 'TBD'",
     "start": "web-ext run --no-reload",
-    "test": "echo 'Error: no test specified' && exit 0",
     "watch": "web-ext run"
   }
 }

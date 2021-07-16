@@ -18,11 +18,11 @@ firefox-bin
 venv
 
 # npm packages
-openwpm/Extension/firefox/node_modules
-openwpm/Extension/webext-instrumentation/node_modules
+Extension/firefox/node_modules
+Extension/webext-instrumentation/node_modules
 
 # built extension artifacts
-openwpm/Extension/firefox/dist
-openwpm/Extension/firefox/openwpm.xpi
-openwpm/Extension/firefox/src/content.js
-openwpm/Extension/firefox/src/feature.js
+Extension/firefox/dist
+Extension/firefox/openwpm.xpi
+Extension/firefox/src/content.js
+Extension/firefox/src/feature.js

@@ -13,7 +13,7 @@ conda activate openwpm
 
 npm update --dev
 
-pushd openwpm/Extension/webext-instrumentation
+pushd Extension/webext-instrumentation
 
 npm update --dev
 

@@ -9,7 +9,7 @@ set -e
 eval "$(conda shell.bash hook)"
 conda activate openwpm
 
-pushd openwpm/Extension/firefox
+pushd Extension/firefox
 npm install --legacy-peer-deps
 pushd ../webext-instrumentation
 npm install
@@ -17,4 +17,4 @@ popd
 npm run build
 popd
 
-echo "Success: openwpm/Extension/firefox/openwpm.xpi has been built"
+echo "Success: Extension/firefox/openwpm.xpi has been built"

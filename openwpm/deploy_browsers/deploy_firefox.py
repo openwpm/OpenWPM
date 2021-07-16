@@ -81,7 +81,7 @@ def deploy_firefox(
         fo.add_argument("--height={}".format(DEFAULT_SCREEN_RES[1]))
     if display_mode == "xvfb":
         try:
-            display = Display(visible=0, size=DEFAULT_SCREEN_RES)
+            display = Display(visible=False, size=DEFAULT_SCREEN_RES)
             display.start()
             display_pid, display_port = display.pid, display.display
         except EasyProcessError:
@@ -171,7 +171,7 @@ def deploy_firefox(
     if browser_params.extension_enabled:
 
         # Install extension
-        ext_loc = os.path.join(root_dir, "../Extension/firefox/openwpm.xpi")
+        ext_loc = os.path.join(root_dir, "../../Extension/firefox/openwpm.xpi")
         ext_loc = os.path.normpath(ext_loc)
         driver.install_addon(ext_loc, temporary=True)
         logger.debug(
