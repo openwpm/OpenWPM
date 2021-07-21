@@ -380,6 +380,7 @@ Response body content
 - Set `browser_params.save_content` to a comma-separated list of
     [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
     to save only specific types of files, for instance
-    `browser_params.save_content = "script"` to save only Javascript
+    `browser_params.save_content = "image,script"` to save Images and Javascript
     files. This will lessen the performance impact of this instrumentation
-    when a large number of browsers are used in parallel.
+    when a large number of browsers are used in parallel. 
+- You will also need to import LevelDbProvider from openwpm/storage/leveldb.py and instantiate it in the TaskManager in demo.py
