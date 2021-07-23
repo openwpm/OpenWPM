@@ -58,9 +58,9 @@
     "node": ">=8.9"
   },
   "devDependencies": {
+    "@types/download": "^8.0.0",
     "@types/firefox-webext-browser": "^82.0.1",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
-    "@typescript-eslint/eslint-plugin-tslint": "^4.28.4",
     "@typescript-eslint/parser": "^4.28.4",
     "codecov": "^3.8.3",
     "commitizen": "^4.2.4",
@@ -79,7 +79,7 @@
     "publish-please": "^5.5.2",
     "standard-version": "github:conventional-changelog/standard-version#master",
     "trash-cli": "^4.0.0",
-    "typedoc": "^0.20.37",
+    "typedoc": "^0.21.4",
     "typescript": "^4.3.5"
   },
   "ava": {
