@@ -36,6 +36,8 @@ We're hoping to improve this setup in the future.
 
    Release-Checklist
 
+   developers/JS-Instrument
+
 
 Indices and tables
 ==================
