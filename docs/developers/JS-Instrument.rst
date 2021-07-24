@@ -16,7 +16,7 @@ TL;DR: We pass the configuration to a content script in the webextension. In the
 scope generate a string that contains the script we want to execute on the page
 and then insert it in into the page.
 This script is literally a format string in which the configuration gets embedded via
-`JSON.stringify`.
+``JSON.stringify``.
 
 Data collection
 ---------------
@@ -33,7 +33,7 @@ in the in the database, we had to figure out a way to get it there.
 
 We do this via the following steps:
 
-1. Dispatch a custom event via `document.dispatchEvent` in `javascript-instrumentat-page-scope`
-2. Register a listener for the custom event in `javascript-instrument-content-scope` and
-   call `runtime.sendMessage` to pass it from the content scope into the background scope
-3. Where `js-instrument` receives the message and forwards it to the `loggingdb`
+1. Dispatch a custom event via ``document.dispatchEvent`` in ``javascript-instrumentat-page-scope``
+2. Register a listener for the custom event in ``javascript-instrument-content-scope`` and
+   call ``runtime.sendMessage`` to pass it from the content scope into the background scope
+3. Where ``javascript-instrument`` (in the background scope) receives the message and forwards it to the ``loggingdb``
