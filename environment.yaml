@@ -3,7 +3,7 @@ channels:
 - main
 dependencies:
 - beautifulsoup4=4.9.3
-- black=21.5b2
+- black=21.7b0
 - click=8.0.1
 - codecov=2.1.11
 - dill=0.3.4
@@ -34,7 +34,7 @@ dependencies:
 - sphinx=4.1.1
 - tabulate=0.8.9
 - tblib=1.7.0
-- wget=1.20.1
+- wget=1.20.3
 - pip:
   - dataclasses-json==0.5.4
   - domain-utils==0.7.1

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.17.0 - 2021-07-23
+
+Updates OpenWPM to Firefox 90.0.2
+
+- Moved Extension folder to top-level (#939)
+- Replaced TSLint with ESLint (#940)
+- Stopped AssertionErrors crashing production crawls (#945)
+
 ## v0.16.0 - 2021-06-10
 
 Updates OpenWPM to Firefox 89
@@ -11,6 +19,7 @@ Things that happened in the last release:
 - Enabled extension tests (#929)
 - Fixed deault extension config (#927)
 - Expanded profile tests (#924)
+
 ## v0.15.0 - 2021-05-03
 
 Updates OpenWPM to Firefox 88
