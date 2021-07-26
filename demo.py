@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from custom_command import LinkCountingCommand
+from custom_command import FirstCommand, LinkCountingCommand, SecondCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.browser_commands import GetCommand
 from openwpm.config import BrowserParams, ManagerParams
@@ -67,11 +67,10 @@ with TaskManager(
             site_rank=index,
             callback=callback,
         )
-
         # Start by visiting the page
-        command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
+        command_sequence.append_command(FirstCommand(), timeout=60)
         # Have a look at custom_command.py to see how to implement your own command
-        command_sequence.append_command(LinkCountingCommand())
+        command_sequence.append_command(SecondCommand())
 
         # Run commands across all browsers (simple parallelization)
         manager.execute_command_sequence(command_sequence)

@@ -9,6 +9,7 @@ Steps to have a custom command run as part of a CommandSequence
 
 """
 import logging
+from typing import Dict
 
 from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
@@ -41,3 +42,31 @@ class LinkCountingCommand(BaseCommand):
         current_url = webdriver.current_url
         link_count = len(webdriver.find_elements(By.TAG_NAME, "a"))
         self.logger.info("There are %d links on %s", link_count, current_url)
+
+
+class FirstCommand(BaseCommand):
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
+        extension_socket: ClientSocket,
+    ) -> None:
+        browser_params.done = True
+
+
+class SecondCommand(BaseCommand):
+    def __init__(self) -> None:
+        self.logger = logging.getLogger("openwpm")
+
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
+        extension_socket: ClientSocket,
+    ) -> None:
+        if browser_params.done:
+            self.logger.info("First command was successful")
+        else:
+            self.logger.info("Guess I have to do work")
