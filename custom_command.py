@@ -52,7 +52,7 @@ class FirstCommand(BaseCommand):
         manager_params: ManagerParams,
         extension_socket: ClientSocket,
     ) -> None:
-        browser_params.done = True
+        browser_params.custom_params["done"] = True
 
 
 class SecondCommand(BaseCommand):
@@ -66,7 +66,7 @@ class SecondCommand(BaseCommand):
         manager_params: ManagerParams,
         extension_socket: ClientSocket,
     ) -> None:
-        if browser_params.done:
+        if browser_params.custom_params.get("done"):
             self.logger.info("First command was successful")
         else:
             self.logger.info("Guess I have to do work")
