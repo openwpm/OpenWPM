@@ -18,6 +18,36 @@ and then insert it in into the page.
 This script is literally a format string in which the configuration gets embedded via
 ``JSON.stringify``.
 
+In the JavascriptInstrument class which runs in the background script, we register two content
+scripts to run at ``document_start`` these are:
+
+1. A dynamically generated script that sets ``window.openWpmContentScriptConfig`` to the
+   ``JSON.stringified`` value of the contentScriptConfig.
+2. ``content.js`` which is the combination of ``javascript-instrumentat-page-scope`` and
+   ``javascript-instrument-content-scope`` as produced by webpack
+
+By setting those two in this order we are able to pass a parameter to the content script.
+I currently do not know of another way to dynamically pass config from the background to the
+content scope but this feels hacky.
+
+In ``javascript-instrument-content-scope`` we then create a massive string that contains
+all of the following:
+
+1. The ``lib/js-instruments.ts`` file, where the actual instrumenting happens
+2. The ``jsInstrumentationSettings`` as a JSON object
+3. The ``javascript-instrument-page-scope`` which contains the setup and sendMessagesToLogger
+   functions
+
+This string is then injected into the page scope where ``javascript-instrument-page-scope``
+starts executing, pulling the testing and event parameter out of data attributes on it's
+script node. It then calls into ``lib/js-instruments.ts`` which then does the actual
+instrumentation.
+
+TODO: Elaborate on how that works.
+
+
+
+
 Data collection
 ---------------
 
