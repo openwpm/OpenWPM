@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 # Use the Unbranded build that corresponds to a specific Firefox version
 # To upgrade:
 #    1. Go to: https://hg.mozilla.org/releases/mozilla-release/tags.
@@ -9,7 +9,7 @@
 # Note this script is **destructive** and will
 # remove the existing Firefox in the OpenWPM directory
 
-TAG='3687de1d9c640e4a735a4912e73ea69afbba1da9' # FIREFOX_RELEASE_95_BASE
+TAG='5a1a2f3b06c23a27532ba48f9999c59c643f3f36' # FIREFOX_95_0_RELEASE
 
 case "$(uname -s)" in
    Darwin)

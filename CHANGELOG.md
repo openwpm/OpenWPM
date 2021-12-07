@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.18.0 - 2021-12-07
+
+Updates OpenWPM to Firefox 95
+
 ## v0.17.0 - 2021-07-23
 
 Updates OpenWPM to Firefox 90.0.2
