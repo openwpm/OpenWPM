@@ -1,8 +1,9 @@
 {
   "name": "openwpm",
-  "author": "Mozilla",
+  "author": "OpenWPM Contributors",
   "description": "OpenWPM NodeJS Utilities",
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "info": "npm-scripts-info",
     "jsonschema2md": "jsonschema2md || true",
     "render_schema_docs": "jsonschema2md --input=schemas --out=docs/schemas --schema-out=-",
@@ -20,7 +21,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mozilla/OpenWPM.git"
+    "url": "git+https://github.com/openwpm/OpenWPM.git"
   },
   "homepage": "",
   "devDependencies": {
@@ -31,5 +32,9 @@
     "markdown-link-check": "^3.9.0",
     "markdownlint-cli": "^0.27.1",
     "npm-scripts-info": "^0.3.9"
+  },
+  "resolutions": {
+    "glob-parent": "^6.0.2",
+    "trim-newlines": "^3.0.1"
   }
 }
