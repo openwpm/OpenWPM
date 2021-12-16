@@ -24,8 +24,8 @@ sys.path.insert(0, project_root)
 # -- Project information -----------------------------------------------------
 
 project = "OpenWPM"
-copyright = "2020, Mozilla"
-author = "Mozilla"
+copyright = "2021, OpenWPM"
+author = "OpenWPM Contributors"
 
 
 # -- General configuration ---------------------------------------------------
