@@ -44,7 +44,7 @@ def deploy_firefox(
     # Set a custom profile that is used in-place and is not deleted by geckodriver.
     # https://firefox-source-docs.mozilla.org/testing/geckodriver/CrashReports.html
     # Using FirefoxProfile breaks stateful crawling:
-    # https://github.com/mozilla/OpenWPM/issues/423#issuecomment-521018093
+    # https://github.com/openwpm/OpenWPM/issues/423#issuecomment-521018093
     fo.add_argument("-profile")
     fo.add_argument(str(browser_profile_path))
 
@@ -117,7 +117,7 @@ def deploy_firefox(
 
     # Geckodriver currently places the user.js file in the wrong profile
     # directory, so we have to create it manually here.
-    # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for when
+    # TODO: See https://github.com/openwpm/OpenWPM/issues/867 for when
     # to remove this workaround.
     # Load existing preferences from the profile's user.js file
     prefs = configure_firefox.load_existing_prefs(browser_profile_path)
@@ -162,7 +162,7 @@ def deploy_firefox(
         firefox_binary=fb,
         options=fo,
         log_path=interceptor.fifo,
-        # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for
+        # TODO: See https://github.com/openwpm/OpenWPM/issues/867 for
         # when to remove this
         service_args=["--marionette-port", str(marionette_port)],
     )

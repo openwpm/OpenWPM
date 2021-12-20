@@ -25,7 +25,7 @@ eval "$(conda shell.bash hook)"
 if [ "$1" != "--skip-create" ]; then
   echo 'Creating / Overwriting openwpm conda environment.'
   # `PYTHONNOUSERSITE` set so python ignores local user site libraries when building the env
-  # See: https://github.com/mozilla/OpenWPM/pull/682#issuecomment-645648939
+  # See: https://github.com/openwpm/OpenWPM/pull/682#issuecomment-645648939
   PYTHONNOUSERSITE=True conda env create --force -q -f environment.yaml
 fi
 

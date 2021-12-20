@@ -15,7 +15,7 @@ We aim to release a new version of OpenWPM with each new Firefox release (~1 rel
 5. Increment the version number in [VERSION](../VERSION)
 6. Add a summary of changes since the last version to [CHANGELOG](../CHANGELOG.md)
 7. Squash and merge the release PR to master.
-8. Publish a new release from https://github.com/mozilla/OpenWPM/releases:
+8. Publish a new release from https://github.com/openwpm/OpenWPM/releases:
     1. Click "Draft a new release".
     2. Enter the "Tag version" and "Release title" as `vX.X.X`.
     3. In the description:

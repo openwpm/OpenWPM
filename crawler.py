@@ -64,7 +64,7 @@ EXTENDED_LEASE_TIME = 2 * (TIMEOUT + DWELL_TIME + 30)
 # Loads the default manager params
 # We can't use more than one browser per instance because the job management
 # code below requires blocking commands. For more context see:
-# https://github.com/mozilla/OpenWPM/issues/470
+# https://github.com/openwpm/OpenWPM/issues/470
 NUM_BROWSERS = 1
 manager_params = ManagerParams()
 browser_params = [BrowserParams() for _ in range(NUM_BROWSERS)]

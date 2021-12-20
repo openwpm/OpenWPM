@@ -1,7 +1,7 @@
 {
   "name": "@openwpm/webext-firefox",
   "description": "OpenWPM Client extension",
-  "author": "Mozilla",
+  "author": "OpenWPM Contributors",
   "dependencies": {
     "openwpm-webext-instrumentation": "../webext-instrumentation"
   },
@@ -35,14 +35,13 @@
   "homepage": "",
   "keywords": [
     "firefox",
-    "mozilla",
     "openwpm"
   ],
   "license": "MPL-2.0",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mozilla/OpenWPM.git"
+    "url": "git+https://github.com/openwpm/OpenWPM.git"
   },
   "scripts": {
     "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
