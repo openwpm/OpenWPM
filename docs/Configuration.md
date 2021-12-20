@@ -71,7 +71,7 @@ left out of this section.
     "headless" browsing because you do not need to be in a full X environment e.g. on a
     server. `headless` mode is supported on all platforms and is implemented by the browser
     but has some differences. For example WebGL is not supported in headless mode.
-    <https://github.com/mozilla/OpenWPM/issues/448> discusses additional factors to consider
+    <https://github.com/openwpm/OpenWPM/issues/448> discusses additional factors to consider
     when picking a `display_mode`.
 - `browser`
   - Used to specify which browser to launch. Currently, only `firefox` is
@@ -116,7 +116,7 @@ They allow collecting various types of data that is labeled per visit and aim to
 much of a website's behaviour as we can.
 
 If you feel that we are missing a fundamental instrument and are willing to implement it,
-please [file an issue](https://github.com/mozilla/OpenWPM/issues/new?labels=feature-request),
+please [file an issue](https://github.com/openwpm/OpenWPM/issues/new?labels=feature-request),
 and we'll try to assist you in writing that instrument.
 
 Below you'll find a description for every single instrument, however if you
@@ -283,7 +283,7 @@ or by manually tarring a firefox profile directory.
 > Please note that you must tar the contents of the profile directory
 > and not the directory itself.  
 > (For an example of the difference please see
-> [here](https://github.com/mozilla/OpenWPM/issues/790#issuecomment-791316632))
+> [here](https://github.com/openwpm/OpenWPM/issues/790#issuecomment-791316632))
 
 The profile will be automatically extracted and loaded into the browser
 instance for which the configuration parameter was set.

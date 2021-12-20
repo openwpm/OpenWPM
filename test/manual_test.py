@@ -124,7 +124,7 @@ def start_webdriver(
     fo = Options()
     fo.add_argument("-profile")
     fo.add_argument(str(browser_profile_path))
-    # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for when
+    # TODO: See https://github.com/openwpm/OpenWPM/issues/867 for when
     # to remove manually creating user.js
     prefs = configure_firefox.load_existing_prefs(browser_profile_path)
     prefs.update(configure_firefox.DEFAULT_GECKODRIVER_PREFS)
@@ -139,7 +139,7 @@ def start_webdriver(
         firefox_binary=fb,
         options=fo,
         # Use the default Marionette port.
-        # TODO: See https://github.com/mozilla/OpenWPM/issues/867 for
+        # TODO: See https://github.com/openwpm/OpenWPM/issues/867 for
         # when to remove this
         service_args=["--marionette-port", "2828"],
     )

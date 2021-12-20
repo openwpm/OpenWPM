@@ -211,7 +211,7 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
             raise ConfigError(
                 "The callstacks instrument currently doesn't work without "
                 "the JS instrument enabled. see: "
-                "https://github.com/mozilla/OpenWPM/issues/557"
+                "https://github.com/openwpm/OpenWPM/issues/557"
             )
 
         if not isinstance(browser_params.save_content, bool) and not isinstance(

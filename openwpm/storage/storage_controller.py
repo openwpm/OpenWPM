@@ -180,7 +180,7 @@ class StorageController:
                     signal that a visit_id is complete.
         - initialize: TODO: Start complaining if we receive data for a visit_id
                       before the initialize event happened.
-                      See also https://github.com/mozilla/OpenWPM/issues/846
+                      See also https://github.com/openwpm/OpenWPM/issues/846
         """
         action: str = data["action"]
         if action == ACTION_TYPE_INITIALIZE:

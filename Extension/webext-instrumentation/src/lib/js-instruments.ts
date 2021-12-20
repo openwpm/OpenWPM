@@ -564,7 +564,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
               logSettings,
             );
             // Restore the original prototype and constructor so that instrumented classes remain intact
-            // TODO: This may have introduced prototype pollution as per https://github.com/mozilla/OpenWPM/issues/471
+            // TODO: This may have introduced prototype pollution as per https://github.com/openwpm/OpenWPM/issues/471
             if (origProperty.prototype) {
               instrumentedFunctionWrapper.prototype = origProperty.prototype;
               if (origProperty.prototype.constructor) {

@@ -107,35 +107,35 @@ There has been a lot happening in OpenWPM over the last three months.
 
 Here are the highlights:
 
-- Introduced `seed_profile` ([#735](https://github.com/mozilla/OpenWPM/issues/735))  
+- Introduced `seed_profile` ([#735](https://github.com/openwpm/OpenWPM/issues/735))  
   As part of our long-standing effort to restore stateful crawling support we now allow
   specifying a `seed_profile` that gets loaded for each fresh start of a browser.  
   More documentation can be found [here](docs/Configuration.md#load-a-profile).
 
-- Added new WebExtension instrument `dns_instrument` ([#721](https://github.com/mozilla/OpenWPM/issues/721))  
+- Added new WebExtension instrument `dns_instrument` ([#721](https://github.com/openwpm/OpenWPM/issues/721))  
   This instrument was contributed by [@turban1988](https://github.com/turban1988) .  
   It allows to log the resolution of DNS requests. Unfortunately it is currently
-  undocumented. Adding docs is tracked in [#758](https://github.com/mozilla/OpenWPM/issues/758).
+  undocumented. Adding docs is tracked in [#758](https://github.com/openwpm/OpenWPM/issues/758).
 
-- Moved `automation` to `openwpm` ([#793](https://github.com/mozilla/OpenWPM/issues/793))  
+- Moved `automation` to `openwpm` ([#793](https://github.com/openwpm/OpenWPM/issues/793))  
   This change might have the biggest impact on users as we changed the name of the
   top-level package. We apologize for the inconvenience caused but felt it was
   a good change overall as the new name is a lot more meaningful.
 
 Internal changes:
 
-- We replaced flake8 with black as our formatting tool [#740](https://github.com/mozilla/OpenWPM/issues/740)
-- [@Metropass](https://github.com/Metropass) removed the built in extensions as they were horribly out of date [#754](https://github.com/mozilla/OpenWPM/issues/754)
-- [@Ankushduacodes](https://github.com/Ankushduacodes) removed the `browser_settings` as they required a lot of code for very little benefit [#775](https://github.com/mozilla/OpenWPM/issues/775)
-- [@Ankushduacodes](https://github.com/Ankushduacodes) made the `memory_watchdog` and `process_watchdog` part of the `manager_params` [#785](https://github.com/mozilla/OpenWPM/issues/785) [#787](https://github.com/mozilla/OpenWPM/issues/787)
+- We replaced flake8 with black as our formatting tool [#740](https://github.com/openwpm/OpenWPM/issues/740)
+- [@Metropass](https://github.com/Metropass) removed the built in extensions as they were horribly out of date [#754](https://github.com/openwpm/OpenWPM/issues/754)
+- [@Ankushduacodes](https://github.com/Ankushduacodes) removed the `browser_settings` as they required a lot of code for very little benefit [#775](https://github.com/openwpm/OpenWPM/issues/775)
+- [@Ankushduacodes](https://github.com/Ankushduacodes) made the `memory_watchdog` and `process_watchdog` part of the `manager_params` [#785](https://github.com/openwpm/OpenWPM/issues/785) [#787](https://github.com/openwpm/OpenWPM/issues/787)
 
 Thanks to all the external contributors that worked on this release.
 Besides the people mentioned above we also merged contributions from:
 
-- [@jyothisjagan](https://github.com/jyothisjagan) [#769](https://github.com/mozilla/OpenWPM/issues/769)
-- [@Prajwal7842](https://github.com/Prajwal7842) [#760](https://github.com/mozilla/OpenWPM/issues/760)
-- [@7brokenmirrors](https://github.com/7brokenmirrors) [#776](https://github.com/mozilla/OpenWPM/issues/776)
-- [@LordReigns](https://github.com/LordReigns) [#801](https://github.com/mozilla/OpenWPM/pull/801)
+- [@jyothisjagan](https://github.com/jyothisjagan) [#769](https://github.com/openwpm/OpenWPM/issues/769)
+- [@Prajwal7842](https://github.com/Prajwal7842) [#760](https://github.com/openwpm/OpenWPM/issues/760)
+- [@7brokenmirrors](https://github.com/7brokenmirrors) [#776](https://github.com/openwpm/OpenWPM/issues/776)
+- [@LordReigns](https://github.com/LordReigns) [#801](https://github.com/openwpm/OpenWPM/pull/801)
 
 ## v0.12.0 - 2020-08-26
 
@@ -144,9 +144,9 @@ Firefox 80.0.0 release
 There have been no new features added in this release.
 However there are two significant bugfixes worth highlighting:
 
-- We hopefully fixed [a bug when hashing content](https://github.com/mozilla/OpenWPM/issues/711) where the same file could have multiple hashes
-  If you ran a big crawl and could repeat @birdsarah's analysis, we'd be grateful if you reported your results [here](https://github.com/mozilla/OpenWPM/issues/719)
-- Fixed longstanding bug when [propagating exceptions from the BrowserManager to the TaskManager](https://github.com/mozilla/OpenWPM/issues/547) you should now be seeing
+- We hopefully fixed [a bug when hashing content](https://github.com/openwpm/OpenWPM/issues/711) where the same file could have multiple hashes
+  If you ran a big crawl and could repeat @birdsarah's analysis, we'd be grateful if you reported your results [here](https://github.com/openwpm/OpenWPM/issues/719)
+- Fixed longstanding bug when [propagating exceptions from the BrowserManager to the TaskManager](https://github.com/openwpm/OpenWPM/issues/547) you should now be seeing
   the exception that happened in the BrowserManager in your logs
 
 __NOTE:__ Please be aware that this release contains a regression related to https://bugzilla.mozilla.org/show_bug.cgi?id=1656405 and https://bugzilla.mozilla.org/show_bug.cgi?id=1599160.
@@ -169,14 +169,14 @@ New features:
     new ``js_instrument_settings`` are in the
     [Instrumentation and Data Access section of the README](./README.md#instrumentation-and-data-access).
 
-- [Issue 641](https://github.com/mozilla/OpenWPM/issues/641)
-- [PR 642](https://github.com/mozilla/OpenWPM/pull/642)
+- [Issue 641](https://github.com/openwpm/OpenWPM/issues/641)
+- [PR 642](https://github.com/openwpm/OpenWPM/pull/642)
 
 Minor fixes:
 
-- Asserting that unpickled exception is an exception [PR 705](https://github.com/mozilla/OpenWPM/pull/705)
-- Minor fixes [PR 703](https://github.com/mozilla/OpenWPM/pull/703)
-- Better crawling experience [PR 696](https://github.com/mozilla/OpenWPM/pull/696)
+- Asserting that unpickled exception is an exception [PR 705](https://github.com/openwpm/OpenWPM/pull/705)
+- Minor fixes [PR 703](https://github.com/openwpm/OpenWPM/pull/703)
+- Better crawling experience [PR 696](https://github.com/openwpm/OpenWPM/pull/696)
 
 No OpenWPM release was made with Firefox 78.0.
 
@@ -200,7 +200,7 @@ Changes:
   * Refactor extension instumentation to live in a separate module
   * Re-write logger and add support for logging to sentry
   * Add a crawler.py crawl script that can be used for cloud deployments like
-    the type documented in https://github.com/mozilla/openwpm-crawler
+    the type documented in https://github.com/openwpm/OpenWPM-crawler
   * Add support for Firefox's native headless mode alongside XVFB
   * Add Dockerfile and automatically deploy builds to dockerhub
   * Add a Navigation instrument that records navigation events

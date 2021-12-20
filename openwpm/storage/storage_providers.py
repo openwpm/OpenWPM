@@ -88,7 +88,7 @@ class UnstructuredStorageProvider(StorageProvider):
     This is primarily content loaded by websites.
     Don't make any assumptions about the data (especially don't assume it's valid unicode)
 
-    In the future this interface will be expanded to address the needs of https://github.com/mozilla/OpenWPM/issues/232
+    In the future this interface will be expanded to address the needs of https://github.com/openwpm/OpenWPM/issues/232
     """
 
     @abstractmethod
