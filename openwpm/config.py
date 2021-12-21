@@ -48,7 +48,6 @@ ALL_RESOURCE_TYPES = {
     "sub_frame",
     "web_manifest",
     "websocket",
-    "xbl",
     "xml_dtd",
     "xmlhttprequest",
     "xslt",
