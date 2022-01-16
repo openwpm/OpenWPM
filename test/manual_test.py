@@ -29,7 +29,7 @@ from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
-EXT_PATH = join(BASE_DIR, "openwpm", "Extension", "firefox")
+EXT_PATH = join(BASE_DIR, "Extension", "firefox")
 
 
 class Logger:
