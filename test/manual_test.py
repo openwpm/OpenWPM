@@ -29,7 +29,7 @@ from selenium.webdriver.common.keys import Keys  # noqa isort:skip
 OPENWPM_LOG_PREFIX = "console.log: openwpm: "
 INSERT_PREFIX = "Array"
 BASE_DIR = dirname(dirname(realpath(__file__)))
-EXT_PATH = join(BASE_DIR, "openwpm", "Extension", "firefox")
+EXT_PATH = join(BASE_DIR, "Extension", "firefox")
 
 
 class Logger:
@@ -124,25 +124,13 @@ def start_webdriver(
     fo = Options()
     fo.add_argument("-profile")
     fo.add_argument(str(browser_profile_path))
-    # TODO: See https://github.com/openwpm/OpenWPM/issues/867 for when
-    # to remove manually creating user.js
-    prefs = configure_firefox.load_existing_prefs(browser_profile_path)
-    prefs.update(configure_firefox.DEFAULT_GECKODRIVER_PREFS)
 
     if with_extension:
         # TODO: Restore preference for log level in a way that works in Fx 57+
         # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-        configure_firefox.optimize_prefs(prefs)
+        configure_firefox.optimize_prefs(fo)
 
-    configure_firefox.save_prefs_to_profile(prefs, browser_profile_path)
-    driver = webdriver.Firefox(
-        firefox_binary=fb,
-        options=fo,
-        # Use the default Marionette port.
-        # TODO: See https://github.com/openwpm/OpenWPM/issues/867 for
-        # when to remove this
-        service_args=["--marionette-port", "2828"],
-    )
+    driver = webdriver.Firefox(firefox_binary=fb, options=fo)
     if load_browser_params is True:
         # There's probably more we could do here
         # to set more preferences and better emulate
