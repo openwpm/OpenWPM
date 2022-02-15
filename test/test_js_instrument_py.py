@@ -10,10 +10,6 @@ from jsonschema.exceptions import ValidationError
 from openwpm import js_instrumentation as jsi
 
 
-def _no_whitespace(x):
-    return "".join(x.split())
-
-
 # Test our validation
 @pytest.fixture
 def default_log_settings():
