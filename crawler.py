@@ -7,7 +7,8 @@ import time
 import typing
 from pathlib import Path
 from threading import Lock
-from typing import Any, Callable, List, Literal
+from types import FrameType
+from typing import Any, Callable, List, Literal, Optional
 
 import sentry_sdk
 
@@ -160,8 +161,8 @@ shutting_down = False
 
 def on_shutdown(
     manager: TaskManager, unsaved_jobs_lock: Lock
-) -> Callable[[signal.Signals, Any], None]:
-    def actual_callback(s: signal.Signals, __: Any) -> None:
+) -> Callable[[int, Optional[FrameType]], None]:
+    def actual_callback(s: int, _: Optional[FrameType]) -> None:
         global shutting_down
         manager.logger.error("Got interupted by %r, shutting down", s)
         with unsaved_jobs_lock:

@@ -21,7 +21,7 @@ class LevelDbProvider(UnstructuredStorageProvider):
         self.ldb = plyvel.DB(
             str(self.db_path),
             create_if_missing=True,
-            write_buffer_size=128 * 10 ** 6,
+            write_buffer_size=128 * 10**6,
             compression="snappy",
         )
         self.content_batch = self.ldb.write_batch()

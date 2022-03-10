@@ -42,14 +42,14 @@ if TYPE_CHECKING:
 
 
 class BrowserManagerHandle:
-    """
-    The BrowserManagerHandle class is responsible for holding all of the
+    """The BrowserManagerHandle class is responsible for holding all of the
     configuration and status information on BrowserManager process
     it corresponds to. It also includes a set of methods for managing
     the BrowserManager process and its child processes/threads.
-    <manager_params> are the TaskManager configuration settings.
-    <browser_params> are per-browser parameter settings (e.g. whether
-                     this browser is headless, etc.)
+
+    :param manager_params: are the TaskManager configuration settings.
+    :param browser_params: are per-browser parameter settings (e.g. whether
+        this browser is headless, etc.)
     """
 
     def __init__(
