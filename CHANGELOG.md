@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.19.0 - 2022-03-10
+
+Updates OpenWPM to Firefox 98
+
+- Reverted workaround of manually creating user.js (#968) Thanks [@boolean5](https://github.com/boolean5)!
+- Removed invalid resource type (#966)
+
 ## v0.18.0 - 2021-12-07
 
 Updates OpenWPM to Firefox 95

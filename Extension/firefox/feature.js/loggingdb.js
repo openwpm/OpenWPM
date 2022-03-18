@@ -23,11 +23,11 @@ let listeningSocketCallback =  async (data) => {
             break;
         case "Finalize":
             if (!visitID) {
-                logWarn("Send Finalize while no visit_id was set")
+                logWarn("Received Finalize while no visit_id was set")
             }
             if (_visitID !== visitID ) {
-                logError("Send Finalize but visit_id didn't match. " +
-                `Current visit_id ${visit_id}, sent visit_id ${_visit_id}.`);
+                logError("Received Finalize but visit_id didn't match. " +
+                `Current visit_id ${_visitID}, received visit_id ${visitID}.`);
             }
             data["browser_id"] = crawlID;
             data["success"] = true;
