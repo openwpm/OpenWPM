@@ -9,10 +9,11 @@ import os
 import tempfile
 import threading
 
-from selenium.webdriver.common.service import Service as BaseService
-from selenium.webdriver.firefox import webdriver as FirefoxDriverModule
+from selenium.webdriver.firefox import service as FirefoxServiceModule
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.options import Options
+
+from openwpm.types import BrowserId
 
 __all__ = ["FirefoxBinary", "FirefoxLogInterceptor", "Options"]
 
@@ -49,14 +50,14 @@ class FirefoxLogInterceptor(threading.Thread):
     instance.
     """
 
-    def __init__(self, browser_id):
+    def __init__(self, browser_id: BrowserId) -> None:
         threading.Thread.__init__(self, name="log-interceptor-%i" % browser_id)
         self.browser_id = browser_id
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
         self.daemon = True
         self.logger = logging.getLogger("openwpm")
 
-    def run(self):
+    def run(self) -> None:
         # We might not ever get EOF on the FIFO, so instead we delete
         # it after we receive the first line (which means the other
         # end has actually opened it).
@@ -76,11 +77,11 @@ class FirefoxLogInterceptor(threading.Thread):
                 self.fifo = None
 
 
-class PatchedGeckoDriverService(FirefoxDriverModule.Service):
+class PatchedFirefoxService(FirefoxServiceModule.Service):
     """Object that manages the starting and stopping of the GeckoDriver.
-    Modified from the original (selenium.webdriver.firefox.service.Service)
-    for Py3 compat in the presence of log FIFOs, and for potential future
-    extra flexibility."""
+    We need to override the constructor to be able to write to the FIFO
+    queue we use for log collection
+    """
 
     def __init__(
         self,
@@ -90,36 +91,18 @@ class PatchedGeckoDriverService(FirefoxDriverModule.Service):
         log_path="geckodriver.log",
         env=None,
     ):
-        """Creates a new instance of the GeckoDriver remote service proxy.
 
-        GeckoDriver provides a HTTP interface speaking the W3C WebDriver
-        protocol to Marionette.
+        super().__init__(executable_path, port, service_args, log_path, env)
+        if self.log_file:
+            os.close(self.log_file)
 
-        :param executable_path: Path to the GeckoDriver binary.
-        :param port: Run the remote service on a specified port.
-            Defaults to 0, which binds to a random open port of the
-            system's choosing.
-        :param service_args: Optional list of arguments to pass to the
-            GeckoDriver binary.
-        :param log_path: Optional path for the GeckoDriver to log to.
-            Defaults to _geckodriver.log_ in the current working directory.
-        :param env: Optional dictionary of output variables to expose
-            in the services' environment.
-
-        """
-        log_file = None
         if log_path:
             try:
-                log_file = open(log_path, "a")
+                self.log_file = open(log_path, "a")
             except OSError as e:
                 if e.errno != errno.ESPIPE:
                     raise
-                log_file = open(log_path, "w")
-
-        BaseService.__init__(
-            self, executable_path, port=port, log_file=log_file, env=env
-        )
-        self.service_args = service_args or []
+                self.log_file = open(log_path, "w")
 
 
-FirefoxDriverModule.Service = PatchedGeckoDriverService
+FirefoxServiceModule.Service = PatchedFirefoxService
