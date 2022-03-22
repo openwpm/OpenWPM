@@ -12,7 +12,6 @@ dependencies:
 - ipython=8.1.1
 - isort=5.10.1
 - leveldb=1.23
-- mamba=0.22.1
 - multiprocess=0.70.12.2
 - mypy=0.941
 - nodejs=14.18.3

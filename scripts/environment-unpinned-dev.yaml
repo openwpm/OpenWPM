@@ -14,7 +14,6 @@ dependencies:
     - sphinx
     - recommonmark
     - sphinx-markdown-tables
-    - mamba
     - pip:
         - types-pyyaml
         - types-redis
