@@ -7,6 +7,7 @@ dependencies:
 - click=8.0.4
 - codecov=2.1.11
 - dill=0.3.4
+- easyprocess=1.1
 - gcsfs=2022.2.0
 - geckodriver=0.30.0
 - ipython=8.1.1
