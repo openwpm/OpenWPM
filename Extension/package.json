@@ -3,7 +3,7 @@
   "description": "OpenWPM Client extension",
   "author": "OpenWPM Contributors",
   "dependencies": {
-    "openwpm-webext-instrumentation": "../webext-instrumentation"
+    "openwpm-webext-instrumentation": "./webext-instrumentation/"
   },
   "devDependencies": {
     "@types/download": "^8.0.1",
@@ -44,10 +44,10 @@
     "url": "git+https://github.com/openwpm/OpenWPM.git"
   },
   "scripts": {
-    "prebuild": "cd ../webext-instrumentation && npm run build && cd - && webpack",
+    "prebuild": "cd webext-instrumentation && npm run build && cd - && webpack",
     "build": "web-ext build",
     "postbuild": "cp dist/openwpm-1.0.zip openwpm.xpi",
-    "postinstall": "cd ../webext-instrumentation && npm install",
+    "postinstall": "cd webext-instrumentation && npm install",
     "eslint": "eslint . --ext jsm,js,json",
     "lint": "npm-run-all lint:*",
     "lint:eslint": "npm run eslint",

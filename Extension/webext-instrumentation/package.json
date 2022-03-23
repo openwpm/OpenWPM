@@ -29,18 +29,13 @@
     "doc": "run-s doc:html && opn build/docs/index.html",
     "doc:html": "typedoc src/ --out build/docs",
     "doc:json": "typedoc src/ --json build/docs/typedoc.json",
-    "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
     "version-major": "git stash && run-s prepare && standard-version --release-as major",
     "version-minor": "git stash && run-s prepare && standard-version --release-as minor",
     "version-patch": "git stash && run-s prepare && standard-version --release-as patch",
     "reset": "git clean -dfx && git reset --hard && npm i",
     "clean": "trash build test",
     "all": "run-s reset test cov:check doc:html",
-    "preinstall": "npx npm-force-resolutions",
-    "prepare": "run-s build test",
-    "prepare-release": "run-s all version doc:publish",
-    "publish-please": "publish-please",
-    "prepublishOnly": "publish-please guard"
+    "prepare": "run-s build test"
   },
   "scripts-info": {
     "info": "Display information about the package scripts",
@@ -52,12 +47,12 @@
     "doc": "Generate HTML API documentation and open it in a browser",
     "doc:json": "Generate API documentation in typedoc JSON format",
     "version": "Bump package.json version, update CHANGELOG.md, tag release",
-    "reset": "Delete all untracked files and reset the repo to the last commit",
-    "prepare-release": "One-step: clean, build, test, publish docs, and prep a release"
+    "reset": "Delete all untracked files and reset the repo to the last commit"
   },
   "engines": {
     "node": ">=8.9"
   },
+  "dependencies": { },
   "devDependencies": {
     "@types/download": "^8.0.1",
     "@types/firefox-webext-browser": "^94.0.1",
@@ -77,7 +72,6 @@
     "nyc": "^15.1.0",
     "open-cli": "^7.0.1",
     "prettier": "^2.6.2",
-    "publish-please": "^5.5.2",
     "standard-version": "github:conventional-changelog/standard-version#master",
     "trash-cli": "^5.0.0",
     "typedoc": "^0.22.15",
