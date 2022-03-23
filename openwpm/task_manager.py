@@ -219,7 +219,7 @@ class TaskManager:
                             mem_bytes += firefox.memory_info().rss
                             for child in firefox.children():
                                 mem_bytes += child.memory_full_info().uss
-                        mem = mem_bytes / 2 ** 20
+                        mem = mem_bytes / 2**20
                         if mem > BROWSER_MEMORY_LIMIT:
                             self.logger.info(
                                 "BROWSER %i: Memory usage: %iMB"

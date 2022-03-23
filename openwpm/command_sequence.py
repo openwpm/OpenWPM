@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from .commands.browser_commands import (
     BrowseCommand,
@@ -36,9 +36,9 @@ class CommandSequence:
         url: str,
         reset: bool = False,
         blocking: bool = False,
-        retry_number: int = None,
-        site_rank: int = None,
-        callback: Callable[[bool], None] = None,
+        retry_number: Optional[int] = None,
+        site_rank: Optional[int] = None,
+        callback: Optional[Callable[[bool], None]] = None,
     ) -> None:
         """Initialize command sequence.
 

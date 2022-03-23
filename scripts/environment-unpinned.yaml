@@ -6,6 +6,7 @@ dependencies:
     - beautifulsoup4
     - click
     - dill
+    - easyprocess
     # - firefox-unbranded - when it's available
     - gcsfs
     - geckodriver

@@ -28,7 +28,7 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMJSTest):
     METHOD_CALLS: Set[Tuple[str, str, str]] = set()
 
     TEST_PAGE = "instrument_non_existing_window_property.html"
-    TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    TOP_URL = "%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
         """Ensure instrumentObject logs all property gets, sets, and calls"""
@@ -71,7 +71,7 @@ class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
     METHOD_CALLS: Set[Tuple[str, str, str]] = set()  # Note 2
 
     TEST_PAGE = "instrument_existing_window_property.html"
-    TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    TOP_URL = "%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
         """Ensure instrumentObject logs all property gets, sets, and calls"""
@@ -90,7 +90,7 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
     # This test tests python side configuration. But we can only test
     # built in browser APIs, so we're not using html specced objects.
     TEST_PAGE = "instrument_pyside.html"
-    TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    TOP_URL = "%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     GETS_AND_SETS = {
         ("window.navigator.webdriver", "get", "true"),
@@ -198,7 +198,7 @@ class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     }
 
     TEST_PAGE = "instrument_mock_window_property.html"
-    TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    TOP_URL = "%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
         """Ensure instrumentObject logs all property gets, sets, and calls"""
@@ -270,25 +270,25 @@ class TestJSInstrument(OpenWPMJSTest):
     }
 
     SET_PREVENT_CALLS = {
-        (u"window.test3.method1", u"call", None),
+        ("window.test3.method1", "call", None),
         ("window.test3.obj1.method2", "call", None),
     }
 
     SET_PREVENT_GETS_AND_SETS = {
-        (u"window.test3.prop1", u"set", u"newprop1"),
+        ("window.test3.prop1", "set", "newprop1"),
         ("window.test3.method1", "set(prevented)", "FUNCTION"),
         ("window.test3.obj1", "set(prevented)", '{"new":"object"}'),
-        (u"window.test3.obj1.prop2", u"set", u"newprop2"),
+        ("window.test3.obj1.prop2", "set", "newprop2"),
         ("window.test3.obj1.method2", "set(prevented)", "FUNCTION"),
         ("window.test3.obj1.obj2", "set(prevented)", '{"new":"object2"}'),
-        (u"window.test3.prop1", u"get", u"newprop1"),
+        ("window.test3.prop1", "get", "newprop1"),
         ("window.test3.obj1.obj2", "get", '{"testobj":"nested"}'),
         ("window.test3.obj1.prop2", "get", "newprop2"),
     }
 
-    TOP_URL = u"%s/js_instrument/instrument_object.html" % util.BASE_TEST_URL
-    FRAME1_URL = u"%s/js_instrument/framed1.html" % util.BASE_TEST_URL
-    FRAME2_URL = u"%s/js_instrument/framed2.html" % util.BASE_TEST_URL
+    TOP_URL = "%s/js_instrument/instrument_object.html" % util.BASE_TEST_URL
+    FRAME1_URL = "%s/js_instrument/framed1.html" % util.BASE_TEST_URL
+    FRAME2_URL = "%s/js_instrument/framed2.html" % util.BASE_TEST_URL
 
     def test_instrument_object(self):
         """Ensure instrumentObject logs all property gets, sets, and calls"""
@@ -385,7 +385,7 @@ class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
     METHOD_CALLS: Set[Tuple[str, str, str]] = set()
 
     TEST_PAGE = "instrument_do_not_recurse_properties_to_instrument.html"
-    TOP_URL = u"%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
+    TOP_URL = "%s/js_instrument/%s" % (util.BASE_TEST_URL, TEST_PAGE)
 
     def test_instrument_object(self):
         """Ensure instrumentObject logs all property gets, sets, and calls"""
