@@ -147,7 +147,7 @@ def deploy_firefox(
     if browser_params.extension_enabled:
 
         # Install extension
-        ext_loc = os.path.join(root_dir, "../../Extension/firefox/openwpm.xpi")
+        ext_loc = os.path.join(root_dir, "../../Extension/openwpm.xpi")
         ext_loc = os.path.normpath(ext_loc)
         driver.install_addon(ext_loc, temporary=True)
         logger.debug(
