@@ -2,7 +2,7 @@
 
 const defaultConfig = {
   // Global options:
-  sourceDir: "./src/",
+  sourceDir: "./bundled/",
   artifactsDir: "./dist/",
   ignoreFiles: [".DS_Store"],
   // Command options:

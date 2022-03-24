@@ -6,6 +6,6 @@ export interface openWpmContentScriptConfig {
 }
 declare global {
   interface Window {
-    openWpmContentScriptConfig: JSInstrumentRequest[];
+    openWpmContentScriptConfig: openWpmContentScriptConfig;
   }
 }
