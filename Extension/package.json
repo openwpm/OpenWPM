@@ -2,8 +2,10 @@
   "name": "@openwpm/webext-firefox",
   "description": "OpenWPM Client extension",
   "author": "OpenWPM Contributors",
-  "dependencies": {
-    "openwpm-webext-instrumentation": "./webext-instrumentation/"
+  "scripts-info": {
+    "info": "Display information about the package scripts",
+    "build": "Clean and rebuild the project",
+    "fix": "Try to automatically fix any linting problems"
   },
   "devDependencies": {
     "@types/download": "^8.0.1",
@@ -11,6 +13,8 @@
     "body-parser": "^1.20.0",
     "download": "^8.0.0",
     "eslint": "^8.14.0",
+    "@typescript-eslint/eslint-plugin": "^5.16.0",
+    "@types/firefox-webext-browser": "^94.0.1",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-fetch-options": "0.0.5",
     "eslint-plugin-html": "^6.2.0",
@@ -27,10 +31,15 @@
     "typescript": "^4.6.4",
     "web-ext": "^6.8.0",
     "webpack": "^5.72.0",
-    "webpack-cli": "^4.9.2"
+    "webpack-cli": "^4.9.2",
+    "eslint-plugin-jsdoc": "^37.9.7",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "eslint-plugin-unicorn": "^41.0.0",
+    "trash-cli": "^5.0.0",
+    "typedoc": "^0.22.13"
   },
   "engines": {
-    "node": ">=7.0.0"
+    "node": ">=14.0.0"
   },
   "homepage": "",
   "keywords": [
@@ -38,21 +47,35 @@
     "openwpm"
   ],
   "license": "MPL-2.0",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/openwpm/OpenWPM.git"
   },
   "scripts": {
-    "prebuild": "cd webext-instrumentation && npm run build && cd - && webpack",
-    "build": "web-ext build",
     "postbuild": "cp dist/openwpm-1.0.zip openwpm.xpi",
-    "postinstall": "cd webext-instrumentation && npm install",
-    "eslint": "eslint . --ext jsm,js,json",
-    "lint": "npm-run-all lint:*",
-    "lint:eslint": "npm run eslint",
+    "lint": "npm run lint:eslint && npm run lint:web-ext-lint",
+    "lint:eslint": "eslint . --ext jsm,js,json,ts",
     "lint:web-ext-lint": "web-ext lint",
-    "start": "web-ext run --no-reload",
-    "watch": "web-ext run"
+    "info": "npm-scripts-info",
+    "build": "npm run clean && npm run build:main && npm run build:module && npm run build:webpack && npm run build:webext",
+    "build:main": "tsc -p tsconfig.json",
+    "build:module": "tsc -p tsconfig.module.json",
+    "build:webpack": "webpack",
+    "build:webext": "web-ext build",
+    "fix": "npm run fix:prettier && npm run fix:lint",
+    "fix:prettier": "prettier \"src/**/*.ts\" --write",
+    "fix:lint": "eslint --fix \"src/**/*.ts\"",
+    "test": "npm run build && npm run test:lint",
+    "test:lint": "eslint --ext \"src/**/*.ts\" && prettier \"src/**/*.ts\" --list-different || exit 0",
+    "watch": "npm run clean && npm run build",
+    "clean": "trash build test",
+    "prepare": "npm run build && npm run test"
+  },
+  "resolutions": {
+    "lodash": "^4.17.21"
+  },
+  "prettier": {
+    "singleQuote": false,
+    "trailingComma": "all"
   }
 }

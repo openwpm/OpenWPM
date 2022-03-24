@@ -11,36 +11,38 @@ let DataReceiver = {
   },
 };
 
-browser.sockets.onDataReceived.addListener(DataReceiver.onDataReceived);
+(browser as any).sockets.onDataReceived.addListener(DataReceiver.onDataReceived);
 
-let ListeningSockets = new Map();
 
 export class ListeningSocket {
+  callback: any;
+  port: any;
   constructor(callback) {
     this.callback = callback
   }
 
   async startListening() {
-    this.port = await browser.sockets.createServerSocket();
+    this.port = await (browser as any).sockets.createServerSocket();
     DataReceiver.callbacks.set(this.port, this.callback);
-    browser.sockets.startListening(this.port);
+    (browser as any).sockets.startListening(this.port);
     console.log('Listening on port ' + this.port);
   }
 }
 
 export class SendingSocket {
+  id: any;
   constructor() {
   }
 
   async connect(host, port) {
-    this.id = await browser.sockets.createSendingSocket();
-    browser.sockets.connect(this.id, host, port);
+    this.id = await (browser as any).sockets.createSendingSocket();
+    (browser as any).sockets.connect(this.id, host, port);
     console.log(`Connected to ${host}:${port}`);
   }
 
   send(aData, aJSON=true) {
     try {
-      browser.sockets.sendData(this.id, aData, !!aJSON);
+      (browser as any).sockets.sendData(this.id, aData, !!aJSON);
       return true;
     } catch (err) {
       console.error(err,err.message);
@@ -49,7 +51,7 @@ export class SendingSocket {
   }
 
   close() {
-    browser.sockets.close(this.id);
+    (browser as any).sockets.close(this.id);
   }
 }
 

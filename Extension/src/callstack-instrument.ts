@@ -4,11 +4,12 @@
   This instrumentation captures those and saves them to the "callstacks" table.
 */
 export class CallstackInstrument {
+  dataReceiver: any;
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
   }
   run(browser_id) {
-    browser.stackDump.onStackAvailable.addListener((request_id, call_stack) => {
+    (browser as any).stackDump.onStackAvailable.addListener((request_id, call_stack) => {
       const record = {
         browser_id,
         request_id,

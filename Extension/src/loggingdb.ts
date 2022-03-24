@@ -1,4 +1,4 @@
-import * as socket from "./socket.js";
+import * as socket from "./socket";
 
 let crawlID = null;
 let visitID = null;
@@ -71,7 +71,7 @@ export let open = async function(storageControllerAddress, logAddress, curr_craw
     listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
     console.log("Starting socket listening for incoming connections.");
     await listeningSocket.startListening().then(() => {
-        browser.profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
+        (browser as any).profileDirIO.writeFile("extension_port.txt", `${listeningSocket.port}`);
     });
 };
 
@@ -165,7 +165,7 @@ export let logCritical = function(msg) {
 
 export let dataReceiver = {
     saveRecord(a, b) {
-        console.log(b);
+        console.log(a,b);
     },
 };
 

@@ -4,18 +4,28 @@ const path = require("path");
 
 module.exports = {
   entry: {
-    feature: "./feature.js/index.js",
-    content: "./content.js/index.js",
+    feature: "./src/feature.ts",
+    content: "./src/feature.ts",
   },
   output: {
-    path: path.resolve(__dirname, "src"),
+    path: path.resolve(__dirname, "bundled"),
     filename: "[name].js",
     sourceMapFilename: "[name].js.map",
     pathinfo: true,
   },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
   resolve: {
-    extensions: [".js"],
+    extensions: ['.ts', '...'],
   },
   mode: "development",
   devtool: "inline-source-map",
+
 };

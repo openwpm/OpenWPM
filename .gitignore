@@ -93,7 +93,7 @@ node_modules
 # built extension artifacts
 Extension/dist
 Extension/openwpm.xpi
-Extension/src/content.js
-Extension/src/feature.js
+Extension/bundled/content.js
+Extension/bundled/feature.js
 
 datadir
