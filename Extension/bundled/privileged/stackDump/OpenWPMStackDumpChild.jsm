@@ -1,6 +1,7 @@
+/* eslint-disable max-classes-per-file */
 "use strict";
-
-var EXPORTED_SYMBOLS = ["OpenWPMStackDumpChild"];
+// eslint-disable-next-line no-unused-vars
+const EXPORTED_SYMBOLS = ["OpenWPMStackDumpChild"];
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 class Controller {
@@ -96,7 +97,7 @@ class Controller {
 
     try {
       return request.loadGroup.notificationCallbacks.getInterface(
-        Ci.nsILoadContext
+        Ci.nsILoadContext,
       );
     } catch (ex) {
       // Ignore.
@@ -105,50 +106,54 @@ class Controller {
     return null;
   }
 
-  observe(subject, topic, data) {
+  observe(subject, topic, _data) {
     switch (topic) {
-    case "http-on-opening-request":
-    case "document-on-opening-request":
-      let channel, channelId;
-      try {
-        channel = subject.QueryInterface(Ci.nsIHttpChannel);
-        channelId = channel.channelId;
-      } catch(e) {
-        return;
-      }
-      if (!this.matchRequest(channel, { window: this.actor.contentWindow })) {
-        return;
-      }
-      let frame = Components.stack;
-      let stacktrace = [];
-      if (frame && frame.caller) {
-        frame = frame.caller;
-        while (frame) {
-          const scheme = frame.filename.split("://")[0];
-         /*  Maybe enable this later if we need to
+      case "http-on-opening-request":
+      case "document-on-opening-request":
+        let channel;
+        let channelId;
+        try {
+          channel = subject.QueryInterface(Ci.nsIHttpChannel);
+          channelId = channel.channelId;
+        } catch (e) {
+          return;
+        }
+        if (!this.matchRequest(channel, { window: this.actor.contentWindow })) {
+          return;
+        }
+        let frame = Components.stack;
+        let stacktrace = [];
+        if (frame && frame.caller) {
+          frame = frame.caller;
+          while (frame) {
+            const scheme = frame.filename.split("://")[0];
+            /*  Maybe enable this later if we need to
             if (["resource", "chrome", "file"].contains(scheme)) {
             return;
           } */
-          // Format described here https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
-          stacktrace.push(
-            frame.name +
-              "@" +
-              frame.filename +
-              ":" +
-              frame.lineNumber +
-              ":" +
-              frame.columnNumber +
-              ";" +
-              frame.asyncCause
-          );
-          frame = frame.caller || frame.asyncCaller;
+            // Format described here https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
+            stacktrace.push(
+              frame.name +
+                "@" +
+                frame.filename +
+                ":" +
+                frame.lineNumber +
+                ":" +
+                frame.columnNumber +
+                ";" +
+                frame.asyncCause,
+            );
+            frame = frame.caller || frame.asyncCaller;
+          }
         }
-      }
-      if (!stacktrace.length) return;
-      stacktrace = stacktrace.join("\n");
-      //Passes the message up to the parent
-      this.actor.sendAsyncMessage("OpenWPM:Callstack", { stacktrace, channelId });
-      break;
+        if (!stacktrace.length) return;
+        stacktrace = stacktrace.join("\n");
+        // Passes the message up to the parent
+        this.actor.sendAsyncMessage("OpenWPM:Callstack", {
+          stacktrace,
+          channelId,
+        });
+        break;
     }
   }
   willDestroy() {
@@ -172,4 +177,4 @@ class OpenWPMStackDumpChild extends JSWindowActorChild {
   observe() {
     // stuff
   }
-};
+}

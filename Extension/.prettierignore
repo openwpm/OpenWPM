@@ -1,0 +1,6 @@
+bundled/content.js
+bundled/feature.js
+bundled/privileged/sockets/bufferpack.js
+dist
+build
+node_modules
