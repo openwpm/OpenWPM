@@ -1,3 +1,4 @@
+/* eslint no-eval: "off" */
 // Intrumentation injection code is based on privacybadgerfirefox
 // https://github.com/EFForg/privacybadgerfirefox/blob/master/data/fingerprinting.js
 
@@ -133,8 +134,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
     let siblingIndex = 1;
     const siblings = element.parentNode.childNodes;
-    for (let i = 0; i < siblings.length; i++) {
-      const sibling = siblings[i];
+    for (const sibling of siblings) {
       if (sibling === element) {
         let path = getPathToDomElement(element.parentNode, visibilityAttr);
         path += "/" + element.tagName + "[" + siblingIndex;
@@ -621,7 +621,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
             returnValue = originalSetter.call(this, value);
           } else if ("value" in propDesc) {
             inLog = true;
-            if (object.isPrototypeOf(this)) {
+            if (Object.prototype.isPrototypeOf.call(object, this)) {
               Object.defineProperty(this, propertyName, {
                 value,
               });
@@ -733,7 +733,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   const sendFactory = function (eventId, $sendMessagesToLogger) {
     let messages = [];
     // debounce sending queued messages
-    const _send = debounce(function () {
+    const send = debounce(function () {
       $sendMessagesToLogger(eventId, messages);
 
       // clear the queue
@@ -743,7 +743,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     return function (msgType, msg) {
       // queue the message
       messages.push({ type: msgType, content: msg });
-      _send();
+      send();
     };
   };
 

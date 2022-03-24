@@ -9,13 +9,15 @@ export class CallstackInstrument {
     this.dataReceiver = dataReceiver;
   }
   run(browser_id) {
-    (browser as any).stackDump.onStackAvailable.addListener((request_id, call_stack) => {
-      const record = {
-        browser_id,
-        request_id,
-        call_stack
-      };
-      this.dataReceiver.saveRecord("callstacks", record);
-    });
+    (browser as any).stackDump.onStackAvailable.addListener(
+      (request_id, call_stack) => {
+        const record = {
+          browser_id,
+          request_id,
+          call_stack,
+        };
+        this.dataReceiver.saveRecord("callstacks", record);
+      },
+    );
   }
 }

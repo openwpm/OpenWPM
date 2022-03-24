@@ -79,7 +79,7 @@ export class JavascriptInstrument {
   public handleJsInstrumentationMessage(message, sender: MessageSender) {
     switch (message.type) {
       case "logCall":
-      case "logValue":
+      case "logValue": {
         const update = JavascriptInstrument.processCallsAndValues(
           message.data,
           sender,
@@ -91,6 +91,7 @@ export class JavascriptInstrument {
           this.pendingRecords.push(update);
         }
         break;
+      }
     }
   }
 
