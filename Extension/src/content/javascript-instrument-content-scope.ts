@@ -2,7 +2,7 @@ import { getInstrumentJS, JSInstrumentRequest } from "../lib/js-instruments";
 import { pageScript } from "./javascript-instrument-page-scope";
 import { openWpmContentScriptConfig } from "../types/javascript-instrument";
 
-function getPageScriptAsString (
+function getPageScriptAsString(
   jsInstrumentationSettings: JSInstrumentRequest[],
 ): string {
   // The JS Instrument Requests are setup and validated python side
@@ -21,7 +21,7 @@ const jsInstrumentationSettings = ${JSON.stringify(jsInstrumentationSettings)};
 // End.
   `;
   return pageScriptString;
-};
+}
 
 function insertScript(
   pageScriptString: string,
@@ -36,16 +36,16 @@ function insertScript(
   script.setAttribute("data-testing", `${testing}`);
   parent.insertBefore(script, parent.firstChild);
   parent.removeChild(script);
-};
+}
 
-function emitMsg (type, msg)  {
+function emitMsg(type, msg) {
   msg.timeStamp = new Date().toISOString();
   browser.runtime.sendMessage({
     namespace: "javascript-instrumentation",
     type,
     data: msg,
   });
-};
+}
 
 const eventId = Math.random().toString();
 
@@ -62,10 +62,12 @@ document.addEventListener(eventId, (e: CustomEvent) => {
   }
 });
 
-export const injectJavascriptInstrumentPageScript = (contentScriptConfig: openWpmContentScriptConfig) => {
+export const injectJavascriptInstrumentPageScript = (
+  contentScriptConfig: openWpmContentScriptConfig,
+) => {
   insertScript(
     getPageScriptAsString(contentScriptConfig.jsInstrumentationSettings),
     eventId,
     contentScriptConfig.testing,
   );
-}
+};

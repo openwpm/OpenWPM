@@ -443,7 +443,9 @@ export class HttpInstrument {
     if (details.type === "main_frame") {
       // Url of the top-level document itself.
       url = details.url;
-    } else if (details.hasOwnProperty("frameAncestors")) {
+    } else if (
+      Object.prototype.hasOwnProperty.call(details, "frameAncestors")
+    ) {
       // In case of nested frames, retrieve url from top-most ancestor.
       // If frameAncestors == [], request comes from the top-level-document.
       url = details.frameAncestors.length

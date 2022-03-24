@@ -3,7 +3,7 @@
 // Also, no webpack/es6 imports may be used in this file since the script
 // is exported as a page script as a string
 
-export function pageScript (getInstrumentJS, jsInstrumentationSettings) {
+export function pageScript(getInstrumentJS, jsInstrumentationSettings) {
   // messages the injected script
   const sendMessagesToLogger = (eventId, messages) => {
     document.dispatchEvent(
@@ -34,4 +34,4 @@ export function pageScript (getInstrumentJS, jsInstrumentationSettings) {
       "(if spec is '<unavailable>' check web console.)",
     );
   }
-};
+}
