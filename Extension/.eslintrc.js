@@ -13,19 +13,21 @@ module.exports = {
     webextensions: true,
     browser: true,
   },
+  parser: "@babel/eslint-parser",
   extends: ["prettier", "eslint:recommended"],
   ignorePatterns: [
     "bundled/feature.js",
     "bundled/content.js",
-    "bundled/privileged",
-    "build/**",
-    "dist/**",
-    "node_modules/**",
+    "bundled/privileged/sockets/bufferpack.js" /** This is a file we just copied in  */,
+    "build/",
+    "dist/",
+    "node_modules/",
   ],
   plugins: [
     "eslint-plugin-import",
     "eslint-plugin-jsdoc",
     "eslint-plugin-unicorn",
+    "eslint-plugin-mozilla",
   ],
   rules: {
     "arrow-parens": ["off", "always"],
@@ -75,6 +77,7 @@ module.exports = {
     "no-underscore-dangle": "warn",
     "no-unsafe-finally": "error",
     "no-unused-labels": "error",
+    "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     "no-var": "error",
     "object-shorthand": "error",
     "one-var": ["warn", "never"],
@@ -96,6 +99,21 @@ module.exports = {
     "valid-typeof": "off",
   },
   overrides: [
+    {
+      files: ["bundled/privileged/**"],
+      env: {
+        es2022: true,
+        "mozilla/browser-window": true,
+        "mozilla/privileged": true,
+      },
+      globals: {
+        Cu: "readonly",
+        Ci: "readonly",
+        Cc: "readonly",
+        Cr: "readonly",
+        ExtensionAPI: "readonly",
+      },
+    },
     {
       files: ["*.ts"],
       parser: "@typescript-eslint/parser",

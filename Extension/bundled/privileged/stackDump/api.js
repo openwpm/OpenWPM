@@ -1,19 +1,26 @@
-ChromeUtils.defineModuleGetter(this, "ExtensionCommon",
-                               "resource://gre/modules/ExtensionCommon.jsm");
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
+/* globals resProto ExtensionCommon */
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionCommon",
+  "resource://gre/modules/ExtensionCommon.jsm",
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Services",
+  "resource://gre/modules/Services.jsm",
+);
 const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+  "resource://gre/modules/XPCOMUtils.jsm",
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "resProto",
   "@mozilla.org/network/protocol;1?name=resource",
-  "nsISubstitutingProtocolHandler"
+  "nsISubstitutingProtocolHandler",
 );
 
-gOnStackAvailableListeners = new Set();
+const gOnStackAvailableListeners = new Set();
 
 this.stackDump = class extends ExtensionAPI {
   getAPI(context) {
@@ -27,10 +34,12 @@ this.stackDump = class extends ExtensionAPI {
     resProto.setSubstitution("openwpm", context.extension.rootURI);
     ChromeUtils.registerWindowActor("OpenWPMStackDump", {
       parent: {
-        moduleURI: "resource://openwpm/privileged/stackDump/OpenWPMStackDumpParent.jsm",
+        moduleURI:
+          "resource://openwpm/privileged/stackDump/OpenWPMStackDumpParent.jsm",
       },
       child: {
-        moduleURI: "resource://openwpm/privileged/stackDump/OpenWPMStackDumpChild.jsm",
+        moduleURI:
+          "resource://openwpm/privileged/stackDump/OpenWPMStackDumpChild.jsm",
         observers: ["content-document-global-created"],
       },
       allFrames: true,
@@ -39,17 +48,17 @@ this.stackDump = class extends ExtensionAPI {
     return {
       stackDump: {
         onStackAvailable: new ExtensionCommon.EventManager({
-          context: context,
+          context,
           name: "stackDump.onStackAvailable",
           register: (fire) => {
-            let listener = (id, data) => {
+            const listener = (id, data) => {
               fire.async(id, data);
             };
             gOnStackAvailableListeners.add(listener);
             return () => {
               gOnStackAvailableListeners.delete(listener);
             };
-          }
+          },
         }).api(),
       },
     };
