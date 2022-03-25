@@ -12,7 +12,7 @@ dependencies:
     - geckodriver
     - leveldb
     - multiprocess
-    - nodejs==14.*.*
+    - nodejs
     - pandas
     - pip
     - pillow

@@ -107,7 +107,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     };
 
     return function () {
-      context = this;
+      context = this; // eslint-disable-line @typescript-eslint/no-this-alias
       args = arguments;
       timestamp = Date.now();
       const callNow = immediate && !timeout;
