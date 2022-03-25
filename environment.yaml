@@ -15,7 +15,7 @@ dependencies:
 - leveldb=1.23
 - multiprocess=0.70.12.2
 - mypy=0.941
-- nodejs=14.18.3
+- nodejs=17.7.1
 - pandas=1.4.1
 - pillow=9.0.1
 - pip=22.0.4
