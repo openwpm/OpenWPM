@@ -13,7 +13,7 @@ RUN apt-get clean -qq \
     # git and make for `npm install`, wget for `install-miniconda`
     && apt-get install wget git make -qq \
     # deps to run firefox inc. with xvfb
-    && apt-get install libgtk-3-0 libx11-xcb1 libdbus-glib-1-2 libxt6 xvfb -qq
+    && apt-get install firefox xvfb -qq
 
 ENV HOME /opt
 COPY scripts/install-miniconda.sh .
