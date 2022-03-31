@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.19.1 - 2022-03-22
+
+Hotfix for the Dockerfile
+Thanks to @sal123-droid for [the report](https://github.com/openwpm/openwpm-crawler/issues/56)
+
 ## v0.19.0 - 2022-03-10
 
 Updates OpenWPM to Firefox 98

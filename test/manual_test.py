@@ -64,6 +64,7 @@ def get_command_output(command, cwd=None):
     popen = subprocess.Popen(
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
     )
+    assert popen.stdout is not None
     return iter(popen.stdout.readline, b"")
 
 
@@ -227,4 +228,4 @@ def main(selenium, no_extension, browser_params, browser_params_file):
 
 
 if __name__ == "__main__":
-    main()
+    main()  # type: ignore
