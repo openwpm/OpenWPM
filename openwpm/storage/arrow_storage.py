@@ -4,7 +4,7 @@ import random
 from abc import abstractmethod
 from asyncio import Task
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List
+from typing import Any, DefaultDict, Dict, List, Optional
 
 import pandas as pd
 import pyarrow as pa
@@ -99,6 +99,7 @@ class ArrowProvider(StructuredStorageProvider):
     ) -> Task[None]:
         """This method is the reason the finalize_visit_id interface returns a task.
         This was necessary as we needed to enable the following pattern.
+
         ```
             token = await structured_storage.finalize_visit_id(1)
             structured_storage.flush_cache()
@@ -137,7 +138,7 @@ class ArrowProvider(StructuredStorageProvider):
         This should only return once it's actually saved out
         """
 
-    async def flush_cache(self, lock: asyncio.Lock = None) -> None:
+    async def flush_cache(self, lock: Optional[asyncio.Lock] = None) -> None:
         """We need to hack around the fact that asyncio has no reentrant lock
         So we either grab the storing_lock ourselves or the caller needs
         to pass us the locked storing_lock
