@@ -24,6 +24,7 @@ dependencies:
     - s3fs
     - selenium
     - sentry-sdk
+    - sqlalchemy
     - tabulate
     - tblib
     - wget
