@@ -26,10 +26,10 @@
   "homepage": "",
   "devDependencies": {
     "@adobe/jsonschema2md": "^7.0.0",
-    "@commitlint/cli": "^16.2.1",
-    "@commitlint/config-conventional": "^16.2.1",
-    "commitlint": "^16.2.1",
-    "markdown-link-check": "^3.9.3",
+    "@commitlint/cli": "^16.2.4",
+    "@commitlint/config-conventional": "^16.2.4",
+    "commitlint": "^16.2.4",
+    "markdown-link-check": "^3.10.2",
     "markdownlint-cli": "^0.31.1",
     "npm-scripts-info": "^0.3.9"
   },
