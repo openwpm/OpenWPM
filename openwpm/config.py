@@ -84,6 +84,7 @@ class BrowserParams(DataClassJsonMixin):
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
+    stealth_js_instrument: bool = False
     navigation_instrument: bool = False
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
