@@ -95,5 +95,6 @@ Extension/firefox/dist
 Extension/firefox/openwpm.xpi
 Extension/firefox/src/content.js
 Extension/firefox/src/feature.js
+Extension/firefox/src/stealth.js
 
 datadir

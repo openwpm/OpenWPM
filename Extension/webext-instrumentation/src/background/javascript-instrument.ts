@@ -47,11 +47,13 @@ export class JavascriptInstrument {
   private readonly dataReceiver;
   private onMessageListener;
   private configured: boolean = false;
+  private legacy: boolean = true;
   private pendingRecords: JavascriptOperation[] = [];
   private crawlID;
 
-  constructor(dataReceiver) {
+  constructor(dataReceiver, legacy) {
     this.dataReceiver = dataReceiver;
+    this.legacy = legacy;
   }
 
   /**
@@ -121,7 +123,7 @@ export class JavascriptInstrument {
       testing,
       jsInstrumentationSettings,
     };
-    if (contentScriptConfig) {
+    if (contentScriptConfig && this.legacy) {
       // TODO: Avoid using window to pass the content script config
       await browser.contentScripts.register({
         js: [
@@ -137,8 +139,9 @@ export class JavascriptInstrument {
         matchAboutBlank: true,
       });
     }
+    const entryScript = (this.legacy) ? "/content.js" : "/stealth.js";
     return browser.contentScripts.register({
-      js: [{ file: "/content.js" }],
+      js: [{ file: entryScript }],
       matches: ["<all_urls>"],
       allFrames: true,
       runAt: "document_start",
