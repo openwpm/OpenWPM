@@ -571,7 +571,7 @@ function changeProperty(
   name,
   method,
   changed){
-  	descriptor[method] = changed;
+    descriptor[method] = changed;
     Object.defineProperty(pageObject, name, descriptor);
 }
 
