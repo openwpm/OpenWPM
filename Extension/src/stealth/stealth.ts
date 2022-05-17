@@ -175,20 +175,20 @@ function protectFrameProperties({context, wrappedWindow, changeWindowProperty, s
     const contentDocumentDescriptor = Object.getOwnPropertyDescriptor(
       constructor.prototype,
       "contentDocument"
-  	);
-  	const originalContentDocumentGetter = contentDocumentDescriptor.get;
-  	const contentDocumentTemp = {
-  		get contentDocument(){
+    );
+    const originalContentDocumentGetter = contentDocumentDescriptor.get;
+    const contentDocumentTemp = {
+      get contentDocument(){
         const document = originalContentDocumentGetter.call(this);
         if (document){
           singleCallback(document.defaultView);
         }
-  			return document;
-  		}
-  	};
-  	changeWindowProperty(wrappedConstructor.prototype, "contentDocument", "get",
-  		Object.getOwnPropertyDescriptor(contentDocumentTemp, "contentDocument").get
-  	);
+        return document;
+      }
+    };
+    changeWindowProperty(wrappedConstructor.prototype, "contentDocument", "get",
+      Object.getOwnPropertyDescriptor(contentDocumentTemp, "contentDocument").get
+    );
   });
 }
 
