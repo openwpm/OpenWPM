@@ -105,17 +105,18 @@ function createProxyFunction(context, original, replacement){
 		changePropertyFunc(
       context,
        {
-      	object: functionPrototype,
-      	name: "toString",
-      	type: "value",
-      	changed: createProxyFunction(
-				context,
-				toString,
-				function(){
-					return proxies.get(this) || toString.call(this);
-				}
-			)
-    });
+         object: functionPrototype,
+         name: "toString",
+         type: "value",
+         changed: createProxyFunction(
+           context,
+           toString,
+           function(){
+             return proxies.get(this) || toString.call(this);
+				   }
+			   )
+      }
+    );
 	}
 	const handler = getWrapped(context).Object.create(null);
 	handler.apply = exportCustomFunction(function(target, thisArgs, args){
@@ -149,40 +150,39 @@ function changePropertyFunc(context, {object, name, type, changed}){
 
 function protectFrameProperties({context, wrappedWindow, changeWindowProperty, singleCallback}){
   ["HTMLIFrameElement", "HTMLFrameElement"].forEach(function(constructorName){
-  	const constructor = context[constructorName];
-  	const wrappedConstructor = wrappedWindow[constructorName];
+    const constructor = context[constructorName];
+    const wrappedConstructor = wrappedWindow[constructorName];
 
-  	const contentWindowDescriptor = Object.getOwnPropertyDescriptor(
-  		constructor.prototype,
-  		"contentWindow"
-  	);
+    const contentWindowDescriptor = Object.getOwnPropertyDescriptor(
+      constructor.prototype,
+      "contentWindow"
+    );
     //TODO: Continue here!!!!
-  	const originalContentWindowGetter = contentWindowDescriptor.get;
-  	const contentWindowTemp = {
-  		get contentWindow(){
-  			const window = originalContentWindowGetter.call(this);
-  			if (window){
-          // TODO: What is singleCallback - Instrumenting everything?
-  				singleCallback(window);
-  			}
-  			return window;
-  		}
-  	};
-  	changeWindowProperty(wrappedConstructor.prototype, "contentWindow", "get",
-  		Object.getOwnPropertyDescriptor(contentWindowTemp, "contentWindow").get
-  	);
+    const originalContentWindowGetter = contentWindowDescriptor.get;
+    const contentWindowTemp = {
+      get contentWindow(){
+        const window = originalContentWindowGetter.call(this);
+        if (window){
+          singleCallback(window);
+        }
+        return window;
+      }
+    };
+    changeWindowProperty(wrappedConstructor.prototype, "contentWindow", "get",
+      Object.getOwnPropertyDescriptor(contentWindowTemp, "contentWindow").get
+    );
 
-  	const contentDocumentDescriptor = Object.getOwnPropertyDescriptor(
-  		constructor.prototype,
-  		"contentDocument"
+    const contentDocumentDescriptor = Object.getOwnPropertyDescriptor(
+      constructor.prototype,
+      "contentDocument"
   	);
   	const originalContentDocumentGetter = contentDocumentDescriptor.get;
   	const contentDocumentTemp = {
   		get contentDocument(){
-  			const document = originalContentDocumentGetter.call(this);
-  			if (document){
-  				singleCallback(document.defaultView);
-  			}
+        const document = originalContentDocumentGetter.call(this);
+        if (document){
+          singleCallback(document.defaultView);
+        }
   			return document;
   		}
   	};
