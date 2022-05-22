@@ -274,7 +274,7 @@ X-server. You can do this by running: `xhost +local:docker`
 Then you can run the demo script using:
 
 ```bash
-    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/opt/Desktop \
+    mkdir -p docker-volume && docker run -v $PWD/docker-volume:/opt/OpenWPM/datadir \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
     -it openwpm
 ```
@@ -291,8 +291,8 @@ it's being run from the root OpenWPM directory):
     `python /opt/OpenWPM/demo.py` command.
 
 - `-v` binds a directory on the host (`$PWD/docker-volume`) to a
-    directory in the container (`/root`). Binding allows the script's
-    output to be saved on the host (`./docker-volume/Desktop`), and also allows
+    directory in the container (`/opt/OpenWPM/datadir`). Binding allows the script's
+    output to be saved on the host (`./docker-volume`), and also allows
     you to pass inputs to the docker container (if necessary). We first create
     the `docker-volume` direction (if it doesn't exist), as docker will
     otherwise create it with root permissions.
