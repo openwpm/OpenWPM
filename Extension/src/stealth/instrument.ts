@@ -267,7 +267,8 @@ function logValue(
      notify("logValue", msg);
   } catch (error) {
     console.log("OpenWPM: Unsuccessful value log!");
-    logErrorToConsole(error);
+    // Activate for debugging purpose
+    //logErrorToConsole(error);
   }
 
   inLog = false;
@@ -307,8 +308,9 @@ function logCall(instrumentedFunctionName, args, callContext, logSettings) {
     }
     catch (error) {
         console.log("OpenWPM: Unsuccessful call log: " + instrumentedFunctionName);
-        console.log(error);
-        logErrorToConsole(error);
+        // Activate for debugging purpose
+        //console.log(error);
+        //logErrorToConsole(error);
     }
     inLog = false;
 }
@@ -411,7 +413,7 @@ function getObjectProperties(context, item){
   let propertiesToInstrument = item.logSettings.propertiesToInstrument;
   const proto = getContextualPrototypeFromString(context, item["object"]);
   if (!proto) {
-    throw Error("Object " + item['object'] + "was undefined.");
+    throw Error("Object " + item['object'] + " was undefined.");
   }
 
   if (propertiesToInstrument === undefined || !propertiesToInstrument.length) {
@@ -677,8 +679,8 @@ function instrument(context, item, depth, propertyName, newValue = undefined){
       instrumentGetterSetter(descriptor, identifier, pageObject, propertyName, newValue);
     }
   } catch (error){
-    console.log(error);
-    console.log(error.stack);
+    console.error(error);
+    console.error(error.stack);
     return;
   }
 }
@@ -691,29 +693,25 @@ function instrument(context, item, depth, propertyName, newValue = undefined){
 let wrappedObjects = [];
 function needsWrapper(object) {
   if (wrappedObjects.some(obj => object === obj)){
-    //console.log("is already wrapped:" + object);
     return false;
   }
   wrappedObjects.push(object);
-  //console.log("Will be wrapped:" + object);
   return true;
 }
 
 function startInstrument(context){
-  jsInstrumentationSettings.forEach(item => {
+  for (const item of jsInstrumentationSettings) {
 
     // retrieve Object properties alont the chain
     let propertyCollection;
     try {
       propertyCollection = getObjectProperties(context, item);
     } catch (err){
-      console.log(err);
-      return;
+      console.error(err);
+      continue;
     }
     // Instrument each Property per object/prototype
     if (propertyCollection[0] !== ""){
-      // console.log(item["instrumentedName"]);
-      // console.log(propertyCollection);
       propertyCollection.forEach(({depth, propertyNames, object}) => {
         if (needsWrapper(object)){
           propertyNames.forEach(propertyName => instrument(context, item, depth, propertyName));
@@ -728,12 +726,11 @@ function startInstrument(context){
           let {depth, propertyName} = Object.findPropertyInChain(proto, name);
           instrument(context, item, depth, propertyName, value);
         } else {
-          console.log("Could not instrument " + item["object"] + ". Encountered undefined object.");
+          console.error("Could not instrument " + item["object"] + ". Encountered undefined object.");
         }
       });
     }
-  });
-  //console.log(wrappedObjects);
+  }
 }
 
 export {
