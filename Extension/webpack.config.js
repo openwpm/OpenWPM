@@ -3,7 +3,7 @@ const path = require("path");
 module.exports = {
   entry: {
     feature: "./src/feature.ts",
-    content: "./src/feature.ts",
+    content: "./src/content.ts",
   },
   output: {
     path: path.resolve(__dirname, "bundled"),

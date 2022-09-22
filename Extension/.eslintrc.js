@@ -112,6 +112,8 @@ module.exports = {
         Cc: "readonly",
         Cr: "readonly",
         ExtensionAPI: "readonly",
+        Services: "readonly",
+        OS: "readonly",
       },
     },
     {
