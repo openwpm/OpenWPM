@@ -1,6 +1,7 @@
 import sqlite3
 
 from selenium.webdriver import Firefox
+from selenium.webdriver.common.by import By
 
 from openwpm import command_sequence
 from openwpm.commands.types import BaseCommand
@@ -51,7 +52,7 @@ class CollectLinksCommand(BaseCommand):
             x
             for x in (
                 element.get_attribute("href")
-                for element in webdriver.find_elements_by_tag_name("a")
+                for element in webdriver.find_elements(By.TAG_NAME, "a")
             )
             if x.startswith(self.scheme + "://")
         ]

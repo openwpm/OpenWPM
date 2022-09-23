@@ -8,7 +8,7 @@ def test_extension_logging(task_manager_creator, default_params, tmp_path):
             "pre_instrumentation_code"
         ] = f"""
             // Weird name needed due to webpack name mangling
-            _loggingdb_js__WEBPACK_IMPORTED_MODULE_1__.logWarn("{test_msg}"); 
+            loggingDB.logWarn("{test_msg}"); 
         """
 
     task_manager, _ = task_manager_creator((manager_params, browser_params))

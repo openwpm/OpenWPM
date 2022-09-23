@@ -19,7 +19,7 @@ sites = [
 # and NUM_BROWSERS copies of the default BrowserParams
 
 manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
-browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
+browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for browser_param in browser_params:
@@ -69,7 +69,7 @@ with TaskManager(
         )
 
         # Start by visiting the page
-        command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
+        command_sequence.append_command(GetCommand(url=site, sleep=120), timeout=180)
         # Have a look at custom_command.py to see how to implement your own command
         command_sequence.append_command(LinkCountingCommand())
 

@@ -18,7 +18,6 @@ EXTENSION_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "..",
     "Extension",
-    "firefox",
 )
 pytest_plugins = "test.storage.fixtures"
 
