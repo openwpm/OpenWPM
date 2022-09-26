@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.21.0 - 2022-09-26
+
+Update to Firefox 105
+Unified and simplified Extension [#1008](https://github.com/openwpm/OpenWPM/pull/1008)
+
 ## v0.20.0 - 2022-05-05
 
 Updates OpenWPM to Firefox 100
