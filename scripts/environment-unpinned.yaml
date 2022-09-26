@@ -28,7 +28,7 @@ dependencies:
     - tblib
     - wget
     - pip:
-      - jsonschema
-      - plyvel
-      - domain-utils
-      - dataclasses-json
+        - jsonschema
+        - plyvel
+        - domain-utils
+        - dataclasses-json

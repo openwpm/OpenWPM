@@ -15,7 +15,7 @@ dependencies:
 - leveldb=1.23
 - multiprocess=0.70.13
 - mypy=0.971
-- nodejs=14.18.3
+- nodejs=18.9.0
 - pandas=1.5.0
 - pillow=9.2.0
 - pip=22.2.2
@@ -31,9 +31,9 @@ dependencies:
 - redis-py=4.3.4
 - s3fs=2022.8.2
 - selenium=4.4.0
-- sentry-sdk=1.9.8
+- sentry-sdk=1.9.9
 - sphinx-markdown-tables=0.0.17
-- sphinx=5.1.1
+- sphinx=5.2.1
 - tabulate=0.8.10
 - tblib=1.7.0
 - wget=1.20.3
