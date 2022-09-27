@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 # Use the Unbranded build that corresponds to a specific Firefox version
 # To upgrade:
@@ -9,7 +9,7 @@ set -e
 # Note this script is **destructive** and will
 # remove the existing Firefox in the OpenWPM directory
 
-TAG='1c7f7adc90e2b4c8d64548938bb1499033c5be8f' # FIREFOX_100_0_RELEASE
+TAG='433fb8a983f63150726d31c00e98b02c462c8491' # FIREFOX_105_0_RELEASE
 
 case "$(uname -s)" in
    Darwin)
