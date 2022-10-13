@@ -29,12 +29,12 @@ jobs:
           echo ::set-output name=tags::${TAGS}
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_USER_PASSWORD }}
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: ./ 
           file: ./Dockerfile
