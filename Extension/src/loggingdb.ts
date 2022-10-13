@@ -7,7 +7,7 @@ let storageController = null;
 let logAggregator = null;
 let listeningSocket = null;
 
-const listeningSocketCallback = async (data) => {
+const listeningSocketCallback = async data => {
   // This works even if data is an int
   const action = data.action;
   let newVisitID = data.visit_id;
@@ -42,7 +42,7 @@ const listeningSocketCallback = async (data) => {
       visitID = newVisitID;
   }
 };
-export const open = async function (
+export const open = async function(
   storageControllerAddress,
   logAddress,
   curr_crawlID,
@@ -88,7 +88,7 @@ export const open = async function (
   });
 };
 
-export const close = function () {
+export const close = function() {
   if (storageController != null) {
     storageController.close();
   }
@@ -97,7 +97,7 @@ export const close = function () {
   }
 };
 
-const makeLogJSON = function (lvl, msg) {
+const makeLogJSON = function(lvl, msg) {
   const log_json = {
     name: "Extension-Logger",
     level: lvl,
@@ -111,7 +111,7 @@ const makeLogJSON = function (lvl, msg) {
   return log_json;
 };
 
-export const logInfo = function (msg) {
+export const logInfo = function(msg) {
   // Always log to browser console
   console.log(msg);
 
@@ -124,7 +124,7 @@ export const logInfo = function (msg) {
   logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logDebug = function (msg) {
+export const logDebug = function(msg) {
   // Always log to browser console
   console.log(msg);
 
@@ -137,7 +137,7 @@ export const logDebug = function (msg) {
   logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logWarn = function (msg) {
+export const logWarn = function(msg) {
   // Always log to browser console
   console.warn(msg);
 
@@ -150,7 +150,7 @@ export const logWarn = function (msg) {
   logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logError = function (msg) {
+export const logError = function(msg) {
   // Always log to browser console
   console.error(msg);
 
@@ -163,7 +163,7 @@ export const logError = function (msg) {
   logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logCritical = function (msg) {
+export const logCritical = function(msg) {
   // Always log to browser console
   console.error(msg);
 
@@ -182,7 +182,7 @@ export const dataReceiver = {
   },
 };
 
-export const saveRecord = function (instrument, record) {
+export const saveRecord = function(instrument, record) {
   record.visit_id = visitID;
 
   if (!visitID && !debugging) {
@@ -211,7 +211,7 @@ export const saveRecord = function (instrument, record) {
 };
 
 // Stub for now
-export const saveContent = async function (content, contentHash) {
+export const saveContent = async function(content, contentHash) {
   // Send page content to the data aggregator
   // deduplicated by contentHash in a levelDB database
   if (debugging) {
@@ -244,13 +244,13 @@ function Uint8ToBase64(u8Arr) {
   return btoa(result);
 }
 
-export const escapeString = function (string) {
+export const escapeString = function(string) {
   // Convert to string if necessary
   if (typeof string !== "string") string = "" + string;
 
   return encode_utf8(string);
 };
 
-export const boolToInt = function (bool) {
+export const boolToInt = function(bool) {
   return bool ? 1 : 0;
 };
