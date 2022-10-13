@@ -30,7 +30,7 @@ def mktempfifo(suffix="", prefix="tmp", dir=None):
         name = next(names)
         file = os.path.join(dir, prefix + name + suffix)
         try:
-            os.mkfifo(file, 384)  # 0600
+            os.mkfifo(file, 0o600)
             return file
         except OSError as e:
             if e.errno == errno.EEXIST:
@@ -61,6 +61,7 @@ class FirefoxLogInterceptor(threading.Thread):
         # We might not ever get EOF on the FIFO, so instead we delete
         # it after we receive the first line (which means the other
         # end has actually opened it).
+        assert self.fifo is not None
         try:
             with open(self.fifo, "rt") as f:
                 for line in f:

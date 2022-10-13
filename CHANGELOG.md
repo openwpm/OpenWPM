@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.21.1 - 2022-10-13
+
+Fix erronous change to demo.py
+
 ## v0.21.0 - 2022-09-26
 
 Update to Firefox 105
