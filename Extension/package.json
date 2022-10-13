@@ -35,7 +35,6 @@
     "express": "^4.18.1",
     "prettier": "^2.7.1",
     "safe-compare": "^1.1.4",
-    "trash-cli": "^5.0.0",
     "ts-loader": "^9.4.1",
     "typedoc": "^0.23.15",
     "typescript": "^4.8.3",
@@ -74,7 +73,7 @@
     "test": "npm run build && npm run test:lint",
     "test:lint": "eslint . && prettier . --list-different || exit 0",
     "watch": "npm run clean && npm run build",
-    "clean": "trash build test",
+    "clean": "rm -rf build test",
     "prepare": "npm run build && npm run test",
     "start": "web-ext run --no-reload"
   },
