@@ -13,12 +13,7 @@ conda activate openwpm
 
 npm update --dev
 
-pushd Extension/webext-instrumentation
-
-npm update --dev
-
-pushd ../firefox
-
+pushd Extension
 npm update --dev
 popd
 popd
