@@ -9,3 +9,9 @@ coverage
 *.log
 
 yarn.lock
+
+# built extension artifacts
+dist
+openwpm.xpi
+bundled/content.js
+bundled/feature.js

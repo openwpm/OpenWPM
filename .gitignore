@@ -90,10 +90,4 @@ docs/apidoc/
 # npm packages
 node_modules
 
-# built extension artifacts
-Extension/dist
-Extension/openwpm.xpi
-Extension/bundled/content.js
-Extension/bundled/feature.js
-
 datadir
