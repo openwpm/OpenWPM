@@ -10,7 +10,7 @@ eval "$(conda shell.bash hook)"
 conda activate openwpm
 
 pushd Extension
-npm install --legacy-peer-deps
+npm install
 popd
 
 echo "Success: Extension/openwpm.xpi has been built"
