@@ -1,4 +1,4 @@
-xchannels:
+channels:
 - conda-forge
 - main
 dependencies:
