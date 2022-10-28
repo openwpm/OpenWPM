@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.20.0 - 2022-05-05
+
+Updates OpenWPM to Firefox 100
+
 ## v0.19.1 - 2022-03-22
 
 Hotfix for the Dockerfile
