@@ -32,21 +32,22 @@ OpenWPM<sub>hide</sub> introduces two new parameters to the BrowserParams object
 Using both parameters works as follows:
 
 ```javascript
-NUM_BROWSERS = 2
-browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
-for browser_param in browser_params:
-  browser_param.resolution = (1520, 630)
-  browser_param.position = (50, 100)
+from hide_commands import (SetResolution, SetPosition)
+...
+command_sequence = CommandSequence(...)
+
+command_sequence.append_command(SetResolution(width=1600, height=800), timeout=10)
+command_sequence.append_command(SetPosition(x=50, y=200), timeout=10)
 ```
 
 ### Hardened JavaScript instrument
 Set _stealth_js_instrument_ to _True_ to activate the hardened version (similar as above):
 
 ```javascript
- NUM_BROWSERS = 2
- browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
- for browser_param in browser_params:
- browser_param.stealth_js_instrument = True
+NUM_BROWSERS = 2
+browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
+for browser_param in browser_params:
+  browser_param.stealth_js_instrument = True
 ```
 
 Use the [settings.js](https://github.com/bkrumnow/OpenWPM/blob/stealth_extension/Extension/firefox/stealth.js/settings.js) file to
