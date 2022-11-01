@@ -1,3 +1,117 @@
+OpenWPM<sub>hide</sub>
+======================
+Full details are described in our paper, which can be found
+on our [website](https://bkrumnow.github.io/openwpm-reliability/).
+
+Deployment
+----------
+1. Follow the instructions from the original description
+to install OpenWPM ([see below](#installation)).
+2. Adjuste the [settings.js](https://github.com/bkrumnow/OpenWPM/blob/stealth_extension/Extension/firefox/stealth.js/settings.js)
+to determine which properties shall be instrumented.
+3. Recompile the extension if you do any changes to make them effective
+4. Add the new features to your OpenWPM clients, as described in the next section
+5. Run your OpenWPM client as
+
+To recompile the extension run the following commands:
+
+```sh
+cd Extension/firefox && npm install && run build && cp dist/*.zip ./openwpm.xpi && cd ../..
+```
+
+Main features
+------------
+1. Adjusting the window position
+2. Adjusting screen resolution
+3. Hardened JavaScript instrument
+4. Overwriting the _webdriver_ attribute
+
+
+### Window position & screen resolution
+OpenWPM<sub>hide</sub> introduces two new parameters to the BrowserParams object.
+Using both parameters works as follows:
+
+```javascript
+NUM_BROWSERS = 2
+browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
+for browser_param in browser_params:
+  browser_param.resolution = (1520, 630)
+  browser_param.position = (50, 100)
+```
+
+### Hardened JavaScript instrument
+Set _stealth_js_instrument_ to _True_ to activate the hardened version (similar as above):
+
+```javascript
+ NUM_BROWSERS = 2
+ browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
+ for browser_param in browser_params:
+ browser_param.stealth_js_instrument = True
+```
+
+Use the [settings.js](https://github.com/bkrumnow/OpenWPM/blob/stealth_extension/Extension/firefox/stealth.js/settings.js) file to
+define which properties will be recorded. While there is a number of properties already listed in the sample settings.js, you may
+want to add others. Adding new properties requires to determine a property's position in the property chain. The position can be
+retrieved in a Firefox browser via JavaScript reflect.
+
+In your browser, add this function via the console:
+
+```javascript
+Object.getPropertyNamesPerDepth = function (subject, maxDepth=10) {
+  if (subject === undefined) {
+    throw new Error("Can't get property names for undefined");
+  }
+  let res = [];
+  let depth = 0;
+  let properties = Object.getOwnPropertyNames(subject);
+  res.push({"depth": depth, "propertyNames":properties, "object":subject});
+  let proto = Object.getPrototypeOf(subject);
+
+  while (proto !== null, depth < maxDepth) {
+    depth++;
+    properties = Object.getOwnPropertyNames(proto);
+    res.push({"depth": depth, "propertyNames":properties, "object":proto});
+    proto = Object.getPrototypeOf(proto);
+    if (proto==null){
+      return res;
+    }
+  }
+  return res;
+}
+```
+Then check for property levels (this example checks the navigator object):
+```javascript
+Object.getPropertyNamesPerDepth(Object.getPrototypeOf(navigator))
+````
+
+### Overwriting webdriver attribute
+Overwriting is done by default when activating stealth_js_instrument. However, you may not want to use the JS recording, but
+overwrite the property anyway. In this case, remove all entries settings.js, except the [default entry](https://github.com/bkrumnow/OpenWPM/blob/stealth_extension/Extension/firefox/stealth.js/settings.js#L172-L184) for the Navigator object.
+
+
+Cite
+-----
+You can refer to our work as follows:
+
+How gullible are web measurement tools? A case study analysing and strengthening OpenWPM’s reliability. Benjamin Krumnow, Hugo Jonker, and Stefan Karsch. In Proc. 18th International Conference on emerging Networking EXperiments and Technologies (CoNEXT’22). ACM, 16 pages, doi: 10.1145/3555050.3569131, 2022.
+
+or
+
+```bibtex
+@inproceedings{KJK22,
+  author      = {Krumnow, Benjamin and Jonker, Hugo and
+  Karsch, Stefan},
+  title       = {How gullible are web measurement tools? {A} case study
+  analysing and strengthening {OpenWPM}’s reliability},
+  booktitle   = {Proc.\ 18th International Conference on emerging Networking
+  EXperiments and Technologies {(CoNEXT ’22)}},
+  publisher   = { {ACM} },
+  year        = {2022},
+  address     = {New York, NY, USA},
+  pages       = {16},
+  doi         = {10.1145/3555050.3569131}
+}
+```
 
 # OpenWPM [![Documentation Status](https://readthedocs.org/projects/openwpm/badge/?version=latest)](https://openwpm.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://github.com/openwpm/OpenWPM/workflows/Tests%20and%20linting/badge.svg?branch=master)](https://github.com/openwpm/OpenWPM/actions?query=branch%3Amaster) [![OpenWPM Matrix Channel](https://img.shields.io/matrix/OpenWPM:mozilla.org?label=Join%20us%20on%20matrix&server_fqdn=mozilla.modular.im)](https://matrix.to/#/#OpenWPM:mozilla.org?via=mozilla.org) <!-- omit in toc -->
 
@@ -199,7 +313,7 @@ For each of the data classes we offer a variety of storage providers, and you ar
 to implement your own, should the provided backends not be enough for you.
 
 We have an outstanding issue to enable saving content generated by commands, such as
-screenshots and page dumps to unstructured storage (see [#232](https://github.com/openwpm/OpenWPM/issues/232)).  
+screenshots and page dumps to unstructured storage (see [#232](https://github.com/openwpm/OpenWPM/issues/232)).
 For now, they get saved to `manager_params.data_directory`.
 
 ### Local Storage
