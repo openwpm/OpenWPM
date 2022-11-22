@@ -1,7 +1,7 @@
 import argparse
-import tranco
-
 from pathlib import Path
+
+import tranco
 
 from custom_command import LinkCountingCommand
 from openwpm.command_sequence import CommandSequence
@@ -11,15 +11,15 @@ from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--tranco', action='store_true', default=False),
+parser.add_argument("--tranco", action="store_true", default=False),
 args = parser.parse_args()
 
-# Load the latest tranco list. See https://tranco-list.eu/
 if args.tranco:
-    print('Loading tranco top sites list...')
-    t = tranco.Tranco(cache=True, cache_dir='.tranco')
+    # Load the latest tranco list. See https://tranco-list.eu/
+    print("Loading tranco top sites list...")
+    t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
-    sites = ['http://'+x for x in latest_list.top(5)]
+    sites = ["http://" + x for x in latest_list.top(5)]
 else:
     sites = [
         "http://www.example.com",
