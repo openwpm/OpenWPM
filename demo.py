@@ -1,4 +1,7 @@
+import argparse
 from pathlib import Path
+
+import tranco
 
 from custom_command import LinkCountingCommand
 from openwpm.command_sequence import CommandSequence
@@ -7,17 +10,26 @@ from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
-# The list of sites that we wish to crawl
-NUM_BROWSERS = 1
-sites = [
-    "http://www.example.com",
-    "http://www.princeton.edu",
-    "http://citp.princeton.edu/",
-]
+parser = argparse.ArgumentParser()
+parser.add_argument("--tranco", action="store_true", default=False),
+args = parser.parse_args()
+
+if args.tranco:
+    # Load the latest tranco list. See https://tranco-list.eu/
+    print("Loading tranco top sites list...")
+    t = tranco.Tranco(cache=True, cache_dir=".tranco")
+    latest_list = t.list()
+    sites = ["http://" + x for x in latest_list.top(10)]
+else:
+    sites = [
+        "http://www.example.com",
+        "http://www.princeton.edu",
+        "http://citp.princeton.edu/",
+    ]
 
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
-
+NUM_BROWSERS = 2
 manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
 browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
 

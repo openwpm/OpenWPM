@@ -32,3 +32,4 @@ dependencies:
         - plyvel
         - domain-utils
         - dataclasses-json
+        - tranco

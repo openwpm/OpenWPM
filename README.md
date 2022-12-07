@@ -88,6 +88,11 @@ Once installed, it is very easy to run a quick test of OpenWPM. Check out
 `openwpm/config.py::BrowserParams`, with the exception of the changes
 specified in `demo.py`.
 
+The demo script also includes a sample of how to use the
+[Tranco](https://tranco-list.eu/) top sites list via the optional command line
+flag `demo.py --tranco`. Note that since this is a real top sites list it will
+include NSFW websites, some of which will be highly ranked.
+
 More information on the instrumentation and configuration parameters is given
 below.
 
