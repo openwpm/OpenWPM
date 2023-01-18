@@ -8,4 +8,9 @@ markers = [
     "slow: marks a test as slow (omit slow tests with '-m \"not slow\"')"
 ]
 
-
+[tool.isort]
+profile = "black"
+known_future_library = "future"
+known_first_party = ["openwpm","openwpmtest","test"]
+default_section = "THIRDPARTY"
+skip = ["venv","Extension","firefox-bin"]
