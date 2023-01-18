@@ -15,24 +15,24 @@ jobs:
     steps:
     # All of these steps are just setup
     - uses: actions/checkout@v3
-    - name: Setting MINICONDA_PATH
-      run: echo "MINICONDA_PATH=$HOME/miniconda" >> $GITHUB_ENV
-    - name: Setting OPENWPM_CONDA_PATH
-      run: echo "OPENWPM_CONDA_PATH=$MINICONDA_PATH/envs/openwpm" >> $GITHUB_ENV
+    - name: Setting MAMBA_PATH
+      run: echo "MAMBA_PATH=$HOME/mamba" >> $GITHUB_ENV
+    - name: Setting OPENWPM_MAMBA_PATH
+      run: echo "OPENWPM_MAMBA_PATH=$MAMBA_PATH/envs/openwpm" >> $GITHUB_ENV
     # If the environment.yaml hasn't changed we just reuse the entire conda install
     - id: cache
       uses: actions/cache@v3
       env:
         cache-name: conda-cache
       with:
-        path: ${{ env.MINICONDA_PATH }}
+        path: ${{ env.MAMBA_PATH }}
         key: ${{ env.cache-name }}-${{ hashFiles('environment.yaml') }}
 
     - name: Install conda
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      run: $GITHUB_WORKSPACE/scripts/install-miniconda.sh
+      run: $GITHUB_WORKSPACE/scripts/install-mamba.sh
 
-    - run: echo "$MINICONDA_PATH/bin" >> $GITHUB_PATH
+    - run: echo "$MAMBA_PATH/bin" >> $GITHUB_PATH
 
     - name: Install.sh (cache miss)
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
@@ -40,7 +40,7 @@ jobs:
     - name: Install.sh (cache hit)
       if: ${{ steps.cache.outputs.cache-hit == 'true' }}
       run: $GITHUB_WORKSPACE/install.sh --skip-create
-    - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
+    - run: echo "$OPENWPM_MAMBA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
 
     - run: pre-commit run --all
@@ -62,10 +62,10 @@ jobs:
         path: ~/.npm
         key: ${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
     # Setting env variables that depend on $HOME
-    - name: Setting MINICONDA_PATH
-      run: echo "MINICONDA_PATH=$HOME/miniconda" >> $GITHUB_ENV
-    - name: Setting OPENWPM_CONDA_PATH
-      run: echo "OPENWPM_CONDA_PATH=$MINICONDA_PATH/envs/openwpm" >> $GITHUB_ENV
+    - name: Setting MAMBA_PATH
+      run: echo "MAMBA_PATH=$HOME/mamba" >> $GITHUB_ENV
+    - name: Setting OPENWPM_MAMBA_PATH
+      run: echo "OPENWPM_MAMBA_PATH=$MAMBA_PATH/envs/openwpm" >> $GITHUB_ENV
 
     # If the environment.yaml hasn't changed we just reuse the entire conda install
     - id: conda-cache
@@ -73,14 +73,14 @@ jobs:
       env:
         cache-name: conda-cache
       with:
-        path: ${{ env.MINICONDA_PATH }}
+        path: ${{ env.MAMBA_PATH }}
         key: ${{ env.cache-name }}-${{ hashFiles('environment.yaml') }}
 
     - name: Install conda
       if: ${{ steps.conda-cache.outputs.cache-hit != 'true' }}
-      run: $GITHUB_WORKSPACE/scripts/install-miniconda.sh
+      run: $GITHUB_WORKSPACE/scripts/install-mamba.sh
 
-    - run: echo "$MINICONDA_PATH/bin" >> $GITHUB_PATH
+    - run: echo "$MAMBA_PATH/bin" >> $GITHUB_PATH
 
     - name: Install.sh (cache miss)
       if: ${{ steps.conda-cache.outputs.cache-hit != 'true' }}
@@ -89,7 +89,7 @@ jobs:
       if: ${{ steps.conda-cache.outputs.cache-hit == 'true' }}
       run: $GITHUB_WORKSPACE/install.sh --skip-create
 
-    - run: echo "$OPENWPM_CONDA_PATH/bin" >> $GITHUB_PATH
+    - run: echo "$OPENWPM_MAMBA_PATH/bin" >> $GITHUB_PATH
     # Now we have a working OpenWPM environment
 
     - run: ./scripts/ci.sh
