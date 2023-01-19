@@ -10,21 +10,21 @@ RUN apt-get clean -qq \
     && apt-get clean -qq \
     && apt-get update -qq \
     && apt-get upgrade -qq \
-    # git and make for `npm install`, wget for `install-miniconda`
+    # git and make for `npm install`, wget for `install-mamba`
     && apt-get install wget git make -qq \
     # deps to run firefox inc. with xvfb
     && apt-get install firefox xvfb -qq
 
 ENV HOME /opt
-COPY scripts/install-miniconda.sh .
-RUN ./install-miniconda.sh
-ENV PATH $HOME/miniconda/bin:$PATH
+COPY scripts/install-mamba.sh .
+RUN ./install-mamba.sh
+ENV PATH $HOME/mamba/bin:$PATH
 
 # Install OpenWPM
 WORKDIR /opt/OpenWPM
 COPY . .
 RUN ./install.sh
-ENV PATH $HOME/miniconda/envs/openwpm/bin:$PATH
+ENV PATH $HOME/mamba/envs/openwpm/bin:$PATH
 
 # Move the firefox binary away from the /opt/OpenWPM root so that it is available if
 # we mount a local source code directory as /opt/OpenWPM
