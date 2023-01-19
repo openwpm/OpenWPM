@@ -1,0 +1,55 @@
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+testpaths = "test"
+addopts = "--strict-markers"
+
+markers = [
+    "pyonly: marks a test as being python only and so server and xpi not needed",
+    "slow: marks a test as slow (omit slow tests with '-m \"not slow\"')",
+]
+
+[tool.isort]
+profile = "black"
+known_future_library = "future"
+known_first_party = ["openwpm", "openwpmtest", "test"]
+default_section = "THIRDPARTY"
+skip = ["venv", "Extension", "firefox-bin"]
+
+[tool.mypy]
+follow_imports = "silent"
+python_version = 3.10
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "openwpm.storage.*"
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "openwpm.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "openwpm.utilities.*",
+    "openwpm.mp_logger",
+    "openwpm.commands.browser_commands",
+]
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "openwpm.browser_manager"
+allow_redefinition = true
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "test.*"
+allow_untyped_defs = true
+
+[tool.coverage.run]
+concurrency = ["multiprocessing"]
+parallel = true
+sigterm = true
