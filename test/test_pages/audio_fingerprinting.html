@@ -7,6 +7,7 @@
 <pre id="result"></pre>
 
 <script>
+const activate = function () {
 Array.prototype.extend = function (other_array) {
     other_array.forEach(function(v) {this.push(v)}, this);
 }
@@ -37,7 +38,8 @@ scriptProcessor.onaudioprocess = function (a) {
 };
 
 oscillator.start(0)
+}
 </script>
-
+<button id="play" onclick="activate()">Play</button>
 </body>
 </html>

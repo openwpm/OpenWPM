@@ -1,12 +1,19 @@
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import Row
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
+from selenium.webdriver import Firefox
+from selenium.webdriver.common.by import By
 
+from openwpm.command_sequence import CommandSequence
+from openwpm.commands.browser_commands import GetCommand
+from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParams
+from openwpm.socket_interface import ClientSocket
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -346,19 +353,6 @@ class TestExtension(OpenWPMTest):
                 observed_rows.add(item)
         assert WEBRTC_CALLS == observed_rows
 
-    @pytest.mark.skipif(
-        "CI" in os.environ and os.environ["CI"] == "true",
-        reason="Flaky on CI",
-    )
-    def test_audio_fingerprinting(self):
-        db = self.visit("/audio_fingerprinting.html")
-        # Check that all calls and methods are recorded
-        rows = db_utils.get_javascript_entries(db)
-        observed_symbols = set()
-        for item in rows:
-            observed_symbols.add(item[1])
-        assert AUDIO_SYMBOLS == observed_symbols
-
     def test_js_call_stack(self):
         db = self.visit("/js_call_stack.html")
         # Check that all stack info are recorded
@@ -409,3 +403,41 @@ class TestExtension(OpenWPMTest):
             )
             captured_cookie_calls.add(item)
         assert captured_cookie_calls == DOCUMENT_COOKIE_READ_WRITE
+
+
+class ClickButtonCommand(BaseCommand):
+    def execute(
+        self,
+        webdriver: Firefox,
+        browser_params: BrowserParams,
+        manager_params: ManagerParams,
+        extension_socket: ClientSocket,
+    ) -> None:
+        button = webdriver.find_element(By.ID, "play")
+        button.click()
+        time.sleep(5)
+
+
+@pytest.mark.skipif(
+    "CI" in os.environ and os.environ["CI"] == "true",
+    reason="Flaky on CI",
+)
+def test_audio_fingerprinting(default_params, task_manager_creator):
+    for browser_params in default_params[1]:
+        browser_params.js_instrument = True
+
+    tm, db = task_manager_creator(default_params)
+    cs = CommandSequence("/audio_fingerprinting.html")
+    cs.append_command(
+        GetCommand(utilities.BASE_TEST_URL + "/audio_fingerprinting.html", 0)
+    )
+    cs.append_command(ClickButtonCommand())
+    tm.execute_command_sequence(cs)
+
+    tm.close()
+    # Check that all calls and methods are recorded
+    rows = db_utils.get_javascript_entries(db)
+    observed_symbols = set()
+    for item in rows:
+        observed_symbols.add(item[1])
+    assert AUDIO_SYMBOLS == observed_symbols
