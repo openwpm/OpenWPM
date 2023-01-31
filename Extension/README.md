@@ -7,7 +7,7 @@ It allows users to track and monitor privacy-related browsing behavior.
 ## Installation
 
 ```bash
-npm install
+npm ci
 ```
 
 ## Instrumentation
