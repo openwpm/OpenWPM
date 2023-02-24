@@ -78,6 +78,9 @@ class BrowserParams(DataClassJsonMixin):
     """
 
     extension_enabled: bool = True
+    extension_ghostery: bool = False
+    extension_abp: bool = False
+    extension_ublock: bool = False
     cookie_instrument: bool = True
     js_instrument: bool = False
     js_instrument_settings: List[Union[str, dict]] = field(

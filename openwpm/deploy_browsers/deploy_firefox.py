@@ -154,6 +154,22 @@ def deploy_firefox(
             "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
         )
 
+    #ghostery
+    if browser_params.extension_ghostery:
+        ghostery_path = "./firefox_extensions/ghostery-8.9.8.xpi"
+        driver.install_addon(ghostery_path, temporary=True)
+    
+    #AdBlockPlus
+    if browser_params.extension_abp:
+        abp_path = "./firefox_extensions/adblock_plus-3.16.1.xpi"
+        driver.install_addon(abp_path, temporary=True)
+    
+    #Ublock Origin
+    if browser_params.extension_ublock:
+        ublock_path = "./firefox_extensions/ublock_origin-1.47.0.xpi"
+        driver.install_addon(ublock_path, temporary=True)
+
+    
     # set window size
     driver.set_window_size(*DEFAULT_SCREEN_RES)
 

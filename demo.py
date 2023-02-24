@@ -12,6 +12,9 @@ from openwpm.task_manager import TaskManager
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--tranco", action="store_true", default=False),
+parser.add_argument("--ghostery", action="store_true", default=False)
+parser.add_argument("--abp", action="store_true", default=False)
+parser.add_argument("--ublock", action="store_true", default=False)
 args = parser.parse_args()
 
 if args.tranco:
@@ -26,6 +29,7 @@ else:
         "http://www.princeton.edu",
         "http://citp.princeton.edu/",
     ]
+
 
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
@@ -47,6 +51,13 @@ for browser_param in browser_params:
     browser_param.callstack_instrument = True
     # Record DNS resolution
     browser_param.dns_instrument = True
+    if args.ghostery:
+        browser_param.extension_ghostery = True
+    if args.abp:
+        browser_param.extension_abp = True
+    if args.ublock:
+        browser_param.extension_ublock = True
+
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params.data_directory = Path("./datadir/")
