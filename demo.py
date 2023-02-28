@@ -22,7 +22,7 @@ if args.tranco:
     print("Loading tranco top sites list...")
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
-    sites = ["http://" + x for x in latest_list.top(10)]
+    sites = ["http://" + x for x in latest_list.top(100)]
 else:
     sites = [
         "http://www.example.com",
@@ -30,12 +30,11 @@ else:
         "http://citp.princeton.edu/",
     ]
 
-
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
 NUM_BROWSERS = 2
 manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
-browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
+browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for browser_param in browser_params:
@@ -89,10 +88,11 @@ with TaskManager(
             site,
             site_rank=index,
             callback=callback,
+            reset=True
         )
 
         # Start by visiting the page
-        command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
+        command_sequence.append_command(GetCommand(url=site, sleep=5), timeout=60)
         # Have a look at custom_command.py to see how to implement your own command
         command_sequence.append_command(LinkCountingCommand())
 
