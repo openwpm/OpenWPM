@@ -1,0 +1,439 @@
+{
+    "http://google.com": {},
+    "http://youtube.com": {},
+    "http://facebook.com": {
+        "static.xx.fbcdn.net": {
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasTotal": 2
+        }
+    },
+    "http://amazonaws.com": {},
+    "http://microsoft.com": {
+        "microsoft.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        },
+        "fpt.microsoft.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "HTMLCanvasElement.setAttribute": 1,
+            "CanvasRenderingContext2D.font": 1,
+            "CanvasRenderingContext2D.fillStyle": 2,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasRenderingContext2D.fillText": 1,
+            "CanvasTotal": 8
+        }
+    },
+    "http://twitter.com": {},
+    "http://baidu.com": {},
+    "http://instagram.com": {
+        "static.cdninstagram.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasTotal": 2
+        }
+    },
+    "http://cloudflare.com": {},
+    "http://apple.com": {
+        "apple.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://linkedin.com": {},
+    "http://netflix.com": {},
+    "http://bilibili.com": {
+        "s1.hdslb.com": {
+            "HTMLCanvasElement.getContext": 10,
+            "HTMLCanvasElement.width": 2,
+            "HTMLCanvasElement.height": 2,
+            "HTMLCanvasElement.style": 1,
+            "CanvasRenderingContext2D.rect": 2,
+            "CanvasRenderingContext2D.isPointInPath": 1,
+            "CanvasRenderingContext2D.textBaseline": 1,
+            "CanvasRenderingContext2D.fillStyle": 8,
+            "CanvasRenderingContext2D.fillRect": 2,
+            "CanvasRenderingContext2D.font": 2,
+            "CanvasRenderingContext2D.fillText": 2,
+            "CanvasRenderingContext2D.globalCompositeOperation": 1,
+            "CanvasRenderingContext2D.arc": 5,
+            "CanvasRenderingContext2D.fill": 4,
+            "HTMLCanvasElement.toDataURL": 3,
+            "CanvasTotal": 46
+        }
+    },
+    "http://wikipedia.org": {},
+    "http://live.com": {},
+    "http://qq.com": {},
+    "http://amazon.com": {},
+    "http://azure.com": {
+        "azure.microsoft.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://yahoo.com": {
+        "pagead2.googlesyndication.com": {
+            "HTMLCanvasElement.getContext": 4,
+            "CanvasTotal": 4
+        },
+        "s0.2mdn.net": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://bing.com": {},
+    "http://doubleclick.net": {},
+    "http://googlevideo.com": {},
+    "http://reddit.com": {
+        "redditstatic.com": {
+            "HTMLCanvasElement.getContext": 4,
+            "HTMLCanvasElement.width": 1,
+            "HTMLCanvasElement.height": 1,
+            "CanvasRenderingContext2D.fillStyle": 1,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasTotal": 8
+        }
+    },
+    "http://pinterest.com": {},
+    "http://wordpress.org": {
+        "ordpress.org": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasRenderingContext2D.textBaseline": 2,
+            "CanvasRenderingContext2D.font": 2,
+            "HTMLCanvasElement.width": 8,
+            "HTMLCanvasElement.height": 8,
+            "CanvasRenderingContext2D.fillText": 8,
+            "HTMLCanvasElement.toDataURL": 8,
+            "CanvasTotal": 37
+        }
+    },
+    "http://office.com": {},
+    "http://whatsapp.com": {},
+    "http://youtu.be": {},
+    "http://mail.ru": {
+        "home.imgsmail.ru": {
+            "HTMLCanvasElement.width": 1,
+            "HTMLCanvasElement.height": 1,
+            "CanvasTotal": 2
+        }
+    },
+    "http://fastly.net": {},
+    "http://zoom.us": {},
+    "http://adobe.com": {
+        "adobe.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasRenderingContext2D.fillStyle": 4,
+            "CanvasRenderingContext2D.font": 1,
+            "CanvasRenderingContext2D.textBaseline": 1,
+            "CanvasRenderingContext2D.fillText": 2,
+            "CanvasRenderingContext2D.fillRect": 3,
+            "HTMLCanvasElement.toDataURL": 1,
+            "CanvasRenderingContext2D.getImageData": 1,
+            "CanvasTotal": 15
+        },
+        "assets.adobedtm.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://vimeo.com": {
+        "ebsdk.appsflyer.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://yandex.ru": {},
+    "http://openai.com": {
+        "f.vimeocdn.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "HTMLCanvasElement.toDataURL": 2,
+            "CanvasTotal": 4
+        }
+    },
+    "http://wordpress.com": {},
+    "http://gandi.net": {},
+    "http://sharepoint.com": {
+        "microsoft.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://intuit.com": {
+        "intuit.com": {
+            "HTMLCanvasElement.width": 1,
+            "HTMLCanvasElement.height": 1,
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasRenderingContext2D.fillStyle": 1,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasTotal": 6
+        }
+    },
+    "http://goo.gl": {},
+    "http://vk.com": {
+        "st6-22.vk.com": {
+            "HTMLCanvasElement.getContext": 8,
+            "HTMLCanvasElement.width": 1,
+            "HTMLCanvasElement.height": 1,
+            "HTMLCanvasElement.style": 1,
+            "CanvasRenderingContext2D.rect": 2,
+            "CanvasRenderingContext2D.isPointInPath": 1,
+            "CanvasRenderingContext2D.textBaseline": 1,
+            "CanvasRenderingContext2D.fillStyle": 7,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasRenderingContext2D.font": 2,
+            "CanvasRenderingContext2D.fillText": 2,
+            "CanvasRenderingContext2D.globalCompositeOperation": 1,
+            "CanvasRenderingContext2D.arc": 5,
+            "CanvasRenderingContext2D.fill": 4,
+            "HTMLCanvasElement.toDataURL": 2,
+            "CanvasTotal": 39
+        }
+    },
+    "http://bit.ly": {},
+    "http://windows.net": {
+        "dotnet.microsoft.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://taobao.com": {
+        "g.alicdn.com": {
+            "HTMLCanvasElement.getContext": 6,
+            "HTMLCanvasElement.height": 2,
+            "HTMLCanvasElement.width": 2,
+            "HTMLCanvasElement.style": 2,
+            "CanvasRenderingContext2D.textBaseline": 2,
+            "CanvasRenderingContext2D.fillStyle": 6,
+            "CanvasRenderingContext2D.fillRect": 2,
+            "CanvasRenderingContext2D.font": 4,
+            "CanvasRenderingContext2D.fillText": 4,
+            "HTMLCanvasElement.toDataURL": 2,
+            "CanvasTotal": 32
+        },
+        "assets.alicdn.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "HTMLCanvasElement.height": 1,
+            "HTMLCanvasElement.width": 1,
+            "HTMLCanvasElement.style": 1,
+            "CanvasRenderingContext2D.textBaseline": 1,
+            "CanvasRenderingContext2D.fillStyle": 3,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasRenderingContext2D.font": 2,
+            "CanvasRenderingContext2D.fillText": 2,
+            "HTMLCanvasElement.toDataURL": 1,
+            "CanvasTotal": 14
+        }
+    },
+    "http://tiktok.com": {
+        "tiktok.com": {
+            "HTMLCanvasElement.getContext": 7,
+            "CanvasRenderingContext2D.fillStyle": 8,
+            "CanvasRenderingContext2D.font": 5,
+            "CanvasRenderingContext2D.textBaseline": 1,
+            "CanvasRenderingContext2D.fillText": 6,
+            "CanvasRenderingContext2D.fillRect": 5,
+            "HTMLCanvasElement.toDataURL": 5,
+            "CanvasRenderingContext2D.getImageData": 1,
+            "HTMLCanvasElement.width": 4,
+            "HTMLCanvasElement.height": 4,
+            "HTMLCanvasElement.style": 2,
+            "CanvasRenderingContext2D.strokeStyle": 2,
+            "CanvasRenderingContext2D.arc": 2,
+            "CanvasRenderingContext2D.stroke": 2,
+            "CanvasTotal": 54
+        },
+        "s20.tiktokcdn.com": {
+            "HTMLCanvasElement.width": 15,
+            "HTMLCanvasElement.height": 33,
+            "HTMLCanvasElement.getContext": 18,
+            "CanvasRenderingContext2D.font": 90,
+            "CanvasRenderingContext2D.fillStyle": 12,
+            "CanvasRenderingContext2D.fillText": 11,
+            "CanvasRenderingContext2D.getImageData": 36,
+            "CanvasRenderingContext2D.textBaseline": 2,
+            "HTMLCanvasElement.toDataURL": 5,
+            "CanvasRenderingContext2D.fillRect": 2,
+            "CanvasRenderingContext2D.fill": 1,
+            "CanvasRenderingContext2D.shadowOffsetX": 1,
+            "CanvasRenderingContext2D.shadowOffsetY": 1,
+            "CanvasRenderingContext2D.shadowBlur": 1,
+            "CanvasRenderingContext2D.shadowColor": 1,
+            "CanvasRenderingContext2D.measureText": 79,
+            "CanvasTotal": 308
+        },
+        "lf16-tiktok-web.tiktokcdn-us.com": {
+            "HTMLCanvasElement.width": 2,
+            "HTMLCanvasElement.height": 2,
+            "HTMLCanvasElement.getContext": 4,
+            "CanvasRenderingContext2D.fillStyle": 2,
+            "CanvasRenderingContext2D.fillRect": 2,
+            "HTMLCanvasElement.setAttribute": 21,
+            "CanvasTotal": 33
+        },
+        "sf16-website-login.neutral.ttwstatic.com": {
+            "HTMLCanvasElement.width": 3,
+            "HTMLCanvasElement.height": 3,
+            "HTMLCanvasElement.getContext": 7,
+            "CanvasRenderingContext2D.font": 5,
+            "CanvasRenderingContext2D.fillText": 5,
+            "CanvasRenderingContext2D.shadowBlur": 3,
+            "CanvasRenderingContext2D.arc": 5,
+            "CanvasRenderingContext2D.stroke": 5,
+            "HTMLCanvasElement.toDataURL": 3,
+            "CanvasRenderingContext2D.getImageData": 3,
+            "CanvasRenderingContext2D.createLinearGradient": 4,
+            "CanvasRenderingContext2D.fillStyle": 8,
+            "CanvasRenderingContext2D.fillRect": 2,
+            "CanvasRenderingContext2D.textBaseline": 4,
+            "CanvasRenderingContext2D.strokeStyle": 2,
+            "CanvasTotal": 62
+        }
+    },
+    "http://google-analytics.com": {},
+    "http://googledomains.com": {
+        "domains.google": {
+            "HTMLCanvasElement.width": 1,
+            "HTMLCanvasElement.height": 1,
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasRenderingContext2D.fillStyle": 1,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasTotal": 6
+        }
+    },
+    "http://xvideos.com": {},
+    "http://msn.com": {},
+    "http://mozilla.org": {},
+    "http://office365.com": {
+        "microsoft.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        },
+        "fpt.microsoft.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "HTMLCanvasElement.setAttribute": 1,
+            "CanvasRenderingContext2D.font": 1,
+            "CanvasRenderingContext2D.fillStyle": 2,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasRenderingContext2D.fillText": 1,
+            "CanvasTotal": 8
+        }
+    },
+    "http://pornhub.com": {
+        "static.trafficjunky.com": {
+            "HTMLCanvasElement.width": 3,
+            "HTMLCanvasElement.height": 3,
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasRenderingContext2D.rect": 2,
+            "CanvasRenderingContext2D.isPointInPath": 1,
+            "CanvasRenderingContext2D.globalCompositeOperation": 1,
+            "CanvasRenderingContext2D.fillStyle": 7,
+            "CanvasRenderingContext2D.arc": 5,
+            "CanvasRenderingContext2D.fill": 4,
+            "HTMLCanvasElement.toDataURL": 2,
+            "CanvasRenderingContext2D.textBaseline": 1,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasRenderingContext2D.font": 2,
+            "CanvasRenderingContext2D.fillText": 2,
+            "CanvasTotal": 35
+        }
+    },
+    "http://weibo.com": {},
+    "http://cloudflare.net": {
+        "idgets.q4app.com": {
+            "HTMLCanvasElement.id": 1,
+            "HTMLCanvasElement.setAttribute": 1,
+            "HTMLCanvasElement.mozOpaque": 1,
+            "HTMLCanvasElement.getContext": 8,
+            "HTMLCanvasElement.width": 16,
+            "HTMLCanvasElement.height": 16,
+            "HTMLCanvasElement.style": 2,
+            "CanvasRenderingContext2D.save": 34,
+            "CanvasRenderingContext2D.restore": 28,
+            "CanvasRenderingContext2D.scale": 8,
+            "CanvasRenderingContext2D.rotate": 1,
+            "CanvasRenderingContext2D.fillStyle": 9,
+            "CanvasRenderingContext2D.fillRect": 1,
+            "CanvasRenderingContext2D.strokeStyle": 1,
+            "CanvasRenderingContext2D.lineWidth": 3,
+            "CanvasRenderingContext2D.lineCap": 1,
+            "CanvasRenderingContext2D.lineJoin": 1,
+            "CanvasRenderingContext2D.miterLimit": 1,
+            "CanvasRenderingContext2D.globalCompositeOperation": 1,
+            "CanvasRenderingContext2D.font": 3,
+            "CanvasRenderingContext2D.setLineDash": 1,
+            "CanvasRenderingContext2D.lineDashOffset": 1,
+            "HTMLCanvasElement.removeAttribute": 1,
+            "CanvasRenderingContext2D.getImageData": 4,
+            "CanvasRenderingContext2D.clip": 4,
+            "CanvasRenderingContext2D.fill": 5,
+            "CanvasRenderingContext2D.createImageData": 2,
+            "CanvasRenderingContext2D.putImageData": 124,
+            "CanvasRenderingContext2D.fillText": 24,
+            "CanvasTotal": 303
+        }
+    },
+    "http://spotify.com": {},
+    "http://paypal.com": {},
+    "http://icloud.com": {
+        "icloud.com": {
+            "HTMLCanvasElement.getContext": 1,
+            "HTMLCanvasElement.toDataURL": 1,
+            "CanvasTotal": 2
+        }
+    },
+    "http://nih.gov": {
+        "cdn.jsdelivr.net": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://canva.com": {
+        "canva.com": {
+            "HTMLCanvasElement.transferControlToOffscreen": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://fandom.com": {},
+    "http://nic.ru": {
+        "nic.ru": {
+            "HTMLCanvasElement.width": 6,
+            "HTMLCanvasElement.height": 6,
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasRenderingContext2D.rect": 4,
+            "CanvasRenderingContext2D.isPointInPath": 2,
+            "CanvasRenderingContext2D.globalCompositeOperation": 2,
+            "CanvasRenderingContext2D.fillStyle": 14,
+            "CanvasRenderingContext2D.arc": 10,
+            "CanvasRenderingContext2D.fill": 8,
+            "HTMLCanvasElement.toDataURL": 4,
+            "CanvasRenderingContext2D.textBaseline": 2,
+            "CanvasRenderingContext2D.fillRect": 2,
+            "CanvasRenderingContext2D.font": 4,
+            "CanvasRenderingContext2D.fillText": 4,
+            "CanvasTotal": 70
+        },
+        "yastatic.net": {
+            "HTMLCanvasElement.getContext": 1,
+            "CanvasTotal": 1
+        }
+    },
+    "http://skype.com": {
+        "secure.skypeassets.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasTotal": 2
+        }
+    },
+    "http://jd.com": {},
+    "http://europa.eu": {},
+    "http://nytimes.com": {
+        "dd.nytimes.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasTotal": 2
+        },
+        "pagead2.googlesyndication.com": {
+            "HTMLCanvasElement.getContext": 2,
+            "CanvasTotal": 2
+        }
+    },
+    "http://dropbox.com": {},
+    "http://opera.com": {}
+}

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 import sqlite3
-
+import functools
 from pandas import read_sql_query
 
 # from .domain import get_ps_plus_1
@@ -188,25 +188,106 @@ def get_set_of_script_ps1s_from_call_stack(script_urls):
 def add_col_set_of_script_ps1s_from_call_stack(js_df):
     js_df['stack_script_ps1s'] =\
         js_df['stack_scripts'].map(get_set_of_script_ps1s_from_call_stack)
+    
+def get_fingerprinting(con, visit_ids):
+    visit_ids_str = "(%s)" % ",".join(str(x) for x in visit_ids)
 
+    qry = """SELECT r.id, r.incognito, r.browser_id, r.visit_id,
+                r.extension_session_uuid, r.event_ordinal, r.page_scoped_event_ordinal, r.window_id,
+                r.tab_id, r.frame_id, r.script_url, r.script_line, r.script_col,
+                r.func_name, r.script_loc_eval, r.document_url, r.top_level_url,
+                r.call_stack, r.symbol, r.operation, r.value, r.arguments, r.time_stamp, sv.site_url, sv.site_rank
+                FROM javascript as r
+            LEFT JOIN site_visits as sv
+            ON r.visit_id = sv.visit_id
+            WHERE r.visit_id in %s;""" % visit_ids_str
+
+    return read_sql_query(qry, con)
+
+
+def create_fingerprint_json(fingerprint_df, fingerprint_type):
+    if fingerprint_type == "canvas":
+        identifier = set(["CanvasRenderingContext2D", "HTMLCanvasElement"])
+    elif fingerprint_type == "webRTC":
+        identifier = set(["RTCPeerConnection"])
+    elif fingerprint_type == "font":
+        identifier = set(["CanvasRenderingContext2D.font"])
+    else:
+        raise Exception("Pick either 'canvas', 'webRTC', or 'font' for fingerprint_type")
+    
+    outter_dict = {}
+    for index, row in fingerprint_df.iterrows():
+        script_url = get_host_from_url(row['script_url'])
+        if fingerprint_type == "font":
+            split_identifier =  row['symbol']
+        else:
+            split_identifier = row['symbol'].split('.')[0]
+        if row['site_url'] not in outter_dict:
+            middle_dict = {}
+            outter_dict[row['site_url']] = middle_dict
+            inner_dict = {}
+            middle_dict[script_url] = inner_dict
+            if split_identifier in identifier:
+                inner_dict[row['symbol']] = 1
+        else:
+            middle_dict = outter_dict[row['site_url']]
+            if script_url not in middle_dict:
+                inner_dict = {}
+                middle_dict[script_url] = inner_dict
+            else:
+                inner_dict = middle_dict[script_url]
+                if split_identifier in identifier:
+                    if row['symbol'] not in inner_dict:
+                        inner_dict[row['symbol']] = 1
+                    else:
+                        inner_dict[row['symbol']] += 1
+    
+    return remove_empty_dicts(outter_dict, fingerprint_type)
+
+
+def remove_empty_dicts(outter_dict, fingerprint_type):
+    outter_dict_copy = outter_dict.copy()
+    for host_url_key in outter_dict_copy:
+        middle_dict_copy = outter_dict_copy[host_url_key].copy()
+        for script_url_key in middle_dict_copy:
+            if len(middle_dict_copy[script_url_key]) == 0:
+                del outter_dict[host_url_key][script_url_key]
+    
+    return sum_fingerprint(outter_dict, fingerprint_type)
+
+
+def sum_fingerprint(outter_dict, fingerprint_type):
+    if fingerprint_type == 'canvas':
+        identifier = 'CanvasTotal'
+    elif fingerprint_type == 'webRTC':
+        identifier = 'RTCPeerConnection'
+    elif fingerprint_type == "font":
+        identifier = 'CanvasRenderingContext2D.font'
+
+    outter_dict_copy = outter_dict.copy()
+    for host_url_key in outter_dict_copy:
+        middle_dict_copy = outter_dict_copy[host_url_key].copy()
+        for script_url_key in middle_dict_copy:
+            inner_dict_copy = middle_dict_copy[script_url_key].copy()
+            total_fingerprint = 0
+            for canvasElement in inner_dict_copy:
+                total_fingerprint += inner_dict_copy[canvasElement]
+            outter_dict[host_url_key][script_url_key][identifier] = total_fingerprint
+    
+    return write_to_json(outter_dict, fingerprint_type)
+
+
+def write_to_json(outter_dict, fingerprint_type):
+    with open("fingerprinting_analysis_" + fingerprint_type + ".json", "w") as write_file:
+        json.dump(outter_dict, write_file, indent=4)
 
 if __name__ == '__main__':
     # pass
-    sqliteConnection = sqlite3.connect('datadir/stateful/crawl-data-ublock.sqlite')
+    sqliteConnection = sqlite3.connect('datadir/stateful/crawl-data-vanilla.sqlite')
     cursor = sqliteConnection.cursor()
-    # responses = get_responses_from_visits(sqliteConnection, [8869605158283901])
-    # responses.to_csv('responses_ublock.csv', index=False)
-    print(get_host_from_url('https://googleads.g.doubleclick.net/pagead/id?slf_rd=1'))
-
-
-    # with open('responses.csv', 'r') as t1, open('responses_ublock.csv', 'r') as t2:
-    #     fileone = t1.readlines()
-    #     filetwo = t2.readlines()
-
-    # with open('responses_diff.csv', 'w') as outFile:
-    #     for line in filetwo:
-    #         if line not in fileone:
-    #             outFile.write(line)
-    # print(type(responses))
-    # print(get_set_of_script_hosts_from_call_stack("Aj@https://www.google.com/?gws_rd=ssl:113:405;nullIj@https://www.google.com/?gws_rd=ssl:113:618;nullnull@https://www.google.com/?gws_rd=ssl:113:825;nullnull@https://www.google.com/?gws_rd=ssl:113:920;nullnull@https://www.google.com/?gws_rd=ssl:115:3;null"))
-
+    ids = [id[0] for id in cursor.execute("SELECT visit_id FROM javascript")]
+    ids = list(set(ids))
+    fingerprint_df = get_fingerprinting(sqliteConnection, ids)
+    create_fingerprint_json(fingerprint_df, "canvas")
+    create_fingerprint_json(fingerprint_df, "webRTC")
+    create_fingerprint_json(fingerprint_df, "font")

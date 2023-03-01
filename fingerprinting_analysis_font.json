@@ -1,0 +1,122 @@
+{
+    "http://google.com": {},
+    "http://youtube.com": {},
+    "http://facebook.com": {},
+    "http://amazonaws.com": {},
+    "http://microsoft.com": {
+        "fpt.microsoft.com": {
+            "CanvasRenderingContext2D.font": 1
+        }
+    },
+    "http://twitter.com": {},
+    "http://baidu.com": {},
+    "http://instagram.com": {},
+    "http://cloudflare.com": {},
+    "http://apple.com": {},
+    "http://linkedin.com": {},
+    "http://netflix.com": {},
+    "http://bilibili.com": {
+        "s1.hdslb.com": {
+            "CanvasRenderingContext2D.font": 2
+        }
+    },
+    "http://wikipedia.org": {},
+    "http://live.com": {},
+    "http://qq.com": {},
+    "http://amazon.com": {},
+    "http://azure.com": {},
+    "http://yahoo.com": {},
+    "http://bing.com": {},
+    "http://doubleclick.net": {},
+    "http://googlevideo.com": {},
+    "http://reddit.com": {},
+    "http://pinterest.com": {},
+    "http://wordpress.org": {
+        "ordpress.org": {
+            "CanvasRenderingContext2D.font": 2
+        }
+    },
+    "http://office.com": {},
+    "http://whatsapp.com": {},
+    "http://youtu.be": {},
+    "http://mail.ru": {},
+    "http://fastly.net": {},
+    "http://zoom.us": {},
+    "http://adobe.com": {
+        "adobe.com": {
+            "CanvasRenderingContext2D.font": 1
+        }
+    },
+    "http://vimeo.com": {},
+    "http://yandex.ru": {},
+    "http://openai.com": {},
+    "http://wordpress.com": {},
+    "http://gandi.net": {},
+    "http://sharepoint.com": {},
+    "http://intuit.com": {},
+    "http://goo.gl": {},
+    "http://vk.com": {
+        "st6-22.vk.com": {
+            "CanvasRenderingContext2D.font": 2
+        }
+    },
+    "http://bit.ly": {},
+    "http://windows.net": {},
+    "http://taobao.com": {
+        "g.alicdn.com": {
+            "CanvasRenderingContext2D.font": 4
+        },
+        "assets.alicdn.com": {
+            "CanvasRenderingContext2D.font": 2
+        }
+    },
+    "http://tiktok.com": {
+        "tiktok.com": {
+            "CanvasRenderingContext2D.font": 5
+        },
+        "s20.tiktokcdn.com": {
+            "CanvasRenderingContext2D.font": 90
+        },
+        "sf16-website-login.neutral.ttwstatic.com": {
+            "CanvasRenderingContext2D.font": 5
+        }
+    },
+    "http://google-analytics.com": {},
+    "http://googledomains.com": {},
+    "http://xvideos.com": {},
+    "http://msn.com": {},
+    "http://mozilla.org": {},
+    "http://office365.com": {
+        "fpt.microsoft.com": {
+            "CanvasRenderingContext2D.font": 1
+        }
+    },
+    "http://pornhub.com": {
+        "static.trafficjunky.com": {
+            "CanvasRenderingContext2D.font": 2
+        }
+    },
+    "http://weibo.com": {},
+    "http://cloudflare.net": {
+        "idgets.q4app.com": {
+            "CanvasRenderingContext2D.font": 3
+        }
+    },
+    "http://spotify.com": {},
+    "http://paypal.com": {},
+    "http://icloud.com": {},
+    "http://nih.gov": {},
+    "http://canva.com": {},
+    "http://fandom.com": {},
+    "http://nic.ru": {
+        "nic.ru": {
+            "CanvasRenderingContext2D.font": 4
+        }
+    },
+    "http://skype.com": {},
+    "http://jd.com": {},
+    "http://europa.eu": {},
+    "http://nytimes.com": {},
+    "http://dropbox.com": {},
+    "http://opera.com": {}
+}
