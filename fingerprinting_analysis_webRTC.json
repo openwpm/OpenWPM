@@ -49,7 +49,7 @@
             "RTCPeerConnection.createDataChannel": 1,
             "RTCPeerConnection.createOffer": 1,
             "RTCPeerConnection.setLocalDescription": 1,
-            "RTCPeerConnection": 4
+            "RTCPeerConnectionTotal": 4
         },
         "sf16-website-login.neutral.ttwstatic.com": {
             "RTCPeerConnection.onicegatheringstatechange": 1,
@@ -59,7 +59,7 @@
             "RTCPeerConnection.setLocalDescription": 1,
             "RTCPeerConnection.iceGatheringState": 2,
             "RTCPeerConnection.close": 1,
-            "RTCPeerConnection": 8
+            "RTCPeerConnectionTotal": 8
         }
     },
     "http://google-analytics.com": {},
@@ -70,7 +70,7 @@
             "RTCPeerConnection.onicecandidate": 1,
             "RTCPeerConnection.createOffer": 1,
             "RTCPeerConnection.setLocalDescription": 1,
-            "RTCPeerConnection": 4
+            "RTCPeerConnectionTotal": 4
         }
     },
     "http://msn.com": {},

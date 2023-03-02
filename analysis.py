@@ -1,10 +1,14 @@
+##############################
+#MAKE SURE TO RUN THIS FILE WITH SUDO  :) 
+##############################
+
+
 import json
 from datetime import datetime
 import sqlite3
-import functools
 from pandas import read_sql_query
 
-# from .domain import get_ps_plus_1
+from domain_utils import get_ps_plus_1
 
 
 def get_set_of_script_hosts_from_call_stack(call_stack):
@@ -189,6 +193,21 @@ def add_col_set_of_script_ps1s_from_call_stack(js_df):
     js_df['stack_script_ps1s'] =\
         js_df['stack_scripts'].map(get_set_of_script_ps1s_from_call_stack)
     
+
+def get_third_parties(con, visit_ids):
+    visit_ids_str = "(%s)" % ",".join(str(x) for x in visit_ids)
+
+    qry = """SELECT r.id, r.incognito, r.browser_id, r.visit_id,
+                r.extension_session_uuid, r.event_ordinal, r.window_id,
+                r.tab_id, r.frame_id, r.url, r.top_level_url,
+                sv.site_url, sv.site_rank
+                FROM http_requests as r
+            LEFT JOIN site_visits as sv
+            ON r.visit_id = sv.visit_id
+            WHERE r.visit_id in %s;""" % visit_ids_str
+
+    return read_sql_query(qry, con)
+    
 def get_fingerprinting(con, visit_ids):
     visit_ids_str = "(%s)" % ",".join(str(x) for x in visit_ids)
 
@@ -204,6 +223,48 @@ def get_fingerprinting(con, visit_ids):
 
     return read_sql_query(qry, con)
 
+def create_third_party_helper(first_url, second_url):
+    first_word = first_url.split(".")[0]
+    second_word = second_url.split(".")[0]
+    return first_word in second_word or second_word in first_word
+
+def create_third_party_json(third_party_df):
+    third_party_collection = {}
+    for index, row in third_party_df.iterrows():
+        third_party_url = get_host_from_url(row['url'])
+        first_party_url = get_host_from_url(row['site_url'])
+        third_party_url_plus_1 = get_ps_plus_1(third_party_url)
+        first_party_url_plus_1 = get_ps_plus_1(first_party_url)
+        if first_party_url not in third_party_collection:
+            third_parties = {}
+            third_party_collection[first_party_url] = third_parties
+            if third_party_url != first_party_url and third_party_url_plus_1 != first_party_url_plus_1 and \
+                not create_third_party_helper(first_party_url,third_party_url):
+                third_parties[third_party_url] = 1
+        else:
+            third_parties = third_party_collection[first_party_url]
+            if third_party_url == first_party_url or third_party_url_plus_1 == first_party_url_plus_1 or \
+                create_third_party_helper(first_party_url,third_party_url):
+                continue
+            elif third_party_url not in third_parties:
+                third_parties[third_party_url] = 1
+            else:
+                third_parties[third_party_url] += 1
+    
+    return sum_third_parties(third_party_collection)
+
+
+def sum_third_parties(third_party_collection):
+    third_party_collection_copy = third_party_collection.copy()
+    for first_party_url in third_party_collection_copy:
+        third_parties_copy= third_party_collection_copy[first_party_url].copy()
+        total_number_of_third_parties = 0
+        for third_party_url in third_parties_copy:
+            total_number_of_third_parties += third_parties_copy[third_party_url]
+        third_party_collection[first_party_url]["TotalThirdParties"] = total_number_of_third_parties
+    
+    third_party_collection = sorted(third_party_collection.items(), key=lambda x: x[1]["TotalThirdParties"], reverse=True)
+    return write_to_json_third_parties(third_party_collection)
 
 def create_fingerprint_json(fingerprint_df, fingerprint_type):
     if fingerprint_type == "canvas":
@@ -252,7 +313,12 @@ def remove_empty_dicts(outter_dict, fingerprint_type):
         for script_url_key in middle_dict_copy:
             if len(middle_dict_copy[script_url_key]) == 0:
                 del outter_dict[host_url_key][script_url_key]
-    
+
+    outter_dict_copy = outter_dict.copy()
+    for host_url_key in outter_dict_copy:
+        if (len(outter_dict_copy[host_url_key])) == 0:
+            del outter_dict[host_url_key]
+
     return sum_fingerprint(outter_dict, fingerprint_type)
 
 
@@ -260,9 +326,9 @@ def sum_fingerprint(outter_dict, fingerprint_type):
     if fingerprint_type == 'canvas':
         identifier = 'CanvasTotal'
     elif fingerprint_type == 'webRTC':
-        identifier = 'RTCPeerConnection'
+        identifier = 'RTCPeerConnectionTotal'
     elif fingerprint_type == "font":
-        identifier = 'CanvasRenderingContext2D.font'
+        identifier = 'FontTotal'
 
     outter_dict_copy = outter_dict.copy()
     for host_url_key in outter_dict_copy:
@@ -273,21 +339,46 @@ def sum_fingerprint(outter_dict, fingerprint_type):
             for canvasElement in inner_dict_copy:
                 total_fingerprint += inner_dict_copy[canvasElement]
             outter_dict[host_url_key][script_url_key][identifier] = total_fingerprint
-    
-    return write_to_json(outter_dict, fingerprint_type)
 
+    outter_dict_copy = outter_dict.copy()
+    for host_url_key in outter_dict_copy:
+        outter_dict[host_url_key] = sorted(outter_dict[host_url_key].items(), key=lambda x: x[1][identifier], reverse=True)
 
-def write_to_json(outter_dict, fingerprint_type):
+    # third_party_collection = sorted(third_party_collection.items(), key=lambda x: x[1]["TotalThirdParties"], reverse=True)
+    return write_to_json_fingerprinting(outter_dict, fingerprint_type)
+
+def write_to_json_fingerprinting(outter_dict, fingerprint_type):
     with open("fingerprinting_analysis_" + fingerprint_type + ".json", "w") as write_file:
         json.dump(outter_dict, write_file, indent=4)
 
+def write_to_json_third_parties(third_party_collection):
+    with open("third_parties.json", "w") as write_file:
+        json.dump(third_party_collection, write_file, indent=4)
+
 if __name__ == '__main__':
-    # pass
+    # Connect to DB
     sqliteConnection = sqlite3.connect('datadir/stateful/crawl-data-vanilla.sqlite')
     cursor = sqliteConnection.cursor()
+    
+    #Grab visit ids for each website from fingerprinting table
     ids = [id[0] for id in cursor.execute("SELECT visit_id FROM javascript")]
     ids = list(set(ids))
+
+    #Conduct fingerprinting analysis 
     fingerprint_df = get_fingerprinting(sqliteConnection, ids)
     create_fingerprint_json(fingerprint_df, "canvas")
     create_fingerprint_json(fingerprint_df, "webRTC")
     create_fingerprint_json(fingerprint_df, "font")
+
+    #Grab ids from http_requests table
+    ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
+    ids = list(set(ids))
+
+    #Conduct third party URL analyses
+    third_party_df = get_third_parties(sqliteConnection, ids)
+    create_third_party_json(third_party_df)
+
+
+    # print(get_ps_plus_1("vs.aws.haha.amazon.com"))
+    # print(get_host_from_url("vs.aws.haha.amazon.com/hello/hi"))
+    # print(create_third_party_helper("azure.com", "azure.microsoft.com"))
