@@ -1,0 +1,218 @@
+{
+    "office.com": {
+        "TotalThirdParties": 952
+    },
+    "twitter.com": {
+        "TotalThirdParties": 245
+    },
+    "amazonaws.com": {
+        "TotalThirdParties": 186
+    },
+    "spotify.com": {
+        "TotalThirdParties": 157
+    },
+    "reddit.com": {
+        "TotalThirdParties": 106
+    },
+    "amazon.com": {
+        "TotalThirdParties": 105
+    },
+    "dropbox.com": {
+        "TotalThirdParties": 104
+    },
+    "fastly.net": {
+        "TotalThirdParties": 103
+    },
+    "sharepoint.com": {
+        "TotalThirdParties": 103
+    },
+    "yahoo.com": {
+        "TotalThirdParties": 101
+    },
+    "office365.com": {
+        "TotalThirdParties": 98
+    },
+    "taobao.com": {
+        "TotalThirdParties": 95
+    },
+    "yandex.ru": {
+        "TotalThirdParties": 85
+    },
+    "fandom.com": {
+        "TotalThirdParties": 79
+    },
+    "nytimes.com": {
+        "TotalThirdParties": 79
+    },
+    "pornhub.com": {
+        "TotalThirdParties": 68
+    },
+    "mail.ru": {
+        "TotalThirdParties": 66
+    },
+    "youtu.be": {
+        "TotalThirdParties": 64
+    },
+    "xvideos.com": {
+        "TotalThirdParties": 62
+    },
+    "myfritz.net": {
+        "TotalThirdParties": 62
+    },
+    "blogspot.com": {
+        "TotalThirdParties": 61
+    },
+    "qq.com": {
+        "TotalThirdParties": 60
+    },
+    "msn.com": {
+        "TotalThirdParties": 59
+    },
+    "youtube.com": {
+        "TotalThirdParties": 58
+    },
+    "bilibili.com": {
+        "TotalThirdParties": 57
+    },
+    "indows.net": {
+        "TotalThirdParties": 51
+    },
+    "live.com": {
+        "TotalThirdParties": 47
+    },
+    "baidu.com": {
+        "TotalThirdParties": 46
+    },
+    "tiktok.com": {
+        "TotalThirdParties": 46
+    },
+    "cloudflare.net": {
+        "TotalThirdParties": 40
+    },
+    "hatsapp.com": {
+        "TotalThirdParties": 36
+    },
+    "ordpress.com": {
+        "TotalThirdParties": 36
+    },
+    "bit.ly": {
+        "TotalThirdParties": 36
+    },
+    "netflix.com": {
+        "TotalThirdParties": 35
+    },
+    "adobe.com": {
+        "TotalThirdParties": 33
+    },
+    "azure.com": {
+        "TotalThirdParties": 32
+    },
+    "facebook.com": {
+        "TotalThirdParties": 30
+    },
+    "googledomains.com": {
+        "TotalThirdParties": 30
+    },
+    "doubleclick.net": {
+        "TotalThirdParties": 29
+    },
+    "linkedin.com": {
+        "TotalThirdParties": 27
+    },
+    "vimeo.com": {
+        "TotalThirdParties": 27
+    },
+    "openai.com": {
+        "TotalThirdParties": 27
+    },
+    "goo.gl": {
+        "TotalThirdParties": 27
+    },
+    "skype.com": {
+        "TotalThirdParties": 27
+    },
+    "google-analytics.com": {
+        "TotalThirdParties": 26
+    },
+    "instagram.com": {
+        "TotalThirdParties": 25
+    },
+    "intuit.com": {
+        "TotalThirdParties": 21
+    },
+    "zoom.us": {
+        "TotalThirdParties": 19
+    },
+    "nih.gov": {
+        "TotalThirdParties": 19
+    },
+    "zhihu.com": {
+        "TotalThirdParties": 16
+    },
+    "akamaiedge.net": {
+        "TotalThirdParties": 15
+    },
+    "pinterest.com": {
+        "TotalThirdParties": 15
+    },
+    "jd.com": {
+        "TotalThirdParties": 14
+    },
+    "google.com": {
+        "TotalThirdParties": 13
+    },
+    "yandex.net": {
+        "TotalThirdParties": 13
+    },
+    "apple.com": {
+        "TotalThirdParties": 11
+    },
+    "nic.ru": {
+        "TotalThirdParties": 10
+    },
+    "microsoft.com": {
+        "TotalThirdParties": 9
+    },
+    "paypal.com": {
+        "TotalThirdParties": 8
+    },
+    "canva.com": {
+        "TotalThirdParties": 6
+    },
+    "ordpress.org": {
+        "TotalThirdParties": 5
+    },
+    "eibo.com": {
+        "TotalThirdParties": 5
+    },
+    "b-msedge.net": {
+        "TotalThirdParties": 4
+    },
+    "bing.com": {
+        "TotalThirdParties": 3
+    },
+    "googlevideo.com": {
+        "TotalThirdParties": 3
+    },
+    "vk.com": {
+        "TotalThirdParties": 3
+    },
+    "mozilla.org": {
+        "TotalThirdParties": 3
+    },
+    "edgekey.net": {
+        "TotalThirdParties": 3
+    },
+    "icloud.com": {
+        "TotalThirdParties": 2
+    },
+    "opera.com": {
+        "TotalThirdParties": 2
+    },
+    "t.co": {
+        "TotalThirdParties": 1
+    },
+    "tumblr.com": {
+        "TotalThirdParties": 1
+    }
+}

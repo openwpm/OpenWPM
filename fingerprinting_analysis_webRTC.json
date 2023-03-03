@@ -1,95 +1,55 @@
-{
-    "http://google.com": {},
-    "http://youtube.com": {},
-    "http://facebook.com": {},
-    "http://amazonaws.com": {},
-    "http://microsoft.com": {},
-    "http://twitter.com": {},
-    "http://baidu.com": {},
-    "http://instagram.com": {},
-    "http://cloudflare.com": {},
-    "http://apple.com": {},
-    "http://linkedin.com": {},
-    "http://netflix.com": {},
-    "http://bilibili.com": {},
-    "http://wikipedia.org": {},
-    "http://live.com": {},
-    "http://qq.com": {},
-    "http://amazon.com": {},
-    "http://azure.com": {},
-    "http://yahoo.com": {},
-    "http://bing.com": {},
-    "http://doubleclick.net": {},
-    "http://googlevideo.com": {},
-    "http://reddit.com": {},
-    "http://pinterest.com": {},
-    "http://wordpress.org": {},
-    "http://office.com": {},
-    "http://whatsapp.com": {},
-    "http://youtu.be": {},
-    "http://mail.ru": {},
-    "http://fastly.net": {},
-    "http://zoom.us": {},
-    "http://adobe.com": {},
-    "http://vimeo.com": {},
-    "http://yandex.ru": {},
-    "http://openai.com": {},
-    "http://wordpress.com": {},
-    "http://gandi.net": {},
-    "http://sharepoint.com": {},
-    "http://intuit.com": {},
-    "http://goo.gl": {},
-    "http://vk.com": {},
-    "http://bit.ly": {},
-    "http://windows.net": {},
-    "http://taobao.com": {},
-    "http://tiktok.com": {
-        "s20.tiktokcdn.com": {
-            "RTCPeerConnection.onicecandidate": 1,
-            "RTCPeerConnection.createDataChannel": 1,
-            "RTCPeerConnection.createOffer": 1,
-            "RTCPeerConnection.setLocalDescription": 1,
-            "RTCPeerConnectionTotal": 4
-        },
-        "sf16-website-login.neutral.ttwstatic.com": {
-            "RTCPeerConnection.onicegatheringstatechange": 1,
-            "RTCPeerConnection.onicecandidate": 1,
-            "RTCPeerConnection.createDataChannel": 1,
-            "RTCPeerConnection.createOffer": 1,
-            "RTCPeerConnection.setLocalDescription": 1,
-            "RTCPeerConnection.iceGatheringState": 2,
-            "RTCPeerConnection.close": 1,
-            "RTCPeerConnectionTotal": 8
+[
+    [
+        "http://tiktok.com",
+        {
+            "s20.tiktokcdn.com": {
+                "RTCPeerConnection.onicecandidate": 1,
+                "RTCPeerConnection.createDataChannel": 1,
+                "RTCPeerConnection.createOffer": 1,
+                "RTCPeerConnection.setLocalDescription": 1,
+                "RTCPeerConnectionTotal": 4
+            },
+            "lf16-tiktok-web.tiktokcdn-us.com": {
+                "RTCPeerConnection.onicegatheringstatechange": 1,
+                "RTCPeerConnection.onicecandidate": 1,
+                "RTCPeerConnection.createDataChannel": 1,
+                "RTCPeerConnection.createOffer": 1,
+                "RTCPeerConnection.setLocalDescription": 1,
+                "RTCPeerConnection.iceGatheringState": 2,
+                "RTCPeerConnection.close": 1,
+                "RTCPeerConnectionTotal": 8
+            },
+            "sf16-website-login.neutral.ttwstatic.com": {
+                "RTCPeerConnection.onicegatheringstatechange": 1,
+                "RTCPeerConnection.onicecandidate": 1,
+                "RTCPeerConnection.createDataChannel": 1,
+                "RTCPeerConnection.createOffer": 1,
+                "RTCPeerConnection.setLocalDescription": 1,
+                "RTCPeerConnection.iceGatheringState": 2,
+                "RTCPeerConnection.close": 1,
+                "RTCPeerConnectionTotal": 8
+            }
         }
-    },
-    "http://google-analytics.com": {},
-    "http://googledomains.com": {},
-    "http://xvideos.com": {
-        "static-l3.xvideos-cdn.com": {
-            "RTCPeerConnection.createDataChannel": 1,
-            "RTCPeerConnection.onicecandidate": 1,
-            "RTCPeerConnection.createOffer": 1,
-            "RTCPeerConnection.setLocalDescription": 1,
-            "RTCPeerConnectionTotal": 4
+    ],
+    [
+        "http://xvideos.com",
+        {
+            "static-l3.xvideos-cdn.com": {
+                "RTCPeerConnection.createDataChannel": 1,
+                "RTCPeerConnection.onicecandidate": 1,
+                "RTCPeerConnection.createOffer": 1,
+                "RTCPeerConnection.setLocalDescription": 1,
+                "RTCPeerConnectionTotal": 4
+            }
         }
-    },
-    "http://msn.com": {},
-    "http://mozilla.org": {},
-    "http://office365.com": {},
-    "http://pornhub.com": {},
-    "http://weibo.com": {},
-    "http://cloudflare.net": {},
-    "http://spotify.com": {},
-    "http://paypal.com": {},
-    "http://icloud.com": {},
-    "http://nih.gov": {},
-    "http://canva.com": {},
-    "http://fandom.com": {},
-    "http://nic.ru": {},
-    "http://skype.com": {},
-    "http://jd.com": {},
-    "http://europa.eu": {},
-    "http://nytimes.com": {},
-    "http://dropbox.com": {},
-    "http://opera.com": {}
-}
+    ],
+    [
+        "http://bilibili.com",
+        {
+            "bilibili.com": {
+                "RTCPeerConnection.createDataChannel": 1,
+                "RTCPeerConnectionTotal": 1
+            }
+        }
+    ]
+]

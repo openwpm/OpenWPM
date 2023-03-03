@@ -55,6 +55,10 @@
                 "CanvasRenderingContext2D.font": 4,
                 "CanvasRenderingContext2D.fillText": 4,
                 "CanvasTotal": 70
+            },
+            "yastatic.net": {
+                "HTMLCanvasElement.getContext": 1,
+                "CanvasTotal": 1
             }
         }
     ],
@@ -78,56 +82,51 @@
                 "CanvasRenderingContext2D.stroke": 2,
                 "CanvasTotal": 54
             },
-            "lf16-tiktok-web.tiktokcdn-us.com": {
-                "HTMLCanvasElement.width": 7,
-                "HTMLCanvasElement.height": 7,
-                "HTMLCanvasElement.getContext": 15,
-                "CanvasRenderingContext2D.fillStyle": 18,
-                "CanvasRenderingContext2D.fillRect": 6,
-                "HTMLCanvasElement.setAttribute": 24,
-                "CanvasRenderingContext2D.getImageData": 5,
-                "CanvasRenderingContext2D.font": 9,
-                "CanvasRenderingContext2D.fillText": 9,
-                "CanvasRenderingContext2D.shadowBlur": 5,
-                "CanvasRenderingContext2D.arc": 9,
-                "CanvasRenderingContext2D.stroke": 9,
-                "HTMLCanvasElement.toDataURL": 5,
-                "CanvasRenderingContext2D.createLinearGradient": 8,
-                "CanvasRenderingContext2D.textBaseline": 8,
-                "CanvasRenderingContext2D.strokeStyle": 4,
-                "CanvasTotal": 148
-            },
             "s20.tiktokcdn.com": {
                 "HTMLCanvasElement.width": 15,
                 "HTMLCanvasElement.height": 33,
                 "HTMLCanvasElement.getContext": 18,
+                "CanvasRenderingContext2D.font": 90,
                 "CanvasRenderingContext2D.fillStyle": 12,
-                "CanvasRenderingContext2D.fillRect": 2,
+                "CanvasRenderingContext2D.fillText": 11,
                 "CanvasRenderingContext2D.getImageData": 36,
+                "CanvasRenderingContext2D.textBaseline": 2,
                 "HTMLCanvasElement.toDataURL": 5,
+                "CanvasRenderingContext2D.fillRect": 2,
                 "CanvasRenderingContext2D.fill": 1,
                 "CanvasRenderingContext2D.shadowOffsetX": 1,
                 "CanvasRenderingContext2D.shadowOffsetY": 1,
                 "CanvasRenderingContext2D.shadowBlur": 1,
                 "CanvasRenderingContext2D.shadowColor": 1,
-                "CanvasRenderingContext2D.font": 90,
-                "CanvasRenderingContext2D.fillText": 11,
-                "CanvasRenderingContext2D.textBaseline": 2,
                 "CanvasRenderingContext2D.measureText": 79,
                 "CanvasTotal": 308
             },
+            "lf16-tiktok-web.tiktokcdn-us.com": {
+                "HTMLCanvasElement.width": 2,
+                "HTMLCanvasElement.height": 2,
+                "HTMLCanvasElement.getContext": 4,
+                "CanvasRenderingContext2D.fillStyle": 2,
+                "CanvasRenderingContext2D.fillRect": 2,
+                "HTMLCanvasElement.setAttribute": 21,
+                "CanvasTotal": 33
+            },
             "sf16-website-login.neutral.ttwstatic.com": {
-                "HTMLCanvasElement.width": 1,
-                "HTMLCanvasElement.height": 1,
-                "HTMLCanvasElement.getContext": 3,
-                "CanvasRenderingContext2D.font": 1,
-                "CanvasRenderingContext2D.fillText": 1,
-                "CanvasRenderingContext2D.shadowBlur": 1,
-                "CanvasRenderingContext2D.arc": 1,
-                "CanvasRenderingContext2D.stroke": 1,
-                "HTMLCanvasElement.toDataURL": 1,
-                "CanvasRenderingContext2D.getImageData": 1,
-                "CanvasTotal": 12
+                "HTMLCanvasElement.width": 3,
+                "HTMLCanvasElement.height": 3,
+                "HTMLCanvasElement.getContext": 7,
+                "CanvasRenderingContext2D.font": 5,
+                "CanvasRenderingContext2D.fillText": 5,
+                "CanvasRenderingContext2D.shadowBlur": 3,
+                "CanvasRenderingContext2D.arc": 5,
+                "CanvasRenderingContext2D.stroke": 5,
+                "HTMLCanvasElement.toDataURL": 3,
+                "CanvasRenderingContext2D.getImageData": 3,
+                "CanvasRenderingContext2D.createLinearGradient": 4,
+                "CanvasRenderingContext2D.fillStyle": 8,
+                "CanvasRenderingContext2D.fillRect": 2,
+                "CanvasRenderingContext2D.textBaseline": 4,
+                "CanvasRenderingContext2D.strokeStyle": 2,
+                "CanvasTotal": 62
             }
         }
     ],
@@ -193,6 +192,28 @@
         }
     ],
     [
+        "http://pornhub.com",
+        {
+            "static.trafficjunky.com": {
+                "HTMLCanvasElement.width": 3,
+                "HTMLCanvasElement.height": 3,
+                "HTMLCanvasElement.getContext": 1,
+                "CanvasRenderingContext2D.rect": 2,
+                "CanvasRenderingContext2D.isPointInPath": 1,
+                "CanvasRenderingContext2D.globalCompositeOperation": 1,
+                "CanvasRenderingContext2D.fillStyle": 7,
+                "CanvasRenderingContext2D.arc": 5,
+                "CanvasRenderingContext2D.fill": 4,
+                "HTMLCanvasElement.toDataURL": 2,
+                "CanvasRenderingContext2D.textBaseline": 1,
+                "CanvasRenderingContext2D.fillRect": 1,
+                "CanvasRenderingContext2D.font": 2,
+                "CanvasRenderingContext2D.fillText": 2,
+                "CanvasTotal": 35
+            }
+        }
+    ],
+    [
         "http://taobao.com",
         {
             "g.alicdn.com": {
@@ -247,9 +268,9 @@
         "http://reddit.com",
         {
             "redditstatic.com": {
+                "HTMLCanvasElement.getContext": 4,
                 "HTMLCanvasElement.width": 1,
                 "HTMLCanvasElement.height": 1,
-                "HTMLCanvasElement.getContext": 4,
                 "CanvasRenderingContext2D.fillStyle": 1,
                 "CanvasRenderingContext2D.fillRect": 1,
                 "CanvasTotal": 8
@@ -279,6 +300,19 @@
                 "CanvasRenderingContext2D.fillStyle": 1,
                 "CanvasRenderingContext2D.fillRect": 1,
                 "CanvasTotal": 6
+            }
+        }
+    ],
+    [
+        "http://yahoo.com",
+        {
+            "pagead2.googlesyndication.com": {
+                "HTMLCanvasElement.getContext": 4,
+                "CanvasTotal": 4
+            },
+            "s0.2mdn.net": {
+                "HTMLCanvasElement.getContext": 1,
+                "CanvasTotal": 1
             }
         }
     ],
@@ -331,15 +365,6 @@
         }
     ],
     [
-        "http://fandom.com",
-        {
-            "pagead2.googlesyndication.com": {
-                "HTMLCanvasElement.getContext": 2,
-                "CanvasTotal": 2
-            }
-        }
-    ],
-    [
         "http://skype.com",
         {
             "secure.skypeassets.com": {
@@ -352,6 +377,10 @@
         "http://nytimes.com",
         {
             "dd.nytimes.com": {
+                "HTMLCanvasElement.getContext": 2,
+                "CanvasTotal": 2
+            },
+            "pagead2.googlesyndication.com": {
                 "HTMLCanvasElement.getContext": 2,
                 "CanvasTotal": 2
             }
