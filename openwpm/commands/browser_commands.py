@@ -139,6 +139,19 @@ class GetCommand(BaseCommand):
 
         # Execute a get through selenium
         try:
+            #Enable code below when running Ghostery Stateless, comment out otherwise
+            ########################################################################
+            time.sleep(self.sleep)
+            if len(webdriver.window_handles) == 2:
+                webdriver.switch_to.window(webdriver.window_handles[1])
+                #Enable Ad Blocking + Tracking
+                webdriver.find_element("xpath", '//input[@type="checkbox"]').click()
+                # Accept terms
+                webdriver.find_element("xpath", '//ui-onboarding-checkbox').click()
+                # Press Submit Button
+                webdriver.find_element("xpath", '//button[@type="submit"]').click()
+                time.sleep(self.sleep)
+            ########################################################################
             webdriver.get(self.url)
         except TimeoutException:
             pass

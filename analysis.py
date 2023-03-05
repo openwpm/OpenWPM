@@ -372,7 +372,7 @@ def write_to_json_third_parties(third_party_collection, type):
     with open("3rd_parties_short-" + type + ".json", "w") as write_file:
         json.dump(third_party_collection_shortened, write_file, indent=4)
 
-def getStatefulRuns():
+def get_stateful_runs():
     # Connect to DB
     types = ["vanilla", "abp", "ublock", "ghostery"]
 
@@ -396,8 +396,36 @@ def getStatefulRuns():
         ids = list(set(ids))
 
         #Conduct third party URL analyses
-        third_party_df = get_third_parties(sqliteConnection, ids,)
+        third_party_df = get_third_parties(sqliteConnection, ids)
+        create_third_party_json(third_party_df, type)
+
+def get_stateless_runs():
+    # Connect to DB
+    types = ["vanilla", "abp", "ublock"]
+
+    for type in types:
+
+        sqliteConnection = sqlite3.connect('datadir/stateless/crawl-data-' + type + '.sqlite')
+        cursor = sqliteConnection.cursor()
+
+        #Grab visit ids for each website from fingerprinting table
+        # ids = [id[0] for id in cursor.execute("SELECT visit_id FROM javascript")]
+        # ids = list(set(ids))
+
+        #Conduct fingerprinting analysis 
+        # fingerprint_df = get_fingerprinting(sqliteConnection, ids)
+        # create_fingerprint_json(fingerprint_df, "canvas", type)
+        # create_fingerprint_json(fingerprint_df, "webRTC")
+        # create_fingerprint_json(fingerprint_df, "font")
+
+        #Grab ids from http_requests table
+        ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
+        ids = list(set(ids))
+
+        #Conduct third party URL analyses
+        third_party_df = get_third_parties(sqliteConnection, ids)
         create_third_party_json(third_party_df, type)
 
 if __name__ == '__main__':
-    getStatefulRuns()
+    # get_stateful_runs()
+    get_stateless_runs()

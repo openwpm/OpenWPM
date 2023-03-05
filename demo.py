@@ -22,7 +22,7 @@ if args.tranco:
     print("Loading tranco top sites list...")
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
-    sites = ["http://" + x for x in latest_list.top(100)]
+    sites = ["http://" + x for x in latest_list.top(10)]
 else:
     sites = [
         "http://www.example.com",
@@ -32,9 +32,9 @@ else:
 
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
-NUM_BROWSERS = 2
+NUM_BROWSERS = 1
 manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
-browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
+browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for browser_param in browser_params:
