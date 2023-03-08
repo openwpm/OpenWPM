@@ -264,6 +264,7 @@ def sum_third_parties(third_party_collection, type):
         third_party_collection[first_party_url]["TotalThirdParties"] = total_number_of_third_parties
     
     third_party_collection = sorted(third_party_collection.items(), key=lambda x: x[1]["TotalThirdParties"], reverse=True)
+
     return write_to_json_third_parties(third_party_collection, type)
 
 def create_fingerprint_json(fingerprint_df, fingerprint_type, type):
@@ -364,10 +365,7 @@ def write_to_json_third_parties(third_party_collection, type):
     counter = 0
     for url in third_party_collection_shortened:
         inner_dict = third_party_collection_shortened[url]
-        counter += inner_dict["TotalThirdParties"]
-    
-    print(counter)
-    
+        counter += inner_dict["TotalThirdParties"]    
 
     with open("3rd_parties_short-" + type + ".json", "w") as write_file:
         json.dump(third_party_collection_shortened, write_file, indent=4)
@@ -378,7 +376,7 @@ def get_stateful_runs():
 
     for type in types:
 
-        sqliteConnection = sqlite3.connect('datadir/stateful/crawl-data-' + type + '.sqlite')
+        sqliteConnection = sqlite3.connect('datadir/500 Sites/stateful/crawl-data-' + type + '.sqlite')
         cursor = sqliteConnection.cursor()
 
         #Grab visit ids for each website from fingerprinting table
@@ -386,10 +384,10 @@ def get_stateful_runs():
         ids = list(set(ids))
 
         #Conduct fingerprinting analysis 
-        fingerprint_df = get_fingerprinting(sqliteConnection, ids)
-        create_fingerprint_json(fingerprint_df, "canvas", type)
-        create_fingerprint_json(fingerprint_df, "webRTC")
-        create_fingerprint_json(fingerprint_df, "font")
+        # fingerprint_df = get_fingerprinting(sqliteConnection, ids)
+        # create_fingerprint_json(fingerprint_df, "canvas", type)
+        # create_fingerprint_json(fingerprint_df, "webRTC")
+        # create_fingerprint_json(fingerprint_df, "font")
 
         #Grab ids from http_requests table
         ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
@@ -401,11 +399,11 @@ def get_stateful_runs():
 
 def get_stateless_runs():
     # Connect to DB
-    types = ["vanilla", "abp", "ublock"]
+    types = ["vanilla", "abp", "ublock", "ghostery"]
 
     for type in types:
 
-        sqliteConnection = sqlite3.connect('datadir/stateless/crawl-data-' + type + '.sqlite')
+        sqliteConnection = sqlite3.connect('datadir/100 Sites/stateless/crawl-data-' + type + '.sqlite')
         cursor = sqliteConnection.cursor()
 
         #Grab visit ids for each website from fingerprinting table
@@ -426,6 +424,28 @@ def get_stateless_runs():
         third_party_df = get_third_parties(sqliteConnection, ids)
         create_third_party_json(third_party_df, type)
 
+def count_3rd_parties_on_1st_parties():
+    # Opening JSON file
+    f = open("datadir/100 Sites/Stateless/3rd Parties/3rd_parties-abp.json")
+    
+    # returns JSON object as 
+    # a dictionary
+    data = json.load(f)
+    number_of_3rd_parties = {}
+    for top_level in data:
+        inner_dict = top_level[1]
+        for third_party in inner_dict:
+            third_party_domain = get_ps_plus_1(third_party)
+            if third_party_domain not in number_of_3rd_parties:
+                number_of_3rd_parties[third_party_domain] = 1
+            else:
+                number_of_3rd_parties[third_party_domain] += 1
+    number_of_3rd_parties = dict(sorted(number_of_3rd_parties.items(), key=lambda x: x[1], reverse=True))
+    # number_of_3rd_parties = dict(sorted(number_of_3rd_parties.items(), key=lambda x: x[0]))
+    with open("3rd_parties_on_1st_parties.json", "w") as write_file:
+        json.dump(number_of_3rd_parties, write_file, indent=4)
+
 if __name__ == '__main__':
     # get_stateful_runs()
-    get_stateless_runs()
+    # get_stateless_runs()
+    count_3rd_parties_on_1st_parties()

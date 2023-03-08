@@ -22,7 +22,7 @@ if args.tranco:
     print("Loading tranco top sites list...")
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
-    sites = ["http://" + x for x in latest_list.top(10)]
+    sites = ["http://" + x for x in latest_list.top(500)]
 else:
     sites = [
         "http://www.example.com",
@@ -92,7 +92,7 @@ with TaskManager(
         )
 
         # Start by visiting the page
-        command_sequence.append_command(GetCommand(url=site, sleep=5), timeout=60)
+        command_sequence.append_command(GetCommand(url=site, sleep=8), timeout=60)
         # Have a look at custom_command.py to see how to implement your own command
         command_sequence.append_command(LinkCountingCommand())
 
