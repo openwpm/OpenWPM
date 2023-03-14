@@ -1,0 +1,747 @@
+{
+  "alicdn.com": [
+    12,
+    12,
+    0
+  ],
+  "adobedtm.com": [
+    11,
+    11,
+    0
+  ],
+  "googlesyndication.com": [
+    9,
+    9,
+    0
+  ],
+  "microsoft.com": [
+    8,
+    6,
+    2
+  ],
+  "bdstatic.com": [
+    5,
+    5,
+    0
+  ],
+  "moatads.com": [
+    4,
+    4,
+    0
+  ],
+  "bytescm.com": [
+    3,
+    3,
+    0
+  ],
+  "media-amazon.com": [
+    3,
+    3,
+    0
+  ],
+  "appsflyer.com": [
+    3,
+    3,
+    0
+  ],
+  "rambler.ru": [
+    3,
+    2,
+    1
+  ],
+  "salesforce.com": [
+    3,
+    2,
+    1
+  ],
+  "fbcdn.net": [
+    3,
+    2,
+    1
+  ],
+  "geoedge.be": [
+    2,
+    2,
+    0
+  ],
+  "siftscience.com": [
+    2,
+    2,
+    0
+  ],
+  "jwplayer.com": [
+    2,
+    2,
+    0
+  ],
+  "xhscdn.com": [
+    2,
+    2,
+    0
+  ],
+  "telegram.org": [
+    2,
+    1,
+    1
+  ],
+  "vk.com": [
+    2,
+    1,
+    1
+  ],
+  "avito.ru": [
+    2,
+    1,
+    1
+  ],
+  "adobe.com": [
+    2,
+    1,
+    1
+  ],
+  "q4app.com": [
+    1,
+    1,
+    0
+  ],
+  "f5.com": [
+    1,
+    1,
+    0
+  ],
+  "cloudflare.com": [
+    1,
+    1,
+    0
+  ],
+  "forter.com": [
+    1,
+    1,
+    0
+  ],
+  "cityrobotflower.com": [
+    1,
+    1,
+    0
+  ],
+  "fyrsbckgi-c.global.ssl.fastly.net": [
+    1,
+    1,
+    0
+  ],
+  "dfcfw.com": [
+    1,
+    1,
+    0
+  ],
+  "tiktokcdn-us.com": [
+    1,
+    1,
+    0
+  ],
+  "xfinity.com": [
+    1,
+    1,
+    0
+  ],
+  "bbc.com": [
+    1,
+    1,
+    0
+  ],
+  "qualtrics.com": [
+    1,
+    1,
+    0
+  ],
+  "d3op16id4dloxg.cloudfront.net": [
+    1,
+    1,
+    0
+  ],
+  "taboola.com": [
+    1,
+    1,
+    0
+  ],
+  "imds-cdn.com": [
+    1,
+    1,
+    0
+  ],
+  "hdslb.com": [
+    1,
+    1,
+    0
+  ],
+  "tiqcdn.com": [
+    1,
+    1,
+    0
+  ],
+  "licdn.com": [
+    1,
+    1,
+    0
+  ],
+  "ordpress.org": [
+    1,
+    1,
+    0
+  ],
+  "clickcease.com": [
+    1,
+    1,
+    0
+  ],
+  "top100.ru": [
+    1,
+    1,
+    0
+  ],
+  "naydex.net": [
+    1,
+    1,
+    0
+  ],
+  "vimeocdn.com": [
+    1,
+    1,
+    0
+  ],
+  "vidible.tv": [
+    1,
+    1,
+    0
+  ],
+  "sndcdn.com": [
+    1,
+    1,
+    0
+  ],
+  "datadome.co": [
+    1,
+    1,
+    0
+  ],
+  "cookielaw.org": [
+    1,
+    1,
+    0
+  ],
+  "csdnimg.cn": [
+    1,
+    1,
+    0
+  ],
+  "eather.com": [
+    1,
+    1,
+    0
+  ],
+  "envato-static.com": [
+    1,
+    1,
+    0
+  ],
+  "cdnst.net": [
+    1,
+    1,
+    0
+  ],
+  "spokenlayer.net": [
+    1,
+    1,
+    0
+  ],
+  "fengkongcloud.com": [
+    1,
+    1,
+    0
+  ],
+  "yandex.ru": [
+    1,
+    1,
+    0
+  ],
+  "bytetos.com": [
+    1,
+    1,
+    0
+  ],
+  "bytegoofy.com": [
+    1,
+    1,
+    0
+  ],
+  "redditstatic.com": [
+    1,
+    1,
+    0
+  ],
+  "maxmind.com": [
+    1,
+    1,
+    0
+  ],
+  "gr-assets.com": [
+    1,
+    1,
+    0
+  ],
+  "domains.google": [
+    1,
+    1,
+    0
+  ],
+  "iqiyipic.com": [
+    1,
+    1,
+    0
+  ],
+  "jwplatform.com": [
+    1,
+    1,
+    0
+  ],
+  "autoimg.cn": [
+    1,
+    1,
+    0
+  ],
+  "medtargetsystem.com": [
+    1,
+    1,
+    0
+  ],
+  "itc.cn": [
+    1,
+    1,
+    0
+  ],
+  "unity.com": [
+    1,
+    1,
+    0
+  ],
+  "cdninstagram.com": [
+    1,
+    1,
+    0
+  ],
+  "imgsmail.ru": [
+    1,
+    1,
+    0
+  ],
+  "mradx.net": [
+    1,
+    1,
+    0
+  ],
+  "skypeassets.com": [
+    1,
+    1,
+    0
+  ],
+  "framerusercontent.com": [
+    1,
+    1,
+    0
+  ],
+  "highwebmedia.com": [
+    1,
+    1,
+    0
+  ],
+  "sift.com": [
+    1,
+    1,
+    0
+  ],
+  "uzbhjpvsf.com": [
+    1,
+    1,
+    0
+  ],
+  "rxeosevsso.com": [
+    1,
+    1,
+    0
+  ],
+  "forbesimg.com": [
+    1,
+    1,
+    0
+  ],
+  "granify.com": [
+    1,
+    1,
+    0
+  ],
+  "espncdn.com": [
+    1,
+    1,
+    0
+  ],
+  "wbstatic.net": [
+    1,
+    1,
+    0
+  ],
+  "lightboxcdn.com": [
+    1,
+    1,
+    0
+  ],
+  "esetstatic.com": [
+    1,
+    1,
+    0
+  ],
+  "d2c8v52ll5s99u.cloudfront.net": [
+    1,
+    1,
+    0
+  ],
+  "r10s.jp": [
+    1,
+    1,
+    0
+  ],
+  "yahoo.com": [
+    1,
+    1,
+    0
+  ],
+  "dns.com": [
+    1,
+    0,
+    1
+  ],
+  "unsplash.com": [
+    1,
+    0,
+    1
+  ],
+  "nginx.com": [
+    1,
+    0,
+    1
+  ],
+  "bluehost.com": [
+    1,
+    0,
+    1
+  ],
+  "sberbank.ru": [
+    1,
+    0,
+    1
+  ],
+  "tripadvisor.com": [
+    1,
+    0,
+    1
+  ],
+  "nic.ru": [
+    1,
+    0,
+    1
+  ],
+  "dell.com": [
+    1,
+    0,
+    1
+  ],
+  "godaddy.com": [
+    1,
+    0,
+    1
+  ],
+  "go.com": [
+    1,
+    0,
+    1
+  ],
+  "mailchimp.com": [
+    1,
+    0,
+    1
+  ],
+  "att.com": [
+    1,
+    0,
+    1
+  ],
+  "ibm.com": [
+    1,
+    0,
+    1
+  ],
+  "onlyfans.com": [
+    1,
+    0,
+    1
+  ],
+  "baidu.com": [
+    1,
+    0,
+    1
+  ],
+  "livejournal.com": [
+    1,
+    0,
+    1
+  ],
+  "markmonitor.com": [
+    1,
+    0,
+    1
+  ],
+  "uol.com.br": [
+    1,
+    0,
+    1
+  ],
+  "creativecommons.org": [
+    1,
+    0,
+    1
+  ],
+  "adriver.ru": [
+    1,
+    0,
+    1
+  ],
+  "berkeley.edu": [
+    1,
+    0,
+    1
+  ],
+  "techcrunch.com": [
+    1,
+    0,
+    1
+  ],
+  "ngenix.net": [
+    1,
+    0,
+    1
+  ],
+  "cpanel.net": [
+    1,
+    0,
+    1
+  ],
+  "cbsnews.com": [
+    1,
+    0,
+    1
+  ],
+  "nvidia.com": [
+    1,
+    0,
+    1
+  ],
+  "oracle.com": [
+    1,
+    0,
+    1
+  ],
+  "ea.com": [
+    1,
+    0,
+    1
+  ],
+  "cdc.gov": [
+    1,
+    0,
+    1
+  ],
+  "mcafee.com": [
+    1,
+    0,
+    1
+  ],
+  "toutiao.com": [
+    1,
+    0,
+    1
+  ],
+  "douyin.com": [
+    1,
+    0,
+    1
+  ],
+  "mediafire.com": [
+    1,
+    0,
+    1
+  ],
+  "shopify.com": [
+    1,
+    0,
+    1
+  ],
+  "intuit.com": [
+    1,
+    0,
+    1
+  ],
+  "medium.com": [
+    1,
+    0,
+    1
+  ],
+  "iqiyi.com": [
+    1,
+    0,
+    1
+  ],
+  "hostgator.com": [
+    1,
+    0,
+    1
+  ],
+  "coinmarketcap.com": [
+    1,
+    0,
+    1
+  ],
+  "loc.gov": [
+    1,
+    0,
+    1
+  ],
+  "maricopa.gov": [
+    1,
+    0,
+    1
+  ],
+  "icloud.com": [
+    1,
+    0,
+    1
+  ],
+  "nytimes.com": [
+    1,
+    0,
+    1
+  ],
+  "harvard.edu": [
+    1,
+    0,
+    1
+  ],
+  "namu.wiki": [
+    1,
+    0,
+    1
+  ],
+  "chaturbate.com": [
+    1,
+    0,
+    1
+  ],
+  "udemy.com": [
+    1,
+    0,
+    1
+  ],
+  "intel.com": [
+    1,
+    0,
+    1
+  ],
+  "pexels.com": [
+    1,
+    0,
+    1
+  ],
+  "tandfonline.com": [
+    1,
+    0,
+    1
+  ],
+  "miui.com": [
+    1,
+    0,
+    1
+  ],
+  "missav.com": [
+    1,
+    0,
+    1
+  ],
+  "apple.com": [
+    1,
+    0,
+    1
+  ],
+  "canva.com": [
+    1,
+    0,
+    1
+  ],
+  "forbes.com": [
+    1,
+    0,
+    1
+  ],
+  "spankbang.com": [
+    1,
+    0,
+    1
+  ],
+  "etsy.com": [
+    1,
+    0,
+    1
+  ],
+  "twitch.tv": [
+    1,
+    0,
+    1
+  ],
+  "epicgames.com": [
+    1,
+    0,
+    1
+  ],
+  "cisco.com": [
+    1,
+    0,
+    1
+  ],
+  "pixiv.net": [
+    1,
+    0,
+    1
+  ],
+  "wsj.com": [
+    1,
+    0,
+    1
+  ],
+  "rakuten.co.jp": [
+    1,
+    0,
+    1
+  ],
+  "chase.com": [
+    1,
+    0,
+    1
+  ],
+  "cornell.edu": [
+    1,
+    0,
+    1
+  ],
+  "box.com": [
+    1,
+    0,
+    1
+  ]
+}

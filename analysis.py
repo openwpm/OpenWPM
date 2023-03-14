@@ -375,8 +375,7 @@ def get_stateful_runs():
     types = ["vanilla", "abp", "ublock", "ghostery"]
 
     for type in types:
-
-        sqliteConnection = sqlite3.connect('datadir/500 Sites/stateful/crawl-data-' + type + '.sqlite')
+        sqliteConnection = sqlite3.connect("datadir/100 Sites/Stateful/" + type.capitalize() + "/crawl-data-" + type + ".sqlite")
         cursor = sqliteConnection.cursor()
 
         #Grab visit ids for each website from fingerprinting table
@@ -384,49 +383,48 @@ def get_stateful_runs():
         ids = list(set(ids))
 
         #Conduct fingerprinting analysis 
-        # fingerprint_df = get_fingerprinting(sqliteConnection, ids)
-        # create_fingerprint_json(fingerprint_df, "canvas", type)
-        # create_fingerprint_json(fingerprint_df, "webRTC")
-        # create_fingerprint_json(fingerprint_df, "font")
+        fingerprint_df = get_fingerprinting(sqliteConnection, ids)
+        create_fingerprint_json(fingerprint_df, "canvas", type)
+        create_fingerprint_json(fingerprint_df, "webRTC", type)
+        create_fingerprint_json(fingerprint_df, "font", type)
 
         #Grab ids from http_requests table
-        ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
-        ids = list(set(ids))
+        # ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
+        # ids = list(set(ids))
 
         #Conduct third party URL analyses
-        third_party_df = get_third_parties(sqliteConnection, ids)
-        create_third_party_json(third_party_df, type)
+        # third_party_df = get_third_parties(sqliteConnection, ids)
+        # create_third_party_json(third_party_df, type)
 
 def get_stateless_runs():
     # Connect to DB
     types = ["vanilla", "abp", "ublock", "ghostery"]
 
     for type in types:
-
-        sqliteConnection = sqlite3.connect('datadir/100 Sites/stateless/crawl-data-' + type + '.sqlite')
+        sqliteConnection = sqlite3.connect("datadir/100 Sites/Stateless/" + type.capitalize() + "/crawl-data-" + type + ".sqlite")
         cursor = sqliteConnection.cursor()
 
         #Grab visit ids for each website from fingerprinting table
-        # ids = [id[0] for id in cursor.execute("SELECT visit_id FROM javascript")]
-        # ids = list(set(ids))
-
-        #Conduct fingerprinting analysis 
-        # fingerprint_df = get_fingerprinting(sqliteConnection, ids)
-        # create_fingerprint_json(fingerprint_df, "canvas", type)
-        # create_fingerprint_json(fingerprint_df, "webRTC")
-        # create_fingerprint_json(fingerprint_df, "font")
-
-        #Grab ids from http_requests table
-        ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
+        ids = [id[0] for id in cursor.execute("SELECT visit_id FROM javascript")]
         ids = list(set(ids))
 
+        #Conduct fingerprinting analysis 
+        fingerprint_df = get_fingerprinting(sqliteConnection, ids)
+        create_fingerprint_json(fingerprint_df, "canvas", type)
+        create_fingerprint_json(fingerprint_df, "webRTC", type)
+        create_fingerprint_json(fingerprint_df, "font", type)
+
+        #Grab ids from http_requests table
+        # ids = [id[0] for id in cursor.execute("SELECT visit_id FROM http_requests")]
+        # ids = list(set(ids))
+
         #Conduct third party URL analyses
-        third_party_df = get_third_parties(sqliteConnection, ids)
-        create_third_party_json(third_party_df, type)
+        # third_party_df = get_third_parties(sqliteConnection, ids)
+        # create_third_party_json(third_party_df, type)
 
 def count_3rd_parties_on_1st_parties():
     # Opening JSON file
-    f = open("datadir/100 Sites/Stateless/3rd Parties/3rd_parties-abp.json")
+    f = open("datadir/500 Sites/Stateless/Vanilla/3rd Parties/3rd_parties-vanilla.json")
     
     # returns JSON object as 
     # a dictionary
@@ -441,11 +439,74 @@ def count_3rd_parties_on_1st_parties():
             else:
                 number_of_3rd_parties[third_party_domain] += 1
     number_of_3rd_parties = dict(sorted(number_of_3rd_parties.items(), key=lambda x: x[1], reverse=True))
-    # number_of_3rd_parties = dict(sorted(number_of_3rd_parties.items(), key=lambda x: x[0]))
-    with open("3rd_parties_on_1st_parties.json", "w") as write_file:
+    with open("3rd_parties_on_1st_parties-vanilla.json", "w") as write_file:
         json.dump(number_of_3rd_parties, write_file, indent=4)
 
+def count_fp_on_1st_parties():
+    # Opening JSON file
+    f = open("datadir/500 Sites/Stateless/Vanilla/Fingerprint/fp_results_canvas_vanilla.json")
+    
+    # returns JSON object as 
+    # a dictionary
+    data = json.load(f)
+    number_of_fp = {}
+    for top_level in data:
+        top_level_url = get_ps_plus_1(top_level[0])
+        middle_dict = top_level[1]
+        for fp_url in middle_dict:
+            fp_url_plus_1 = get_ps_plus_1(fp_url)
+            if fp_url_plus_1 not in number_of_fp:
+                total = num_of_3rd_party = num_of_1st_party = 0
+                total += 1
+                if fp_url_plus_1 == top_level_url:
+                    num_of_1st_party += 1
+                else:
+                    num_of_3rd_party += 1
+                number_of_fp[fp_url_plus_1] = [total, num_of_3rd_party, num_of_1st_party]
+            else:
+                total, num_of_3rd_party, num_of_1st_party = number_of_fp[fp_url_plus_1]
+                total += 1
+                if fp_url_plus_1 == top_level_url:
+                    num_of_1st_party += 1
+                else:
+                    num_of_3rd_party += 1
+                number_of_fp[fp_url_plus_1] = [total, num_of_3rd_party, num_of_1st_party]
+    
+    number_of_fp = dict(sorted(number_of_fp.items(), key=lambda x: x[1], reverse=True))
+    with open("fp_freq_canvas_vanilla.json", "w") as write_file:
+        json.dump(number_of_fp, write_file, indent=2)
+    
+    totalCount = 0
+    third_party_count = 0
+    first_party_count = 0
+    for url in number_of_fp:
+        totalCount += number_of_fp[url][0] 
+        third_party_count += number_of_fp[url][1]
+        first_party_count += number_of_fp[url][2]
+    
+    print(totalCount)
+    print(third_party_count)
+    print(first_party_count)
+    print("Third Party Percentage: ", third_party_count/totalCount * 100)
+    print("First Party Percentage: ", first_party_count/totalCount * 100)
+
+def count_num_of_3rd_parties():
+    # Opening JSON file
+    f = open("datadir/100 Sites/Stateful/Vanilla/3rd Parties/3rd_parties_on_1st_parties-vanilla.json")
+    
+    # returns JSON object as 
+    # a dictionary
+    data = json.load(f)
+    total = 0
+    for third_party_url in data:
+        total += data[third_party_url]
+    
+    print("Total: ", total)
+    
 if __name__ == '__main__':
     # get_stateful_runs()
     # get_stateless_runs()
-    count_3rd_parties_on_1st_parties()
+    # count_3rd_parties_on_1st_parties()
+    # print(get_ps_plus_1('http://sina.com.cn'))
+    # count_fp_on_1st_parties()
+    count_num_of_3rd_parties()
