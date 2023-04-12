@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.22.0 - 2023-04-11
+
+Update to Firefox 112
+
 ## v0.21.1 - 2022-10-13
 
 Fix erronous change to demo.py
