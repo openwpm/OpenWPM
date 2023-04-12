@@ -11,7 +11,7 @@ STACK_TRACE_INJECT_IMAGE = (
     "onload@" + HTTP_STACKTRACE_TEST_URL + ":1:1;null"
 )
 
-RAWGIT_HTTP_STACKTRACE_TEST_URL = "https://gist.githack.com/gunesacar/b927d3fe69f3e7bf456da5192f74beea/raw/8d3e490b5988c633101ec45ef1443e61b1fd495e/inject_pixel.js"  # noqa
+RAWGIT_HTTP_STACKTRACE_TEST_URL = "https://gistcdn.githack.com/gunesacar/b927d3fe69f3e7bf456da5192f74beea/raw/8d3e490b5988c633101ec45ef1443e61b1fd495e/inject_pixel.js"  # noqa
 # https://gist.github.com/gunesacar/b927d3fe69f3e7bf456da5192f74beea
 STACK_TRACE_INJECT_PIXEL = (
     "inject_pixel@" + RAWGIT_HTTP_STACKTRACE_TEST_URL + ":4:3;null\n"
