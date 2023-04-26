@@ -1,5 +1,5 @@
 import logging
-from typing import Set
+from typing import Optional, Set
 
 import pyarrow.parquet as pq
 from gcsfs import GCSFileSystem
@@ -29,7 +29,7 @@ class GcsStructuredProvider(ArrowProvider):
         project: str,
         bucket_name: str,
         base_path: str,
-        token: str = None,
+        token: Optional[str] = None,
         sub_dir: str = "visits",
     ) -> None:
         super().__init__()
@@ -69,7 +69,7 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         project: str,
         bucket_name: str,
         base_path: str,
-        token: str = None,
+        token: Optional[str] = None,
     ) -> None:
         super().__init__()
         self.project = project
@@ -83,7 +83,6 @@ class GcsUnstructuredProvider(UnstructuredStorageProvider):
         self.logger = logging.getLogger("openwpm")
 
     async def init(self) -> None:
-        await super(GcsUnstructuredProvider, self).init()
         self.file_system = GCSFileSystem(
             project=self.project, token=self.token, access="read_write"
         )

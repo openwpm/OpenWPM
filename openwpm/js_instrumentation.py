@@ -126,7 +126,6 @@ def _build_full_settings_object(setting):
         obj, instrumentedName = _handle_obj_string(setting)
 
     elif isinstance(setting, dict):
-
         if len(setting.keys()) != 1:
             raise ValueError(
                 f"Invalid settings request. \

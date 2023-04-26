@@ -208,7 +208,6 @@ def start_webext():
     absolute path or a path relative to the test directory.""",
 )
 def main(selenium, no_extension, browser_params, browser_params_file):
-
     if selenium:
         driver = start_webdriver(  # noqa
             with_extension=not no_extension,
