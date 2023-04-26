@@ -11,8 +11,8 @@ eval "$(conda shell.bash hook)"
 
 conda activate openwpm
 
-npm update --dev
+npm update --include=dev
 
 pushd Extension
-npm update --dev
+npm update --include=dev
 popd
