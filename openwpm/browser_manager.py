@@ -34,6 +34,7 @@ from .utilities.multiprocess_utils import (
     kill_process_and_children,
     parse_traceback_for_sentry,
 )
+from .utilities.storage_watchdog import periodic_check
 
 pickling_support.install()
 
@@ -501,6 +502,11 @@ class BrowserManagerHandle:
         if task_manager.closing:
             return
 
+        # Allow StorageWatchdog to utilize built-in browser reset functionality
+        # which results in a graceful restart of the browser instance
+        if self.manager_params.storage_watchdog_enable:
+            reset = periodic_check(self.current_profile_path, self)
+
         if self.restart_required or reset:
             success = self.restart_browser_manager(clear_profile=reset)
             if not success:
@@ -564,7 +570,9 @@ class BrowserManagerHandle:
                     "type %s" % (self.browser_id, str(self.display_pid))
                 )
         if self.display_port is not None:  # xvfb display lock
-            lockfile = "/tmp/.X%s-lock" % self.display_port
+            # lockfile = "/tmp/.X%s-lock" % self.display_port
+            lockfile = os.path.join(self.browser_params.tmp_profile_dir, f".X{self.display_port}-lock")
+
             try:
                 os.remove(lockfile)
             except OSError:

@@ -46,4 +46,5 @@ dependencies:
   - types-pyyaml==6.0.12.3
   - types-redis==4.4.0.2
   - types-tabulate==0.9.0.0
+  - watchdog==3.0.0
 name: openwpm

@@ -29,6 +29,7 @@ from .storage.storage_providers import (
 )
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
+from .utilities.storage_watchdog import StorageWatchdog
 
 tblib.pickling_support.install()
 
@@ -128,6 +129,14 @@ class TaskManager:
         thread.name = "OpenWPM-watchdog"
         thread.start()
 
+        # Start the StorageWatchdog
+        if self.manager_params.storage_watchdog_enable:
+            storage_watchdog = StorageWatchdog()
+            storage_watchdog_thread = threading.Thread(target=storage_watchdog.run, args=())
+            storage_watchdog_thread.daemon = True
+            thread.name = "OpenWPM-storage-watchdog"
+            
+            storage_watchdog_thread.start()
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
         self.storage_controller_handle.save_configuration(
