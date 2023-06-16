@@ -54,7 +54,7 @@ document.addEventListener(eventId, (e: CustomEvent) => {
   // pass these on to the background page
   const msgs = e.detail;
   if (Array.isArray(msgs)) {
-    msgs.forEach(msg => {
+    msgs.forEach((msg) => {
       emitMsg(msg.type, msg.content);
     });
   } else {

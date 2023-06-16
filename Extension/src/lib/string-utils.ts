@@ -2,7 +2,7 @@ export function encode_utf8(s) {
   return unescape(encodeURIComponent(s));
 }
 
-export const escapeString = function(str: any) {
+export const escapeString = function (str: any) {
   // Convert to string if necessary
   if (typeof str !== "string") {
     str = String(str);
@@ -11,7 +11,7 @@ export const escapeString = function(str: any) {
   return encode_utf8(str);
 };
 
-export const escapeUrl = function(
+export const escapeUrl = function (
   url: string,
   stripDataUrlData: boolean = true,
 ) {
@@ -29,7 +29,7 @@ export const escapeUrl = function(
 
 // Base64 encoding, found on:
 // https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
-export const Uint8ToBase64 = function(u8Arr: Uint8Array) {
+export const Uint8ToBase64 = function (u8Arr: Uint8Array) {
   const CHUNK_SIZE = 0x8000; // arbitrary number
   let index = 0;
   const length = u8Arr.length;
@@ -43,6 +43,6 @@ export const Uint8ToBase64 = function(u8Arr: Uint8Array) {
   return btoa(result);
 };
 
-export const boolToInt = function(bool: boolean) {
+export const boolToInt = function (bool: boolean) {
   return bool ? 1 : 0;
 };

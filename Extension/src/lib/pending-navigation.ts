@@ -9,10 +9,10 @@ export class PendingNavigation {
   public resolveOnBeforeNavigateEventNavigation: (details: Navigation) => void;
   public resolveOnCommittedEventNavigation: (details: Navigation) => void;
   constructor() {
-    this.onBeforeNavigateEventNavigation = new Promise(resolve => {
+    this.onBeforeNavigateEventNavigation = new Promise((resolve) => {
       this.resolveOnBeforeNavigateEventNavigation = resolve;
     });
-    this.onCommittedEventNavigation = new Promise(resolve => {
+    this.onCommittedEventNavigation = new Promise((resolve) => {
       this.resolveOnCommittedEventNavigation = resolve;
     });
   }
@@ -32,7 +32,7 @@ export class PendingNavigation {
   public async resolvedWithinTimeout(ms) {
     const resolved = await Promise.race([
       this.resolved(),
-      new Promise(resolve => setTimeout(resolve, ms)),
+      new Promise((resolve) => setTimeout(resolve, ms)),
     ]);
     return resolved;
   }
