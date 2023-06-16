@@ -54,7 +54,6 @@ class MyHandler(SimpleHTTPRequestHandler):
         SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def do_GET(self, *args, **kwargs):
-
         # 1. Redirect all requests to `/MAGIC_REDIRECT/`.
         if self.path.startswith("/MAGIC_REDIRECT/"):
             parsed_path = urlparse(self.path)

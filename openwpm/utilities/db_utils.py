@@ -1,13 +1,13 @@
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, AnyStr, Iterator, List, Tuple, Union
+from typing import Any, AnyStr, Iterator, List, Optional, Tuple, Union
 
 import plyvel
 
 
 def query_db(
-    db: Path, query: str, params: Iterable = None, as_tuple: bool = False
+    db: Path, query: str, params: Any = None, as_tuple: bool = False
 ) -> List[Union[sqlite3.Row, Tuple[Any, ...]]]:
     """Run a query against the given db.
 

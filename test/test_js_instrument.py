@@ -44,7 +44,6 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMJSTest):
 
 
 class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
-
     GETS_AND_SETS = {
         ("window.partiallyExisting", "get", '{"existingProp":"foo"}'),
         ("window.partiallyExisting", "get", '{"existingProp":"foo"}'),
@@ -144,7 +143,6 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
 
 
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
-
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
@@ -215,7 +213,6 @@ class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
 
 
 class TestJSInstrument(OpenWPMJSTest):
-
     GETS_AND_SETS = {
         ("prop1", "get", "prop1"),
         ("prop1", "set", "blah1"),
