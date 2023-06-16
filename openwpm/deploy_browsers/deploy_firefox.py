@@ -136,11 +136,11 @@ def deploy_firefox(
 
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
-    fb = FirefoxBinary(firefox_path=firefox_binary_path)
+    fo.binary = FirefoxBinary(
+        firefox_path=firefox_binary_path, log_file=interceptor.fifo
+    )
     driver = webdriver.Firefox(
-        firefox_binary=fb,
         options=fo,
-        log_path=interceptor.fifo,
     )
 
     # Add extension
@@ -159,8 +159,8 @@ def deploy_firefox(
     # Get browser process pid
     if hasattr(driver, "service") and hasattr(driver.service, "process"):
         pid = driver.service.process.pid
-    elif hasattr(driver, "binary") and hasattr(driver.binary, "process"):
-        pid = driver.binary.process.pid
+    elif hasattr(driver, "binary") and hasattr(driver.options.binary, "process"):
+        pid = driver.options.binary.process.pid
     else:
         raise RuntimeError("Unable to identify Firefox process ID.")
 

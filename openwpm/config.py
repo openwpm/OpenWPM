@@ -206,6 +206,13 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 )
             )
 
+        if browser_params.callstack_instrument:
+            raise ConfigError(
+                "The callstacks instrument currently doesn't work "
+                "as it is requires intricate machinery that broke "
+                "in one of the previous Firefox versions."
+            )
+
         if browser_params.callstack_instrument and not browser_params.js_instrument:
             raise ConfigError(
                 "The callstacks instrument currently doesn't work without "
