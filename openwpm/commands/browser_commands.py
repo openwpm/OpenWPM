@@ -262,7 +262,6 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
             manager_params.screenshot_path, "parts", "%i*-part-*.png" % visit_id
         )
     ):
-
         # Load image from disk and parse params out of filename
         img_obj = Image.open(f)
         width, height = img_obj.size
@@ -353,7 +352,6 @@ class ScreenshotFullPageCommand(BaseCommand):
             while (
                 curr_scrollY + inner_height
             ) < max_height and curr_scrollY != prev_scrollY:
-
                 # Scroll down to bottom of previous viewport
                 try:
                     webdriver.execute_script("window.scrollBy(0, window.innerHeight)")
@@ -398,7 +396,6 @@ class DumpPageSourceCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-
         if self.suffix != "":
             self.suffix = "-" + self.suffix
 
@@ -427,7 +424,6 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-
         """Dump a compressed html tree for the current page visit"""
         if self.suffix != "":
             self.suffix = "-" + self.suffix
@@ -488,7 +484,6 @@ class FinalizeCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-
         """Informs the extension that a visit is done"""
         tab_restart_browser(webdriver)
         # This doesn't immediately stop data saving from the current
@@ -515,6 +510,5 @@ class InitializeCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-
         msg = {"action": "Initialize", "visit_id": self.visit_id}
         extension_socket.send(msg)

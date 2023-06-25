@@ -8,12 +8,8 @@ import { ResponseBodyListener } from "./response-body-listener";
  * Ties together the two separate events that together holds information about both response headers and body
  */
 export class PendingResponse {
-  public readonly onBeforeRequestEventDetails: Promise<
-    WebRequestOnBeforeRequestEventDetails
-  >;
-  public readonly onCompletedEventDetails: Promise<
-    WebRequestOnCompletedEventDetails
-  >;
+  public readonly onBeforeRequestEventDetails: Promise<WebRequestOnBeforeRequestEventDetails>;
+  public readonly onCompletedEventDetails: Promise<WebRequestOnCompletedEventDetails>;
   public responseBodyListener: ResponseBodyListener;
   public resolveOnBeforeRequestEventDetails: (
     details: WebRequestOnBeforeRequestEventDetails,
@@ -22,10 +18,10 @@ export class PendingResponse {
     details: WebRequestOnCompletedEventDetails,
   ) => void;
   constructor() {
-    this.onBeforeRequestEventDetails = new Promise(resolve => {
+    this.onBeforeRequestEventDetails = new Promise((resolve) => {
       this.resolveOnBeforeRequestEventDetails = resolve;
     });
-    this.onCompletedEventDetails = new Promise(resolve => {
+    this.onCompletedEventDetails = new Promise((resolve) => {
       this.resolveOnCompletedEventDetails = resolve;
     });
   }
@@ -50,7 +46,7 @@ export class PendingResponse {
   public async resolvedWithinTimeout(ms) {
     const resolved = await Promise.race([
       this.resolved(),
-      new Promise(resolve => setTimeout(resolve, ms)),
+      new Promise((resolve) => setTimeout(resolve, ms)),
     ]);
     return resolved;
   }

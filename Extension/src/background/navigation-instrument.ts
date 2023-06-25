@@ -74,10 +74,11 @@ export class NavigationInstrument {
         details.frameId,
       );
       const pendingNavigation = this.instantiatePendingNavigation(navigationId);
-      const navigation: Navigation = await transformWebNavigationBaseEventDetailsToOpenWPMSchema(
-        crawlID,
-        details,
-      );
+      const navigation: Navigation =
+        await transformWebNavigationBaseEventDetailsToOpenWPMSchema(
+          crawlID,
+          details,
+        );
       navigation.parent_frame_id = details.parentFrameId;
       navigation.before_navigate_event_ordinal = incrementedEventOrdinal();
       navigation.before_navigate_time_stamp = new Date(
@@ -96,10 +97,11 @@ export class NavigationInstrument {
         details.tabId,
         details.frameId,
       );
-      const navigation: Navigation = await transformWebNavigationBaseEventDetailsToOpenWPMSchema(
-        crawlID,
-        details,
-      );
+      const navigation: Navigation =
+        await transformWebNavigationBaseEventDetailsToOpenWPMSchema(
+          crawlID,
+          details,
+        );
       navigation.transition_qualifiers = escapeString(
         JSON.stringify(details.transitionQualifiers),
       );
@@ -115,7 +117,8 @@ export class NavigationInstrument {
         pendingNavigation.resolveOnCommittedEventNavigation(navigation);
         const resolved = await pendingNavigation.resolvedWithinTimeout(1000);
         if (resolved) {
-          const onBeforeNavigateEventNavigation = await pendingNavigation.onBeforeNavigateEventNavigation;
+          const onBeforeNavigateEventNavigation =
+            await pendingNavigation.onBeforeNavigateEventNavigation;
           navigation.parent_frame_id =
             onBeforeNavigateEventNavigation.parent_frame_id;
           navigation.before_navigate_event_ordinal =

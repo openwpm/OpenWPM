@@ -58,7 +58,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
   // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
   // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-  Object.getPropertyDescriptor = function(subject, name) {
+  Object.getPropertyDescriptor = function (subject, name) {
     if (subject === undefined) {
       throw new Error("Can't get property descriptor for undefined");
     }
@@ -71,7 +71,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     return pd;
   };
 
-  Object.getPropertyNames = function(subject) {
+  Object.getPropertyNames = function (subject) {
     if (subject === undefined) {
       throw new Error("Can't get property names for undefined");
     }
@@ -93,7 +93,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     let timestamp;
     let result;
 
-    const later = function() {
+    const later = function () {
       const last = Date.now() - timestamp;
       if (last < wait) {
         timeout = setTimeout(later, wait - last);
@@ -106,7 +106,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
       }
     };
 
-    return function() {
+    return function () {
       context = this; // eslint-disable-line @typescript-eslint/no-this-alias
       args = arguments;
       timestamp = Date.now();
@@ -174,7 +174,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         return object;
       }
       const seenObjects = [];
-      return JSON.stringify(object, function(key, value) {
+      return JSON.stringify(object, function (key, value) {
         if (value === null) {
           return "null";
         }
@@ -342,7 +342,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   }
 
   // from http://stackoverflow.com/a/5202185
-  const rsplit = function(source: string, sep, maxsplit) {
+  const rsplit = function (source: string, sep, maxsplit) {
     const split = source.split(sep);
     return maxsplit
       ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit))
@@ -350,9 +350,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   };
 
   function getOriginatingScriptContext(getCallStack = false) {
-    const trace = getStackTrace()
-      .trim()
-      .split("\n");
+    const trace = getStackTrace().trim().split("\n");
     // return a context object even if there is an error
     const empty_context = {
       scriptUrl: "",
@@ -404,12 +402,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         scriptCol: columnNo,
         funcName,
         scriptLocEval,
-        callStack: getCallStack
-          ? trace
-              .slice(3)
-              .join("\n")
-              .trim()
-          : "",
+        callStack: getCallStack ? trace.slice(3).join("\n").trim() : "",
       };
       return callContext;
     } catch (e) {
@@ -446,7 +439,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     func: any,
     logSettings: LogSettings,
   ) {
-    return function() {
+    return function () {
       const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
@@ -503,7 +496,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
       get: () => {
         return undefinedPropValue;
       },
-      set: value => {
+      set: (value) => {
         undefinedPropValue = value;
       },
       enumerable: false,
@@ -518,8 +511,8 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     // accessor property
     Object.defineProperty(object, propertyName, {
       configurable: true,
-      get: (function() {
-        return function() {
+      get: (function () {
+        return function () {
           let origProperty;
           const callContext = getOriginatingScriptContext(
             logSettings.logCallStack,
@@ -598,8 +591,8 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
           }
         };
       })(),
-      set: (function() {
-        return function(value) {
+      set: (function () {
+        return function (value) {
           const callContext = getOriginatingScriptContext(
             logSettings.logCallStack,
           );
@@ -737,17 +730,17 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     }
   }
 
-  const sendFactory = function(eventId, $sendMessagesToLogger) {
+  const sendFactory = function (eventId, $sendMessagesToLogger) {
     let messages = [];
     // debounce sending queued messages
-    const send = debounce(function() {
+    const send = debounce(function () {
       $sendMessagesToLogger(eventId, messages);
 
       // clear the queue
       messages = [];
     }, 100);
 
-    return function(msgType, msg) {
+    return function (msgType, msg) {
       // queue the message
       messages.push({ type: msgType, content: msg });
       send();
@@ -762,7 +755,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
     // More details about how this function is invoked are in
     // content/javascript-instrument-content-scope.ts
-    JSInstrumentRequests.forEach(function(item) {
+    JSInstrumentRequests.forEach(function (item) {
       instrumentObject(
         eval(item.object),
         item.instrumentedName,

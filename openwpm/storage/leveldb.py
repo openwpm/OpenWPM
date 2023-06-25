@@ -40,7 +40,6 @@ class LevelDbProvider(UnstructuredStorageProvider):
         blob: bytes,
         overwrite: bool = False,
     ) -> None:
-
         content_hash = str(filename).encode("ascii")
         if self.ldb.get(content_hash) is not None and not overwrite:
             return
