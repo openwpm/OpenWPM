@@ -1,1 +1,1 @@
-from .commands import (SetResolution, SetPosition)
+from .commands import SetPosition, SetResolution
