@@ -8,10 +8,10 @@ export class ResponseBodyListener {
   private resolveContentHash: (contentHash: string) => void;
 
   constructor(details: WebRequestOnBeforeRequestEventDetails) {
-    this.responseBody = new Promise(resolve => {
+    this.responseBody = new Promise((resolve) => {
       this.resolveResponseBody = resolve;
     });
-    this.contentHash = new Promise(resolve => {
+    this.contentHash = new Promise((resolve) => {
       this.resolveContentHash = resolve;
     });
 
@@ -21,8 +21,8 @@ export class ResponseBodyListener {
     ) as any;
 
     let responseBody = new Uint8Array();
-    filter.ondata = event => {
-      digestMessage(event.data).then(digest => {
+    filter.ondata = (event) => {
+      digestMessage(event.data).then((digest) => {
         this.resolveContentHash(digest);
       });
       const incoming = new Uint8Array(event.data);
@@ -33,7 +33,7 @@ export class ResponseBodyListener {
       filter.write(event.data);
     };
 
-    filter.onstop = _event => {
+    filter.onstop = (_event) => {
       this.resolveResponseBody(responseBody);
       filter.disconnect();
     };

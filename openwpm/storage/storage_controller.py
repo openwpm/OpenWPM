@@ -159,7 +159,6 @@ class StorageController:
     async def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
-
         if visit_id == INVALID_VISIT_ID:
             # Hacking around the fact that task and crawl don't have a VisitID
             del data["visit_id"]
@@ -402,7 +401,6 @@ class StorageControllerHandle:
         structured_storage: StructuredStorageProvider,
         unstructured_storage: Optional[UnstructuredStorageProvider],
     ) -> None:
-
         self.listener_address: Optional[Tuple[str, int]] = None
         self.listener_process: Optional[Process] = None
         self.status_queue = Queue()

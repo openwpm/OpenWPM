@@ -92,7 +92,6 @@ class PatchedFirefoxService(FirefoxServiceModule.Service):
         log_path="geckodriver.log",
         env=None,
     ):
-
         super().__init__(executable_path, port, service_args, log_path, env)
         if self.log_file:
             os.close(self.log_file)

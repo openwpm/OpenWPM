@@ -18,7 +18,7 @@ export class DnsInstrument {
   public run(crawlID) {
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
 
-    const requestStemsFromExtension = details => {
+    const requestStemsFromExtension = (details) => {
       return (
         details.originUrl &&
         details.originUrl.indexOf("moz-extension://") > -1 &&
@@ -58,7 +58,7 @@ export class DnsInstrument {
 
   private handleResolvedDnsData(dnsRecordObj, dataReceiver) {
     // Curring the data returned by API call.
-    return function(record) {
+    return function (record) {
       // Get data from API call
       dnsRecordObj.addresses = record.addresses.toString();
       dnsRecordObj.canonical_name = record.canonicalName;
