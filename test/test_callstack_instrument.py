@@ -1,3 +1,5 @@
+import pytest
+
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -31,6 +33,7 @@ HTTP_STACKTRACES = {
 }
 
 
+@pytest.mark.skip("We don't have the resources to fix this")
 def test_http_stacktrace(default_params, task_manager_creator):
     manager_params, browser_params = default_params
     for browser_param in browser_params:

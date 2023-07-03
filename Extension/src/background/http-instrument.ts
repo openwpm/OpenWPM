@@ -71,7 +71,7 @@ export class HttpInstrument {
   public run(crawlID, saveContentOption: SaveContentOption) {
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
 
-    const requestStemsFromExtension = details => {
+    const requestStemsFromExtension = (details) => {
       return (
         details.originUrl && details.originUrl.indexOf("moz-extension://") > -1
       );
@@ -106,7 +106,7 @@ export class HttpInstrument {
         : ["requestBody"],
     );
 
-    this.onBeforeSendHeadersListener = details => {
+    this.onBeforeSendHeadersListener = (details) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
@@ -125,7 +125,7 @@ export class HttpInstrument {
       ["requestHeaders"],
     );
 
-    this.onBeforeRedirectListener = details => {
+    this.onBeforeRedirectListener = (details) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
@@ -138,7 +138,7 @@ export class HttpInstrument {
       ["responseHeaders"],
     );
 
-    this.onCompletedListener = details => {
+    this.onCompletedListener = (details) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
@@ -271,7 +271,7 @@ export class HttpInstrument {
     const headers = [];
     let isOcsp = false;
     if (details.requestHeaders) {
-      details.requestHeaders.map(requestHeader => {
+      details.requestHeaders.map((requestHeader) => {
         const { name, value } = requestHeader;
         const header_pair = [];
         header_pair.push(escapeString(name));
@@ -299,7 +299,8 @@ export class HttpInstrument {
           "Pending request timed out waiting for data from both onBeforeRequest and onBeforeSendHeaders events",
         );
       } else {
-        const onBeforeRequestEventDetails = await pendingRequest.onBeforeRequestEventDetails;
+        const onBeforeRequestEventDetails =
+          await pendingRequest.onBeforeRequestEventDetails;
         const requestBody = onBeforeRequestEventDetails.requestBody;
 
         if (requestBody) {
@@ -678,7 +679,7 @@ export class HttpInstrument {
     const resultHeaders = [];
     let location = "";
     if (headers) {
-      headers.map(responseHeader => {
+      headers.map((responseHeader) => {
         const { name, value } = responseHeader;
         const header_pair = [];
         header_pair.push(escapeString(name));

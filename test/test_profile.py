@@ -239,6 +239,7 @@ def test_profile_recovery(
         manager.get("example.com", reset=not stateful)
         # This will cause browser restarts to fail
         monkeypatch.setenv("FIREFOX_BINARY", "/tmp/NOTREAL")
+
         # Let the launch succeed after some failed launch attempts
         def undo_monkeypatch():
             time.sleep(5)  # This should be smaller than _SPAWN_TIMEOUT

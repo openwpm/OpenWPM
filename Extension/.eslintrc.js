@@ -24,10 +24,13 @@ module.exports = {
     "node_modules/",
   ],
   plugins: [
+    "eslint-plugin-html",
     "eslint-plugin-import",
     "eslint-plugin-jsdoc",
+    "eslint-plugin-json",
     "eslint-plugin-unicorn",
     "eslint-plugin-mozilla",
+    "eslint-plugin-no-unsanitized",
   ],
   rules: {
     "arrow-parens": ["off", "always"],
@@ -44,7 +47,13 @@ module.exports = {
     "import/no-internal-modules": "error",
     "jsdoc/check-alignment": "error",
     "jsdoc/check-indentation": "error",
-    "jsdoc/newline-after-description": "error",
+    "jsdoc/tag-lines": [
+      'error',
+      'any',
+      {
+        startLines: 1,
+      },
+    ],
     "linebreak-style": "off",
     "max-classes-per-file": ["error", 1],
     "max-len": "off",

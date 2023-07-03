@@ -108,7 +108,7 @@ export class JavascriptInstrument {
     }
     this.crawlID = crawlID;
     this.configured = true;
-    this.pendingRecords.map(update => {
+    this.pendingRecords.map((update) => {
       update.browser_id = this.crawlID;
       this.dataReceiver.saveRecord("javascript", update);
     });

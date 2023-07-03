@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.22.0 - 2023-06-17
+
+Bump to Firefox 114.0.1
+
 ## v0.21.1 - 2022-10-13
 
 Fix erronous change to demo.py
