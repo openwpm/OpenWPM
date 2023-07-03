@@ -43,7 +43,8 @@ dependencies:
   - jsonschema==4.17.3
   - plyvel==1.5.0
   - tranco==0.6
-  - types-pyyaml==6.0.12.3
-  - types-redis==4.4.0.2
-  - types-tabulate==0.9.0.0
+  - types-pyyaml==6.0.12.10
+  - types-redis==4.5.5.2
+  - types-tabulate==0.9.0.2
+  - watchdog==3.0.0
 name: openwpm
