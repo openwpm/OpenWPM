@@ -1,8 +1,12 @@
 import { jsInstrumentationSettings } from "./settings";
-import { generateErrorObject, getBeginOfScriptCalls, getStackTrace } from "./error";
-/**************************************
-* OpenWPM legacy code
-***************************************/
+import {
+  generateErrorObject,
+  getBeginOfScriptCalls,
+  getStackTrace,
+} from "./error";
+/** ************************************
+ * OpenWPM legacy code
+ ***************************************/
 // Counter to cap # of calls logged for each script/api combination
 const maxLogCount = 500;
 // logCounter
@@ -24,7 +28,7 @@ const JSOperation = {
 };
 
 // from http://stackoverflow.com/a/5202185
-function rsplit(source, sep, maxsplit){
+function rsplit(source, sep, maxsplit) {
   const split = source.split(sep);
   return maxsplit
     ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit))
@@ -34,10 +38,10 @@ function rsplit(source, sep, maxsplit){
 // Helper for JSONifying objects
 function serializeObject(
   object,
-  //stringifyFunctions: boolean = false,
-  stringifyFunctions,
-//): string {
-){
+  // stringifyFunctions: boolean = false,
+  stringifyFunctions: boolean,
+  // ): string {
+) {
   // Handle permissions errors
   try {
     if (object === null) {
@@ -99,7 +103,7 @@ Object.getPropertyDescriptor = function (subject, name) {
   return pd;
 };
 
-function updateCounterAndCheckIfOver(scriptUrl, symbol){
+function updateCounterAndCheckIfOver(scriptUrl, symbol) {
   const key = scriptUrl + "|" + symbol;
   if (key in logCounter && logCounter[key] >= maxLogCount) {
     return true;
@@ -112,7 +116,7 @@ function updateCounterAndCheckIfOver(scriptUrl, symbol){
 }
 
 // Recursively generates a path for an element
-function getPathToDomElement(element, visibilityAttr) {
+function getPathToDomElement(element, visibilityAttr: boolean = false) {
   if (element === document.body) {
     return element.tagName;
   }
@@ -122,8 +126,7 @@ function getPathToDomElement(element, visibilityAttr) {
 
   let siblingIndex = 1;
   const siblings = element.parentNode.childNodes;
-  for (let i = 0; i < siblings.length; i++) {
-    const sibling = siblings[i];
+  for (const sibling of siblings) {
     if (sibling === element) {
       let path = getPathToDomElement(element.parentNode, visibilityAttr);
       path += "/" + element.tagName + "[" + siblingIndex;
@@ -146,7 +149,7 @@ function getPathToDomElement(element, visibilityAttr) {
   }
 }
 
-function getOriginatingScriptContext(getCallStack = false, isCall = false){
+function getOriginatingScriptContext(getCallStack = false, isCall = false) {
   const trace = getStackTrace().trim().split("\n");
   // return a context object even if there is an error
   const empty_context = {
@@ -162,7 +165,7 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false){
   }
 
   let traceStart = getBeginOfScriptCalls(trace);
-  if (traceStart == -1){
+  if (traceStart == -1) {
     // If not included, use heuristic, 0-3 or 0-2 are OpenWPMs functions
     traceStart = isCall ? 3 : 4;
   }
@@ -217,25 +220,25 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false){
   }
 }
 
-function logErrorToConsole(error, context = false) {
-    console.error("OpenWPM: Error name: " + error.name);
-    console.error("OpenWPM: Error message: " + error.message);
-    console.error("OpenWPM: Error filename: " + error.fileName);
-    console.error("OpenWPM: Error line number: " + error.lineNumber);
-    console.error("OpenWPM: Error stack: " + error.stack);
-    if (context) {
-        console.error("OpenWPM: Error context: " + JSON.stringify(context));
-    }
-}
+// function logErrorToConsole(error, context = false) {
+//     console.error("OpenWPM: Error name: " + error.name);
+//     console.error("OpenWPM: Error message: " + error.message);
+//     console.error("OpenWPM: Error filename: " + error.fileName);
+//     console.error("OpenWPM: Error line number: " + error.lineNumber);
+//     console.error("OpenWPM: Error stack: " + error.stack);
+//     if (context) {
+//         console.error("OpenWPM: Error context: " + JSON.stringify(context));
+//     }
+// }
 
 // For gets, sets, etc. on a single value
 function logValue(
-  instrumentedVariableName,//: string,
-  value,//: any,
-  operation,//: string, // from JSOperation object please
-  callContext,//: any,
-  logSettings = false,//: LogSettings,
-){
+  instrumentedVariableName, // : string,
+  value, // : any,
+  operation, // : string, // from JSOperation object please
+  callContext, // : any,
+  logSettings = false, // : LogSettings,
+) {
   if (inLog) {
     return;
   }
@@ -264,60 +267,62 @@ function logValue(
   };
 
   try {
-     notify("logValue", msg);
+    notify("logValue", msg);
   } catch (error) {
     console.log("OpenWPM: Unsuccessful value log!");
     // Activate for debugging purpose
-    //logErrorToConsole(error);
+    // logErrorToConsole(error);
   }
 
   inLog = false;
 }
 
 // For functions
-function logCall(instrumentedFunctionName, args, callContext, logSettings) {
-    if (inLog) {
-        return;
-    }
-    inLog = true;
-    const overLimit = updateCounterAndCheckIfOver(callContext.scriptUrl, instrumentedFunctionName);
-    if (overLimit) {
-        inLog = false;
-        return;
-    }
-    try {
-        // Convert special arguments array to a standard array for JSONifying
-        const serialArgs = [];
-        for (const arg of args) {
-            serialArgs.push(serializeObject(arg, false));//TODO: Get back to logSettings.logFunctionsAsStrings));
-        }
-        const msg = {
-            operation: JSOperation.call,
-            symbol: instrumentedFunctionName,
-            args: serialArgs,
-            value: "",
-            scriptUrl: callContext.scriptUrl,
-            scriptLine: callContext.scriptLine,
-            scriptCol: callContext.scriptCol,
-            funcName: callContext.funcName,
-            scriptLocEval: callContext.scriptLocEval,
-            callStack: callContext.callStack,
-            ordinal: ordinal++,
-        };
-        notify("logCall", msg);
-    }
-    catch (error) {
-        console.log("OpenWPM: Unsuccessful call log: " + instrumentedFunctionName);
-        // Activate for debugging purpose
-        //console.log(error);
-        //logErrorToConsole(error);
-    }
+function logCall(instrumentedFunctionName, args, callContext, _logSettings) {
+  if (inLog) {
+    return;
+  }
+  inLog = true;
+  const overLimit = updateCounterAndCheckIfOver(
+    callContext.scriptUrl,
+    instrumentedFunctionName,
+  );
+  if (overLimit) {
     inLog = false;
+    return;
+  }
+  try {
+    // Convert special arguments array to a standard array for JSONifying
+    const serialArgs = [];
+    for (const arg of args) {
+      serialArgs.push(serializeObject(arg, false)); // TODO: Get back to logSettings.logFunctionsAsStrings));
+    }
+    const msg = {
+      operation: JSOperation.call,
+      symbol: instrumentedFunctionName,
+      args: serialArgs,
+      value: "",
+      scriptUrl: callContext.scriptUrl,
+      scriptLine: callContext.scriptLine,
+      scriptCol: callContext.scriptCol,
+      funcName: callContext.funcName,
+      scriptLocEval: callContext.scriptLocEval,
+      callStack: callContext.callStack,
+      ordinal: ordinal++,
+    };
+    notify("logCall", msg);
+  } catch (error) {
+    console.log("OpenWPM: Unsuccessful call log: " + instrumentedFunctionName);
+    // Activate for debugging purpose
+    // console.log(error);
+    // logErrorToConsole(error);
+  }
+  inLog = false;
 }
 
-/*********************************************************************************
-* New functionality
-**********************************************************************************/
+/** *******************************************************************************
+ * New functionality
+ **********************************************************************************/
 
 /**
  * Provides the properties per prototype object
@@ -326,41 +331,41 @@ Object.getPrototypeByDepth = function (subject, depth) {
   if (subject === undefined) {
     throw new Error("Can't get property names for undefined");
   }
-  if (depth === undefined || typeof(depth) !== "number" ) {
-    throw new Error("Depth "+ depth +" is invalid");
+  if (depth === undefined || typeof depth !== "number") {
+    throw new Error("Depth " + depth + " is invalid");
   }
   let proto = subject;
-  for(let i=1; i<=depth; i++) {
+  for (let i = 1; i <= depth; i++) {
     proto = Object.getPrototypeOf(proto);
   }
-  if (proto === undefined){
+  if (proto === undefined) {
     throw new Error("Prototype was undefined. Too deep iteration?");
   }
   return proto;
-}
+};
 
 /**
  * Traverses the prototype chain to collect properties. Returns an array containing
  * an object with the depth, propertyNames and scanned subject
  */
-Object.getPropertyNamesPerDepth = function (subject, maxDepth=0) {
+Object.getPropertyNamesPerDepth = function (subject, maxDepth = 0) {
   if (subject === undefined) {
     throw new Error("Can't get property names for undefined");
   }
-  let res = [];
+  const res = [];
   let depth = 0;
   let properties = Object.getOwnPropertyNames(subject);
-  res.push({"depth": depth, "propertyNames":properties, "object":subject});
+  res.push({ depth, propertyNames: properties, object: subject });
   let proto = Object.getPrototypeOf(subject);
 
-  while (proto !== null, depth < maxDepth) {
+  while (proto !== null && depth < maxDepth) {
     depth++;
     properties = Object.getOwnPropertyNames(proto);
-    res.push({"depth": depth, "propertyNames":properties, "object":proto});
+    res.push({ depth, propertyNames: properties, object: proto });
     proto = Object.getPrototypeOf(proto);
   }
   return res;
-}
+};
 
 /**
  * Finds a property along the prototype chain
@@ -373,63 +378,68 @@ Object.findPropertyInChain = function (subject, propertyName) {
   let depth = 0;
   while (subject !== null) {
     properties = Object.getOwnPropertyNames(subject);
-    if (properties.includes(propertyName)){
-      return {"depth": depth, "propertyName":propertyName};
+    if (properties.includes(propertyName)) {
+      return { depth, propertyName };
     }
     depth++;
     subject = Object.getPrototypeOf(subject);
   }
   throw Error("Property not found. Check whether configuration is correct!");
-}
-
+};
 
 /*
  * Get all keys for properties that shall be overwritten
  */
-function getPropertyKeysToOverwrite(item){
-  let res = [];
-  item.logSettings.overwrittenProperties.forEach(obj =>{
+function getPropertyKeysToOverwrite(item) {
+  const res = [];
+  item.logSettings.overwrittenProperties.forEach((obj) => {
     res.push(obj.key);
-  })
+  });
   return res;
 }
 
 function getContextualPrototypeFromString(context, objectAsString) {
   const obj = context[objectAsString];
   if (obj) {
-    return (obj.prototype) ? obj.prototype : Object.getPrototypeOf(obj);
+    return obj.prototype ? obj.prototype : Object.getPrototypeOf(obj);
   } else {
     return undefined;
   }
 }
-
 
 /**
  * Prepares a list of properties that need to be instrumented
  * Here, this can be a previous created list (settings.js: propertiesToInstrument)
  * or all properties of a given object (settings.js: propertiesToInstrument is empty)
  */
-function getObjectProperties(context, item){
+function getObjectProperties(context, item) {
   let propertiesToInstrument = item.logSettings.propertiesToInstrument;
-  const proto = getContextualPrototypeFromString(context, item["object"]);
+  const proto = getContextualPrototypeFromString(context, item.object);
   if (!proto) {
-    throw Error("Object " + item['object'] + " was undefined.");
+    throw Error("Object " + item.object + " was undefined.");
   }
 
   if (propertiesToInstrument === undefined || !propertiesToInstrument.length) {
-    propertiesToInstrument = Object.getPropertyNamesPerDepth(proto, item['depth']);
+    propertiesToInstrument = Object.getPropertyNamesPerDepth(proto, item.depth);
     // filter excluded and overwritten properties
-    const excluded = getPropertyKeysToOverwrite(item).concat(item.logSettings.excludedProperties);
-    propertiesToInstrument = filterPropertiesPerDepth(propertiesToInstrument, excluded);
-  }else{
+    const excluded = getPropertyKeysToOverwrite(item).concat(
+      item.logSettings.excludedProperties,
+    );
+    propertiesToInstrument = filterPropertiesPerDepth(
+      propertiesToInstrument,
+      excluded,
+    );
+  } else {
     // include the object to each item
-    propertiesToInstrument.forEach(propertyList => {
-      propertyList["object"] = Object.getPrototypeByDepth(proto, propertyList["depth"]);
+    propertiesToInstrument.forEach((propertyList) => {
+      propertyList.object = Object.getPrototypeByDepth(
+        proto,
+        propertyList.depth,
+      );
     });
   }
   return propertiesToInstrument;
 }
-
 
 /*
  * Enables communication with a background script
@@ -438,18 +448,20 @@ function getObjectProperties(context, item){
  *
  * @param details: property access details
  */
-function notify(type, content){
+function notify(type, content) {
   content.timeStamp = new Date().toISOString();
   browser.runtime.sendMessage({
     namespace: "javascript-instrumentation",
     type,
-    data: content
+    data: content,
   });
 }
 
-function filterPropertiesPerDepth(collection, excluded){
-  for (let i=0; i<collection.length; i++){
-    collection[i]["propertyNames"] = collection[i]["propertyNames"].filter(p => !excluded.includes(p));
+function filterPropertiesPerDepth(collection, excluded) {
+  for (let i = 0; i < collection.length; i++) {
+    collection[i].propertyNames = collection[i].propertyNames.filter(
+      (p) => !excluded.includes(p),
+    );
   }
   return collection;
 }
@@ -461,10 +473,13 @@ function filterPropertiesPerDepth(collection, excluded){
  * @param context: target DOM
  * @param name: Name of the function (e.g., get width)
  */
-function exportCustomFunction(func, context, name){
-	const targetObject = context.wrappedJSObject.Object.create(null);
-	const exportedTry = exportFunction(func, targetObject, {allowCrossOriginArguments: true, defineAs: name});
-	return exportedTry;
+function exportCustomFunction(func, context, name) {
+  const targetObject = context.wrappedJSObject.Object.create(null);
+  const exportedTry = exportFunction(func, targetObject, {
+    allowCrossOriginArguments: true,
+    defineAs: name,
+  });
+  return exportedTry;
 }
 
 /*
@@ -476,107 +491,137 @@ function injectFunction(
   descriptor,
   functionType,
   pageObject,
-  propertyName){
-    const exportedFunction = exportCustomFunction(instrumentedFunction, window, propertyName);
-    changeProperty(descriptor, pageObject, propertyName, functionType,	exportedFunction);
+  propertyName,
+) {
+  const exportedFunction = exportCustomFunction(
+    instrumentedFunction,
+    window,
+    propertyName,
+  );
+  changeProperty(
+    descriptor,
+    pageObject,
+    propertyName,
+    functionType,
+    exportedFunction,
+  );
 }
 
-
 /*
-  * Add notifications when a property is requested
+ * Add notifications when a property is requested
  * TODO: Bring everything together at this point
  *
  * @param original: the original getter/setter function
  * @param object:
  * @param args:
  */
-function instrumentGetObjectProperty(identifier, original, newValue, object, args){
+function instrumentGetObjectProperty(
+  identifier,
+  original,
+  newValue,
+  object,
+  args,
+) {
   const originalValue = original.call(object, ...args);
   const callContext = getOriginatingScriptContext(true);
-  const returnValue = (newValue !== undefined) ? newValue : originalValue;
+  const returnValue = newValue !== undefined ? newValue : originalValue;
   logValue(
     identifier,
     returnValue,
     JSOperation.get,
     callContext,
-    //logSettings
-   );
+    // logSettings
+  );
   return returnValue;
 }
- /*
-  * Add notifications when a property is set
-  *
-  * @param original: the original getter/setter function
-  * @param object:
-  * @param args:
-  */
-function instrumentSetObjectProperty(identifier, original, newValue, object, args){
+/*
+ * Add notifications when a property is set
+ *
+ * @param original: the original getter/setter function
+ * @param object:
+ * @param args:
+ */
+function instrumentSetObjectProperty(
+  identifier,
+  original,
+  newValue,
+  object,
+  args,
+) {
   const callContext = getOriginatingScriptContext(true);
   logValue(
-     identifier,
-     newValue,
-     (!!original) ? JSOperation.set : JSOperation.set_failed,
-     callContext,
-     //logSettings
-    );
-    if (!original){
-      return newValue;
-    }
-    else{
-      return original.call(object, newValue);
-    }
+    identifier,
+    newValue,
+    original ? JSOperation.set : JSOperation.set_failed,
+    callContext,
+    // logSettings
+  );
+  return !original ? newValue : original.call(object, newValue);
 }
 
 /*
-* Creates a getter function
-*
-* @param descriptor: the descriptor of the original function
-* @param funcName: Name of property/function that shall be overwritten
-* @param newValue: in Case the value shall be changed
-*/
-function generateGetter(identifier, descriptor, propertyName, newValue = undefined){
+ * Creates a getter function
+ *
+ * @param descriptor: the descriptor of the original function
+ * @param funcName: Name of property/function that shall be overwritten
+ * @param newValue: in Case the value shall be changed
+ */
+function generateGetter(
+  identifier,
+  descriptor,
+  propertyName,
+  newValue = undefined,
+) {
   const original = descriptor.get;
   return Object.getOwnPropertyDescriptor(
-  {
-   get [propertyName](){
-     return instrumentGetObjectProperty(identifier, original, newValue, this, arguments);
-   }
-  },
-  propertyName).get;
+    {
+      get [propertyName]() {
+        return instrumentGetObjectProperty(
+          identifier,
+          original,
+          newValue,
+          this,
+          arguments,
+        );
+      },
+    },
+    propertyName,
+  ).get;
 }
 
 /*
-* Creates a setter function
-*
-* @param descriptor: the descriptor of the original function
-* @param funcName: Name of property/function that shall be overwritten
-* @param newValue: in Case the value shall be changed
-*/
-function generateSetter(identifier, descriptor, propertyName, newValue){
+ * Creates a setter function
+ *
+ * @param descriptor: the descriptor of the original function
+ * @param funcName: Name of property/function that shall be overwritten
+ * @param newValue: in Case the value shall be changed
+ */
+function generateSetter(identifier, descriptor, propertyName, newValue) {
   const original = descriptor.set;
   return Object.getOwnPropertyDescriptor(
-  {
-   set [propertyName](newValue){
-     return instrumentSetObjectProperty(identifier, original, newValue, this, arguments);
-   }
-  },
-  propertyName).set;
+    {
+      set [propertyName](newValue) {
+        return instrumentSetObjectProperty(
+          identifier,
+          original,
+          newValue,
+          this,
+          arguments,
+        );
+      },
+    },
+    propertyName,
+  ).set;
 }
 
 /*
  * Overwrites the prototype to access a property
  * @param
  */
-function changeProperty(
-  descriptor,
-  pageObject,
-  name,
-  method,
-  changed){
-    descriptor[method] = changed;
-    Object.defineProperty(pageObject, name, descriptor);
+function changeProperty(descriptor, pageObject, name, method, changed) {
+  descriptor[method] = changed;
+  Object.defineProperty(pageObject, name, descriptor);
 }
-
 
 /*
  * Retrieves an object in a context
@@ -584,9 +629,9 @@ function changeProperty(
  * @param context: the window object that is currently instrumented
  * @param object: the subobject needed
  */
-function getPageObjectInContext(context, context_object){
-  if (context === undefined || context_object === undefined){
-    return ;
+function getPageObjectInContext(context, context_object) {
+  if (context === undefined || context_object === undefined) {
+    return;
   }
   return context[context_object].prototype || context[context_object];
 }
@@ -594,8 +639,7 @@ function getPageObjectInContext(context, context_object){
 /*
  * TODO: Add description
  */
-const getPropertyType = (object, property) => typeof(object[property]);
-
+const getPropertyType = (object, property) => typeof object[property];
 
 /*
  * Entry point to creates (g/s)etter functions,
@@ -607,55 +651,91 @@ function instrumentGetterSetter(
   identifier,
   pageObject,
   propertyName,
-  newValue = undefined)
-  {
-    let instrumentedFunction;
-    const getFuncType = "get";
-    const setFuncType = "set";
+  newValue = undefined,
+) {
+  let instrumentedFunction;
+  const getFuncType = "get";
+  const setFuncType = "set";
 
-    if (descriptor.hasOwnProperty(getFuncType)){
-      instrumentedFunction = generateGetter(identifier, descriptor, propertyName, newValue);
-      injectFunction(instrumentedFunction, descriptor, getFuncType, pageObject, propertyName);
-    }
-    if (descriptor.hasOwnProperty(setFuncType)){
-      instrumentedFunction = generateSetter(identifier, descriptor, propertyName);
-      injectFunction(instrumentedFunction, descriptor, setFuncType, pageObject, propertyName);
-    }
+  if (descriptor.hasOwnProperty(getFuncType)) {
+    instrumentedFunction = generateGetter(
+      identifier,
+      descriptor,
+      propertyName,
+      newValue,
+    );
+    injectFunction(
+      instrumentedFunction,
+      descriptor,
+      getFuncType,
+      pageObject,
+      propertyName,
+    );
+  }
+  if (descriptor.hasOwnProperty(setFuncType)) {
+    instrumentedFunction = generateSetter(identifier, descriptor, propertyName);
+    injectFunction(
+      instrumentedFunction,
+      descriptor,
+      setFuncType,
+      pageObject,
+      propertyName,
+    );
+  }
 }
 
 /*
  * TODO: Add description
  */
 function functionGenerator(context, identifier, original, funcName) {
-  function temp(){
+  function temp() {
     let result;
     const callContext = getOriginatingScriptContext(true, true);
-    logCall(identifier,
-      arguments,
-      callContext
-    );
-    try{
-      result = (arguments.length > 0) ? original.call(this, ...arguments) : original.call(this);
-    }catch(err){
-      let fakeError = generateErrorObject(err);
+    logCall(identifier, arguments, callContext);
+    try {
+      result =
+        arguments.length > 0
+          ? original.call(this, ...arguments)
+          : original.call(this);
+    } catch (err) {
+      const fakeError = generateErrorObject(err);
       throw fakeError;
     }
     return result;
   }
-  return temp
+  return temp;
 }
-
 
 /*
  * TODO: Add description
  */
-function instrumentFunction(context, descriptor, identifier, pageObject, propertyName) {
+function instrumentFunction(
+  context,
+  descriptor,
+  identifier,
+  pageObject,
+  propertyName,
+) {
   const original = descriptor.value;
-  const tempFunction = functionGenerator(context, identifier, original, propertyName);
-  const exportedFunction = exportCustomFunction(tempFunction, context, original.name);
-  changeProperty(descriptor, pageObject, propertyName, "value",	exportedFunction);
+  const tempFunction = functionGenerator(
+    context,
+    identifier,
+    original,
+    propertyName,
+  );
+  const exportedFunction = exportCustomFunction(
+    tempFunction,
+    context,
+    original.name,
+  );
+  changeProperty(
+    descriptor,
+    pageObject,
+    propertyName,
+    "value",
+    exportedFunction,
+  );
 }
-
 
 /*
  * Helper class to perform all needed functionality
@@ -663,77 +743,96 @@ function instrumentFunction(context, descriptor, identifier, pageObject, propert
  * @param context: the window object that is currently instrumented
  * @param object: child object that shall be instumented
  */
-function instrument(context, item, depth, propertyName, newValue = undefined){
-  try{
-    const identifier = item["instrumentedName"] + "." + propertyName;
-    const initialPageObject = getPageObjectInContext(context.wrappedJSObject, item["object"]);
+function instrument(context, item, depth, propertyName, newValue = undefined) {
+  try {
+    const identifier = item.instrumentedName + "." + propertyName;
+    const initialPageObject = getPageObjectInContext(
+      context.wrappedJSObject,
+      item.object,
+    );
     const pageObject = Object.getPrototypeByDepth(initialPageObject, depth);
     const descriptor = Object.getPropertyDescriptor(pageObject, propertyName);
-    if (descriptor === undefined){
+    if (descriptor === undefined) {
       // Do not do undefined descriptor. We can safely skip them
       return;
     }
-    if (typeof(descriptor.value) === "function"){
-      instrumentFunction(context, descriptor, identifier, pageObject, propertyName);
+    if (typeof descriptor.value === "function") {
+      instrumentFunction(
+        context,
+        descriptor,
+        identifier,
+        pageObject,
+        propertyName,
+      );
     } else {
-      instrumentGetterSetter(descriptor, identifier, pageObject, propertyName, newValue);
+      instrumentGetterSetter(
+        descriptor,
+        identifier,
+        pageObject,
+        propertyName,
+        newValue,
+      );
     }
-  } catch (error){
+  } catch (error) {
     console.error(error);
     console.error(error.stack);
     return;
   }
 }
 
-
 /*
  * Checks if an object was already wrapped
  * Unwrapped objects should be wrapped immediately
  */
-let wrappedObjects = [];
+const wrappedObjects = [];
 function needsWrapper(object) {
-  if (wrappedObjects.some(obj => object === obj)){
+  if (wrappedObjects.some((obj) => object === obj)) {
     return false;
   }
   wrappedObjects.push(object);
   return true;
 }
 
-function startInstrument(context){
+function startInstrument(context) {
   for (const item of jsInstrumentationSettings) {
-
     // retrieve Object properties alont the chain
     let propertyCollection;
     try {
       propertyCollection = getObjectProperties(context, item);
-    } catch (err){
+    } catch (err) {
       console.error(err);
       continue;
     }
     // Instrument each Property per object/prototype
-    if (propertyCollection[0] !== ""){
-      propertyCollection.forEach(({depth, propertyNames, object}) => {
-        if (needsWrapper(object)){
-          propertyNames.forEach(propertyName => instrument(context, item, depth, propertyName));
+    if (propertyCollection[0] !== "") {
+      propertyCollection.forEach(({ depth, propertyNames, object }) => {
+        if (needsWrapper(object)) {
+          propertyNames.forEach((propertyName) =>
+            instrument(context, item, depth, propertyName),
+          );
         }
       });
     }
     // Instrument properties and overwrite their return value
-    if (item.logSettings.overwrittenProperties){
-      item.logSettings.overwrittenProperties.forEach(({key: name, value}) => {
-        const proto = getContextualPrototypeFromString(context, item["object"]);
-        if (proto){
-          let {depth, propertyName} = Object.findPropertyInChain(proto, name);
+    if (item.logSettings.overwrittenProperties) {
+      item.logSettings.overwrittenProperties.forEach(({ key: name, value }) => {
+        const proto = getContextualPrototypeFromString(context, item.object);
+        if (proto) {
+          const { depth, propertyName } = Object.findPropertyInChain(
+            proto,
+            name,
+          );
           instrument(context, item, depth, propertyName, value);
         } else {
-          console.error("Could not instrument " + item["object"] + ". Encountered undefined object.");
+          console.error(
+            "Could not instrument " +
+              item.object +
+              ". Encountered undefined object.",
+          );
         }
       });
     }
   }
 }
 
-export {
-  startInstrument,
-  exportCustomFunction
-};
+export { startInstrument, exportCustomFunction };

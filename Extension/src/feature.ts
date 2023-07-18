@@ -21,7 +21,7 @@ async function main() {
       navigation_instrument: true,
       cookie_instrument: true,
       js_instrument: true,
-      stealth_js_instrument:false,
+      stealth_js_instrument: false,
       cleaned_js_instrument_settings: [
         {
           object: `window.CanvasRenderingContext2D.prototype`,
@@ -73,16 +73,20 @@ async function main() {
     const cookieInstrument = new CookieInstrument(loggingDB);
     cookieInstrument.run(config.browser_id);
   }
-  if (config['stealth_js_instrument']) {
+  if (config.stealth_js_instrument) {
     loggingDB.logDebug("Stealth JavaScript Instrumentation enabled");
-    let stealthJSInstrument = new JavascriptInstrument(loggingDB, false);
-    stealthJSInstrument.run(config['browser_id']);
+    const stealthJSInstrument = new JavascriptInstrument(loggingDB, false);
+    stealthJSInstrument.run(config.browser_id);
     await stealthJSInstrument.registerContentScript();
-  } if (config['js_instrument']) {
+  }
+  if (config.js_instrument) {
     loggingDB.logDebug("Javascript instrumentation enabled");
-    let jsInstrument = new JavascriptInstrument(loggingDB, true);
-    jsInstrument.run(config['browser_id']);
-    await jsInstrument.registerContentScript(config['testing'], config['cleaned_js_instrument_settings']);
+    const jsInstrument = new JavascriptInstrument(loggingDB, true);
+    jsInstrument.run(config.browser_id);
+    await jsInstrument.registerContentScript(
+      config.testing,
+      config.cleaned_js_instrument_settings,
+    );
   }
 
   if (config.http_instrument) {

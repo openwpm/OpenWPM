@@ -140,7 +140,7 @@ export class JavascriptInstrument {
         matchAboutBlank: true,
       });
     }
-    const entryScript = (this.legacy) ? "/content.js" : "/stealth.js";
+    const entryScript = this.legacy ? "/content.js" : "/stealth.js";
     return browser.contentScripts.register({
       js: [{ file: entryScript }],
       matches: ["<all_urls>"],
