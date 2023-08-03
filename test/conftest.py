@@ -51,17 +51,15 @@ def default_params(
     """Just a simple wrapper around task_manager.load_default_params"""
 
     manager_params = ManagerParams(
-        num_browsers=NUM_BROWSERS
+        num_browsers=num_browsers
     )  # num_browsers is necessary to let TaskManager know how many browsers to spawn
 
     browser_params = [
-        BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)
+        BrowserParams(display_mode="headless") for _ in range(num_browsers)
     ]
     manager_params.data_directory = tmp_path
     manager_params.log_path = tmp_path / "openwpm.log"
     manager_params.testing = True
-    for i in range(num_browsers):
-        browser_params[i].display_mode = "headless"
     return manager_params, browser_params
 
 

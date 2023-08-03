@@ -3,7 +3,6 @@ ChromeUtils.defineModuleGetter(
   "ExtensionCommon",
   "resource://gre/modules/ExtensionCommon.jsm",
 );
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 Cu.importGlobalProperties(["TextEncoder", "TextDecoder"]);
 
 this.profileDirIO = class extends ExtensionAPI {
@@ -13,13 +12,13 @@ this.profileDirIO = class extends ExtensionAPI {
         async writeFile(filename, data) {
           const encoder = new TextEncoder();
           const array = encoder.encode(data);
-          const path = OS.Path.join(OS.Constants.Path.profileDir, filename);
-          const tmpPath = OS.Path.join(
-            OS.Constants.Path.profileDir,
+          const path = PathUtils.join(PathUtils.profileDir, filename);
+          const tmpPath = PathUtils.join(
+            PathUtils.profileDir,
             filename + ".tmp",
           );
           try {
-            await OS.File.writeAtomic(path, array, { tmpPath });
+            await IOUtils.write(path, array, { tmpPath });
             console.log(`Wrote to ${path}`);
             return true;
           } catch (e) {
@@ -29,9 +28,9 @@ this.profileDirIO = class extends ExtensionAPI {
         },
         async readFile(filename) {
           const decoder = new TextDecoder();
-          const path = OS.Path.join(OS.Constants.Path.profileDir, filename);
+          const path = PathUtils.join(PathUtils.profileDir, filename);
           try {
-            const array = await OS.File.read(path);
+            const array = await IOUtils.read(path);
             return decoder.decode(array);
           } catch (e) {
             Cu.reportError(e);

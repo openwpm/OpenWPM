@@ -46,7 +46,6 @@ def deploy_firefox(
     # https://github.com/openwpm/OpenWPM/issues/423#issuecomment-521018093
     fo.add_argument("-profile")
     fo.add_argument(str(browser_profile_path))
-
     assert browser_params.browser_id is not None
     if browser_params.seed_tar and not crash_recovery:
         logger.info(
