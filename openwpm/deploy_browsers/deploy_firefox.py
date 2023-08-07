@@ -137,15 +137,18 @@ def deploy_firefox(
 
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
-    geckodriver_path = subprocess.check_output(
-        "which geckodriver", encoding="utf-8", shell=True
-    ).strip()
+
     fo.binary = FirefoxBinary(
         firefox_path=firefox_binary_path, log_file=open(interceptor.fifo, "w")
     )
+    geckodriver_path = subprocess.check_output(
+        "which geckodriver", encoding="utf-8", shell=True
+    ).strip()
     driver = webdriver.Firefox(
         options=fo,
-        service=Service(executable_path=geckodriver_path),
+        service=Service(
+            executable_path=geckodriver_path, log_output=open(interceptor.fifo, "w")
+        ),
     )
 
     # Add extension
