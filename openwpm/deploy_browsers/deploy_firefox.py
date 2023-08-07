@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -9,6 +10,7 @@ from easyprocess import EasyProcessError
 from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
 
 from ..commands.profile_commands import load_profile
 from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
@@ -135,11 +137,15 @@ def deploy_firefox(
 
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
+    geckodriver_path = subprocess.check_output(
+        "which geckodriver", encoding="utf-8", shell=True
+    ).strip()
     fo.binary = FirefoxBinary(
-        firefox_path=firefox_binary_path, log_file=interceptor.fifo
+        firefox_path=firefox_binary_path, log_file=open(interceptor.fifo, "w")
     )
     driver = webdriver.Firefox(
         options=fo,
+        service=Service(executable_path=geckodriver_path),
     )
 
     # Add extension
