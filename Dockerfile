@@ -1,4 +1,4 @@
-FROM krallin/ubuntu-tini:bionic
+FROM ubuntu:xenial
 
 SHELL ["/bin/bash", "-c"]
 

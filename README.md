@@ -272,7 +272,7 @@ Then you can run the demo script using:
 ```bash
     mkdir -p docker-volume && docker run -v $PWD/docker-volume:/opt/OpenWPM/datadir \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
-    -it openwpm
+    -it --init openwpm
 ```
 
 **Note:** the `--shm-size=2g` parameter is required, as it increases the
