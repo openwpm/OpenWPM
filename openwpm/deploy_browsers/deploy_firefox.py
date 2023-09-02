@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -9,6 +10,7 @@ from easyprocess import EasyProcessError
 from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
 
 from ..commands.profile_commands import load_profile
 from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
@@ -46,7 +48,6 @@ def deploy_firefox(
     # https://github.com/openwpm/OpenWPM/issues/423#issuecomment-521018093
     fo.add_argument("-profile")
     fo.add_argument(str(browser_profile_path))
-
     assert browser_params.browser_id is not None
     if browser_params.seed_tar and not crash_recovery:
         logger.info(
@@ -136,11 +137,18 @@ def deploy_firefox(
 
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
+
     fo.binary = FirefoxBinary(
-        firefox_path=firefox_binary_path, log_file=interceptor.fifo
+        firefox_path=firefox_binary_path, log_file=open(interceptor.fifo, "w")
     )
+    geckodriver_path = subprocess.check_output(
+        "which geckodriver", encoding="utf-8", shell=True
+    ).strip()
     driver = webdriver.Firefox(
         options=fo,
+        service=Service(
+            executable_path=geckodriver_path, log_output=open(interceptor.fifo, "w")
+        ),
     )
 
     # Add extension

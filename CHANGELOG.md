@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.23.0 - 2023-08-03
+
+Bump to Firefox 115.0.3
+
 ## v0.22.0 - 2023-06-17
 
 Bump to Firefox 114.0.1
