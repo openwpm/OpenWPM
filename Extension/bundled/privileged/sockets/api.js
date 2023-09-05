@@ -1,8 +1,3 @@
-/* globals ExtensionCommon */
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
-});
-
 const tm = Cc["@mozilla.org/thread-manager;1"].getService();
 const socketService = Cc[
   "@mozilla.org/network/socket-transport-service;1"

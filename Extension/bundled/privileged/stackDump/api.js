@@ -1,12 +1,4 @@
-/* globals resProto ExtensionCommon */
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
-});
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs",
-);
-
+/* globals resProto*/
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "resProto",
