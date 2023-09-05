@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.24.0 - 2023-09-05
+
+Bump to Firefox 117
+Upgrade to Selenium 4.11 (Fixing the logs)
+
 ## v0.23.0 - 2023-08-03
 
 Bump to Firefox 115.0.3
