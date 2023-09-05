@@ -44,6 +44,41 @@ jobs:
     # Now we have a working OpenWPM environment
 
     - run: pre-commit run --all
+
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      # All of these steps are just setup
+      - uses: actions/checkout@v3
+      - name: Setting MAMBA_PATH
+        run: echo "MAMBA_PATH=$HOME/mamba" >> $GITHUB_ENV
+      - name: Setting OPENWPM_MAMBA_PATH
+        run: echo "OPENWPM_MAMBA_PATH=$MAMBA_PATH/envs/openwpm" >> $GITHUB_ENV
+      # If the environment.yaml hasn't changed we just reuse the entire conda install
+      - id: cache
+        uses: actions/cache@v3
+        env:
+          cache-name: conda-cache
+        with:
+          path: ${{ env.MAMBA_PATH }}
+          key: ${{ env.cache-name }}-${{ hashFiles('environment.yaml') }}
+
+      - name: Install conda
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: $GITHUB_WORKSPACE/scripts/install-mamba.sh
+
+      - run: echo "$MAMBA_PATH/bin" >> $GITHUB_PATH
+
+      - name: Install.sh (cache miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: $GITHUB_WORKSPACE/install.sh
+      - name: Install.sh (cache hit)
+        if: ${{ steps.cache.outputs.cache-hit == 'true' }}
+        run: $GITHUB_WORKSPACE/install.sh --skip-create
+      - run: echo "$OPENWPM_MAMBA_PATH/bin" >> $GITHUB_PATH
+      # Now we have a working OpenWPM environment
+
+      - run: python demo.py
   tests:
     runs-on: ubuntu-latest
     strategy:
