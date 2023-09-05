@@ -1,8 +1,3 @@
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionCommon",
-  "resource://gre/modules/ExtensionCommon.jsm",
-);
 Cu.importGlobalProperties(["TextEncoder", "TextDecoder"]);
 
 this.profileDirIO = class extends ExtensionAPI {
