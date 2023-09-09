@@ -30,22 +30,18 @@ class BaseCommand(ABC):
         manager_params: ManagerParamsInternal,
         extension_socket: ClientSocket,
     ) -> None:
-        """
-        This method gets called in the Browser process
-        :parameter webdriver:
-            WebDriver is a Selenium class used to control
-            browser.
-            You can simulate arbitrary interactions and extract almost all browser state
-            with the tools that Selenium gives you
-        :parameter browser_params:
-            Contains the per browser configuration
+        """This method gets called in the Browser process
+
+        :parameter webdriver: WebDriver is a Selenium class used to control
+            browser. You can simulate arbitrary interactions and extract almost
+            all browser state with the tools that Selenium gives you
+        :parameter browser_params: Contains the per browser configuration
             E.g. which instruments are enabled
-        :parameter manager_params:
-            Per crawl parameters
-            E.g. where to store files
+        :parameter manager_params: Per crawl parameters E.g. where to store files
         :parameter extension_socket: Communication channel to the storage provider
-           TODO: Further document this once the StorageProvider PR has landed
-           This allows you to send data to be persisted to storage.
+
+            TODO: Further document this once the StorageProvider PR has landed
+            This allows you to send data to be persisted to storage.
         """
         pass
 
