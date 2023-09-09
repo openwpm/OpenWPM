@@ -100,11 +100,12 @@ class ArrowProvider(StructuredStorageProvider):
         """This method is the reason the finalize_visit_id interface returns a task.
         This was necessary as we needed to enable the following pattern.
 
-        ```
+        .. code-block:: Python
+
             token = await structured_storage.finalize_visit_id(1)
             structured_storage.flush_cache()
             await token
-        ```
+
         If there was no task returned and the method would just block/yield after turning the
         record into a batch, there would be no way to know, when it's safe to flush_cache as
         I couldn't find a way to run a coroutine until it yields and then run a different one.
@@ -135,6 +136,7 @@ class ArrowProvider(StructuredStorageProvider):
     @abstractmethod
     async def write_table(self, table_name: TableName, table: Table) -> None:
         """Write out the table to persistent storage
+
         This should only return once it's actually saved out
         """
 

@@ -40,8 +40,7 @@ logger = logging.getLogger("openwpm")
 
 
 def bot_mitigation(webdriver):
-    """performs three optional commands for bot-detection
-    mitigation when getting a site"""
+    """Performs three optional commands for bot-detection mitigation when getting a site"""
 
     # bot mitigation 1: move the randomly around a number of times
     window_size = webdriver.get_window_size()
@@ -86,9 +85,7 @@ def close_other_windows(webdriver):
 
 
 def tab_restart_browser(webdriver):
-    """
-    kills the current tab and creates a new one to stop traffic
-    """
+    """kills the current tab and creates a new one to stop traffic"""
     # note: this technically uses windows, not tabs, due to problems with
     # chrome-targeted keyboard commands in Selenium 3 (intermittent
     # nonsense WebDriverExceptions are thrown). windows can be reliably
@@ -114,9 +111,7 @@ def tab_restart_browser(webdriver):
 
 
 class GetCommand(BaseCommand):
-    """
-    goes to <url> using the given <webdriver> instance
-    """
+    """goes to <url> using the given <webdriver> instance"""
 
     def __init__(self, url, sleep):
         self.url = url
@@ -467,6 +462,7 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
 
 class FinalizeCommand(BaseCommand):
     """This command is automatically appended to the end of a CommandSequence
+
     It's apperance means there won't be any more commands for this
     visit_id
     """
@@ -494,8 +490,8 @@ class FinalizeCommand(BaseCommand):
 
 
 class InitializeCommand(BaseCommand):
-    """The command is automatically prepended to the beginning of a
-    CommandSequence
+    """The command is automatically prepended to the beginning of a CommandSequence
+
     It initializes state both in the extensions as well in as the
     StorageController
     """

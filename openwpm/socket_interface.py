@@ -164,18 +164,19 @@ class ClientSocket:
 
 
 async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
-    """
-    Reads a message from the StreamReader
-    :exception IncompleteReadError if the underlying socket is closed
-
+    """Reads a message from the StreamReader
     To safely use this method, you should guard against the exception
     like this:
-    ```
+
+    .. code-block:: Python
+
         try:
             record: Tuple[str, Any] = await get_message_from_reader(reader)
         except IncompleteReadError as e:
             print("The underlying socket closed", repr(e))
-    ```
+
+    :raises:
+      IncompleteReadError: If the underlying socket is closed
     """
     msg = await reader.readexactly(5)
     msglen, serialization = struct.unpack(">Lc", msg)

@@ -23,6 +23,8 @@ We're hoping to improve this setup in the future.
 
    Configuration
 
+   Papers
+
 .. toctree::
    :maxdepth: 4
    :caption: Developer documentation
