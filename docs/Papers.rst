@@ -1,8 +1,24 @@
 Studies using OpenWPM 
 ======================
 
-.. list-table:: List of Studies that have used OpenWPM
-    :widths: 5 10 50
+Data collected by WebTAP
+------------------------
+
+Since 2015, WebTAP has conducted a web census to study third-party online tracking.
+Each month between 2015-2018, they visited the web’s 1 million most popular sites using
+OpenWPM and record data pertaining
+to user privacy, including cookies, fingerprinting scripts, the effect of browser privacy tools,
+and the exchange of tracking data between different sites (“cookie syncing”).
+
+WebTAP has `released <https://webtransparency.cs.princeton.edu/webcensus/data-release/>`_
+the entire Princeton Web Census data — about 15 terabytes — containing
+privacy measurements of 1 million sites conducted each month from December 2015 to June 2018.
+
+List of Studies that have used OpenWPM
+---------------------------------------
+
+.. list-table::
+    :widths: 5 25 70
     :header-rows: 1
 
     * - Year
