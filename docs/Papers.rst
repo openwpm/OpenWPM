@@ -62,7 +62,7 @@ List of Studies that have used OpenWPM
       - `Identifying HTTPS-Protected Netflix Videos in Real-Time <https://dl.acm.org/citation.cfm?id=3029821>`_
     * - 2017
       - WWW
-      - `De-anonymizing Web Browsing Data with Social Networks <http://randomwalker.info/publications/browsing-history-deanonymization.pdf>`_
+      - `De-anonymizing Web Browsing Data with Social Networks <http://randomwalker.info/publications/browsing-history-deanonymization.pdf>`_ [#f1]_
     * - 2017
       - IWPE
       - `Battery Status Not Included: Assessing Privacy in Web Standards <http://randomwalker.info/publications/battery-status-case-study.pdf>`_
@@ -194,13 +194,13 @@ List of Studies that have used OpenWPM
       - `In-Depth Evaluation of Redirect Tracking and Link Usage <https://petsymposium.org/2020/files/papers/issue4/popets-2020-0077.pdf>`_
     * - 2020
       - The Web Conference
-      - `The Representativeness of Automated Web Crawls as a Surrogate for Human Browsing <https://research.mozilla.org/files/2020/02/Jestr_vs_crawl_WWW20202.pdf>`_
+      - `The Representativeness of Automated Web Crawls as a Surrogate for Human Browsing <https://research.mozilla.org/files/2020/02/Jestr_vs_crawl_WWW20202.pdf>`_ [#f2]_
     * - 2020
       - The Web Conference
       - `Apophanies or Epiphanies? How Crawlers Impact Our Understanding of the Web <https://sparta.cs.uiowa.edu/docs/www-2020.pdf>`_
     * - 2020
       - The Web Conference
-      - `Stop Tracking me Bro! Differential Tracking of User Demographics on Hyper-partisan Websites <https://arxiv.org/pdf/2002.00934.pdf>`_
+      - `Stop Tracking me Bro! Differential Tracking of User Demographics on Hyper-partisan Websites <https://arxiv.org/pdf/2002.00934.pdf>`_ [#f2]_
     * - 2020
       - The Web Conference
       - `Beyond the Front Page: Measuring Third Party Dynamics in the Field <https://arxiv.org/pdf/2001.10248.pdf>`_
@@ -253,3 +253,7 @@ List of Studies that have used OpenWPM
       - IEEE S&P
       - `Fingerprinting the Fingerprinters: Learning to Detect Browser Fingerprinting Behaviors <https://arxiv.org/abs/2008.04480>`_
 
+.. rubric:: Footnotes
+
+.. [#f1] Uses data released by us.
+.. [#f2] Studies OpenWPM’s behavior.
