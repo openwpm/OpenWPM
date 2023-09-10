@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from typing import Literal
 
 import tranco
 
@@ -11,27 +12,33 @@ from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--tranco", action="store_true", default=False),
+parser.add_argument("--tranco", action="store_true", default=False)
+parser.add_argument("--headless", action="store_true", default=False),
+
 args = parser.parse_args()
 
+sites = [
+    "http://www.example.com",
+    "http://www.princeton.edu",
+    "http://citp.princeton.edu/",
+]
 if args.tranco:
     # Load the latest tranco list. See https://tranco-list.eu/
     print("Loading tranco top sites list...")
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
     sites = ["http://" + x for x in latest_list.top(10)]
-else:
-    sites = [
-        "http://www.example.com",
-        "http://www.princeton.edu",
-        "http://citp.princeton.edu/",
-    ]
+
+
+display_mode: Literal["native", "headless", "xvfb"] = "native"
+if args.headless:
+    display_mode = "headless"
 
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
 NUM_BROWSERS = 2
 manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
-browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
+browser_params = [BrowserParams(display_mode=display_mode) for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for browser_param in browser_params:
