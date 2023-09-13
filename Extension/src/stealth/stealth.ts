@@ -13,12 +13,12 @@ import {
 const interceptedWindows = new WeakMap();
 const proxies = new Map();
 const changedToStrings = new WeakMap();
-
+export type ModifiedWindow = Window & typeof globalThis & { wrappedJSObject: any };
 // Entry point for this extension
 (function () {
   // console.log("Starting frame script");
   try {
-    interceptWindow(window);
+    interceptWindow(window as ModifiedWindow);
   } catch (error) {
     console.log("Instrumentation initialisation crashed. Reason: " + error);
     console.log(error.stack);

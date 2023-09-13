@@ -237,7 +237,7 @@ function logValue(
   value, // : any,
   operation, // : string, // from JSOperation object please
   callContext, // : any,
-  logSettings = false, // : LogSettings,
+  logSettings: typeof jsInstrumentationSettings[0] | { logFunctionsAsStrings: boolean } = { logFunctionsAsStrings: false }, // : LogSettings,
 ) {
   if (inLog) {
     return;
@@ -327,7 +327,16 @@ function logCall(instrumentedFunctionName, args, callContext, _logSettings) {
 /**
  * Provides the properties per prototype object
  */
-Object.getPrototypeByDepth = function (subject, depth) {
+
+declare global {
+  interface Object {
+    getPrototypeByDepth(subject: string | undefined, depth: number): any
+    getPropertyNamesPerDepth(subject: any, maxDepth: number): any
+    findPropertyInChain(subject, propertyName)
+  }
+}
+
+Object.prototype.getPrototypeByDepth = function (subject, depth) {
   if (subject === undefined) {
     throw new Error("Can't get property names for undefined");
   }
@@ -348,7 +357,7 @@ Object.getPrototypeByDepth = function (subject, depth) {
  * Traverses the prototype chain to collect properties. Returns an array containing
  * an object with the depth, propertyNames and scanned subject
  */
-Object.getPropertyNamesPerDepth = function (subject, maxDepth = 0) {
+Object.prototype.getPropertyNamesPerDepth = function (subject, maxDepth = 0) {
   if (subject === undefined) {
     throw new Error("Can't get property names for undefined");
   }
@@ -370,7 +379,7 @@ Object.getPropertyNamesPerDepth = function (subject, maxDepth = 0) {
 /**
  * Finds a property along the prototype chain
  */
-Object.findPropertyInChain = function (subject, propertyName) {
+Object.prototype.findPropertyInChain = function (subject, propertyName) {
   if (subject === undefined || propertyName === undefined) {
     throw new Error("Object and property name must be defined");
   }
@@ -457,9 +466,9 @@ function notify(type, content) {
   });
 }
 
-function filterPropertiesPerDepth(collection, excluded) {
-  for (let i = 0; i < collection.length; i++) {
-    collection[i].propertyNames = collection[i].propertyNames.filter(
+function filterPropertiesPerDepth<T>(collection: {propertyNames: T[]}[], excluded: T[]) {
+  for (const elem of collection) {
+      elem.propertyNames = elem.propertyNames.filter(
       (p) => !excluded.includes(p),
     );
   }
