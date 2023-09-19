@@ -156,19 +156,23 @@ class CommandSequence:
         stored in `manager_params.source_dump_path` and is keyed by the
         current `visit_id` and top-level url. The source dump is a gzipped json
         file with the following structure:
-        {
-            'document_url': "http://example.com",
-            'source': "<html> ... </html>",
-            'iframes': {
-                'frame_1': {'document_url': ...,
-                            'source': ...,
-                            'iframes: { ... }},
-                'frame_2': {'document_url': ...,
-                            'source': ...,
-                            'iframes: { ... }},
-                'frame_3': { ... }
+
+        .. code-block:: JSON
+            :linenos:
+
+            {
+                "document_url": "http://example.com",
+                "source": "<html> ... </html>",
+                "iframes": {
+                    "frame_1": {"document_url": "...",
+                                "source": "...",
+                                "iframes": "{ ... }"},
+                    "frame_2": {"document_url": "...",
+                                "source": "...",
+                                "iframes": "{ ... }"},
+                    "frame_3": "{ ... }"
+                }
             }
-        }
         """
         self.total_timeout += timeout
         if not self.contains_get_or_browse:
