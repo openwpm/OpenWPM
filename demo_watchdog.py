@@ -25,13 +25,17 @@ else:
         "http://www.example.com",
         "http://www.princeton.edu",
         "http://citp.princeton.edu/",
+        "https://www.google.com",
+        "https://www.minecraft.net",
+        "https://www.nytimes.com",
+        "https://www.github.com"
     ]
 
 # Loads the default ManagerParams
 # and NUM_BROWSERS copies of the default BrowserParams
 NUM_BROWSERS = 2
 manager_params = ManagerParams(num_browsers=NUM_BROWSERS)
-browser_params = [BrowserParams(display_mode="native") for _ in range(NUM_BROWSERS)]
+browser_params = [BrowserParams(display_mode="headless") for _ in range(NUM_BROWSERS)]
 
 # Update browser configuration (use this for per-browser settings)
 for browser_param in browser_params:
@@ -44,7 +48,8 @@ for browser_param in browser_params:
     # Record JS Web API calls
     browser_param.js_instrument = True
     # Record the callstack of all WebRequests made
-    browser_param.callstack_instrument = True
+    # browser_param.callstack_instrument = True # According to error messages, callstack_instrument is now
+    # a broken function
     # Record DNS resolution
     browser_param.dns_instrument = True
     # Specify the location of temporary files. Ensure directory exists when specifying. 
@@ -59,8 +64,7 @@ manager_params.log_path = Path("./datadir/openwpm.log")
 # Please refer to docs/Configuration.md#platform-configuration-options for more information
 # manager_params.memory_watchdog = True
 # manager_params.process_watchdog = True
-manager_params.storage_watchdog_enable = True
-
+manager_params.storage_watchdog_enable = 52428800
 
 # Commands time out by default after 60 seconds
 with TaskManager(

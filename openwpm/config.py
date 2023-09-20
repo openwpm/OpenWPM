@@ -101,8 +101,12 @@ class BrowserParams(DataClassJsonMixin):
         default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
     )
     
-    # tmp_profile_dir: str = "/tmp"
     tmp_profile_dir: str = tempfile.gettempdir()
+    """
+    The tmp_profile_dir defaults to the OS's temporary file folder (typically /tmp) and is where the generated 
+    browser profiles and residual files are stored.
+    """
+    
     
     recovery_tar: Optional[Path] = None
     donottrack: bool = False
@@ -138,11 +142,24 @@ class ManagerParams(DataClassJsonMixin):
     """A watchdog that tries to ensure that no Firefox instance takes up too much memory.
     It is mostly useful for long running cloud crawls"""
     process_watchdog: bool = False
-
+    
+    storage_watchdog_enable: Optional[int] = None
     """A watchdog that serves as a happy medium between killing a browser after each 
     crawl and allowing the application to still perform quickly. Used as a way to save space 
-    in a limited environment with minimal detriment to speed."""
-    storage_watchdog_enable: bool = False
+    in a limited environment with minimal detriment to speed. This Optional[int] should be the threshold
+    size of the folder in bytes. 
+    ```
+    # Sample values:
+    1073741824: 1GB
+    20971520:  20MB - for testing purposes
+    52428800:  50MB
+    73400320:  70MB
+    104857600: 100MB - IDEAL for 10+ browsers
+    ```
+    """
+    
+    storage_watchdog_obj = None # DO NOT EDIT THIS LINE
+    """Stores a handle to the actual watchdog object."""
     
     """- It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by
          Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server)."""

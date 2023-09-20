@@ -84,6 +84,8 @@ class TaskManager:
         self.browser_params = browser_params
         self._logger_kwargs = logger_kwargs
 
+
+        
         # Create data directories if they do not exist
         if not os.path.exists(manager_params.screenshot_path):
             os.makedirs(manager_params.screenshot_path)
@@ -131,10 +133,12 @@ class TaskManager:
 
         # Start the StorageWatchdog
         if self.manager_params.storage_watchdog_enable:
-            storage_watchdog = StorageWatchdog()
+            
+            storage_watchdog = StorageWatchdog(self.browser_params[0].tmp_profile_dir ,self.manager_params.storage_watchdog_enable)
+            self.manager_params.storage_watchdog_obj = storage_watchdog
             storage_watchdog_thread = threading.Thread(target=storage_watchdog.run, args=())
             storage_watchdog_thread.daemon = True
-            thread.name = "OpenWPM-storage-watchdog"
+            storage_watchdog_thread.name = "OpenWPM-storage-watchdog"
             
             storage_watchdog_thread.start()
         # Save crawl config information to database

@@ -34,7 +34,7 @@ from .utilities.multiprocess_utils import (
     kill_process_and_children,
     parse_traceback_for_sentry,
 )
-from .utilities.storage_watchdog import periodic_check
+from .utilities.storage_watchdog import StorageWatchdogThread
 
 pickling_support.install()
 
@@ -505,7 +505,25 @@ class BrowserManagerHandle:
         # Allow StorageWatchdog to utilize built-in browser reset functionality
         # which results in a graceful restart of the browser instance
         if self.manager_params.storage_watchdog_enable:
-            reset = periodic_check(self.current_profile_path, self)
+            
+            # storage_checker = threading.Thread(target=self.manager_params.storage_watchdog_obj.periodic_check, args=([self.current_profile_path, self]))
+            # storage_checker.daemon = True
+            # storage_checker.name = f"OpenWPM-storage-checker-{self.browser_id}"
+            storage_checker = StorageWatchdogThread(self.manager_params.storage_watchdog_obj, [
+                self.current_profile_path,
+                self
+            ])
+            storage_checker.daemon = True
+            storage_checker.name = ""
+            storage_checker.start()
+            storage_checker.join()
+            
+            # storage_checker.start()
+            # storage_checker.join()
+            
+            # reset = self.manager_params.storage_watchdog_obj.periodic_check(self.current_profile_path, self)
+            reset = storage_checker.ret_value
+
 
         if self.restart_required or reset:
             success = self.restart_browser_manager(clear_profile=reset)
