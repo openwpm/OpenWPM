@@ -48,8 +48,8 @@ module.exports = {
     "jsdoc/check-alignment": "error",
     "jsdoc/check-indentation": "error",
     "jsdoc/tag-lines": [
-      'error',
-      'any',
+      "error",
+      "any",
       {
         startLines: 1,
       },
@@ -115,15 +115,31 @@ module.exports = {
         "mozilla/browser-window": true,
         "mozilla/privileged": true,
       },
-      globals: {
-        Cu: "readonly",
-        Ci: "readonly",
-        Cc: "readonly",
-        Cr: "readonly",
-        ExtensionAPI: "readonly",
-        Services: "readonly",
-        OS: "readonly",
-      },
+      /** See https://firefox-source-docs.mozilla.org/toolkit/components/extensions/webextensions/basics.html#globals-available-in-the-api-scripts-global */
+      globals: [
+        "AppConstants",
+        "console",
+        "Cu",
+        "Ci",
+        "Cc",
+        "Cr",
+        "ChromeWorker",
+        "extensions",
+        "ExtensionAPI",
+        "ExtensionCommon",
+        "ExtensionUtils",
+        "ExtensionUtils",
+        "MatchGlob",
+        "MatchPattern",
+        "MatchPatternSet",
+        "Services",
+        "StructuredCloneHolder",
+        "OS",
+        "XPCOMUtils",
+      ].reduce((acc, e) => {
+        acc[e] = "readonly";
+        return acc;
+      }, {}),
     },
     {
       files: ["*.ts"],

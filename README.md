@@ -162,7 +162,7 @@ Further information is available at [OPENWPM's Documentation Page](https://openw
 
 ## Advice for Measurement Researchers
 
-OpenWPM is [often used](https://webtap.princeton.edu/software/) for web
+OpenWPM is [often used](https://openwpm.readthedocs.io/Papers.html) for web
 measurement research. We recommend the following for researchers using the tool:
 
 **Use a versioned [release](https://github.com/openwpm/OpenWPM/releases).** We

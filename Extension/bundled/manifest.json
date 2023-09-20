@@ -4,9 +4,7 @@
   "version": "1.0",
   "description": "OpenWPM Client Extension",
   "background": {
-    "scripts": [
-      "feature.js"
-    ]
+    "scripts": ["feature.js"]
   },
   "content_scripts": [],
   "applications": {
@@ -34,43 +32,25 @@
     "sockets": {
       "schema": "./privileged/sockets/schema.json",
       "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
+        "scopes": ["addon_parent"],
         "script": "./privileged/sockets/api.js",
-        "paths": [
-          [
-            "sockets"
-          ]
-        ]
+        "paths": [["sockets"]]
       }
     },
     "profileDirIO": {
       "schema": "./privileged/profileDirIO/schema.json",
       "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
+        "scopes": ["addon_parent"],
         "script": "./privileged/profileDirIO/api.js",
-        "paths": [
-          [
-            "profileDirIO"
-          ]
-        ]
+        "paths": [["profileDirIO"]]
       }
     },
     "stackDump": {
       "schema": "./privileged/stackDump/schema.json",
       "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
+        "scopes": ["addon_parent"],
         "script": "./privileged/stackDump/api.js",
-        "paths": [
-          [
-            "stackDump"
-          ]
-        ]
+        "paths": [["stackDump"]]
       }
     }
   }

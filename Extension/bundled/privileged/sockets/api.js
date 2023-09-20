@@ -1,15 +1,3 @@
-/* globals ExtensionCommon */
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionCommon",
-  "resource://gre/modules/ExtensionCommon.jsm",
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm",
-);
-
 const tm = Cc["@mozilla.org/thread-manager;1"].getService();
 const socketService = Cc[
   "@mozilla.org/network/socket-transport-service;1"
