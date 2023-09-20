@@ -44,7 +44,7 @@ for browser_param in browser_params:
     # Record JS Web API calls
     browser_param.js_instrument = True
     # Record the callstack of all WebRequests made
-    browser_param.callstack_instrument = True
+    # browser_param.callstack_instrument = True
     # Record DNS resolution
     browser_param.dns_instrument = True
 

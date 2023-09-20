@@ -25,7 +25,7 @@ class Controller {
       channel.loadInfo &&
       channel.loadInfo.loadingDocument === null &&
       channel.loadInfo.loadingPrincipal ===
-        Services.scriptSecurityManager.getSystemPrincipal()
+      Services.scriptSecurityManager.getSystemPrincipal()
     ) {
       return false;
     }
@@ -134,14 +134,14 @@ class Controller {
             // Format described here https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
             stacktrace.push(
               frame.name +
-                "@" +
-                frame.filename +
-                ":" +
-                frame.lineNumber +
-                ":" +
-                frame.columnNumber +
-                ";" +
-                frame.asyncCause,
+              "@" +
+              frame.filename +
+              ":" +
+              frame.lineNumber +
+              ":" +
+              frame.columnNumber +
+              ";" +
+              frame.asyncCause,
             );
             frame = frame.caller || frame.asyncCaller;
           }

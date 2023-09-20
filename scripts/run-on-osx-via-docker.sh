@@ -15,17 +15,17 @@ rm -rf test/__pycache__/
 
 # Allow access to XQuartz for the current IP
 export IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
-xhost + $IP
+xhost + "$IP"
 export DISPLAY=$IP:0
 
 # start the docker environment with X server forwarding
 if [ "$#" == 0 ]; then
     echo "Starting a shell in the Docker environment"
 else
-    echo "Running '$@' in the Docker environment"
+    echo "Running '$*' in the Docker environment"
 fi
 docker run \
-    -v $PWD/docker-volume:/home/user/Desktop/ \
-    -v $PWD:/opt/OpenWPM/ \
-    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
-    -it openwpm $@
+    -v "$PWD"/docker-volume:/home/user/Desktop/ \
+    -v "$PWD":/opt/OpenWPM/ \
+    -e DISPLAY="$DISPLAY" -v /tmp/.X11-unix:/tmp/.X11-unix --shm-size=2g \
+    -it --init openwpm "$@"
