@@ -111,3 +111,20 @@ class AdScrapingCommand(BaseCommand):
 
         except Exception as e:
             self.logger.error(f"Error scraping ad content: {e}")
+
+
+class SetCookiesCommand(BaseCommand):
+    def __init__(self, cookies):
+        self.cookies = cookies
+
+    def execute(self, webdriver: Firefox, *args, **kwargs):
+        for cookie_data in self.cookies:
+            cookie = {
+                'name': str(cookie_data[12]),  # Convert to string
+                'value': str(cookie_data[15]),  # Convert to string
+                'domain': str(cookie_data[10]),  # Convert to string
+                'path': str(cookie_data[13]),  # Convert to string
+                'secure': bool(cookie_data[16]),  # Convert to string and lowercase
+                'httpOnly': bool(cookie_data[6]),  # Convert to string and lowercase
+            }
+            webdriver.add_cookie(cookie)
