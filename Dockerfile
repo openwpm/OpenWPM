@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:22.04
 
 SHELL ["/bin/bash", "-c"]
 
@@ -13,7 +13,7 @@ RUN apt-get clean -qq \
     # git and make for `npm install`, wget for `install-mamba`
     && apt-get install wget git make -qq \
     # deps to run firefox inc. with xvfb
-    && apt-get install firefox xvfb -qq
+    && apt-get install firefox xvfb libgtk-3-dev libasound2 libdbus-glib-1-2 libpci3 -qq
 
 ENV HOME /opt
 COPY scripts/install-mamba.sh .
