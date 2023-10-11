@@ -35,7 +35,9 @@ def deploy_firefox(
 
     root_dir = os.path.dirname(__file__)  # directory of this file
 
-    browser_profile_path = Path(tempfile.mkdtemp(prefix="firefox_profile_", dir=browser_params.tmp_profile_dir))
+    browser_profile_path = Path(
+        tempfile.mkdtemp(prefix="firefox_profile_", dir=browser_params.tmp_profile_dir)
+    )
     status_queue.put(("STATUS", "Profile Created", browser_profile_path))
 
     # Use Options instead of FirefoxProfile to set preferences since the

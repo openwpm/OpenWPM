@@ -1,9 +1,8 @@
-import os
+import tempfile
 from dataclasses import dataclass, field
 from json import JSONEncoder
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
-import tempfile
 
 from dataclasses_json import DataClassJsonMixin
 from dataclasses_json import config as DCJConfig
@@ -100,14 +99,46 @@ class BrowserParams(DataClassJsonMixin):
     profile_archive_dir: Optional[Path] = field(
         default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
     )
-    
-    tmp_profile_dir: str = tempfile.gettempdir()
+
+    tmp_profile_dir: Path = field(
+        default=Path(tempfile.gettempdir()),
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
     """
     The tmp_profile_dir defaults to the OS's temporary file folder (typically /tmp) and is where the generated 
     browser profiles and residual files are stored.
     """
-    
-    
+
+    maximum_profile_size: Optional[int] = None
+    """
+    The total amount of on disk space a profile is allowed to consume in bytes.
+    If this option is not set, no checks will be performed
+
+    Rationale
+    ---------
+    This option can serve as a happy medium between killing a browser after each
+    crawl and allowing the application to still perform quickly.
+
+    Used as a way to save space
+    in a limited environment with minimal detriment to speed.
+
+    If the maximum_profile_size is exceeded after a CommandSequence
+    is completed, the browser will be shut down and a new one will
+    be created. **Even with this setting you may temporarily have
+    more disk usage than the sum of all maximum_profile_sizes**
+    However, this will also ensure that a CommandSequence is
+    allowed to complete without undue interruptions.
+
+    Sample values
+    -------------
+    * 1073741824: 1GB
+    * 20971520:  20MB - for testing purposes
+    * 52428800:  50MB
+    * 73400320:  70MB
+    * 104857600: 100MB - IDEAL for 10+ browsers
+
+    """
+
     recovery_tar: Optional[Path] = None
     donottrack: bool = False
     tracking_protection: bool = False
@@ -142,30 +173,11 @@ class ManagerParams(DataClassJsonMixin):
     """A watchdog that tries to ensure that no Firefox instance takes up too much memory.
     It is mostly useful for long running cloud crawls"""
     process_watchdog: bool = False
-
-    
-    storage_watchdog_enable: Optional[int] = None
-    """A watchdog that serves as a happy medium between killing a browser after each 
-    crawl and allowing the application to still perform quickly. Used as a way to save space 
-    in a limited environment with minimal detriment to speed. This Optional[int] should be the threshold
-    size of the folder in bytes. 
-    ```
-    # Sample values:
-    1073741824: 1GB
-    20971520:  20MB - for testing purposes
-    52428800:  50MB
-    73400320:  70MB
-    104857600: 100MB - IDEAL for 10+ browsers
-    ```
+    """It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`)
+    instances that haven't been spawned by OpenWPM. (GeckoDriver is used by
+    Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server).
     """
-   
-    storage_watchdog_obj = None # DO NOT EDIT THIS LINE
-    """Stores a handle to the actual watchdog object."""
-    
-    """- It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by
-=======
-    """It is used to create another thread that kills off `GeckoDriver` (or `Xvfb`) instances that haven't been spawned by OpenWPM. (GeckoDriver is used by
-         Selenium to control Firefox and Xvfb a "virtual display" so we simulate having graphics when running on a server)."""
+
     num_browsers: int = 1
     _failure_limit: Optional[int] = None
     """The number of command failures the platform will tolerate before raising a

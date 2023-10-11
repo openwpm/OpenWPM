@@ -19,7 +19,7 @@ if args.tranco:
     print("Loading tranco top sites list...")
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
-    sites = ["http://" + x for x in latest_list.top(10)]
+    sites = ["http://" + x for x in latest_list.top(100)]
 else:
     sites = [
         "http://www.example.com",
@@ -28,7 +28,7 @@ else:
         "https://www.google.com",
         "https://www.minecraft.net",
         "https://www.nytimes.com",
-        "https://www.github.com"
+        "https://www.github.com",
     ]
 
 # Loads the default ManagerParams
@@ -52,8 +52,9 @@ for browser_param in browser_params:
     # a broken function
     # Record DNS resolution
     browser_param.dns_instrument = True
-    # Specify the location of temporary files. Ensure directory exists when specifying. 
+    # Specify the location of temporary files. Ensure directory exists when specifying.
     # browser_param.tmp_profile_dir = "/"
+    browser_param.maximum_profile_size = 52428800
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params.data_directory = Path("./datadir/")
@@ -64,7 +65,7 @@ manager_params.log_path = Path("./datadir/openwpm.log")
 # Please refer to docs/Configuration.md#platform-configuration-options for more information
 # manager_params.memory_watchdog = True
 # manager_params.process_watchdog = True
-manager_params.storage_watchdog_enable = 52428800
+
 
 # Commands time out by default after 60 seconds
 with TaskManager(
@@ -74,7 +75,7 @@ with TaskManager(
     None,
 ) as manager:
     # Visits the sites
-    
+
     for index, site in enumerate(sites):
 
         def callback(success: bool, val: str = site) -> None:

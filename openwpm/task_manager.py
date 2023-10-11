@@ -3,6 +3,7 @@ import os
 import pickle
 import threading
 import time
+from functools import reduce
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Set, Type
 
@@ -29,7 +30,7 @@ from .storage.storage_providers import (
 )
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
-from .utilities.storage_watchdog import StorageWatchdog
+from .utilities.storage_watchdog import StorageLogger
 
 tblib.pickling_support.install()
 
@@ -80,12 +81,10 @@ class TaskManager:
 
         manager_params.source_dump_path = manager_params.data_directory / "sources"
 
-        self.manager_params = manager_params
-        self.browser_params = browser_params
+        self.manager_params: ManagerParamsInternal = manager_params
+        self.browser_params: List[BrowserParamsInternal] = browser_params
         self._logger_kwargs = logger_kwargs
 
-
-        
         # Create data directories if they do not exist
         if not os.path.exists(manager_params.screenshot_path):
             os.makedirs(manager_params.screenshot_path)
@@ -131,16 +130,20 @@ class TaskManager:
         thread.name = "OpenWPM-watchdog"
         thread.start()
 
-        # Start the StorageWatchdog
-        if self.manager_params.storage_watchdog_enable:
-            
-            storage_watchdog = StorageWatchdog(self.browser_params[0].tmp_profile_dir ,self.manager_params.storage_watchdog_enable)
-            self.manager_params.storage_watchdog_obj = storage_watchdog
-            storage_watchdog_thread = threading.Thread(target=storage_watchdog.run, args=())
-            storage_watchdog_thread.daemon = True
-            storage_watchdog_thread.name = "OpenWPM-storage-watchdog"
-            
-            storage_watchdog_thread.start()
+        # Start the StorageLogger if a maximum storage value has been specified for any browser
+        if reduce(
+            lambda x, y: x or y,
+            map(lambda p: p.maximum_profile_size is not None, self.browser_params),
+            False,
+        ):
+            storage_logger = StorageLogger(
+                self.browser_params[0].tmp_profile_dir,
+            )
+
+            storage_logger.daemon = True
+            storage_logger.name = "OpenWPM-storage-logger"
+
+            storage_logger.start()
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
         self.storage_controller_handle.save_configuration(

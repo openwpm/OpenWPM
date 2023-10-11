@@ -34,7 +34,7 @@ from .utilities.multiprocess_utils import (
     kill_process_and_children,
     parse_traceback_for_sentry,
 )
-from .utilities.storage_watchdog import StorageWatchdogThread
+from .utilities.storage_watchdog import profile_size_exceeds_max_size
 
 pickling_support.install()
 
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 
 
 class BrowserManagerHandle:
-    """The BrowserManagerHandle class is responsible for holding all of the
+    """The BrowserManagerHandle class is responsible for holding all the
     configuration and status information on BrowserManager process
     it corresponds to. It also includes a set of methods for managing
     the BrowserManager process and its child processes/threads.
@@ -504,26 +504,13 @@ class BrowserManagerHandle:
 
         # Allow StorageWatchdog to utilize built-in browser reset functionality
         # which results in a graceful restart of the browser instance
-        if self.manager_params.storage_watchdog_enable:
-            
-            # storage_checker = threading.Thread(target=self.manager_params.storage_watchdog_obj.periodic_check, args=([self.current_profile_path, self]))
-            # storage_checker.daemon = True
-            # storage_checker.name = f"OpenWPM-storage-checker-{self.browser_id}"
-            storage_checker = StorageWatchdogThread(self.manager_params.storage_watchdog_obj, [
-                self.current_profile_path,
-                self
-            ])
-            storage_checker.daemon = True
-            storage_checker.name = ""
-            storage_checker.start()
-            storage_checker.join()
-            
-            # storage_checker.start()
-            # storage_checker.join()
-            
-            # reset = self.manager_params.storage_watchdog_obj.periodic_check(self.current_profile_path, self)
-            reset = storage_checker.ret_value
+        if self.browser_params.maximum_profile_size:
+            assert self.current_profile_path is not None
 
+            reset = profile_size_exceeds_max_size(
+                self.current_profile_path,
+                self.browser_params.maximum_profile_size,
+            )
 
         if self.restart_required or reset:
             success = self.restart_browser_manager(clear_profile=reset)
@@ -589,7 +576,9 @@ class BrowserManagerHandle:
                 )
         if self.display_port is not None:  # xvfb display lock
             # lockfile = "/tmp/.X%s-lock" % self.display_port
-            lockfile = os.path.join(self.browser_params.tmp_profile_dir, f".X{self.display_port}-lock")
+            lockfile = os.path.join(
+                self.browser_params.tmp_profile_dir, f".X{self.display_port}-lock"
+            )
 
             try:
                 os.remove(lockfile)
