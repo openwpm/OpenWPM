@@ -33,4 +33,3 @@ dependencies:
         - domain-utils
         - dataclasses-json
         - tranco
-        - watchdog

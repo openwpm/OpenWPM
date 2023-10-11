@@ -110,7 +110,7 @@ class TaskManager:
         self.logging_server = MPLogger(
             self.manager_params.log_path,
             str(structured_storage_provider),
-            **self._logger_kwargs
+            **self._logger_kwargs,
         )
         self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
@@ -379,6 +379,7 @@ class TaskManager:
         # Start command execution thread
         args = (self, command_sequence)
         thread = threading.Thread(target=browser.execute_command_sequence, args=args)
+        thread.name = f"BrowserManagerHandle-{browser.browser_id}"
         browser.command_thread = thread
         thread.daemon = True
         thread.start()
