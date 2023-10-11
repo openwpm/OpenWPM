@@ -111,7 +111,8 @@ class BrowserParams(DataClassJsonMixin):
 
     maximum_profile_size: Optional[int] = None
     """
-    The total amount of on disk space a profile is allowed to consume in bytes.
+    The total amount of on disk space the generated 
+    browser profiles and residual files are allowed to consume in bytes.
     If this option is not set, no checks will be performed
 
     Rationale
