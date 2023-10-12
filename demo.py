@@ -54,6 +54,9 @@ for browser_param in browser_params:
     # browser_param.callstack_instrument = True
     # Record DNS resolution
     browser_param.dns_instrument = True
+    # Set this value as appropriate for the size of your temp directory
+    # if you are running out of space
+    browser_param.maximum_profile_size = 50 * (10**20)  # 50 MB = 50 * 2^20 Bytes
 
 # Update TaskManager configuration (use this for crawl-wide settings)
 manager_params.data_directory = Path("./datadir/")
