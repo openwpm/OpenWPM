@@ -54,7 +54,7 @@ class CollectLinksCommand(BaseCommand):
                 element.get_attribute("href")
                 for element in webdriver.find_elements(By.TAG_NAME, "a")
             )
-            if x.startswith(self.scheme + "://")
+            if x is not None and x.startswith(self.scheme + "://")
         ]
         current_url = webdriver.current_url
 

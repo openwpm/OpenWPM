@@ -3,6 +3,7 @@ import os
 import pickle
 import threading
 import time
+from functools import reduce
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Set, Type
 
@@ -29,6 +30,7 @@ from .storage.storage_providers import (
 )
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
+from .utilities.storage_watchdog import StorageLogger
 
 tblib.pickling_support.install()
 
@@ -79,8 +81,8 @@ class TaskManager:
 
         manager_params.source_dump_path = manager_params.data_directory / "sources"
 
-        self.manager_params = manager_params
-        self.browser_params = browser_params
+        self.manager_params: ManagerParamsInternal = manager_params
+        self.browser_params: List[BrowserParamsInternal] = browser_params
         self._logger_kwargs = logger_kwargs
 
         # Create data directories if they do not exist
@@ -108,7 +110,7 @@ class TaskManager:
         self.logging_server = MPLogger(
             self.manager_params.log_path,
             str(structured_storage_provider),
-            **self._logger_kwargs
+            **self._logger_kwargs,
         )
         self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
@@ -128,6 +130,20 @@ class TaskManager:
         thread.name = "OpenWPM-watchdog"
         thread.start()
 
+        # Start the StorageLogger if a maximum storage value has been specified for any browser
+        if reduce(
+            lambda x, y: x or y,
+            map(lambda p: p.maximum_profile_size is not None, self.browser_params),
+            False,
+        ):
+            storage_logger = StorageLogger(
+                self.browser_params[0].tmp_profile_dir,
+            )
+
+            storage_logger.daemon = True
+            storage_logger.name = "OpenWPM-storage-logger"
+
+            storage_logger.start()
         # Save crawl config information to database
         openwpm_v, browser_v = get_version()
         self.storage_controller_handle.save_configuration(
@@ -363,6 +379,7 @@ class TaskManager:
         # Start command execution thread
         args = (self, command_sequence)
         thread = threading.Thread(target=browser.execute_command_sequence, args=args)
+        thread.name = f"BrowserManagerHandle-{browser.browser_id}"
         browser.command_thread = thread
         thread.daemon = True
         thread.start()

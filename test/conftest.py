@@ -2,7 +2,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Any, Callable, Generator, List, Literal, Tuple
+from typing import Any, Callable, Generator, List, Literal, Protocol, Tuple, TypeAlias
 
 import pytest
 
@@ -44,10 +44,11 @@ def server():
     server_thread.join()
 
 
+FullConfig: TypeAlias = tuple[ManagerParams, list[BrowserParams]]
+
+
 @pytest.fixture()
-def default_params(
-    tmp_path: Path, num_browsers: int = NUM_BROWSERS
-) -> Tuple[ManagerParams, List[BrowserParams]]:
+def default_params(tmp_path: Path, num_browsers: int = NUM_BROWSERS) -> FullConfig:
     """Just a simple wrapper around task_manager.load_default_params"""
 
     manager_params = ManagerParams(
@@ -63,17 +64,16 @@ def default_params(
     return manager_params, browser_params
 
 
+TaskManagerCreator: TypeAlias = Callable[[FullConfig], Tuple[TaskManager, Path]]
+
+
 @pytest.fixture()
-def task_manager_creator(
-    server: None, xpi: None
-) -> Callable[[Tuple[ManagerParams, List[BrowserParams]]], Tuple[TaskManager, Path]]:
+def task_manager_creator(server: None, xpi: None) -> TaskManagerCreator:
     """We create a callable that returns a TaskManager that has
     been configured with the Manager and BrowserParams"""
 
     # We need to create the fixtures like this because usefixtures doesn't work on fixtures
-    def _create_task_manager(
-        params: Tuple[ManagerParams, List[BrowserParams]]
-    ) -> Tuple[TaskManager, Path]:
+    def _create_task_manager(params: FullConfig) -> Tuple[TaskManager, Path]:
         manager_params, browser_params = params
         db_path = manager_params.data_directory / "crawl-data.sqlite"
         structured_provider = SQLiteStorageProvider(db_path)
@@ -88,17 +88,24 @@ def task_manager_creator(
     return _create_task_manager
 
 
+class HttpParams(Protocol):
+    def __call__(
+        self, display_mode: Literal["headless", "xvfb"] = "headless"
+    ) -> FullConfig:
+        ...
+
+
 @pytest.fixture()
 def http_params(
-    default_params: Tuple[ManagerParams, List[BrowserParams]],
-) -> Callable[[Literal["headless", "xvfb"]], Tuple[ManagerParams, List[BrowserParams]]]:
+    default_params: FullConfig,
+) -> HttpParams:
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.http_instrument = True
 
     def parameterize(
         display_mode: Literal["headless", "xvfb"] = "headless",
-    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+    ) -> FullConfig:
         for browser_param in browser_params:
             browser_param.display_mode = display_mode
         return manager_params, browser_params
