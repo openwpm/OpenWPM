@@ -169,8 +169,6 @@ def deploy_firefox(
     # Get browser process pid
     if hasattr(driver, "service") and hasattr(driver.service, "process"):
         pid = driver.service.process.pid
-    elif hasattr(driver, "binary") and hasattr(driver.options.binary, "process"):
-        pid = driver.options.binary.process.pid
     else:
         raise RuntimeError("Unable to identify Firefox process ID.")
 

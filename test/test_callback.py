@@ -3,10 +3,13 @@ from typing import List
 
 from openwpm.command_sequence import CommandSequence
 
+from .conftest import FullConfig, TaskManagerCreator
 from .utilities import BASE_TEST_URL
 
 
-def test_local_callbacks(default_params, task_manager_creator):
+def test_local_callbacks(
+    default_params: FullConfig, task_manager_creator: TaskManagerCreator
+) -> None:
     """Test the storage controller as well as the entire callback machinery
     to see if all callbacks get correctly called"""
     manager, _ = task_manager_creator(default_params)

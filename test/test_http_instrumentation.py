@@ -6,8 +6,9 @@ import json
 import os
 from hashlib import sha256
 from pathlib import Path
+from sqlite3 import Row
 from time import sleep
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import pytest
@@ -21,6 +22,7 @@ from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.utilities import db_utils
 
 from . import utilities
+from .conftest import FullConfig, HttpParams, TaskManagerCreator
 from .openwpmtest import OpenWPMTest
 
 # Data for test_page_visit
@@ -32,7 +34,7 @@ from .openwpmtest import OpenWPMTest
 # loading_href,
 # is_XHR, is_tp_content, is_tp_window,
 #   resource_type
-HTTP_REQUESTS = {
+HTTP_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
@@ -202,7 +204,7 @@ HTTP_REQUESTS = {
 
 # format: (request_url, referrer, location)
 # TODO: webext instrumentation doesn't support referrer yet
-HTTP_RESPONSES = {
+HTTP_RESPONSES: set[tuple[str, str]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
         # u'',
@@ -256,7 +258,7 @@ HTTP_RESPONSES = {
 }
 
 # format: (source_url, destination_url, location header)
-HTTP_REDIRECTS = {
+HTTP_REDIRECTS: set[tuple[str, str, str | None]] = {
     (
         f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req1.png",
         f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
@@ -285,7 +287,7 @@ HTTP_REDIRECTS = {
 }
 
 # Data for test_cache_hits_recorded
-HTTP_CACHED_REQUESTS = {
+HTTP_CACHED_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
@@ -411,7 +413,7 @@ HTTP_CACHED_REQUESTS = {
 
 # format: (request_url, referrer, is_cached)
 # TODO: referrer isn't recorded by webext instrumentation yet.
-HTTP_CACHED_RESPONSES = {
+HTTP_CACHED_RESPONSES: set[tuple[str, int]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
         # u'',
@@ -441,7 +443,7 @@ HTTP_CACHED_RESPONSES = {
 }
 
 # format: (source_url, destination_url)
-HTTP_CACHED_REDIRECTS = {
+HTTP_CACHED_REDIRECTS: set[tuple[str, str]] = {
     (
         f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame1.png",
         f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
@@ -465,7 +467,7 @@ HTTP_CACHED_REDIRECTS = {
 }
 
 # Test URL attribution for worker script requests
-HTTP_WORKER_SCRIPT_REQUESTS = {
+HTTP_WORKER_SCRIPT_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_worker_page.html",
         f"{utilities.BASE_TEST_URL}/http_worker_page.html",
@@ -524,7 +526,7 @@ HTTP_WORKER_SCRIPT_REQUESTS = {
 }
 
 # Test URL-attribution for Service Worker requests.
-HTTP_SERVICE_WORKER_REQUESTS = {
+HTTP_SERVICE_WORKER_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
     (
         "http://localhost:8000/test_pages/http_service_worker_page.html",
         "http://localhost:8000/test_pages/http_service_worker_page.html",
@@ -586,9 +588,7 @@ BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestHTTPInstrument(OpenWPMTest):
-    def get_config(
-        self, data_dir: Optional[Path]
-    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+    def get_config(self, data_dir: Optional[Path]) -> FullConfig:
         manager_params, browser_params = self.get_test_config(data_dir)
         browser_params[0].http_instrument = True
         return manager_params, browser_params
@@ -814,7 +814,9 @@ class TestPOSTInstrument(OpenWPMTest):
 
 
 @pytest.mark.parametrize("delayed", [True, False])
-def test_page_visit(task_manager_creator, http_params, delayed):
+def test_page_visit(
+    task_manager_creator: TaskManagerCreator, http_params: HttpParams, delayed: bool
+) -> None:
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
     manager_params, browser_params = http_params()
     if delayed:
@@ -836,9 +838,10 @@ def test_page_visit(task_manager_creator, http_params, delayed):
 
     # HTTP Requests
     rows = db_utils.query_db(db, "SELECT * FROM http_requests")
-    observed_records = set()
+    observed_requests = set()
     for row in rows:
-        observed_records.add(
+        assert isinstance(row, Row)
+        observed_requests.add(
             (
                 row["url"].split("?")[0],
                 row["top_level_url"],
@@ -853,13 +856,14 @@ def test_page_visit(task_manager_creator, http_params, delayed):
         )
 
         request_id_to_url[row["request_id"]] = row["url"]
-    assert HTTP_REQUESTS == observed_records
+    assert HTTP_REQUESTS == observed_requests
 
     # HTTP Responses
     rows = db_utils.query_db(db, "SELECT * FROM http_responses")
-    observed_records: Set[Tuple[str, str]] = set()
+    observed_responses: Set[Tuple[str, str]] = set()
     for row in rows:
-        observed_records.add(
+        assert isinstance(row, Row)
+        observed_responses.add(
             (
                 row["url"].split("?")[0],
                 # TODO: webext-instrumentation doesn't support referrer
@@ -869,12 +873,13 @@ def test_page_visit(task_manager_creator, http_params, delayed):
         )
         assert row["request_id"] in request_id_to_url
         assert request_id_to_url[row["request_id"]] == row["url"]
-    assert HTTP_RESPONSES == observed_records
+    assert HTTP_RESPONSES == observed_responses
 
     # HTTP Redirects
     rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
-    observed_records = set()
+    observed_redirects: set[tuple[str, str, str | None]] = set()
     for row in rows:
+        assert isinstance(row, Row)
         # TODO: webext instrumentation doesn't support new_request_id yet
         # src = request_id_to_url[row['old_request_id']].split('?')[0]
         # dst = request_id_to_url[row['new_request_id']].split('?')[0]
@@ -886,8 +891,8 @@ def test_page_visit(task_manager_creator, http_params, delayed):
             if header.lower() == "location":
                 location = value
                 break
-        observed_records.add((src, dst, location))
-    assert HTTP_REDIRECTS == observed_records
+        observed_redirects.add((src, dst, location))
+    assert HTTP_REDIRECTS == observed_redirects
 
 
 def test_javascript_saving(http_params, xpi, server):
