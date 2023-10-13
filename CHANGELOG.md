@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.25.0 - 2023-10-13
+
+Bump to Firefox 118.0.2
+Introduce StorageWatchdog #1056 (Thanks @gridl0ck for contributing this)
+Upgrade Docker image to Ubuntu 22.04 #1055
+
 ## v0.24.0 - 2023-09-05
 
 Bump to Firefox 117
