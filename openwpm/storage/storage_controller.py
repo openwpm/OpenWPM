@@ -97,6 +97,8 @@ class StorageController:
             self.logger.error(
                 "An exception occurred while processing records", exc_info=e
             )
+        writer.close()
+        await writer.wait_closed()
 
     async def handler(
         self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
