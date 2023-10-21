@@ -76,7 +76,7 @@ export const open = async function (
     );
     console.log("StorageController started?", rv);
   }
-
+  storageController.send(JSON.stringify(`Browser-${crawlID}`));
   // Listen for incoming urls as visit ids
   listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
   console.log("Starting socket listening for incoming connections.");

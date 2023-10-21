@@ -104,13 +104,14 @@ class StorageController:
         self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
-        self.logger.debug("Initializing new handler")
+        client_name = await get_message_from_reader(reader)
+        self.logger.debug(f"Initializing new handler for {client_name}")
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
             except IncompleteReadError:
                 self.logger.info(
-                    "Terminating handler, because the underlying socket closed"
+                    f"Terminating handler for {client_name}, because the underlying socket closed"
                 )
                 break
             if len(record) != 2:
@@ -361,10 +362,11 @@ class StorageController:
 class DataSocket:
     """Wrapper around ClientSocket to make sending records to the StorageController more convenient"""
 
-    def __init__(self, listener_address: Tuple[str, int]) -> None:
+    def __init__(self, listener_address: Tuple[str, int], client_name: str) -> None:
         self.socket = ClientSocket(serialization="dill")
         self.socket.connect(*listener_address)
         self.logger = logging.getLogger("openwpm")
+        self.socket.send(client_name)
 
     def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -445,7 +447,7 @@ class StorageControllerHandle:
         browser_version: str,
     ) -> None:
         assert self.listener_address is not None
-        sock = DataSocket(self.listener_address)
+        sock = DataSocket(self.listener_address, "StorageControllerHandle")
         task_id = random.getrandbits(32)
         sock.store_record(
             TableName("task"),
@@ -469,6 +471,7 @@ class StorageControllerHandle:
                 },
             )
         sock.finalize_visit_id(INVALID_VISIT_ID, success=True)
+        sock.close()
 
     def launch(self) -> None:
         """Starts the storage controller"""

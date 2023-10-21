@@ -291,7 +291,9 @@ class TaskManager:
         )
         assert self.manager_params.storage_controller_address is not None
         # open connection to storage controller for saving crawl details
-        self.sock = DataSocket(self.manager_params.storage_controller_address)
+        self.sock = DataSocket(
+            self.manager_params.storage_controller_address, "TaskManager"
+        )
 
     def _shutdown_manager(
         self, during_init: bool = False, relaxed: bool = True
