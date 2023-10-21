@@ -558,7 +558,7 @@ class BrowserManagerHandle:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(
-                    "BROWSER %i: Browser manager process does " "not exist",
+                    "BROWSER %i: Browser manager process does not exist",
                     self.browser_id,
                 )
                 pass
