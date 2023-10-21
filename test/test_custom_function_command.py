@@ -61,6 +61,7 @@ class CollectLinksCommand(BaseCommand):
         sock = ClientSocket()
         assert manager_params.storage_controller_address is not None
         sock.connect(*manager_params.storage_controller_address)
+        sock.send("custom_command")
 
         for link in link_urls:
             query = (

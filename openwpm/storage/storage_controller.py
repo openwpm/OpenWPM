@@ -105,7 +105,7 @@ class StorageController:
     ) -> None:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
-        self.logger.debug(f"Initializing new handler for {client_name}")
+        self.logger.info(f"Initializing new handler for {client_name}")
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
