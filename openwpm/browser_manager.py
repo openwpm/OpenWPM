@@ -550,14 +550,16 @@ class BrowserManagerHandle:
             self.logger.debug(
                 "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
                 "Browser PID: %s",
-                (self.browser_id, self.browser_manager.pid, self.geckodriver_pid),
+                self.browser_id,
+                self.browser_manager.pid,
+                self.geckodriver_pid,
             )
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(
-                    "BROWSER %i: Browser manager process does "
-                    "not exist" % self.browser_id
+                    "BROWSER %i: Browser manager process does " "not exist",
+                    self.browser_id,
                 )
                 pass
 
@@ -566,13 +568,14 @@ class BrowserManagerHandle:
                 os.kill(self.display_pid, signal.SIGKILL)
             except OSError:
                 self.logger.debug(
-                    "BROWSER %i: Display process does not exit" % self.browser_id
+                    "BROWSER %i: Display process does not exit", self.browser_id
                 )
                 pass
             except TypeError:
                 self.logger.error(
-                    "BROWSER %i: PID may not be the correct "
-                    "type %s" % (self.browser_id, str(self.display_pid))
+                    "BROWSER %i: PID may not be the correct " "type %s",
+                    self.browser_id,
+                    str(self.display_pid),
                 )
         if self.display_port is not None:  # xvfb display lock
             # lockfile = "/tmp/.X%s-lock" % self.display_port
@@ -584,8 +587,9 @@ class BrowserManagerHandle:
                 os.remove(lockfile)
             except OSError:
                 self.logger.debug(
-                    "BROWSER %i: Screen lockfile (%s) already "
-                    "removed" % (self.browser_id, lockfile)
+                    "BROWSER %i: Screen lockfile (%s) already removed",
+                    self.browser_id,
+                    lockfile,
                 )
                 pass
 
