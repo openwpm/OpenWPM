@@ -78,7 +78,7 @@ def deploy_firefox(
     display_port = None
     display = None
     if display_mode == "headless":
-        fo.headless = True
+        fo.add_argument("--headless")
         fo.add_argument("--width={}".format(DEFAULT_SCREEN_RES[0]))
         fo.add_argument("--height={}".format(DEFAULT_SCREEN_RES[1]))
     if display_mode == "xvfb":
