@@ -549,8 +549,8 @@ class BrowserManagerHandle:
         if self.browser_manager is not None and self.browser_manager.pid is not None:
             self.logger.debug(
                 "BROWSER %i: Attempting to kill BrowserManager with pid %i. "
-                "Browser PID: %s"
-                % (self.browser_id, self.browser_manager.pid, self.geckodriver_pid)
+                "Browser PID: %s",
+                (self.browser_id, self.browser_manager.pid, self.geckodriver_pid),
             )
             try:
                 os.kill(self.browser_manager.pid, signal.SIGKILL)
