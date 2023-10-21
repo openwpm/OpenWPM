@@ -20,7 +20,7 @@ def test_startup_and_shutdown(mp_logger: MPLogger, test_values: dt_test_values) 
     controller_handle = StorageControllerHandle(structured, None)
     controller_handle.launch()
     assert controller_handle.listener_address is not None
-    cs = DataSocket(controller_handle.listener_address)
+    cs = DataSocket(controller_handle.listener_address, "Test")
     for table, data in test_table.items():
         visit_id = data["visit_id"]
         cs.store_record(
@@ -47,7 +47,7 @@ def test_arrow_provider(mp_logger: MPLogger, test_values: dt_test_values) -> Non
     controller_handle.launch()
 
     assert controller_handle.listener_address is not None
-    cs = DataSocket(controller_handle.listener_address)
+    cs = DataSocket(controller_handle.listener_address, "Test")
 
     for table, data in test_table.items():
         visit_id = data["visit_id"]

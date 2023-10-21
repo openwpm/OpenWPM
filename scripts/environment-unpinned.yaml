@@ -16,6 +16,7 @@ dependencies:
     - pandas
     - pip
     - pillow
+    - plyvel
     - psutil
     - pyarrow
     - python
@@ -29,7 +30,6 @@ dependencies:
     - wget
     - pip:
         - jsonschema
-        - plyvel
         - domain-utils
         - dataclasses-json
         - tranco

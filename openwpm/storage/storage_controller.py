@@ -72,11 +72,11 @@ class StorageController:
         self._shutdown_flag = False
         self._relaxed = False
         self.logger = logging.getLogger("openwpm")
-        self.store_record_tasks: DefaultDict[VisitId, List[Task[None]]] = defaultdict(
+        self.store_record_tasks: DefaultDict[VisitId, list[Task[None]]] = defaultdict(
             list
         )
         """Contains all store_record tasks for a given visit_id"""
-        self.finalize_tasks: List[Tuple[VisitId, Optional[Task[None]], bool]] = []
+        self.finalize_tasks: list[tuple[VisitId, Optional[Task[None]], bool]] = []
         """Contains all information required for update_completion_queue to work
             Tuple structure is: VisitId, optional completion token, success
         """
@@ -97,18 +97,21 @@ class StorageController:
             self.logger.error(
                 "An exception occurred while processing records", exc_info=e
             )
+        writer.close()
+        await writer.wait_closed()
 
     async def handler(
         self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
-        self.logger.debug("Initializing new handler")
+        client_name = await get_message_from_reader(reader)
+        self.logger.info(f"Initializing new handler for {client_name}")
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
             except IncompleteReadError:
                 self.logger.info(
-                    "Terminating handler, because the underlying socket closed"
+                    f"Terminating handler for {client_name}, because the underlying socket closed"
                 )
                 break
             if len(record) != 2:
@@ -248,6 +251,7 @@ class StorageController:
             )
 
     async def shutdown(self, completion_queue_task: Task[None]) -> None:
+        self.logger.info("Entering self.shutdown")
         completion_tokens = {}
         visit_ids = list(self.store_record_tasks.keys())
         for visit_id in visit_ids:
@@ -261,6 +265,7 @@ class StorageController:
             self.completion_queue.put((visit_id, False))
 
         await self.structured_storage.shutdown()
+        self.logger.info("structured_storage is shut down")
 
         if self.unstructured_storage is not None:
             await self.unstructured_storage.flush_cache()
@@ -342,13 +347,21 @@ class StorageController:
         update_completion_queue = asyncio.create_task(
             self.update_completion_queue(), name="CompletionQueueFeeder"
         )
-        # Blocks until we should shutdown
+        # Blocks until we should shut down
         await self.should_shutdown()
-
+        self.logger.info(f"Closing Server")
         server.close()
+        self.logger.info("Closed Server")
+        self.logger.info("Cancelling status_queue_update")
         status_queue_update.cancel()
+        self.logger.info("Cancelled status_queue_update")
+        self.logger.info("Cancelling timeout_check")
         timeout_check.cancel()
+        self.logger.info("Cancelled timeout_check")
+        self.logger.info("Starting wait_closed")
         await server.wait_closed()
+        self.logger.info("Completed wait_closed")
+
         await self.shutdown(update_completion_queue)
 
     def run(self) -> None:
@@ -359,10 +372,11 @@ class StorageController:
 class DataSocket:
     """Wrapper around ClientSocket to make sending records to the StorageController more convenient"""
 
-    def __init__(self, listener_address: Tuple[str, int]) -> None:
+    def __init__(self, listener_address: Tuple[str, int], client_name: str) -> None:
         self.socket = ClientSocket(serialization="dill")
         self.socket.connect(*listener_address)
         self.logger = logging.getLogger("openwpm")
+        self.socket.send(client_name)
 
     def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -443,7 +457,7 @@ class StorageControllerHandle:
         browser_version: str,
     ) -> None:
         assert self.listener_address is not None
-        sock = DataSocket(self.listener_address)
+        sock = DataSocket(self.listener_address, "StorageControllerHandle")
         task_id = random.getrandbits(32)
         sock.store_record(
             TableName("task"),
@@ -467,6 +481,7 @@ class StorageControllerHandle:
                 },
             )
         sock.finalize_visit_id(INVALID_VISIT_ID, success=True)
+        sock.close()
 
     def launch(self) -> None:
         """Starts the storage controller"""
