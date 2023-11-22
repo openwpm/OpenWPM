@@ -1,6 +1,6 @@
-import {PendingResponse} from "../lib/pending-response";
-import {DnsResolved} from "../schema";
-import {allTypes} from "./http-instrument";
+import { PendingResponse } from "../lib/pending-response";
+import { DnsResolved } from "../schema";
+import { allTypes } from "./http-instrument";
 import RequestFilter = browser.webRequest.RequestFilter;
 
 export class DnsInstrument {
@@ -28,7 +28,9 @@ export class DnsInstrument {
     /*
      * Attach handlers to event listeners
      */
-    this.onCompleteListener = (details: browser.webRequest._OnCompletedDetails) => {
+    this.onCompleteListener = (
+      details: browser.webRequest._OnCompletedDetails,
+    ) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;

@@ -1,4 +1,4 @@
-import {ResponseBodyListener} from "./response-body-listener";
+import { ResponseBodyListener } from "./response-body-listener";
 
 /**
  * Ties together the two separate events that together holds information about both response headers and body

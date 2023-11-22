@@ -1,4 +1,4 @@
-import {escapeString, Uint8ToBase64} from "./string-utils";
+import { escapeString, Uint8ToBase64 } from "./string-utils";
 
 export interface ParsedPostRequest {
   post_headers?: any;

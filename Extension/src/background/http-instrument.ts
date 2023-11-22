@@ -1,11 +1,11 @@
-import {incrementedEventOrdinal} from "../lib/extension-session-event-ordinal";
-import {extensionSessionUuid} from "../lib/extension-session-uuid";
-import {HttpPostParser, ParsedPostRequest} from "../lib/http-post-parser";
-import {PendingRequest} from "../lib/pending-request";
-import {PendingResponse} from "../lib/pending-response";
-import {boolToInt, escapeString, escapeUrl} from "../lib/string-utils";
-import {HttpRedirect, HttpRequest, HttpResponse} from "../schema";
-import {WebRequestOnBeforeSendHeadersEventDetails,} from "../types/browser-web-request-event-details";
+import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
+import { extensionSessionUuid } from "../lib/extension-session-uuid";
+import { HttpPostParser, ParsedPostRequest } from "../lib/http-post-parser";
+import { PendingRequest } from "../lib/pending-request";
+import { PendingResponse } from "../lib/pending-response";
+import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
+import { HttpRedirect, HttpRequest, HttpResponse } from "../schema";
+import { WebRequestOnBeforeSendHeadersEventDetails } from "../types/browser-web-request-event-details";
 import ResourceType = browser.webRequest.ResourceType;
 import RequestFilter = browser.webRequest.RequestFilter;
 import BlockingResponse = browser.webRequest.BlockingResponse;
@@ -47,17 +47,25 @@ const allTypes: ResourceType[] = [
 export { allTypes };
 
 export class HttpInstrument {
-  private readonly dataReceiver : typeof import("../loggingdb");
+  private readonly dataReceiver: typeof import("../loggingdb");
   private pendingRequests: {
     [requestId: string]: PendingRequest;
   } = {};
   private pendingResponses: {
     [requestId: string]: PendingResponse;
   } = {};
-  private onBeforeRequestListener: (details: browser.webRequest._OnBeforeRequestDetails) => BlockingResponse;
-  private onBeforeSendHeadersListener: (details: WebRequestOnBeforeSendHeadersEventDetails) => void;
-  private onBeforeRedirectListener: (details: browser.webRequest._OnBeforeRedirectDetails) => void;
-  private onCompletedListener: (details: browser.webRequest._OnCompletedDetails) => void;
+  private onBeforeRequestListener: (
+    details: browser.webRequest._OnBeforeRequestDetails,
+  ) => BlockingResponse;
+  private onBeforeSendHeadersListener: (
+    details: WebRequestOnBeforeSendHeadersEventDetails,
+  ) => void;
+  private onBeforeRedirectListener: (
+    details: browser.webRequest._OnBeforeRedirectDetails,
+  ) => void;
+  private onCompletedListener: (
+    details: browser.webRequest._OnCompletedDetails,
+  ) => void;
 
   constructor(dataReceiver: typeof import("../loggingdb")) {
     this.dataReceiver = dataReceiver;
@@ -211,14 +219,14 @@ export class HttpInstrument {
     );
   }
 
-  private getPendingRequest(requestId:string): PendingRequest {
+  private getPendingRequest(requestId: string): PendingRequest {
     if (!this.pendingRequests[requestId]) {
       this.pendingRequests[requestId] = new PendingRequest();
     }
     return this.pendingRequests[requestId];
   }
 
-  private getPendingResponse(requestId:string): PendingResponse {
+  private getPendingResponse(requestId: string): PendingResponse {
     if (!this.pendingResponses[requestId]) {
       this.pendingResponses[requestId] = new PendingResponse();
     }

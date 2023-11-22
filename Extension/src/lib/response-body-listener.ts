@@ -1,4 +1,4 @@
-import {digestMessage} from "./sha256";
+import { digestMessage } from "./sha256";
 
 export class ResponseBodyListener {
   private readonly responseBody: Promise<Uint8Array>;
