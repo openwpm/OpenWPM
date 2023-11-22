@@ -1,5 +1,4 @@
-import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-request-event-details";
-import { digestMessage } from "./sha256";
+import {digestMessage} from "./sha256";
 
 export class ResponseBodyListener {
   private readonly responseBody: Promise<Uint8Array>;
@@ -7,7 +6,7 @@ export class ResponseBodyListener {
   private resolveResponseBody: (responseBody: Uint8Array) => void;
   private resolveContentHash: (contentHash: string) => void;
 
-  constructor(details: WebRequestOnBeforeRequestEventDetails) {
+  constructor(details: browser.webRequest._OnBeforeRequestDetails) {
     this.responseBody = new Promise((resolve) => {
       this.resolveResponseBody = resolve;
     });

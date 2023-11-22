@@ -1,7 +1,6 @@
-import { PendingResponse } from "../lib/pending-response";
-import { DnsResolved } from "../schema";
-import { WebRequestOnCompletedEventDetails } from "../types/browser-web-request-event-details";
-import { allTypes } from "./http-instrument";
+import {PendingResponse} from "../lib/pending-response";
+import {DnsResolved} from "../schema";
+import {allTypes} from "./http-instrument";
 import RequestFilter = browser.webRequest.RequestFilter;
 
 export class DnsInstrument {
@@ -29,7 +28,7 @@ export class DnsInstrument {
     /*
      * Attach handlers to event listeners
      */
-    this.onCompleteListener = (details: WebRequestOnCompletedEventDetails) => {
+    this.onCompleteListener = (details: browser.webRequest._OnCompletedDetails) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
@@ -70,7 +69,7 @@ export class DnsInstrument {
   }
 
   private async onCompleteDnsHandler(
-    details: WebRequestOnCompletedEventDetails,
+    details: browser.webRequest._OnCompletedDetails,
     crawlID,
   ) {
     // Create and populate DnsResolve object

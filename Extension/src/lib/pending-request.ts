@@ -1,16 +1,13 @@
-import {
-  WebRequestOnBeforeRequestEventDetails,
-  WebRequestOnBeforeSendHeadersEventDetails,
-} from "../types/browser-web-request-event-details";
+import {WebRequestOnBeforeSendHeadersEventDetails,} from "../types/browser-web-request-event-details";
 
 /**
  * Ties together the two separate events that together holds information about both request headers and body
  */
 export class PendingRequest {
-  public readonly onBeforeRequestEventDetails: Promise<WebRequestOnBeforeRequestEventDetails>;
+  public readonly onBeforeRequestEventDetails: Promise<browser.webRequest._OnBeforeRequestDetails>;
   public readonly onBeforeSendHeadersEventDetails: Promise<WebRequestOnBeforeSendHeadersEventDetails>;
   public resolveOnBeforeRequestEventDetails: (
-    details: WebRequestOnBeforeRequestEventDetails,
+    details: browser.webRequest._OnBeforeRequestDetails,
   ) => void;
   public resolveOnBeforeSendHeadersEventDetails: (
     details: WebRequestOnBeforeSendHeadersEventDetails,
