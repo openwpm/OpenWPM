@@ -11,9 +11,10 @@ import { CallstackInstrument } from "./callstack-instrument";
 async function main() {
   // Read the browser configuration from file
   const filename = "browser_params.json";
-  let config = await (browser as any).profileDirIO.readFile(filename);
-  if (config) {
-    config = JSON.parse(config);
+  const raw_config = await browser.profileDirIO.readFile(filename);
+  let config: any;
+  if (raw_config) {
+    config = JSON.parse(raw_config);
     console.log("Browser Config:", config);
   } else {
     config = {
@@ -100,10 +101,7 @@ async function main() {
     dnsInstrument.run(config.browser_id);
   }
 
-  await (browser as any).profileDirIO.writeFile(
-    "OPENWPM_STARTUP_SUCCESS.txt",
-    "",
-  );
+  await browser.profileDirIO.writeFile("OPENWPM_STARTUP_SUCCESS.txt", "");
 }
 
 main();

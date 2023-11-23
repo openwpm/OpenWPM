@@ -1,4 +1,3 @@
-import { WebRequestOnBeforeRequestEventDetails } from "../types/browser-web-request-event-details";
 import { escapeString, Uint8ToBase64 } from "./string-utils";
 
 export interface ParsedPostRequest {
@@ -8,11 +7,11 @@ export interface ParsedPostRequest {
 }
 
 export class HttpPostParser {
-  private readonly onBeforeRequestEventDetails: WebRequestOnBeforeRequestEventDetails;
+  private readonly onBeforeRequestEventDetails: browser.webRequest._OnBeforeRequestDetails;
   private readonly dataReceiver;
 
   constructor(
-    onBeforeRequestEventDetails: WebRequestOnBeforeRequestEventDetails,
+    onBeforeRequestEventDetails: browser.webRequest._OnBeforeRequestDetails,
     dataReceiver,
   ) {
     this.onBeforeRequestEventDetails = onBeforeRequestEventDetails;

@@ -43,9 +43,9 @@ const listeningSocketCallback = async (data) => {
   }
 };
 export const open = async function (
-  storageControllerAddress,
-  logAddress,
-  curr_crawlID,
+  storageControllerAddress: any[],
+  logAddress: any[],
+  curr_crawlID: number,
 ) {
   if (
     storageControllerAddress == null &&
@@ -81,7 +81,7 @@ export const open = async function (
   listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
   console.log("Starting socket listening for incoming connections.");
   await listeningSocket.startListening().then(() => {
-    (browser as any).profileDirIO.writeFile(
+    browser.profileDirIO.writeFile(
       "extension_port.txt",
       `${listeningSocket.port}`,
     );

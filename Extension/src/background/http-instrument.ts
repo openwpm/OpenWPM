@@ -5,12 +5,7 @@ import { PendingRequest } from "../lib/pending-request";
 import { PendingResponse } from "../lib/pending-response";
 import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { HttpRedirect, HttpRequest, HttpResponse } from "../schema";
-import {
-  WebRequestOnBeforeRedirectEventDetails,
-  WebRequestOnBeforeRequestEventDetails,
-  WebRequestOnBeforeSendHeadersEventDetails,
-  WebRequestOnCompletedEventDetails,
-} from "../types/browser-web-request-event-details";
+import { WebRequestOnBeforeSendHeadersEventDetails } from "../types/browser-web-request-event-details";
 import ResourceType = browser.webRequest.ResourceType;
 import RequestFilter = browser.webRequest.RequestFilter;
 import BlockingResponse = browser.webRequest.BlockingResponse;
@@ -52,23 +47,31 @@ const allTypes: ResourceType[] = [
 export { allTypes };
 
 export class HttpInstrument {
-  private readonly dataReceiver;
+  private readonly dataReceiver: typeof import("../loggingdb");
   private pendingRequests: {
-    [requestId: number]: PendingRequest;
+    [requestId: string]: PendingRequest;
   } = {};
   private pendingResponses: {
-    [requestId: number]: PendingResponse;
+    [requestId: string]: PendingResponse;
   } = {};
-  private onBeforeRequestListener;
-  private onBeforeSendHeadersListener;
-  private onBeforeRedirectListener;
-  private onCompletedListener;
+  private onBeforeRequestListener: (
+    details: browser.webRequest._OnBeforeRequestDetails,
+  ) => BlockingResponse;
+  private onBeforeSendHeadersListener: (
+    details: WebRequestOnBeforeSendHeadersEventDetails,
+  ) => void;
+  private onBeforeRedirectListener: (
+    details: browser.webRequest._OnBeforeRedirectDetails,
+  ) => void;
+  private onCompletedListener: (
+    details: browser.webRequest._OnCompletedDetails,
+  ) => void;
 
-  constructor(dataReceiver) {
+  constructor(dataReceiver: typeof import("../loggingdb")) {
     this.dataReceiver = dataReceiver;
   }
 
-  public run(crawlID, saveContentOption: SaveContentOption) {
+  public run(crawlID: number, saveContentOption: SaveContentOption) {
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
 
     const requestStemsFromExtension = (details) => {
@@ -82,7 +85,7 @@ export class HttpInstrument {
      */
 
     this.onBeforeRequestListener = (
-      details: WebRequestOnBeforeRequestEventDetails,
+      details: browser.webRequest._OnBeforeRequestDetails,
     ) => {
       const blockingResponseThatDoesNothing: BlockingResponse = {};
       // Ignore requests made by extensions
@@ -216,14 +219,14 @@ export class HttpInstrument {
     );
   }
 
-  private getPendingRequest(requestId): PendingRequest {
+  private getPendingRequest(requestId: string): PendingRequest {
     if (!this.pendingRequests[requestId]) {
       this.pendingRequests[requestId] = new PendingRequest();
     }
     return this.pendingRequests[requestId];
   }
 
-  private getPendingResponse(requestId): PendingResponse {
+  private getPendingResponse(requestId: string): PendingResponse {
     if (!this.pendingResponses[requestId]) {
       this.pendingResponses[requestId] = new PendingResponse();
     }
@@ -236,7 +239,7 @@ export class HttpInstrument {
 
   private async onBeforeSendHeadersHandler(
     details: WebRequestOnBeforeSendHeadersEventDetails,
-    crawlID,
+    crawlID: number,
     eventOrdinal: number,
   ) {
     const tab =
@@ -460,7 +463,7 @@ export class HttpInstrument {
   }
 
   private async onBeforeRedirectHandler(
-    details: WebRequestOnBeforeRedirectEventDetails,
+    details: browser.webRequest._OnBeforeRedirectDetails,
     crawlID,
     eventOrdinal: number,
   ) {
@@ -569,7 +572,7 @@ export class HttpInstrument {
    */
 
   private async logWithResponseBody(
-    details: WebRequestOnBeforeRequestEventDetails,
+    details: browser.webRequest._OnBeforeRequestDetails,
     update: HttpResponse,
   ) {
     const pendingResponse = this.getPendingResponse(details.requestId);
@@ -604,7 +607,7 @@ export class HttpInstrument {
 
   // Instrument HTTP responses
   private async onCompletedHandler(
-    details: WebRequestOnCompletedEventDetails,
+    details: browser.webRequest._OnCompletedDetails,
     crawlID,
     eventOrdinal,
     saveContent,

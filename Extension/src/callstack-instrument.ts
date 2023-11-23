@@ -5,10 +5,10 @@
 */
 export class CallstackInstrument {
   dataReceiver: any;
-  constructor(dataReceiver) {
+  constructor(dataReceiver: typeof import("./loggingdb")) {
     this.dataReceiver = dataReceiver;
   }
-  run(browser_id) {
+  run(browser_id: number) {
     (browser as any).stackDump.onStackAvailable.addListener(
       (request_id, call_stack) => {
         const record = {
