@@ -214,9 +214,12 @@ class StorageController:
             return None
 
         self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
-        for task in self.store_record_tasks[visit_id]:
-            await task
+
+        store_record_tasks = self.store_record_tasks[visit_id]
         del self.store_record_tasks[visit_id]
+        for task in store_record_tasks:
+            await task
+
         self.logger.debug(
             "Awaited all tasks for visit_id %d while finalizing", visit_id
         )
@@ -535,6 +538,7 @@ class StorageControllerHandle:
 
         # Check last status signal
         if (time.time() - self._last_status_received) > STATUS_TIMEOUT:
+            self._last_status = None
             raise RuntimeError(
                 "No status update from the storage controller process "
                 "for %d seconds." % (time.time() - self._last_status_received)
