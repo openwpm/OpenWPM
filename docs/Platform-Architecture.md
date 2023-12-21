@@ -21,7 +21,7 @@ In OpenWPM we have a watchdog thread that tries to ensure two things.
 - `memory_watchdog`
   - It is part of default manager_params. It is set to false by default which can manually be set to true.
   - It is a watchdog that tries to ensure that no Firefox instance takes up too much memory.
-  - It is mostly useful for long running cloud crawls.
+  - It is mostly useful for long-running cloud crawls.
 
 ### Issuing commands
 
@@ -29,21 +29,23 @@ OpenWPM uses the `CommandSequence` as a fundamental unit of work.
 A `CommandSequence` describes as series of steps that will execute in order on a particular browser.
 All available Commands are visible by inspecting the `CommandSequence` API.
 
-For example you could wire up a `CommandSequence` to go to a given url and take a screenshot of it by writing:
+For example, you could wire up a `CommandSequence` to go to a given url and take a screenshot of it by writing:
 
 ```python
-    command_sequence = CommandSequence(url)
-    # Start by visiting the page
-    command_sequence.get(sleep=3, timeout=60)
-    command_sequence.save_screenshot()
+from openwpm.command_sequence import CommandSequence
+url = "https://example.com"
+command_sequence = CommandSequence(url)
+# Start by visiting the page
+command_sequence.get(sleep=3, timeout=60)
+command_sequence.save_screenshot()
 ```
 
 But this on its own would do nothing, because `CommandSequence`s are not automatically scheduled.
 Instead, you need to submit them to a `TaskManager` by calling:
 
 ```python
-    manager.execute_command_sequence(command_sequence)
-    manager.close()
+manager.execute_command_sequence(command_sequence)
+manager.close()
 ```
 
 Please note that you need to close the manager, because by default `CommandSequence`s are executed in a non-blocking fashion meaning that you might reach the end of your main function/file before the CommandSequence completed running.
@@ -87,7 +89,7 @@ which provides stability in logging data despite the possibility of individual b
 ## The WebExtension
 
 All of our data collection happens in the OpenWPM WebExtension, which can be found under [Extension](../Extension).
-The Extension makes heavy use of priviliged APIs and can only be installed on unbranded or custom builds of Firefox with add-on security disabled.
+The Extension makes heavy use of privileged APIs and can only be installed on unbranded or custom builds of Firefox with add-on security disabled.
 
 The currently supported instruments can be found in [Configuration.md](Configuration.md#Instruments)
 
@@ -95,7 +97,7 @@ The currently supported instruments can be found in [Configuration.md](Configura
 
 ### Overview
 
-One of the Data Aggregators, contained in `openwpm/DataAggregator`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. We as previously mentioned we support both local as well as remote data saving.
+One of the Data Aggregators, contained in `openwpm/DataAggregator`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. We as previously mentioned we support both local and remote data saving.
 The most useful feature of the Data Aggregator is the fact that it is isolated from the other processes through a network socket interface (see `openwpm/SocketInterface.py`).
 
 ### Data Logged
