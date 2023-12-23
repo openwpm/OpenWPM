@@ -1,15 +1,15 @@
 repos:
   - repo: https://github.com/timothycrosley/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.12.1
     hooks:
       - id: black
         language_version: python3
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
+    rev: v1.8.0
     hooks:
       - id: mypy
         additional_dependencies:
@@ -17,7 +17,7 @@ repos:
         # We may need to add more and more dependencies here, as pre-commit
         # runs in an environment without our dependencies
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.5.0
+    rev: v9.10.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
