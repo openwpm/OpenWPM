@@ -167,7 +167,7 @@ JS_STACK_CALLS = {
     (
         JS_STACK_TEST_SCRIPT_URL,
         "3",
-        "5",
+        "17",
         "js_check_navigator",
         "",
         "",
@@ -207,7 +207,7 @@ JS_STACK_CALLS = {
     (
         JS_STACK_TEST_URL,
         "7",
-        "9",
+        "21",
         "check_navigator",
         "",
         "",
