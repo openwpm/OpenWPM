@@ -13,8 +13,6 @@ dependencies:
     - leveldb
     - multiprocess
     - nodejs
-    - opentelemetry-api
-    - opentelemetry-sdk
     - pandas
     - pip
     - pillow
@@ -35,3 +33,4 @@ dependencies:
           - domain-utils
           - dataclasses-json
           - tranco
+          - honeycomb-opentelemetry==0.2.3b0

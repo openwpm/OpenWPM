@@ -16,8 +16,6 @@ dependencies:
 - multiprocess=0.70.15
 - mypy=1.8.0
 - nodejs=20.9.0
-- opentelemetry-api=1.22.0
-- opentelemetry-sdk=1.22.0
 - pandas=2.2.0
 - pillow=10.2.0
 - pip=23.3.2
@@ -43,6 +41,7 @@ dependencies:
 - pip:
   - dataclasses-json==0.6.3
   - domain-utils==0.7.1
+  - honeycomb-opentelemetry==0.2.3b0
   - jsonschema==4.21.1
   - tranco==0.7.1
   - types-pyyaml==6.0.12.12
