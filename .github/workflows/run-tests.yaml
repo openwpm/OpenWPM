@@ -145,5 +145,5 @@ jobs:
         if: success() || failure() # run this step even if previous step failed
         with:
           name: ${{matrix.test-groups}} # Name of the check run which will be created
-          path: junit-report.xml # Path to test results
+          path: ${{matrix.test-groups}}-report.xml # Path to test results
           reporter: java-junit # Format of test results
