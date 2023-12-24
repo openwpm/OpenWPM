@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.26.0 - 2023-12-23
+
+Bump to Firefox 121
+
+Type cleanup in WebExtension #1069 Thanks to @MohammadMahdiJavid for the extensive bug report
+Fix race condition during shutdown #1073
+
 ## v0.25.0 - 2023-10-13
 
 Bump to Firefox 118.0.2  

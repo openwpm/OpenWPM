@@ -22,7 +22,7 @@ class RedisWQ(object):
     https://kubernetes.io/docs/tasks/job/fine-parallel-processing-work-queue
     """
 
-    def __init__(self, name, max_retries=2, **redis_kwargs):
+    def __init__(self, name: str, max_retries=2, **redis_kwargs: Any) -> None:
         """Redis worker queue instance
 
         The default connection parameters are:

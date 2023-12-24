@@ -167,7 +167,7 @@ JS_STACK_CALLS = {
     (
         JS_STACK_TEST_SCRIPT_URL,
         "3",
-        "5",
+        "17",
         "js_check_navigator",
         "",
         "",
@@ -207,7 +207,7 @@ JS_STACK_CALLS = {
     (
         JS_STACK_TEST_URL,
         "7",
-        "9",
+        "21",
         "check_navigator",
         "",
         "",
@@ -231,10 +231,10 @@ JS_COOKIE_TEST_URL = "%s/js_cookie.html" % utilities.BASE_TEST_URL
 DOCUMENT_COOKIE_READ = (
     JS_COOKIE_TEST_URL,
     "8",
-    "9",
+    "21",
     "set_cookie",
     "",
-    "set_cookie@" + JS_COOKIE_TEST_URL + ":8:9"
+    "set_cookie@" + JS_COOKIE_TEST_URL + ":8:21"
     "\nonload@" + JS_COOKIE_TEST_URL + ":1:1",
     "window.document.cookie",
     "get",
