@@ -15,7 +15,8 @@ from queue import Empty as EmptyQueue
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 import psutil
-from multiprocess import Process, Queue
+from multiprocess import Queue
+from opentelemetry import trace
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
@@ -31,6 +32,7 @@ from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (
+    Process,
     kill_process_and_children,
     parse_traceback_for_sentry,
 )
@@ -40,6 +42,8 @@ pickling_support.install()
 
 if TYPE_CHECKING:
     from .task_manager import TaskManager
+
+_tracer = trace.get_tracer(__name__)
 
 
 class BrowserManagerHandle:
@@ -340,6 +344,7 @@ class BrowserManagerHandle:
             if not shutdown_complete:
                 self.kill_browser_manager()
 
+    @_tracer.start_as_current_span("execute_command_sequence")
     def execute_command_sequence(
         self,
         # Quoting to break cyclic import, see https://stackoverflow.com/a/39757388
@@ -351,6 +356,10 @@ class BrowserManagerHandle:
         """
         assert self.browser_id is not None
         assert self.curr_visit_id is not None
+        trace.get_current_span().set_attributes(
+            {"browser_id": self.browser_id, "visit_id": self.curr_visit_id}
+        )
+
         task_manager.sock.store_record(
             TableName("site_visits"),
             self.curr_visit_id,
@@ -374,71 +383,70 @@ class BrowserManagerHandle:
         assert self.status_queue is not None
 
         for command_and_timeout in command_sequence.get_commands_with_timeout():
-            command, timeout = command_and_timeout
-            command.set_visit_browser_id(self.curr_visit_id, self.browser_id)
-            command.set_start_time(time.time())
-            self.current_timeout = timeout
+            command: BaseCommand = command_and_timeout[0]
+            timeout: int = command_and_timeout[1]
+            with _tracer.start_as_current_span(type(command).__name__):
+                trace.get_current_span().set_attributes({"timeout": timeout})
+                command.set_visit_browser_id(self.curr_visit_id, self.browser_id)
+                command.set_start_time(time.time())
+                self.current_timeout = timeout
 
-            # Adding timer to track performance of commands
-            t1 = time.time_ns()
+                # Adding timer to track performance of commands
+                t1 = time.time_ns()
 
-            # passes off command and waits for a success (or failure signal)
-            self.command_queue.put(command)
+                # passes off command and waits for a success (or failure signal)
+                self.command_queue.put(command)
 
-            # received reply from BrowserManager, either success or failure
-            error_text = None
-            tb = None
-            status = None
-            try:
-                status = self.status_queue.get(True, self.current_timeout)
-            except EmptyQueue:
-                self.logger.info(
-                    "BROWSER %i: Timeout while executing command, %s, killing "
-                    "browser manager" % (self.browser_id, repr(command))
-                )
+                # received reply from BrowserManager, either success or failure
+                error_text = None
+                tb = None
+                status = None
+                try:
+                    status = self.status_queue.get(True, self.current_timeout)
+                except EmptyQueue:
+                    self.logger.info(
+                        "BROWSER %i: Timeout while executing command, %s, killing "
+                        "browser manager" % (self.browser_id, repr(command))
+                    )
 
-            if status is None:
-                # allows us to skip this entire block without having to bloat
-                # every if statement
-                command_status = "timeout"
-                pass
-            elif status == "OK":
-                command_status = "ok"
-            elif status[0] == "CRITICAL":
-                command_status = "critical"
-                self.logger.critical(
-                    "BROWSER %i: Received critical error from browser "
-                    "process while executing command %s. Setting failure "
-                    "status." % (self.browser_id, str(command))
-                )
-                task_manager.failure_status = {
-                    "ErrorType": "CriticalChildException",
-                    "CommandSequence": command_sequence,
-                    "Exception": status[1],
-                }
-                error_text, tb = self._unpack_pickled_error(status[1])
-            elif status[0] == "FAILED":
-                command_status = "error"
-                error_text, tb = self._unpack_pickled_error(status[1])
-                self.logger.info(
-                    "BROWSER %i: Received failure status while executing "
-                    "command: %s" % (self.browser_id, repr(command))
-                )
-            elif status[0] == "NETERROR":
-                command_status = "neterror"
-                error_text, tb = self._unpack_pickled_error(status[1])
-                error_text = parse_neterror(error_text)
-                self.logger.info(
-                    "BROWSER %i: Received neterror %s while executing "
-                    "command: %s" % (self.browser_id, error_text, repr(command))
-                )
-            else:
-                raise ValueError("Unknown browser status message %s" % status)
+                if status is None:
+                    # allows us to skip this entire block without having to bloat
+                    # every if statement
+                    command_status = "timeout"
+                elif status == "OK":
+                    command_status = "ok"
+                elif status[0] == "CRITICAL":
+                    command_status = "critical"
+                    self.logger.critical(
+                        "BROWSER %i: Received critical error from browser "
+                        "process while executing command %s. Setting failure "
+                        "status." % (self.browser_id, str(command))
+                    )
+                    task_manager.failure_status = {
+                        "ErrorType": "CriticalChildException",
+                        "CommandSequence": command_sequence,
+                        "Exception": status[1],
+                    }
+                    error_text, tb = self._unpack_pickled_error(status[1])
+                elif status[0] == "FAILED":
+                    command_status = "error"
+                    error_text, tb = self._unpack_pickled_error(status[1])
+                    self.logger.info(
+                        "BROWSER %i: Received failure status while executing "
+                        "command: %s" % (self.browser_id, repr(command))
+                    )
+                elif status[0] == "NETERROR":
+                    command_status = "neterror"
+                    error_text, tb = self._unpack_pickled_error(status[1])
+                    error_text = parse_neterror(error_text)
+                    self.logger.info(
+                        "BROWSER %i: Received neterror %s while executing "
+                        "command: %s" % (self.browser_id, error_text, repr(command))
+                    )
+                else:
+                    raise ValueError("Unknown browser status message %s" % status)
 
-            task_manager.sock.store_record(
-                TableName("crawl_history"),
-                self.curr_visit_id,
-                {
+                table_entry = {
                     "browser_id": self.browser_id,
                     "visit_id": self.curr_visit_id,
                     "command": type(command).__name__,
@@ -450,44 +458,54 @@ class BrowserManagerHandle:
                     "error": error_text,
                     "traceback": tb,
                     "duration": int((time.time_ns() - t1) / 1000000),
-                },
-            )
-
-            if command_status == "critical":
-                task_manager.sock.finalize_visit_id(
-                    success=False,
-                    visit_id=self.curr_visit_id,
+                }
+                task_manager.sock.store_record(
+                    TableName("crawl_history"),
+                    self.curr_visit_id,
+                    table_entry,
                 )
-                return
+                for k in ["browser_id", "visit_id", "command", "duration"]:
+                    table_entry.pop(k, None)
+                for k in list(table_entry.keys()):
+                    if table_entry[k] is None:
+                        del table_entry[k]
+                trace.get_current_span().set_attributes(table_entry)
 
-            if command_status != "ok":
-                with task_manager.threadlock:
-                    task_manager.failure_count += 1
-                if task_manager.failure_count > task_manager.failure_limit:
-                    self.logger.critical(
-                        "BROWSER %i: Command execution failure pushes failure "
-                        "count above the allowable limit. Setting "
-                        "failure_status." % self.browser_id
+                if command_status == "critical":
+                    task_manager.sock.finalize_visit_id(
+                        success=False,
+                        visit_id=self.curr_visit_id,
                     )
-                    task_manager.failure_status = {
-                        "ErrorType": "ExceedCommandFailureLimit",
-                        "CommandSequence": command_sequence,
-                    }
                     return
-                self.restart_required = True
-                self.logger.debug(
-                    "BROWSER %i: Browser restart required" % self.browser_id
-                )
-            # Reset failure_count at the end of each successful command sequence
-            elif type(command) is FinalizeCommand:
-                with task_manager.threadlock:
-                    task_manager.failure_count = 0
 
-            if self.restart_required:
-                task_manager.sock.finalize_visit_id(
-                    success=False, visit_id=self.curr_visit_id
-                )
-                break
+                if command_status != "ok":
+                    with task_manager.threadlock:
+                        task_manager.failure_count += 1
+                    if task_manager.failure_count > task_manager.failure_limit:
+                        self.logger.critical(
+                            "BROWSER %i: Command execution failure pushes failure "
+                            "count above the allowable limit. Setting "
+                            "failure_status." % self.browser_id
+                        )
+                        task_manager.failure_status = {
+                            "ErrorType": "ExceedCommandFailureLimit",
+                            "CommandSequence": command_sequence,
+                        }
+                        return
+                    self.restart_required = True
+                    self.logger.debug(
+                        "BROWSER %i: Browser restart required" % self.browser_id
+                    )
+                # Reset failure_count at the end of each successful command sequence
+                elif type(command) is FinalizeCommand:
+                    with task_manager.threadlock:
+                        task_manager.failure_count = 0
+
+                if self.restart_required:
+                    task_manager.sock.finalize_visit_id(
+                        success=False, visit_id=self.curr_visit_id
+                    )
+                    break
 
         self.logger.info(
             "Finished working on CommandSequence with "
