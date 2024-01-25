@@ -4,7 +4,7 @@ import {
   getBeginOfScriptCalls,
   getStackTrace,
 } from "./error";
-import {LogSettings} from "../types/js_instrument_settings";
+import { LogSettings } from "../types/js_instrument_settings";
 
 /** ************************************
  * OpenWPM legacy code
@@ -14,7 +14,7 @@ const maxLogCount = 500;
 // logCounter
 const logCounter = {};
 // Prevent logging of gets arising from logging
-let inLog :boolean = false;
+let inLog: boolean = false;
 // To keep track of the original order of events
 let ordinal = 0;
 
@@ -233,7 +233,6 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
 //     }
 // }
 
-;
 // For gets, sets, etc. on a single value
 function logValue(
   instrumentedVariableName, // : string,
@@ -249,7 +248,8 @@ function logValue(
     preventSets: false,
     propertiesToInstrument: [],
     recursive: false,
-    logFunctionsAsStrings: false }, // : LogSettings,
+    logFunctionsAsStrings: false,
+  }, // : LogSettings,
 ) {
   if (inLog) {
     return;
@@ -620,7 +620,12 @@ function generateGetter(
  * @param funcName: Name of property/function that shall be overwritten
  * @param newValue: in Case the value shall be changed
  */
-function generateSetter(identifier, descriptor, propertyName, _newValue: any | undefined = undefined) {
+function generateSetter(
+  identifier,
+  descriptor,
+  propertyName,
+  _newValue: any | undefined = undefined,
+) {
   const original = descriptor.set;
   return Object.getOwnPropertyDescriptor(
     {
@@ -633,8 +638,7 @@ function generateSetter(identifier, descriptor, propertyName, _newValue: any | u
           obj,
           arguments,
         );
-      }
-
+      },
     },
     propertyName,
   ).set;

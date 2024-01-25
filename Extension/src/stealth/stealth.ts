@@ -27,9 +27,7 @@ export type ModifiedWindow = Window &
   // console.log("Starting frame script");
 })();
 
-function interceptWindow(
-  context: ModifiedWindow,
-) {
+function interceptWindow(context: ModifiedWindow) {
   let wrappedTry;
   try {
     wrappedTry = getWrapped(context);
@@ -74,7 +72,7 @@ function protectAllFrames(context, wrappedWindow, singleCallback, allCallback) {
     changeWindowProperty,
     singleCallback,
     allCallback,
-    observe: null
+    observe: null,
   };
 
   protectFrameProperties(api);
@@ -207,7 +205,6 @@ function protectFrameProperties({
     );
   });
 }
-
 
 function protectDOMModifications({
   wrappedWindow,
