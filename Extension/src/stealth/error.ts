@@ -1,7 +1,7 @@
 /*
  * Functionality to generate error objects
  */
-function generateErrorObject(err, context) {
+function generateErrorObject(err: { stack: any; name: string | number; message: any; }, context = undefined) {
   // TODO: Pass context
   context = context !== undefined ? context : window;
   const cleaned = cleanErrorStack(err.stack);

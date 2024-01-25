@@ -13,7 +13,8 @@ import {
 const interceptedWindows = new WeakMap();
 const proxies = new Map();
 const changedToStrings = new WeakMap();
-export type ModifiedWindow = Window & typeof globalThis & { wrappedJSObject: any };
+export type ModifiedWindow = Window &
+  typeof globalThis & { wrappedJSObject: any };
 // Entry point for this extension
 (function () {
   // console.log("Starting frame script");
@@ -27,7 +28,7 @@ export type ModifiedWindow = Window & typeof globalThis & { wrappedJSObject: any
 })();
 
 function interceptWindow(
-  context: Window & typeof globalThis & { wrappedJSObject: any },
+  context: ModifiedWindow,
 ) {
   let wrappedTry;
   try {
@@ -53,7 +54,7 @@ function interceptWindow(
     const currentLength = context.length;
     for (let i = currentLength; i--; ) {
       if (!interceptedWindows.get(wrappedWindow[i])) {
-        interceptWindow(context[i]);
+        interceptWindow(context[i] as ModifiedWindow);
       }
     }
   }
@@ -73,6 +74,7 @@ function protectAllFrames(context, wrappedWindow, singleCallback, allCallback) {
     changeWindowProperty,
     singleCallback,
     allCallback,
+    observe: null
   };
 
   protectFrameProperties(api);
@@ -143,7 +145,7 @@ function createProxyFunction(context, original, replacement) {
   return getWrapped(proxy);
 }
 
-function changePropertyFunc(context, { object, name, type, changed }) {
+function changePropertyFunc(_context, { object, name, type, changed }) {
   // Removed tracker for changed properties
   const descriptor = Object.getOwnPropertyDescriptor(object, name);
   descriptor[type] = changed;
@@ -206,8 +208,8 @@ function protectFrameProperties({
   });
 }
 
+
 function protectDOMModifications({
-  context,
   wrappedWindow,
   changeWindowProperty,
   allCallback,
@@ -278,8 +280,8 @@ function protectDOMModifications({
       const descriptor = Object.getOwnPropertyDescriptor(object, property);
       const setter = descriptor.set;
       const temp = {
-        set [property](value) {
-          const ret = setter.call(this, value);
+        set(obj, _prop, value) {
+          const ret = setter.call(obj, value);
           allCallback();
           return ret;
         },
@@ -334,7 +336,7 @@ function protectDocumentWrite({
       : wrappedWindow.Document.prototype,
     "write",
     "value",
-    function write(markup) {
+    function write(_markup) {
       for (let i = 0, l = arguments.length; i < l; i += 1) {
         const str = "" + arguments[i];
         // weird problem with waterfox and google docs
@@ -373,7 +375,7 @@ function protectDocumentWrite({
       : wrappedWindow.Document.prototype,
     "writeln",
     "value",
-    function writeln(markup) {
+    function writeln(_markup) {
       for (let i = 0, l = arguments.length; i < l; i += 1) {
         const str = "" + arguments[i];
         const parts = str.split(/(?=<)/);

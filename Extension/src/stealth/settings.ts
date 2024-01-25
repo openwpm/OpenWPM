@@ -1,4 +1,6 @@
-export const jsInstrumentationSettings = [
+import { JSInstrumentSettings } from "../types/js_instrument_settings";
+
+export const jsInstrumentationSettings: JSInstrumentSettings = [
   {
     object: "ScriptProcessorNode", // Depcrecated. Replaced by AudioWorkletNode
     instrumentedName: "ScriptProcessorNode",

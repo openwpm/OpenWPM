@@ -5,7 +5,6 @@ module.exports = {
     feature: "./src/feature.ts",
     content: "./src/content.ts",
     stealth: "./src/stealth/stealth.ts",
-
   },
   output: {
     path: path.resolve(__dirname, "bundled"),

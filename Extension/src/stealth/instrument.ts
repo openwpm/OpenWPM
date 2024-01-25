@@ -4,15 +4,17 @@ import {
   getBeginOfScriptCalls,
   getStackTrace,
 } from "./error";
+import {LogSettings} from "../types/js_instrument_settings";
+
 /** ************************************
  * OpenWPM legacy code
  ***************************************/
 // Counter to cap # of calls logged for each script/api combination
 const maxLogCount = 500;
 // logCounter
-const logCounter = new Object();
+const logCounter = {};
 // Prevent logging of gets arising from logging
-let inLog = false;
+let inLog :boolean = false;
 // To keep track of the original order of events
 let ordinal = 0;
 
@@ -28,7 +30,7 @@ const JSOperation = {
 };
 
 // from http://stackoverflow.com/a/5202185
-function rsplit(source, sep, maxsplit) {
+function rsplit(source: string, sep: string, maxsplit: number) {
   const split = source.split(sep);
   return maxsplit
     ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit))
@@ -169,7 +171,7 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
     // If not included, use heuristic, 0-3 or 0-2 are OpenWPMs functions
     traceStart = isCall ? 3 : 4;
   }
-  const callSite = trace[traceStart];
+  const callSite: string | null = trace[traceStart];
   if (!callSite) {
     return empty_context;
   }
@@ -231,13 +233,23 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
 //     }
 // }
 
+;
 // For gets, sets, etc. on a single value
 function logValue(
   instrumentedVariableName, // : string,
   value, // : any,
   operation, // : string, // from JSOperation object please
   callContext, // : any,
-  logSettings: typeof jsInstrumentationSettings[0] | { logFunctionsAsStrings: boolean } = { logFunctionsAsStrings: false }, // : LogSettings,
+  logSettings: LogSettings = {
+    depth: 0,
+    excludedProperties: [],
+    logCallStack: false,
+    logFunctionGets: false,
+    nonExistingPropertiesToInstrument: [],
+    preventSets: false,
+    propertiesToInstrument: [],
+    recursive: false,
+    logFunctionsAsStrings: false }, // : LogSettings,
 ) {
   if (inLog) {
     return;
@@ -278,7 +290,7 @@ function logValue(
 }
 
 // For functions
-function logCall(instrumentedFunctionName, args, callContext, _logSettings) {
+function logCall(instrumentedFunctionName, args, callContext) {
   if (inLog) {
     return;
   }
@@ -330,9 +342,9 @@ function logCall(instrumentedFunctionName, args, callContext, _logSettings) {
 
 declare global {
   interface Object {
-    getPrototypeByDepth(subject: string | undefined, depth: number): any
-    getPropertyNamesPerDepth(subject: any, maxDepth: number): any
-    findPropertyInChain(subject, propertyName)
+    getPrototypeByDepth(subject: string | undefined, depth: number): any;
+    getPropertyNamesPerDepth(subject: any, maxDepth: number): any;
+    findPropertyInChain(subject, propertyName);
   }
 }
 
@@ -466,9 +478,12 @@ function notify(type, content) {
   });
 }
 
-function filterPropertiesPerDepth<T>(collection: {propertyNames: T[]}[], excluded: T[]) {
+function filterPropertiesPerDepth<T>(
+  collection: { propertyNames: T[] }[],
+  excluded: T[],
+) {
   for (const elem of collection) {
-      elem.propertyNames = elem.propertyNames.filter(
+    elem.propertyNames = elem.propertyNames.filter(
       (p) => !excluded.includes(p),
     );
   }
@@ -555,7 +570,7 @@ function instrumentSetObjectProperty(
   original,
   newValue,
   object,
-  args,
+  _args,
 ) {
   const callContext = getOriginatingScriptContext(true);
   logValue(
@@ -605,19 +620,21 @@ function generateGetter(
  * @param funcName: Name of property/function that shall be overwritten
  * @param newValue: in Case the value shall be changed
  */
-function generateSetter(identifier, descriptor, propertyName, newValue) {
+function generateSetter(identifier, descriptor, propertyName, _newValue: any | undefined = undefined) {
   const original = descriptor.set;
   return Object.getOwnPropertyDescriptor(
     {
-      set [propertyName](newValue) {
+      set(obj, _prop, value) {
+        // _prop === propertyName
         return instrumentSetObjectProperty(
           identifier,
           original,
-          newValue,
-          this,
+          value,
+          obj,
           arguments,
         );
-      },
+      }
+
     },
     propertyName,
   ).set;
@@ -644,11 +661,6 @@ function getPageObjectInContext(context, context_object) {
   }
   return context[context_object].prototype || context[context_object];
 }
-
-/*
- * TODO: Add description
- */
-const getPropertyType = (object, property) => typeof object[property];
 
 /*
  * Entry point to creates (g/s)etter functions,
@@ -696,7 +708,7 @@ function instrumentGetterSetter(
 /*
  * TODO: Add description
  */
-function functionGenerator(context, identifier, original, funcName) {
+function functionGenerator(_context, identifier, original, _funcName) {
   function temp() {
     let result;
     const callContext = getOriginatingScriptContext(true, true);
