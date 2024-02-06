@@ -125,8 +125,15 @@ def deploy_firefox(
 
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.
-    interceptor = FirefoxLogInterceptor(browser_params.browser_id)
-    interceptor.start()
+    webdriver_interceptor = FirefoxLogInterceptor(
+        browser_params.browser_id, is_webdriver=True
+    )
+    webdriver_interceptor.start()
+
+    browser_interceptor = FirefoxLogInterceptor(
+        browser_params.browser_id, is_webdriver=False
+    )
+    browser_interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow
     # our defaults to be overwritten.
@@ -141,7 +148,7 @@ def deploy_firefox(
     status_queue.put(("STATUS", "Launch Attempted", None))
 
     fo.binary = FirefoxBinary(
-        firefox_path=firefox_binary_path, log_file=open(interceptor.fifo, "w")
+        firefox_path=firefox_binary_path, log_file=open(browser_interceptor.fifo, "w")
     )
     geckodriver_path = subprocess.check_output(
         "which geckodriver", encoding="utf-8", shell=True
@@ -149,7 +156,8 @@ def deploy_firefox(
     driver = webdriver.Firefox(
         options=fo,
         service=Service(
-            executable_path=geckodriver_path, log_output=open(interceptor.fifo, "w")
+            executable_path=geckodriver_path,
+            log_output=open(webdriver_interceptor.fifo, "w"),
         ),
     )
 
