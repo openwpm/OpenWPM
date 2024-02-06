@@ -167,7 +167,7 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
   }
 
   let traceStart = getBeginOfScriptCalls(trace);
-  if (traceStart == -1) {
+  if (traceStart === -1) {
     // If not included, use heuristic, 0-3 or 0-2 are OpenWPMs functions
     traceStart = isCall ? 3 : 4;
   }
@@ -682,7 +682,7 @@ function instrumentGetterSetter(
   const getFuncType = "get";
   const setFuncType = "set";
 
-  if (descriptor.hasOwnProperty(getFuncType)) {
+  if (Object.prototype.hasOwnProperty.call(descriptor,getFuncType)) {
     instrumentedFunction = generateGetter(
       identifier,
       descriptor,
@@ -697,7 +697,7 @@ function instrumentGetterSetter(
       propertyName,
     );
   }
-  if (descriptor.hasOwnProperty(setFuncType)) {
+  if (Object.prototype.hasOwnProperty.call(descriptor,setFuncType)) {
     instrumentedFunction = generateSetter(identifier, descriptor, propertyName);
     injectFunction(
       instrumentedFunction,

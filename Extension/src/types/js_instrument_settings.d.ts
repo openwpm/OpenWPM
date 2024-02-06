@@ -17,11 +17,14 @@ export type InstrumentedName = string;
  * An array of properties to instrument on this object. If array is empty, then all properties are instrumented.
  */
 export type PropertiesToInstrument =
-  | {
-      depth?: number;
-      propertyNames?: string[];
-      [k: string]: unknown;
-    }[]
+  | (
+      | {
+          depth?: number;
+          propertyNames?: string[];
+          [k: string]: unknown;
+        }
+      | string
+    )[]
   | null;
 /**
  * An array of non-existing properties to instrument on this object.
