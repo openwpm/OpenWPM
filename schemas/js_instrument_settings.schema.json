@@ -30,8 +30,8 @@
             "title": "Properties to instrument",
             "description": "An array of properties to instrument on this object. If array is empty, then all properties are instrumented.",
             "type": ["array", "null"],
-            "items":
-              {
+            "items": {
+              "anyOf": [{
                 "type": "object",
                 "properties": {
                   "depth": {
@@ -45,6 +45,11 @@
                   }
                 }
               },
+                {
+                  "type": "string"
+                }]
+            }
+              ,
             "default": []
           },
           "nonExistingPropertiesToInstrument": {
