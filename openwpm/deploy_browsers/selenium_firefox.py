@@ -9,7 +9,6 @@ import os
 import tempfile
 import threading
 
-from selenium.webdriver.firefox import service as FirefoxServiceModule
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.options import Options
 
@@ -76,33 +75,3 @@ class FirefoxLogInterceptor(threading.Thread):
             if self.fifo is not None:
                 os.unlink(self.fifo)
                 self.fifo = None
-
-
-class PatchedFirefoxService(FirefoxServiceModule.Service):
-    """Object that manages the starting and stopping of the GeckoDriver.
-    We need to override the constructor to be able to write to the FIFO
-    queue we use for log collection
-    """
-
-    def __init__(
-        self,
-        executable_path,
-        port=0,
-        service_args=None,
-        log_path="geckodriver.log",
-        env=None,
-    ):
-        super().__init__(executable_path, port, service_args, log_path, env)
-        if self.log_file:
-            os.close(self.log_file)
-
-        if log_path:
-            try:
-                self.log_file = open(log_path, "a")
-            except OSError as e:
-                if e.errno != errno.ESPIPE:
-                    raise
-                self.log_file = open(log_path, "w")
-
-
-FirefoxServiceModule.Service = PatchedFirefoxService
