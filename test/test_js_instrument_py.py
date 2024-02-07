@@ -2,6 +2,7 @@
 Test function that converts our python
 objects to our JS string
 """
+
 from typing import Any, Dict, List
 
 import pytest

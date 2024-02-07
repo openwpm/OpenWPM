@@ -10,13 +10,13 @@ from easyprocess import EasyProcessError
 from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 
 from ..commands.profile_commands import load_profile
 from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
-from selenium.webdriver.firefox.options import Options
 from .selenium_firefox import FirefoxLogInterceptor
 
 DEFAULT_SCREEN_RES = (1366, 768)
@@ -103,9 +103,9 @@ def deploy_firefox(
         extension_config: Dict[str, Any] = dict()
         extension_config.update(browser_params.to_dict())
         extension_config["logger_address"] = manager_params.logger_address
-        extension_config[
-            "storage_controller_address"
-        ] = manager_params.storage_controller_address
+        extension_config["storage_controller_address"] = (
+            manager_params.storage_controller_address
+        )
         extension_config["testing"] = manager_params.testing
         ext_config_file = browser_profile_path / "browser_params.json"
         with open(ext_config_file, "w") as f:
@@ -126,9 +126,7 @@ def deploy_firefox(
 
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.
-    webdriver_interceptor = FirefoxLogInterceptor(
-        browser_params.browser_id, is_webdriver=True
-    )
+    webdriver_interceptor = FirefoxLogInterceptor(browser_params.browser_id)
     webdriver_interceptor.start()
 
     # Set custom prefs. These are set after all of the default prefs to allow

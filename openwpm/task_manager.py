@@ -184,9 +184,9 @@ class TaskManager:
         """initialize the browser classes, each with its unique set of params"""
         browsers = list()
         for i in range(self.num_browsers):
-            browser_params[
-                i
-            ].browser_id = self.storage_controller_handle.get_next_browser_id()
+            browser_params[i].browser_id = (
+                self.storage_controller_handle.get_next_browser_id()
+            )
             browsers.append(
                 BrowserManagerHandle(self.manager_params, browser_params[i])
             )
@@ -446,9 +446,9 @@ class TaskManager:
             # send the command to this specific browser
             while True:
                 if self.browsers[index].ready():
-                    self.browsers[
-                        index
-                    ].current_timeout = command_sequence.total_timeout
+                    self.browsers[index].current_timeout = (
+                        command_sequence.total_timeout
+                    )
                     thread = self._start_thread(self.browsers[index], command_sequence)
                     break
                 time.sleep(SLEEP_CONS)
