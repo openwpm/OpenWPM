@@ -18,6 +18,7 @@ module.exports = {
   ignorePatterns: [
     "bundled/feature.js",
     "bundled/content.js",
+    "bundled/stealth.js",
     "bundled/privileged/sockets/bufferpack.js" /** This is a file we just copied in  */,
     "build/",
     "dist/",

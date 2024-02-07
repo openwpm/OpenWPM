@@ -26,4 +26,5 @@ Extension/dist
 Extension/openwpm.xpi
 Extension/src/content.js
 Extension/src/feature.js
+Extension/src/stealth.js
 Extension/build

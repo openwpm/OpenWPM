@@ -18,6 +18,9 @@
         "description": "The name recorded by the instrumentation for this object.",
         "type": "string"
       },
+      "depth": {
+        "type": "integer"
+      },
       "logSettings": {
         "title": "Log settings",
         "description": "The log settings object.",
@@ -28,8 +31,25 @@
             "description": "An array of properties to instrument on this object. If array is empty, then all properties are instrumented.",
             "type": ["array", "null"],
             "items": {
-              "type": "string"
-            },
+              "anyOf": [{
+                "type": "object",
+                "properties": {
+                  "depth": {
+                    "type": "integer"
+                  },
+                  "propertyNames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+                {
+                  "type": "string"
+                }]
+            }
+              ,
             "default": []
           },
           "nonExistingPropertiesToInstrument": {
@@ -85,6 +105,48 @@
             "description": "Recursion limit when instrumenting object recursively",
             "type": "number",
             "default": 5
+          },
+          "overwrittenProperties": {
+            "title": "TODO",
+            "description": "TODO",
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "The property that will pe overwritten"
+                },
+                "value": {
+                  "description": "The value that should be returned",
+                  "anyOf": [{
+                    "type": "string"
+                  },
+                    {
+                      "type": "array"
+                    }, {
+                    "type": "object"
+                  },{
+                    "type": "boolean"
+                  },{
+                    "type": "number"
+                  },{
+                    "type": "integer"
+                  }]
+                },
+                "level": {
+                  "type": "integer",
+                  "description": "TODO"
+                }
+
+              },
+              "required": [
+                  "type",
+                "value",
+                "level"
+                ]
+            },
+            "default": []
           }
         },
         "required": [
