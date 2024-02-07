@@ -49,12 +49,16 @@ class FirefoxLogInterceptor(threading.Thread):
     instance.
     """
 
-    def __init__(self, browser_id: BrowserId) -> None:
-        threading.Thread.__init__(self, name="log-interceptor-%i" % browser_id)
+    def __init__(self, browser_id: BrowserId, is_webdriver: bool) -> None:
+        threading.Thread.__init__(
+            self,
+            name=f"log-interceptor-{'webdriver' if is_webdriver else 'browser'}-{browser_id}",
+        )
         self.browser_id = browser_id
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")
         self.daemon = True
         self.logger = logging.getLogger("openwpm")
+        assert self.fifo is not None
 
     def run(self) -> None:
         # We might not ever get EOF on the FIFO, so instead we delete
@@ -70,7 +74,8 @@ class FirefoxLogInterceptor(threading.Thread):
                     if self.fifo is not None:
                         os.unlink(self.fifo)
                         self.fifo = None
-
+        except Exception:
+            self.logger.error("Error in LogInterceptor", exc_info=True)
         finally:
             if self.fifo is not None:
                 os.unlink(self.fifo)
