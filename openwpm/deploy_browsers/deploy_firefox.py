@@ -16,7 +16,8 @@ from ..commands.profile_commands import load_profile
 from ..config import BrowserParamsInternal, ConfigEncoder, ManagerParamsInternal
 from ..utilities.platform_utils import get_firefox_binary_path
 from . import configure_firefox
-from .selenium_firefox import FirefoxBinary, FirefoxLogInterceptor, Options
+from selenium.webdriver.firefox.options import Options
+from .selenium_firefox import FirefoxLogInterceptor
 
 DEFAULT_SCREEN_RES = (1366, 768)
 logger = logging.getLogger("openwpm")
@@ -130,11 +131,6 @@ def deploy_firefox(
     )
     webdriver_interceptor.start()
 
-    browser_interceptor = FirefoxLogInterceptor(
-        browser_params.browser_id, is_webdriver=False
-    )
-    browser_interceptor.start()
-
     # Set custom prefs. These are set after all of the default prefs to allow
     # our defaults to be overwritten.
     for name, value in browser_params.prefs.items():
@@ -147,9 +143,7 @@ def deploy_firefox(
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
 
-    fo.binary = FirefoxBinary(
-        firefox_path=firefox_binary_path, log_file=open(browser_interceptor.fifo, "w")
-    )
+    fo.binary_location = firefox_binary_path
     geckodriver_path = subprocess.check_output(
         "which geckodriver", encoding="utf-8", shell=True
     ).strip()

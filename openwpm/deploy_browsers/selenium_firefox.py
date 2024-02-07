@@ -9,12 +9,10 @@ import os
 import tempfile
 import threading
 
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.firefox.options import Options
 
 from openwpm.types import BrowserId
 
-__all__ = ["FirefoxBinary", "FirefoxLogInterceptor", "Options"]
+__all__ = ["FirefoxLogInterceptor"]
 
 
 def mktempfifo(suffix="", prefix="tmp", dir=None):
