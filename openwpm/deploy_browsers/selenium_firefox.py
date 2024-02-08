@@ -2,19 +2,15 @@
 Workarounds for Selenium headaches.
 """
 
-
 import errno
 import logging
 import os
 import tempfile
 import threading
 
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.firefox.options import Options
-
 from openwpm.types import BrowserId
 
-__all__ = ["FirefoxBinary", "FirefoxLogInterceptor", "Options"]
+__all__ = ["FirefoxLogInterceptor"]
 
 
 def mktempfifo(suffix="", prefix="tmp", dir=None):
@@ -49,10 +45,10 @@ class FirefoxLogInterceptor(threading.Thread):
     instance.
     """
 
-    def __init__(self, browser_id: BrowserId, is_webdriver: bool) -> None:
+    def __init__(self, browser_id: BrowserId) -> None:
         threading.Thread.__init__(
             self,
-            name=f"log-interceptor-{'webdriver' if is_webdriver else 'browser'}-{browser_id}",
+            name=f"log-interceptor-{browser_id}",
         )
         self.browser_id = browser_id
         self.fifo = mktempfifo(suffix=".log", prefix="owpm_driver_")

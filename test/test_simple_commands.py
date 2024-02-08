@@ -5,6 +5,7 @@ This entire test class is parametrized to run against
 both headless and xvfb modes to ensure both are exercised
 during the test suite and there are no obvious problems.
 """
+
 import glob
 import gzip
 import json

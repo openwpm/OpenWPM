@@ -91,8 +91,7 @@ def task_manager_creator(server: None, xpi: None) -> TaskManagerCreator:
 class HttpParams(Protocol):
     def __call__(
         self, display_mode: Literal["headless", "xvfb"] = "headless"
-    ) -> FullConfig:
-        ...
+    ) -> FullConfig: ...
 
 
 @pytest.fixture()
