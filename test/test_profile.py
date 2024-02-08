@@ -1,3 +1,4 @@
+import logging
 import tarfile
 import time
 from pathlib import Path
@@ -13,6 +14,7 @@ from openwpm.config import BrowserParamsInternal
 from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
 
+from . import openwpmtest
 from .utilities import BASE_TEST_URL
 
 # TODO update these tests to make use of blocking commands
@@ -117,17 +119,16 @@ def test_seed_persistence(default_params, task_manager_creator):
     for browser_param in browser_params:
         browser_param.seed_tar = p
     manager, db = task_manager_creator(default_params)
+    with manager:
+        command_sequences = []
+        for _ in range(openwpmtest.NUM_BROWSERS):
+            cs = CommandSequence(url=BASE_TEST_URL)
+            cs.get()
+            cs.append_command(AssertConfigSetCommand("test_pref", True))
+            command_sequences.append(cs)
 
-    command_sequences = []
-    for _ in range(2):
-        cs = CommandSequence(url=BASE_TEST_URL)
-        cs.get()
-        cs.append_command(AssertConfigSetCommand("test_pref", True))
-        command_sequences.append(cs)
-
-    for cs in command_sequences:
-        manager.execute_command_sequence(cs)
-    manager.close()
+        for cs in command_sequences:
+            manager.execute_command_sequence(cs)
     query_result = db_utils.query_db(
         db,
         "SELECT * FROM crawl_history;",
@@ -141,6 +142,7 @@ class AssertConfigSetCommand(BaseCommand):
     def __init__(self, pref_name: str, expected_value: Any) -> None:
         self.pref_name = pref_name
         self.expected_value = expected_value
+        self.logger = logging.getLogger("openwpm")
 
     def execute(
         self,
@@ -162,6 +164,7 @@ class AssertConfigSetCommand(BaseCommand):
                 }}
             """
         )
+        self.logger.error(f"Got result: {result}")
         assert result == self.expected_value
 
 

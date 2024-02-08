@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # All of these steps are just setup
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setting MAMBA_PATH
         run: echo "MAMBA_PATH=$HOME/mamba" >> $GITHUB_ENV
       - name: Setting OPENWPM_MAMBA_PATH
         run: echo "OPENWPM_MAMBA_PATH=$MAMBA_PATH/envs/openwpm" >> $GITHUB_ENV
       # If the environment.yaml hasn't changed we just reuse the entire conda install
       - id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: conda-cache
         with:
@@ -49,14 +49,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # All of these steps are just setup
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setting MAMBA_PATH
         run: echo "MAMBA_PATH=$HOME/mamba" >> $GITHUB_ENV
       - name: Setting OPENWPM_MAMBA_PATH
         run: echo "OPENWPM_MAMBA_PATH=$MAMBA_PATH/envs/openwpm" >> $GITHUB_ENV
       # If the environment.yaml hasn't changed we just reuse the entire conda install
       - id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: conda-cache
         with:
@@ -96,9 +96,9 @@ jobs:
       fail-fast: false
     steps:
       # All of these steps are just setup, maybe we should wrap them in an action
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache node modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-node-modules
         with:
@@ -113,7 +113,7 @@ jobs:
 
       # If the environment.yaml hasn't changed we just reuse the entire conda install
       - id: conda-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: conda-cache
         with:
