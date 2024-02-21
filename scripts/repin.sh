@@ -36,7 +36,6 @@ Darwin)
   ;;
 esac
 
-
 # Export the environment including manually specify channels
 mamba env export --no-builds --override-channels -c conda-forge -c main -f ../environment.yaml
 

@@ -1,9 +1,13 @@
 import logging
+import os
 import sys
 import traceback
+from typing import Any, TypeAlias
 
 import multiprocess as mp
 import psutil
+from honeycomb.opentelemetry import HoneycombOptions, configure_opentelemetry
+from opentelemetry.trace import get_tracer_provider
 
 
 def parse_traceback_for_sentry(tb):
@@ -32,14 +36,28 @@ def parse_traceback_for_sentry(tb):
     return out
 
 
+ProcessName: TypeAlias = str
+
+
 class Process(mp.Process):
     """Wrapper Process class that includes exception logging"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         mp.Process.__init__(self, *args, **kwargs)
         self.logger = logging.getLogger("openwpm")
 
-    def run(self):
+    def run(self) -> None:
+        configure_opentelemetry(
+            HoneycombOptions(
+                debug=True,  # prints exported traces & metrics to the console, useful for debugging and setting up
+                # Honeycomb API Key, required to send data to Honeycomb
+                apikey=os.getenv("HONEYCOMB_API_KEY"),
+                # Dataset that will be populated with data from this service in Honeycomb
+                service_name=self.name,
+                enable_local_visualizations=True,  # Will print a link to a trace produced in Honeycomb to the console, useful for debugging
+                # sample_rate = DEFAULT_SAMPLE_RATE, Set a sample rate for spans
+            )
+        )
         try:
             mp.Process.run(self)
         except Exception as e:
@@ -48,6 +66,10 @@ class Process(mp.Process):
             extra["exception"] = tb[-1]
             self.logger.error("Exception in child process.", exc_info=True, extra=extra)
             raise e
+        provider = get_tracer_provider()
+        # This is an opentelemetry.sdk.TraceProvider which has a shutdown method
+        if hasattr(provider, "shutdown"):
+            provider.shutdown()
 
 
 def kill_process_and_children(
