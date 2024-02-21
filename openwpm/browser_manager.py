@@ -691,6 +691,7 @@ class BrowserManager(Process):
         if self.manager_params.testing:
             self.critical_exceptions += (AssertionError,)
 
+    @_tracer.start_as_current_span("start_extension")
     def _start_extension(self, browser_profile_path: Path) -> ClientSocket:
         """Start up the extension
         Blocks until the extension has fully started up
@@ -749,28 +750,29 @@ class BrowserManager(Process):
         display = None
 
         try:
-            # Start Xvfb (if necessary), webdriver, and browser
-            driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
-                self.status_queue,
-                self.browser_params,
-                self.manager_params,
-                self.crash_recovery,
-            )
+            with _tracer.start_as_current_span("browser_startup"):
+                # Start Xvfb (if necessary), webdriver, and browser
+                driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
+                    self.status_queue,
+                    self.browser_params,
+                    self.manager_params,
+                    self.crash_recovery,
+                )
 
-            extension_socket: Optional[ClientSocket] = None
+                extension_socket: Optional[ClientSocket] = None
 
-            if self.browser_params.extension_enabled:
-                extension_socket = self._start_extension(browser_profile_path)
+                if self.browser_params.extension_enabled:
+                    extension_socket = self._start_extension(browser_profile_path)
 
-            self.logger.debug(
-                "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
-            )
+                self.logger.debug(
+                    "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
+                )
 
-            # passes "READY" to the TaskManager to signal a successful startup
-            self.status_queue.put(("STATUS", "Browser Ready", "READY"))
-            self.browser_params.profile_path = browser_profile_path
+                # passes "READY" to the TaskManager to signal a successful startup
+                self.status_queue.put(("STATUS", "Browser Ready", "READY"))
+                self.browser_params.profile_path = browser_profile_path
 
-            assert extension_socket is not None
+                assert extension_socket is not None
             # starts accepting arguments until told to die
             while True:
                 # no command for now -> sleep to avoid pegging CPU on blocking get

@@ -373,14 +373,14 @@ class StorageController:
         )
         # Blocks until we should shut down
         await self.should_shutdown()
-        async with _tracer.start_as_current_span("storage controller shutdown"):
-            async with _tracer.start_as_current_span("server initialize shutdown"):
+        with _tracer.start_as_current_span("storage controller shutdown"):
+            with _tracer.start_as_current_span("server initialize shutdown"):
                 server.close()
-            async with _tracer.start_as_current_span("status queue shutdown"):
+            with _tracer.start_as_current_span("status queue shutdown"):
                 status_queue_update.cancel()
-            async with _tracer.start_as_current_span("timeout_check shutdown"):
+            with _tracer.start_as_current_span("timeout_check shutdown"):
                 timeout_check.cancel()
-            async with _tracer.start_as_current_span("server shutdown completed"):
+            with _tracer.start_as_current_span("server shutdown completed"):
                 await server.wait_closed()
 
             await self.shutdown(update_completion_queue)
