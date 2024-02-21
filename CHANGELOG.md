@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.27.0 - 2024-02-07
+
+Bump to Firefox 122
+
+Fix race condition in deploy_firefox.py
+Internals cleanup
+
 ## v0.26.0 - 2023-12-23
 
 Bump to Firefox 121

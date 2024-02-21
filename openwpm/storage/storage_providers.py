@@ -3,6 +3,7 @@ This module contains all base classes of the storage provider hierarchy
 Any subclass of these classes should be able to be used in OpenWPM
 without any changes to the rest of the code base
 """
+
 import gzip
 import io
 from abc import ABC, abstractmethod

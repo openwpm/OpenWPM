@@ -24,11 +24,11 @@
   "homepage": "",
   "devDependencies": {
     "@adobe/jsonschema2md": "^7.1.5",
-    "@commitlint/cli": "^17.7.0",
-    "@commitlint/config-conventional": "^17.7.0",
-    "commitlint": "^17.7.0",
+    "@commitlint/cli": "^18.6.0",
+    "@commitlint/config-conventional": "^18.6.0",
+    "commitlint": "^18.6.0",
     "markdown-link-check": "^3.11.2",
-    "markdownlint-cli": "^0.37.0"
+    "markdownlint-cli": "^0.39.0"
   },
   "resolutions": {
     "glob-parent": "^6.0.2",

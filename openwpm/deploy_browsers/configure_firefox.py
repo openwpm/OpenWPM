@@ -1,7 +1,8 @@
 """ Set prefs and load extensions in Firefox """
 
+from selenium.webdriver.firefox.options import Options
+
 from ..config import BrowserParams
-from .selenium_firefox import Options
 
 
 def privacy(browser_params: BrowserParams, fo: Options) -> None:

@@ -8,6 +8,7 @@ Steps to have a custom command run as part of a CommandSequence
 4. Execute the CommandSequence
 
 """
+
 import logging
 
 from selenium.webdriver import Firefox
