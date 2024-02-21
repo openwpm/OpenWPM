@@ -9,7 +9,7 @@ set -e
 # Note this script is **destructive** and will
 # remove the existing Firefox in the OpenWPM directory
 
-TAG='5eb7272884b4ce02cffab7900e41551608885492' # FIREFOX_122_0_1_RELEASE
+TAG='d3c71a6fc9a1aecf1fe04f8de2fc0b816588e677' # FIREFOX_123_0_RELEASE
 
 case "$(uname -s)" in
 Darwin)
