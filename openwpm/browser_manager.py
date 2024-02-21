@@ -506,43 +506,44 @@ class BrowserManagerHandle:
                         success=False, visit_id=self.curr_visit_id
                     )
                     break
-
-        self.logger.info(
-            "Finished working on CommandSequence with "
-            "visit_id %d on browser with id %d",
-            self.curr_visit_id,
-            self.browser_id,
-        )
-        # Sleep after executing CommandSequence to provide extra time for
-        # internal buffers to drain. Stopgap in support of #135
-        time.sleep(2)
-
-        if task_manager.closing:
-            return
-
-        # Allow StorageWatchdog to utilize built-in browser reset functionality
-        # which results in a graceful restart of the browser instance
-        if self.browser_params.maximum_profile_size:
-            assert self.current_profile_path is not None
-
-            reset = profile_size_exceeds_max_size(
-                self.current_profile_path,
-                self.browser_params.maximum_profile_size,
+        with _tracer.start_as_current_span("post_cs_chores"):
+            self.logger.info(
+                "Finished working on CommandSequence with "
+                "visit_id %d on browser with id %d",
+                self.curr_visit_id,
+                self.browser_id,
             )
+            # Sleep after executing CommandSequence to provide extra time for
+            # internal buffers to drain. Stopgap in support of #135
+            time.sleep(2)
 
-        if self.restart_required or reset:
-            success = self.restart_browser_manager(clear_profile=reset)
-            if not success:
-                self.logger.critical(
-                    "BROWSER %i: Exceeded the maximum allowable consecutive "
-                    "browser launch failures. Setting failure_status." % self.browser_id
-                )
-                task_manager.failure_status = {
-                    "ErrorType": "ExceedLaunchFailureLimit",
-                    "CommandSequence": command_sequence,
-                }
+            if task_manager.closing:
                 return
-            self.restart_required = False
+
+            # Allow StorageWatchdog to utilize built-in browser reset functionality
+            # which results in a graceful restart of the browser instance
+            if self.browser_params.maximum_profile_size:
+                assert self.current_profile_path is not None
+
+                reset = profile_size_exceeds_max_size(
+                    self.current_profile_path,
+                    self.browser_params.maximum_profile_size,
+                )
+
+            if self.restart_required or reset:
+                success = self.restart_browser_manager(clear_profile=reset)
+                if not success:
+                    self.logger.critical(
+                        "BROWSER %i: Exceeded the maximum allowable consecutive "
+                        "browser launch failures. Setting failure_status."
+                        % self.browser_id
+                    )
+                    task_manager.failure_status = {
+                        "ErrorType": "ExceedLaunchFailureLimit",
+                        "CommandSequence": command_sequence,
+                    }
+                    return
+                self.restart_required = False
 
     def _unpack_pickled_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into an error `message` and `tb` string."""
@@ -677,6 +678,7 @@ class BrowserManager(Process):
         crash_recovery: bool,
     ) -> None:
         super().__init__()
+        self.name = "BrowserManager"
         self.logger = logging.getLogger("openwpm")
         self.command_queue = command_queue
         self.status_queue = status_queue

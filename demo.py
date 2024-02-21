@@ -80,7 +80,7 @@ with TaskManager(
 ) as manager:
     # Visits the sites
     for index, site in enumerate(sites):
-        with _tracer.start_as_current_span(name="command_issuing"):
+        with _tracer.start_as_current_span("command_issuing"):
             span = trace.get_current_span()
 
             def callback(success: bool, val: str = site) -> None:
