@@ -764,6 +764,21 @@ class BrowserManager(Process):
 
                 if isinstance(command, ShutdownSignal):
                     driver.quit()
+                    # Delete the temporary directory used by this browser.
+                    try:
+                        self.logger.debug(
+                            "BROWSER %i: deleting temp dir %s" %
+                            (self.browser_params.browser_id, 
+                                self.browser_params.tmpdir)
+                        )
+                        shutil.rmtree(self.browser_params.tmpdir)
+                    except Exception as e:
+                        self.logger.warn(
+                            "BROWSER %i: failed to delete temp dir %s: %s" %
+                            (self.browser_params.browser_id, 
+                                self.browser_params.tmpdir,
+                                str(e))
+                    )
                     self.status_queue.put("OK")
                     return
 
