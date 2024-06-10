@@ -149,6 +149,15 @@ def deploy_firefox(
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
 
+    # Use browser_params.tmpdir as the temporary directory.  This is so that
+    # geckodriver makes its copy of the extension XPI file in tmpdir, so
+    # we can delete it later and not have it left behind.  I make a shallow
+    # copy of `os.environ` because I'm a little nervous about modifying the
+    # OpenWPM process' environment.
+    env = os.environ.copy()
+    if browser_params.tmpdir is not None:
+        env["TMPDIR"] = str(browser_params.tmpdir)
+
     fo.binary_location = firefox_binary_path
     geckodriver_path = subprocess.check_output(
         "which geckodriver", encoding="utf-8", shell=True
@@ -173,6 +182,7 @@ def deploy_firefox(
             # privilege escalation. Only the process launching geckodriver may
             # opt in, which is exactly what we are doing here.
             service_args=["--allow-system-access"],
+            env=env,
         ),
     )
 

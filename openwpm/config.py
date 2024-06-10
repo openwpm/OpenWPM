@@ -103,6 +103,7 @@ class BrowserParams(DataClassJsonMixin):
         default=Path(tempfile.gettempdir()),
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
+
     """
     The tmp_profile_dir defaults to the OS's temporary file folder (typically /tmp) and is where the generated 
     browser profiles and residual files are stored.
@@ -137,6 +138,18 @@ class BrowserParams(DataClassJsonMixin):
     * 73400320:  70MB
     * 104857600: 100MB - IDEAL for 10+ browsers
 
+    """
+
+    tmpdir: Optional[Path] = field(
+        default=None,
+        metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
+    )
+    """
+    The temporary directory used by `geckodriver`.  This is configured in
+    `BrowserManager.run` and then deleted when the browser is finished.  We do
+    this because it seems that `geckodriver` doesn't clean up its temporary
+    files (in particular, a copy of the extension XPI file), so we need to do
+    so ourselves.
     """
 
     recovery_tar: Optional[Path] = None
