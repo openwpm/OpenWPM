@@ -138,6 +138,19 @@ def deploy_firefox(
         )
         fo.set_preference(name, value)
 
+    # Create a temporary directory for this instance of geckodriver that
+    # we can delete later.
+    env = os.environ
+    browser_params.tmpdir = tempfile.mkdtemp(
+        prefix="openwpm_", 
+        dir=os.getenv('TMPDIR', default='/tmp')
+    )
+    env['TMPDIR'] = browser_params.tmpdir
+    logger.debug(
+        "BROWSER %i: Using temp dir %s" % 
+        (browser_params.browser_id, browser_params.tmpdir)
+    )
+
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
 
@@ -150,6 +163,7 @@ def deploy_firefox(
         service=Service(
             executable_path=geckodriver_path,
             log_output=open(webdriver_interceptor.fifo, "w"),
+            env=env
         ),
     )
 
