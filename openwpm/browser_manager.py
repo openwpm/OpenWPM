@@ -131,6 +131,18 @@ class BrowserManagerHandle:
 
             crash_recovery = True
 
+        # Create a unique temporary directory that we can delete
+        # when we shut down.  Note that this doesn't force anything to
+        # use `tmpdir`, it just makes it available.
+        self.browser_params.tmpdir = Path(tempfile.mkdtemp(
+            prefix="openwpm_", 
+            dir=os.getenv('TMPDIR', default='/tmp')
+        ))
+        self.logger.debug(
+            "BROWSER %i: Using temp dir %s" % 
+            (self.browser_params.browser_id, self.browser_params.tmpdir)
+        )
+
         self.logger.info("BROWSER %i: Launching browser..." % self.browser_id)
         self.is_fresh = not crash_recovery
 
@@ -640,6 +652,22 @@ class BrowserManagerHandle:
         if self.current_profile_path is not None:
             shutil.rmtree(self.current_profile_path, ignore_errors=True)
 
+        # Delete the temporary directory used by geckodriver.
+        try:
+            self.logger.debug(
+                "BROWSER %i: deleting temp dir %s" %
+                (self.browser_params.browser_id, 
+                    self.browser_params.tmpdir)
+            )
+            shutil.rmtree(self.browser_params.tmpdir)
+        except Exception as e:
+            self.logger.warn(
+                "BROWSER %i: failed to delete temp dir %s: %s" %
+                (self.browser_params.browser_id, 
+                    self.browser_params.tmpdir,
+                    str(e))
+        )
+
 
 class BrowserManager(Process):
     """
@@ -764,21 +792,6 @@ class BrowserManager(Process):
 
                 if isinstance(command, ShutdownSignal):
                     driver.quit()
-                    # Delete the temporary directory used by this browser.
-                    try:
-                        self.logger.debug(
-                            "BROWSER %i: deleting temp dir %s" %
-                            (self.browser_params.browser_id, 
-                                self.browser_params.tmpdir)
-                        )
-                        shutil.rmtree(self.browser_params.tmpdir)
-                    except Exception as e:
-                        self.logger.warn(
-                            "BROWSER %i: failed to delete temp dir %s: %s" %
-                            (self.browser_params.browser_id, 
-                                self.browser_params.tmpdir,
-                                str(e))
-                    )
                     self.status_queue.put("OK")
                     return
 

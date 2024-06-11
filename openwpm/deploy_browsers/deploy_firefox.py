@@ -138,21 +138,14 @@ def deploy_firefox(
         )
         fo.set_preference(name, value)
 
-    # Create a temporary directory for this instance of geckodriver that
-    # we can delete later.
-    env = os.environ
-    browser_params.tmpdir = tempfile.mkdtemp(
-        prefix="openwpm_", 
-        dir=os.getenv('TMPDIR', default='/tmp')
-    )
-    env['TMPDIR'] = browser_params.tmpdir
-    logger.debug(
-        "BROWSER %i: Using temp dir %s" % 
-        (browser_params.browser_id, browser_params.tmpdir)
-    )
-
     # Launch the webdriver
     status_queue.put(("STATUS", "Launch Attempted", None))
+
+    # Use browser_params.tmpdir as the temporary directory.  This is so that
+    # geckodriver makes its copy of the extension XPI file in tmpdir, so
+    # we can delete it later and not have it left behind.
+    env = os.environ
+    env['TMPDIR'] = str(browser_params.tmpdir)
 
     fo.binary_location = firefox_binary_path
     geckodriver_path = subprocess.check_output(
