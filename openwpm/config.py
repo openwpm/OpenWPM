@@ -141,16 +141,16 @@ class BrowserParams(DataClassJsonMixin):
 
     """
 
-    tmpdir: Path = field(
-        default=Path(tempfile.gettempdir()),
+    tmpdir: Optional[Path] = field(
+        default=None,
         metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path),
     )
     """
-    The temporary directory used by `geckodriver`.  This is confiured when the
-    browser is deployed in deploy_browsers.deploy_firefox.  We need it in order
-    to delete it when the browser is closed down, because `geckodriver` doesn't
-    appear to delete temporary files that it creates, such as a copy of the
-    extension XPI file.
+    The temporary directory used by `geckodriver`.  This is configured in
+    `BrowserManager.run` and then deleted when the browser is finished.  We do
+    this because it seems that `geckodriver` doesn't clean up its temporary
+    files (in particular, a copy of the extension XPI file), so we need to do
+    so ourselves.
     """
 
     recovery_tar: Optional[Path] = None

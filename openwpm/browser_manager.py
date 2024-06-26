@@ -134,6 +134,20 @@ class BrowserManagerHandle:
         # Create a unique temporary directory that we can delete
         # when we shut down.  Note that this doesn't force anything to
         # use `tmpdir`, it just makes it available.
+        if self.browser_params.tmpdir is not None:
+            self.logger.debug(
+                "BROWSER %i: leftover temp directory %s?  Deleting it." %
+                (self.browser_params.browser_id, self.browser_params.tmpdir)
+            )
+            try:
+                shutil.rmtree(self.browser_params.tmpdir)
+            except Exception as e:
+                self.logger.debug(
+                    "BROWSER %i: error deleting %s: %s." %
+                    (self.browser_params.browser_id,
+                        self.browser_params.tmpdir,
+                        str(e))
+                )
         self.browser_params.tmpdir = Path(tempfile.mkdtemp(
             prefix="openwpm_", 
             dir=os.getenv('TMPDIR', default='/tmp')
@@ -352,6 +366,7 @@ class BrowserManagerHandle:
                             self.browser_params.tmpdir)
                     )
                     shutil.rmtree(self.browser_params.tmpdir)
+                    self.browser_params.tmpdir = None
                 except Exception as e:
                     self.logger.warn(
                         "BROWSER %i: failed to delete temp dir %s: %s" %
