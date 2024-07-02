@@ -358,22 +358,6 @@ class BrowserManagerHandle:
                     )
                     return
 
-                # Delete the temporary directory used by geckodriver.
-                try:
-                    self.logger.debug(
-                        "BROWSER %i: deleting temp dir %s" %
-                        (self.browser_params.browser_id, 
-                            self.browser_params.tmpdir)
-                    )
-                    shutil.rmtree(self.browser_params.tmpdir)
-                    self.browser_params.tmpdir = None
-                except Exception as e:
-                    self.logger.warn(
-                        "BROWSER %i: failed to delete temp dir %s: %s" %
-                        (self.browser_params.browser_id, 
-                            self.browser_params.tmpdir,
-                            str(e))
-                )
                 self.logger.debug(
                     "BROWSER %i: Browser manager closed successfully." % self.browser_id
                 )
@@ -381,6 +365,23 @@ class BrowserManagerHandle:
         finally:
             if not shutdown_complete:
                 self.kill_browser_manager()
+
+            # Delete the temporary directory used by geckodriver.
+            try:
+                self.logger.debug(
+                    "BROWSER %i: deleting temp dir %s" %
+                    (self.browser_params.browser_id, 
+                        self.browser_params.tmpdir)
+                )
+                shutil.rmtree(self.browser_params.tmpdir)
+                self.browser_params.tmpdir = None
+            except Exception as e:
+                self.logger.warn(
+                    "BROWSER %i: failed to delete temp dir %s: %s" %
+                    (self.browser_params.browser_id, 
+                        self.browser_params.tmpdir,
+                        str(e))
+                )
 
     def execute_command_sequence(
         self,
