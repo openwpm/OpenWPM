@@ -147,7 +147,7 @@ def deploy_firefox(
     # copy of `os.environ` because I'm a little nervous about modifying the
     # OpenWPM process' environment.
     env = os.environ.copy()
-    env['TMPDIR'] = str(browser_params.tmpdir)
+    env["TMPDIR"] = str(browser_params.tmpdir)
 
     fo.binary_location = firefox_binary_path
     geckodriver_path = subprocess.check_output(
@@ -158,7 +158,7 @@ def deploy_firefox(
         service=Service(
             executable_path=geckodriver_path,
             log_output=open(webdriver_interceptor.fifo, "w"),
-            env=env
+            env=env,
         ),
     )
 
