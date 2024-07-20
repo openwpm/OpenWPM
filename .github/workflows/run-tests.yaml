@@ -142,7 +142,8 @@ jobs:
           TESTS: ${{ matrix.test-groups }}
       - name: Test Report
         uses: dorny/test-reporter@v1
-        if: success() || failure() # run this step even if previous step failed
+        continue-on-error: true
+        if: always() # run this step even if previous step failed
         with:
           name: ${{matrix.test-groups}} # Name of the check run which will be created
           path: junit-report.xml # Path to test results
