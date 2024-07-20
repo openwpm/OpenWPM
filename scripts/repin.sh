@@ -9,6 +9,11 @@ set -e
 # Make mamba available to shell script
 eval "$(conda shell.bash hook)"
 
+
+echo "Deactivating and destroying the openwpm env so it can be recreated"
+conda deactivate
+conda env remove -q -y -n openwpm
+
 # Create openwpm env with unpinned yaml file
 # `PYTHONNOUSERSITE` set so python ignores local user site libraries when building the env
 # See: https://github.com/openwpm/OpenWPM/pull/682#issuecomment-645648939
@@ -35,7 +40,6 @@ Darwin)
   PYTHONNOUSERSITE=True mamba env update -f environment-unpinned-dev.yaml
   ;;
 esac
-
 
 # Export the environment including manually specify channels
 mamba env export --no-builds --override-channels -c conda-forge -c main -f ../environment.yaml

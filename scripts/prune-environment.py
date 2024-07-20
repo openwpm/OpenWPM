@@ -32,27 +32,21 @@ def iterate_deps(
                     break  # break out of the sep loop to avoid duplicate entries
 
 
+def split_off_pip_if_exists(env: dict[str, list[str]], has_pip: bool) -> list[str]:
+    return env["dependencies"][:-1] if has_pip else env["dependencies"]
+
+
 deps_not_pip: List[str] = []
 deps_pip: List[str] = []
 
 env_unpinned_contains_pip = "pip" in env_unpinned["dependencies"][-1]
 env_unpinned_dev_contains_pip = "pip" in env_unpinned_dev["dependencies"][-1]
 iterate_deps(
-    (
-        env_pinned["dependencies"][:-1]
-        if env_unpinned_contains_pip or env_unpinned_dev_contains_pip
-        else env_pinned["dependencies"]
+    split_off_pip_if_exists(
+        env_pinned, env_unpinned_contains_pip or env_unpinned_dev_contains_pip
     ),
-    (
-        env_unpinned["dependencies"][:-1]
-        if env_unpinned_contains_pip
-        else env_unpinned["dependencies"]
-    )
-    + (
-        env_unpinned_dev["dependencies"][:-1]
-        if env_unpinned_dev_contains_pip
-        else env_unpinned_dev["dependencies"]
-    ),
+    split_off_pip_if_exists(env_unpinned, env_unpinned_contains_pip)
+    + split_off_pip_if_exists(env_unpinned_dev, env_unpinned_dev_contains_pip),
     deps_not_pip,
 )
 
