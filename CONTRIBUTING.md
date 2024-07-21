@@ -60,8 +60,7 @@ instance (without any instrumentation)
   after automatically rebuilding `openwpm.xpi`. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
-
-* `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
+- `python -m test.manual_test --selenium --no_extension` launches a Firefox Selenium
   instance with no instrumentation. The script then
   drops into an `ipython` shell where the webdriver instance is available
   through variable `driver`.
