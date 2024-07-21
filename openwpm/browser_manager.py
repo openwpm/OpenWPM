@@ -12,11 +12,12 @@ import time
 import traceback
 from pathlib import Path
 from queue import Empty as EmptyQueue
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union, cast
 
 import psutil
 from multiprocess import Queue
 from opentelemetry import trace
+from opentelemetry.util.types import AttributeValue
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
@@ -469,6 +470,7 @@ class BrowserManagerHandle:
                 for k in list(table_entry.keys()):
                     if table_entry[k] is None:
                         del table_entry[k]
+                table_entry = cast(dict[str, AttributeValue], table_entry)
                 trace.get_current_span().set_attributes(table_entry)
 
                 if command_status == "critical":

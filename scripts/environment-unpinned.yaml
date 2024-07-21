@@ -24,7 +24,6 @@ dependencies:
   - redis-py
   - s3fs
   - selenium
-  - sentry-sdk
   - tabulate
   - tblib
   - wget

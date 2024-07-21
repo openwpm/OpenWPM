@@ -13,9 +13,7 @@ from queue import Empty as EmptyQueue
 from typing import Optional
 
 import dill
-import sentry_sdk
 from multiprocess import JoinableQueue
-from sentry_sdk.integrations.logging import BreadcrumbHandler, EventHandler
 from tblib import pickling_support
 
 from .commands.utils.webdriver_utils import parse_neterror
@@ -29,8 +27,6 @@ EXTENSION_PREFIX = re.compile(r"^Extension-\d+ :\s*")
 ENV_CONFIG_VARS = [
     "LOG_LEVEL_CONSOLE",
     "LOG_LEVEL_FILE",
-    "LOG_LEVEL_SENTRY_BREADCRUMB",
-    "LOG_LEVEL_SENTRY_EVENT",
 ]
 
 
@@ -104,30 +100,21 @@ class MPLogger(object):
         crawl_reference: Optional[str] = None,
         log_level_console=logging.INFO,
         log_level_file=logging.DEBUG,
-        log_level_sentry_breadcrumb=logging.DEBUG,
-        log_level_sentry_event=logging.ERROR,
     ) -> None:
         self._crawl_reference = crawl_reference
         self._log_level_console = log_level_console
         self._log_level_file = log_level_file
-        self._log_level_sentry_breadcrumb = log_level_sentry_breadcrumb
-        self._log_level_sentry_event = log_level_sentry_event
         # Configure log handlers
         self._status_queue = JoinableQueue()
         self._log_file = os.path.expanduser(log_file)
 
         self._initialize_loggers()
 
-        # Configure sentry (if available)
-        self._sentry_dsn = os.getenv("SENTRY_DSN", None)
-        if self._sentry_dsn:
-            self._initialize_sentry()
-
     def _initialize_loggers(self):
         """Set up console logging and serialized file logging.
 
         The logger and socket handler are set to log at the logging.DEBUG level
-        and filtering happens at the outputs (console, file, and sentry)."""
+        and filtering happens at the outputs (console, file)."""
         logger = logging.getLogger("openwpm")
         logger.setLevel(logging.DEBUG)
 
@@ -162,57 +149,6 @@ class MPLogger(object):
         socketHandler = ClientSocketHandler(*self.logger_address)
         socketHandler.setLevel(logging.DEBUG)
         logger.addHandler(socketHandler)
-
-    def _sentry_before_send(self, event, hint):
-        """Update sentry events before they are sent
-
-        Note: we want to be very conservative in handling errors here. If this
-        method throws an error, Sentry silently discards it and no record is
-        sent. It's much better to have Sentry send an unparsed error then no
-        error.
-        """
-
-        # Strip "BROWSER X: " and `Extension-X: ` prefix to clean up logs
-        if "logentry" in event and "message" in event["logentry"]:
-            if re.match(BROWSER_PREFIX, event["logentry"]["message"]):
-                event["logentry"]["message"] = re.sub(
-                    BROWSER_PREFIX, "", event["logentry"]["message"]
-                )
-            if re.match(EXTENSION_PREFIX, event["logentry"]["message"]):
-                event["logentry"]["message"] = re.sub(
-                    EXTENSION_PREFIX, "", event["logentry"]["message"]
-                )
-
-        # Add traceback info to fingerprint for logs that contain a traceback
-        try:
-            event["logentry"]["message"] = event["extra"]["exception"].strip()
-        except KeyError:
-            pass
-
-        # Combine neterrors of the same type
-        try:
-            if "about:neterror" in event["extra"]["exception"]:
-                error_text = parse_neterror(event["extra"]["exception"])
-                event["fingerprint"] = ["neterror-%s" % error_text]
-        except Exception:
-            pass
-
-        return event
-
-    def _initialize_sentry(self):
-        """If running a cloud crawl, we can pull the sentry endpoint
-        and related config varibles from the environment"""
-        self._breadcrumb_handler = BreadcrumbHandler(
-            level=self._log_level_sentry_breadcrumb
-        )
-        self._event_handler = EventHandler(level=self._log_level_sentry_event)
-        sentry_sdk.init(dsn=self._sentry_dsn, before_send=self._sentry_before_send)
-        with sentry_sdk.configure_scope() as scope:
-            if self._crawl_reference:
-                scope.set_tag(
-                    "CRAWL_REFERENCE",
-                    self._crawl_reference,
-                )
 
     def _start_listener(self):
         """Start listening socket for remote logs from extension"""
@@ -266,7 +202,6 @@ class MPLogger(object):
         """Handle records that must be serialized to the main process
 
         This is currently records that are written to a file on disk
-        and those sent to Sentry.
         """
         if obj["exc_info"]:
             obj["exc_info"] = dill.loads(obj["exc_info"])
@@ -274,11 +209,6 @@ class MPLogger(object):
             obj["args"] = dill.loads(obj["args"])
         record = logging.makeLogRecord(obj)
         self._file_handler.emit(record)
-        if self._sentry_dsn:
-            if record.levelno >= self._breadcrumb_handler.level:
-                self._breadcrumb_handler.handle(record)
-            if record.levelno >= self._event_handler.level:
-                self._event_handler.handle(record)
 
     def close(self):
         self._status_queue.put("SHUTDOWN")
