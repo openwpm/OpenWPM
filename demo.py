@@ -1,8 +1,11 @@
 import argparse
+import os
 from pathlib import Path
 from typing import Literal
 
 import tranco
+from honeycomb.opentelemetry import HoneycombOptions, configure_opentelemetry
+from opentelemetry import trace
 
 from custom_command import LinkCountingCommand
 from openwpm.command_sequence import CommandSequence
@@ -28,7 +31,6 @@ if args.tranco:
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
     latest_list = t.list()
     sites = ["http://" + x for x in latest_list.top(10)]
-
 
 display_mode: Literal["native", "headless", "xvfb"] = "native"
 if args.headless:
@@ -67,6 +69,7 @@ manager_params.log_path = Path("./datadir/openwpm.log")
 # manager_params.memory_watchdog = True
 # manager_params.process_watchdog = True
 
+_tracer = trace.get_tracer(__name__)
 
 # Commands time out by default after 60 seconds
 with TaskManager(
@@ -77,23 +80,25 @@ with TaskManager(
 ) as manager:
     # Visits the sites
     for index, site in enumerate(sites):
+        with _tracer.start_as_current_span("command_issuing"):
+            span = trace.get_current_span()
 
-        def callback(success: bool, val: str = site) -> None:
-            print(
-                f"CommandSequence for {val} ran {'successfully' if success else 'unsuccessfully'}"
+            def callback(success: bool, val: str = site) -> None:
+                print(
+                    f"CommandSequence for {val} ran {'successfully' if success else 'unsuccessfully'}"
+                )
+
+            # Parallelize sites over all number of browsers set above.
+            command_sequence = CommandSequence(
+                site,
+                site_rank=index,
+                callback=callback,
             )
 
-        # Parallelize sites over all number of browsers set above.
-        command_sequence = CommandSequence(
-            site,
-            site_rank=index,
-            callback=callback,
-        )
+            # Start by visiting the page
+            command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
+            # Have a look at custom_command.py to see how to implement your own command
+            command_sequence.append_command(LinkCountingCommand())
 
-        # Start by visiting the page
-        command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
-        # Have a look at custom_command.py to see how to implement your own command
-        command_sequence.append_command(LinkCountingCommand())
-
-        # Run commands across all browsers (simple parallelization)
-        manager.execute_command_sequence(command_sequence)
+            # Run commands across all browsers (simple parallelization)
+            manager.execute_command_sequence(command_sequence)

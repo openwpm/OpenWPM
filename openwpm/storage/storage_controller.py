@@ -11,6 +11,7 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
+from opentelemetry import trace
 
 from openwpm.utilities.multiprocess_utils import Process
 
@@ -36,6 +37,8 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 INVALID_VISIT_ID = VisitId(-1)
+
+_tracer = trace.get_tracer(__name__)
 
 
 class StorageController:
@@ -100,12 +103,15 @@ class StorageController:
         writer.close()
         await writer.wait_closed()
 
+    @_tracer.start_as_current_span("request_handler")
     async def handler(
         self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
         self.logger.info(f"Initializing new handler for {client_name}")
+        trace.get_current_span().set_attribute("client_name", client_name)
+
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
@@ -195,6 +201,7 @@ class StorageController:
         else:
             raise ValueError("Unexpected action: %s", action)
 
+    @_tracer.start_as_current_span("finalize_visit_id")
     async def finalize_visit_id(
         self, visit_id: VisitId, success: bool
     ) -> Optional[Task[None]]:
@@ -205,6 +212,9 @@ class StorageController:
         See StructuredStorageProvider::finalize_visit_id for additional
         documentation
         """
+        trace.get_current_span().set_attributes(
+            {"success": success, "visit_id": visit_id}
+        )
 
         # If the following critical section contains any await statement
         # we can run into race conditions as reported by https://github.com/openwpm/OpenWPM/issues/1068
@@ -258,8 +268,8 @@ class StorageController:
                 visit_id_count,
             )
 
+    @_tracer.start_as_current_span("data saving")
     async def shutdown(self, completion_queue_task: Task[None]) -> None:
-        self.logger.info("Entering self.shutdown")
         completion_tokens = {}
         visit_ids = list(self.store_record_tasks.keys())
         for visit_id in visit_ids:
@@ -338,13 +348,15 @@ class StorageController:
             self.finalize_tasks = new_finalize_tasks
             await asyncio.sleep(5)
 
+    @_tracer.start_as_current_span("storage controller root span")
     async def _run(self) -> None:
-        await self.structured_storage.init()
-        if self.unstructured_storage:
-            await self.unstructured_storage.init()
-        server: Server = await asyncio.start_server(
-            self._handler, "localhost", 0, family=socket.AF_INET
-        )
+        with _tracer.start_as_current_span("start up"):
+            await self.structured_storage.init()
+            if self.unstructured_storage:
+                await self.unstructured_storage.init()
+            server: Server = await asyncio.start_server(
+                self._handler, "localhost", 0, family=socket.AF_INET
+            )
         sockets = server.sockets
         assert sockets is not None
         socketname = sockets[0].getsockname()
@@ -361,20 +373,17 @@ class StorageController:
         )
         # Blocks until we should shut down
         await self.should_shutdown()
-        self.logger.info(f"Closing Server")
-        server.close()
-        self.logger.info("Closed Server")
-        self.logger.info("Cancelling status_queue_update")
-        status_queue_update.cancel()
-        self.logger.info("Cancelled status_queue_update")
-        self.logger.info("Cancelling timeout_check")
-        timeout_check.cancel()
-        self.logger.info("Cancelled timeout_check")
-        self.logger.info("Starting wait_closed")
-        await server.wait_closed()
-        self.logger.info("Completed wait_closed")
+        with _tracer.start_as_current_span("storage controller shutdown"):
+            with _tracer.start_as_current_span("server initialize shutdown"):
+                server.close()
+            with _tracer.start_as_current_span("status queue shutdown"):
+                status_queue_update.cancel()
+            with _tracer.start_as_current_span("timeout_check shutdown"):
+                timeout_check.cancel()
+            with _tracer.start_as_current_span("server shutdown completed"):
+                await server.wait_closed()
 
-        await self.shutdown(update_completion_queue)
+            await self.shutdown(update_completion_queue)
 
     def run(self) -> None:
         logging.getLogger("asyncio").setLevel(logging.WARNING)
