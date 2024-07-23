@@ -29,10 +29,10 @@ if [ "$1" != "--skip-create" ]; then
   case "$(uname -s)" in
   Darwin)
     echo '...using the osx-64 channel for MacOS dependencies'
-    CONDA_SUBDIR=osx-64 PYTHONNOUSERSITE=True mamba env create --force -q -f environment.yaml
+    CONDA_SUBDIR=osx-64 PYTHONNOUSERSITE=True mamba env create -q -f environment.yaml
     ;;
   *)
-    PYTHONNOUSERSITE=True mamba env create --force -q -f environment.yaml
+    PYTHONNOUSERSITE=True mamba env create -q -f environment.yaml
     ;;
   esac
 
