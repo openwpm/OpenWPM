@@ -143,9 +143,9 @@ def deploy_firefox(
 
     # Use browser_params.tmpdir as the temporary directory.  This is so that
     # geckodriver makes its copy of the extension XPI file in tmpdir, so
-    # we can delete it later and not have it left behind.  I make a shallow
-    # copy of `os.environ` because I'm a little nervous about modifying the
-    # OpenWPM process' environment.
+    # we can delete it later and not have it left behind.  I make a copy of
+    # `os.environ` because I'm a little nervous about modifying the OpenWPM
+    # process' environment.
     env = os.environ.copy()
     env["TMPDIR"] = str(browser_params.tmpdir)
 

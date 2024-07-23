@@ -137,7 +137,7 @@ class BrowserManagerHandle:
         if self.browser_params.tmpdir is not None:
             self.logger.debug(
                 "BROWSER %i: leftover temp directory %s?  Deleting it."
-                % (self.browser_params.browser_id, self.browser_params.tmpdir)
+                % (self.browser_id, self.browser_params.tmpdir)
             )
             try:
                 shutil.rmtree(self.browser_params.tmpdir)
@@ -145,7 +145,7 @@ class BrowserManagerHandle:
                 self.logger.debug(
                     "BROWSER %i: error deleting %s: %s."
                     % (
-                        self.browser_params.browser_id,
+                        self.browser_id,
                         self.browser_params.tmpdir,
                         str(e),
                     )
@@ -155,7 +155,7 @@ class BrowserManagerHandle:
         )
         self.logger.debug(
             "BROWSER %i: Using temp dir %s"
-            % (self.browser_params.browser_id, self.browser_params.tmpdir)
+            % (self.browser_id, self.browser_params.tmpdir)
         )
 
         self.logger.info("BROWSER %i: Launching browser..." % self.browser_id)
@@ -369,17 +369,18 @@ class BrowserManagerHandle:
 
             # Delete the temporary directory used by geckodriver.
             try:
-                self.logger.debug(
-                    "BROWSER %i: deleting temp dir %s"
-                    % (self.browser_params.browser_id, self.browser_params.tmpdir)
-                )
-                shutil.rmtree(self.browser_params.tmpdir)
-                self.browser_params.tmpdir = None
+                if self.browser_params.tmpdir is not None:
+                    self.logger.debug(
+                        "BROWSER %i: deleting temp dir %s"
+                        % (self.browser_id, self.browser_params.tmpdir)
+                    )
+                    shutil.rmtree(self.browser_params.tmpdir)
+                    self.browser_params.tmpdir = None
             except Exception as e:
                 self.logger.warn(
                     "BROWSER %i: failed to delete temp dir %s: %s"
                     % (
-                        self.browser_params.browser_id,
+                        self.browser_id,
                         self.browser_params.tmpdir,
                         str(e),
                     )
