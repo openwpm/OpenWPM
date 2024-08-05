@@ -127,20 +127,21 @@ class TaskManager:
         self.browsers = self._initialize_browsers(browser_params)
         self._launch_browsers()
 
-        # This has to be here because the exporter runs on a background thread which doesn't like being forked
-        # https://opentelemetry-python.readthedocs.io/en/latest/examples/fork-process-model/README.html
-        configure_opentelemetry(
-            HoneycombOptions(
-                # debug=True,  # prints exported traces & metrics to the console, useful for debugging and setting up
-                # Honeycomb API Key, required to send data to Honeycomb
-                apikey=os.getenv("HONEYCOMB_API_KEY"),
-                # Dataset that will be populated with data from this service in Honeycomb
-                service_name="task_manager",
-                enable_local_visualizations=True,
-                # Will print a link to a trace produced in Honeycomb to the console, useful for debugging
-                # sample_rate = DEFAULT_SAMPLE_RATE, Set a sample rate for spans
+        if os.getenv("HONEYCOMB_API_KEY") is not None:
+            # This has to be here because the exporter runs on a background thread which doesn't like being forked
+            # https://opentelemetry-python.readthedocs.io/en/latest/examples/fork-process-model/README.html
+            configure_opentelemetry(
+                HoneycombOptions(
+                    # debug=True,  # prints exported traces & metrics to the console, useful for debugging and setting up
+                    # Honeycomb API Key, required to send data to Honeycomb
+                    apikey=os.getenv("HONEYCOMB_API_KEY"),
+                    # Dataset that will be populated with data from this service in Honeycomb
+                    service_name="task_manager",
+                    enable_local_visualizations=True,
+                    # Will print a link to a trace produced in Honeycomb to the console, useful for debugging
+                    # sample_rate = DEFAULT_SAMPLE_RATE, Set a sample rate for spans
+                )
             )
-        )
 
         # Start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
