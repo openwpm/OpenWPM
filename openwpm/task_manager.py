@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 import psutil
 import tblib
+from honeycomb.opentelemetry import HoneycombOptions, configure_opentelemetry
+from opentelemetry import trace
 
 from openwpm.config import (
     BrowserParams,
@@ -38,6 +40,8 @@ SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 STORAGE_CONTROLLER_JOB_LIMIT = 10000  # number of records in the queue
+
+_tracer = trace.get_tracer(__name__)
 
 
 class TaskManager:
@@ -114,7 +118,6 @@ class TaskManager:
         )
         self.manager_params.logger_address = self.logging_server.logger_address
         self.logger = logging.getLogger("openwpm")
-
         # Initialize the storage controller
         self._launch_storage_controller(
             structured_storage_provider, unstructured_storage_provider
@@ -123,6 +126,22 @@ class TaskManager:
         # Sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)
         self._launch_browsers()
+
+        if os.getenv("HONEYCOMB_API_KEY") is not None:
+            # This has to be here because the exporter runs on a background thread which doesn't like being forked
+            # https://opentelemetry-python.readthedocs.io/en/latest/examples/fork-process-model/README.html
+            configure_opentelemetry(
+                HoneycombOptions(
+                    # debug=True,  # prints exported traces & metrics to the console, useful for debugging and setting up
+                    # Honeycomb API Key, required to send data to Honeycomb
+                    apikey=os.getenv("HONEYCOMB_API_KEY"),
+                    # Dataset that will be populated with data from this service in Honeycomb
+                    service_name="task_manager",
+                    enable_local_visualizations=True,
+                    # Will print a link to a trace produced in Honeycomb to the console, useful for debugging
+                    # sample_rate = DEFAULT_SAMPLE_RATE, Set a sample rate for spans
+                )
+            )
 
         # Start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
@@ -427,7 +446,7 @@ class TaskManager:
                     "length %d. " % (STORAGE_CONTROLLER_JOB_LIMIT, agg_queue_size)
                 )
                 agg_queue_size = self.storage_controller_handle.get_status()
-
+        thread = None
         # Distribute command
         if index is None:
             # send to first browser available
@@ -457,6 +476,7 @@ class TaskManager:
             return
 
         if command_sequence.blocking:
+            assert thread is not None
             thread.join()
             self._check_failure_status()
 

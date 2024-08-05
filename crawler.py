@@ -10,8 +10,6 @@ from threading import Lock
 from types import FrameType
 from typing import Any, Callable, List, Literal, Optional
 
-import sentry_sdk
-
 from openwpm import mp_logger
 from openwpm.command_sequence import CommandSequence
 from openwpm.config import BrowserParams, ManagerParams
@@ -52,8 +50,6 @@ JS_INSTRUMENT_SETTINGS = json.loads(
 SAVE_CONTENT = os.getenv("SAVE_CONTENT", "")
 PREFS = os.getenv("PREFS", None)
 
-
-SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 LOGGER_SETTINGS = mp_logger.parse_config_from_env()
 
 if CALLSTACK_INSTRUMENT is True:
@@ -113,38 +109,6 @@ manager = TaskManager(
     unstructured,
     logger_kwargs=LOGGER_SETTINGS,
 )
-
-# At this point, Sentry should be initiated
-if SENTRY_DSN:
-    # Add crawler.py-specific context
-    with sentry_sdk.configure_scope() as scope:
-        # tags generate breakdown charts and search filters
-        scope.set_tag("CRAWL_DIRECTORY", CRAWL_DIRECTORY)
-        scope.set_tag("GCS_BUCKET", GCS_BUCKET)
-        scope.set_tag("DISPLAY_MODE", DISPLAY_MODE)
-        scope.set_tag("HTTP_INSTRUMENT", HTTP_INSTRUMENT)
-        scope.set_tag("COOKIE_INSTRUMENT", COOKIE_INSTRUMENT)
-        scope.set_tag("NAVIGATION_INSTRUMENT", NAVIGATION_INSTRUMENT)
-        scope.set_tag("JS_INSTRUMENT", JS_INSTRUMENT)
-        scope.set_tag("JS_INSTRUMENT_SETTINGS", JS_INSTRUMENT_SETTINGS)
-        scope.set_tag("CALLSTACK_INSTRUMENT", CALLSTACK_INSTRUMENT)
-        scope.set_tag("SAVE_CONTENT", SAVE_CONTENT)
-        scope.set_tag("DWELL_TIME", DWELL_TIME)
-        scope.set_tag("TIMEOUT", TIMEOUT)
-        scope.set_tag("MAX_JOB_RETRIES", MAX_JOB_RETRIES)
-        scope.set_tag("CRAWL_REFERENCE", "%s/%s" % (GCS_BUCKET, CRAWL_DIRECTORY))
-        # context adds addition information that may be of interest
-        if PREFS:
-            scope.set_context("PREFS", json.loads(PREFS))
-        scope.set_context(
-            "crawl_config",
-            {
-                "REDIS_QUEUE_NAME": REDIS_QUEUE_NAME,
-            },
-        )
-    # Send a sentry error message (temporarily - to easily be able
-    # to compare error frequencies to crawl worker instance count)
-    sentry_sdk.capture_message("Crawl worker started")
 
 # Connect to job queue
 job_queue = rediswq.RedisWQ(
@@ -234,6 +198,3 @@ while not job_queue.empty():
 else:
     manager.logger.info("Job queue finished, exiting.")
 manager.close()
-
-if SENTRY_DSN:
-    sentry_sdk.capture_message("Crawl worker finished")
