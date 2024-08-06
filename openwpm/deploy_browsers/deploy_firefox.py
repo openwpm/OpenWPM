@@ -98,25 +98,24 @@ def deploy_firefox(
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))
 
-    if browser_params.extension_enabled:
-        # Write config file
-        extension_config: Dict[str, Any] = dict()
-        extension_config.update(browser_params.to_dict())
-        extension_config["logger_address"] = manager_params.logger_address
-        extension_config["storage_controller_address"] = (
-            manager_params.storage_controller_address
-        )
-        extension_config["testing"] = manager_params.testing
-        ext_config_file = browser_profile_path / "browser_params.json"
-        with open(ext_config_file, "w") as f:
-            json.dump(extension_config, f, cls=ConfigEncoder)
-        logger.debug(
-            "BROWSER %i: Saved extension config file to: %s"
-            % (browser_params.browser_id, ext_config_file)
-        )
+    # Write config file
+    extension_config: Dict[str, Any] = dict()
+    extension_config.update(browser_params.to_dict())
+    extension_config["logger_address"] = manager_params.logger_address
+    extension_config["storage_controller_address"] = (
+        manager_params.storage_controller_address
+    )
+    extension_config["testing"] = manager_params.testing
+    ext_config_file = browser_profile_path / "browser_params.json"
+    with open(ext_config_file, "w") as f:
+        json.dump(extension_config, f, cls=ConfigEncoder)
+    logger.debug(
+        "BROWSER %i: Saved extension config file to: %s"
+        % (browser_params.browser_id, ext_config_file)
+    )
 
-        # TODO restore detailed logging
-        # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
+    # TODO restore detailed logging
+    # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
 
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fo)
@@ -153,15 +152,13 @@ def deploy_firefox(
         ),
     )
 
-    # Add extension
-    if browser_params.extension_enabled:
-        # Install extension
-        ext_loc = os.path.join(root_dir, "../../Extension/openwpm.xpi")
-        ext_loc = os.path.normpath(ext_loc)
-        driver.install_addon(ext_loc, temporary=True)
-        logger.debug(
-            "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
-        )
+    # Install extension
+    ext_loc = os.path.join(root_dir, "../../Extension/openwpm.xpi")
+    ext_loc = os.path.normpath(ext_loc)
+    driver.install_addon(ext_loc, temporary=True)
+    logger.debug(
+        "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
+    )
 
     # set window size
     driver.set_window_size(*DEFAULT_SCREEN_RES)
