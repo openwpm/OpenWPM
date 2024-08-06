@@ -15,10 +15,10 @@ eval "$(conda shell.bash hook)"
 case "$(uname -s)" in
 Darwin)
   echo 'Using the osx-64 channel for MacOS dependencies...'
-  CONDA_SUBDIR=osx-64 PYTHONNOUSERSITE=True mamba env create --force -q -f environment-unpinned.yaml
+  CONDA_SUBDIR=osx-64 PYTHONNOUSERSITE=True mamba env create -q -f environment-unpinned.yaml
   ;;
 *)
-  PYTHONNOUSERSITE=True mamba env create --force -q -f environment-unpinned.yaml
+  PYTHONNOUSERSITE=True mamba env create -q -f environment-unpinned.yaml
   ;;
 esac
 
