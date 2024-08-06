@@ -3,6 +3,7 @@ import logging
 import os.path
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -20,6 +21,9 @@ from . import configure_firefox
 from .selenium_firefox import FirefoxLogInterceptor
 
 DEFAULT_SCREEN_RES = (1366, 768)
+# The extension's add-on id (manifest browser_specific_settings.gecko.id). Used
+# to look up its internal UUID in the extensions.webextensions.uuids pref.
+EXTENSION_ID = "openwpm@mozilla.org"
 logger = logging.getLogger("openwpm")
 
 
@@ -99,25 +103,6 @@ def deploy_firefox(
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))
 
-    # Write config file
-    extension_config: Dict[str, Any] = dict()
-    extension_config.update(browser_params.to_dict())
-    extension_config["logger_address"] = manager_params.logger_address
-    extension_config["storage_controller_address"] = (
-        manager_params.storage_controller_address
-    )
-    extension_config["testing"] = manager_params.testing
-    ext_config_file = browser_profile_path / "browser_params.json"
-    with open(ext_config_file, "w") as f:
-        json.dump(extension_config, f, cls=ConfigEncoder)
-    logger.debug(
-        "BROWSER %i: Saved extension config file to: %s"
-        % (browser_params.browser_id, ext_config_file)
-    )
-
-    # TODO restore detailed logging
-    # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fo)
 
@@ -183,6 +168,7 @@ def deploy_firefox(
     logger.debug(
         "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
     )
+    apply_extension_configuration(driver, browser_params, manager_params)
 
     # set window size
     driver.set_window_size(*DEFAULT_SCREEN_RES)
@@ -196,3 +182,55 @@ def deploy_firefox(
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
     return driver, browser_profile_path, display
+
+
+def apply_extension_configuration(
+    driver: webdriver.Firefox,
+    browser_params: BrowserParamsInternal,
+    manager_params: ManagerParamsInternal,
+) -> None:
+    # Write config file
+    extension_config: Dict[str, Any] = dict()
+    extension_config.update(browser_params.to_dict())
+    extension_config["logger_address"] = manager_params.logger_address
+    extension_config["storage_controller_address"] = (
+        manager_params.storage_controller_address
+    )
+    extension_config["testing"] = manager_params.testing
+    config = json.dumps(extension_config, cls=ConfigEncoder)
+    # Resolve the extension's internal UUID (needed for the moz-extension:// URL)
+    # from the privileged extensions.webextensions.uuids pref rather than
+    # scraping about:debugging's DOM, which changes between Firefox versions.
+    # Reading prefs via the chrome context requires -remote-allow-system-access,
+    # which deploy_firefox sets when launching Firefox.
+    with driver.context(driver.CONTEXT_CHROME):
+        uuids = driver.execute_script(
+            "return Components"
+            '.classes["@mozilla.org/preferences-service;1"]'
+            ".getService(Components.interfaces.nsIPrefBranch)"
+            '.getStringPref("extensions.webextensions.uuids", "{}");'
+        )
+    try:
+        internal_uuid = json.loads(uuids)[EXTENSION_ID]
+    except (json.JSONDecodeError, KeyError) as e:
+        raise RuntimeError(
+            "Could not resolve the OpenWPM extension's internal UUID from "
+            f"extensions.webextensions.uuids (got: {uuids!r}). The extension "
+            "may have failed to install."
+        ) from e
+    driver.get(f"moz-extension://{internal_uuid}/settings/settings.html")
+    # Use a fresh nonce for `initialized` on every launch so storage.local
+    # always emits a change event -- even when a reused seed/recovery profile
+    # already carries a byte-identical config. Without this the extension's
+    # onChanged handler would never fire and the browser would hang on boot.
+    nonce = uuid.uuid4().hex
+    driver.execute_script(f"""
+        browser.storage.local.set({{
+            config: {config},
+            initialized: {json.dumps(nonce)}
+        }});
+    """)
+    logger.debug("BROWSER %i: Set extension configuration:", browser_params.browser_id)
+
+    # TODO restore detailed logging
+    # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")

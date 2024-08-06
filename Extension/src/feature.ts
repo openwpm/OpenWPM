@@ -9,15 +9,9 @@ import * as loggingDB from "./loggingdb";
 import { CallstackInstrument } from "./callstack-instrument";
 import { runEchoMode } from "./echo";
 
-async function main() {
-  // Read the browser configuration from file
-  const filename = "browser_params.json";
-  const raw_config = await browser.profileDirIO.readFile(filename);
-  let config: any;
-  if (raw_config) {
-    config = JSON.parse(raw_config);
-    console.log("Browser Config:", config);
-  } else {
+async function setup(config: any) {
+  console.log("Browser Config:", config);
+  if (!config) {
     config = {
       navigation_instrument: true,
       cookie_instrument: true,
@@ -117,4 +111,14 @@ async function main() {
   await browser.profileDirIO.writeFile("OPENWPM_STARTUP_SUCCESS.txt", "");
 }
 
-main();
+browser.storage.local.onChanged.addListener((changes) => {
+  if (!("initialized" in changes)) {
+    return;
+  }
+  // Read the config from storage rather than trusting the change delta. A
+  // partial delta (e.g. only `initialized` changed because a reused profile
+  // already held a byte-identical config) would otherwise run
+  // `setup(undefined)`, silently applying the bundled test defaults instead of
+  // the real crawl configuration.
+  browser.storage.local.get("config").then(({ config }) => setup(config));
+});
