@@ -7,11 +7,14 @@
     "scripts": ["feature.js"]
   },
   "content_scripts": [],
-  "applications": {
+  "browser_specific_settings": {
     "gecko": {
-      "id": "openwpm@mozilla.org",
-      "strict_min_version": "60.0"
+      "id": "openwpm@mozilla.org"
     }
+  },
+
+  "options_ui": {
+    "page": "settings/settings.html"
   },
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self';",
   "permissions": [
@@ -25,9 +28,9 @@
     "alarms",
     "downloads",
     "tabs",
-    "dns",
-    "mozillaAddons"
+    "dns"
   ],
+
   "experiment_apis": {
     "sockets": {
       "schema": "./privileged/sockets/schema.json",

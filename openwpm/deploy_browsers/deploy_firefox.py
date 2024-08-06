@@ -4,12 +4,14 @@ import os.path
 import subprocess
 import tempfile
 from pathlib import Path
+from time import sleep
 from typing import Any, Dict, Optional, Tuple
 
 from easyprocess import EasyProcessError
 from multiprocess import Queue
 from pyvirtualdisplay import Display
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 
@@ -98,25 +100,6 @@ def deploy_firefox(
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))
 
-    # Write config file
-    extension_config: Dict[str, Any] = dict()
-    extension_config.update(browser_params.to_dict())
-    extension_config["logger_address"] = manager_params.logger_address
-    extension_config["storage_controller_address"] = (
-        manager_params.storage_controller_address
-    )
-    extension_config["testing"] = manager_params.testing
-    ext_config_file = browser_profile_path / "browser_params.json"
-    with open(ext_config_file, "w") as f:
-        json.dump(extension_config, f, cls=ConfigEncoder)
-    logger.debug(
-        "BROWSER %i: Saved extension config file to: %s"
-        % (browser_params.browser_id, ext_config_file)
-    )
-
-    # TODO restore detailed logging
-    # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
-
     # Configure privacy settings
     configure_firefox.privacy(browser_params, fo)
 
@@ -159,6 +142,7 @@ def deploy_firefox(
     logger.debug(
         "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
     )
+    apply_extension_configuration(driver, browser_params, manager_params)
 
     # set window size
     driver.set_window_size(*DEFAULT_SCREEN_RES)
@@ -172,3 +156,39 @@ def deploy_firefox(
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
     return driver, browser_profile_path, display
+
+
+def apply_extension_configuration(
+    driver: webdriver.Firefox,
+    browser_params: BrowserParamsInternal,
+    manager_params: ManagerParamsInternal,
+) -> None:
+    # Write config file
+    extension_config: Dict[str, Any] = dict()
+    extension_config.update(browser_params.to_dict())
+    extension_config["logger_address"] = manager_params.logger_address
+    extension_config["storage_controller_address"] = (
+        manager_params.storage_controller_address
+    )
+    extension_config["testing"] = manager_params.testing
+    config = json.dumps(extension_config, cls=ConfigEncoder)
+    driver.get("about:debugging#/runtime/this-firefox")
+    sleep(0.1)
+    # Very brittle way of finding the extension ID
+    # Might break if the about:debugging screen ever changes
+    extension_id = driver.find_element(
+        By.XPATH, "//span[@title='OpenWPM']/../section/dl/div[3]/dd"
+    ).text
+    driver.get(f"moz-extension://{extension_id}/settings/settings.html")
+    driver.execute_script(
+        f"""
+        browser.storage.local.set({{
+            config: {config},
+            initialized: true
+        }});
+    """
+    )
+    logger.debug("BROWSER %i: Set extension configuration:", browser_params.browser_id)
+
+    # TODO restore detailed logging
+    # fo.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
