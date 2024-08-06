@@ -29,19 +29,20 @@ jobs:
       matrix:
         test-groups:
           [
-            "test/test_[a-e]*",
-            "test/test_[f-h]*",
-            "test/test_[i-o,q-r,t-z]*",
-            "test/test_[p]*",
-            "test/test_[s]*",
-            "test/storage/*",
-            "test/extension/*",
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            "other"
           ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - run: ./scripts/ci.sh
+      - run: python ./scripts/ci.py ./scripts/distribution.json
         env:
           DISPLAY: ":99.0"
           TESTS: ${{ matrix.test-groups }}
