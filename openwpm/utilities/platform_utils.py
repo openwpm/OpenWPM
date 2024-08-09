@@ -51,7 +51,7 @@ def get_firefox_binary_path():
     root_dir = os.path.dirname(__file__) + "/../.."
     if platform == "darwin":
         firefox_binary_path = os.path.abspath(
-            root_dir + "/Nightly.app/Contents/MacOS/firefox-bin"
+            root_dir + "/Nightly.app/Contents/MacOS/firefox"
         )
     else:
         firefox_binary_path = os.path.abspath(root_dir + "/firefox-bin/firefox-bin")
