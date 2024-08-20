@@ -1,7 +1,6 @@
 import logging
 import math
 import os
-import subprocess
 import time
 from pathlib import Path
 from threading import Thread
@@ -31,32 +30,26 @@ def total_folder_size(startup: bool = False, root_dir: str = "/tmp") -> str:
 
     running_total: int = 0
     if not startup:
-        for file in os.listdir(root_dir):
-            if "firefox" in file or ".xpi" in file or "owpm" in file or "Temp" in file:
-                path = os.path.join(root_dir, file)
-                try:
-                    running_total += int(
-                        subprocess.check_output(["du", "-s", "-b", path])
-                        .split()[0]
-                        .decode("utf-8")
-                    )
-                except:
-                    pass
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            for file in filenames:
+                if (
+                    "firefox" in file
+                    or ".xpi" in file
+                    or "owpm" in file
+                    or "Temp" in file
+                ):
+                    path = os.path.join(dirpath, file)
+                    # skip if it is symbolic link
+                    if not os.path.islink(path):
+                        running_total += os.path.getsize(path)
         return f"Currently using: {convert_size(running_total)} of storage on disk..."
 
-    for file in os.listdir(root_dir):
-        path = os.path.join(root_dir, file)
-        try:
-            running_total += int(
-                subprocess.check_output(
-                    ["du", "-s", "-b", path], stderr=subprocess.DEVNULL
-                )
-                .split()[0]
-                .decode("utf-8")
-            )
-        except:
-            pass
-
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        for file in filenames:
+            path = os.path.join(dirpath, file)
+            # skip if it is symbolic link
+            if not os.path.islink(path):
+                running_total += os.path.getsize(path)
     return f"Readable files in {root_dir} folder take up {convert_size(running_total)} of storage on disk at start time..."
 
 
@@ -99,11 +92,14 @@ def profile_size_exceeds_max_size(
 
     readable_max_dir_size = convert_size(max_dir_size)
 
-    dir_size = int(
-        subprocess.check_output(["du", "-s", "-b", profile_path])
-        .split()[0]
-        .decode("utf-8")
-    )
+    dir_size = 0
+    for dirpath, dirnames, filenames in os.walk(profile_path):
+        for file in filenames:
+            path = os.path.join(dirpath, file)
+            # skip if it is symbolic link
+            if not os.path.islink(path):
+                dir_size += os.path.getsize(path)
+
     readable_dir_size = convert_size(dir_size)
 
     if dir_size < max_dir_size:
