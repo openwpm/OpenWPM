@@ -57,6 +57,9 @@ def optimize_prefs(fo: Options) -> None:
     fo.set_preference("browser.uitour.enabled", False)
     fo.set_preference("dom.flyweb.enabled", False)
 
+    # Enabling callstack capture across async APIs e.g. setTimeout
+    prefs["javascript.option.asyncstack"] = True
+
     # Disable health reports / telemetry / crash reports
     fo.set_preference("datareporting.policy.dataSubmissionEnabled", False)
     fo.set_preference("datareporting.healthreport.uploadEnabled", False)
