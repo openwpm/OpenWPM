@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.30.0 - 2024-09-30
+
+Bump to Firefox 130
+
 ## v0.29.0 - 2024-07-12
 
 Bump to Firefox 128
