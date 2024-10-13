@@ -211,6 +211,13 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
       In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
       in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
 
+### `stealth_js_instrument`
+- Improves the JS instrument described above by
+  - securing the communication between page and background scripts
+  - mitigating iframe escapes
+  - hiding/removing detectable properties
+
+
 ### `navigation_instrument`
 
 TODO
@@ -281,7 +288,7 @@ configuration dictionary. This should be a `Path` object pointing to the
 or by manually tarring a firefox profile directory.
 
 > Please note that you must tar the contents of the profile directory
-> and not the directory itself.  
+> and not the directory itself.
 > (For an example of the difference please see
 > [here](https://github.com/openwpm/OpenWPM/issues/790#issuecomment-791316632))
 
@@ -382,5 +389,5 @@ Response body content
     to save only specific types of files, for instance
     `browser_params.save_content = "image,script"` to save Images and Javascript
     files. This will lessen the performance impact of this instrumentation
-    when a large number of browsers are used in parallel. 
+    when a large number of browsers are used in parallel.
 - You will also need to import LevelDbProvider from openwpm/storage/leveldb.py and instantiate it in the TaskManager in demo.py

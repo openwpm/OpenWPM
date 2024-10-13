@@ -48,6 +48,7 @@ CALLSTACK_INSTRUMENT = os.getenv("CALLSTACK_INSTRUMENT", "1") == "1"
 JS_INSTRUMENT_SETTINGS = json.loads(
     os.getenv("JS_INSTRUMENT_SETTINGS", '["collection_fingerprinting"]')
 )
+STEALTH_JS_INSTRUMENT = os.getenv("STEALTH_JS_INSTRUMENT", "1") == "1"
 
 SAVE_CONTENT = os.getenv("SAVE_CONTENT", "")
 PREFS = os.getenv("PREFS", None)
@@ -79,6 +80,7 @@ for i in range(NUM_BROWSERS):
     browser_params[i].callstack_instrument = CALLSTACK_INSTRUMENT
     browser_params[i].js_instrument = JS_INSTRUMENT
     browser_params[i].js_instrument_settings = JS_INSTRUMENT_SETTINGS
+    browser_params[i].stealth_js_instrument = STEALTH_JS_INSTRUMENT
     if SAVE_CONTENT == "1":
         browser_params[i].save_content = True
     elif SAVE_CONTENT == "0":
@@ -127,6 +129,7 @@ if SENTRY_DSN:
         scope.set_tag("NAVIGATION_INSTRUMENT", NAVIGATION_INSTRUMENT)
         scope.set_tag("JS_INSTRUMENT", JS_INSTRUMENT)
         scope.set_tag("JS_INSTRUMENT_SETTINGS", JS_INSTRUMENT_SETTINGS)
+        scope.set_tag("STEALTH_JS_INSTRUMENT", STEALTH_JS_INSTRUMENT)
         scope.set_tag("CALLSTACK_INSTRUMENT", CALLSTACK_INSTRUMENT)
         scope.set_tag("SAVE_CONTENT", SAVE_CONTENT)
         scope.set_tag("DWELL_TIME", DWELL_TIME)
