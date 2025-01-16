@@ -18,7 +18,8 @@ dependencies:
     - plyvel
     - psutil
     - pyarrow
-    - python
+    # See https://github.com/openwpm/OpenWPM/issues/1111
+    - python=3.12
     - pyvirtualdisplay
     - redis-py
     - s3fs
@@ -28,7 +29,7 @@ dependencies:
     - tblib
     - wget
     - pip:
-        - jsonschema
-        - domain-utils
         - dataclasses-json
+        - domain-utils
+        - jsonschema
         - tranco
