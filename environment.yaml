@@ -1,6 +1,5 @@
 channels:
 - conda-forge
-- main
 dependencies:
 - beautifulsoup4=4.12.3
 - black=24.10.0
