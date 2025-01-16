@@ -29,10 +29,10 @@ if [ "$1" != "--skip-create" ]; then
   case "$(uname -s)" in
   Darwin)
     echo '...using the osx-64 channel for MacOS dependencies'
-    CONDA_SUBDIR=osx-64 PYTHONNOUSERSITE=True conda env create -q -f environment.yaml
+    CONDA_SUBDIR=osx-64 PYTHONNOUSERSITE=True conda env create --yes -q -f environment.yaml
     ;;
   *)
-    PYTHONNOUSERSITE=True conda env create -q -f environment.yaml
+    PYTHONNOUSERSITE=True conda env create --yes -q -f environment.yaml
     ;;
   esac
 
