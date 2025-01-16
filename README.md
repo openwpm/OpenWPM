@@ -33,19 +33,16 @@ the instrumentation section below for more details.
 
 OpenWPM is tested on Ubuntu 18.04 via GitHub actions and is commonly used via the docker container
 that this repo builds, which is also based on Ubuntu. Although we don't officially support
-other platforms, mamba is a cross platform utility and the install script can be expected
+other platforms, conda is a cross platform utility and the install script can be expected
 to work on OSX and other linux distributions.
 
 OpenWPM does not support windows: <https://github.com/openwpm/OpenWPM/issues/503>
 
 ### Pre-requisites
 
-The main pre-requisite for OpenWPM is mamba, a fast cross-platform package management tool.
+The main pre-requisite for OpenWPM is conda, a fast cross-platform package management tool.
 
-Mamba is open-source, and can be installed from <https://mamba.readthedocs.io/en/latest/installation.html>.
-
-Mamba is a reimplmentation of conda and so sometimes a conda command has to be invoked instead of the mamba
-one.
+Conda is open-source and can be installed from <https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html>.
 
 ### Install
 
