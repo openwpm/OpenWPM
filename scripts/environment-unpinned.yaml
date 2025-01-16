@@ -1,7 +1,6 @@
 name: openwpm
 channels:
     - conda-forge
-    - main
 dependencies:
     - beautifulsoup4
     - click
