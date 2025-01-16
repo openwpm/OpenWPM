@@ -10,21 +10,21 @@ RUN apt-get clean -qq \
     && apt-get clean -qq \
     && apt-get update -qq \
     && apt-get upgrade -qq \
-    # git and make for `npm install`, wget for `install-mamba`
+    # git and make for `npm install`, wget for `install-conda`
     && apt-get install wget git make -qq \
     # deps to run firefox inc. with xvfb
     && apt-get install firefox xvfb libgtk-3-dev libasound2 libdbus-glib-1-2 libpci3 -qq
 
 ENV HOME /opt
-COPY scripts/install-mamba.sh .
-RUN ./install-mamba.sh
-ENV PATH $HOME/mamba/bin:$PATH
+COPY scripts/install-conda.sh .
+RUN ./install-conda.sh
+ENV PATH $HOME/conda/bin:$PATH
 
 # Install OpenWPM
 WORKDIR /opt/OpenWPM
 COPY . .
 RUN ./install.sh
-ENV PATH $HOME/mamba/envs/openwpm/bin:$PATH
+ENV PATH $HOME/conda/envs/openwpm/bin:$PATH
 
 # Move the firefox binary away from the /opt/OpenWPM root so that it is available if
 # we mount a local source code directory as /opt/OpenWPM
