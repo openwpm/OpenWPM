@@ -1,8 +1,9 @@
 # Changelog
 
-## v0.30.0 - 2025-01-15
+## v0.31.0 - 2025-01-15
 
 Bump to Firefox 134
+Migrate from mamba back to conda now that mamba has merged into conda
 
 ## v0.30.0 - 2024-09-30
 
