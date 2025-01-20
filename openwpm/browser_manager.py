@@ -131,6 +131,33 @@ class BrowserManagerHandle:
 
             crash_recovery = True
 
+        # Create a unique temporary directory that we can delete
+        # when we shut down.  Note that this doesn't force anything to
+        # use `tmpdir`, it just makes it available.
+        if self.browser_params.tmpdir is not None:
+            self.logger.debug(
+                "BROWSER %i: leftover temp directory %s?  Deleting it."
+                % (self.browser_id, self.browser_params.tmpdir)
+            )
+            try:
+                shutil.rmtree(self.browser_params.tmpdir)
+            except Exception:
+                self.logger.debug(
+                    "BROWSER %i: error deleting %s"
+                    % (
+                        self.browser_id,
+                        self.browser_params.tmpdir,
+                    ),
+                    exc_info=True,
+                )
+        self.browser_params.tmpdir = Path(
+            tempfile.mkdtemp(prefix="openwpm_", dir=os.getenv("TMPDIR", default="/tmp"))
+        )
+        self.logger.debug(
+            "BROWSER %i: Using temp dir %s"
+            % (self.browser_id, self.browser_params.tmpdir)
+        )
+
         self.logger.info("BROWSER %i: Launching browser..." % self.browser_id)
         self.is_fresh = not crash_recovery
 
@@ -339,6 +366,34 @@ class BrowserManagerHandle:
         finally:
             if not shutdown_complete:
                 self.kill_browser_manager()
+
+            # Delete the temporary directory used by geckodriver.
+            if self.browser_params.tmpdir is not None:
+                try:
+                    t1 = time.time()
+                    self.logger.debug(
+                        "BROWSER %i: deleting temp dir %s"
+                        % (self.browser_id, self.browser_params.tmpdir)
+                    )
+                    shutil.rmtree(self.browser_params.tmpdir)
+                    self.logger.debug(
+                        "BROWSER %i: completed deleting temp dir %s in %d seconds"
+                        % (
+                            self.browser_id,
+                            self.browser_params.tmpdir,
+                            time.time() - t1,
+                        )
+                    )
+                    self.browser_params.tmpdir = None
+                except Exception as e:
+                    self.logger.warn(
+                        "BROWSER %i: failed to delete temp dir %s"
+                        % (
+                            self.browser_id,
+                            self.browser_params.tmpdir,
+                        ),
+                        exc_info=True,
+                    )
 
     def execute_command_sequence(
         self,
