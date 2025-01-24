@@ -94,3 +94,5 @@ docs/apidoc/
 node_modules
 
 datadir
+
+junit-report.xml
