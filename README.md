@@ -339,7 +339,7 @@ on the infrastructure. You can use the following BibTeX.
 }
 ```
 
-OpenWPM has been used in over [75 studies](https://webtap.princeton.edu/software/).
+OpenWPM has been used in over [75 studies](https://github.com/openwpm/studies/blob/main/studies.md).
 
 ## License
 
