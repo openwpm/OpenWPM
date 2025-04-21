@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.32.0 - 2025-04-20
+
+Bump to Firefox 137
+
 ## v0.31.0 - 2025-01-15
 
 Bump to Firefox 134

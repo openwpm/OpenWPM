@@ -9,7 +9,7 @@ set -e
 # Note this script is **destructive** and will
 # remove the existing Firefox in the OpenWPM directory
 
-TAG='497a35d032e41a640590af9ac68d8a6dd21f4131' # FIREFOX_134_0_1_RELEASE
+TAG='5d1d0e27dc3a99271b76833be3d9a4a12e709281' # FIREFOX_137_0_2_RELEASE
 
 case "$(uname -s)" in
 Darwin)
@@ -20,7 +20,7 @@ Darwin)
 Linux)
   echo 'Installing for Linux'
   OS='linux'
-  TARGET_SUFFIX='.tar.bz2'
+  TARGET_SUFFIX='.tar.xz'
   ;;
 *)
   echo 'Your OS is not supported. Aborting'
@@ -40,10 +40,10 @@ Darwin)
   rm target.dmg
   ;;
 Linux)
-  tar jxf target.tar.bz2
+  tar Jxf target.tar.xz
   rm -rf firefox-bin
   mv firefox firefox-bin
-  rm target.tar.bz2
+  rm target.tar.xz
   ;;
 esac
 
