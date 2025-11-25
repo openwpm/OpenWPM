@@ -8,7 +8,6 @@ from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.stealth.commands import (SetResolution, SetPosition)
-from openwpm.command_sequence import ScreenshotFullPageCommand
 
 import sys
 import time
