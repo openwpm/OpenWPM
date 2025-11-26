@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from utils.parsing import extract_base_domain
-from openwpm.commands.browser_commands import GetCommand, BrowseCommand
+from openwpm.commands.browser_commands import CrawlSubpagesCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.sql_provider import SQLiteStorageProvider
@@ -80,6 +80,10 @@ for index, site in enumerate(sites):
     command_sequence = CommandSequence(site, site_rank=index)
     command_sequence.append_command(SetResolution(width=1600, height=800), timeout=10)
     command_sequence.append_command(SetPosition(x=50, y=200), timeout=10)
+    command_sequence.append_command(
+        CrawlSubpagesCommand(site, max_pages=5, delay=5),
+        timeout=300
+    )
 
     manager.execute_command_sequence(command_sequence)
 
