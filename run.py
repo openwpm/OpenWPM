@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from custom_command import extract_base_domain
+from utils.parsing import extract_base_domain
 from openwpm.commands.browser_commands import GetCommand, BrowseCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.config import BrowserParams, ManagerParams
@@ -81,9 +81,6 @@ for index, site in enumerate(sites):
     command_sequence.append_command(SetResolution(width=1600, height=800), timeout=10)
     command_sequence.append_command(SetPosition(x=50, y=200), timeout=10)
 
-    command_sequence.append_command(BrowseCommand(site, 10, sleep=10), timeout=1000)
-
-    
     manager.execute_command_sequence(command_sequence)
 
 print("--- %s seconds to finish the whole task ---" % ( time.time() - task_start_time))
