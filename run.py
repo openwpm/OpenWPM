@@ -19,7 +19,7 @@ from datetime import date
 
 initial_time = time.time()
 NUM_BROWSERS = 1
-TIMEOUT_DURATION = 4 * 60 * 60
+TIMEOUT_DURATION = 8 * 60 * 60
 sites_file = None
 if sys.argv[1] == 'iffys':
     sites_file = './iffys.txt'
