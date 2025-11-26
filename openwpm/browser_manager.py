@@ -740,6 +740,20 @@ class BrowserManager(Process):
             )
 
             extension_socket = self._start_extension(browser_profile_path)
+            # Enable stealth JS instrumentation if requested
+            if self.browser_params.stealth_js_instrument:
+                try:
+                    self.logger.info("BROWSER %i: Enabling stealth JS instrumentation" %
+                                    self.browser_params.browser_id)
+                    extension_socket.send(json.dumps({
+                        "command": "enable-stealth-mode"
+                    }))
+                except Exception as e:
+                    self.logger.error(
+                        "BROWSER %i: Failed to enable stealth mode: %s" %
+                        (self.browser_params.browser_id, str(e))
+                    )
+
 
             self.logger.debug(
                 "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
