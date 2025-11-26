@@ -82,6 +82,7 @@ class BrowserParams(DataClassJsonMixin):
     js_instrument_settings: List[Union[str, dict]] = field(
         default_factory=lambda: ["collection_fingerprinting"]
     )
+    stealth_js_instrument: bool = False
     http_instrument: bool = False
     navigation_instrument: bool = False
     save_content: Union[bool, str] = False
@@ -204,6 +205,7 @@ class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
     cleaned_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    stealth_js_instrument: bool = False
 
 
 @dataclass
