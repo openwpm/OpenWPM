@@ -14,6 +14,7 @@ from selenium.common.exceptions import (
     MoveTargetOutOfBoundsException,
     TimeoutException,
     WebDriverException,
+    StaleElementReferenceException
 )
 from selenium.webdriver import Firefox
 from selenium.webdriver.common.action_chains import ActionChains
@@ -31,6 +32,9 @@ from .utils.webdriver_utils import (
     scroll_down,
     wait_until_loaded,
 )
+
+from urllib.parse import urlparse
+from selenium.webdriver.common.by import By
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -508,4 +512,185 @@ class InitializeCommand(BaseCommand):
     ):
         msg = {"action": "Initialize", "visit_id": self.visit_id}
         extension_socket.send(msg)
+
+
+class CrawlCommand(BaseCommand):
+    """
+    Deterministic humanlike crawler
+
+    Guarantees:
+    - Visits up to `num_links` per page IF available
+    - Reaches exactly `depth` levels (unless links run out)
+    - Scrolls on every page
+    """
+
+    def __init__(self, url, num_links=5, depth=2, sleep=2, per_page_budget_s=45):
+        self.start_url = url
+        self.num_links = num_links
+        self.max_depth = depth
+        self.sleep = sleep
+        self.per_page_budget_s = per_page_budget_s
+        self.visited = set()
+
+    def __repr__(self):
+        return f"CrawlSubpagesCommand({self.start_url}, links={self.num_links}, depth={self.max_depth})"
+
+    # -------------------------
+    # Utilities
+    # -------------------------
+
+    def wait_dom(self, driver, timeout=15):
+        try:
+            WebDriverWait(driver, timeout).until(
+                lambda d: d.execute_script(
+                    "return document.readyState"
+                ) in ("interactive", "complete")
+            )
+        except Exception:
+            pass
+
+    def scroll_like_human(self, driver):
+        try:
+            viewport = driver.execute_script("return window.innerHeight") or 800
+            steps = random.randint(3, 7)
+            for _ in range(steps):
+                offset = random.randint(80, viewport // 2)
+                driver.execute_script("window.scrollBy(0, arguments[0]);", offset)
+                time.sleep(random.uniform(0.2, 0.5))
+        except Exception:
+            pass
+
+    def safe_get(self, driver, url, timeout=20):
+        try:
+            driver.set_page_load_timeout(timeout)
+            driver.get(url)
+        except Exception:
+            pass
+        self.wait_dom(driver)
+        time.sleep(random.uniform(self.sleep, self.sleep + 1.5))
+        self.scroll_like_human(driver)
+
+    def find_clickable(self, driver, href):
+        """Re-location of anchor"""
+        try:
+            return driver.find_element(By.CSS_SELECTOR, f'a[href="{href}"]')
+        except Exception:
+            pass
+        try:
+            return driver.find_element(By.XPATH, f"//a[contains(@href, '{href[:60]}')]")
+        except Exception:
+            return None
+
+
+    def safe_click(self, driver, element):
+        """Try real click, then JS click"""
+        try:
+            element.click()
+            return True
+        except Exception:
+            try:
+                driver.execute_script("arguments[0].click()", element)
+                return True
+            except Exception:
+                return False
+
+
+    def same_site(self, base_netloc, href):
+        try:
+            return urlparse(href).netloc.endswith(base_netloc)
+        except Exception:
+            return False
+
+
+    # Link extraction
+    def extract_links(self, driver, current_url, base_netloc):
+        raw = get_intra_links(driver, current_url)
+        hrefs = []
+
+        for el in raw:
+            try:
+                href = el.get_attribute("href")
+            except Exception:
+                continue
+
+            if not href:
+                continue
+
+            if not self.same_site(base_netloc, href):
+                continue
+            if href in self.visited:
+                continue
+
+            hrefs.append(href)
+
+        # Deduplicate while preserving order
+        seen = set()
+        out = []
+        for h in hrefs:
+            if h not in seen:
+                seen.add(h)
+                out.append(h)
+
+        return out
+
+    # Core crawler
+    def crawl_page(self, driver, depth, base_netloc):
+        if depth > self.max_depth:
+            return
+
+        current_url = driver.current_url
+        logger.info(f"Depth {depth}: at {current_url}")
+
+        start = time.time()
+
+        links = self.extract_links(driver, current_url, base_netloc)
+        if not links:
+            return
+
+        random.shuffle(links)
+        links = links[:self.num_links]
+
+        for href in links:
+            if time.time() - start > self.per_page_budget_s:
+                logger.info("Page time budget exceeded; stopping branch")
+                return
+
+            if href in self.visited:
+                continue
+            self.visited.add(href)
+            before = driver.current_url
+            navigated = False
+            el = self.find_clickable(driver, href)
+            if el and self.safe_click(driver, el):
+                self.wait_dom(driver)
+                time.sleep(0.5)
+                after = driver.current_url
+                if after != before:
+                    navigated = True
+                    method = "CLICK"
+
+            if not navigated:
+                self.safe_get(driver, href)
+                after = driver.current_url
+                if after != before:
+                    navigated = True
+                    method = "DIRECT"
+
+            if not navigated:
+                logger.info(f"Depth {depth}: FAILED to navigate to {href}")
+                continue
+
+            logger.info(f"Depth {depth}: visiting {after} via {method}")
+            # recurse from the NEW page
+            self.crawl_page(driver, depth + 1, base_netloc)
+
+            # return
+            self.safe_get(driver, current_url)
+
+
+    # Entry point
+    def execute(self, driver, browser_params, manager_params, extension_socket):
+        base_netloc = urlparse(self.start_url).netloc
+        self.safe_get(driver, self.start_url)
+        self.crawl_page(driver, depth=1, base_netloc=base_netloc)
 
