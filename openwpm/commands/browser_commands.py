@@ -516,11 +516,11 @@ class InitializeCommand(BaseCommand):
 
 class CrawlCommand(BaseCommand):
     """
-    Deterministic humanlike crawler
+    Hybrid BFS --> DFS crawler.
 
     Guarantees:
-    - Visits up to `num_links` per page IF available
-    - Reaches exactly `depth` levels (unless links run out)
+    - Exactly `num_links` subtrees (if available)
+    - DFS to exactly `depth`
     - Scrolls on every page
     """
 
