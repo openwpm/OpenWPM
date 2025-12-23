@@ -524,7 +524,7 @@ class CrawlCommand(BaseCommand):
     - Scrolls on every page
     """
 
-    def __init__(self, url, num_links=5, depth=2, sleep=2, per_page_budget_s=45):
+    def __init__(self, url, num_links=5, depth=2, sleep=2):
         self.start_url = url
         self.num_links = num_links
         self.max_depth = depth
