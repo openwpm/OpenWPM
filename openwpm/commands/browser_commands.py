@@ -516,12 +516,61 @@ class InitializeCommand(BaseCommand):
 
 class CrawlCommand(BaseCommand):
     """
-    Hybrid BFS --> DFS crawler.
+    Hybrid BFS --> DFS crawler for realistic, deep website interaction.
 
-    Guarantees:
-    - Exactly `num_links` subtrees (if available)
-    - DFS to exactly `depth`
-    - Scrolls on every page
+    This command simulates human-like browsing behavior on modern websites to capture
+    realistic third-party request patterns (ads, analytics, trackers, consent flows,
+    paywalls, dynamic content). It uses a two-phase crawling strategy:
+
+    **Phase 1 (BFS):** Collects internal links from the start URL and selects
+    `frontier_links` of them as "frontier" entry points. This ensures coverage across
+    different site sections (e.g., politics, sports, opinion pages) rather than
+    following the first link found.
+
+    **Phase 2 (DFS):** For each frontier link, performs a depth-first search down to
+    `max_depth`, exploring `dfs_links` links per level. This creates coherent
+    browsing sequences that better trigger dynamic content and third-party requests.
+
+    After each subtree is explored, the crawler returns to the start URL before
+    proceeding to the next frontier link.
+
+    **Parameters:**
+        url (str): The starting URL to begin the crawl from.
+
+        frontier_links (int, optional): Number of frontier links to select in the BFS
+            phase. These represent different top-level sections of the site. Default: 5.
+
+        dfs_links (int, optional): Number of links to explore at each DFS level.
+            Controls branching factor during depth-first exploration. Default: 5.
+
+        depth (int, optional): Maximum depth to explore from each frontier link.
+            Depth 1 = frontier link only, depth 2 = frontier + one level of children,
+            depth 3 = frontier + two levels of children, etc. Default: 2.
+
+        sleep (int, optional): Sleep time in seconds after page loads. Default: 2.
+
+    **Output:**
+        Saves a crawl tree visualization to `datadir/crawl-tree-{visit_id}.txt`
+        showing the hierarchical structure of visited URLs.
+
+    **Example:**
+        ```python
+        # Crawl with 10 frontier links, explore 5 links per DFS level, to depth 3
+        command = CrawlCommand(
+            url="https://example.com",
+            frontier_links=10,
+            dfs_links=5,
+            depth=3,
+            sleep=2
+        )
+        ```
+
+    **Notes:**
+        - Uses a global visited set to prevent infinite loops, which may limit
+          exploration in later subtrees if many links are already visited.
+        - Prefers clicking links over direct navigation when possible for realism.
+        - Automatically handles URL normalization (strips fragments) and same-site
+          link filtering.
     """
 
     def __init__(self, url, frontier_links=5, dfs_links=5, depth=2, sleep=2):
