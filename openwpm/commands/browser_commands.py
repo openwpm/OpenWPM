@@ -598,6 +598,83 @@ class CrawlCommand(BaseCommand):
         except Exception:
             return False
 
+    def normalize_url(self, url):
+        clean, _ = urldefrag(url)
+        return clean
+
+    def add_to_tree(self, parent_url, child_url):
+        """Add a parent-child relationship to the crawl tree"""
+        parent = self.normalize_url(parent_url)
+        child = self.normalize_url(child_url)
+        if parent not in self.crawl_tree:
+            self.crawl_tree[parent] = []
+        if child not in self.crawl_tree[parent]:
+            self.crawl_tree[parent].append(child)
+
+    def format_tree(self, start_url):
+        """Format the crawl tree as a text tree structure"""
+        lines = []
+        start = self.normalize_url(start_url)
+        
+        def format_node(url, prefix="", is_last=True, visited=None):
+            if visited is None:
+                visited = set()
+            
+            if url in visited:
+                return  # Prevent infinite loops in tree display
+            visited.add(url)
+            
+            # Format current node
+            connector = "└" if is_last else "├"
+            lines.append(f"{prefix}{connector}_____{url}")
+            
+            # Get children
+            children = self.crawl_tree.get(url, [])
+            if not children:
+                return
+            
+            # Format children
+            for i, child in enumerate(children):
+                is_child_last = (i == len(children) - 1)
+                child_prefix = prefix + ("    " if is_last else "│   ")
+                format_node(child, child_prefix, is_child_last, visited.copy())
+        
+        # Start with root
+        lines.append(start)
+        children = self.crawl_tree.get(start, [])
+        for i, child in enumerate(children):
+            is_last = (i == len(children) - 1)
+            format_node(child, "", is_last, {start})
+        
+        return "\n".join(lines)
+
+    def save_crawl_tree(self, manager_params):
+        """Save the crawl tree to a text file"""
+        if not self.crawl_tree:
+            return
+        
+        tree_text = self.format_tree(self.start_url)
+        
+        # Create filename with visit_id
+        outname = os.path.join(
+            manager_params.data_directory,
+            f"crawl-tree-{self.visit_id}.txt"
+        )
+        
+        try:
+            with open(outname, "w", encoding="utf-8") as f:
+                f.write(f"Crawl Tree for visit_id {self.visit_id}\n")
+                f.write(f"Start URL: {self.start_url}\n")
+                f.write(f"Frontier links: {self.num_links}, Max depth: {self.max_depth}\n")
+                f.write("=" * 80 + "\n\n")
+                f.write(tree_text)
+                f.write("\n")
+            logger.info(f"BROWSER {self.browser_id}: Saved crawl tree to {outname}")
+        except Exception as e:
+            logger.error(
+                f"BROWSER {self.browser_id}: Failed to save crawl tree: {e}",
+                exc_info=True
+            )
 
     # Link extraction
     def extract_links(self, driver, current_url, base_netloc):
