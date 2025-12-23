@@ -578,27 +578,19 @@ class CrawlCommand(BaseCommand):
     def safe_click_or_get(self, driver, href):
         before = driver.current_url
         try:
-            return driver.find_element(By.CSS_SELECTOR, f'a[href="{href}"]')
+            el = driver.find_element(By.CSS_SELECTOR, f'a[href="{href}"]')
+            el.click()
+            self.wait_dom(driver)
+            if driver.current_url != before:
+                return "CLICK"
         except Exception:
             pass
-        try:
-            return driver.find_element(By.XPATH, f"//a[contains(@href, '{href[:60]}')]")
-        except Exception:
-            return None
 
+        self.safe_get(driver, href)
+        if driver.current_url != before:
+            return "DIRECT"
 
-    def safe_click(self, driver, element):
-        """Try real click, then JS click"""
-        try:
-            element.click()
-            return True
-        except Exception:
-            try:
-                driver.execute_script("arguments[0].click()", element)
-                return True
-            except Exception:
-                return False
-
+        return None
 
     def same_site(self, base_netloc, href):
         try:
