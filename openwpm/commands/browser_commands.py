@@ -677,8 +677,8 @@ class CrawlCommand(BaseCommand):
             )
 
     # Link extraction
-    def extract_links(self, driver, current_url, base_netloc):
-        raw = get_intra_links(driver, current_url)
+    def extract_links(self, driver, base_netloc):
+        raw = get_intra_links(driver, driver.current_url)
         hrefs = []
 
         for el in raw:
@@ -695,11 +695,12 @@ class CrawlCommand(BaseCommand):
             if href in self.visited:
                 continue
 
+            href = self.normalize_url(href)
             hrefs.append(href)
 
-        # Deduplicate while preserving order
-        seen = set()
+        # dedupe
         out = []
+        seen = set()
         for h in hrefs:
             if h not in seen:
                 seen.add(h)
