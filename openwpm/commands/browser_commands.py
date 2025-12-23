@@ -524,9 +524,10 @@ class CrawlCommand(BaseCommand):
     - Scrolls on every page
     """
 
-    def __init__(self, url, num_links=5, depth=2, sleep=2):
+    def __init__(self, url, frontier_links=5, dfs_links=5, depth=2, sleep=2):
         self.start_url = url
-        self.num_links = num_links
+        self.frontier_links = frontier_links  # Number of BFS frontier links to select
+        self.dfs_links = dfs_links  # Number of links to explore per DFS level
         self.max_depth = depth
         self.sleep = sleep
         self.visited = set()
@@ -535,7 +536,7 @@ class CrawlCommand(BaseCommand):
         self.crawl_tree = {}
 
     def __repr__(self):
-        return f"CrawlCommand({self.start_url}, links={self.num_links}, depth={self.max_depth})"
+        return f"CrawlCommand({self.start_url}, frontier={self.frontier_links}, dfs={self.dfs_links}, depth={self.max_depth})"
 
     # Utils
 
@@ -667,7 +668,7 @@ class CrawlCommand(BaseCommand):
             with open(outname, "w", encoding="utf-8") as f:
                 f.write(f"Crawl Tree for visit_id {self.visit_id}\n")
                 f.write(f"Start URL: {self.start_url}\n")
-                f.write(f"Frontier links: {self.num_links}, Max depth: {self.max_depth}\n")
+                f.write(f"Frontier links: {self.frontier_links}, DFS links per level: {self.dfs_links}, Max depth: {self.max_depth}\n")
                 f.write("=" * 80 + "\n\n")
                 f.write(tree_text)
                 f.write("\n")
@@ -728,7 +729,7 @@ class CrawlCommand(BaseCommand):
             return
 
         random.shuffle(links)
-        links = links[:self.num_links]
+        links = links[:self.dfs_links]
 
         for href in links:
             if href in self.visited:
@@ -760,7 +761,7 @@ class CrawlCommand(BaseCommand):
 
         frontier = self.extract_links(driver, base_netloc)
         random.shuffle(frontier)
-        frontier = frontier[:self.num_links]
+        frontier = frontier[:self.frontier_links]
 
         logger.info(f"Selected {len(frontier)} frontier links")
 
