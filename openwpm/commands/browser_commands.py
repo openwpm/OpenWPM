@@ -550,9 +550,8 @@ class CrawlCommand(BaseCommand):
     def scroll_like_human(self, driver):
         try:
             viewport = driver.execute_script("return window.innerHeight") or 800
-            steps = random.randint(3, 7)
-            for _ in range(steps):
-                offset = random.randint(80, viewport // 2)
+            for _ in range(random.randint(3, 6)):
+                offset = random.randint(100, viewport // 2)
                 driver.execute_script("window.scrollBy(0, arguments[0]);", offset)
                 time.sleep(random.uniform(0.2, 0.5))
         except Exception:
