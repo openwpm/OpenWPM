@@ -78,6 +78,10 @@ def wait_until_loaded(webdriver, timeout, period=0.25, min_time=0):
 
 
 def get_intra_links(webdriver, url):
+    # Ensure url is a string (it can sometimes be None or other types)
+    if not url or not isinstance(url, str):
+        return []
+    
     ps1 = du.get_ps_plus_1(url)
     links = list()
     for elem in webdriver.find_elements(By.TAG_NAME, "a"):
@@ -86,6 +90,9 @@ def get_intra_links(webdriver, url):
         except StaleElementReferenceException:
             continue
         if href is None:
+            continue
+        # Ensure href is also a string before urljoin
+        if not isinstance(href, str):
             continue
         full_href = urlparse.urljoin(url, href)
         if not full_href.startswith("http"):

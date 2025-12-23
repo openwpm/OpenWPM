@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from utils.parsing import extract_base_domain
-from openwpm.commands.browser_commands import GetCommand, BrowseCommand
+from openwpm.commands.browser_commands import CrawlCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.sql_provider import SQLiteStorageProvider
@@ -19,7 +19,7 @@ from datetime import date
 
 initial_time = time.time()
 NUM_BROWSERS = 1
-TIMEOUT_DURATION = 4 * 60 * 60
+TIMEOUT_DURATION = 8 * 60 * 60
 sites_file = None
 if sys.argv[1] == 'iffys':
     sites_file = './iffys.txt'
@@ -80,6 +80,10 @@ for index, site in enumerate(sites):
     command_sequence = CommandSequence(site, site_rank=index)
     command_sequence.append_command(SetResolution(width=1600, height=800), timeout=10)
     command_sequence.append_command(SetPosition(x=50, y=200), timeout=10)
+    command_sequence.append_command(
+        CrawlCommand(site, frontier_links=3, dfs_links=4, sleep=3, depth=3),
+        timeout=400
+    )
 
     manager.execute_command_sequence(command_sequence)
 

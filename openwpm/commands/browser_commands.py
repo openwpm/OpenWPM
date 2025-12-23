@@ -14,6 +14,7 @@ from selenium.common.exceptions import (
     MoveTargetOutOfBoundsException,
     TimeoutException,
     WebDriverException,
+    StaleElementReferenceException
 )
 from selenium.webdriver import Firefox
 from selenium.webdriver.common.action_chains import ActionChains
@@ -31,6 +32,9 @@ from .utils.webdriver_utils import (
     scroll_down,
     wait_until_loaded,
 )
+
+from urllib.parse import urlparse, urldefrag
+from selenium.webdriver.common.by import By
 
 # Constants for bot mitigation
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
@@ -508,3 +512,342 @@ class InitializeCommand(BaseCommand):
     ):
         msg = {"action": "Initialize", "visit_id": self.visit_id}
         extension_socket.send(msg)
+
+
+class CrawlCommand(BaseCommand):
+    """
+    Hybrid BFS --> DFS crawler for realistic, deep website interaction.
+
+    This command simulates human-like browsing behavior on modern websites to capture
+    realistic third-party request patterns (ads, analytics, trackers, consent flows,
+    paywalls, dynamic content). It uses a two-phase crawling strategy:
+
+    **Phase 1 (BFS):** Collects internal links from the start URL and selects
+    `frontier_links` of them as "frontier" entry points. This ensures coverage across
+    different site sections (e.g., politics, sports, opinion pages) rather than
+    following the first link found.
+
+    **Phase 2 (DFS):** For each frontier link, performs a depth-first search down to
+    `max_depth`, exploring `dfs_links` links per level. This creates coherent
+    browsing sequences that better trigger dynamic content and third-party requests.
+
+    After each subtree is explored, the crawler returns to the start URL before
+    proceeding to the next frontier link.
+
+    **Parameters:**
+        url (str): The starting URL to begin the crawl from.
+
+        frontier_links (int, optional): Number of frontier links to select in the BFS
+            phase. These represent different top-level sections of the site. Default: 5.
+
+        dfs_links (int, optional): Number of links to explore at each DFS level.
+            Controls branching factor during depth-first exploration. Default: 5.
+
+        depth (int, optional): Maximum depth to explore from each frontier link.
+            Depth 1 = frontier link only, depth 2 = frontier + one level of children,
+            depth 3 = frontier + two levels of children, etc. Default: 2.
+
+        sleep (int, optional): Sleep time in seconds after page loads. Default: 2.
+
+    **Output:**
+        Saves a crawl tree visualization to `datadir/crawl-tree-{visit_id}.txt`
+        showing the hierarchical structure of visited URLs.
+
+    **Example:**
+        ```python
+        # Crawl with 10 frontier links, explore 5 links per DFS level, to depth 3 with
+        a sleep of 2 seconds after each page load.
+        command = CrawlCommand(
+            url="https://example.com",
+            frontier_links=10,
+            dfs_links=5,
+            depth=3,
+            sleep=2
+        )
+        ```
+
+    **Notes:**
+        - Uses a global visited set to prevent infinite loops, which may limit
+          exploration in later subtrees if many links are already visited.
+        - Prefers clicking links over direct navigation when possible for realism.
+        - Automatically handles URL normalization (strips fragments) and same-site
+          link filtering.
+    """
+
+    def __init__(self, url, frontier_links=5, dfs_links=5, depth=2, sleep=2):
+        self.start_url = url
+        self.frontier_links = frontier_links  # Number of BFS frontier links to select
+        self.dfs_links = dfs_links  # Number of links to explore per DFS level
+        self.max_depth = depth
+        self.sleep = sleep
+        self.visited = set()
+
+        # Track crawl tree structure: {parent_url: [child_url, ...]}
+        self.crawl_tree = {}
+
+    def __repr__(self):
+        return f"CrawlCommand({self.start_url}, frontier={self.frontier_links}, dfs={self.dfs_links}, depth={self.max_depth})"
+
+    # Utils
+
+    def wait_dom(self, driver, timeout=15):
+        try:
+            WebDriverWait(driver, timeout).until(
+                lambda d: d.execute_script(
+                    "return document.readyState"
+                ) in ("interactive", "complete")
+            )
+        except Exception:
+            pass
+
+    def scroll_like_human(self, driver):
+        try:
+            viewport = driver.execute_script("return window.innerHeight") or 800
+            for _ in range(random.randint(3, 6)):
+                offset = random.randint(100, viewport // 2)
+                driver.execute_script("window.scrollBy(0, arguments[0]);", offset)
+                time.sleep(random.uniform(0.2, 0.5))
+        except Exception:
+            pass
+
+    def safe_get(self, driver, url, timeout=15):
+        start = time.time()
+        try:
+            driver.set_page_load_timeout(timeout)
+            driver.get(url)
+        except TimeoutException:
+            logger.warning(f"GET timeout for {url}")
+        except WebDriverException:
+            return False
+
+        # HARD STOP if page misbehaves
+        if time.time() - start > timeout:
+            logger.warning(f"Navigation exceeded {timeout}s, aborting")
+            return False
+
+        return True
+
+
+    def safe_click_or_get(self, driver, href):
+        before = driver.current_url
+        try:
+            el = driver.find_element(By.CSS_SELECTOR, f'a[href="{href}"]')
+            el.click()
+            self.wait_dom(driver)
+            if driver.current_url != before:
+                return "CLICK"
+        except Exception:
+            pass
+
+        self.safe_get(driver, href)
+        if driver.current_url != before:
+            return "DIRECT"
+
+        return None
+
+    def same_site(self, base_netloc, href):
+        try:
+            return urlparse(href).netloc.endswith(base_netloc)
+        except Exception:
+            return False
+
+    def normalize_url(self, url):
+        clean, _ = urldefrag(url)
+        return clean
+
+    def add_to_tree(self, parent_url, child_url):
+        """Add a parent-child relationship to the crawl tree"""
+        parent = self.normalize_url(parent_url)
+        child = self.normalize_url(child_url)
+        if parent not in self.crawl_tree:
+            self.crawl_tree[parent] = []
+        if child not in self.crawl_tree[parent]:
+            self.crawl_tree[parent].append(child)
+
+    def format_tree(self, start_url):
+        """Format the crawl tree as a text tree structure"""
+        lines = []
+        start = self.normalize_url(start_url)
+        
+        def format_node(url, prefix="", is_last=True, visited=None):
+            if visited is None:
+                visited = set()
+            
+            if url in visited:
+                return  # Prevent infinite loops in tree display
+            visited.add(url)
+            
+            # Format current node
+            connector = "└" if is_last else "├"
+            lines.append(f"{prefix}{connector}_____{url}")
+            
+            # Get children
+            children = self.crawl_tree.get(url, [])
+            if not children:
+                return
+            
+            # Format children
+            for i, child in enumerate(children):
+                is_child_last = (i == len(children) - 1)
+                child_prefix = prefix + ("    " if is_last else "│   ")
+                format_node(child, child_prefix, is_child_last, visited.copy())
+        
+        # Start with root
+        lines.append(start)
+        children = self.crawl_tree.get(start, [])
+        for i, child in enumerate(children):
+            is_last = (i == len(children) - 1)
+            format_node(child, "", is_last, {start})
+        
+        return "\n".join(lines)
+
+    def save_crawl_tree(self, manager_params):
+        """Save the crawl tree to a text file"""
+        if not self.crawl_tree:
+            return
+        
+        tree_text = self.format_tree(self.start_url)
+        
+        # Create filename with visit_id
+        outname = os.path.join(
+            manager_params.data_directory,
+            f"crawl-tree-{self.visit_id}.txt"
+        )
+        
+        try:
+            with open(outname, "w", encoding="utf-8") as f:
+                f.write(f"Crawl Tree for visit_id {self.visit_id}\n")
+                f.write(f"Start URL: {self.start_url}\n")
+                f.write(f"Frontier links: {self.frontier_links}, DFS links per level: {self.dfs_links}, Max depth: {self.max_depth}\n")
+                f.write("=" * 80 + "\n\n")
+                f.write(tree_text)
+                f.write("\n")
+            logger.info(f"BROWSER {self.browser_id}: Saved crawl tree to {outname}")
+        except Exception as e:
+            logger.error(
+                f"BROWSER {self.browser_id}: Failed to save crawl tree: {e}",
+                exc_info=True
+            )
+
+    # Link extraction
+    def extract_links(self, driver, base_netloc):
+        # Ensure current_url is a string (it can sometimes be None or other types)
+        current_url = driver.current_url
+        if not current_url or not isinstance(current_url, str):
+            logger.warning(f"BROWSER {self.browser_id}: Invalid current_url: {current_url}, skipping link extraction")
+            return []
+        
+        raw = get_intra_links(driver, current_url)
+        hrefs = []
+
+        for el in raw:
+            try:
+                href = el.get_attribute("href")
+            except Exception:
+                continue
+
+            if not href:
+                continue
+
+            if not self.same_site(base_netloc, href):
+                continue
+            if href in self.visited:
+                continue
+
+            href = self.normalize_url(href)
+            hrefs.append(href)
+
+        # dedupe
+        out = []
+        seen = set()
+        for h in hrefs:
+            if h not in seen:
+                seen.add(h)
+                out.append(h)
+
+        return out
+
+
+    # DFS inside subtree
+    def dfs(self, driver, depth, base_netloc):
+        if depth > self.max_depth:
+            return
+
+        current = self.normalize_url(driver.current_url)
+        logger.info(f"DFS depth {depth}: at {current}")
+
+        # Don't explore children if we're already at max_depth
+        if depth >= self.max_depth:
+            return
+
+        links = self.extract_links(driver, base_netloc)
+        if not links:
+            logger.info(f"DFS depth {depth}: No unvisited links found at {current} (stopping exploration)")
+            return
+
+        random.shuffle(links)
+        links = links[:self.dfs_links]
+        
+        # Log if we couldn't find enough links to reach dfs_links
+        if len(links) < self.dfs_links:
+            logger.info(
+                f"DFS depth {depth}: Only found {len(links)} unvisited links "
+                f"(requested {self.dfs_links}) at {current}"
+            )
+
+        for href in links:
+            if href in self.visited:
+                continue
+
+            self.visited.add(href)
+            method = self.safe_click_or_get(driver, href)
+            if not method:
+                continue
+
+            # Track navigation in tree (current -> actual destination)
+            actual_url = self.normalize_url(driver.current_url)
+            self.add_to_tree(current, actual_url)
+
+            logger.info(f"DFS depth {depth}: visiting {driver.current_url} via {method}")
+
+            self.dfs(driver, depth + 1, base_netloc)
+
+            # deterministic return
+            self.safe_get(driver, current)
+
+    # Entry point
+    def execute(self, driver, browser_params, manager_params, extension_socket):
+        base_netloc = urlparse(self.start_url).netloc
+
+        # Phase 1: BFS frontier
+        self.safe_get(driver, self.start_url)
+        logger.info("Collecting BFS frontier")
+
+        frontier = self.extract_links(driver, base_netloc)
+        random.shuffle(frontier)
+        frontier = frontier[:self.frontier_links]
+
+        logger.info(f"Selected {len(frontier)} frontier links")
+
+        # Phase 2: DFS per subtree
+        for i, href in enumerate(frontier, start=1):
+            logger.info(f"Starting subtree {i}/{len(frontier)}: {href}")
+
+            self.visited.add(href)
+            method = self.safe_click_or_get(driver, href)
+            if not method:
+                continue
+
+            # Track frontier link in tree
+            actual_url = self.normalize_url(driver.current_url)
+            self.add_to_tree(self.start_url, actual_url)
+
+            logger.info(f"Subtree root via {method}")
+
+            self.dfs(driver, depth=2, base_netloc=base_netloc)
+
+            # always return home
+            self.safe_get(driver, self.start_url)
+
+        # Save crawl tree to file
+        self.save_crawl_tree(manager_params)
