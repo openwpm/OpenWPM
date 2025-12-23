@@ -577,28 +577,6 @@ class CrawlCommand(BaseCommand):
     def __repr__(self):
         return f"CrawlCommand({self.start_url}, frontier={self.frontier_links}, dfs={self.dfs_links}, depth={self.max_depth})"
 
-    # Utils
-
-    def wait_dom(self, driver, timeout=15):
-        try:
-            WebDriverWait(driver, timeout).until(
-                lambda d: d.execute_script(
-                    "return document.readyState"
-                ) in ("interactive", "complete")
-            )
-        except Exception:
-            pass
-
-    def scroll_like_human(self, driver):
-        try:
-            viewport = driver.execute_script("return window.innerHeight") or 800
-            for _ in range(random.randint(3, 6)):
-                offset = random.randint(100, viewport // 2)
-                driver.execute_script("window.scrollBy(0, arguments[0]);", offset)
-                time.sleep(random.uniform(0.2, 0.5))
-        except Exception:
-            pass
-
     def safe_get(self, driver, url, timeout=15):
         start = time.time()
         try:
