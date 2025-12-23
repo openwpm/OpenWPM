@@ -555,7 +555,8 @@ class CrawlCommand(BaseCommand):
 
     **Example:**
         ```python
-        # Crawl with 10 frontier links, explore 5 links per DFS level, to depth 3
+        # Crawl with 10 frontier links, explore 5 links per DFS level, to depth 3 with
+        a sleep of 2 seconds after each page load.
         command = CrawlCommand(
             url="https://example.com",
             frontier_links=10,
