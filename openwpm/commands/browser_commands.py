@@ -801,19 +801,67 @@ class CrawlCommand(BaseCommand):
         self.safe_get(driver, self.start_url)
         logger.info("Collecting BFS frontier")
 
-        frontier = self.extract_links(driver, base_netloc)
-        random.shuffle(frontier)
-        frontier = frontier[:self.frontier_links]
+        all_links = self.extract_links(driver, base_netloc)
+        random.shuffle(all_links)
+        
+        # Select extra links as backup (50% more) in case some fail
+        backup_count = max(1, int(self.frontier_links * 1.5))
+        frontier_pool = all_links[:backup_count]
+        
+        logger.info(f"Selected {len(frontier_pool)} frontier links (requested {self.frontier_links}, with backups)")
 
-        logger.info(f"Selected {len(frontier)} frontier links")
-
-        # Phase 2: DFS per subtree
-        for i, href in enumerate(frontier, start=1):
-            logger.info(f"Starting subtree {i}/{len(frontier)}: {href}")
-
-            self.visited.add(href)
-            if not self.safe_navigate(driver, href):
-                continue
+        # Phase 2: DFS per subtree with retry logic
+        successful_subtrees = 0
+        frontier_attempted = set()
+        
+        for i in range(len(frontier_pool)):
+            if successful_subtrees >= self.frontier_links:
+                break
+                
+            href = frontier_pool[i]
+            frontier_attempted.add(href)
+            
+            # Try to navigate with retries
+            max_retries = 2
+            navigated = False
+            
+            for attempt in range(max_retries + 1):
+                if attempt > 0:
+                    logger.info(f"Retry {attempt}/{max_retries} for frontier link: {href}")
+                
+                self.visited.add(href)
+                if self.safe_navigate(driver, href):
+                    navigated = True
+                    break
+                else:
+                    # Wait a bit before retry
+                    if attempt < max_retries:
+                        time.sleep(1)
+            
+            if not navigated:
+                logger.warning(
+                    f"Failed to navigate to frontier link after {max_retries + 1} attempts: {href}. "
+                    f"Trying backup link."
+                )
+                # Try to find a backup link we haven't tried yet
+                for backup_href in all_links:
+                    if (backup_href not in frontier_attempted and 
+                        backup_href not in self.visited):
+                        href = backup_href
+                        frontier_attempted.add(href)
+                        logger.info(f"Using backup frontier link: {href}")
+                        self.visited.add(href)
+                        if self.safe_navigate(driver, href):
+                            navigated = True
+                            break
+                
+                if not navigated:
+                    logger.warning(f"No backup link available or all backups failed. Skipping subtree.")
+                    continue
+            
+            # Successfully navigated so now explore the subtree
+            successful_subtrees += 1
+            logger.info(f"Starting subtree {successful_subtrees}/{self.frontier_links}: {href}")
 
             # Track frontier link in tree
             actual_url = self.normalize_url(driver.current_url)
@@ -825,6 +873,8 @@ class CrawlCommand(BaseCommand):
 
             # always return home
             self.safe_get(driver, self.start_url)
+        
+        logger.info(f"Completed {successful_subtrees}/{self.frontier_links} frontier subtrees")
 
         # Save crawl tree to file
         self.save_crawl_tree(manager_params)
