@@ -731,7 +731,13 @@ class CrawlCommand(BaseCommand):
 
     # Link extraction
     def extract_links(self, driver, base_netloc):
-        raw = get_intra_links(driver, driver.current_url)
+        # Ensure current_url is a string (it can sometimes be None or other types)
+        current_url = driver.current_url
+        if not current_url or not isinstance(current_url, str):
+            logger.warning(f"BROWSER {self.browser_id}: Invalid current_url: {current_url}, skipping link extraction")
+            return []
+        
+        raw = get_intra_links(driver, current_url)
         hrefs = []
 
         for el in raw:
@@ -776,10 +782,18 @@ class CrawlCommand(BaseCommand):
 
         links = self.extract_links(driver, base_netloc)
         if not links:
+            logger.info(f"DFS depth {depth}: No unvisited links found at {current} (stopping exploration)")
             return
 
         random.shuffle(links)
         links = links[:self.dfs_links]
+        
+        # Log if we couldn't find enough links to reach dfs_links
+        if len(links) < self.dfs_links:
+            logger.info(
+                f"DFS depth {depth}: Only found {len(links)} unvisited links "
+                f"(requested {self.dfs_links}) at {current}"
+            )
 
         for href in links:
             if href in self.visited:
