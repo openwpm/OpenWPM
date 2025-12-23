@@ -703,10 +703,12 @@ class CrawlCommand(BaseCommand):
 
             if not self.same_site(base_netloc, href):
                 continue
+
+            # Normalize before checking visited (visited contains normalized URLs)
+            href = self.normalize_url(href)
             if href in self.visited:
                 continue
 
-            href = self.normalize_url(href)
             hrefs.append(href)
 
         # dedupe
@@ -748,6 +750,7 @@ class CrawlCommand(BaseCommand):
             )
 
         for href in links:
+            # Check again in case this link was visited during DFS recursion of previous links
             if href in self.visited:
                 continue
 
