@@ -710,13 +710,8 @@ class CrawlCommand(BaseCommand):
 
     # Link extraction
     def extract_links(self, driver, base_netloc):
-        # Ensure current_url is a string (it can sometimes be None or other types)
-        current_url = driver.current_url
-        if not current_url or not isinstance(current_url, str):
-            logger.warning(f"BROWSER {self.browser_id}: Invalid current_url: {current_url}, skipping link extraction")
-            return []
-        
-        raw = get_intra_links(driver, current_url)
+        # get_intra_links() handles invalid URLs defensively
+        raw = get_intra_links(driver, driver.current_url)
         hrefs = []
 
         for el in raw:
