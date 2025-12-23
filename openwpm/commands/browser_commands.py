@@ -557,18 +557,26 @@ class CrawlCommand(BaseCommand):
         except Exception:
             pass
 
-    def safe_get(self, driver, url, timeout=20):
+    def safe_get(self, driver, url, timeout=15):
+        start = time.time()
         try:
             driver.set_page_load_timeout(timeout)
             driver.get(url)
-        except Exception:
-            pass
-        self.wait_dom(driver)
-        time.sleep(random.uniform(self.sleep, self.sleep + 1.5))
-        self.scroll_like_human(driver)
+        except TimeoutException:
+            logger.warning(f"GET timeout for {url}")
+        except WebDriverException:
+            return False
 
-    def find_clickable(self, driver, href):
-        """Re-location of anchor"""
+        # HARD STOP if page misbehaves
+        if time.time() - start > timeout:
+            logger.warning(f"Navigation exceeded {timeout}s, aborting")
+            return False
+
+        return True
+
+
+    def safe_click_or_get(self, driver, href):
+        before = driver.current_url
         try:
             return driver.find_element(By.CSS_SELECTOR, f'a[href="{href}"]')
         except Exception:
