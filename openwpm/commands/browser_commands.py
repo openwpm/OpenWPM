@@ -33,7 +33,7 @@ from .utils.webdriver_utils import (
     wait_until_loaded,
 )
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urldefrag
 from selenium.webdriver.common.by import By
 
 # Constants for bot mitigation
@@ -529,8 +529,10 @@ class CrawlCommand(BaseCommand):
         self.num_links = num_links
         self.max_depth = depth
         self.sleep = sleep
-        self.per_page_budget_s = per_page_budget_s
         self.visited = set()
+
+        # Track crawl tree structure: {parent_url: [child_url, ...]}
+        self.crawl_tree = {}
 
     def __repr__(self):
         return f"CrawlCommand({self.start_url}, links={self.num_links}, depth={self.max_depth})"
@@ -708,17 +710,20 @@ class CrawlCommand(BaseCommand):
 
         return out
 
-    # Core crawler
-    def crawl_page(self, driver, depth, base_netloc):
+
+    # DFS inside subtree
+    def dfs(self, driver, depth, base_netloc):
         if depth > self.max_depth:
             return
 
-        current_url = driver.current_url
-        logger.info(f"Depth {depth}: at {current_url}")
+        current = self.normalize_url(driver.current_url)
+        logger.info(f"DFS depth {depth}: at {current}")
 
-        start = time.time()
+        # Don't explore children if we're already at max_depth
+        if depth >= self.max_depth:
+            return
 
-        links = self.extract_links(driver, current_url, base_netloc)
+        links = self.extract_links(driver, base_netloc)
         if not links:
             return
 
@@ -726,46 +731,58 @@ class CrawlCommand(BaseCommand):
         links = links[:self.num_links]
 
         for href in links:
-            if time.time() - start > self.per_page_budget_s:
-                logger.info("Page time budget exceeded; stopping branch")
-                return
-
             if href in self.visited:
                 continue
+
             self.visited.add(href)
-            before = driver.current_url
-            navigated = False
-            el = self.find_clickable(driver, href)
-            if el and self.safe_click(driver, el):
-                self.wait_dom(driver)
-                time.sleep(0.5)
-                after = driver.current_url
-                if after != before:
-                    navigated = True
-                    method = "CLICK"
-
-            if not navigated:
-                self.safe_get(driver, href)
-                after = driver.current_url
-                if after != before:
-                    navigated = True
-                    method = "DIRECT"
-
-            if not navigated:
-                logger.info(f"Depth {depth}: FAILED to navigate to {href}")
+            method = self.safe_click_or_get(driver, href)
+            if not method:
                 continue
 
-            logger.info(f"Depth {depth}: visiting {after} via {method}")
-            # recurse from the NEW page
-            self.crawl_page(driver, depth + 1, base_netloc)
+            # Track navigation in tree (current -> actual destination)
+            actual_url = self.normalize_url(driver.current_url)
+            self.add_to_tree(current, actual_url)
 
-            # return
-            self.safe_get(driver, current_url)
+            logger.info(f"DFS depth {depth}: visiting {driver.current_url} via {method}")
 
+            self.dfs(driver, depth + 1, base_netloc)
+
+            # deterministic return
+            self.safe_get(driver, current)
 
     # Entry point
     def execute(self, driver, browser_params, manager_params, extension_socket):
         base_netloc = urlparse(self.start_url).netloc
-        self.safe_get(driver, self.start_url)
-        self.crawl_page(driver, depth=1, base_netloc=base_netloc)
 
+        # Phase 1: BFS frontier
+        self.safe_get(driver, self.start_url)
+        logger.info("Collecting BFS frontier")
+
+        frontier = self.extract_links(driver, base_netloc)
+        random.shuffle(frontier)
+        frontier = frontier[:self.num_links]
+
+        logger.info(f"Selected {len(frontier)} frontier links")
+
+        # Phase 2: DFS per subtree
+        for i, href in enumerate(frontier, start=1):
+            logger.info(f"Starting subtree {i}/{len(frontier)}: {href}")
+
+            self.visited.add(href)
+            method = self.safe_click_or_get(driver, href)
+            if not method:
+                continue
+
+            # Track frontier link in tree
+            actual_url = self.normalize_url(driver.current_url)
+            self.add_to_tree(self.start_url, actual_url)
+
+            logger.info(f"Subtree root via {method}")
+
+            self.dfs(driver, depth=2, base_netloc=base_netloc)
+
+            # always return home
+            self.safe_get(driver, self.start_url)
+
+        # Save crawl tree to file
+        self.save_crawl_tree(manager_params)
