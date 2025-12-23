@@ -516,47 +516,39 @@ class InitializeCommand(BaseCommand):
 
 class CrawlCommand(BaseCommand):
     """
-    Hybrid BFS --> DFS crawler for realistic, deep website interaction.
+    Hybrid BFS --> DFS crawler for deep website exploration.
 
-    This command simulates human-like browsing behavior on modern websites to capture
-    realistic third-party request patterns (ads, analytics, trackers, consent flows,
-    paywalls, dynamic content). It uses a two-phase crawling strategy:
+    Performs a two-phase crawl to systematically explore a website:
+    
+    1. **BFS Phase:** Selects `frontier_links` top-level links from the start URL
+       as entry points into different site sections.
+    
+    2. **DFS Phase:** For each frontier link, explores down to `max_depth` levels,
+       visiting up to `dfs_links` links at each level.
 
-    **Phase 1 (BFS):** Collects internal links from the start URL and selects
-    `frontier_links` of them as "frontier" entry points. This ensures coverage across
-    different site sections (e.g., politics, sports, opinion pages) rather than
-    following the first link found.
-
-    **Phase 2 (DFS):** For each frontier link, performs a depth-first search down to
-    `max_depth`, exploring `dfs_links` links per level. This creates coherent
-    browsing sequences that better trigger dynamic content and third-party requests.
-
-    After each subtree is explored, the crawler returns to the start URL before
-    proceeding to the next frontier link.
+    After exploring each subtree, returns to the start URL before moving to the
+    next frontier link.
 
     **Parameters:**
-        url (str): The starting URL to begin the crawl from.
+        url (str): Starting URL for the crawl.
 
-        frontier_links (int, optional): Number of frontier links to select in the BFS
-            phase. These represent different top-level sections of the site. Default: 5.
+        frontier_links (int, optional): Number of frontier links to select.
+            Default: 5.
 
-        dfs_links (int, optional): Number of links to explore at each DFS level.
-            Controls branching factor during depth-first exploration. Default: 5.
+        dfs_links (int, optional): Number of links to explore per DFS level.
+            Default: 5.
 
-        depth (int, optional): Maximum depth to explore from each frontier link.
-            Depth 1 = frontier link only, depth 2 = frontier + one level of children,
-            depth 3 = frontier + two levels of children, etc. Default: 2.
+        depth (int, optional): Maximum exploration depth. Depth 1 = frontier only,
+            depth 2 = frontier + 1 level, depth 3 = frontier + 2 levels. Default: 2.
 
-        sleep (int, optional): Sleep time in seconds after page loads. Default: 2.
+        sleep (int, optional): Seconds to wait after each page load. Default: 2.
 
     **Output:**
-        Saves a crawl tree visualization to `datadir/crawl-tree-{visit_id}.txt`
-        showing the hierarchical structure of visited URLs.
+        Saves a crawl tree to `datadir/crawl-tree-{visit_id}.txt` showing the
+        hierarchical structure of visited URLs.
 
     **Example:**
         ```python
-        # Crawl with 10 frontier links, explore 5 links per DFS level, to depth 3 with
-        a sleep of 2 seconds after each page load.
         command = CrawlCommand(
             url="https://example.com",
             frontier_links=10,
@@ -567,11 +559,8 @@ class CrawlCommand(BaseCommand):
         ```
 
     **Notes:**
-        - Uses a global visited set to prevent infinite loops, which may limit
-          exploration in later subtrees if many links are already visited.
-        - Prefers clicking links over direct navigation when possible for realism.
-        - Automatically handles URL normalization (strips fragments) and same-site
-          link filtering.
+        - Uses a global visited set to prevent loops (may limit later subtrees).
+        - Automatically normalizes URLs and filters to same-site links only.
     """
 
     def __init__(self, url, frontier_links=5, dfs_links=5, depth=2, sleep=2):
@@ -628,22 +617,12 @@ class CrawlCommand(BaseCommand):
         return True
 
 
-    def safe_click_or_get(self, driver, href):
+    def safe_navigate(self, driver, href):
+        """Navigate to a URL using driver.get(). Returns True if navigation succeeded."""
         before = driver.current_url
-        try:
-            el = driver.find_element(By.CSS_SELECTOR, f'a[href="{href}"]')
-            el.click()
-            self.wait_dom(driver)
-            if driver.current_url != before:
-                return "CLICK"
-        except Exception:
-            pass
-
-        self.safe_get(driver, href)
-        if driver.current_url != before:
-            return "DIRECT"
-
-        return None
+        if self.safe_get(driver, href):
+            return driver.current_url != before
+        return False
 
     def same_site(self, base_netloc, href):
         try:
@@ -800,15 +779,14 @@ class CrawlCommand(BaseCommand):
                 continue
 
             self.visited.add(href)
-            method = self.safe_click_or_get(driver, href)
-            if not method:
+            if not self.safe_navigate(driver, href):
                 continue
 
             # Track navigation in tree (current -> actual destination)
             actual_url = self.normalize_url(driver.current_url)
             self.add_to_tree(current, actual_url)
 
-            logger.info(f"DFS depth {depth}: visiting {driver.current_url} via {method}")
+            logger.info(f"DFS depth {depth}: visiting {driver.current_url}")
 
             self.dfs(driver, depth + 1, base_netloc)
 
@@ -834,15 +812,14 @@ class CrawlCommand(BaseCommand):
             logger.info(f"Starting subtree {i}/{len(frontier)}: {href}")
 
             self.visited.add(href)
-            method = self.safe_click_or_get(driver, href)
-            if not method:
+            if not self.safe_navigate(driver, href):
                 continue
 
             # Track frontier link in tree
             actual_url = self.normalize_url(driver.current_url)
             self.add_to_tree(self.start_url, actual_url)
 
-            logger.info(f"Subtree root via {method}")
+            logger.info(f"Subtree root: {actual_url}")
 
             self.dfs(driver, depth=2, base_netloc=base_netloc)
 
