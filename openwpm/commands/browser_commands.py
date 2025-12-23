@@ -533,11 +533,9 @@ class CrawlCommand(BaseCommand):
         self.visited = set()
 
     def __repr__(self):
-        return f"CrawlSubpagesCommand({self.start_url}, links={self.num_links}, depth={self.max_depth})"
+        return f"CrawlCommand({self.start_url}, links={self.num_links}, depth={self.max_depth})"
 
-    # -------------------------
-    # Utilities
-    # -------------------------
+    # Utils
 
     def wait_dom(self, driver, timeout=15):
         try:
