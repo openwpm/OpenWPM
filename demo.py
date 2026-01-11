@@ -1,10 +1,11 @@
 import argparse
 from pathlib import Path
 from typing import Literal
-
+from datetime import datetime
 import tranco
 
 from custom_command import LinkCountingCommand
+from openwpm.commands.cookie_consent import AcceptCookieConsentCommand
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.browser_commands import GetCommand
 from openwpm.config import BrowserParams, ManagerParams
@@ -26,9 +27,11 @@ if args.tranco:
     # Load the latest tranco list. See https://tranco-list.eu/
     print("Loading tranco top sites list...")
     t = tranco.Tranco(cache=True, cache_dir=".tranco")
-    latest_list = t.list()
+    latest_list = t.list(date="2025-08-05")
     sites = ["http://" + x for x in latest_list.top(10)]
 
+date_str = datetime.now().strftime("%Y-%m-%d")
+sqlite_path = Path(f"./datadir/crawl-data-{date_str}.sqlite")
 
 display_mode: Literal["native", "headless", "xvfb"] = "native"
 if args.headless:
@@ -70,10 +73,10 @@ manager_params.log_path = Path("./datadir/openwpm.log")
 
 # Commands time out by default after 60 seconds
 with TaskManager(
-    manager_params,
-    browser_params,
-    SQLiteStorageProvider(Path("./datadir/crawl-data.sqlite")),
-    None,
+        manager_params,
+        browser_params,
+        SQLiteStorageProvider(Path(sqlite_path)),
+        None,
 ) as manager:
     # Visits the sites
     for index, site in enumerate(sites):
@@ -93,6 +96,7 @@ with TaskManager(
         # Start by visiting the page
         command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
         # Have a look at custom_command.py to see how to implement your own command
+        command_sequence.append_command(AcceptCookieConsentCommand(), timeout=20)
         command_sequence.append_command(LinkCountingCommand())
 
         # Run commands across all browsers (simple parallelization)

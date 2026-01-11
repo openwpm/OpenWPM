@@ -94,3 +94,4 @@ docs/apidoc/
 node_modules
 
 datadir
+/.env

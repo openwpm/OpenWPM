@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest # Verwende das neueste MongoDB-Image
+    container_name: mongodb_container
+    restart: always
+    ports:
+      - "27017:27017"  # MongoDB Standardport
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root  # Standard-Benutzername
+      MONGO_INITDB_ROOT_PASSWORD: examplepassword  # Standard-Passwort
+    volumes:
+      - mongo_data:/data/db  # Persistente Speicherung der Datenbankdaten
+      - mongo_config:/data/configdb  # Persistente Speicherung der Konfigurationsdaten
+
+volumes:
+  mongo_data:
+    driver: local
+  mongo_config:
+    driver: local
