@@ -19,6 +19,12 @@
 
 set -e
 
+# Check for conda before proceeding
+if ! command -v conda &> /dev/null; then
+  echo "Error: conda is not available. Please install it before running this script."
+  exit 1
+fi
+
 # Make conda available to shell script
 eval "$(conda shell.bash hook)"
 
