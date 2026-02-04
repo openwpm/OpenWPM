@@ -35,7 +35,7 @@ def test_saving(default_params, task_manager_creator):
     profile_items = [
         "cookies.sqlite",
         "places.sqlite",
-        "webappsstore.sqlite",
+        "storage.sqlite",
         "prefs.js",
         "bookmarkbackups",
         "cache2",

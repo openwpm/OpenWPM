@@ -53,7 +53,7 @@ def dump_profile(
     required_items = [
         "cookies.sqlite",  # cookies
         "places.sqlite",  # history
-        "webappsstore.sqlite",  # localStorage
+        "storage.sqlite",  # localStorage
     ]
     for item in required_items:
         if item not in archived_items:
