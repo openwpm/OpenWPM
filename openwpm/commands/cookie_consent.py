@@ -1,139 +1,179 @@
+# python
 from openwpm.commands.types import BaseCommand
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from urllib.parse import urlparse
+import time
+import traceback
+
+from openwpm.commands.utils.cookieButton_rules import rules, commons
+from openwpm.commands.utils.cookie_selectors import generate_xpaths
+
 
 class AcceptCookieConsentCommand(BaseCommand):
-    def execute(
-            self,
-            webdriver,
-            browser_params,
-            manager_params,
-            extension_socket
-    ):
+
+    CMP_SELECTORS = [
+        "//button[@id='onetrust-accept-btn-handler']",
+        "//button[@id='CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll']",
+        "//button[contains(@class,'qc-cmp2-summary-buttons')]"
+    ]
+
+    def execute(self, webdriver, browser_params, manager_params, extension_socket):
+        start_time = time.time()
+        MAX_RUNTIME = 3
+
         try:
-            wait = WebDriverWait(webdriver, 5)
+            current_url = webdriver.current_url
+            domain = self.get_domain(current_url)
 
-            selectors = [
-                # English (US/UK)
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept all')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept and close')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'i accept')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'i agree')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'allow')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'allow all')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'allow cookies')]",
+            print(f"[CookieConsent] START | url={current_url} | domain={domain}")
 
-                # Spanish (Spain / Latin America)
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceptar')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceptar todo')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceptar cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceptar y cerrar')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceptar y continuar')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'estoy de acuerdo')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'de acuerdo')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'permitir')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'permitir cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceptar siempre')]",
+            rule = self.find_matching_rule(domain)
 
-                # Portuguese (Portugal / Brazil)
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceitar')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceitar tudo')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceitar cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'eu aceito')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'aceito')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'concordo')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'concordar')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'permitir')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'permitir cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'permitir tudo')]",
+            for xpath in self.CMP_SELECTORS:
+                runtime = time.time() - start_time
+                if runtime > MAX_RUNTIME:
+                    print(f"[CookieConsent] TIMEOUT during CMP selectors | url={current_url} | runtime={runtime:.2f}s")
+                    return
+                if self.try_click_fast(webdriver, xpath):
+                    print(f"[CookieConsent] CMP selector matched | url={current_url} | xpath={xpath} | runtime={runtime:.2f}s")
+                    return
 
-                # French
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accepter')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tout accepter')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accepter les cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), \"j'accepte\")]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'je suis daccord')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'je suis d\\'accord')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'autoriser')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'autoriser cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'autoriser tout')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok')]",
+            for xpath in generate_xpaths():
+                runtime = time.time() - start_time
+                if runtime > MAX_RUNTIME:
+                    print(f"[CookieConsent] TIMEOUT during keyword fallback | url={current_url} | runtime={runtime:.2f}s")
+                    return
+                if self.try_click_fast(webdriver, xpath):
+                    print(f"[CookieConsent] Keyword selector matched | url={current_url} | runtime={runtime:.2f}s")
+                    return
 
-                # German
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'akzeptieren')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'annehmen')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'alle akzeptieren')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'cookies akzeptieren')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'zustimmen')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'einverstanden')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'erlauben')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'erlauben alle')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'bestätigen')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ', 'abcdefghijklmnopqrstuvwxyzäöüß'), 'ok')]",
+            if rule:
+                print(f"[CookieConsent] Domain rule found for {domain}: keys={list(rule.keys())}")
+                self.apply_domain_rule(webdriver, rule)
+            else:
+                print(f"[CookieConsent] No domain rule matched for {domain}")
 
-                # Italian
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accetta')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accetta tutto')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accetta i cookie')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accetto')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sono daccordo')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'autorizza')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'consenti')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'consenti tutto')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accetta sempre')]",
+            total_runtime = time.time() - start_time
+            print(f"[CookieConsent] No consent button found | url={current_url} | runtime={total_runtime:.2f}s")
 
-                # Dutch
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accepteren')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'alles accepteren')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'cookies accepteren')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ik ga akkoord')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'akkoord')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'toestaan')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sta toe')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'toestaan cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'toestaan alles')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok')]",
+        except Exception as e:
+            print(f"[CookieConsent] ERROR | url={webdriver.current_url} | error={str(e)}")
+            print(traceback.format_exc())
+            return
 
-                # Polish
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'akceptuj')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'zaakceptuj')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'akceptuj wszystko')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'akceptuj ciasteczka')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'zgadzam sie')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'zgoda')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'pozwol')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'pozwol ciasteczka')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'zatwierdz')]",
+    def get_domain(self, url):
+        netloc = urlparse(url).netloc.lower()
+        return netloc.replace("www.", "")
 
-                # Swedish
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'acceptera')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'acceptera alla')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'acceptera cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'godkänn')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'jag godkänner')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tillåt')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tillåt alla')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tillåt cookies')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'okej')]",
-                "//*[contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'acceptera alltid')]"
-            ]
+    def find_matching_rule(self, domain):
+        for rule_domain in rules:
+            if domain.endswith(rule_domain):
+                return rules[rule_domain]
+        return None
 
-            for sel in selectors:
+    def click_and_wait(self, webdriver, element, prefer_js=False):
+        """
+        Attempt to click the provided element. If prefer_js is True, try JS click first.
+        After a successful click, wait 5 seconds.
+        Returns (clicked: bool, method: str|None)
+        method is 'selenium' or 'js'.
+        """
+        try:
+            if prefer_js:
                 try:
-                    button = wait.until(
-                        EC.element_to_be_clickable((By.XPATH, sel))
-                    )
-                    button.click()
-                    print(f"Cookie consent clicked using selector: {sel} on url: {webdriver.current_url}")
-                    break
+                    webdriver.execute_script("arguments[0].click();", element)
+                    method = "js"
                 except Exception:
-                    continue
+                    element.click()
+                    method = "selenium"
+            else:
+                try:
+                    element.click()
+                    method = "selenium"
+                except Exception:
+                    webdriver.execute_script("arguments[0].click();", element)
+                    method = "js"
+            # post-click delay
+            time.sleep(5)
+            return True, method
+        except Exception as e:
+            print(f"[CookieConsent] click_and_wait failed: {str(e)}")
+            return False, None
 
+    def apply_domain_rule(self, webdriver, rule):
+        xpaths = rule.get("xpaths", generate_xpaths()) if isinstance(rule, dict) else generate_xpaths()
+
+        # 1) Try Selenium-native clicks (with JS fallback) and wait after each click
+        for xp in xpaths:
+            try:
+                els = webdriver.find_elements(By.XPATH, xp)
+                if not els:
+                    continue
+                for el in els:
+                    try:
+                        if not el.is_displayed():
+                            continue
+                        try:
+                            print(f"[CookieConsent] Trying click | xpath={xp} for element {el.tag_name} with text '{el.text[:30]}'")
+                            clicked, method = self.click_and_wait(webdriver, el, prefer_js=False)
+                            if clicked:
+                                return {"clicked": True, "xpath": xp, "method": method}
+                        except Exception:
+                            print(f"[CookieConsent] Click failed, trying JS click | xpath={xp} for element {el.tag_name} with text '{el.text[:30]}'")
+                            clicked, method = self.click_and_wait(webdriver, el, prefer_js=True)
+                            if clicked:
+                                return {"clicked": True, "xpath": xp, "method": method}
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+
+        # 2) Fallback: evaluate XPaths in-page via a safe single script with arguments
+        js_code = """
+        const xpaths = arguments[0];
+        for (const xp of xpaths) {
+          try {
+            const res = document.evaluate(xp, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+            const node = res && res.singleNodeValue;
+            if (node) {
+              if (typeof node.click === 'function') { node.click(); return {clicked: true, xpath: xp, method: 'js-eval'}; }
+              const ev = new MouseEvent('click', {bubbles: true, cancelable: true, view: window});
+              node.dispatchEvent(ev);
+              return {clicked: true, xpath: xp, method: 'js-event'};
+            }
+          } catch (e) {
+            // continue
+          }
+        }
+        return {clicked: false};
+        """
+        try:
+            result = webdriver.execute_script(js_code, xpaths)
+            if result and result.get("clicked"):
+                # page-internal click dispatched; ensure post-click wait
+                time.sleep(5)
+            return result
         except Exception:
-            pass
+            return {"clicked": False}
+
+    def inject_css(self, webdriver, css):
+        webdriver.execute_script("""
+            var style = document.createElement('style');
+            style.innerHTML = arguments[0];
+            document.head.appendChild(style);
+        """, css)
+
+    def try_click_fast(self, webdriver, xpath):
+        try:
+            elements = webdriver.find_elements(By.XPATH, xpath)
+            if elements:
+                print(f"[CookieConsent] Found {len(elements)} elements for xpath")
+            for el in elements:
+                if el.is_displayed():
+                    # prefer JS for fast attempts (use click_and_wait with prefer_js=True)
+                    clicked, _ = self.click_and_wait(webdriver, el, prefer_js=True)
+                    if clicked:
+                        return True
+        except Exception as e:
+            print(f"[CookieConsent] XPath failed: {str(e)}")
+        return False

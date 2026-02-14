@@ -96,7 +96,7 @@ with TaskManager(
         # Start by visiting the page
         command_sequence.append_command(GetCommand(url=site, sleep=3), timeout=60)
         # Have a look at custom_command.py to see how to implement your own command
-        command_sequence.append_command(AcceptCookieConsentCommand(), timeout=20)
+        command_sequence.append_command(AcceptCookieConsentCommand(), timeout=30)
         command_sequence.append_command(LinkCountingCommand())
 
         # Run commands across all browsers (simple parallelization)
