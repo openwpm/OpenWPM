@@ -31,8 +31,8 @@ the instrumentation section below for more details.
 
 ## Installation
 
-OpenWPM is tested on Ubuntu 18.04 via GitHub actions and is commonly used via the docker container
-that this repo builds, which is also based on Ubuntu. Although we don't officially support
+OpenWPM is tested on Ubuntu 24.04 via GitHub Actions and is commonly used via the docker container
+that this repo builds, which is based on Ubuntu 22.04. Although we don't officially support
 other platforms, conda is a cross platform utility and the install script can be expected
 to work on OSX and other linux distributions.
 

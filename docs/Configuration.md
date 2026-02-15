@@ -41,7 +41,27 @@ of configurations of `class<BrowserParams>`.
     - [`save_content`](#save_content)
 
 
-<!--- ## Platform Configuration Options -->
+## Platform Configuration Options
+
+- `data_directory`
+  - The directory into which screenshots and page dumps will be saved.
+  - Default: `~/openwpm`
+- `log_path`
+  - The path to the file in which OpenWPM will log. The directory will be created if it does not exist.
+  - Default: `~/openwpm/openwpm.log`
+- `num_browsers`
+  - The number of browser instances to run in parallel.
+  - Default: `1`
+- `memory_watchdog`
+  - A watchdog that tries to ensure that no Firefox instance takes up too much memory.
+  - Mostly useful for long-running cloud crawls.
+  - Default: `False`
+- `process_watchdog`
+  - Kills `GeckoDriver` or `Xvfb` instances that are not currently controlled by OpenWPM.
+  - Default: `False`
+- `failure_limit`
+  - The number of command failures tolerated before raising `CommandExecutionError`.
+  - Default: `2 * num_browsers + 10`
 
 ## Browser Configuration Options
 
@@ -213,15 +233,24 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 
 ### `navigation_instrument`
 
-TODO
+- Records page navigations using the WebExtension `webNavigation` API.
+- Captures `onBeforeNavigate` and `onCommitted` events, including transition types and qualifiers.
+- Data is saved to the `navigations` table.
+  - `navigations` schema [documentation](Schema-Documentation.md#navigations)
+- Collects tab/window metadata (dimensions, type, cookie store ID) alongside each navigation event.
 
 ### `callstack_instrument`
 
-TODO
+- **Currently broken.** The callstack instrument requires intricate machinery that broke in a previous Firefox version. Enabling it will raise a `ConfigError`.
+- When functional, it recorded JavaScript call stacks for HTTP requests.
+- Data is saved to the `callstacks` table.
+- See [#557](https://github.com/openwpm/OpenWPM/issues/557) for status.
 
 ### `dns_instrument`
 
-TODO
+- Records DNS resolutions for HTTP requests using the WebExtension `dns` API.
+- Captures the hostname, resolved addresses, canonical name, and whether Trusted Recursive Resolver (TRR/DoH) was used.
+- Data is saved to the `dns_responses` table.
 
 ### `cookie_instrument`
 
@@ -342,9 +371,9 @@ page load that are **not** reflected back into the seed profile.
 
 ### Screenshots
 
-- Selenium 3 can be used to screenshot an individual element. None of the
+- Selenium can be used to screenshot an individual element. None of the
     built-in commands offer this functionality, but you can use it when
-    [writing your own](Using_OpenWPM.md#adding-a-new-command). See the [Selenium documentation](https://seleniumhq.github.io/selenium/docs/api/py/webdriver_remote/selenium.webdriver.remote.webelement.html?highlight=element#selenium.webdriver.remote.webelement.WebElement.screenshot).
+    [writing your own](Using_OpenWPM.md#adding-a-new-command). See the [Selenium documentation](https://www.selenium.dev/selenium/docs/api/py/selenium_webdriver_remote/selenium.webdriver.remote.webelement.html#selenium.webdriver.remote.webelement.WebElement.screenshot).
 - Viewport screenshots (i.e. a screenshot of the portion of the website
     visible in the browser's window) are available with the
     `CommandSequence::save_screenshot` command.

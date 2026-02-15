@@ -1,6 +1,6 @@
 # Contributing <!-- omit in toc -->
 
-- [Setting up a dev enviroment](#setting-up-a-dev-enviroment)
+- [Setting up a dev environment](#setting-up-a-dev-environment)
 - [General Hints and Guidelines](#general-hints-and-guidelines)
   - [Avoid failing tests for PRs caused by formatting/linting issues](#avoid-failing-tests-for-prs-caused-by-formattinglinting-issues)
   - [Types Annotations in Python](#types-annotations-in-python)
@@ -10,7 +10,7 @@
   - [Running tests](#running-tests)
   - [Updating schema docs](#updating-schema-docs)
 
-## Setting up a dev enviroment
+## Setting up a dev environment
 
 Dev dependencies are installed by using the main `environment.yaml` (which
 is used by `./install.sh` script).
