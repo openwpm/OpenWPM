@@ -50,6 +50,7 @@ module = "test.*"
 allow_untyped_defs = true
 
 [tool.coverage.run]
-concurrency = ["multiprocessing", "subprocess"]
+concurrency = ["multiprocessing"]
 parallel = true
+patch = ["subprocess"]
 sigterm = true
