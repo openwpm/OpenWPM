@@ -93,12 +93,14 @@ The Extension makes heavy use of privileged APIs and can only be installed on un
 
 The currently supported instruments can be found in [Configuration.md](Configuration.md#Instruments)
 
-## Data Aggregator
+## Storage Controller
 
 ### Overview
 
-The storage controller, contained in `openwpm/storage/`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. As previously mentioned we support both local and remote data saving.
-The most useful feature of the storage controller is the fact that it is isolated from the other processes through a network socket interface (see `openwpm/socket_interface.py`).
+The Storage Controller, contained in `openwpm/storage/storage_controller.py`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. It supports both local and remote data saving via pluggable `StructuredStorageProvider` and `UnstructuredStorageProvider` implementations.
+The Storage Controller is isolated from the other processes through a network socket interface (see `openwpm/socket_interface.py`).
+
+For detailed internals (communication channels, timeouts, coupling analysis), see [Architecture-Internals.md](Architecture-Internals.md).
 
 ### Data Logged
 
