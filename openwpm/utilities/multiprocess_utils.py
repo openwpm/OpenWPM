@@ -48,7 +48,7 @@ class Process(mp.Process):
                 coverage.process_startup()
             except ImportError:
                 pass
-        
+
         try:
             mp.Process.run(self)
         except Exception as e:
