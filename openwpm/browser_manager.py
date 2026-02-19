@@ -15,7 +15,7 @@ from queue import Empty as EmptyQueue
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 import psutil
-from multiprocess import Process, Queue
+from multiprocess import Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
@@ -31,6 +31,7 @@ from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (
+    Process,
     kill_process_and_children,
     parse_traceback_for_sentry,
 )
@@ -726,7 +727,7 @@ class BrowserManager(Process):
         success_filename.unlink()
         return extension_socket
 
-    def run(self) -> None:
+    def run_impl(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
 
@@ -821,4 +822,3 @@ class BrowserManager(Process):
         finally:
             if display is not None:
                 display.stop()
-            return
