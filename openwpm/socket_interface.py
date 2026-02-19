@@ -159,6 +159,44 @@ class ClientSocket:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
 
+    def receive(self, timeout: float = 5.0) -> Any:
+        """Receive a single message from the server.
+
+        Uses the same wire format as send() (4-byte length + 1-byte
+        serialization type + payload). Returns the deserialized message.
+
+        Parameters
+        ----------
+        timeout : float
+            Socket timeout in seconds. Returns None if no data arrives
+            within the timeout.
+        """
+        old_timeout = self.sock.gettimeout()
+        self.sock.settimeout(timeout)
+        try:
+            header = self._recv_exactly(5)
+            if header is None:
+                return None
+            msglen, serialization = struct.unpack(">Lc", header)
+            payload = self._recv_exactly(msglen)
+            if payload is None:
+                return None
+            return _parse(serialization, payload)
+        except socket.timeout:
+            return None
+        finally:
+            self.sock.settimeout(old_timeout)
+
+    def _recv_exactly(self, n: int) -> Any:
+        """Receive exactly n bytes from the socket."""
+        data = b""
+        while len(data) < n:
+            chunk = self.sock.recv(n - len(data))
+            if not chunk:
+                return None
+            data += chunk
+        return data
+
     def close(self):
         self.sock.close()
 
@@ -182,6 +220,18 @@ async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
     msglen, serialization = struct.unpack(">Lc", msg)
     msg = await reader.readexactly(msglen)
     return _parse(serialization, msg)
+
+
+async def send_to_writer(writer: asyncio.StreamWriter, msg: Any) -> None:
+    """Send a JSON-serialized message to an asyncio StreamWriter.
+
+    Uses the same wire format as ClientSocket.send() so that
+    ClientSocket can receive responses using the same protocol.
+    """
+    encoded = json.dumps(msg).encode("utf-8")
+    header = struct.pack(">Lc", len(encoded), b"j")
+    writer.write(header + encoded)
+    await writer.drain()
 
 
 def _parse(serialization: bytes, msg: bytes) -> Any:

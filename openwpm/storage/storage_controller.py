@@ -15,7 +15,7 @@ from multiprocess import Queue
 from openwpm.utilities.multiprocess_utils import Process
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket, get_message_from_reader
+from ..socket_interface import ClientSocket, get_message_from_reader, send_to_writer
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
@@ -101,7 +101,7 @@ class StorageController:
         await writer.wait_closed()
 
     async def handler(
-        self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
@@ -109,7 +109,7 @@ class StorageController:
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
-            except IncompleteReadError:
+            except (IncompleteReadError, OSError):
                 self.logger.info(
                     f"Terminating handler for {client_name}, because the underlying socket closed"
                 )
@@ -153,7 +153,7 @@ class StorageController:
             visit_id = VisitId(data["visit_id"])
 
             if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
+                await self._handle_meta(visit_id, data, writer)
                 continue
 
             table_name = TableName(record_type)
@@ -174,7 +174,12 @@ class StorageController:
             )
         )
 
-    async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
+    async def _handle_meta(
+        self,
+        visit_id: VisitId,
+        data: Dict[str, Any],
+        writer: asyncio.StreamWriter,
+    ) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are meta information
         communicated to the storage controller
@@ -192,6 +197,19 @@ class StorageController:
             success: bool = data["success"]
             completion_token = await self.finalize_visit_id(visit_id, success)
             self.finalize_tasks.append((visit_id, completion_token, success))
+            # Send ack back only if the client requested it.
+            # Writing to a closed connection poisons the asyncio transport,
+            # preventing any further reads on the same connection.
+            if data.get("want_ack"):
+                try:
+                    await send_to_writer(
+                        writer,
+                        {"action": "finalize_ack", "visit_id": visit_id},
+                    )
+                except Exception:
+                    self.logger.debug(
+                        "Failed to send finalize ack for visit_id %d", visit_id
+                    )
         else:
             raise ValueError("Unexpected action: %s", action)
 
