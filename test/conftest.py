@@ -22,6 +22,20 @@ EXTENSION_DIR = os.path.join(
 pytest_plugins = "test.storage.fixtures"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def enable_subprocess_coverage():
+    """Enable coverage collection in child processes when running under coverage."""
+    try:
+        import coverage
+        # Only set this if we're actually measuring coverage
+        if coverage.Coverage.current() is not None:
+            os.environ["COVERAGE_PROCESS_START"] = str(
+                Path(__file__).parent.parent / "pyproject.toml"
+            )
+    except ImportError:
+        pass
+
+
 def xpi():
     # Creates a new xpi using npm run build.
     print("Building new xpi")

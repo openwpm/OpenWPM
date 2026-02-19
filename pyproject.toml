@@ -52,5 +52,4 @@ allow_untyped_defs = true
 [tool.coverage.run]
 concurrency = ["multiprocessing"]
 parallel = true
-patch = ["subprocess"]
 sigterm = true

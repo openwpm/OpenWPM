@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import traceback
 
@@ -40,6 +41,14 @@ class Process(mp.Process):
         self.logger = logging.getLogger("openwpm")
 
     def run(self):
+        # Enable coverage collection in child processes when COVERAGE_PROCESS_START is set
+        if "COVERAGE_PROCESS_START" in os.environ:
+            try:
+                import coverage
+                coverage.process_startup()
+            except ImportError:
+                pass
+        
         try:
             mp.Process.run(self)
         except Exception as e:
