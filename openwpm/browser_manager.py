@@ -728,6 +728,14 @@ class BrowserManager(Process):
         return extension_socket
 
     def run(self) -> None:
+        # Enable coverage collection in child processes when COVERAGE_PROCESS_START is set
+        if "COVERAGE_PROCESS_START" in os.environ:
+            try:
+                import coverage
+                coverage.process_startup()
+            except ImportError:
+                pass
+
         assert self.browser_params.browser_id is not None
         display = None
 
