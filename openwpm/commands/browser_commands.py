@@ -484,7 +484,8 @@ class FinalizeCommand(BaseCommand):
         tab_restart_browser(webdriver)
         # This doesn't immediately stop data saving from the current
         # visit so we sleep briefly before unsetting the visit_id.
-        time.sleep(self.sleep)
+        sleep = 0.1 if manager_params.testing else self.sleep
+        time.sleep(sleep)
         msg = {"action": "Finalize", "visit_id": self.visit_id}
         extension_socket.send(msg)
 
