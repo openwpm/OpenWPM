@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import traceback
 
@@ -40,14 +41,38 @@ class Process(mp.Process):
         self.logger = logging.getLogger("openwpm")
 
     def run(self):
+        # Enable coverage collection in child processes when COVERAGE_PROCESS_START is set
+        if "COVERAGE_PROCESS_START" in os.environ:
+            import coverage
+
+            coverage.process_startup()
+
         try:
-            mp.Process.run(self)
+            self.run_impl()
         except Exception as e:
             tb = traceback.format_exception(*sys.exc_info())
             extra = parse_traceback_for_sentry(tb)
             extra["exception"] = tb[-1]
             self.logger.error("Exception in child process.", exc_info=True, extra=extra)
             raise e
+        finally:
+            # Save coverage data before the process exits, since
+            # multiprocess.Process uses os._exit() which skips atexit handlers.
+            if "COVERAGE_PROCESS_START" in os.environ:
+                import coverage
+
+                cov = coverage.Coverage.current()
+                if cov is not None:
+                    cov.stop()
+                    cov.save()
+
+    def run_impl(self):
+        """Override this method in subclasses instead of run().
+
+        The base implementation calls the target function (if provided),
+        matching the default multiprocess.Process behavior.
+        """
+        mp.Process.run(self)
 
 
 def kill_process_and_children(
