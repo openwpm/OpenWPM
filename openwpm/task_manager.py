@@ -339,8 +339,12 @@ class TaskManager:
         self.sock.store_record(table, visit_id, data)
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
-        """Signal that all data for a visit_id has been sent."""
-        self.sock.finalize_visit_id(visit_id, success)
+        """Signal that all data for a visit_id has been sent.
+
+        Waits for acknowledgment from StorageController to confirm
+        the data has been processed. Falls back gracefully on timeout.
+        """
+        self.sock.finalize_visit_id_with_ack(visit_id, success)
 
     def _check_failure_status(self) -> None:
         """Check the status of command failures. Raise exceptions as necessary
