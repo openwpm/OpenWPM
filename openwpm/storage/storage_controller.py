@@ -336,7 +336,7 @@ class StorageController:
                 else:
                     new_finalize_tasks.append((visit_id, token, success))
             self.finalize_tasks = new_finalize_tasks
-            await asyncio.sleep(5)
+            await asyncio.sleep(0.5)
 
     async def _run(self) -> None:
         await self.structured_storage.init()
