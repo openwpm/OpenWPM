@@ -12,13 +12,14 @@ import time
 import traceback
 from pathlib import Path
 from queue import Empty as EmptyQueue
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import psutil
 from multiprocess import Process, Queue
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
+from .command_execution_context import CommandExecutionContext
 from .command_sequence import CommandSequence
 from .commands.browser_commands import FinalizeCommand
 from .commands.profile_commands import dump_profile
@@ -27,6 +28,7 @@ from .commands.utils.webdriver_utils import parse_neterror
 from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
+from .failure_tracker import CommandFailure
 from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
@@ -37,9 +39,6 @@ from .utilities.multiprocess_utils import (
 from .utilities.storage_watchdog import profile_size_exceeds_max_size
 
 pickling_support.install()
-
-if TYPE_CHECKING:
-    from .task_manager import TaskManager
 
 
 class BrowserManagerHandle:
@@ -342,16 +341,23 @@ class BrowserManagerHandle:
 
     def execute_command_sequence(
         self,
-        # Quoting to break cyclic import, see https://stackoverflow.com/a/39757388
-        task_manager: "TaskManager",
+        context: CommandExecutionContext,
         command_sequence: CommandSequence,
     ) -> None:
         """
-        Sends CommandSequence to the BrowserManager one command at a time
+        Sends CommandSequence to the BrowserManager one command at a time.
+
+        Parameters
+        ----------
+        context : CommandExecutionContext
+            Provides storage and failure tracking without requiring a
+            direct reference to TaskManager.
+        command_sequence : CommandSequence
+            The sequence of commands to execute.
         """
         assert self.browser_id is not None
         assert self.curr_visit_id is not None
-        task_manager.sock.store_record(
+        context.store_record(
             TableName("site_visits"),
             self.curr_visit_id,
             {
@@ -411,11 +417,9 @@ class BrowserManagerHandle:
                     "process while executing command %s. Setting failure "
                     "status." % (self.browser_id, str(command))
                 )
-                task_manager.failure_status = {
-                    "ErrorType": "CriticalChildException",
-                    "CommandSequence": command_sequence,
-                    "Exception": status[1],
-                }
+                context.failure_tracker.set_critical_failure(
+                    "CriticalChildException", command_sequence, exception=status[1]
+                )
                 error_text, tb = self._unpack_pickled_error(status[1])
             elif status[0] == "FAILED":
                 command_status = "error"
@@ -435,7 +439,7 @@ class BrowserManagerHandle:
             else:
                 raise ValueError("Unknown browser status message %s" % status)
 
-            task_manager.sock.store_record(
+            context.store_record(
                 TableName("crawl_history"),
                 self.curr_visit_id,
                 {
@@ -454,25 +458,31 @@ class BrowserManagerHandle:
             )
 
             if command_status == "critical":
-                task_manager.sock.finalize_visit_id(
-                    success=False,
+                context.finalize_visit_id(
                     visit_id=self.curr_visit_id,
+                    success=False,
                 )
                 return
 
             if command_status != "ok":
-                with task_manager.threadlock:
-                    task_manager.failure_count += 1
-                if task_manager.failure_count > task_manager.failure_limit:
+                over_limit = context.failure_tracker.record_failure(
+                    CommandFailure(
+                        browser_id=self.browser_id,
+                        command=repr(command),
+                        command_status=command_status,
+                        error=error_text,
+                        traceback=tb,
+                    )
+                )
+                if over_limit:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
                         "count above the allowable limit. Setting "
                         "failure_status." % self.browser_id
                     )
-                    task_manager.failure_status = {
-                        "ErrorType": "ExceedCommandFailureLimit",
-                        "CommandSequence": command_sequence,
-                    }
+                    context.failure_tracker.set_critical_failure(
+                        "ExceedCommandFailureLimit", command_sequence
+                    )
                     return
                 self.restart_required = True
                 self.logger.debug(
@@ -480,13 +490,10 @@ class BrowserManagerHandle:
                 )
             # Reset failure_count at the end of each successful command sequence
             elif type(command) is FinalizeCommand:
-                with task_manager.threadlock:
-                    task_manager.failure_count = 0
+                context.failure_tracker.reset()
 
             if self.restart_required:
-                task_manager.sock.finalize_visit_id(
-                    success=False, visit_id=self.curr_visit_id
-                )
+                context.finalize_visit_id(visit_id=self.curr_visit_id, success=False)
                 break
 
         self.logger.info(
@@ -499,7 +506,7 @@ class BrowserManagerHandle:
         # internal buffers to drain. Stopgap in support of #135
         time.sleep(2)
 
-        if task_manager.closing:
+        if context.closing:
             return
 
         # Allow StorageWatchdog to utilize built-in browser reset functionality
@@ -519,10 +526,9 @@ class BrowserManagerHandle:
                     "BROWSER %i: Exceeded the maximum allowable consecutive "
                     "browser launch failures. Setting failure_status." % self.browser_id
                 )
-                task_manager.failure_status = {
-                    "ErrorType": "ExceedLaunchFailureLimit",
-                    "CommandSequence": command_sequence,
-                }
+                context.failure_tracker.set_critical_failure(
+                    "ExceedLaunchFailureLimit", command_sequence
+                )
                 return
             self.restart_required = False
 
