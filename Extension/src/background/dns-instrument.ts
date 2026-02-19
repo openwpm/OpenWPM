@@ -2,10 +2,11 @@ import { PendingResponse } from "../lib/pending-response";
 import { DnsResolved } from "../schema";
 import { allTypes } from "./http-instrument";
 import RequestFilter = browser.webRequest.RequestFilter;
+import { WebRequestOnHeadersReceivedDetails } from "../types/browser-web-request-event-details";
 
 export class DnsInstrument {
   private readonly dataReceiver;
-  private onCompleteListener;
+  private onHeadersReceivedListener;
   private pendingResponses: {
     [requestId: number]: PendingResponse;
   } = {};
@@ -28,25 +29,23 @@ export class DnsInstrument {
     /*
      * Attach handlers to event listeners
      */
-    this.onCompleteListener = (
-      details: browser.webRequest._OnCompletedDetails,
-    ) => {
+    this.onHeadersReceivedListener = (details: browser.webRequest._OnHeadersReceivedDetails) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
       }
       const pendingResponse = this.getPendingResponse(details.requestId);
-      pendingResponse.resolveOnCompletedEventDetails(details);
+      pendingResponse.resolveOnHeadersReceivedDetails(details);
 
       this.onCompleteDnsHandler(details, crawlID);
     };
 
-    browser.webRequest.onCompleted.addListener(this.onCompleteListener, filter);
+    browser.webRequest.onHeadersReceived.addListener(this.onHeadersReceivedListener, filter);
   }
 
   public cleanup() {
-    if (this.onCompleteListener) {
-      browser.webRequest.onCompleted.removeListener(this.onCompleteListener);
+    if (this.onHeadersReceivedListener) {
+      browser.webRequest.onHeadersReceived.removeListener(this.onHeadersReceivedListener);
     }
   }
 
@@ -71,7 +70,7 @@ export class DnsInstrument {
   }
 
   private async onCompleteDnsHandler(
-    details: browser.webRequest._OnCompletedDetails,
+    details: WebRequestOnHeadersReceivedDetails,
     crawlID,
   ) {
     // Create and populate DnsResolve object
