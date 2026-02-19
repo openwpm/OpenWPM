@@ -427,6 +427,56 @@ class DataSocket:
             )
         )
 
+    def finalize_visit_id_with_ack(
+        self, visit_id: VisitId, success: bool, timeout: float = 10.0
+    ) -> bool:
+        """Send finalize and wait for acknowledgment from StorageController.
+
+        Returns True if ack was received, False on timeout.
+        Falls back gracefully - the finalize is still sent even if
+        the ack is not received.
+
+        This is the data-socket back-channel substrate: it lets a caller block
+        until the StorageController has accepted a visit's finalize, replacing a
+        fixed sleep with a real completion signal. The server side
+        (``_handle_meta``, which answers ``want_ack`` with ``finalize_ack``) is
+        wired; the TaskManager-side caller is intentionally left for a
+        follow-up, because on the current architecture the ``Finalize`` message
+        is emitted by ``FinalizeCommand`` -> extension, not by TaskManager
+        directly. See the bidi-on-hardening PR for the reconciliation note.
+        """
+        self.socket.send(
+            (
+                RECORD_TYPE_META,
+                {
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": visit_id,
+                    "success": success,
+                    "want_ack": True,
+                },
+            )
+        )
+        # ClientSocket.receive() bounds the wait itself and raises on timeout
+        # or a dropped connection; treat both as "no ack" and fall back rather
+        # than letting the finalize path fail.
+        try:
+            ack = self.socket.receive(timeout=timeout)
+        except (socket.timeout, RuntimeError) as exc:
+            self.logger.debug(
+                "Did not receive finalize ack for visit_id %d (%s)",
+                visit_id,
+                exc,
+            )
+            return False
+        if isinstance(ack, dict) and ack.get("action") == "finalize_ack":
+            return True
+        self.logger.debug(
+            "Did not receive finalize ack for visit_id %d (got: %r)",
+            visit_id,
+            ack,
+        )
+        return False
+
     def close(self) -> None:
         self.socket.close()
 

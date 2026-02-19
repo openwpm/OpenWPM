@@ -207,6 +207,7 @@ def test_send_rejects_oversized_payload() -> None:
 # used by the finalize-ack round trips). Exercised against a plain TCP peer.
 # ---------------------------------------------------------------------------
 
+
 def frame(obj: object, serialization: bytes = b"j") -> bytes:
     """Encode ``obj`` the way the extension's socket API frames a reply."""
     payload = json.dumps(obj).encode("utf-8")
