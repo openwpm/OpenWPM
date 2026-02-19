@@ -401,18 +401,34 @@ class TaskManager:
         return thread
 
     def _mark_command_sequences_complete(self) -> None:
-        """Polls the storage controller for saved records
-        and calls their callbacks
+        """Waits for completed visits from the storage controller
+        and invokes their callbacks.
+
+        Uses blocking queue.get() with a 1s timeout instead of polling
+        with sleep(1), so callbacks fire as soon as data is available.
         """
         while True:
             if self.closing and not self.unsaved_command_sequences:
                 # we're shutting down and have no unprocessed callbacks
                 break
 
+            # First drain any already-available completions
             visit_id_list = self.storage_controller_handle.get_new_completed_visits()
+
             if not visit_id_list:
-                time.sleep(1)
-                continue
+                # Block waiting for the next completion, with timeout as fallback
+                try:
+                    item = self.storage_controller_handle.completion_queue.get(
+                        block=True, timeout=1
+                    )
+                    visit_id_list = [item]
+                    # Drain any additional completions that arrived
+                    visit_id_list.extend(
+                        self.storage_controller_handle.get_new_completed_visits()
+                    )
+                except Exception:
+                    # queue.Empty or other exceptions - just loop back
+                    continue
 
             for visit_id, successful in visit_id_list:
                 self.logger.debug("Invoking callback of visit_id %d", visit_id)

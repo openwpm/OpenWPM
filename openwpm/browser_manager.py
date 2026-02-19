@@ -505,7 +505,8 @@ class BrowserManagerHandle:
         )
         # Sleep after executing CommandSequence to provide extra time for
         # internal buffers to drain. Stopgap in support of #135
-        time.sleep(2)
+        drain_sleep = 0.1 if self.manager_params.testing else 2
+        time.sleep(drain_sleep)
 
         if context.closing:
             return
