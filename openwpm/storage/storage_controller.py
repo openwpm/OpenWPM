@@ -431,6 +431,40 @@ class DataSocket:
             )
         )
 
+    def finalize_visit_id_with_ack(
+        self, visit_id: VisitId, success: bool, timeout: float = 10.0
+    ) -> bool:
+        """Send finalize and wait for acknowledgment from StorageController.
+
+        Returns True if ack was received, False on timeout.
+        Falls back gracefully - the finalize is still sent even if
+        the ack is not received.
+        """
+        self.socket.send(
+            (
+                RECORD_TYPE_META,
+                {
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": visit_id,
+                    "success": success,
+                    "want_ack": True,
+                },
+            )
+        )
+        ack = self.socket.receive(timeout=timeout)
+        if (
+            ack is not None
+            and isinstance(ack, dict)
+            and ack.get("action") == "finalize_ack"
+        ):
+            return True
+        self.logger.debug(
+            "Did not receive finalize ack for visit_id %d (got: %r)",
+            visit_id,
+            ack,
+        )
+        return False
+
     def close(self) -> None:
         self.socket.close()
 
