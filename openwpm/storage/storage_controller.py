@@ -5,6 +5,8 @@ import queue
 import random
 import re
 import socket
+import struct
+import threading
 import time
 from asyncio import IncompleteReadError, Task
 from asyncio.base_events import Server
@@ -460,19 +462,30 @@ class StorageController:
 
 
 class DataSocket:
-    """Wrapper around ClientSocket to make sending records to the StorageController more convenient"""
+    """Wrapper around ClientSocket to make sending records to the StorageController more convenient
+
+    Safe to share between threads (the TaskManager shares one across all
+    browser threads).
+    """
 
     def __init__(self, listener_address: Tuple[str, int], client_name: str) -> None:
         self.socket = ClientSocket(serialization="dill")
         self.socket.connect(*listener_address)
         self.logger = logging.getLogger("openwpm")
-        self.socket.send(client_name)
+        self._send_lock = threading.Lock()
+        self._ack_lock = threading.Lock()
+        self._send(client_name)
+
+    def _send(self, msg: Any) -> None:
+        # ClientSocket.send() may write a frame in several chunks.
+        with self._send_lock:
+            self.socket.send(msg)
 
     def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
         data["visit_id"] = visit_id
-        self.socket.send(
+        self._send(
             (
                 table_name,
                 data,
@@ -480,7 +493,7 @@ class DataSocket:
         )
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
-        self.socket.send(
+        self._send(
             (
                 RECORD_TYPE_META,
                 {
@@ -490,6 +503,61 @@ class DataSocket:
                 },
             )
         )
+
+    def finalize_visit_id_with_ack(
+        self, visit_id: VisitId, success: bool, timeout: float = 10.0
+    ) -> Optional[bool]:
+        """Send finalize and wait for the StorageController's acknowledgment.
+
+        Returns the ack's ``finalized`` flag: True if the visit's records were
+        handed to the storage provider, False if the controller skipped the
+        visit (no records, or already finalized). Returns None if no ack
+        arrived within ``timeout`` or the connection broke while waiting; the
+        finalize was still sent, so do not retry it.
+
+        Concurrent calls are serialized; ``store_record`` from other threads
+        is not blocked by a pending ack.
+        """
+        with self._ack_lock:
+            self._send(
+                (
+                    RECORD_TYPE_META,
+                    {
+                        "action": ACTION_TYPE_FINALIZE,
+                        "visit_id": visit_id,
+                        "success": success,
+                        "want_ack": True,
+                    },
+                )
+            )
+            deadline = time.monotonic() + timeout
+            try:
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise socket.timeout()
+                    ack = self.socket.receive(timeout=remaining)
+                    # An ack for an earlier call that timed out may still be
+                    # buffered.
+                    if (
+                        isinstance(ack, dict)
+                        and ack.get("action") == "finalize_ack"
+                        and ack.get("visit_id") == visit_id
+                    ):
+                        return bool(ack.get("finalized"))
+                    self.logger.debug(
+                        "Discarding unexpected message while waiting for "
+                        "finalize ack of visit_id %d: %r",
+                        visit_id,
+                        ack,
+                    )
+            except (OSError, RuntimeError, ValueError, struct.error) as exc:
+                self.logger.debug(
+                    "Did not receive finalize ack for visit_id %d (%r)",
+                    visit_id,
+                    exc,
+                )
+                return None
 
     def close(self) -> None:
         self.socket.close()
