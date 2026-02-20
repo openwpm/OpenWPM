@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.32.0 - 2026-02-20
+
+Bump to Firefox 147
+Update profile validation for Firefox 137's localStorage migration from webappsstore.sqlite to storage.sqlite
+Fix Firefox Linux build archive format change from bz2 to xz
+
 ## v0.31.0 - 2025-01-15
 
 Bump to Firefox 134
