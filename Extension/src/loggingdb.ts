@@ -7,7 +7,7 @@ let storageController = null;
 let logAggregator = null;
 let listeningSocket = null;
 
-const listeningSocketCallback = async (data) => {
+const listeningSocketCallback = async (data, respond: socket.RespondFn) => {
   // This works even if data is an int
   const action = data.action;
   let newVisitID = data.visit_id;
@@ -20,7 +20,7 @@ const listeningSocketCallback = async (data) => {
       data.browser_id = crawlID;
       storageController.send(JSON.stringify(["meta_information", data]));
       break;
-    case "Finalize":
+    case "Finalize": {
       if (!visitID) {
         logWarn("Received Finalize while no visit_id was set");
       }
@@ -32,9 +32,33 @@ const listeningSocketCallback = async (data) => {
       }
       data.browser_id = crawlID;
       data.success = true;
+      // BrowserManager has already torn down the visit's tab, but events
+      // captured just before that can still be in flight (content script ->
+      // background messaging, late webRequest callbacks). Keep visitID set
+      // during a short grace period so those stragglers are still attributed
+      // to this visit -- this is what the old Python-side pre-Finalize sleep
+      // achieved, except the wait now happens in the event loop that actually
+      // drains the stragglers rather than in an idle Python sleep.
+      //
+      // No fallback is needed for a missing finalize_grace_seconds: the
+      // extension xpi is built from, and shipped inside, the same repo commit
+      // as the Python that drives it (see install.sh / scripts/build-extension),
+      // so the two never disagree on the control-socket message shape.
+      const graceMs = data.finalize_grace_seconds * 1000;
+      delete data.finalize_grace_seconds;
+      await new Promise((resolve) => setTimeout(resolve, graceMs));
+      // Grace elapsed: meta_information is the visit's last record, so the
+      // storage controller sees it only after every straggler. Clear the
+      // visit, then acknowledge -- the ack means "visit fully finalized".
       storageController.send(JSON.stringify(["meta_information", data]));
       visitID = null;
+      respond({
+        action: "FinalizeAck",
+        visit_id: newVisitID,
+        success: true,
+      });
       break;
+    }
     default:
       // Just making sure that it's a valid number before logging
       newVisitID = parseInt(data, 10);
