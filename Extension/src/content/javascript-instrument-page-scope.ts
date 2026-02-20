@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // Code below is not a content script: no Firefox APIs should be used
 // Also, no webpack/es6 imports may be used in this file since the script
 // is exported as a page script as a string

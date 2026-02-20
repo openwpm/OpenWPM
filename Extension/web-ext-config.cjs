@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 const defaultConfig = {
   // Global options:
   sourceDir: "./bundled/",

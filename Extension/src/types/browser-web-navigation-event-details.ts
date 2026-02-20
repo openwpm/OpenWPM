@@ -26,14 +26,12 @@ export interface WebNavigationBaseEventDetails {
   timeStamp: number;
 }
 
-export interface WebNavigationOnBeforeNavigateEventDetails
-  extends WebNavigationBaseEventDetails {
+export interface WebNavigationOnBeforeNavigateEventDetails extends WebNavigationBaseEventDetails {
   /** ID of frame that wraps the frame. Set to -1 of no parent frame exists. */
   parentFrameId: number;
 }
 
-export interface WebNavigationOnCommittedEventDetails
-  extends WebNavigationBaseEventDetails {
+export interface WebNavigationOnCommittedEventDetails extends WebNavigationBaseEventDetails {
   /**
    * Cause of the navigation.
    *
@@ -56,8 +54,7 @@ export interface WebNavigationOnCompletedEventDetails
   extends WebNavigationBaseEventDetails {}
 */
 
-export interface WebNavigationOnErrorOccurredEventDetails
-  extends WebNavigationBaseEventDetails {
+export interface WebNavigationOnErrorOccurredEventDetails extends WebNavigationBaseEventDetails {
   /**
    * The error description.
    *

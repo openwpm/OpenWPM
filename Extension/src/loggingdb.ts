@@ -80,12 +80,11 @@ export const open = async function (
   // Listen for incoming urls as visit ids
   listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
   console.log("Starting socket listening for incoming connections.");
-  await listeningSocket.startListening().then(() => {
-    browser.profileDirIO.writeFile(
-      "extension_port.txt",
-      `${listeningSocket.port}`,
-    );
-  });
+  await listeningSocket.startListening();
+  browser.profileDirIO.writeFile(
+    "extension_port.txt",
+    `${listeningSocket.port}`,
+  );
 };
 
 export const close = function () {
