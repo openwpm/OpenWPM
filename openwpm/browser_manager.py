@@ -29,7 +29,7 @@ from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
 from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
 from .failure_tracker import CommandFailure
-from .socket_interface import ClientSocket
+from .socket_interface import ClientSocket, ServerSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
 from .utilities.multiprocess_utils import (
@@ -649,6 +649,62 @@ class BrowserManagerHandle:
             shutil.rmtree(self.current_profile_path, ignore_errors=True)
 
 
+class ExtensionDataForwarder:
+    """Receives data from the WebExtension and forwards to StorageController.
+
+    The extension connects to this forwarder's ServerSocket instead of
+    directly to the StorageController. Messages are forwarded as-is
+    via a JSON ClientSocket to preserve the original wire format.
+    """
+
+    def __init__(
+        self,
+        storage_controller_address: Tuple[str, int],
+        browser_id: BrowserId,
+    ) -> None:
+        self.server_socket = ServerSocket(name=f"ExtDataFwd-{browser_id}")
+        self.server_socket.start_accepting()
+        self.address: Tuple[str, int] = self.server_socket.sock.getsockname()
+        self._sc_address = storage_controller_address
+        self._thread: Optional[threading.Thread] = None
+        self._stop = threading.Event()
+        self.logger = logging.getLogger("openwpm")
+
+    def start(self) -> None:
+        self._thread = threading.Thread(
+            target=self._forward_loop,
+            daemon=True,
+            name=f"ExtDataFwd-{self.address[1]}",
+        )
+        self._thread.start()
+
+    def _forward_loop(self) -> None:
+        sc_socket = ClientSocket(serialization="json")
+        sc_socket.connect(*self._sc_address)
+        try:
+            while not self._stop.is_set():
+                try:
+                    msg = self.server_socket.queue.get(timeout=1)
+                except EmptyQueue:
+                    continue
+                sc_socket.send(msg)
+            # Drain remaining messages
+            while not self.server_socket.queue.empty():
+                try:
+                    msg = self.server_socket.queue.get_nowait()
+                    sc_socket.send(msg)
+                except EmptyQueue:
+                    break
+        finally:
+            sc_socket.close()
+
+    def close(self) -> None:
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=5)
+        self.server_socket.close()
+
+
 class BrowserManager(Process):
     """
     The BrowserManager function runs in each new browser process.
@@ -737,14 +793,24 @@ class BrowserManager(Process):
     def run_impl(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
+        forwarder: Optional[ExtensionDataForwarder] = None
 
         try:
+            # Route extension data through BrowserManager to StorageController
+            assert self.manager_params.storage_controller_address is not None
+            forwarder = ExtensionDataForwarder(
+                self.manager_params.storage_controller_address,
+                self.browser_params.browser_id,
+            )
+            forwarder.start()
+
             # Start Xvfb (if necessary), webdriver, and browser
             driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
                 self.status_queue,
                 self.browser_params,
                 self.manager_params,
                 self.crash_recovery,
+                extension_storage_address=forwarder.address,
             )
 
             extension_socket = self._start_extension(browser_profile_path)
@@ -827,5 +893,7 @@ class BrowserManager(Process):
             )
             self.status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
         finally:
+            if forwarder is not None:
+                forwarder.close()
             if display is not None:
                 display.stop()
