@@ -19,6 +19,9 @@ const gManager = {
   sendingSocketMap: new Map(),
   nextSendingSocketId: 0,
   onDataReceivedListeners: new Set(),
+  // Map of connectionId -> { stream, bOutputStream } for accepted connections
+  connectionMap: new Map(),
+  nextConnectionId: 0,
 };
 
 let bufferpack;
@@ -32,6 +35,56 @@ function writeAll(bOutputStream, bytes) {
   bOutputStream.writeByteArray(bytes, bytes.length);
 }
 
+// Narrow an already-encoded byte-string (each char in 0-255, as produced by
+// escapeString()/encode_utf8() in Extension/src/lib/string-utils.ts) into a
+// Uint8Array of raw bytes. Running TextEncoder over this already-UTF-8 string
+// would double-encode it; assigning into a Uint8Array applies ToUint8 (mod
+// 256), so each already-byte-sized char code lands as the intended raw byte.
+function toBytes(data) {
+  const bytes = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    bytes[i] = data.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Pack the length-prefixed header for a payload of `byteLength` bytes. The
+// length field is a big-endian u32 (`>L`); bufferpack silently clamps
+// out-of-range values, which would emit a wrong length and permanently desync
+// the stream. Reject oversized payloads instead.
+function packHeader(byteLength, serializationSymbol) {
+  if (byteLength > 0xffffffff) {
+    throw new Error(
+      `Payload of ${byteLength} bytes exceeds the u32 length ` +
+        `field (max ${0xffffffff}); refusing to send to avoid ` +
+        `framing desync.`,
+    );
+  }
+  return bufferpack.pack(">Lc", [byteLength, serializationSymbol]);
+}
+
+/**
+ * Write a length-prefixed message to a connection's output stream.
+ *
+ * The wire format matches the Python `socket_interface` framing: a 4-byte
+ * big-endian length, a 1-byte serialization tag, then the payload.
+ *
+ * `conn` is a `{ stream, bOutputStream }` pair as stored in `sendingSocketMap`
+ * (outbound connections) or `connectionMap` (replies on accepted connections).
+ *
+ * `data` is an already-encoded byte-string (see `toBytes`); framing on the
+ * narrowed byte length keeps the prefix consistent with the bytes on the wire
+ * for non-ASCII payloads too. Both the header and the payload go through
+ * `writeAll` on the blocking binary stream so a frame can never be partially
+ * written (which would desync the length-prefixed stream).
+ */
+function writeFramedMessage(conn, data, json) {
+  const serializationSymbol = json ? "j" : "n";
+  const bytes = toBytes(data);
+  const header = packHeader(bytes.length, serializationSymbol);
+  writeAll(conn.bOutputStream, header);
+  writeAll(conn.bOutputStream, bytes);
+}
 this.sockets = class extends ExtensionAPI {
   getAPI(context) {
     if (!bufferpack) {
@@ -61,6 +114,29 @@ this.sockets = class extends ExtensionAPI {
           socket.asyncListen({
             onSocketAccepted: (sock, transport) => {
               const inputStream = transport.openInputStream(0, 0, 0);
+              // Open the reply stream in blocking mode (the default flag 0
+              // would yield a non-blocking stream whose write() can throw
+              // NS_BASE_STREAM_WOULD_BLOCK). Replies are tiny and the peer is
+              // a localhost socket that is actively reading, so a blocking
+              // write returns immediately; this mirrors the outbound
+              // `connect()` stream below.
+              const outputStream = transport.openOutputStream(
+                Ci.nsITransport.OPEN_BLOCKING,
+                0,
+                0,
+              );
+
+              gManager.nextConnectionId++;
+              const connectionId = gManager.nextConnectionId;
+              const bOutputStream = Cc[
+                "@mozilla.org/binaryoutputstream;1"
+              ].createInstance(Ci.nsIBinaryOutputStream);
+              bOutputStream.setOutputStream(outputStream);
+              gManager.connectionMap.set(connectionId, {
+                stream: outputStream,
+                bOutputStream,
+              });
+
               const socketListener = {
                 onInputStreamReady: () => {
                   try {
@@ -70,6 +146,18 @@ this.sockets = class extends ExtensionAPI {
                       // Abnormal close, let's log the error.
                       console.error(e);
                     }
+                    // Connection closed: close the paired output stream so we
+                    // don't leak it, then drop the bookkeeping entry.
+                    const conn = gManager.connectionMap.get(connectionId);
+                    if (conn) {
+                      try {
+                        conn.stream.close();
+                      } catch {
+                        // Already closed by the peer; nothing to do.
+                      }
+                    }
+                    inputStream.close();
+                    gManager.connectionMap.delete(connectionId);
                     return;
                   }
                   const bis = Cc[
@@ -99,12 +187,12 @@ this.sockets = class extends ExtensionAPI {
                       new Uint8Array(payloadBytes),
                     );
                     gManager.onDataReceivedListeners.forEach((listener) => {
-                      listener(port, string, tag === "j");
+                      listener(port, string, tag === "j", connectionId);
                     });
                   } else if (tag === "n") {
                     const rawBytes = new Uint8Array(payloadBytes);
                     gManager.onDataReceivedListeners.forEach((listener) => {
-                      listener(port, rawBytes, false);
+                      listener(port, rawBytes, false, connectionId);
                     });
                   } else {
                     console.error(`Unsupported serialization type ('${tag}').`);
@@ -122,8 +210,8 @@ this.sockets = class extends ExtensionAPI {
           context,
           name: "sockets.onDataReceived",
           register: (fire) => {
-            const listener = (id, data, is_json) => {
-              fire.async(id, data, is_json);
+            const listener = (id, data, is_json, connectionId) => {
+              fire.async(id, data, is_json, connectionId);
             };
             gManager.onDataReceivedListeners.add(listener);
             return () => {
@@ -131,6 +219,27 @@ this.sockets = class extends ExtensionAPI {
             };
           },
         }).api(),
+
+        sendResponse(connectionId, data, json) {
+          if (!gManager.connectionMap.has(connectionId)) {
+            console.error(
+              "Unknown connection ID for sendResponse; connection may have closed.",
+            );
+            return false;
+          }
+
+          try {
+            writeFramedMessage(
+              gManager.connectionMap.get(connectionId),
+              data,
+              json,
+            );
+            return true;
+          } catch (err) {
+            console.error(err, err.message);
+            return false;
+          }
+        },
 
         async createSendingSocket() {
           gManager.nextSendingSocketId++;
@@ -181,45 +290,17 @@ this.sockets = class extends ExtensionAPI {
             return false;
           }
 
-          const socket = gManager.sendingSocketMap.get(id);
           try {
-            const serializationSymbol = json ? "j" : "n";
-            // `data` is ALREADY a byte-string, NOT a Unicode string. Every
-            // caller funnels payloads through escapeString()/encode_utf8()
-            // (see Extension/src/lib/string-utils.ts), which converts the
-            // source text to UTF-8 and exposes each byte as a Latin-1 char
-            // (code points 0-255); binary POST bodies arrive the same way. The
-            // bytes we must put on the wire are therefore exactly those char
-            // codes narrowed to one byte each -- this is the lossless byte
-            // pass-through the Python reader (socket_interface._parse) decodes
-            // as UTF-8. Running TextEncoder over this already-encoded
-            // byte-string would double-encode it (the UTF-8 of "你好" turns
-            // into the UTF-8 of "ä½\xa0å¥½" mojibake), so we narrow instead of
-            // re-encode (api.js narrows each char to a byte below). Framing on
-            // bytes.length (== data.length here, since every char is one byte)
-            // keeps the length prefix consistent with the payload.
-            // Assigning into a Uint8Array applies ToUint8 (mod 256), so each
-            // already-byte-sized char code lands as the intended raw byte.
-            const bytes = new Uint8Array(data.length);
-            for (let i = 0; i < data.length; i++) {
-              bytes[i] = data.charCodeAt(i);
-            }
-            // The length field is a big-endian u32 (`>L`); bufferpack silently
-            // clamps out-of-range values, which would emit a wrong length and
-            // permanently desync the stream. Reject oversized payloads instead.
-            if (bytes.length > 0xffffffff) {
-              throw new Error(
-                `Payload of ${bytes.length} bytes exceeds the u32 length ` +
-                  `field (max ${0xffffffff}); refusing to send to avoid ` +
-                  `framing desync.`,
-              );
-            }
-            const buff = bufferpack.pack(">Lc", [
-              bytes.length,
-              serializationSymbol,
-            ]);
-            writeAll(socket.bOutputStream, buff);
-            writeAll(socket.bOutputStream, bytes);
+            // Outbound framing shares the hardened code path with replies:
+            // `data` is an already-encoded byte-string (each char in 0-255 via
+            // escapeString()/encode_utf8() in Extension/src/lib/string-utils.ts;
+            // binary POST bodies arrive the same way). writeFramedMessage()
+            // narrows those char codes back to raw bytes -- re-encoding with
+            // TextEncoder would double-encode and corrupt non-ASCII payloads --
+            // frames on the narrowed byte length, rejects payloads over the u32
+            // length field, and writes header+payload through writeAll() on the
+            // blocking stream so a frame can never be partially written.
+            writeFramedMessage(gManager.sendingSocketMap.get(id), data, json);
             return true;
           } catch (err) {
             console.error(err, err.message);
