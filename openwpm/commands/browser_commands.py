@@ -482,12 +482,23 @@ class FinalizeCommand(BaseCommand):
     ):
         """Informs the extension that a visit is done"""
         tab_restart_browser(webdriver)
-        # This doesn't immediately stop data saving from the current
-        # visit so we sleep briefly before unsetting the visit_id.
-        sleep = 0.1 if manager_params.testing else self.sleep
-        time.sleep(sleep)
         msg = {"action": "Finalize", "visit_id": self.visit_id}
         extension_socket.send(msg)
+        # Wait for the extension to acknowledge it has flushed all events
+        # for this visit. Falls back to a timeout if the ack is not received.
+        timeout = 0.5 if manager_params.testing else self.sleep
+        try:
+            ack = extension_socket.receive(timeout=timeout)
+            logger.debug(
+                "Received finalize ack for visit_id %s: %s",
+                self.visit_id,
+                ack,
+            )
+        except Exception:
+            logger.warning(
+                "Timed out waiting for finalize ack for visit_id %s",
+                self.visit_id,
+            )
 
 
 class InitializeCommand(BaseCommand):

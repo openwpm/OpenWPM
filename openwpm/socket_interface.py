@@ -159,6 +159,31 @@ class ClientSocket:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
 
+    def _receive_bytes(self, nbytes: int) -> bytes:
+        """Read exactly nbytes from the socket."""
+        data = b""
+        while len(data) < nbytes:
+            chunk = self.sock.recv(nbytes - len(data))
+            if not chunk:
+                raise RuntimeError("socket connection broken")
+            data += chunk
+        return data
+
+    def receive(self, timeout: float = 5.0) -> Any:
+        """Read a response message from the socket.
+
+        Uses the same wire format as send: 4-byte big-endian length +
+        1-byte serialization type + payload.
+        """
+        self.sock.settimeout(timeout)
+        try:
+            header = self._receive_bytes(5)
+            msglen, serialization = struct.unpack(">Lc", header)
+            payload = self._receive_bytes(msglen)
+            return _parse(serialization, payload)
+        finally:
+            self.sock.settimeout(None)
+
     def close(self):
         self.sock.close()
 

@@ -1,4 +1,5 @@
 import * as socket from "./socket";
+import { RespondFn } from "./socket";
 
 let crawlID = null;
 let visitID = null;
@@ -7,7 +8,7 @@ let storageController = null;
 let logAggregator = null;
 let listeningSocket = null;
 
-const listeningSocketCallback = async (data) => {
+const listeningSocketCallback = async (data, respond: RespondFn) => {
   // This works even if data is an int
   const action = data.action;
   let newVisitID = data.visit_id;
@@ -34,6 +35,11 @@ const listeningSocketCallback = async (data) => {
       data.success = true;
       storageController.send(JSON.stringify(["meta_information", data]));
       visitID = null;
+      respond({
+        action: "FinalizeAck",
+        visit_id: newVisitID,
+        success: true,
+      });
       break;
     default:
       // Just making sure that it's a valid number before logging
