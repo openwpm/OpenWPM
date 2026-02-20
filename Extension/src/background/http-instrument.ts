@@ -30,7 +30,6 @@ const allTypes: ResourceType[] = [
   "main_frame",
   "media",
   "object",
-  "object_subrequest",
   "ping",
   "script",
   "speculative",

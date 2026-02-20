@@ -108,7 +108,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
     return function () {
       context = this; // eslint-disable-line @typescript-eslint/no-this-alias
-      args = arguments;
+      args = arguments; // eslint-disable-line prefer-rest-params
       timestamp = Date.now();
       const callNow = immediate && !timeout;
       if (!timeout) {
@@ -419,7 +419,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     let property;
     try {
       property = object[propertyName];
-    } catch (error) {
+    } catch {
       return false;
     }
     if (property === null) {
@@ -443,10 +443,11 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
       const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
-        arguments,
+        arguments, // eslint-disable-line prefer-rest-params
         callContext,
         logSettings,
       );
+      // eslint-disable-next-line prefer-rest-params
       return func.apply(this, arguments);
     };
   }

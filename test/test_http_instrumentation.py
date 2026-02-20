@@ -417,7 +417,7 @@ HTTP_CACHED_RESPONSES: set[tuple[str, int]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_test_page.html",
         # u'',
-        1,
+        0,
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_script.js",
@@ -427,7 +427,7 @@ HTTP_CACHED_RESPONSES: set[tuple[str, int]] = {
     (
         f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
         # u'http://localhost:8000/test_pages/http_test_page.html',
-        1,
+        0,
     ),
     (
         f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
