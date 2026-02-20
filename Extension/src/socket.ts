@@ -1,11 +1,14 @@
 /* eslint-disable max-classes-per-file */
 
+export type RespondFn = (msg: any) => void;
+
 const DataReceiver = {
   callbacks: new Map(),
   onDataReceived: (
     aSocketId: number,
     aData: string | Uint8Array,
     aJSON: boolean,
+    aConnectionId: number,
   ): void => {
     if (!DataReceiver.callbacks.has(aSocketId)) {
       return;
@@ -13,16 +16,19 @@ const DataReceiver = {
     // aJSON is only ever true for the "j" tag, whose payload is a UTF-8
     // string; "n" arrives as a raw Uint8Array and is handed through untouched.
     const data = aJSON ? JSON.parse(aData as string) : aData;
-    DataReceiver.callbacks.get(aSocketId)(data);
+    const respond: RespondFn = (msg: any) => {
+      browser.sockets.sendResponse(aConnectionId, JSON.stringify(msg), true);
+    };
+    DataReceiver.callbacks.get(aSocketId)(data, respond);
   },
 };
 
 browser.sockets.onDataReceived.addListener(DataReceiver.onDataReceived);
 
 export class ListeningSocket {
-  callback: (data: unknown) => void;
+  callback: (data: unknown, respond: RespondFn) => void;
   port!: number; // assigned in startListening()
-  constructor(callback: (data: unknown) => void) {
+  constructor(callback: (data: unknown, respond: RespondFn) => void) {
     this.callback = callback;
   }
 

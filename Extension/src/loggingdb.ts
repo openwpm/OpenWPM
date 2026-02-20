@@ -11,6 +11,7 @@ interface VisitControlMessage {
   visit_id?: number;
   browser_id?: number | null;
   success?: boolean;
+  finalize_grace_seconds?: number;
 }
 
 let crawlID: number | null = null;
@@ -20,7 +21,7 @@ let storageController: socket.SendingSocket | null = null;
 let logAggregator: socket.SendingSocket | null = null;
 let listeningSocket: socket.ListeningSocket | null = null;
 
-const listeningSocketCallback = async (data: unknown) => {
+const listeningSocketCallback = async (data: unknown, respond: socket.RespondFn) => {
   // This works even if data is an int
   const message = data as VisitControlMessage;
   const action = message.action;
@@ -34,7 +35,7 @@ const listeningSocketCallback = async (data: unknown) => {
       message.browser_id = crawlID ?? null;
       storageController?.send(JSON.stringify(["meta_information", message]));
       break;
-    case "Finalize":
+    case "Finalize": {
       if (!visitID) {
         logWarn("Received Finalize while no visit_id was set");
       }
@@ -46,9 +47,33 @@ const listeningSocketCallback = async (data: unknown) => {
       }
       message.browser_id = crawlID ?? null;
       message.success = true;
+      // BrowserManager has already torn down the visit's tab, but events
+      // captured just before that can still be in flight (content script ->
+      // background messaging, late webRequest callbacks). Keep visitID set
+      // during a short grace period so those stragglers are still attributed
+      // to this visit -- this is what the old Python-side pre-Finalize sleep
+      // achieved, except the wait now happens in the event loop that actually
+      // drains the stragglers rather than in an idle Python sleep.
+      //
+      // No fallback is needed for a missing finalize_grace_seconds: the
+      // extension xpi is built from, and shipped inside, the same repo commit
+      // as the Python that drives it (see install.sh / scripts/build-extension),
+      // so the two never disagree on the control-socket message shape.
+      const graceMs = message.finalize_grace_seconds! * 1000;
+      delete message.finalize_grace_seconds;
+      await new Promise((resolve) => setTimeout(resolve, graceMs));
+      // Grace elapsed: meta_information is the visit's last record, so the
+      // storage controller sees it only after every straggler. Clear the
+      // visit, then acknowledge -- the ack means "visit fully finalized".
       storageController?.send(JSON.stringify(["meta_information", message]));
       visitID = null;
+      respond({
+        action: "FinalizeAck",
+        visit_id: newVisitID,
+        success: true,
+      });
       break;
+    }
     default:
       // Just making sure that it's a valid number before logging
       newVisitID = parseInt(String(data), 10);
