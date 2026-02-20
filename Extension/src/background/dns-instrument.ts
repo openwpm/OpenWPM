@@ -20,7 +20,7 @@ export class DnsInstrument {
     const requestStemsFromExtension = (details) => {
       return (
         details.originUrl &&
-        details.originUrl.indexOf("moz-extension://") > -1 &&
+        details.originUrl.includes("moz-extension://") &&
         details.originUrl.includes("fakeRequest")
       );
     };
@@ -85,9 +85,9 @@ export class DnsInstrument {
     // Query DNS API
     const url = new URL(details.url);
     dnsRecord.hostname = url.hostname;
-    const dnsResolve = browser.dns.resolve(dnsRecord.hostname, [
+    const record = await browser.dns.resolve(dnsRecord.hostname, [
       "canonical_name",
     ]);
-    dnsResolve.then(this.handleResolvedDnsData(dnsRecord, this.dataReceiver));
+    this.handleResolvedDnsData(dnsRecord, this.dataReceiver)(record);
   }
 }

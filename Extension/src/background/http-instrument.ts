@@ -30,7 +30,6 @@ const allTypes: ResourceType[] = [
   "main_frame",
   "media",
   "object",
-  "object_subrequest",
   "ping",
   "script",
   "speculative",
@@ -282,7 +281,7 @@ export class HttpInstrument {
         headers.push(header_pair);
         if (name === "Content-Type") {
           encodingType = value;
-          if (encodingType.indexOf("application/ocsp-request") !== -1) {
+          if (encodingType.includes("application/ocsp-request")) {
             isOcsp = true;
           }
         }
