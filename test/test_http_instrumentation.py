@@ -895,6 +895,73 @@ def test_page_visit(
     assert HTTP_REDIRECTS == observed_redirects
 
 
+def test_page_visit_inprocess(
+    inprocess_task_manager_creator: TaskManagerCreator, http_params: HttpParams
+) -> None:
+    """Same as test_page_visit[False] but with InProcessStorageControllerHandle
+    (thread instead of subprocess) for the StorageController."""
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    manager_params, browser_params = http_params()
+
+    tm, db = inprocess_task_manager_creator((manager_params, browser_params))
+    with tm as tm:
+        tm.get(test_url)
+
+    request_id_to_url = dict()
+
+    # HTTP Requests
+    rows = db_utils.query_db(db, "SELECT * FROM http_requests")
+    observed_requests = set()
+    for row in rows:
+        assert isinstance(row, Row)
+        observed_requests.add(
+            (
+                row["url"].split("?")[0],
+                row["top_level_url"],
+                row["triggering_origin"],
+                row["loading_origin"],
+                row["loading_href"],
+                row["is_XHR"],
+                row["is_third_party_channel"],
+                row["is_third_party_to_top_window"],
+                row["resource_type"],
+            )
+        )
+        request_id_to_url[row["request_id"]] = row["url"]
+    assert HTTP_REQUESTS == observed_requests
+
+    # HTTP Responses
+    rows = db_utils.query_db(db, "SELECT * FROM http_responses")
+    observed_responses: Set[Tuple[str, str]] = set()
+    for row in rows:
+        assert isinstance(row, Row)
+        observed_responses.add(
+            (
+                row["url"].split("?")[0],
+                row["location"],
+            )
+        )
+        assert row["request_id"] in request_id_to_url
+        assert request_id_to_url[row["request_id"]] == row["url"]
+    assert HTTP_RESPONSES == observed_responses
+
+    # HTTP Redirects
+    rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
+    observed_redirects: set[tuple[str, str, str | None]] = set()
+    for row in rows:
+        assert isinstance(row, Row)
+        src = row["old_request_url"].split("?")[0]
+        dst = row["new_request_url"].split("?")[0]
+        headers = json.loads(row["headers"])
+        location = None
+        for header, value in headers:
+            if header.lower() == "location":
+                location = value
+                break
+        observed_redirects.add((src, dst, location))
+    assert HTTP_REDIRECTS == observed_redirects
+
+
 def test_javascript_saving(http_params, xpi, server):
     """check that javascript content is saved and hashed correctly"""
     test_url = utilities.BASE_TEST_URL + "/http_test_page.html"

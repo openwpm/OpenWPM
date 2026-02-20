@@ -125,17 +125,19 @@ class InProcessStorageControllerHandle:
         assert isinstance(self._last_status, int)
         return self._last_status
 
-    def save_configuration(self, *args, **kwargs) -> None:
+    def save_configuration(
+        self,
+        manager_params: "ManagerParamsInternal",
+        browser_params: "List[BrowserParamsInternal]",
+        openwpm_version: str,
+        browser_version: str,
+    ) -> None:
         """Save configuration - delegates to a DataSocket like StorageControllerHandle."""
-        from .storage_controller import DataSocket, INVALID_VISIT_ID
-        from ..config import BrowserParamsInternal, ManagerParamsInternal
+        from ..config import BrowserParamsInternal, ManagerParamsInternal  # noqa: F811
+        from .storage_controller import INVALID_VISIT_ID, DataSocket
         from .storage_providers import TableName
 
         assert self.listener_address is not None
-        manager_params: ManagerParamsInternal = args[0]
-        browser_params: List[BrowserParamsInternal] = args[1]
-        openwpm_version: str = args[2]
-        browser_version: str = args[3]
 
         sock = DataSocket(self.listener_address, "StorageControllerHandle")
         task_id = random.getrandbits(32)

@@ -25,6 +25,7 @@ from .failure_tracker import FailureTracker
 from .js_instrumentation import clean_js_instrumentation_settings
 from .mp_logger import MPLogger
 from .storage.storage_controller import DataSocket, StorageControllerHandle
+from .storage.storage_interface import StorageInterface
 from .storage.storage_providers import (
     StructuredStorageProvider,
     TableName,
@@ -60,6 +61,7 @@ class TaskManager:
         structured_storage_provider: StructuredStorageProvider,
         unstructured_storage_provider: Optional[UnstructuredStorageProvider],
         logger_kwargs: Dict[Any, Any] = {},
+        storage_controller_handle: Optional[StorageInterface] = None,
     ) -> None:
         """Initialize the TaskManager with browser and manager config params
 
@@ -72,6 +74,10 @@ class TaskManager:
             includes individual configurations for each browser.
         logger_kwargs : dict, optional
             Keyword arguments to pass to MPLogger on initialization.
+        storage_controller_handle : StorageInterface, optional
+            Pre-created storage controller handle (e.g.
+            InProcessStorageControllerHandle for testing). If not provided,
+            a StorageControllerHandle subprocess is created.
         """
 
         validate_crawl_configs(manager_params_temp, browser_params_temp)
@@ -116,7 +122,9 @@ class TaskManager:
 
         # Initialize the storage controller
         self._launch_storage_controller(
-            structured_storage_provider, unstructured_storage_provider
+            structured_storage_provider,
+            unstructured_storage_provider,
+            storage_controller_handle,
         )
 
         # Sets up the BrowserManager(s) + associated queues
@@ -280,10 +288,14 @@ class TaskManager:
         self,
         structured_storage_provider: StructuredStorageProvider,
         unstructured_storage_provider: Optional[UnstructuredStorageProvider],
+        handle: Optional[StorageInterface] = None,
     ) -> None:
-        self.storage_controller_handle = StorageControllerHandle(
-            structured_storage_provider, unstructured_storage_provider
-        )
+        if handle is not None:
+            self.storage_controller_handle = handle
+        else:
+            self.storage_controller_handle = StorageControllerHandle(
+                structured_storage_provider, unstructured_storage_provider
+            )
         self.storage_controller_handle.launch()
         self.manager_params.storage_controller_address = (
             self.storage_controller_handle.listener_address

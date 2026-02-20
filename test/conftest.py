@@ -8,6 +8,7 @@ import pytest
 
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.mp_logger import MPLogger
+from openwpm.storage.in_process_storage import InProcessStorageControllerHandle
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 
@@ -99,6 +100,28 @@ def task_manager_creator(server: None, xpi: None) -> TaskManagerCreator:
             browser_params,
             structured_provider,
             None,
+        )
+        return manager, db_path
+
+    return _create_task_manager
+
+
+@pytest.fixture()
+def inprocess_task_manager_creator(server: None, xpi: None) -> TaskManagerCreator:
+    """Like task_manager_creator but uses InProcessStorageControllerHandle
+    (thread) instead of StorageControllerHandle (subprocess)."""
+
+    def _create_task_manager(params: FullConfig) -> Tuple[TaskManager, Path]:
+        manager_params, browser_params = params
+        db_path = manager_params.data_directory / "crawl-data.sqlite"
+        structured_provider = SQLiteStorageProvider(db_path)
+        handle = InProcessStorageControllerHandle(structured_provider, None)
+        manager = TaskManager(
+            manager_params,
+            browser_params,
+            structured_provider,
+            None,
+            storage_controller_handle=handle,
         )
         return manager, db_path
 
