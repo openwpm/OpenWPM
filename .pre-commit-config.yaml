@@ -16,6 +16,10 @@ repos:
           [pytest, types-tabulate, types-PyYAML, types-redis]
         # We may need to add more and more dependencies here, as pre-commit
         # runs in an environment without our dependencies
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.11
+    hooks:
+      - id: actionlint
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.11.0
     hooks:
