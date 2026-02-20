@@ -20,7 +20,7 @@ from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
 from .command_sequence import CommandSequence
-from .commands.browser_commands import FinalizeCommand
+from .commands.browser_commands import FinalizeAckTimeout, FinalizeCommand
 from .commands.profile_commands import dump_profile
 from .commands.types import BaseCommand, ShutdownSignal
 from .commands.utils.webdriver_utils import parse_neterror
@@ -452,6 +452,13 @@ class BrowserManagerHandle:
                     "BROWSER %i: Received neterror %s while executing "
                     "command: %s" % (self.browser_id, error_text, repr(command))
                 )
+            elif status[0] == "FINALIZE_INCOMPLETE":
+                command_status = "finalize_incomplete"
+                error_text, tb = self._unpack_pickled_error(status[1])
+                self.logger.warning(
+                    "BROWSER %i: FinalizeAck timed out; marking visit "
+                    "incomplete: %s" % (self.browser_id, repr(command))
+                )
             else:
                 raise ValueError("Unknown browser status message %s" % status)
 
@@ -480,7 +487,31 @@ class BrowserManagerHandle:
                 )
                 return
 
-            if command_status != "ok":
+            if command_status == "finalize_incomplete":
+                # The extension never acknowledged the Finalize, so the visit's
+                # data may be incomplete. Mark the visit unsuccessful and count
+                # it as a failure, but do NOT restart the browser: a merely-slow
+                # drain is not a crash and shouldn't pay the restart cost.
+                task_manager.sock.finalize_visit_id(
+                    success=False, visit_id=self.curr_visit_id
+                )
+                with task_manager.threadlock:
+                    task_manager.failure_count += 1
+                    exceeded_limit = (
+                        task_manager.failure_count > task_manager.failure_limit
+                    )
+                if exceeded_limit:
+                    self.logger.critical(
+                        "BROWSER %i: Command execution failure pushes failure "
+                        "count above the allowable limit. Setting "
+                        "failure_status." % self.browser_id
+                    )
+                    task_manager.failure_status = {
+                        "ErrorType": "ExceedCommandFailureLimit",
+                        "CommandSequence": command_sequence,
+                    }
+                    return
+            elif command_status != "ok":
                 if not is_dns_error(command_status, error_text):
                     with task_manager.threadlock:
                         task_manager.failure_count += 1
@@ -813,6 +844,14 @@ class BrowserManager(Process):
                         extension_socket,
                     )
                     self.status_queue.put("OK")
+                except FinalizeAckTimeout:
+                    # The extension never acknowledged the Finalize within the
+                    # grace+margin window. The visit's data may be incomplete,
+                    # but the browser is still healthy so we keep it running.
+                    self.status_queue.put(
+                        ("FINALIZE_INCOMPLETE", pickle.dumps(sys.exc_info()))
+                    )
+                    continue
                 except WebDriverException:
                     # We handle WebDriverExceptions separately here because they
                     # are quite common, and we often still have a handle to the

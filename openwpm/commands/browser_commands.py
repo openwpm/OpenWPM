@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import random
+import socket
+import struct
 import sys
 import time
 import traceback
@@ -37,6 +39,16 @@ from .utils.webdriver_utils import (
 NUM_MOUSE_MOVES = 10  # Times to randomly move the mouse
 RANDOM_SLEEP_LOW = 1  # low (in sec) for random sleep between page loads
 RANDOM_SLEEP_HIGH = 7  # high (in sec) for random sleep between page loads
+# Slack added on top of the extension-side finalize grace period when waiting
+# for a FinalizeAck: covers the control-socket round trip and the extension
+# handing the visit's meta_information to the storage controller.
+#
+# INVARIANT: FinalizeCommand.execute() blocks for up to
+# ``grace + FINALIZE_ACK_MARGIN`` seconds. The FinalizeCommand's per-command
+# timeout (set in CommandSequence.get_commands_with_timeout) MUST stay strictly
+# greater than this, or the watchdog will kill a healthy browser mid-drain.
+# That timeout is derived from this constant so the two cannot drift apart.
+FINALIZE_ACK_MARGIN = 10.0
 logger = logging.getLogger("openwpm")
 
 
@@ -96,6 +108,11 @@ def tab_restart_browser(webdriver):
     # to content-level popup blocking.
     webdriver.switch_to.new_window("tab")
     close_other_windows(webdriver)
+
+
+class FinalizeAckTimeout(Exception):
+    """Raised when the extension does not acknowledge a Finalize within the
+    grace+margin window, meaning the visit's data may be incomplete."""
 
 
 class GetCommand(BaseCommand):
@@ -500,11 +517,65 @@ class FinalizeCommand(BaseCommand):
     ):
         """Informs the extension that a visit is done"""
         tab_restart_browser(webdriver)
-        # This doesn't immediately stop data saving from the current
-        # visit so we sleep briefly before unsetting the visit_id.
-        time.sleep(self.sleep)
-        msg = {"action": "Finalize", "visit_id": self.visit_id}
+        # The extension keeps attributing events to this visit for a short
+        # grace period after Finalize (events can still be in flight once the
+        # tab is torn down). We hand it that grace duration and then block on
+        # its FinalizeAck, so the visit is only considered done once the
+        # extension has flushed meta_information to the storage controller.
+        grace = 0.5 if manager_params.testing else self.sleep
+        msg = {
+            "action": "Finalize",
+            "visit_id": self.visit_id,
+            "finalize_grace_seconds": grace,
+        }
         extension_socket.send(msg)
+
+        deadline = time.monotonic() + grace + FINALIZE_ACK_MARGIN
+        browser_id = browser_params.browser_id
+        try:
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise socket.timeout()
+                ack = extension_socket.receive(timeout=remaining)
+                # The control socket is strictly request/response, but a
+                # FinalizeAck from a previous visit that timed out could still
+                # be buffered. Only a matching ack ends the wait.
+                if (
+                    isinstance(ack, dict)
+                    and ack.get("action") == "FinalizeAck"
+                    and ack.get("visit_id") == self.visit_id
+                ):
+                    logger.debug(
+                        "BROWSER %s: received FinalizeAck for visit_id %s",
+                        browser_id,
+                        self.visit_id,
+                    )
+                    break
+                logger.warning(
+                    "BROWSER %s: discarding unexpected control-socket message "
+                    "while waiting for FinalizeAck of visit_id %s: %r",
+                    browser_id,
+                    self.visit_id,
+                    ack,
+                )
+        except socket.timeout:
+            logger.warning(
+                "BROWSER %s: timed out waiting for FinalizeAck of visit_id %s; "
+                "marking visit incomplete",
+                browser_id,
+                self.visit_id,
+            )
+            raise FinalizeAckTimeout(
+                "BROWSER %s: no FinalizeAck for visit_id %s within grace+margin"
+                % (browser_id, self.visit_id)
+            ) from None
+        except (RuntimeError, ValueError, struct.error):
+            logger.exception(
+                "BROWSER %s: error reading FinalizeAck of visit_id %s",
+                browser_id,
+                self.visit_id,
+            )
 
 
 class InitializeCommand(BaseCommand):
