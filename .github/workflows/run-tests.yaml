@@ -53,3 +53,26 @@ jobs:
           name: ${{matrix.test-groups}} # Name of the check run which will be created
           path: junit-report.xml # Path to test results
           reporter: java-junit # Format of test results
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ strategy.job-index }}
+          path: coverage.xml
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: tests
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: .
+          fail_ci_if_error: false

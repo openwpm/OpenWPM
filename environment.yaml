@@ -4,7 +4,6 @@ dependencies:
 - beautifulsoup4=4.12.3
 - black=24.10.0
 - click=8.1.8
-- codecov=2.1.13
 - dill=0.3.9
 - easyprocess=1.1
 - gcsfs=2024.12.0
