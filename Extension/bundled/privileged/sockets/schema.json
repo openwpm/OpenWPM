@@ -73,6 +73,25 @@
             "name": "id"
           }
         ]
+      },
+      {
+        "name": "sendResponse",
+        "type": "function",
+        "async": false,
+        "parameters": [
+          {
+            "type": "number",
+            "name": "connectionId"
+          },
+          {
+            "type": "string",
+            "name": "data"
+          },
+          {
+            "type": "boolean",
+            "name": "json"
+          }
+        ]
       }
     ],
     "events": [
@@ -91,6 +110,10 @@
           {
             "type": "boolean",
             "name": "json"
+          },
+          {
+            "type": "number",
+            "name": "connectionId"
           }
         ]
       }

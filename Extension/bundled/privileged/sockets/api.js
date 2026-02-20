@@ -10,6 +10,9 @@ const gManager = {
   sendingSocketMap: new Map(),
   nextSendingSocketId: 0,
   onDataReceivedListeners: new Set(),
+  // Map of connectionId -> { stream, bOutputStream } for accepted connections
+  connectionMap: new Map(),
+  nextConnectionId: 0,
 };
 
 let bufferpack;
@@ -43,6 +46,19 @@ this.sockets = class extends ExtensionAPI {
           socket.asyncListen({
             onSocketAccepted: (sock, transport) => {
               const inputStream = transport.openInputStream(0, 0, 0);
+              const outputStream = transport.openOutputStream(0, 0, 0);
+
+              gManager.nextConnectionId++;
+              const connectionId = gManager.nextConnectionId;
+              const bOutputStream = Cc[
+                "@mozilla.org/binaryoutputstream;1"
+              ].createInstance(Ci.nsIBinaryOutputStream);
+              bOutputStream.setOutputStream(outputStream);
+              gManager.connectionMap.set(connectionId, {
+                stream: outputStream,
+                bOutputStream,
+              });
+
               const socketListener = {
                 onInputStreamReady: () => {
                   try {
@@ -52,6 +68,7 @@ this.sockets = class extends ExtensionAPI {
                       // Abnormal close, let's log the error.
                       console.error(e);
                     }
+                    gManager.connectionMap.delete(connectionId);
                     return;
                   }
                   const bis = Cc[
@@ -64,7 +81,7 @@ this.sockets = class extends ExtensionAPI {
 
                   if (["j", "n"].includes(meta[1])) {
                     gManager.onDataReceivedListeners.forEach((listener) => {
-                      listener(port, string, meta[1] === "j");
+                      listener(port, string, meta[1] === "j", connectionId);
                     });
                   } else {
                     console.error(
@@ -84,8 +101,8 @@ this.sockets = class extends ExtensionAPI {
           context,
           name: "sockets.onDataReceived",
           register: (fire) => {
-            const listener = (id, data, is_json) => {
-              fire.async(id, data, is_json);
+            const listener = (id, data, is_json, connectionId) => {
+              fire.async(id, data, is_json, connectionId);
             };
             gManager.onDataReceivedListeners.add(listener);
             return () => {
@@ -93,6 +110,30 @@ this.sockets = class extends ExtensionAPI {
             };
           },
         }).api(),
+
+        sendResponse(connectionId, data, json) {
+          if (!gManager.connectionMap.has(connectionId)) {
+            console.error(
+              "Unknown connection ID for sendResponse; connection may have closed.",
+            );
+            return false;
+          }
+
+          const conn = gManager.connectionMap.get(connectionId);
+          try {
+            const serializationSymbol = json ? "j" : "n";
+            const buff = bufferpack.pack(">Lc", [
+              data.length,
+              serializationSymbol,
+            ]);
+            conn.bOutputStream.writeByteArray(buff, buff.length);
+            conn.stream.write(data, data.length);
+            return true;
+          } catch (err) {
+            console.error(err, err.message);
+            return false;
+          }
+        },
 
         async createSendingSocket() {
           gManager.nextSendingSocketId++;
