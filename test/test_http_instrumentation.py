@@ -8,17 +8,30 @@ from hashlib import sha256
 from pathlib import Path
 from sqlite3 import Row
 from time import sleep
-from typing import List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import pytest
 
 from openwpm import command_sequence, task_manager
+from openwpm.browser_manager import BrowserManagerHandle
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
-from openwpm.config import BrowserParams, ManagerParams
+from openwpm.config import (
+    BrowserParams,
+    BrowserParamsInternal,
+    ManagerParams,
+    ManagerParamsInternal,
+)
+from openwpm.failure_tracker import FailureTracker
+from openwpm.mp_logger import MPLogger
+from openwpm.storage.in_memory_storage import MemoryStructuredProvider
+from openwpm.storage.in_process_storage import InProcessStorageControllerHandle
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.sql_provider import SQLiteStorageProvider
+from openwpm.storage.storage_controller import DataSocket
+from openwpm.storage.storage_providers import TableName
+from openwpm.types import VisitId
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -960,6 +973,127 @@ def test_page_visit_inprocess(
                 break
         observed_redirects.add((src, dst, location))
     assert HTTP_REDIRECTS == observed_redirects
+
+
+def _assert_http_records(
+    records_by_table: Dict[str, List[Dict[str, Any]]],
+) -> None:
+    """Assert HTTP instrumentation data from in-memory storage matches expected sets."""
+    request_id_to_url: Dict[Any, str] = {}
+    observed_requests: set[tuple[Any, ...]] = set()
+    for row in records_by_table.get("http_requests", []):
+        observed_requests.add(
+            (
+                row["url"].split("?")[0],
+                row["top_level_url"],
+                row["triggering_origin"],
+                row["loading_origin"],
+                row["loading_href"],
+                row["is_XHR"],
+                row.get("is_third_party_channel"),
+                row.get("is_third_party_to_top_window"),
+                row["resource_type"],
+            )
+        )
+        request_id_to_url[row["request_id"]] = row["url"]
+    assert HTTP_REQUESTS == observed_requests
+
+    observed_responses: set[tuple[str, str]] = set()
+    for row in records_by_table.get("http_responses", []):
+        observed_responses.add(
+            (
+                row["url"].split("?")[0],
+                row["location"],
+            )
+        )
+        assert row["request_id"] in request_id_to_url
+        assert request_id_to_url[row["request_id"]] == row["url"]
+    assert HTTP_RESPONSES == observed_responses
+
+    observed_redirects: set[tuple[str, str, str | None]] = set()
+    for row in records_by_table.get("http_redirects", []):
+        src = row["old_request_url"].split("?")[0]
+        dst = row["new_request_url"].split("?")[0]
+        headers = (
+            json.loads(row["headers"])
+            if isinstance(row["headers"], str)
+            else row["headers"]
+        )
+        location = None
+        for header, value in headers:
+            if header.lower() == "location":
+                location = value
+                break
+        observed_redirects.add((src, dst, location))
+    assert HTTP_REDIRECTS == observed_redirects
+
+
+class _MinimalContext:
+    """Minimal CommandExecutionContext for testing without TaskManager."""
+
+    def __init__(self, sock: DataSocket) -> None:
+        self.closing = False
+        self.failure_tracker = FailureTracker(100)
+        self._sock = sock
+
+    def store_record(
+        self, table: TableName, visit_id: VisitId, data: Dict[str, Any]
+    ) -> None:
+        self._sock.store_record(table, visit_id, data)
+
+    def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
+        self._sock.finalize_visit_id(visit_id, success)
+
+
+def test_page_visit_direct(tmp_path: Path, xpi: None, server: None) -> None:
+    """Layer 2: Bypass TaskManager. Drive BrowserManagerHandle directly
+    with InProcessStorageControllerHandle + MemoryStructuredProvider."""
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+
+    structured = MemoryStructuredProvider()
+    handle = InProcessStorageControllerHandle(structured, None)
+    handle.launch()
+    assert handle.listener_address is not None
+
+    logger = MPLogger(tmp_path / "openwpm.log")
+
+    manager_params = ManagerParamsInternal(num_browsers=1)
+    manager_params.data_directory = tmp_path
+    manager_params.screenshot_path = tmp_path / "screenshots"
+    manager_params.source_dump_path = tmp_path / "sources"
+    manager_params.log_path = tmp_path / "openwpm.log"
+    manager_params.testing = True
+    manager_params.storage_controller_address = handle.listener_address
+    manager_params.logger_address = logger.logger_address
+    os.makedirs(manager_params.screenshot_path, exist_ok=True)
+    os.makedirs(manager_params.source_dump_path, exist_ok=True)
+
+    browser_params = BrowserParamsInternal(display_mode="headless")
+    browser_params.browser_id = handle.get_next_browser_id()
+    browser_params.http_instrument = True
+
+    browser = BrowserManagerHandle(manager_params, browser_params)
+    try:
+        assert browser.launch_browser_manager()
+
+        sock = DataSocket(handle.listener_address, "TestDirect")
+        context = _MinimalContext(sock)
+        visit_id = handle.get_next_visit_id()
+        browser.set_visit_id(visit_id)
+
+        cs = CommandSequence(test_url)
+        cs.get()
+        browser.execute_command_sequence(context, cs)
+
+        context.finalize_visit_id(visit_id, True)
+        sock.close()
+    finally:
+        browser.shutdown_browser(during_init=False)
+        handle.shutdown()
+        logger.close()
+
+    structured.handle.poll_queue()
+    _assert_http_records(structured.handle.storage)
 
 
 def test_javascript_saving(http_params, xpi, server):
