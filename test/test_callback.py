@@ -4,16 +4,18 @@ from typing import List
 from openwpm.command_sequence import CommandSequence
 
 from .conftest import FullConfig, TaskManagerCreator
-from .utilities import BASE_TEST_URL
+from .utilities import ServerUrls
 
 
 def test_local_callbacks(
-    default_params: FullConfig, task_manager_creator: TaskManagerCreator
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
 ) -> None:
     """Test the storage controller as well as the entire callback machinery
     to see if all callbacks get correctly called"""
     manager, _ = task_manager_creator(default_params)
-    TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
+    TEST_SITE = server.base + "/simple_a.html"
 
     def callback(argument: List[int], success: bool) -> None:
         argument.extend([1, 2, 3])
