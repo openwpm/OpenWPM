@@ -4,6 +4,8 @@
 import base64
 import json
 import os
+import random
+import time
 from hashlib import sha256
 from pathlib import Path
 from sqlite3 import Row
@@ -25,13 +27,14 @@ from openwpm.config import (
 )
 from openwpm.failure_tracker import FailureTracker
 from openwpm.mp_logger import MPLogger
+from openwpm.socket_interface import ServerSocket
 from openwpm.storage.in_memory_storage import MemoryStructuredProvider
 from openwpm.storage.in_process_storage import InProcessStorageControllerHandle
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_controller import DataSocket
 from openwpm.storage.storage_providers import TableName
-from openwpm.types import VisitId
+from openwpm.types import BrowserId, VisitId
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -1094,6 +1097,83 @@ def test_page_visit_direct(tmp_path: Path, xpi: None, server: None) -> None:
 
     structured.handle.poll_queue()
     _assert_http_records(structured.handle.storage)
+
+
+class _NoOpContext:
+    """No-op CommandExecutionContext for forwarder-level testing."""
+
+    closing = False
+    failure_tracker = FailureTracker(100)
+
+    def store_record(
+        self, table: TableName, visit_id: VisitId, data: Dict[str, Any]
+    ) -> None:
+        pass
+
+    def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
+        pass
+
+
+def test_page_visit_forwarder(tmp_path: Path, xpi: None, server: None) -> None:
+    """Layer 3: Skip StorageController entirely. Use a ServerSocket to collect
+    extension data directly from the BrowserManager's forwarder."""
+    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+
+    # Data sink: a ServerSocket that collects whatever the forwarder sends
+    collector = ServerSocket(name="DataSink")
+    collector.start_accepting()
+    collector_address = collector.sock.getsockname()
+
+    logger = MPLogger(tmp_path / "openwpm.log")
+
+    manager_params = ManagerParamsInternal(num_browsers=1)
+    manager_params.data_directory = tmp_path
+    manager_params.screenshot_path = tmp_path / "screenshots"
+    manager_params.source_dump_path = tmp_path / "sources"
+    manager_params.log_path = tmp_path / "openwpm.log"
+    manager_params.testing = True
+    # Point at the collector instead of a StorageController
+    manager_params.storage_controller_address = collector_address
+    manager_params.logger_address = logger.logger_address
+    os.makedirs(manager_params.screenshot_path, exist_ok=True)
+    os.makedirs(manager_params.source_dump_path, exist_ok=True)
+
+    browser_params = BrowserParamsInternal(display_mode="headless")
+    browser_params.browser_id = BrowserId(random.getrandbits(32))
+    browser_params.http_instrument = True
+
+    browser = BrowserManagerHandle(manager_params, browser_params)
+    try:
+        assert browser.launch_browser_manager()
+
+        context = _NoOpContext()
+        visit_id = VisitId(random.getrandbits(53))
+        browser.set_visit_id(visit_id)
+
+        cs = CommandSequence(test_url)
+        cs.get()
+        browser.execute_command_sequence(context, cs)
+    finally:
+        browser.shutdown_browser(during_init=False)
+        logger.close()
+
+    # Allow forwarder to drain remaining messages
+    time.sleep(0.5)
+
+    # Drain collected records from the ServerSocket queue
+    records_by_table: Dict[str, List[Dict[str, Any]]] = {}
+    first = True
+    while not collector.queue.empty():
+        msg = collector.queue.get_nowait()
+        if first:
+            # First message is the client name string
+            first = False
+            continue
+        table_name, data = msg
+        records_by_table.setdefault(table_name, []).append(data)
+
+    collector.close()
+    _assert_http_records(records_by_table)
 
 
 def test_javascript_saving(http_params, xpi, server):
