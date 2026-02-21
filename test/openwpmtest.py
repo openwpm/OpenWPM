@@ -8,7 +8,7 @@ from openwpm import task_manager
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 
-from . import utilities
+from .utilities import ServerUrls
 
 NUM_BROWSERS = 2
 
@@ -23,6 +23,11 @@ class OpenWPMTest:
         https://mail.python.org/pipermail/pytest-dev/2014-April/002484.html
         """
         self.tmpdir = Path(tmpdir)
+
+    @pytest.fixture(autouse=True)
+    def set_server(self, server: ServerUrls) -> None:
+        """Inject server URLs for use in test methods."""
+        self.server = server
 
     def get_config(
         self, data_dir: Optional[Path]
@@ -46,7 +51,7 @@ class OpenWPMTest:
             None,
         )
         if not page_url.startswith("http"):
-            page_url = utilities.BASE_TEST_URL + page_url
+            page_url = self.server.base + page_url
         manager.get(url=page_url, sleep=sleep_after)
         manager.close()
         return db_path
