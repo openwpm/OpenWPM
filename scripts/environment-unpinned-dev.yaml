@@ -2,7 +2,6 @@ channels:
     - conda-forge
 dependencies:
     - black
-    - codecov
     - pytest-cov
     - ipython
     - isort

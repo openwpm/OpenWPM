@@ -1,35 +1,19 @@
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  packages = with pkgs; [
-    # Build essentials
+  # Libraries needed both as package inputs and on LD_LIBRARY_PATH at runtime
+  sharedLibs = with pkgs; [
     stdenv.cc.cc.lib
-    gcc
-    gnumake
-    pkg-config
     zlib
-    openssl
-
-    # Python build dependencies
-    libffi
-    readline
-    ncurses
-    bzip2
-    xz
-    sqlite
-
-    # Firefox dependencies
-    gtk3
+    libGL
     glib
+    gtk3
     atk
     gdk-pixbuf
     pciutils
-    dbus-glib
-    libGL
-    libGLU
     alsa-lib
     libpulseaudio
-    ffmpeg
+    dbus-glib
     pango
     cairo
     freetype
@@ -40,55 +24,49 @@ let
     libxext
     libxrender
     libxtst
-    libxi
     libxcomposite
     libxcursor
     libxdamage
     libxfixes
     libxrandr
+  ];
+
+  packages = sharedLibs ++ (with pkgs; [
+    # Build essentials
+    gcc
+    gnumake
+    pkg-config
+    openssl
+
+    # Python build dependencies
+    libffi
+    readline
+    ncurses
+    bzip2
+    xz
+    sqlite
+
+    # Additional Firefox dependencies
+    ffmpeg
+
+    # Additional X11 libraries
+    libxi
     libxcb
     xvfb
 
     # Utilities
     git
     which
-    curl
     wget
-    file
     gnugrep
     coreutils
     bashInteractive
 
     # Node.js for extension build
     nodejs_22
-  ];
-
-  libraryPath = pkgs.lib.makeLibraryPath (with pkgs; [
-    stdenv.cc.cc.lib
-    zlib
-    libGL
-    glib
-    gtk3
-    atk
-    gdk-pixbuf
-    pciutils
-    alsa-lib
-    libpulseaudio
-    libx11
-    libxext
-    libxrender
-    libxtst
-    libxcomposite
-    libxcursor
-    libxdamage
-    libxfixes
-    libxrandr
-    dbus-glib
-    pango
-    cairo
-    freetype
-    fontconfig
   ]);
+
+  libraryPath = pkgs.lib.makeLibraryPath sharedLibs;
 
   fhsEnv = pkgs.buildFHSEnv {
     name = "openwpm";
