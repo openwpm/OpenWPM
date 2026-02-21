@@ -1,42 +1,20 @@
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  packages = with pkgs; [
-    # Build essentials
-    stdenv.cc.cc.lib
-    gcc
-    gnumake
-    pkg-config
-    zlib
-    openssl
-
-    # Python build dependencies
-    libffi
-    readline
-    ncurses
-    bzip2
-    xz
-    sqlite
-
-    # Firefox dependencies
+  # System libraries needed by Firefox (unbranded build in firefox-bin/)
+  firefoxDeps = with pkgs; [
     gtk3
     glib
     atk
     gdk-pixbuf
-    pciutils
-    dbus-glib
-    libGL
-    libGLU
-    alsa-lib
-    libpulseaudio
-    ffmpeg
     pango
     cairo
     freetype
     fontconfig
-
-    # X11 libraries
+    dbus
+    alsa-lib
     libx11
+    libxcb
     libxext
     libxrender
     libxtst
@@ -46,73 +24,43 @@ let
     libxdamage
     libxfixes
     libxrandr
-    libxcb
-    xvfb
-
-    # Utilities
-    git
-    which
-    curl
-    wget
-    file
-    gnugrep
-    coreutils
-    bashInteractive
-
-    # Node.js for extension build
-    nodejs_22
+    xorg-server  # Xvfb for headless testing
+    xvfb-run
   ];
 
-  libraryPath = pkgs.lib.makeLibraryPath (with pkgs; [
-    stdenv.cc.cc.lib
-    zlib
-    libGL
-    glib
-    gtk3
-    atk
-    gdk-pixbuf
-    pciutils
-    alsa-lib
-    libpulseaudio
-    libx11
-    libxext
-    libxrender
-    libxtst
-    libxcomposite
-    libxcursor
-    libxdamage
-    libxfixes
-    libxrandr
-    dbus-glib
-    pango
-    cairo
-    freetype
-    fontconfig
-  ]);
+  libraryPath = pkgs.lib.makeLibraryPath firefoxDeps;
 
-  fhsEnv = pkgs.buildFHSEnv {
-    name = "openwpm";
-    targetPkgs = _: packages;
-    profile = ''
-      export LD_LIBRARY_PATH="${libraryPath}:$LD_LIBRARY_PATH"
-      export PATH="$HOME/.conda/bin:$PATH"
-      source "$HOME/.conda/etc/profile.d/conda.sh"
-    '';
-    runScript = let
-      condaInit = pkgs.writeText "conda-init.sh" ''
-        set -h  # Enable command hashing
-        source "$HOME/.conda/etc/profile.d/conda.sh"
-        conda activate openwpm
-      '';
-    in pkgs.writeShellScript "openwpm-shell" ''
-      export BASH_ENV="${condaInit}"
+  condaInit = pkgs.writeText "conda-init.sh" ''
+    source /etc/profile
+    source "$HOME/.conda/etc/profile.d/conda.sh"
+    conda activate openwpm
+    export LD_LIBRARY_PATH="${libraryPath}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  '';
+
+  condaEnv = pkgs.conda.override {
+    condaDeps = [];
+    extraPkgs = firefoxDeps;
+    runScript = toString (pkgs.writeShellScript "openwpm-shell" ''
+      # Disable default Anaconda channels (we only use conda-forge)
+      cat > "$HOME/.condarc" <<'CONDARC'
+channels:
+  - conda-forge
+default_channels: []
+CONDARC
+
+      # Create openwpm env if it doesn't exist
+      if ! conda env list | grep -q "^openwpm "; then
+        echo "Creating openwpm conda environment..."
+        PYTHONNOUSERSITE=True conda env create --yes -q -f environment.yaml
+      fi
+
       exec bash --rcfile "${condaInit}" "$@"
-    '';
+    '');
   };
 
 in pkgs.mkShell {
-  packages = [ fhsEnv ];
+  packages = [ condaEnv ];
   shellHook = ''
-    exec openwpm
+    exec conda-shell
   '';
 }
