@@ -21,9 +21,10 @@ from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.utilities import db_utils
 
-from . import utilities
 from .conftest import FullConfig, HttpParams, TaskManagerCreator
 from .openwpmtest import OpenWPMTest
+from .utilities import ServerUrls
+
 
 # Data for test_page_visit
 # format: (
@@ -34,555 +35,569 @@ from .openwpmtest import OpenWPMTest
 # loading_href,
 # is_XHR, is_tp_content, is_tp_window,
 #   resource_type
-HTTP_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        "undefined",
-        "undefined",
-        "undefined",
-        0,
-        None,
-        None,
-        "main_frame",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_favicon.ico",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "script",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script.js",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "script",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "sub_frame",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_style.css",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "stylesheet",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame1.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req1.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req3.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-}
+def _http_requests(server: ServerUrls) -> set[tuple[Union[str, None, int], ...]]:
+    return {
+        (
+            f"{server.base}/http_test_page.html",
+            f"{server.base}/http_test_page.html",
+            "undefined",
+            "undefined",
+            "undefined",
+            0,
+            None,
+            None,
+            "main_frame",
+        ),
+        (
+            f"{server.base}/shared/test_favicon.ico",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base}/shared/test_image_2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base}/shared/test_script_2.js",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "script",
+        ),
+        (
+            f"{server.base}/shared/test_script.js",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "script",
+        ),
+        (
+            f"{server.base}/shared/test_image.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base}/http_test_page_2.html",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "sub_frame",
+        ),
+        (
+            f"{server.base}/shared/test_style.css",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "stylesheet",
+        ),
+        (
+            f"{server.base_nopath}/404.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame1.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req1.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req3.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base}/shared/test_image_2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+    }
+
 
 # format: (request_url, referrer, location)
 # TODO: webext instrumentation doesn't support referrer yet
-HTTP_RESPONSES: set[tuple[str, str]] = {
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        # u'',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_favicon.ico",
-        # u'',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_style.css",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script.js",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image.png",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        # u'http://localhost:8000/test_pages/http_test_page_2.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
-        # u'http://localhost:8000/test_pages/http_test_page_2.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        # u'http://localhost:8000/test_pages/http_test_page_2.html',
-        "",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        "",
-    ),
-}
+def _http_responses(server: ServerUrls) -> set[tuple[str, str]]:
+    return {
+        (
+            f"{server.base}/http_test_page.html",
+            # u'',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_favicon.ico",
+            # u'',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_style.css",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_script.js",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_image.png",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            "",
+        ),
+        (
+            f"{server.base}/http_test_page_2.html",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_image_2.png",
+            # u'http://localhost:8000/test_pages/http_test_page_2.html',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_script_2.js",
+            # u'http://localhost:8000/test_pages/http_test_page_2.html',
+            "",
+        ),
+        (
+            f"{server.base_nopath}/404.png",
+            # u'http://localhost:8000/test_pages/http_test_page_2.html',
+            "",
+        ),
+        (
+            f"{server.base}/shared/test_image_2.png",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            "",
+        ),
+    }
+
 
 # format: (source_url, destination_url, location header)
-HTTP_REDIRECTS: set[tuple[str, str, str | None]] = {
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req1.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
-        "req2.png?dst=req3.png&dst=/test_pages/shared/test_image_2.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req3.png",
-        "req3.png?dst=/test_pages/shared/test_image_2.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req3.png",
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        "/test_pages/shared/test_image_2.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame1.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
-        "frame2.png?dst=/404.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        "/404.png",
-    ),
-}
+def _http_redirects(server: ServerUrls) -> set[tuple[str, str, str | None]]:
+    return {
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req1.png",
+            f"{server.base_nopath}/MAGIC_REDIRECT/req2.png",
+            "req2.png?dst=req3.png&dst=/test_pages/shared/test_image_2.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req2.png",
+            f"{server.base_nopath}/MAGIC_REDIRECT/req3.png",
+            "req3.png?dst=/test_pages/shared/test_image_2.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req3.png",
+            f"{server.base}/shared/test_image_2.png",
+            "/test_pages/shared/test_image_2.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame1.png",
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame2.png",
+            "frame2.png?dst=/404.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame2.png",
+            f"{server.base_nopath}/404.png",
+            "/404.png",
+        ),
+    }
+
 
 # Data for test_cache_hits_recorded
-HTTP_CACHED_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        "undefined",
-        "undefined",
-        "undefined",
-        0,
-        None,
-        None,
-        "main_frame",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "script",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script.js",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "script",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "sub_frame",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame1.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req1.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req3.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-}
+def _http_cached_requests(server: ServerUrls) -> set[tuple[Union[str, None, int], ...]]:
+    return {
+        (
+            f"{server.base}/http_test_page.html",
+            f"{server.base}/http_test_page.html",
+            "undefined",
+            "undefined",
+            "undefined",
+            0,
+            None,
+            None,
+            "main_frame",
+        ),
+        (
+            f"{server.base}/shared/test_script_2.js",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "script",
+        ),
+        (
+            f"{server.base}/shared/test_script.js",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "script",
+        ),
+        (
+            f"{server.base}/http_test_page_2.html",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "sub_frame",
+        ),
+        (
+            f"{server.base_nopath}/404.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame1.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page_2.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req1.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req3.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base}/shared/test_image_2.png",
+            f"{server.base}/http_test_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_test_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+    }
+
 
 # format: (request_url, referrer, is_cached)
 # TODO: referrer isn't recorded by webext instrumentation yet.
-HTTP_CACHED_RESPONSES: set[tuple[str, int]] = {
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page.html",
-        # u'',
-        1,
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script.js",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        1,
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
-        # u'http://localhost:8000/test_pages/http_test_page.html',
-        1,
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_script_2.js",
-        # u'http://localhost:8000/test_pages/http_test_page_2.html',
-        1,
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-        # u'http://localhost:8000/test_pages/http_test_page_2.html',
-        1,
-    ),
-    (f"{utilities.BASE_TEST_URL}/shared/test_image_2.png", 1),
-}
+def _http_cached_responses(server: ServerUrls) -> set[tuple[str, int]]:
+    return {
+        (
+            f"{server.base}/http_test_page.html",
+            # u'',
+            1,
+        ),
+        (
+            f"{server.base}/shared/test_script.js",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            1,
+        ),
+        (
+            f"{server.base}/http_test_page_2.html",
+            # u'http://localhost:8000/test_pages/http_test_page.html',
+            1,
+        ),
+        (
+            f"{server.base}/shared/test_script_2.js",
+            # u'http://localhost:8000/test_pages/http_test_page_2.html',
+            1,
+        ),
+        (
+            f"{server.base_nopath}/404.png",
+            # u'http://localhost:8000/test_pages/http_test_page_2.html',
+            1,
+        ),
+        (f"{server.base}/shared/test_image_2.png", 1),
+    }
+
 
 # format: (source_url, destination_url)
-HTTP_CACHED_REDIRECTS: set[tuple[str, str]] = {
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame1.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/frame2.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/404.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req1.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req2.png",
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req3.png",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL_NOPATH}/MAGIC_REDIRECT/req3.png",
-        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
-    ),
-}
+def _http_cached_redirects(server: ServerUrls) -> set[tuple[str, str]]:
+    return {
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame1.png",
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame2.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/frame2.png",
+            f"{server.base_nopath}/404.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req1.png",
+            f"{server.base_nopath}/MAGIC_REDIRECT/req2.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req2.png",
+            f"{server.base_nopath}/MAGIC_REDIRECT/req3.png",
+        ),
+        (
+            f"{server.base_nopath}/MAGIC_REDIRECT/req3.png",
+            f"{server.base}/shared/test_image_2.png",
+        ),
+    }
+
 
 # Test URL attribution for worker script requests
-HTTP_WORKER_SCRIPT_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
-    (
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        "undefined",
-        "undefined",
-        "undefined",
-        0,
-        None,
-        None,
-        "main_frame",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_favicon.ico",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/worker.js",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        0,
-        None,
-        None,
-        "script",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image.png",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/http_worker_page.html",
-        1,
-        None,
-        None,
-        "xmlhttprequest",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/shared/test_image.png",
-        f"{utilities.BASE_TEST_URL}/shared/worker.js",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL_NOPATH}",
-        f"{utilities.BASE_TEST_URL}/shared/worker.js",
-        1,
-        None,
-        None,
-        "xmlhttprequest",
-    ),
-}
+def _http_worker_script_requests(
+    server: ServerUrls,
+) -> set[tuple[Union[str, None, int], ...]]:
+    return {
+        (
+            f"{server.base}/http_worker_page.html",
+            f"{server.base}/http_worker_page.html",
+            "undefined",
+            "undefined",
+            "undefined",
+            0,
+            None,
+            None,
+            "main_frame",
+        ),
+        (
+            f"{server.base}/shared/test_favicon.ico",
+            f"{server.base}/http_worker_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_worker_page.html",
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (
+            f"{server.base}/shared/worker.js",
+            f"{server.base}/http_worker_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_worker_page.html",
+            0,
+            None,
+            None,
+            "script",
+        ),
+        (
+            f"{server.base}/shared/test_image.png",
+            f"{server.base}/http_worker_page.html",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/http_worker_page.html",
+            1,
+            None,
+            None,
+            "xmlhttprequest",
+        ),
+        (
+            f"{server.base}/shared/test_image.png",
+            f"{server.base}/shared/worker.js",
+            f"{server.base_nopath}",
+            f"{server.base_nopath}",
+            f"{server.base}/shared/worker.js",
+            1,
+            None,
+            None,
+            "xmlhttprequest",
+        ),
+    }
 
-# Test URL-attribution for Service Worker requests.
-HTTP_SERVICE_WORKER_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
-    (
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        "undefined",
-        "undefined",
-        "undefined",
-        0,
-        None,
-        None,
-        "main_frame",
-    ),
-    (
-        "http://localhost:8000/test_pages/shared/test_favicon.ico",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        "http://localhost:8000",
-        "http://localhost:8000",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        0,
-        None,
-        None,
-        "image",
-    ),
-    (
-        "http://localhost:8000/test_pages/shared/service_worker.js",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        "http://localhost:8000",
-        "http://localhost:8000",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        0,
-        None,
-        None,
-        "script",
-    ),
-    (
-        "http://localhost:8000/test_pages/shared/test_image.png",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        "http://localhost:8000",
-        "http://localhost:8000",
-        "http://localhost:8000/test_pages/http_service_worker_page.html",
-        1,
-        None,
-        None,
-        "xmlhttprequest",
-    ),
-    (
-        "http://localhost:8000/test_pages/shared/test_image_2.png",
-        "http://localhost:8000/test_pages/shared/service_worker.js",
-        "http://localhost:8000",
-        "http://localhost:8000",
-        "http://localhost:8000/test_pages/shared/service_worker.js",
-        1,
-        None,
-        None,
-        "xmlhttprequest",
-    ),
-}
+
+def _http_service_worker_requests(
+    server: ServerUrls,
+) -> set[tuple[Union[str, None, int], ...]]:
+    """Build expected service worker requests (needs dynamic BASE_TEST_URL)."""
+    base = server.base
+    origin = server.base_nopath
+    page = f"{base}/http_service_worker_page.html"
+    sw = f"{base}/shared/service_worker.js"
+    return {
+        (
+            page,
+            page,
+            "undefined",
+            "undefined",
+            "undefined",
+            0,
+            None,
+            None,
+            "main_frame",
+        ),
+        (
+            f"{base}/shared/test_favicon.ico",
+            page,
+            origin,
+            origin,
+            page,
+            0,
+            None,
+            None,
+            "image",
+        ),
+        (sw, page, origin, origin, page, 0, None, None, "script"),
+        (
+            f"{base}/shared/test_image.png",
+            page,
+            origin,
+            origin,
+            page,
+            1,
+            None,
+            None,
+            "xmlhttprequest",
+        ),
+        (
+            f"{base}/shared/test_image_2.png",
+            sw,
+            origin,
+            origin,
+            sw,
+            1,
+            None,
+            None,
+            "xmlhttprequest",
+        ),
+    }
+
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -595,7 +610,7 @@ class TestHTTPInstrument(OpenWPMTest):
 
     def test_worker_script_requests(self):
         """Check correct URL attribution for requests made by worker script"""
-        test_url = utilities.BASE_TEST_URL + "/http_worker_page.html"
+        test_url = self.server.base + "/http_worker_page.html"
         db = self.visit(test_url)
 
         request_id_to_url = dict()
@@ -619,11 +634,11 @@ class TestHTTPInstrument(OpenWPMTest):
             )
             request_id_to_url[row["request_id"]] = row["url"]
 
-        assert HTTP_WORKER_SCRIPT_REQUESTS == observed_records
+        assert _http_worker_script_requests(self.server) == observed_records
 
     def test_service_worker_requests(self):
         """Check correct URL attribution for requests made by service worker"""
-        test_url = utilities.BASE_TEST_URL + "/http_service_worker_page.html"
+        test_url = self.server.base + "/http_service_worker_page.html"
         db = self.visit(test_url)
 
         request_id_to_url = dict()
@@ -647,7 +662,7 @@ class TestHTTPInstrument(OpenWPMTest):
             )
             request_id_to_url[row["request_id"]] = row["url"]
 
-        assert HTTP_SERVICE_WORKER_REQUESTS == observed_records
+        assert _http_service_worker_requests(self.server) == observed_records
 
 
 class TestPOSTInstrument(OpenWPMTest):
@@ -790,7 +805,7 @@ class TestPOSTInstrument(OpenWPMTest):
 
         manager_params, browser_params = self.get_config()
         manager, db_path = task_manager_creator((manager_params, browser_params))
-        test_url = utilities.BASE_TEST_URL + "/post_file_upload.html"
+        test_url = self.server.base + "/post_file_upload.html"
         cs = command_sequence.CommandSequence(test_url)
         cs.get(sleep=0, timeout=60)
         cs.append_command(FilenamesIntoFormCommand(img_file_path, css_file_path))
@@ -815,9 +830,12 @@ class TestPOSTInstrument(OpenWPMTest):
 
 @pytest.mark.parametrize("delayed", [True, False])
 def test_page_visit(
-    task_manager_creator: TaskManagerCreator, http_params: HttpParams, delayed: bool
+    task_manager_creator: TaskManagerCreator,
+    http_params: HttpParams,
+    delayed: bool,
+    server: ServerUrls,
 ) -> None:
-    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    test_url = server.base + "/http_test_page.html"
     manager_params, browser_params = http_params()
     if delayed:
         for browser_param in browser_params:
@@ -856,7 +874,7 @@ def test_page_visit(
         )
 
         request_id_to_url[row["request_id"]] = row["url"]
-    assert HTTP_REQUESTS == observed_requests
+    assert _http_requests(server) == observed_requests
 
     # HTTP Responses
     rows = db_utils.query_db(db, "SELECT * FROM http_responses")
@@ -873,7 +891,7 @@ def test_page_visit(
         )
         assert row["request_id"] in request_id_to_url
         assert request_id_to_url[row["request_id"]] == row["url"]
-    assert HTTP_RESPONSES == observed_responses
+    assert _http_responses(server) == observed_responses
 
     # HTTP Redirects
     rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
@@ -892,12 +910,14 @@ def test_page_visit(
                 location = value
                 break
         observed_redirects.add((src, dst, location))
-    assert HTTP_REDIRECTS == observed_redirects
+    assert _http_redirects(server) == observed_redirects
 
 
-def test_javascript_saving(http_params, xpi, server):
+def test_javascript_saving(
+    http_params: HttpParams, xpi: None, server: ServerUrls
+) -> None:
     """check that javascript content is saved and hashed correctly"""
-    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    test_url = server.base + "/http_test_page.html"
     manager_params, browser_params = http_params()
 
     for browser_param in browser_params:
@@ -918,8 +938,10 @@ def test_javascript_saving(http_params, xpi, server):
         "0110c0521088c74f179615cd7c404816816126fa657550032f75ede67a66c7cc",
         "b34744034cd61e139f85f6c4c92464927bed8343a7ac08acf9fb3c6796f80f08",
     }
-    for chash, content in db_utils.get_content(ldb_path):
-        chash = chash.decode("ascii").lower()
+    for chash_raw, content in db_utils.get_content(ldb_path):
+        assert isinstance(chash_raw, bytes)
+        assert isinstance(content, bytes)
+        chash = chash_raw.decode("ascii").lower()
         pyhash = sha256(content).hexdigest().lower()
         assert pyhash == chash  # Verify expected key (sha256 of content)
         assert chash in expected_hashes
@@ -927,9 +949,11 @@ def test_javascript_saving(http_params, xpi, server):
     assert len(expected_hashes) == 0  # All expected hashes have been seen
 
 
-def test_document_saving(http_params, xpi, server):
+def test_document_saving(
+    http_params: HttpParams, xpi: None, server: ServerUrls
+) -> None:
     """check that document content is saved and hashed correctly"""
-    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    test_url = server.base + "/http_test_page.html"
     expected_hashes = {
         "2390eceab422db15bc45940b7e042e83e6cbd5f279f57e714bc4ad6cded7f966",
         "25343f42d9ffa5c082745f775b172db87d6e14dfbc3160b48669e06d727bfc8d",
@@ -950,8 +974,10 @@ def test_document_saving(http_params, xpi, server):
 
     manager.get(url=test_url, sleep=1)
     manager.close()
-    for chash, content in db_utils.get_content(ldb_path):
-        chash = chash.decode("ascii").lower()
+    for chash_raw, content in db_utils.get_content(ldb_path):
+        assert isinstance(chash_raw, bytes)
+        assert isinstance(content, bytes)
+        chash = chash_raw.decode("ascii").lower()
         pyhash = sha256(content).hexdigest().lower()
         assert pyhash == chash  # Verify expected key (sha256 of content)
         assert chash in expected_hashes
@@ -959,9 +985,9 @@ def test_document_saving(http_params, xpi, server):
     assert len(expected_hashes) == 0  # All expected hashes have been seen
 
 
-def test_content_saving(http_params, xpi, server):
+def test_content_saving(http_params: HttpParams, xpi: None, server: ServerUrls) -> None:
     """check that content is saved and hashed correctly"""
-    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    test_url = server.base + "/http_test_page.html"
     manager_params, browser_params = http_params()
     for browser_param in browser_params:
         browser_param.http_instrument = True
@@ -977,8 +1003,9 @@ def test_content_saving(http_params, xpi, server):
     manager.close()
 
     rows = db_utils.query_db(db, "SELECT * FROM http_responses;")
-    disk_content = dict()
+    disk_content: dict[str, bytes] = dict()
     for row in rows:
+        assert not isinstance(row, tuple)
         if "MAGIC_REDIRECT" in row["url"] or "404" in row["url"]:
             continue
         path = urlparse(row["url"]).path
@@ -988,16 +1015,21 @@ def test_content_saving(http_params, xpi, server):
         assert chash == row["content_hash"]
         disk_content[chash] = content
 
-    ldb_content = dict()
-    for chash, content in db_utils.get_content(ldb_path):
-        chash = chash.decode("ascii")
-        ldb_content[chash] = content
+    ldb_content: dict[str, bytes] = dict()
+    for chash_raw, content_raw in db_utils.get_content(ldb_path):
+        assert isinstance(chash_raw, bytes)
+        assert isinstance(content_raw, bytes)
+        ldb_content[chash_raw.decode("ascii")] = content_raw
 
     for k, v in disk_content.items():
         assert v == ldb_content[k]
 
 
-def test_cache_hits_recorded(http_params, task_manager_creator):
+def test_cache_hits_recorded(
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     """Verify all http responses are recorded, including cached responses
 
     Note that we expect to see all of the same requests and responses
@@ -1010,7 +1042,7 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
     for this image when the page is reloaded. Additionally, the redirects
     should be cached.
     """
-    test_url = utilities.BASE_TEST_URL + "/http_test_page.html"
+    test_url = server.base + "/http_test_page.html"
     manager_params, browser_params = http_params()
     # ensuring that we only spawn one browser
     manager_params.num_browsers = 1
@@ -1022,7 +1054,7 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
 
     manager.close()
 
-    request_id_to_url = dict()
+    request_id_to_url: dict[object, object] = dict()
 
     # HTTP Requests
     rows = db_utils.query_db(
@@ -1033,12 +1065,13 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
         JOIN site_visits sv ON sv.visit_id = hr.visit_id and sv.browser_id = hr.browser_id
         WHERE sv.site_rank = 1""",
     )
-    observed_records = set()
+    observed_requests: set[tuple[object, ...]] = set()
     for row in rows:
+        assert not isinstance(row, tuple)
         # HACK: favicon caching is unpredictable, don't bother checking it
         if row["url"].split("?")[0].endswith("favicon.ico"):
             continue
-        observed_records.add(
+        observed_requests.add(
             (
                 row["url"].split("?")[0],
                 row["top_level_url"],
@@ -1063,12 +1096,13 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
          JOIN site_visits sv ON sv.visit_id = hp.visit_id and sv.browser_id = hp.browser_id
          WHERE sv.site_rank = 1""",
     )
-    observed_records = set()
+    observed_responses: set[tuple[object, ...]] = set()
     for row in rows:
+        assert not isinstance(row, tuple)
         # HACK: favicon caching is unpredictable, don't bother checking it
         if row["url"].split("?")[0].endswith("favicon.ico"):
             continue
-        observed_records.add(
+        observed_responses.add(
             (
                 row["url"].split("?")[0],
                 # TODO: referrer isn't available yet in the
@@ -1078,7 +1112,7 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
         )
         assert row["request_id"] in request_id_to_url
         assert request_id_to_url[row["request_id"]] == row["url"]
-    assert HTTP_CACHED_RESPONSES == observed_records
+    assert _http_cached_responses(server) == observed_responses
 
     # HTTP Redirects
     rows = db_utils.query_db(
@@ -1089,15 +1123,16 @@ def test_cache_hits_recorded(http_params, task_manager_creator):
          JOIN site_visits sv ON sv.visit_id = hr.visit_id and sv.browser_id = hr.browser_id
          WHERE sv.site_rank = 1""",
     )
-    observed_records = set()
+    observed_redirects: set[tuple[str, str]] = set()
     for row in rows:
+        assert not isinstance(row, tuple)
         # TODO: new_request_id isn't supported yet
         # src = request_id_to_url[row['old_request_id']].split('?')[0]
         # dst = request_id_to_url[row['new_request_id']].split('?')[0]
         src = row["old_request_url"].split("?")[0]
         dst = row["new_request_url"].split("?")[0]
-        observed_records.add((src, dst))
-    assert HTTP_CACHED_REDIRECTS == observed_records
+        observed_redirects.add((src, dst))
+    assert _http_cached_redirects(server) == observed_redirects
 
 
 class FilenamesIntoFormCommand(BaseCommand):

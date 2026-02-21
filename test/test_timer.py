@@ -1,12 +1,17 @@
 from openwpm.utilities import db_utils
 
-from .utilities import BASE_TEST_URL
+from .conftest import FullConfig, TaskManagerCreator
+from .utilities import ServerUrls
 
 TEST_FILE = "canvas_fingerprinting.html"
-TEST_URL = BASE_TEST_URL + "/" + TEST_FILE
 
 
-def test_command_duration(default_params, task_manager_creator):
+def test_command_duration(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
+    TEST_URL = server.base + "/" + TEST_FILE
     manager, db = task_manager_creator(default_params)
     manager.get(url=TEST_URL, sleep=5)
     manager.close()

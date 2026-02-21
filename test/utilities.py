@@ -1,15 +1,35 @@
 import os
 import socketserver
 import threading
+from dataclasses import dataclass
 from http.server import SimpleHTTPRequestHandler
 from os.path import dirname, realpath
 from urllib.parse import parse_qs, urlparse
 
-LOCAL_WEBSERVER_PORT = 8000
 BASE_TEST_URL_DOMAIN = "localhost"
-BASE_TEST_URL_NOPATH = "http://%s:%s" % (BASE_TEST_URL_DOMAIN, LOCAL_WEBSERVER_PORT)
-BASE_TEST_URL = "%s/test_pages" % BASE_TEST_URL_NOPATH
-BASE_TEST_URL_NOSCHEME = BASE_TEST_URL.split("//")[1]
+
+
+@dataclass(frozen=True)
+class ServerUrls:
+    """URLs for the test HTTP server, computed from the dynamic port."""
+
+    port: int
+    domain: str = BASE_TEST_URL_DOMAIN
+
+    @property
+    def base_nopath(self) -> str:
+        return f"http://{self.domain}:{self.port}"
+
+    @property
+    def base(self) -> str:
+        return f"{self.base_nopath}/test_pages"
+
+    @property
+    def base_noscheme(self) -> str:
+        return self.base.split("//")[1]
+
+    def url(self, path: str) -> str:
+        return self.base + path
 
 
 class MyTCPServer(socketserver.TCPServer):
@@ -53,6 +73,15 @@ class MyHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
+    def send_response(self, code, message=None):
+        self._response_code = code
+        super().send_response(code, message)
+
+    def end_headers(self):
+        if getattr(self, "_response_code", None) == 200:
+            self.send_header("Cache-Control", "max-age=3600")
+        super().end_headers()
+
     def do_GET(self, *args, **kwargs):
         # 1. Redirect all requests to `/MAGIC_REDIRECT/`.
         if self.path.startswith("/MAGIC_REDIRECT/"):
@@ -87,19 +116,23 @@ class MyHandler(SimpleHTTPRequestHandler):
         return SimpleHTTPRequestHandler.do_GET(self, *args, **kwargs)
 
 
-def start_server():
+def start_server() -> tuple[MyTCPServer, threading.Thread, ServerUrls]:
     """Start a simple HTTP server to run local tests.
 
     We need this since page-mod events in the extension
     don't fire on `file://*`. Instead, point test code to
-    `http://localhost:8000/test_pages/...`
+    `http://localhost:<port>/test_pages/...`
+
+    Binds to port 0 (OS-assigned free port) to allow parallel test runs.
     """
     print("Starting HTTP Server in a separate thread")
     # switch to test dir, this is where the test files are
     os.chdir(dirname(realpath(__file__)))
-    server = MyTCPServer(("0.0.0.0", LOCAL_WEBSERVER_PORT), MyHandler)
+    server = MyTCPServer(("0.0.0.0", 0), MyHandler)
+    port = server.server_address[1]
+    urls = ServerUrls(port=port)
     thread = threading.Thread(target=server.serve_forever)
     thread.daemon = True
     thread.start()
-    print("...serving at port", LOCAL_WEBSERVER_PORT)
-    return server, thread
+    print("...serving at port", port)
+    return server, thread, urls

@@ -16,7 +16,6 @@ from openwpm.config import BrowserParams, ManagerParams
 from openwpm.socket_interface import ClientSocket
 from openwpm.utilities import db_utils
 
-from . import utilities
 from .openwpmtest import OpenWPMTest
 
 # Expected Navigator and Screen properties
@@ -43,72 +42,80 @@ PROPERTIES = {
 }
 
 # Canvas Fingerprinting DB calls and property sets
-CANVAS_TEST_URL = "%s/canvas_fingerprinting.html" % utilities.BASE_TEST_URL
 
-CANVAS_CALLS = {
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.fillStyle", "set", "#f60", None),
-    (
-        CANVAS_TEST_URL,
-        "CanvasRenderingContext2D.textBaseline",
-        "set",
-        "alphabetic",
-        None,
-    ),
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.textBaseline", "set", "top", None),
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.font", "set", "14px 'Arial'", None),
-    (CANVAS_TEST_URL, "CanvasRenderingContext2D.fillStyle", "set", "#069", None),
-    (
-        CANVAS_TEST_URL,
-        "CanvasRenderingContext2D.fillStyle",
-        "set",
-        "rgba(102, 204, 0, 0.7)",
-        None,
-    ),
-    (CANVAS_TEST_URL, "HTMLCanvasElement.getContext", "call", "", '["2d"]'),
-    (
-        CANVAS_TEST_URL,
-        "CanvasRenderingContext2D.fillRect",
-        "call",
-        "",
-        "[125,1,62,20]",
-    ),
-    (CANVAS_TEST_URL, "HTMLCanvasElement.toDataURL", "call", "", None),
-    (
-        CANVAS_TEST_URL,
-        "CanvasRenderingContext2D.fillText",
-        "call",
-        "",
-        '["BrowserLeaks,com <canvas> 1.0",4,17]',
-    ),
-    (
-        CANVAS_TEST_URL,
-        "CanvasRenderingContext2D.fillText",
-        "call",
-        "",
-        '["BrowserLeaks,com <canvas> 1.0",2,15]',
-    ),
-}
 
-WEBRTC_TEST_URL = "%s/webrtc_localip.html" % utilities.BASE_TEST_URL
+def expected_canvas_calls(canvas_test_url: str) -> set:
+    return {
+        (canvas_test_url, "CanvasRenderingContext2D.fillStyle", "set", "#f60", None),
+        (
+            canvas_test_url,
+            "CanvasRenderingContext2D.textBaseline",
+            "set",
+            "alphabetic",
+            None,
+        ),
+        (canvas_test_url, "CanvasRenderingContext2D.textBaseline", "set", "top", None),
+        (
+            canvas_test_url,
+            "CanvasRenderingContext2D.font",
+            "set",
+            "14px 'Arial'",
+            None,
+        ),
+        (canvas_test_url, "CanvasRenderingContext2D.fillStyle", "set", "#069", None),
+        (
+            canvas_test_url,
+            "CanvasRenderingContext2D.fillStyle",
+            "set",
+            "rgba(102, 204, 0, 0.7)",
+            None,
+        ),
+        (canvas_test_url, "HTMLCanvasElement.getContext", "call", "", '["2d"]'),
+        (
+            canvas_test_url,
+            "CanvasRenderingContext2D.fillRect",
+            "call",
+            "",
+            "[125,1,62,20]",
+        ),
+        (canvas_test_url, "HTMLCanvasElement.toDataURL", "call", "", None),
+        (
+            canvas_test_url,
+            "CanvasRenderingContext2D.fillText",
+            "call",
+            "",
+            '["BrowserLeaks,com <canvas> 1.0",4,17]',
+        ),
+        (
+            canvas_test_url,
+            "CanvasRenderingContext2D.fillText",
+            "call",
+            "",
+            '["BrowserLeaks,com <canvas> 1.0",2,15]',
+        ),
+    }
 
-WEBRTC_CALLS = {
-    (
-        WEBRTC_TEST_URL,
-        "RTCPeerConnection.createOffer",
-        "call",
-        "",
-        '["FUNCTION","FUNCTION"]',
-    ),
-    (WEBRTC_TEST_URL, "RTCPeerConnection.createDataChannel", "call", "", '[""]'),
-    (
-        WEBRTC_TEST_URL,
-        "RTCPeerConnection.createDataChannel",
-        "call",
-        "",
-        '["","{\\"reliable\\":false}"]',
-    ),
-    (WEBRTC_TEST_URL, "RTCPeerConnection.onicecandidate", "set", "FUNCTION", None),
-}
+
+def expected_webrtc_calls(webrtc_test_url: str) -> set:
+    return {
+        (
+            webrtc_test_url,
+            "RTCPeerConnection.createOffer",
+            "call",
+            "",
+            '["FUNCTION","FUNCTION"]',
+        ),
+        (webrtc_test_url, "RTCPeerConnection.createDataChannel", "call", "", '[""]'),
+        (
+            webrtc_test_url,
+            "RTCPeerConnection.createDataChannel",
+            "call",
+            "",
+            '["","{\\"reliable\\":false}"]',
+        ),
+        (webrtc_test_url, "RTCPeerConnection.onicecandidate", "set", "FUNCTION", None),
+    }
+
 
 # we expect these strings to be present in the WebRTC SDP
 WEBRTC_SDP_OFFER_STRINGS = (
@@ -150,111 +157,111 @@ AUDIO_SYMBOLS = {
     "OscillatorNode.stop",
 }
 
-JS_STACK_TEST_URL = "%s/js_call_stack.html" % utilities.BASE_TEST_URL
-JS_STACK_TEST_SCRIPT_URL = "%s/stack.js" % utilities.BASE_TEST_URL
 
-JS_STACK_CALLS = {
-    (
-        JS_STACK_TEST_URL,
-        "1",
-        "1",
-        "",
-        "line 10 > eval",
-        "",
-        "window.navigator.appName",
-        "get",
-    ),
-    (
-        JS_STACK_TEST_SCRIPT_URL,
-        "3",
-        "17",
-        "js_check_navigator",
-        "",
-        "",
-        "window.navigator.userAgent",
-        "get",
-    ),
-    (
-        JS_STACK_TEST_SCRIPT_URL,
-        "1",
-        "1",
-        "",
-        "line 4 > eval",
-        "",
-        "window.navigator.platform",
-        "get",
-    ),
-    (
-        JS_STACK_TEST_SCRIPT_URL,
-        "1",
-        "1",
-        "",
-        "line 11 > eval",
-        "",
-        "window.navigator.buildID",
-        "get",
-    ),
-    (
-        JS_STACK_TEST_SCRIPT_URL,
-        "3",
-        "1",
-        "anonymous",
-        "line 14 > Function",
-        "",
-        "window.navigator.appVersion",
-        "get",
-    ),
-    (
-        JS_STACK_TEST_URL,
-        "7",
+def expected_js_stack_calls(base_url: str) -> set:
+    js_stack_test_url = base_url + "/js_call_stack.html"
+    js_stack_test_script_url = base_url + "/stack.js"
+    return {
+        (
+            js_stack_test_url,
+            "1",
+            "1",
+            "",
+            "line 10 > eval",
+            "",
+            "window.navigator.appName",
+            "get",
+        ),
+        (
+            js_stack_test_script_url,
+            "3",
+            "17",
+            "js_check_navigator",
+            "",
+            "",
+            "window.navigator.userAgent",
+            "get",
+        ),
+        (
+            js_stack_test_script_url,
+            "1",
+            "1",
+            "",
+            "line 4 > eval",
+            "",
+            "window.navigator.platform",
+            "get",
+        ),
+        (
+            js_stack_test_script_url,
+            "1",
+            "1",
+            "",
+            "line 11 > eval",
+            "",
+            "window.navigator.buildID",
+            "get",
+        ),
+        (
+            js_stack_test_script_url,
+            "3",
+            "1",
+            "anonymous",
+            "line 14 > Function",
+            "",
+            "window.navigator.appVersion",
+            "get",
+        ),
+        (
+            js_stack_test_url,
+            "7",
+            "21",
+            "check_navigator",
+            "",
+            "",
+            "window.navigator.userAgent",
+            "get",
+        ),
+        (
+            js_stack_test_url,
+            "1",
+            "1",
+            "",
+            "line 8 > eval",
+            "",
+            "window.navigator.appCodeName",
+            "get",
+        ),
+    }
+
+
+def expected_document_cookie_read_write(base_url: str) -> set:
+    js_cookie_test_url = base_url + "/js_cookie.html"
+    document_cookie_read = (
+        js_cookie_test_url,
+        "8",
         "21",
-        "check_navigator",
+        "set_cookie",
         "",
-        "",
-        "window.navigator.userAgent",
+        "set_cookie@" + js_cookie_test_url + ":8:21"
+        "\nonload@" + js_cookie_test_url + ":1:1",
+        "window.document.cookie",
         "get",
-    ),
-    (
-        JS_STACK_TEST_URL,
-        "1",
-        "1",
+        "test_cookie=Test-0123456789",
+    )
+    document_cookie_write = (
+        js_cookie_test_url,
+        "7",
+        "9",
+        "set_cookie",
         "",
-        "line 8 > eval",
-        "",
-        "window.navigator.appCodeName",
-        "get",
-    ),
-}
-
-JS_COOKIE_TEST_URL = "%s/js_cookie.html" % utilities.BASE_TEST_URL
-
-DOCUMENT_COOKIE_READ = (
-    JS_COOKIE_TEST_URL,
-    "8",
-    "21",
-    "set_cookie",
-    "",
-    "set_cookie@" + JS_COOKIE_TEST_URL + ":8:21"
-    "\nonload@" + JS_COOKIE_TEST_URL + ":1:1",
-    "window.document.cookie",
-    "get",
-    "test_cookie=Test-0123456789",
-)
-
-DOCUMENT_COOKIE_WRITE = (
-    JS_COOKIE_TEST_URL,
-    "7",
-    "9",
-    "set_cookie",
-    "",
-    "set_cookie@" + JS_COOKIE_TEST_URL + ":7:9"
-    "\nonload@" + JS_COOKIE_TEST_URL + ":1:1",
-    "window.document.cookie",
-    "set",
-    "test_cookie=Test-0123456789; " "expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/",
-)
-
-DOCUMENT_COOKIE_READ_WRITE = {DOCUMENT_COOKIE_READ, DOCUMENT_COOKIE_WRITE}
+        "set_cookie@" + js_cookie_test_url + ":7:9"
+        "\nonload@" + js_cookie_test_url + ":1:1",
+        "window.document.cookie",
+        "set",
+        "test_cookie=Test-0123456789; " "expires=Tue, 31 Dec 2030 00:00:00 UTC; path=/",
+    )
+    return {document_cookie_read, document_cookie_write}
 
 
 class TestExtension(OpenWPMTest):
@@ -266,7 +273,7 @@ class TestExtension(OpenWPMTest):
         return manager_params, browser_params
 
     def test_property_enumeration(self) -> None:
-        test_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
+        test_url = self.server.base + "/property_enumeration.html"
         db = self.visit(test_url)
         rows = db_utils.query_db(db, "SELECT script_url, symbol FROM javascript")
         observed_symbols = set()
@@ -290,11 +297,12 @@ class TestExtension(OpenWPMTest):
                 row["arguments"],
             )
             observed_rows.add(item)
-        assert CANVAS_CALLS == observed_rows
+        canvas_test_url = self.server.base + "/canvas_fingerprinting.html"
+        assert expected_canvas_calls(canvas_test_url) == observed_rows
 
     def test_extension_gets_correct_visit_id(self) -> None:
-        url_a = utilities.BASE_TEST_URL + "/simple_a.html"
-        url_b = utilities.BASE_TEST_URL + "/simple_b.html"
+        url_a = self.server.base + "/simple_a.html"
+        url_b = self.server.base + "/simple_b.html"
         self.visit(url_a)
         db = self.visit(url_b)
 
@@ -351,7 +359,8 @@ class TestExtension(OpenWPMTest):
                     row["arguments"],
                 )
                 observed_rows.add(item)
-        assert WEBRTC_CALLS == observed_rows
+        webrtc_test_url = self.server.base + "/webrtc_localip.html"
+        assert expected_webrtc_calls(webrtc_test_url) == observed_rows
 
     def test_js_call_stack(self):
         db = self.visit("/js_call_stack.html")
@@ -370,7 +379,7 @@ class TestExtension(OpenWPMTest):
                 row["operation"],
             )
             observed_rows.add(item)
-        assert JS_STACK_CALLS == observed_rows
+        assert expected_js_stack_calls(self.server.base) == observed_rows
 
     def test_js_time_stamp(self):
         # Check that timestamp is recorded correctly for the javascript table
@@ -386,7 +395,7 @@ class TestExtension(OpenWPMTest):
         assert not db_utils.any_command_failed(db)
 
     def test_document_cookie_instrumentation(self):
-        db = self.visit(utilities.BASE_TEST_URL + "/js_cookie.html")
+        db = self.visit(self.server.base + "/js_cookie.html")
         rows = db_utils.get_javascript_entries(db, all_columns=True)
         captured_cookie_calls = set()
         for row in rows:
@@ -402,7 +411,9 @@ class TestExtension(OpenWPMTest):
                 row["value"],
             )
             captured_cookie_calls.add(item)
-        assert captured_cookie_calls == DOCUMENT_COOKIE_READ_WRITE
+        assert captured_cookie_calls == expected_document_cookie_read_write(
+            self.server.base
+        )
 
 
 class ClickButtonCommand(BaseCommand):
@@ -422,15 +433,13 @@ class ClickButtonCommand(BaseCommand):
     "CI" in os.environ and os.environ["CI"] == "true",
     reason="Flaky on CI",
 )
-def test_audio_fingerprinting(default_params, task_manager_creator):
+def test_audio_fingerprinting(default_params, task_manager_creator, server):
     for browser_params in default_params[1]:
         browser_params.js_instrument = True
 
     tm, db = task_manager_creator(default_params)
     cs = CommandSequence("/audio_fingerprinting.html")
-    cs.append_command(
-        GetCommand(utilities.BASE_TEST_URL + "/audio_fingerprinting.html", 0)
-    )
+    cs.append_command(GetCommand(server.base + "/audio_fingerprinting.html", 0))
     cs.append_command(ClickButtonCommand())
     tm.execute_command_sequence(cs)
 

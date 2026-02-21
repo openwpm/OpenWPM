@@ -15,19 +15,19 @@ from openwpm.errors import CommandExecutionError, ProfileLoadError
 from openwpm.utilities import db_utils
 
 from . import openwpmtest
-from .utilities import BASE_TEST_URL
+from .utilities import ServerUrls
 
 # TODO update these tests to make use of blocking commands
 
 
-def test_saving(default_params, task_manager_creator):
+def test_saving(default_params, task_manager_creator, server):
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     browser_params[0].profile_archive_dir = (
         manager_params.data_directory / "browser_profile"
     )
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
-    manager.get(BASE_TEST_URL)
+    manager.get(server.base)
     manager.close()
     tar_path = browser_params[0].profile_archive_dir / "profile.tar.gz"
     assert tar_path.is_file()
@@ -47,21 +47,21 @@ def test_saving(default_params, task_manager_creator):
         assert item in archive_items
 
 
-def test_save_incomplete_profile_error(default_params, task_manager_creator):
+def test_save_incomplete_profile_error(default_params, task_manager_creator, server):
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     browser_params[0].profile_archive_dir = (
         manager_params.data_directory / "browser_profile"
     )
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
-    manager.get(BASE_TEST_URL)
+    manager.get(server.base)
     (manager.browsers[0].current_profile_path / "cookies.sqlite").unlink()
     with pytest.raises(RuntimeError) as error:
         manager.close()
     assert str(error.value) == "Profile dump not successful"
 
 
-def test_crash_profile(default_params, task_manager_creator):
+def test_crash_profile(default_params, task_manager_creator, server):
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     manager_params.failure_limit = 2
@@ -70,7 +70,7 @@ def test_crash_profile(default_params, task_manager_creator):
     )
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
     try:
-        manager.get(BASE_TEST_URL)  # So we have a profile
+        manager.get(server.base)  # So we have a profile
         manager.get("example.com")  # Selenium requires scheme prefix
         manager.get("example.com")  # Selenium requires scheme prefix
         manager.get("example.com")  # Selenium requires scheme prefix
@@ -89,7 +89,7 @@ def test_profile_error(default_params, task_manager_creator):
 
 
 def test_profile_saved_when_launch_crashes(
-    monkeypatch, default_params, task_manager_creator
+    monkeypatch, default_params, task_manager_creator, server
 ):
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
@@ -97,7 +97,7 @@ def test_profile_saved_when_launch_crashes(
         manager_params.data_directory / "browser_profile"
     )
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
-    manager.get(BASE_TEST_URL)
+    manager.get(server.base)
 
     # This will cause browser restarts to fail
     monkeypatch.setenv("FIREFOX_BINARY", "/tmp/NOTREAL")
@@ -106,14 +106,14 @@ def test_profile_saved_when_launch_crashes(
     manager.get("example.com")  # Cause a selenium crash to force browser to restart
 
     try:
-        manager.get(BASE_TEST_URL)
+        manager.get(server.base)
     except CommandExecutionError:
         pass
     manager.close()
     assert (browser_params[0].profile_archive_dir / "profile.tar.gz").is_file()
 
 
-def test_seed_persistence(default_params, task_manager_creator):
+def test_seed_persistence(default_params, task_manager_creator, server):
     manager_params, browser_params = default_params
     p = Path("profile.tar.gz")
     for browser_param in browser_params:
@@ -122,7 +122,7 @@ def test_seed_persistence(default_params, task_manager_creator):
     with manager:
         command_sequences = []
         for _ in range(openwpmtest.NUM_BROWSERS):
-            cs = CommandSequence(url=BASE_TEST_URL)
+            cs = CommandSequence(url=server.base)
             cs.get()
             cs.append_command(AssertConfigSetCommand("test_pref", True))
             command_sequences.append(cs)
@@ -168,12 +168,12 @@ class AssertConfigSetCommand(BaseCommand):
         assert result == self.expected_value
 
 
-def test_dump_profile_command(default_params, task_manager_creator):
+def test_dump_profile_command(default_params, task_manager_creator, server):
     """Test saving the browser profile using a command."""
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
-    cs = CommandSequence(url=BASE_TEST_URL)
+    cs = CommandSequence(url=server.base)
     cs.get()
     tar_path = manager_params.data_directory / "profile.tar.gz"
     cs.dump_profile(tar_path, True)
@@ -223,14 +223,20 @@ def test_crash_during_init(default_params, task_manager_creator):
 # Use -k to run this test for a specific set of parameters. For example:
 # pytest -vv test_profile.py::test_profile_recovery -k on_crash-stateful-with_seed_tar
 def test_profile_recovery(
-    monkeypatch, default_params, task_manager_creator, testcase, stateful, seed_tar
+    monkeypatch,
+    default_params,
+    task_manager_creator,
+    server,
+    testcase,
+    stateful,
+    seed_tar,
 ):
     """Test browser profile recovery in various scenarios."""
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     browser_params[0].seed_tar = seed_tar
     manager, db = task_manager_creator((manager_params, browser_params[:1]))
-    manager.get(BASE_TEST_URL, reset=not stateful)
+    manager.get(server.base, reset=not stateful)
 
     if testcase == "normal_operation":
         pass
@@ -270,9 +276,9 @@ def test_profile_recovery(
     rows = db_utils.query_db(ff_db, "SELECT url FROM moz_places")
     places = [url for (url,) in rows]
     if stateful:
-        assert BASE_TEST_URL in places
+        assert server.base in places
     else:
-        assert BASE_TEST_URL not in places
+        assert server.base not in places
 
     # Check if seed_tar was loaded on restart
     rows = db_utils.query_db(
