@@ -1,21 +1,27 @@
 from sqlite3 import Row
+from typing import cast
 from urllib.parse import urlparse
 
 from openwpm.utilities import db_utils
 
-from . import utilities
+from .conftest import FullConfig, TaskManagerCreator
+from .utilities import ServerUrls
 
 
-def test_name_resolution(default_params, task_manager_creator):
+def test_name_resolution(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.dns_instrument = True
 
     manager, db = task_manager_creator((manager_params, browser_params))
-    manager.get("http://test.localhost:8000")
+    manager.get(f"http://test.localhost:{server.port}")
     manager.close()
 
-    results = db_utils.query_db(db, "SELECT * FROM dns_responses")
+    results = cast("list[Row]", db_utils.query_db(db, "SELECT * FROM dns_responses"))
     result = results[0]
     assert isinstance(result, Row)
     assert result["used_address"] == "127.0.0.1"
@@ -23,14 +29,18 @@ def test_name_resolution(default_params, task_manager_creator):
     assert result["hostname"] == "test.localhost"
     assert result["canonical_name"] == "test.localhost"
     assert result["redirect_url"] is not None
-    assert "test.localhost:8000" in result["redirect_url"]
+    assert f"test.localhost:{server.port}" in result["redirect_url"]
 
     # Each redirect hop should record the URL it was associated with
     redirect_urls = [r["redirect_url"] for r in results]
     assert all(url is not None for url in redirect_urls)
 
 
-def test_dns_captured_on_connection_abort(default_params, task_manager_creator):
+def test_dns_captured_on_connection_abort(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     """Regression test: DNS data must be captured even when the connection
     aborts before completion. This verifies that the extension uses
     onHeadersReceived (not onCompleted) to record DNS responses."""
@@ -39,7 +49,7 @@ def test_dns_captured_on_connection_abort(default_params, task_manager_creator):
         browser_param.dns_instrument = True
 
     manager, db = task_manager_creator((manager_params, browser_params))
-    manager.get("http://localhost:8000/CONNECTION_ABORT/")
+    manager.get(f"http://localhost:{server.port}/CONNECTION_ABORT/")
     manager.close()
 
     results = db_utils.query_db(db, "SELECT * FROM dns_responses")
@@ -51,7 +61,10 @@ def test_dns_captured_on_connection_abort(default_params, task_manager_creator):
     assert result["hostname"] == "localhost"
 
 
-def test_dns_failure_captured(default_params, task_manager_creator):
+def test_dns_failure_captured(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+) -> None:
     """DNS failures (NXDOMAIN) should be captured via onErrorOccurred
     with error details and null addresses."""
     manager_params, browser_params = default_params
@@ -63,7 +76,7 @@ def test_dns_failure_captured(default_params, task_manager_creator):
     manager.get("http://example.invalid/")
     manager.close()
 
-    results = db_utils.query_db(db, "SELECT * FROM dns_responses")
+    results = cast("list[Row]", db_utils.query_db(db, "SELECT * FROM dns_responses"))
     assert len(results) > 0, "No DNS responses captured for failed resolution"
     # Find the row for example.invalid
     dns_failure = [r for r in results if "example.invalid" in (r["hostname"] or "")]
@@ -75,7 +88,11 @@ def test_dns_failure_captured(default_params, task_manager_creator):
     assert result["error"] is not None
 
 
-def test_redirect_chain_dns(default_params, task_manager_creator):
+def test_redirect_chain_dns(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     """A 2-hop redirect chain (hop1 -> hop2 -> simple_b.html) should produce
     exactly three dns_responses rows that, ordered by time_stamp, reconstruct
     the original chain — one row per redirect step, all sharing the same
@@ -88,7 +105,7 @@ def test_redirect_chain_dns(default_params, task_manager_creator):
     manager, db = task_manager_creator((manager_params, browser_params))
 
     chain_url = (
-        f"http://test.localhost:{utilities.LOCAL_WEBSERVER_PORT}"
+        f"http://test.localhost:{server.port}"
         f"/MAGIC_REDIRECT/hop1"
         f"?dst=/MAGIC_REDIRECT/hop2"
         f"&dst=/test_pages/simple_b.html"
@@ -101,10 +118,13 @@ def test_redirect_chain_dns(default_params, task_manager_creator):
         "/MAGIC_REDIRECT/hop2",
         "/test_pages/simple_b.html",
     ]
-    rows = db_utils.query_db(
-        db,
-        "SELECT * FROM dns_responses WHERE hostname = 'test.localhost' "
-        "ORDER BY time_stamp",
+    rows = cast(
+        "list[Row]",
+        db_utils.query_db(
+            db,
+            "SELECT * FROM dns_responses WHERE hostname = 'test.localhost' "
+            "ORDER BY time_stamp",
+        ),
     )
     chain_rows = [r for r in rows if urlparse(r["redirect_url"]).path in expected_paths]
 
