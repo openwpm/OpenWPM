@@ -2,14 +2,21 @@ from sqlite3 import Row
 
 from openwpm.utilities import db_utils
 
+from .conftest import FullConfig, TaskManagerCreator
+from .utilities import ServerUrls
 
-def test_name_resolution(default_params, task_manager_creator):
+
+def test_name_resolution(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.dns_instrument = True
 
     manager, db = task_manager_creator((manager_params, browser_params))
-    manager.get("http://test.localhost:8000")
+    manager.get(f"http://test.localhost:{server.port}")
     manager.close()
 
     results = db_utils.query_db(db, "SELECT * FROM dns_responses")

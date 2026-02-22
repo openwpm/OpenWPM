@@ -11,6 +11,7 @@ import gzip
 import json
 import os
 import re
+from typing import Literal
 from urllib.parse import urlparse
 
 import pytest
@@ -19,73 +20,47 @@ from PIL import Image
 from openwpm import command_sequence
 from openwpm.utilities import db_utils
 
-from . import utilities
-
-url_a = utilities.BASE_TEST_URL + "/simple_a.html"
-url_b = utilities.BASE_TEST_URL + "/simple_b.html"
-url_c = utilities.BASE_TEST_URL + "/simple_c.html"
-url_d = utilities.BASE_TEST_URL + "/simple_d.html"
-
-rendered_js_url = utilities.BASE_TEST_URL + "/property_enumeration.html"
-
-# Expected nested page source
-# This needs to be changed back once #887 is addressed
+from .conftest import HttpParams, TaskManagerCreator
+from .utilities import ServerUrls
 
 NESTED_TEST_DIR = "/recursive_iframes/"
-NESTED_FRAMES_URL = utilities.BASE_TEST_URL + NESTED_TEST_DIR + "parent.html"
-D1_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
-D2_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
-D3_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
-D4_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
-D5_BASE = utilities.BASE_TEST_URL + NESTED_TEST_DIR
-EXPECTED_PARENTS = {
-    NESTED_FRAMES_URL: [],
-    D1_BASE + "child1a.html": [NESTED_FRAMES_URL],
-    D1_BASE + "child1b.html": [NESTED_FRAMES_URL],
-    D1_BASE + "child1c.html": [NESTED_FRAMES_URL],
-    D2_BASE + "child2a.html": [NESTED_FRAMES_URL, D1_BASE + "child1a.html"],
-    D2_BASE + "child2b.html": [NESTED_FRAMES_URL, D1_BASE + "child1a.html"],
-    D2_BASE + "child2c.html": [NESTED_FRAMES_URL, D1_BASE + "child1c.html"],
-    D3_BASE
-    + "child3a.html": [
-        NESTED_FRAMES_URL,
-        D1_BASE + "child1a.html",
-        D2_BASE + "child2a.html",
-    ],
-    D3_BASE
-    + "child3b.html": [
-        NESTED_FRAMES_URL,
-        D1_BASE + "child1c.html",
-        D2_BASE + "child2c.html",
-    ],
-    D3_BASE
-    + "child3c.html": [
-        NESTED_FRAMES_URL,
-        D1_BASE + "child1c.html",
-        D2_BASE + "child2c.html",
-    ],
-    D3_BASE
-    + "child3d.html": [
-        NESTED_FRAMES_URL,
-        D1_BASE + "child1c.html",
-        D2_BASE + "child2c.html",
-    ],
-    D4_BASE
-    + "child4a.html": [
-        NESTED_FRAMES_URL,
-        D1_BASE + "child1a.html",
-        D2_BASE + "child2a.html",
-        D3_BASE + "child3a.html",
-    ],
-    D5_BASE
-    + "child5a.html": [
-        NESTED_FRAMES_URL,
-        D1_BASE + "child1a.html",
-        D2_BASE + "child2a.html",
-        D3_BASE + "child3a.html",
-        D4_BASE + "child4a.html",
-    ],
-}
+
+
+def _url(base: str, page: str) -> str:
+    return base + page
+
+
+def _expected_parents(base: str) -> dict:
+    base = base + NESTED_TEST_DIR
+    frames = base + "parent.html"
+    return {
+        frames: [],
+        base + "child1a.html": [frames],
+        base + "child1b.html": [frames],
+        base + "child1c.html": [frames],
+        base + "child2a.html": [frames, base + "child1a.html"],
+        base + "child2b.html": [frames, base + "child1a.html"],
+        base + "child2c.html": [frames, base + "child1c.html"],
+        base + "child3a.html": [frames, base + "child1a.html", base + "child2a.html"],
+        base + "child3b.html": [frames, base + "child1c.html", base + "child2c.html"],
+        base + "child3c.html": [frames, base + "child1c.html", base + "child2c.html"],
+        base + "child3d.html": [frames, base + "child1c.html", base + "child2c.html"],
+        base
+        + "child4a.html": [
+            frames,
+            base + "child1a.html",
+            base + "child2a.html",
+            base + "child3a.html",
+        ],
+        base
+        + "child5a.html": [
+            frames,
+            base + "child1a.html",
+            base + "child2a.html",
+            base + "child3a.html",
+            base + "child4a.html",
+        ],
+    }
 
 
 scenarios = [
@@ -95,16 +70,21 @@ scenarios = [
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
-def test_get_site_visits_table_valid(http_params, task_manager_creator, display_mode):
+def test_get_site_visits_table_valid(
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that get works and populates db correctly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
     manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential get commands to two URLS
-    cs_a = command_sequence.CommandSequence(url_a)
+    cs_a = command_sequence.CommandSequence(_url(server.base, "/simple_a.html"))
     cs_a.get(sleep=1)
-    cs_b = command_sequence.CommandSequence(url_b)
+    cs_b = command_sequence.CommandSequence(_url(server.base, "/simple_b.html"))
     cs_b.get(sleep=1)
 
     # Perform the get commands
@@ -120,21 +100,26 @@ def test_get_site_visits_table_valid(http_params, task_manager_creator, display_
     # We had two separate page visits
     assert len(qry_res) == 2
 
-    assert qry_res[0][0] == url_a
-    assert qry_res[1][0] == url_b
+    assert qry_res[0][0] == _url(server.base, "/simple_a.html")
+    assert qry_res[1][0] == _url(server.base, "/simple_b.html")
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
-def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
+def test_get_http_tables_valid(
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that get works and populates http tables correctly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
     manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential get commands to two URLS
-    cs_a = command_sequence.CommandSequence(url_a)
+    cs_a = command_sequence.CommandSequence(_url(server.base, "/simple_a.html"))
     cs_a.get(sleep=1)
-    cs_b = command_sequence.CommandSequence(url_b)
+    cs_b = command_sequence.CommandSequence(_url(server.base, "/simple_b.html"))
     cs_b.get(sleep=1)
 
     manager.execute_command_sequence(cs_a)
@@ -151,45 +136,52 @@ def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
-        (url_a,),
+        (_url(server.base, "/simple_a.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
-        (url_b,),
+        (_url(server.base, "/simple_b.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_b]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_b.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_a,),
+        (_url(server.base, "/simple_a.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_b,),
+        (_url(server.base, "/simple_b.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_b]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_b.html")]
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
 def test_browse_site_visits_table_valid(
-    http_params, task_manager_creator, display_mode
-):
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that CommandSequence.browse() populates db correctly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
     manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential browse commands to two URLS
-    cs_a = command_sequence.CommandSequence(url_a, site_rank=0)
+    cs_a = command_sequence.CommandSequence(
+        _url(server.base, "/simple_a.html"), site_rank=0
+    )
     cs_a.browse(num_links=1, sleep=1)
-    cs_b = command_sequence.CommandSequence(url_b, site_rank=1)
+    cs_b = command_sequence.CommandSequence(
+        _url(server.base, "/simple_b.html"), site_rank=1
+    )
     cs_b.browse(num_links=1, sleep=1)
 
     manager.execute_command_sequence(cs_a)
@@ -204,14 +196,19 @@ def test_browse_site_visits_table_valid(
     # We had two separate page visits
     assert len(qry_res) == 2
 
-    assert qry_res[0][0] == url_a
+    assert qry_res[0][0] == _url(server.base, "/simple_a.html")
     assert qry_res[0][1] == 0
-    assert qry_res[1][0] == url_b
+    assert qry_res[1][0] == _url(server.base, "/simple_b.html")
     assert qry_res[1][1] == 1
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
-def test_browse_http_table_valid(http_params, task_manager_creator, display_mode):
+def test_browse_http_table_valid(
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check CommandSequence.browse() works and populates http tables correctly.
 
     NOTE: Since the browse command is choosing links randomly, there is a
@@ -223,9 +220,9 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential browse commands to two URLS
-    cs_a = command_sequence.CommandSequence(url_a)
+    cs_a = command_sequence.CommandSequence(_url(server.base, "/simple_a.html"))
     cs_a.browse(num_links=20, sleep=1)
-    cs_b = command_sequence.CommandSequence(url_b)
+    cs_b = command_sequence.CommandSequence(_url(server.base, "/simple_b.html"))
     cs_b.browse(num_links=1, sleep=1)
 
     manager.execute_command_sequence(cs_a)
@@ -242,30 +239,30 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
-        (url_a,),
+        (_url(server.base, "/simple_a.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
-        (url_b,),
+        (_url(server.base, "/simple_b.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_b]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_b.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_a,),
+        (_url(server.base, "/simple_a.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_b,),
+        (_url(server.base, "/simple_b.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_b]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_b.html")]
 
     # Page simple_a.html has three links:
     # 1) An absolute link to simple_c.html
@@ -277,29 +274,32 @@ def test_browse_http_table_valid(http_params, task_manager_creator, display_mode
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_c,),
+        (_url(server.base, "/simple_c.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_d,),
+        (_url(server.base, "/simple_d.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     # We expect 4 urls: a,c,d and a favicon request
     qry_res = db_utils.query_db(
         db,
         "SELECT COUNT(DISTINCT url) FROM http_responses WHERE visit_id = ?",
-        (visit_ids[url_a],),
+        (visit_ids[_url(server.base, "/simple_a.html")],),
     )
     assert qry_res[0][0] == 4
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
 def test_browse_wrapper_http_table_valid(
-    http_params, task_manager_creator, display_mode
-):
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that TaskManager.browse() wrapper works and populates
     http tables correctly.
 
@@ -312,8 +312,8 @@ def test_browse_wrapper_http_table_valid(
     manager, db = task_manager_creator((manager_params, browser_params))
 
     # Set up two sequential browse commands to two URLS
-    manager.browse(url_a, num_links=20, sleep=1)
-    manager.browse(url_b, num_links=1, sleep=1)
+    manager.browse(_url(server.base, "/simple_a.html"), num_links=20, sleep=1)
+    manager.browse(_url(server.base, "/simple_b.html"), num_links=1, sleep=1)
     manager.close()
 
     qry_res = db_utils.query_db(db, "SELECT visit_id, site_url FROM site_visits")
@@ -326,30 +326,30 @@ def test_browse_wrapper_http_table_valid(
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
-        (url_a,),
+        (_url(server.base, "/simple_a.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_requests WHERE url = ?",
-        (url_b,),
+        (_url(server.base, "/simple_b.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_b]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_b.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_a,),
+        (_url(server.base, "/simple_a.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_b,),
+        (_url(server.base, "/simple_b.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_b]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_b.html")]
 
     # Page simple_a.html has three links:
     # 1) An absolute link to simple_c.html
@@ -361,33 +361,38 @@ def test_browse_wrapper_http_table_valid(
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_c,),
+        (_url(server.base, "/simple_c.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
     qry_res = db_utils.query_db(
         db,
         "SELECT visit_id FROM http_responses WHERE url = ?",
-        (url_d,),
+        (_url(server.base, "/simple_d.html"),),
     )
-    assert qry_res[0][0] == visit_ids[url_a]
+    assert qry_res[0][0] == visit_ids[_url(server.base, "/simple_a.html")]
 
     # We expect 4 urls: a,c,d and a favicon request
     qry_res = db_utils.query_db(
         db,
         "SELECT COUNT(DISTINCT url) FROM http_responses WHERE visit_id = ?",
-        (visit_ids[url_a],),
+        (visit_ids[_url(server.base, "/simple_a.html")],),
     )
     assert qry_res[0][0] == 4
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
-def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
+def test_save_screenshot_valid(
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that 'save_screenshot' works"""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
     manager, _ = task_manager_creator((manager_params, browser_params))
 
-    cs = command_sequence.CommandSequence(url_a)
+    cs = command_sequence.CommandSequence(_url(server.base, "/simple_a.html"))
     cs.get(sleep=1)
     cs.save_screenshot("test")
     cs.screenshot_full_page("test_full")
@@ -414,13 +419,18 @@ def test_save_screenshot_valid(http_params, task_manager_creator, display_mode):
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
-def test_dump_page_source_valid(http_params, task_manager_creator, display_mode):
+def test_dump_page_source_valid(
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that 'dump_page_source' works and source is saved properly."""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
     manager, db = task_manager_creator((manager_params, browser_params))
 
-    cs = command_sequence.CommandSequence(url_a)
+    cs = command_sequence.CommandSequence(_url(server.base, "/simple_a.html"))
     cs.get(sleep=1)
     cs.dump_page_source(suffix="test")
     manager.execute_command_sequence(cs)
@@ -441,13 +451,18 @@ def test_dump_page_source_valid(http_params, task_manager_creator, display_mode)
 
 @pytest.mark.parametrize("display_mode", scenarios)
 def test_recursive_dump_page_source_valid(
-    http_params, task_manager_creator, display_mode
-):
+    http_params: HttpParams,
+    task_manager_creator: TaskManagerCreator,
+    display_mode: Literal["headless", "xvfb"],
+    server: ServerUrls,
+) -> None:
     """Check that 'recursive_dump_page_source' works"""
     # Run the test crawl
     manager_params, browser_params = http_params(display_mode)
     manager, db = task_manager_creator((manager_params, browser_params))
-    cs = command_sequence.CommandSequence(NESTED_FRAMES_URL)
+    cs = command_sequence.CommandSequence(
+        _url(server.base, NESTED_TEST_DIR + "parent.html")
+    )
     cs.get(sleep=1)
     cs.recursive_dump_page_source()
     manager.execute_command_sequence(cs)
@@ -483,4 +498,4 @@ def test_recursive_dump_page_source_valid(
         parent_frames.pop()
 
     verify_frame(visit_source)
-    assert EXPECTED_PARENTS == observed_parents
+    assert _expected_parents(server.base) == observed_parents

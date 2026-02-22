@@ -12,24 +12,25 @@ from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
-from . import utilities
+from .conftest import FullConfig
+from .utilities import ServerUrls
 
-url_a = utilities.BASE_TEST_URL + "/simple_a.html"
 
-PAGE_LINKS = {
-    (
-        f"{utilities.BASE_TEST_URL}/simple_a.html",
-        f"{utilities.BASE_TEST_URL}/simple_c.html",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/simple_a.html",
-        f"{utilities.BASE_TEST_URL}/simple_d.html",
-    ),
-    (
-        f"{utilities.BASE_TEST_URL}/simple_a.html",
-        "http://example.com/test.html?localhost",
-    ),
-}
+def _page_links(base: str) -> set:
+    return {
+        (
+            f"{base}/simple_a.html",
+            f"{base}/simple_c.html",
+        ),
+        (
+            f"{base}/simple_a.html",
+            f"{base}/simple_d.html",
+        ),
+        (
+            f"{base}/simple_a.html",
+            "http://example.com/test.html?localhost",
+        ),
+    }
 
 
 class CollectLinksCommand(BaseCommand):
@@ -77,9 +78,12 @@ class CollectLinksCommand(BaseCommand):
         sock.close()
 
 
-def test_custom_function(default_params, xpi, server):
+def test_custom_function(
+    default_params: FullConfig, xpi: None, server: ServerUrls
+) -> None:
     """Test `custom_function` with an inline func that collects links"""
     table_name = TableName("page_links")
+    url_a = server.base + "/simple_a.html"
 
     manager_params, browser_params = default_params
     path = manager_params.data_directory / "crawl-data.sqlite"
@@ -107,4 +111,4 @@ def test_custom_function(default_params, xpi, server):
         "SELECT top_url, link FROM page_links;",
         as_tuple=True,
     )
-    assert PAGE_LINKS == set(query_result)
+    assert _page_links(server.base) == set(query_result)

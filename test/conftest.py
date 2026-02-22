@@ -13,6 +13,7 @@ from openwpm.task_manager import TaskManager
 
 from . import utilities
 from .openwpmtest import NUM_BROWSERS
+from .utilities import ServerUrls
 
 EXTENSION_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -52,10 +53,10 @@ def xpi_fixture():
 
 @pytest.fixture(scope="session")
 def server():
-    """Run an HTTP server during the tests."""
+    """Run an HTTP server during the tests and yield its URLs."""
     print("Starting local_http_server")
-    server, server_thread = utilities.start_server()
-    yield
+    server, server_thread, urls = utilities.start_server()
+    yield urls
     print("\nClosing server thread...")
     server.shutdown()
     server_thread.join()
@@ -85,7 +86,7 @@ TaskManagerCreator: TypeAlias = Callable[[FullConfig], Tuple[TaskManager, Path]]
 
 
 @pytest.fixture()
-def task_manager_creator(server: None, xpi: None) -> TaskManagerCreator:
+def task_manager_creator(server: ServerUrls, xpi: None) -> TaskManagerCreator:
     """We create a callable that returns a TaskManager that has
     been configured with the Manager and BrowserParams"""
 
