@@ -1,7 +1,6 @@
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from openwpm.mp_logger import MPLogger
 from openwpm.storage.in_memory_storage import (
     MemoryArrowProvider,
     MemoryStructuredProvider,
@@ -14,13 +13,12 @@ from openwpm.storage.storage_controller import (
 from test.storage.fixtures import dt_test_values
 
 
-def test_startup_and_shutdown(mp_logger: MPLogger, test_values: dt_test_values) -> None:
+def test_startup_and_shutdown(mp_logger,test_values: dt_test_values) -> None:
     test_table, visit_ids = test_values
     structured = MemoryStructuredProvider()
     controller_handle = StorageControllerHandle(structured, None)
     controller_handle.launch()
-    assert controller_handle.listener_address is not None
-    cs = DataSocket(controller_handle.listener_address, "Test")
+    cs = DataSocket(controller_handle.data_queue)
     for table, data in test_table.items():
         visit_id = data["visit_id"]
         cs.store_record(
@@ -40,14 +38,12 @@ def test_startup_and_shutdown(mp_logger: MPLogger, test_values: dt_test_values) 
         assert handle.storage[table] == [data]
 
 
-def test_arrow_provider(mp_logger: MPLogger, test_values: dt_test_values) -> None:
+def test_arrow_provider(mp_logger,test_values: dt_test_values) -> None:
     test_table, visit_ids = test_values
     structured = MemoryArrowProvider()
     controller_handle = StorageControllerHandle(structured, None)
     controller_handle.launch()
-
-    assert controller_handle.listener_address is not None
-    cs = DataSocket(controller_handle.listener_address, "Test")
+    cs = DataSocket(controller_handle.data_queue)
 
     for table, data in test_table.items():
         visit_id = data["visit_id"]
