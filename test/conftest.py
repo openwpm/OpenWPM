@@ -7,8 +7,8 @@ from typing import Any, Callable, Generator, List, Literal, Protocol, Tuple, Typ
 import pytest
 
 from openwpm.config import BrowserParams, ManagerParams
-from openwpm.mp_logger import MPLogger
 from openwpm.storage.sql_provider import SQLiteStorageProvider
+from openwpm.telemetry import setup_telemetry, shutdown_telemetry
 from openwpm.task_manager import TaskManager
 
 from . import utilities
@@ -130,11 +130,11 @@ def http_params(
 
 
 @pytest.fixture()
-def mp_logger(tmp_path: Path) -> Generator[MPLogger, Any, None]:
+def mp_logger(tmp_path: Path) -> Generator[None, Any, None]:
     log_path = tmp_path / "openwpm.log"
-    logger = MPLogger(log_path, log_level_console=logging.DEBUG)
-    yield logger
-    logger.close()
+    setup_telemetry(log_path)
+    yield
+    shutdown_telemetry()
     # The performance hit for this might be unacceptable but it might help us discover bugs
     with log_path.open("r") as f:
         for line in f:

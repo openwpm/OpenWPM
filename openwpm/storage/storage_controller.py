@@ -3,19 +3,15 @@ import base64
 import logging
 import queue
 import random
-import socket
+import threading
 import time
-from asyncio import IncompleteReadError, Task
-from asyncio.base_events import Server
+from asyncio import Task
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
 
-from openwpm.utilities.multiprocess_utils import Process
-
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket, get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
@@ -53,6 +49,7 @@ class StorageController:
         status_queue: Queue,
         completion_queue: Queue,
         shutdown_queue: Queue,
+        data_queue: Queue,
     ) -> None:
         """
         Parameters
@@ -65,10 +62,13 @@ class StorageController:
             queue containing the visit_ids of saved records
         shutdown_queue
             queue that the main process can use to shut down the StorageController
+        data_queue
+            queue from which the StorageController reads incoming records
         """
         self.status_queue = status_queue
         self.completion_queue = completion_queue
         self.shutdown_queue = shutdown_queue
+        self.data_queue = data_queue
         self._shutdown_flag = False
         self._relaxed = False
         self.logger = logging.getLogger("openwpm")
@@ -84,80 +84,78 @@ class StorageController:
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
 
-    async def _handler(
-        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ) -> None:
-        """This is a dirty hack around the fact that exceptions get swallowed by the asyncio.Server
-        and the coroutine just dies without any message.
-        By having this function be a wrapper we at least get a log message
-        """
-        try:
-            await self.handler(reader, writer)
-        except Exception as e:
-            self.logger.error(
-                "An exception occurred while processing records", exc_info=e
+    async def _process_record(self, record: Tuple[str, Any]) -> None:
+        """Process a single record from the data queue."""
+        if len(record) != 2:
+            self.logger.error("Query is not the correct length %s", repr(record))
+            return
+
+        self._last_record_received = time.time()
+        record_type, data = record
+
+        if record_type == RECORD_TYPE_CREATE:
+            raise RuntimeError(
+                f"""{RECORD_TYPE_CREATE} is no longer supported.
+                Please change the schema before starting the StorageController.
+                For an example of that see test/test_custom_function.py
+                """
             )
-        writer.close()
-        await writer.wait_closed()
 
-    async def handler(
-        self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
-    ) -> None:
-        """Created for every new connection to the Server"""
-        client_name = await get_message_from_reader(reader)
-        self.logger.info(f"Initializing new handler for {client_name}")
-        while True:
-            try:
-                record: Tuple[str, Any] = await get_message_from_reader(reader)
-            except IncompleteReadError:
-                self.logger.info(
-                    f"Terminating handler for {client_name}, because the underlying socket closed"
-                )
-                break
-            if len(record) != 2:
-                self.logger.error("Query is not the correct length %s", repr(record))
-                continue
-
-            self._last_record_received = time.time()
-            record_type, data = record
-
-            if record_type == RECORD_TYPE_CREATE:
-                raise RuntimeError(
-                    f"""{RECORD_TYPE_CREATE} is no longer supported.
-                    Please change the schema before starting the StorageController.
-                    For an example of that see test/test_custom_function.py
-                    """
-                )
-
-            if record_type == RECORD_TYPE_CONTENT:
-                assert len(data) == 2
-                if self.unstructured_storage is None:
-                    self.logger.error(
-                        """Tried to save content while not having
-                        provided any unstructured storage provider."""
-                    )
-                    continue
-                content, content_hash = data
-                content = base64.b64decode(content)
-                await self.unstructured_storage.store_blob(
-                    filename=content_hash, blob=content
-                )
-                continue
-
-            if "visit_id" not in data:
+        if record_type == RECORD_TYPE_CONTENT:
+            assert len(data) == 2
+            if self.unstructured_storage is None:
                 self.logger.error(
-                    "Skipping record: No visit_id contained in record %r", record
+                    """Tried to save content while not having
+                    provided any unstructured storage provider."""
                 )
+                return
+            content, content_hash = data
+            content = base64.b64decode(content)
+            await self.unstructured_storage.store_blob(
+                filename=content_hash, blob=content
+            )
+            return
+
+        if "visit_id" not in data:
+            self.logger.error(
+                "Skipping record: No visit_id contained in record %r",
+                (record_type, data),
+            )
+            return
+
+        visit_id = VisitId(data["visit_id"])
+
+        if record_type == RECORD_TYPE_META:
+            await self._handle_meta(visit_id, data)
+            return
+
+        table_name = TableName(record_type)
+        await self.store_record(table_name, visit_id, data)
+
+    async def _drain_queue(self) -> None:
+        """Drain the data_queue, processing records as they arrive.
+
+        Uses run_in_executor to avoid blocking the event loop while
+        waiting on the multiprocess.Queue. After shutdown flag is set,
+        drains any remaining items from the queue before returning.
+        """
+        loop = asyncio.get_event_loop()
+        while not self._shutdown_flag:
+            try:
+                record: Tuple[str, Any] = await loop.run_in_executor(
+                    None, self.data_queue.get, True, 1
+                )
+            except queue.Empty:
                 continue
+            await self._process_record(record)
 
-            visit_id = VisitId(data["visit_id"])
-
-            if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
-                continue
-
-            table_name = TableName(record_type)
-            await self.store_record(table_name, visit_id, data)
+        # Drain any remaining records after shutdown signal
+        while not self.data_queue.empty():
+            try:
+                record = self.data_queue.get_nowait()
+            except queue.Empty:
+                break
+            await self._process_record(record)
 
     async def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -342,13 +340,12 @@ class StorageController:
         await self.structured_storage.init()
         if self.unstructured_storage:
             await self.unstructured_storage.init()
-        server: Server = await asyncio.start_server(
-            self._handler, "localhost", 0, family=socket.AF_INET
+
+        self.status_queue.put("READY")
+
+        drain_task = asyncio.create_task(
+            self._drain_queue(), name="DrainQueue"
         )
-        sockets = server.sockets
-        assert sockets is not None
-        socketname = sockets[0].getsockname()
-        self.status_queue.put(socketname)
         status_queue_update = asyncio.create_task(
             self.update_status_queue(), name="StatusQueue"
         )
@@ -361,18 +358,15 @@ class StorageController:
         )
         # Blocks until we should shut down
         await self.should_shutdown()
-        self.logger.info(f"Closing Server")
-        server.close()
-        self.logger.info("Closed Server")
+        self.logger.info("Waiting for drain_task to finish processing remaining records")
+        await drain_task
+        self.logger.info("drain_task finished")
         self.logger.info("Cancelling status_queue_update")
         status_queue_update.cancel()
         self.logger.info("Cancelled status_queue_update")
         self.logger.info("Cancelling timeout_check")
         timeout_check.cancel()
         self.logger.info("Cancelled timeout_check")
-        self.logger.info("Starting wait_closed")
-        await server.wait_closed()
-        self.logger.info("Completed wait_closed")
 
         await self.shutdown(update_completion_queue)
 
@@ -382,19 +376,17 @@ class StorageController:
 
 
 class DataSocket:
-    """Wrapper around ClientSocket to make sending records to the StorageController more convenient"""
+    """Wrapper around a multiprocess.Queue to make sending records to the StorageController more convenient"""
 
-    def __init__(self, listener_address: Tuple[str, int], client_name: str) -> None:
-        self.socket = ClientSocket(serialization="dill")
-        self.socket.connect(*listener_address)
+    def __init__(self, data_queue: Queue) -> None:
+        self.data_queue = data_queue
         self.logger = logging.getLogger("openwpm")
-        self.socket.send(client_name)
 
     def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
         data["visit_id"] = visit_id
-        self.socket.send(
+        self.data_queue.put(
             (
                 table_name,
                 data,
@@ -402,7 +394,7 @@ class DataSocket:
         )
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
-        self.socket.send(
+        self.data_queue.put(
             (
                 RECORD_TYPE_META,
                 {
@@ -414,7 +406,7 @@ class DataSocket:
         )
 
     def close(self) -> None:
-        self.socket.close()
+        pass
 
 
 class StorageControllerHandle:
@@ -427,8 +419,8 @@ class StorageControllerHandle:
         structured_storage: StructuredStorageProvider,
         unstructured_storage: Optional[UnstructuredStorageProvider],
     ) -> None:
-        self.listener_address: Optional[Tuple[str, int]] = None
-        self.listener_process: Optional[Process] = None
+        self.listener_thread: Optional[threading.Thread] = None
+        self.data_queue: Queue = Queue()
         self.status_queue = Queue()
         self.completion_queue = Queue()
         self.shutdown_queue = Queue()
@@ -441,6 +433,7 @@ class StorageControllerHandle:
             status_queue=self.status_queue,
             completion_queue=self.completion_queue,
             shutdown_queue=self.shutdown_queue,
+            data_queue=self.data_queue,
         )
 
     def get_next_visit_id(self) -> VisitId:
@@ -468,8 +461,7 @@ class StorageControllerHandle:
         openwpm_version: str,
         browser_version: str,
     ) -> None:
-        assert self.listener_address is not None
-        sock = DataSocket(self.listener_address, "StorageControllerHandle")
+        sock = DataSocket(self.data_queue)
         task_id = random.getrandbits(32)
         sock.store_record(
             TableName("task"),
@@ -497,15 +489,16 @@ class StorageControllerHandle:
 
     def launch(self) -> None:
         """Starts the storage controller"""
-        self.storage_controller = Process(
+        self.listener_thread = threading.Thread(
             name="StorageController",
             target=StorageController.run,
             args=(self.storage_controller,),
+            daemon=True,
         )
-        self.storage_controller.daemon = True
-        self.storage_controller.start()
+        self.listener_thread.start()
 
-        self.listener_address = self.status_queue.get()
+        # Wait for the READY sentinel from the StorageController
+        self.status_queue.get()
 
     def get_new_completed_visits(self) -> List[Tuple[int, bool]]:
         """
@@ -522,12 +515,12 @@ class StorageControllerHandle:
         return finished_visit_ids
 
     def shutdown(self, relaxed: bool = True) -> None:
-        """Terminate the storage controller process"""
-        assert isinstance(self.storage_controller, Process)
+        """Terminate the storage controller thread"""
+        assert isinstance(self.listener_thread, threading.Thread)
         self.logger.debug("Sending the shutdown signal to the Storage Controller...")
         self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
         start_time = time.time()
-        self.storage_controller.join(300)
+        self.listener_thread.join(300)
         self.logger.debug(
             "%s took %s seconds to close."
             % (type(self).__name__, str(time.time() - start_time))
