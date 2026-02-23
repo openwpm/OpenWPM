@@ -1,9 +1,21 @@
 from abc import ABC, abstractmethod
+from typing import Any, Protocol, runtime_checkable
 
 from selenium.webdriver import Firefox
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket
+
+
+@runtime_checkable
+class ExtensionSocket(Protocol):
+    """Protocol for the extension communication socket.
+
+    Both the legacy ClientSocket and the new ExtensionSocketAdapter
+    satisfy this interface.
+    """
+
+    def send(self, msg: Any) -> None: ...
+    def close(self) -> None: ...
 
 
 class BaseCommand(ABC):
@@ -28,7 +40,7 @@ class BaseCommand(ABC):
         webdriver: Firefox,
         browser_params: BrowserParamsInternal,
         manager_params: ManagerParamsInternal,
-        extension_socket: ClientSocket,
+        extension_socket: ExtensionSocket,
     ) -> None:
         """This method gets called in the Browser process
 
@@ -38,10 +50,8 @@ class BaseCommand(ABC):
         :parameter browser_params: Contains the per browser configuration
             E.g. which instruments are enabled
         :parameter manager_params: Per crawl parameters E.g. where to store files
-        :parameter extension_socket: Communication channel to the storage provider
-
-            TODO: Further document this once the StorageProvider PR has landed
-            This allows you to send data to be persisted to storage.
+        :parameter extension_socket: Communication channel to the extension.
+            Supports send() to push commands to the extension.
         """
         pass
 

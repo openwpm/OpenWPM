@@ -1,12 +1,7 @@
-export function encode_utf8(s: string) {
-  return unescape(encodeURIComponent(s));
-}
-
 export const escapeString = function (str: unknown): string {
-  // Convert to string if necessary
-  const asString = typeof str === "string" ? str : String(str);
-
-  return encode_utf8(asString);
+  // Convert to string if necessary. The WebSocket transport carries UTF-8
+  // text natively, so no manual byte-string re-encoding is required here.
+  return typeof str === "string" ? str : String(str);
 };
 
 export const escapeUrl = function (
