@@ -461,7 +461,18 @@ class BrowserManagerHandle:
                 )
                 return
 
-            if command_status != "ok":
+            # DNS resolution errors are expected when crawling large domain
+            # lists (e.g. Tranco top 100k) and don't indicate a browser or
+            # instrumentation failure, so we skip the failure counter and
+            # browser restart for them.  See:
+            # https://github.com/openwpm/OpenWPM/issues/1116
+            is_dns_error = (
+                command_status == "neterror"
+                and error_text is not None
+                and error_text == "dnsNotFound"
+            )
+
+            if command_status != "ok" and not is_dns_error:
                 with task_manager.threadlock:
                     task_manager.failure_count += 1
                 if task_manager.failure_count > task_manager.failure_limit:
