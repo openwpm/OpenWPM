@@ -3,9 +3,8 @@ import os
 from selenium.webdriver import Firefox
 
 from openwpm.command_sequence import CommandSequence
-from openwpm.commands.types import BaseCommand
+from openwpm.commands.types import BaseCommand, ExtensionSocket
 from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
-from openwpm.socket_interface import ClientSocket
 
 from .utilities import BASE_TEST_URL
 
@@ -16,7 +15,7 @@ class ExceptionCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: BrowserParamsInternal,
         manager_params: ManagerParamsInternal,
-        extension_socket: ClientSocket,
+        extension_socket: ExtensionSocket,
     ) -> None:
         raise RuntimeError("We simulate a Command failing")
 

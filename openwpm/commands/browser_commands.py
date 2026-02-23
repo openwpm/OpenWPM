@@ -21,8 +21,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from ..config import BrowserParams, ManagerParams
-from ..socket_interface import ClientSocket
-from .types import BaseCommand
+from .types import BaseCommand, ExtensionSocket
 from .utils.webdriver_utils import (
     execute_in_all_frames,
     execute_script_with_retry,
@@ -125,7 +124,7 @@ class GetCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: BrowserParams,
         manager_params: ManagerParams,
-        extension_socket: ClientSocket,
+        extension_socket: ExtensionSocket,
     ) -> None:
         tab_restart_browser(webdriver)
 

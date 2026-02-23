@@ -52,11 +52,7 @@ async function main() {
     );
   }
 
-  await loggingDB.open(
-    config.storage_controller_address,
-    config.logger_address,
-    config.browser_id,
-  );
+  await loggingDB.open(config.websocket_port, config.browser_id);
 
   if (config.custom_params.pre_instrumentation_code) {
     eval(config.custom_params.pre_instrumentation_code);
