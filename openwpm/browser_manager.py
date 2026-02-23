@@ -12,7 +12,7 @@ import time
 import traceback
 from pathlib import Path
 from queue import Empty as EmptyQueue
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import psutil
 from multiprocess import Queue
@@ -91,6 +91,8 @@ class BrowserManagerHandle:
         """indicates if the BrowserManager is new (to optimize restarts)"""
         self.restart_required: bool = False
         """indicates if the browser should be restarted"""
+        self.tmp_files: List[Path] = []
+        """temporary files (e.g. XPI copies) that should be cleaned up on shutdown"""
 
         self.current_timeout: Optional[int] = None
         """timeout of the current command"""
@@ -183,6 +185,8 @@ class BrowserManagerHandle:
                 check_queue(launch_status)
                 # 5. Browser launched
                 self.geckodriver_pid = check_queue(launch_status)
+                # 6. Temporary files to clean up (e.g. XPI copies)
+                self.tmp_files.extend(check_queue(launch_status))
 
                 ready = check_queue(launch_status)
                 if ready != "READY":
@@ -202,6 +206,7 @@ class BrowserManagerHandle:
                     "Display",
                     "Launch Attempted",
                     "Browser Launched",
+                    "Temporary Files",
                     "Browser Ready",
                 ]
                 for string in status_strings:
@@ -226,8 +231,12 @@ class BrowserManagerHandle:
             self.current_profile_path = browser_profile_path
             if previous_profile_path is not None:
                 shutil.rmtree(previous_profile_path, ignore_errors=True)
-            if tempdir is not None:
-                shutil.rmtree(tempdir, ignore_errors=True)
+
+        # Always clean up the profile archive tempdir, whether spawn
+        # succeeded or failed. On success the archive has been loaded;
+        # on failure it is no longer needed.
+        if tempdir is not None:
+            shutil.rmtree(tempdir, ignore_errors=True)
 
         return success
 
@@ -248,6 +257,14 @@ class BrowserManagerHandle:
             return True
 
         self.close_browser_manager()
+
+        # Clean up temp files from previous browser instance (e.g. XPI copies)
+        for tmp_file in self.tmp_files:
+            try:
+                tmp_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+        self.tmp_files = []
 
         # if crawl should be stateless we can clear profile
         if clear_profile and self.current_profile_path is not None:
@@ -637,7 +654,18 @@ class BrowserManagerHandle:
                 browser_params=self.browser_params,
             )
 
-        # Clean up temporary files
+        # Clean up temporary files (e.g. XPI copies in /tmp)
+        for tmp_file in self.tmp_files:
+            try:
+                tmp_file.unlink(missing_ok=True)
+            except OSError:
+                self.logger.debug(
+                    "BROWSER %i: Failed to remove temp file %s",
+                    self.browser_id,
+                    tmp_file,
+                )
+        self.tmp_files = []
+
         if self.current_profile_path is not None:
             shutil.rmtree(self.current_profile_path, ignore_errors=True)
 
@@ -733,11 +761,13 @@ class BrowserManager(Process):
 
         try:
             # Start Xvfb (if necessary), webdriver, and browser
-            driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
-                self.status_queue,
-                self.browser_params,
-                self.manager_params,
-                self.crash_recovery,
+            driver, browser_profile_path, display, _tmp_files = (
+                deploy_firefox.deploy_firefox(
+                    self.status_queue,
+                    self.browser_params,
+                    self.manager_params,
+                    self.crash_recovery,
+                )
             )
 
             extension_socket = self._start_extension(browser_profile_path)

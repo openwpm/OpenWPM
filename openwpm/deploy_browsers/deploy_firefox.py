@@ -1,10 +1,11 @@
+import glob
 import json
 import logging
 import os.path
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from easyprocess import EasyProcessError
 from multiprocess import Queue
@@ -28,9 +29,13 @@ def deploy_firefox(
     browser_params: BrowserParamsInternal,
     manager_params: ManagerParamsInternal,
     crash_recovery: bool,
-) -> Tuple[webdriver.Firefox, Path, Optional[Display]]:
+) -> Tuple[webdriver.Firefox, Path, Optional[Display], List[Path]]:
     """
     launches a firefox instance with parameters set by the input dictionary
+
+    Returns a tuple of (driver, browser_profile_path, display, tmp_files)
+    where tmp_files is a list of temporary file paths that should be cleaned
+    up when the browser is shut down.
     """
     firefox_binary_path = get_firefox_binary_path()
 
@@ -152,10 +157,14 @@ def deploy_firefox(
         ),
     )
 
-    # Install extension
+    # Install extension, tracking any temp XPI files created in /tmp
     ext_loc = os.path.join(root_dir, "../../Extension/openwpm.xpi")
     ext_loc = os.path.normpath(ext_loc)
+    tmp_dir = str(browser_params.tmp_profile_dir)
+    xpi_before = set(glob.glob(os.path.join(tmp_dir, "*.xpi")))
     driver.install_addon(ext_loc, temporary=True)
+    xpi_after = set(glob.glob(os.path.join(tmp_dir, "*.xpi")))
+    tmp_files: List[Path] = [Path(f) for f in xpi_after - xpi_before]
     logger.debug(
         "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
     )
@@ -170,5 +179,6 @@ def deploy_firefox(
         raise RuntimeError("Unable to identify Firefox process ID.")
 
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
+    status_queue.put(("STATUS", "Temporary Files", tmp_files))
 
-    return driver, browser_profile_path, display
+    return driver, browser_profile_path, display, tmp_files
