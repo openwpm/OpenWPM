@@ -212,12 +212,18 @@ class BrowseCommand(BaseCommand):
                 wait_until_loaded(webdriver, 300)
             except Exception as e:
                 logger.error(
-                    "BROWSER %i: Error visitit internal link %s",
+                    "BROWSER %i: Error visiting internal link %s",
                     browser_params.browser_id,
                     links[r].get_attribute("href"),
                     exc_info=e,
                 )
-                pass
+                # Navigate back to the original URL so subsequent
+                # iterations can still find intra-links
+                try:
+                    webdriver.get(self.url)
+                    wait_until_loaded(webdriver, 300)
+                except Exception:
+                    break
 
 
 class SaveScreenshotCommand(BaseCommand):
