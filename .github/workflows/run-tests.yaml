@@ -27,16 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-groups:
-          [
-            "test/test_[a-e]*",
-            "test/test_[f-h]*",
-            "test/test_[i-o,q-r,t-z]*",
-            "test/test_[p]*",
-            "test/test_[s]*",
-            "test/storage/*",
-            "test/extension/*",
-          ]
+        group: [1, 2, 3, 4, 5, 6, 7]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -44,20 +35,52 @@ jobs:
       - run: ./scripts/ci.sh
         env:
           DISPLAY: ":99.0"
-          TESTS: ${{ matrix.test-groups }}
-      - name: Test Report
-        uses: dorny/test-reporter@v1
+          GROUP: ${{ matrix.group }}
+          SPLITS: 7
+      - name: Test failure summary
+        if: always()
         continue-on-error: true
-        if: always() # run this step even if previous step failed
-        with:
-          name: ${{matrix.test-groups}} # Name of the check run which will be created
-          path: junit-report.xml # Path to test results
-          reporter: java-junit # Format of test results
+        run: |
+          python - <<'PYEOF'
+          import xml.etree.ElementTree as ET, os, sys
+          if not os.path.exists("junit-report.xml"):
+              sys.exit(0)
+          tree = ET.parse("junit-report.xml")
+          root = tree.getroot()
+          # Collect suite-level stats
+          suites = list(root.iter("testsuite"))
+          total = sum(int(s.get("tests", 0)) for s in suites)
+          fails = sum(int(s.get("failures", 0)) for s in suites)
+          errs = sum(int(s.get("errors", 0)) for s in suites)
+          bad = fails + errs
+          if bad == 0:
+              sys.exit(0)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(f"### Group ${{ matrix.group }}: {bad}/{total} test(s) failed\n\n")
+              for tc in root.iter("testcase"):
+                  for tag in ("failure", "error"):
+                      elem = tc.find(tag)
+                      if elem is None:
+                          continue
+                      name = tc.get("name", "?")
+                      cls = tc.get("classname", "")
+                      short = cls.rsplit(".", 1)[-1] if cls else ""
+                      etype = elem.get("type", tag)
+                      msg = elem.get("message", "")
+                      trace = (elem.text or "").rstrip()
+                      # Summary line shows test + exception type
+                      f.write(f"<details>\n<summary>")
+                      f.write(f"<code>{short}::{name}</code> — {etype}")
+                      if msg:
+                          oneliner = msg.split("\n")[0][:120]
+                          f.write(f": {oneliner}")
+                      f.write(f"</summary>\n\n```\n{trace}\n```\n</details>\n\n")
+          PYEOF
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-${{ strategy.job-index }}
+          name: coverage-${{ matrix.group }}
           path: coverage.xml
 
   upload-coverage:

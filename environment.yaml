@@ -40,6 +40,7 @@ dependencies:
   - dataclasses-json==0.6.7
   - domain-utils==0.7.1
   - jsonschema==4.23.0
+  - pytest-split==0.11.0
   - tranco==0.8.1
   - types-pyyaml==6.0.12.20241230
   - types-redis==4.6.0.20241004
