@@ -22,12 +22,12 @@ from .browser_manager import BrowserManagerHandle
 from .command_sequence import CommandSequence
 from .errors import CommandExecutionError
 from .js_instrumentation import clean_js_instrumentation_settings
-from .mp_logger import MPLogger
 from .storage.storage_controller import DataSocket, StorageControllerHandle
 from .storage.storage_providers import (
     StructuredStorageProvider,
     UnstructuredStorageProvider,
 )
+from .telemetry import setup_telemetry, shutdown_telemetry
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 from .utilities.storage_watchdog import StorageLogger
@@ -106,13 +106,8 @@ class TaskManager:
         self.failure_count = 0
 
         self.failure_limit = manager_params.failure_limit
-        # Start logging server thread
-        self.logging_server = MPLogger(
-            self.manager_params.log_path,
-            str(structured_storage_provider),
-            **self._logger_kwargs,
-        )
-        self.manager_params.logger_address = self.logging_server.logger_address
+        # Set up telemetry (OTel tracing + logging)
+        setup_telemetry(self.manager_params.log_path)
         self.logger = logging.getLogger("openwpm")
 
         # Initialize the storage controller
@@ -188,7 +183,11 @@ class TaskManager:
                 self.storage_controller_handle.get_next_browser_id()
             )
             browsers.append(
-                BrowserManagerHandle(self.manager_params, browser_params[i])
+                BrowserManagerHandle(
+                    self.manager_params,
+                    browser_params[i],
+                    self.storage_controller_handle.data_queue,
+                )
             )
 
         return browsers
@@ -286,14 +285,10 @@ class TaskManager:
             structured_storage_provider, unstructured_storage_provider
         )
         self.storage_controller_handle.launch()
-        self.manager_params.storage_controller_address = (
-            self.storage_controller_handle.listener_address
-        )
-        assert self.manager_params.storage_controller_address is not None
-        # open connection to storage controller for saving crawl details
-        self.sock = DataSocket(
-            self.manager_params.storage_controller_address, "TaskManager"
-        )
+        # Make data_queue accessible to commands via manager_params
+        # (not a declared field, so it won't be serialized)
+        self.manager_params.data_queue = self.storage_controller_handle.data_queue  # type: ignore[attr-defined]
+        self.sock = DataSocket(self.storage_controller_handle.data_queue)
 
     def _shutdown_manager(
         self, during_init: bool = False, relaxed: bool = True
@@ -325,9 +320,9 @@ class TaskManager:
                 browser.command_thread.join()
             browser.shutdown_browser(during_init, force=not relaxed)
 
-        self.sock.close()  # close socket to storage controller
+        self.sock.close()  # close data queue wrapper
         self.storage_controller_handle.shutdown(relaxed=relaxed)
-        self.logging_server.close()
+        shutdown_telemetry()
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
 

@@ -11,9 +11,8 @@ from selenium.webdriver.common.by import By
 
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.browser_commands import GetCommand
-from openwpm.commands.types import BaseCommand
+from openwpm.commands.types import BaseCommand, ExtensionSocket
 from openwpm.config import BrowserParams, ManagerParams
-from openwpm.socket_interface import ClientSocket
 from openwpm.utilities import db_utils
 
 from . import utilities
@@ -411,7 +410,7 @@ class ClickButtonCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: BrowserParams,
         manager_params: ManagerParams,
-        extension_socket: ClientSocket,
+        extension_socket: ExtensionSocket,
     ) -> None:
         button = webdriver.find_element(By.ID, "play")
         button.click()

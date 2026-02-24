@@ -28,6 +28,7 @@ def deploy_firefox(
     browser_params: BrowserParamsInternal,
     manager_params: ManagerParamsInternal,
     crash_recovery: bool,
+    websocket_port: int = 0,
 ) -> Tuple[webdriver.Firefox, Path, Optional[Display]]:
     """
     launches a firefox instance with parameters set by the input dictionary
@@ -101,10 +102,7 @@ def deploy_firefox(
     # Write config file
     extension_config: Dict[str, Any] = dict()
     extension_config.update(browser_params.to_dict())
-    extension_config["logger_address"] = manager_params.logger_address
-    extension_config["storage_controller_address"] = (
-        manager_params.storage_controller_address
-    )
+    extension_config["websocket_port"] = websocket_port
     extension_config["testing"] = manager_params.testing
     ext_config_file = browser_profile_path / "browser_params.json"
     with open(ext_config_file, "w") as f:

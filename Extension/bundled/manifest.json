@@ -13,7 +13,7 @@
       "strict_min_version": "60.0"
     }
   },
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self';",
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'; connect-src ws://127.0.0.1:*;",
   "permissions": [
     "<all_urls>",
     "webRequest",
@@ -29,14 +29,6 @@
     "mozillaAddons"
   ],
   "experiment_apis": {
-    "sockets": {
-      "schema": "./privileged/sockets/schema.json",
-      "parent": {
-        "scopes": ["addon_parent"],
-        "script": "./privileged/sockets/api.js",
-        "paths": [["sockets"]]
-      }
-    },
     "profileDirIO": {
       "schema": "./privileged/profileDirIO/schema.json",
       "parent": {
