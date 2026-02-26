@@ -25,3 +25,13 @@ repos:
     hooks:
       - id: commitlint
         stages: [commit-msg]
+  - repo: local
+    hooks:
+      - id: check-environment-pins
+        name: Validate environment.yaml pins match unpinned sources
+        entry: python scripts/manage-environment.py check
+        language: python
+        language_version: python3
+        files: (^environment\.yaml$|^scripts/environment-unpinned|^scripts/manage-environment\.py$)
+        additional_dependencies: [pyyaml]
+        pass_filenames: false

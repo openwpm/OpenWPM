@@ -87,6 +87,10 @@ TaskManager (orchestrator)
 
 - `callstack_instrument` is broken — enabling it raises `ConfigError`. See [#557](https://github.com/openwpm/OpenWPM/issues/557).
 
+### Large Test Fixtures (jj users)
+
+`test/profile.tar.gz` (~2.5MB) exceeds jj's default `snapshot.max-new-file-size` (1MB). jj will silently show it as deleted and exclude it from commits. **Do NOT increase the snapshot limit.** If `jj status` shows `D test/profile.tar.gz`, restore it from the parent: `jj restore --from @- test/profile.tar.gz`. This file is a static test fixture and should never be modified unless explicitly requested.
+
 ### Data Schema
 
 Schema files must be kept in sync:

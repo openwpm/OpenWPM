@@ -6,6 +6,7 @@ on:
     branches:
       - master
   pull_request:
+  merge_group:
   schedule:
     - cron: "0 0 */2 * *"
 

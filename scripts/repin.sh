@@ -41,6 +41,6 @@ esac
 conda env export --no-builds --override-channels -c conda-forge -f ../environment.yaml
 
 # Prune environment file to only things we want to pin
-python prune-environment.py
+python manage-environment.py prune
 
 echo 'New environment.yaml successfully created.'
