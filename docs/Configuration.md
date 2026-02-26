@@ -109,6 +109,22 @@ left out of this section.
   - **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   - Set to `True` to enable Firefox's built-in
     [Tracking Protection](https://developer.mozilla.org/en-US/Firefox/Privacy/Tracking_Protection).
+- `prefs`
+  - A dictionary of custom Firefox `about:config` preferences to set on the
+    browser profile. These are applied **after** OpenWPM's own defaults, so they
+    can override built-in settings.
+  - Example:
+
+    ```python
+    browser_params.prefs = {
+        "dom.disable_open_during_load": True,  # block pop-ups
+        "media.autoplay.default": 5,           # block autoplay
+    }
+    ```
+
+  - Any `about:config` preference can be specified. See the
+    [Firefox source](https://searchfox.org/mozilla-release/source/modules/libpref/init/all.js)
+    for a list of available preferences.
 
 ## Validations
 

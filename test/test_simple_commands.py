@@ -124,6 +124,33 @@ def test_get_site_visits_table_valid(http_params, task_manager_creator, display_
     assert qry_res[1][0] == url_b
 
 
+def test_get_with_popup_blocking(default_params, task_manager_creator):
+    """Verify that visits complete when popup blocking is enabled.
+
+    Regression test for #741: dom.disable_open_during_load causes
+    tab_restart_browser to crash because window.open() is blocked.
+    """
+    manager_params, browser_params = default_params
+    browser_params[0].prefs["dom.disable_open_during_load"] = True
+
+    manager, db = task_manager_creator((manager_params, browser_params))
+
+    cs_a = command_sequence.CommandSequence(url_a)
+    cs_a.get(sleep=1)
+    cs_b = command_sequence.CommandSequence(url_b)
+    cs_b.get(sleep=1)
+
+    manager.execute_command_sequence(cs_a)
+    manager.execute_command_sequence(cs_b)
+    manager.close()
+
+    assert not db_utils.any_command_failed(db)
+    qry_res = db_utils.query_db(
+        db, "SELECT site_url FROM site_visits ORDER BY site_url"
+    )
+    assert len(qry_res) == 2
+
+
 @pytest.mark.parametrize("display_mode", scenarios)
 def test_get_http_tables_valid(http_params, task_manager_creator, display_mode):
     """Check that get works and populates http tables correctly."""
