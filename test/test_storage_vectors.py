@@ -1,5 +1,4 @@
-"""Runs some basic tests to check that the saving of
-storage vectors (i.e. profile cookies) works.
+"""Tests for storage vectors (profile cookies).
 
 NOTE: These tests are very basic and should be expanded
 on to check for completeness and correctness.
