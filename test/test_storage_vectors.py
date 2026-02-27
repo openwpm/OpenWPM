@@ -21,7 +21,7 @@ expected_js_cookie = (
     "test_cookie",  # name
     "/",  # path
     "Test-0123456789",  # value
-    "no_restriction",  # same_site
+    "unspecified",  # same_site
 )
 
 
