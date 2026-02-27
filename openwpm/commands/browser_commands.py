@@ -91,15 +91,17 @@ def tab_restart_browser(webdriver):
     if webdriver.current_url.lower() == "about:blank":
         return
 
-    # Create a fresh window via the WebDriver protocol. This replaced an
+    # Create a fresh tab via the WebDriver protocol. This replaced an
     # older Selenium 3 workaround that used JS `window.open('')`, which
     # breaks when popup-blocking prefs are active (e.g.
     # dom.disable_open_during_load). The WebDriver new-window command is
-    # not subject to content-level popup blocking. See #741.
-    webdriver.switch_to.new_window("window")
+    # not subject to content-level popup blocking. Using "tab" instead of
+    # "window" ensures the new context shares the browser's HTTP cache.
+    # See #741.
+    webdriver.switch_to.new_window("tab")
 
-    # new_window() already switched us to the new window.
-    # Close all other windows (i.e. the old one).
+    # new_window() already switched us to the new tab.
+    # Close all other windows/tabs (i.e. the old one).
     close_other_windows(webdriver)
 
 
