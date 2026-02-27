@@ -8,4 +8,9 @@ declare global {
   interface Window {
     openWpmContentScriptConfig: openWpmContentScriptConfig;
   }
+  function exportFunction(
+    vfunction: any,
+    scope: any,
+    options: { defineAs: string; allowCrossOriginArguments: boolean },
+  ): any;
 }
