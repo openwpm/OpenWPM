@@ -116,7 +116,7 @@ left out of this section.
   - Example:
 
     ```python
-    browser_params.prefs = {
+    browser_params[0].prefs = {
         "dom.disable_open_during_load": True,  # block pop-ups
         "media.autoplay.default": 5,           # block autoplay
     }

@@ -409,6 +409,41 @@ HTTP_CACHED_REQUESTS: set[tuple[Union[str, None, int], ...]] = {
         None,
         "image",
     ),
+    # Resources re-requested when the tab restart opens a new tab; served from
+    # the shared HTTP cache (is_cached=1 in HTTP_CACHED_RESPONSES).
+    (
+        f"{utilities.BASE_TEST_URL}/shared/test_style.css",
+        f"{utilities.BASE_TEST_URL}/http_test_page.html",
+        f"{utilities.BASE_TEST_URL_NOPATH}",
+        f"{utilities.BASE_TEST_URL_NOPATH}",
+        f"{utilities.BASE_TEST_URL}/http_test_page.html",
+        0,
+        None,
+        None,
+        "stylesheet",
+    ),
+    (
+        f"{utilities.BASE_TEST_URL}/shared/test_image.png",
+        f"{utilities.BASE_TEST_URL}/http_test_page.html",
+        f"{utilities.BASE_TEST_URL_NOPATH}",
+        f"{utilities.BASE_TEST_URL_NOPATH}",
+        f"{utilities.BASE_TEST_URL}/http_test_page.html",
+        0,
+        None,
+        None,
+        "image",
+    ),
+    (
+        f"{utilities.BASE_TEST_URL}/shared/test_image_2.png",
+        f"{utilities.BASE_TEST_URL}/http_test_page.html",
+        f"{utilities.BASE_TEST_URL_NOPATH}",
+        f"{utilities.BASE_TEST_URL_NOPATH}",
+        f"{utilities.BASE_TEST_URL}/http_test_page_2.html",
+        0,
+        None,
+        None,
+        "image",
+    ),
 }
 
 # format: (request_url, referrer, is_cached)
@@ -440,6 +475,8 @@ HTTP_CACHED_RESPONSES: set[tuple[str, int]] = {
         1,
     ),
     (f"{utilities.BASE_TEST_URL}/shared/test_image_2.png", 1),
+    (f"{utilities.BASE_TEST_URL}/shared/test_style.css", 1),
+    (f"{utilities.BASE_TEST_URL}/shared/test_image.png", 1),
 }
 
 # format: (source_url, destination_url)

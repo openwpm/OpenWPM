@@ -131,6 +131,9 @@ def test_get_with_popup_blocking(default_params, task_manager_creator):
     tab_restart_browser to crash because window.open() is blocked.
     """
     manager_params, browser_params = default_params
+    # Force a single browser so both visits run on the popup-blocking browser.
+    manager_params.num_browsers = 1
+    browser_params = [browser_params[0]]
     browser_params[0].prefs["dom.disable_open_during_load"] = True
 
     manager, db = task_manager_creator((manager_params, browser_params))
@@ -149,6 +152,8 @@ def test_get_with_popup_blocking(default_params, task_manager_creator):
         db, "SELECT site_url FROM site_visits ORDER BY site_url"
     )
     assert len(qry_res) == 2
+    assert qry_res[0][0] == url_a
+    assert qry_res[1][0] == url_b
 
 
 @pytest.mark.parametrize("display_mode", scenarios)
