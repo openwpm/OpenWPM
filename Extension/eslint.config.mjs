@@ -22,6 +22,7 @@ export default tseslint.config(
     ignores: [
       "bundled/feature.js",
       "bundled/content.js",
+      "bundled/stealth.js",
       "bundled/privileged/sockets/bufferpack.js",
       "eslint.config.mjs",
       "build/",
