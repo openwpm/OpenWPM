@@ -8,7 +8,8 @@ on to check for completeness and correctness.
 from openwpm import command_sequence
 from openwpm.utilities import db_utils
 
-from . import utilities
+from .conftest import FullConfig, TaskManagerCreator
+from .utilities import BASE_TEST_URL_DOMAIN, ServerUrls
 
 expected_js_cookie = (
     "added-or-changed",  # record_type
@@ -16,7 +17,7 @@ expected_js_cookie = (
     0,  # is_http_only
     1,  # is_host_only
     0,  # is_session
-    "%s" % utilities.BASE_TEST_URL_DOMAIN,  # host
+    "%s" % BASE_TEST_URL_DOMAIN,  # host
     0,  # is_secure
     "test_cookie",  # name
     "/",  # path
@@ -25,14 +26,18 @@ expected_js_cookie = (
 )
 
 
-def test_js_profile_cookies(default_params, task_manager_creator):
+def test_js_profile_cookies(
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     """Check that profile cookies set by JS are saved"""
     # Run the test crawl
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.cookie_instrument = True
     manager, db = task_manager_creator((manager_params, browser_params))
-    url = utilities.BASE_TEST_URL + "/js_cookie.html"
+    url = server.base + "/js_cookie.html"
     cs = command_sequence.CommandSequence(url)
     cs.get(sleep=3, timeout=120)
     manager.execute_command_sequence(cs)
