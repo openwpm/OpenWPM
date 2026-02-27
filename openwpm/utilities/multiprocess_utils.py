@@ -2,9 +2,11 @@ import logging
 import os
 import sys
 import traceback
+from typing import Any
 
 import multiprocess as mp
 import psutil
+from opentelemetry import trace
 
 
 def parse_traceback_for_sentry(tb):
@@ -33,20 +35,40 @@ def parse_traceback_for_sentry(tb):
     return out
 
 
+def configure_otel_for_process(service_name: str) -> None:
+    """Configure OpenTelemetry for a child process.
+
+    No-op when OTEL_EXPORTER_OTLP_ENDPOINT is not set.
+    """
+    if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+        return
+
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+    resource = Resource.create({"service.name": service_name})
+    provider = TracerProvider(resource=resource)
+    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+    trace.set_tracer_provider(provider)
+
+
 class Process(mp.Process):
     """Wrapper Process class that includes exception logging"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         mp.Process.__init__(self, *args, **kwargs)
         self.logger = logging.getLogger("openwpm")
 
-    def run(self):
+    def run(self) -> None:
         # Enable coverage collection in child processes when COVERAGE_PROCESS_START is set
         if "COVERAGE_PROCESS_START" in os.environ:
             import coverage
 
             coverage.process_startup()
 
+        configure_otel_for_process(self.name)
         try:
             self.run_impl()
         except Exception as e:
@@ -56,6 +78,9 @@ class Process(mp.Process):
             self.logger.error("Exception in child process.", exc_info=True, extra=extra)
             raise e
         finally:
+            provider = trace.get_tracer_provider()
+            if hasattr(provider, "shutdown"):
+                provider.shutdown()
             # Save coverage data before the process exits, since
             # multiprocess.Process uses os._exit() which skips atexit handlers.
             if "COVERAGE_PROCESS_START" in os.environ:
