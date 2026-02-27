@@ -72,7 +72,7 @@ def _run_detection(
     )
 
     cs = CommandSequence(STEALTH_DETECTION_URL)
-    cs.get(STEALTH_DETECTION_URL, sleep=2)
+    cs.get(sleep=2)
     read_cmd = ReadDetectionResults()
     cs.append_command(read_cmd)
     manager.execute_command_sequence(cs)
@@ -90,7 +90,7 @@ class TestStealthDetection:
     """
 
     @pytest.fixture(autouse=True)
-    def set_tmpdir(self, tmp_path: Path):
+    def set_tmpdir(self, tmp_path: Path) -> None:
         self.tmpdir = tmp_path
 
     def _get_stealth_config(
@@ -131,54 +131,54 @@ class TestStealthDetection:
         assert results, "No detection results collected"
 
         # navigator.webdriver should be hidden
-        assert results.get("webdriver_flag") is True, (
-            "navigator.webdriver was not hidden by stealth extension"
-        )
+        assert (
+            results.get("webdriver_flag") is True
+        ), "navigator.webdriver was not hidden by stealth extension"
 
         # Canvas functions should still appear native (no prototype pollution)
-        assert results.get("canvas_functions_native") is True, (
-            "Canvas functions are not native - stealth instrument should avoid prototype pollution"
-        )
+        assert (
+            results.get("canvas_functions_native") is True
+        ), "Canvas functions are not native - stealth instrument should avoid prototype pollution"
 
         # Storage functions should still appear native
-        assert results.get("storage_functions_native") is True, (
-            "Storage functions are not native - stealth instrument should avoid prototype pollution"
-        )
+        assert (
+            results.get("storage_functions_native") is True
+        ), "Storage functions are not native - stealth instrument should avoid prototype pollution"
 
         # Navigator getters should appear native
-        assert results.get("navigator_native") is True, (
-            "Navigator getters are not native - stealth instrument should avoid prototype pollution"
-        )
+        assert (
+            results.get("navigator_native") is True
+        ), "Navigator getters are not native - stealth instrument should avoid prototype pollution"
 
         # No OpenWPM globals should be exposed
-        assert results.get("no_global_leaks") is True, (
-            "OpenWPM globals detected (jsInstruments, instrumentFingerprintingApis, etc.)"
-        )
+        assert (
+            results.get("no_global_leaks") is True
+        ), "OpenWPM globals detected (jsInstruments, instrumentFingerprintingApis, etc.)"
 
         # Constructor properties should be preserved
-        assert results.get("constructors_present") is True, (
-            "Constructor properties missing on instrumented objects"
-        )
+        assert (
+            results.get("constructors_present") is True
+        ), "Constructor properties missing on instrumented objects"
 
         # Function.prototype.bind should not be tampered
-        assert results.get("bind_integrity") is True, (
-            "Function.prototype.bind integrity check failed"
-        )
+        assert (
+            results.get("bind_integrity") is True
+        ), "Function.prototype.bind integrity check failed"
 
         # Error stacks should not contain extension URLs
-        assert results.get("clean_error_stacks") is True, (
-            "Error stack traces contain moz-extension:// URLs"
-        )
+        assert (
+            results.get("clean_error_stacks") is True
+        ), "Error stack traces contain moz-extension:// URLs"
 
         # No extra properties added to prototypes
-        assert results.get("no_extra_prototype_properties") is True, (
-            "Extra instrumentation properties found on prototypes"
-        )
+        assert (
+            results.get("no_extra_prototype_properties") is True
+        ), "Extra instrumentation properties found on prototypes"
 
         # RTC functions should appear native
-        assert results.get("rtc_native") is True, (
-            "RTCPeerConnection functions are not native"
-        )
+        assert (
+            results.get("rtc_native") is True
+        ), "RTCPeerConnection functions are not native"
 
     def test_legacy_instrument_is_detectable(self):
         """With legacy JS instrumentation, detection checks should catch it.
