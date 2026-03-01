@@ -86,28 +86,15 @@ def close_other_windows(webdriver):
 
 def tab_restart_browser(webdriver):
     """kills the current tab and creates a new one to stop traffic"""
-    # note: this technically uses windows, not tabs, due to problems with
-    # chrome-targeted keyboard commands in Selenium 3 (intermittent
-    # nonsense WebDriverExceptions are thrown). windows can be reliably
-    # created, although we do have to detour into JS to do it.
     close_other_windows(webdriver)
 
     if webdriver.current_url.lower() == "about:blank":
         return
 
-    # Create a new window.  Note that it is not practical to use
-    # noopener here, as we would then be forced to specify a bunch of
-    # other "features" that we don't know whether they are on or off.
-    # Closing the old window will kill the opener anyway.
-    webdriver.execute_script("window.open('')")
-
-    # This closes the _old_ window, and does _not_ switch to the new one.
-    webdriver.close()
-
-    # The only remaining window handle will be for the new window;
-    # switch to it.
-    assert len(webdriver.window_handles) == 1
-    webdriver.switch_to.window(webdriver.window_handles[0])
+    # Create a fresh tab via the WebDriver protocol, which is not subject
+    # to content-level popup blocking.
+    webdriver.switch_to.new_window("tab")
+    close_other_windows(webdriver)
 
 
 class GetCommand(BaseCommand):

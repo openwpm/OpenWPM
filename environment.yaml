@@ -30,6 +30,7 @@ dependencies:
 - redis-py=5.2.1
 - s3fs=2024.12.0
 - selenium=4.27.1
+- sqlalchemy=2.0.36
 - sentry-sdk=2.20.0
 - sphinx-markdown-tables=0.0.17
 - sphinx=8.1.3
