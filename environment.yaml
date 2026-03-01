@@ -31,6 +31,7 @@ dependencies:
 - s3fs=2026.2.0
 - selenium=4.41.0
 - sentry-sdk=2.56.0
+- sqlalchemy=2.0.36
 - sphinx-markdown-tables=0.0.17
 - sphinx=9.1.0
 - tabulate=0.10.0
