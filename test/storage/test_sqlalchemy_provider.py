@@ -6,11 +6,14 @@ Covers:
 3. _coerce_record edge cases: bool, bytes, callable, dict coercions
 """
 
+import asyncio
 import json
 import logging
 import os
 import re
+import socket
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -18,6 +21,7 @@ import pyarrow as pa
 import pytest
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.dialects import postgresql, sqlite
+from sqlalchemy.engine import make_url
 
 from openwpm.storage.parquet_schema import PQ_SCHEMAS
 from openwpm.storage.sqlalchemy_provider import SQLAlchemyStorageProvider
@@ -26,7 +30,7 @@ from openwpm.storage.storage_controller import INVALID_VISIT_ID
 from openwpm.storage.storage_providers import StructuredStorageProvider, TableName
 from openwpm.types import VisitId
 
-from .fixtures import structured_scenarios
+from .fixtures import HAS_POSTGRESQL, postgresql_scenarios, structured_scenarios
 from .test_values import dt_test_values
 
 SCHEMA_FILE = os.path.join(
@@ -155,7 +159,9 @@ async def test_schema_equivalence(tmp_path):
 
 
 @pytest.mark.pyonly
-@pytest.mark.parametrize("structured_provider", structured_scenarios, indirect=True)
+@pytest.mark.parametrize(
+    "structured_provider", structured_scenarios + postgresql_scenarios, indirect=True
+)
 @pytest.mark.asyncio
 async def test_all_tables_access(
     structured_provider: StructuredStorageProvider,
@@ -573,3 +579,246 @@ async def test_ids_follow_arrival_order(tmp_path: Path) -> None:
         )
     engine.dispose()
     assert ordinals == list(range(6))
+
+
+requires_postgresql = pytest.mark.skipif(
+    not HAS_POSTGRESQL, reason="needs PostgreSQL (see test/storage/conftest.py)"
+)
+
+
+@pytest.mark.pyonly
+@requires_postgresql
+@pytest.mark.asyncio
+async def test_postgresql_stores_production_values(postgresql_url: str) -> None:
+    """Values SQLite accepts must survive on PostgreSQL: uint32 ids as drawn by
+    StorageControllerHandle, URLs over 500 chars and NUL in text."""
+    provider = SQLAlchemyStorageProvider(postgresql_url)
+    await provider.init()
+    big = 2**32 - 1
+    long_url = "https://example.com/?" + "a" * 600
+    await provider.store_record(
+        TableName("task"),
+        INVALID_VISIT_ID,
+        {
+            "task_id": big,
+            "manager_params": "",
+            "openwpm_version": "",
+            "browser_version": "",
+        },
+    )
+    await provider.store_record(
+        TableName("crawl"),
+        INVALID_VISIT_ID,
+        {"browser_id": big, "task_id": big, "browser_params": ""},
+    )
+    await provider.store_record(
+        TableName("site_visits"),
+        VisitId(2**53 - 1),
+        {
+            "visit_id": 2**53 - 1,
+            "browser_id": big,
+            "site_url": long_url,
+            "site_rank": big,
+        },
+    )
+    await provider.store_record(
+        TableName("javascript"),
+        VisitId(2**53 - 1),
+        {"visit_id": 2**53 - 1, "browser_id": big, "value": "a\x00b", "time_stamp": ""},
+    )
+    await provider.finalize_visit_id(VisitId(2**53 - 1))
+    await provider.shutdown()
+
+    engine = create_engine(postgresql_url)
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT task_id FROM task")).all() == [(big,)]
+        assert conn.execute(text("SELECT browser_id, task_id FROM crawl")).all() == [
+            (big, big)
+        ]
+        assert conn.execute(
+            text("SELECT browser_id, site_url, site_rank FROM site_visits")
+        ).all() == [(big, long_url, big)]
+        assert conn.execute(text("SELECT value FROM javascript")).all() == [
+            ("a\ufffdb",)
+        ]
+    engine.dispose()
+
+
+def _terminate_other_backends(url: str) -> int:
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        killed: int = conn.execute(
+            text(
+                "SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity"
+                " WHERE datname = current_database() AND pid <> pg_backend_pid()"
+            )
+        ).scalar_one()
+    engine.dispose()
+    return killed
+
+
+@pytest.mark.pyonly
+@requires_postgresql
+@pytest.mark.asyncio
+async def test_postgresql_survives_connection_loss(
+    postgresql_url: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A server-side disconnect, between flushes or in the middle of one, must
+    neither lose the buffered batch nor raise into the StorageController."""
+    provider = SQLAlchemyStorageProvider(postgresql_url)
+    await provider.init()
+
+    def store(url: str) -> Any:
+        return provider.store_record(
+            TableName("http_requests"),
+            VisitId(1),
+            {
+                "browser_id": 1,
+                "visit_id": 1,
+                "url": url,
+                "method": "GET",
+                "referrer": "",
+                "headers": "",
+                "request_id": 1,
+                "resource_type": "",
+                "time_stamp": "",
+            },
+        )
+
+    await store("before")
+    await provider.flush_cache()
+
+    await store("idle-kill")
+    assert _terminate_other_backends(postgresql_url) >= 1
+    await provider.flush_cache()
+
+    killed: List[int] = []
+
+    def kill_mid_flush(conn: Any, cursor: Any, statement: str, *args: Any) -> None:
+        if statement.startswith("INSERT") and not killed:
+            killed.append(_terminate_other_backends(postgresql_url))
+
+    assert provider._engine is not None
+    event.listen(provider._engine, "before_cursor_execute", kill_mid_flush)
+    await store("mid-flush-kill")
+    await provider.finalize_visit_id(VisitId(1), interrupted=True)
+    event.remove(provider._engine, "before_cursor_execute", kill_mid_flush)
+
+    await store("after")
+    await provider.shutdown()
+    assert killed and killed[0] >= 1
+
+    engine = create_engine(postgresql_url)
+    with engine.connect() as conn:
+        urls: List[str] = list(
+            conn.execute(text("SELECT url FROM http_requests ORDER BY id")).scalars()
+        )
+        assert urls == ["before", "idle-kill", "mid-flush-kill", "after"]
+        assert conn.execute(text("SELECT visit_id FROM incomplete_visits")).all() == [
+            (1,)
+        ]
+    engine.dispose()
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert any("retrying" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.pyonly
+@requires_postgresql
+def test_postgresql_concurrent_init(postgresql_url: str) -> None:
+    """Crawlers started together against an empty database must all come up."""
+    n = 8
+    barrier = threading.Barrier(n)
+    errors: List[BaseException] = []
+
+    def start() -> None:
+        provider = SQLAlchemyStorageProvider(postgresql_url)
+        barrier.wait()
+        try:
+            asyncio.run(provider.init())
+        except BaseException as e:
+            errors.append(e)
+        asyncio.run(provider.shutdown())
+
+    threads = [threading.Thread(target=start) for _ in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []
+
+
+@pytest.mark.pyonly
+@requires_postgresql
+@pytest.mark.asyncio
+async def test_postgresql_unbindable_row_drops_only_itself(postgresql_url: str) -> None:
+    await _store_one_unbindable_row(
+        postgresql_url, "javascript", lambda i: _js(i, "ok"), _js(3, LONE_SURROGATE)
+    )
+    assert _scalar(postgresql_url, "SELECT count(*) FROM javascript") == 4
+
+
+@pytest.mark.pyonly
+@requires_postgresql
+@pytest.mark.asyncio
+async def test_postgresql_lost_commit_reply_is_not_retried(
+    postgresql_url: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The server commits but its reply is lost: a retry would duplicate the batch."""
+    upstream_url = make_url(postgresql_url)
+    armed = threading.Event()
+    listener = socket.create_server(("127.0.0.1", 0))
+
+    def pipe(
+        src: socket.socket, dst: socket.socket, to_server: bool, state: Any
+    ) -> None:
+        try:
+            while data := src.recv(65536):
+                if to_server and armed.is_set() and b"COMMIT" in data:
+                    state["commit_sent"] = True
+                elif not to_server and state.get("commit_sent"):
+                    armed.clear()
+                    src.shutdown(socket.SHUT_RDWR)
+                    dst.shutdown(socket.SHUT_RDWR)
+                    return
+                dst.sendall(data)
+        except OSError:
+            pass
+
+    def serve() -> None:
+        while True:
+            try:
+                client, _ = listener.accept()
+            except OSError:
+                return
+            upstream = socket.create_connection((upstream_url.host, upstream_url.port))
+            state: Dict[str, bool] = {}
+            for args in (
+                (client, upstream, True, state),
+                (upstream, client, False, state),
+            ):
+                threading.Thread(target=pipe, args=args, daemon=True).start()
+
+    threading.Thread(target=serve, daemon=True).start()
+    proxy_url = upstream_url.set(
+        host="127.0.0.1", port=listener.getsockname()[1]
+    ).render_as_string(hide_password=False)
+    try:
+        provider = SQLAlchemyStorageProvider(proxy_url)
+        await provider.init()
+        for i in range(5):
+            await provider.store_record(
+                TableName("http_requests"), VisitId(1), _http_request(i)
+            )
+        armed.set()
+        await provider.finalize_visit_id(VisitId(1))
+        await provider.shutdown()
+    finally:
+        listener.shutdown(socket.SHUT_RDWR)
+        listener.close()
+    assert not armed.is_set(), "the proxy never saw COMMIT"
+    assert _scalar(postgresql_url, "SELECT count(*) FROM http_requests") == 5
+    assert any(
+        "during COMMIT" in r.getMessage()
+        for r in caplog.records
+        if r.levelno >= logging.ERROR
+    )
