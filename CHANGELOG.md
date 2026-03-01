@@ -1,10 +1,36 @@
 # Changelog
 
-## v0.32.0 - 2026-02-20
+## v0.32.0 - 2026-03-01
 
-Bump to Firefox 147
-Update profile validation for Firefox 137's localStorage migration from webappsstore.sqlite to storage.sqlite
-Fix Firefox Linux build archive format change from bz2 to xz
+Bump to Firefox 148
+
+### Breaking changes
+
+- Cookie `same_site` is now reported as `"unspecified"` instead of `"no_restriction"` for cookies without an explicit SameSite attribute
+- 404 responses are no longer reported as cache hits (`fromCache`)
+
+### Fixes & improvements
+
+- Fix Firefox Linux build archive format change from bz2 to xz
+- Update profile validation for Firefox 137's localStorage migration (webappsstore.sqlite → storage.sqlite)
+- Fix coverage collection from multiprocess child processes
+- Fix `browse` command to recover to original URL after link-click failure
+- Fix dead studies link in README
+
+### CI & tooling
+
+- Replace codecov package with codecov-action and add actionlint
+- Use pytest-split for optimal test distribution
+- Improve tool detection and error handling in scripts
+- Merge environment check and prune into single script
+- Add NixOS dev environment under nix/
+
+### Documentation
+
+- Add AGENTS.md with project guidance for AI coding agents
+- Add Architecture-Internals.md with detailed internals documentation
+- Fill in missing and outdated configuration documentation
+- Fix stale references in Platform-Architecture.md and README
 
 ## v0.31.0 - 2025-01-15
 
