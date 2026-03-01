@@ -33,6 +33,9 @@ dependencies:
     - tblib
     - wget
     - pip:
+        # Not psycopg[binary]: repin prunes extras, which would drop libpq.
+        - psycopg
+        - psycopg-binary
         - sqlalchemy
         - dataclasses-json
         - domain-utils
