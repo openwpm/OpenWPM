@@ -11,8 +11,6 @@ import jsdoc from "eslint-plugin-jsdoc";
 import unicorn from "eslint-plugin-unicorn";
 import importPlugin from "eslint-plugin-import";
 import html from "eslint-plugin-html";
-import json from "eslint-plugin-json";
-import noUnsanitized from "eslint-plugin-no-unsanitized";
 import promisePlugin from "eslint-plugin-promise";
 import sdlPlugin from "@microsoft/eslint-plugin-sdl";
 import mozillaPlugin from "eslint-plugin-mozilla";
@@ -49,9 +47,7 @@ export default tseslint.config(
       html,
       import: importPlugin,
       jsdoc,
-      json,
       unicorn,
-      "no-unsanitized": noUnsanitized,
     },
     rules: {
       "arrow-parens": ["off", "always"],
