@@ -33,6 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+      - name: Restore test durations cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .test_durations_cached
+          key: test-durations-${{ github.ref }}-${{ github.run_id }}
+          restore-keys: |
+            test-durations-${{ github.ref }}-
+            test-durations-refs/heads/master-
       - run: ./scripts/ci.sh
         env:
           DISPLAY: ":99.0"
@@ -77,12 +85,58 @@ jobs:
                           f.write(f": {oneliner}")
                       f.write(f"</summary>\n\n```\n{trace}\n```\n</details>\n\n")
           PYEOF
+      - name: Upload test durations
+        uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: test-durations-${{ matrix.group }}
+          path: .test_durations_group_${{ matrix.group }}
+          if-no-files-found: ignore
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-${{ matrix.group }}
           path: coverage.xml
+
+  consolidate-durations:
+    runs-on: ubuntu-latest
+    needs: tests
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all duration artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-durations-*
+          path: duration-artifacts
+      - name: Merge durations
+        run: |
+          python - <<'PYEOF'
+          import json, glob, os
+
+          merged = {}
+          # Start with committed baseline
+          if os.path.exists(".test_durations"):
+              with open(".test_durations") as f:
+                  merged = json.load(f)
+
+          # Overlay fresh durations from each group
+          for path in sorted(glob.glob("duration-artifacts/test-durations-*/.test_durations_group_*")):
+              with open(path) as f:
+                  merged.update(json.load(f))
+
+          with open(".test_durations_cached", "w") as f:
+              json.dump(merged, f, indent=2, sort_keys=True)
+
+          print(f"Merged {len(merged)} test durations")
+          PYEOF
+      - name: Save durations to cache
+        uses: actions/cache/save@v4
+        with:
+          path: .test_durations_cached
+          key: test-durations-${{ github.ref }}-${{ github.run_id }}
 
   upload-coverage:
     runs-on: ubuntu-latest
