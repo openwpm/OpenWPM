@@ -57,19 +57,6 @@ export class DnsInstrument {
     return this.pendingResponses[requestId];
   }
 
-  private handleResolvedDnsData(dnsRecordObj, dataReceiver) {
-    // Curring the data returned by API call.
-    return function (record) {
-      // Get data from API call
-      dnsRecordObj.addresses = record.addresses.toString();
-      dnsRecordObj.canonical_name = record.canonicalName;
-      dnsRecordObj.is_TRR = record.isTRR;
-
-      // Send data to main OpenWPM data aggregator.
-      dataReceiver.saveRecord("dns_responses", dnsRecordObj);
-    };
-  }
-
   private async onCompleteDnsHandler(
     details: browser.webRequest._OnCompletedDetails,
     crawlID,
@@ -88,6 +75,10 @@ export class DnsInstrument {
     const record = await browser.dns.resolve(dnsRecord.hostname, [
       "canonical_name",
     ]);
-    this.handleResolvedDnsData(dnsRecord, this.dataReceiver)(record);
+
+    dnsRecord.addresses = record.addresses.toString();
+    dnsRecord.canonical_name = record.canonicalName;
+    dnsRecord.is_TRR = record.isTRR;
+    this.dataReceiver.saveRecord("dns_responses", dnsRecord);
   }
 }
