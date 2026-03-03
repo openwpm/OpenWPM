@@ -26,16 +26,9 @@ def pytest_sessionfinish(session, exitstatus):
     import json
 
     group = os.environ.get("GROUP")
-    print(
-        f"\n[test-durations] GROUP={group!r}, "
-        f"collected {len(_test_durations)} durations, "
-        f"cwd={os.getcwd()}"
-    )
     if group and _test_durations:
-        path = f".test_durations_group_{group}"
-        with open(path, "w") as f:
+        with open(f".test_durations_group_{group}", "w") as f:
             json.dump(_test_durations, f, indent=2, sort_keys=True)
-        print(f"[test-durations] Wrote {path} ({os.path.getsize(path)} bytes)")
 
 
 EXTENSION_DIR = os.path.join(

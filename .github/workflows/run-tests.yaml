@@ -93,6 +93,7 @@ jobs:
           name: test-durations-${{ matrix.group }}
           path: .test_durations_group_${{ matrix.group }}
           if-no-files-found: ignore
+          include-hidden-files: true
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         if: always()
