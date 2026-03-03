@@ -8,15 +8,9 @@ import { NavigationInstrument } from "./background/navigation-instrument";
 import * as loggingDB from "./loggingdb";
 import { CallstackInstrument } from "./callstack-instrument";
 
-async function main() {
-  // Read the browser configuration from file
-  const filename = "browser_params.json";
-  const raw_config = await browser.profileDirIO.readFile(filename);
-  let config: any;
-  if (raw_config) {
-    config = JSON.parse(raw_config);
-    console.log("Browser Config:", config);
-  } else {
+async function setup(config: any) {
+  console.log("Browser Config:", config);
+  if(!config){
     config = {
       navigation_instrument: true,
       cookie_instrument: true,
@@ -104,4 +98,10 @@ async function main() {
   await browser.profileDirIO.writeFile("OPENWPM_STARTUP_SUCCESS.txt", "");
 }
 
-main();
+browser.storage.local.onChanged.addListener((changes) => {
+  const changedItems = Object.keys(changes);
+  if (!changedItems.includes("initialized")) {
+    return;
+  }
+  setup(changes.config?.newValue)
+});
