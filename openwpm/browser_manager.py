@@ -158,6 +158,25 @@ class BrowserManagerHandle:
             # Resets the command/status queues
             (self.command_queue, self.status_queue) = (Queue(), Queue())
 
+            # Create a unique temporary directory for this spawn attempt.
+            # This is created inside the loop so each retry gets a fresh
+            # tmpdir (close_browser_manager deletes it on failure).
+            if self.browser_params.tmpdir is not None:
+                self.logger.debug(
+                    "BROWSER %i: Deleting leftover temp directory %s"
+                    % (self.browser_id, self.browser_params.tmpdir)
+                )
+                shutil.rmtree(self.browser_params.tmpdir, ignore_errors=True)
+            self.browser_params.tmpdir = Path(
+                tempfile.mkdtemp(
+                    prefix="openwpm_", dir=os.getenv("TMPDIR", default="/tmp")
+                )
+            )
+            self.logger.debug(
+                "BROWSER %i: Using temp dir %s"
+                % (self.browser_id, self.browser_params.tmpdir)
+            )
+
             # builds and launches the browser_manager
 
             self.browser_manager = BrowserManager(
@@ -340,6 +359,22 @@ class BrowserManagerHandle:
         finally:
             if not shutdown_complete:
                 self.kill_browser_manager()
+
+            # Delete the temporary directory used by geckodriver.
+            if self.browser_params.tmpdir is not None:
+                try:
+                    shutil.rmtree(self.browser_params.tmpdir)
+                    self.logger.debug(
+                        "BROWSER %i: Deleted temp dir %s"
+                        % (self.browser_id, self.browser_params.tmpdir)
+                    )
+                    self.browser_params.tmpdir = None
+                except Exception:
+                    self.logger.warning(
+                        "BROWSER %i: Failed to delete temp dir %s"
+                        % (self.browser_id, self.browser_params.tmpdir),
+                        exc_info=True,
+                    )
 
     def execute_command_sequence(
         self,
