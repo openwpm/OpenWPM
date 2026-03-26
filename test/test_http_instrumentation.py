@@ -661,7 +661,7 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_service_worker_requests(self):
         """Check correct URL attribution for requests made by service worker"""
         test_url = utilities.BASE_TEST_URL + "/http_service_worker_page.html"
-        db = self.visit(test_url)
+        db = self.visit(test_url, sleep_after=5)
 
         request_id_to_url = dict()
 

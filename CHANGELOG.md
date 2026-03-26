@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.33.0 - 2026-03-26
+
+Bump to Firefox 149
+
 ## v0.32.0 - 2026-03-01
 
 Bump to Firefox 148
