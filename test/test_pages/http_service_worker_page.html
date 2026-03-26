@@ -4,8 +4,8 @@
     <link rel='icon' href='shared/test_favicon.ico' />
   </head>
   <body>
-    <p> This test page registers a service worker, then sends a message
-    to the worker to tell it to make a request.
+    <p> This test page registers a service worker that fetches an image
+    during its activate phase.
     </p>
     <script>
       if ('serviceWorker' in navigator) {
@@ -13,24 +13,8 @@
           './shared/service_worker.js',
           {scope: './shared/'}
         ).then((reg) => {
-          // registration worked
           console.log('Registration succeeded. Scope is ' + reg.scope);
-          var serviceWorker;
-          if (reg.installing) {
-            serviceWorker = reg.installing;
-          } else if (reg.waiting) {
-            serviceWorker = reg.waiting;
-          } else if (reg.active) {
-            serviceWorker = reg.active;
-          }
-          serviceWorker.addEventListener('statechange', (e) => {
-            // Send message to service worker to trigger image load.
-            if (e.target.state === 'activated') {
-              reg.active.postMessage("Fetch image.");
-            }
-          })
         }).catch((error) => {
-          // registration failed
           console.log('Registration failed with ' + error);
         });
       }
