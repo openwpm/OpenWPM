@@ -12,6 +12,7 @@ Run from the project root:
     python scripts/update.py
 """
 
+import json
 import re
 import subprocess
 import sys
@@ -32,8 +33,13 @@ def conda_run(*cmd: str, cwd: Path = ROOT) -> None:
     run("conda", "run", "-n", "openwpm", *cmd, cwd=cwd)
 
 
-def _npm_install(cwd: Path) -> str:
-    """Run npm install and return combined stdout+stderr."""
+def _npm_install(cwd: Path) -> tuple[str, bool]:
+    """Run npm install and return (combined output, success).
+
+    On a hard ERESOLVE failure npm exits non-zero; we still return the output
+    so the caller can parse peer dep conflicts and retry after downgrading.
+    Any other non-zero exit is re-raised as a CalledProcessError.
+    """
     result = subprocess.run(
         ["conda", "run", "-n", "openwpm", "npm", "install", "--include=dev"],
         cwd=cwd,
@@ -41,52 +47,98 @@ def _npm_install(cwd: Path) -> str:
         text=True,
     )
     print(result.stdout, end="")
+    combined = result.stdout + result.stderr
     if result.returncode != 0:
-        print(result.stderr, end="", file=sys.stderr)
-        raise subprocess.CalledProcessError(result.returncode, result.args)
-    return result.stdout + result.stderr
+        if "ERESOLVE" not in combined:
+            print(result.stderr, end="", file=sys.stderr)
+            raise subprocess.CalledProcessError(result.returncode, result.args)
+    return combined, result.returncode == 0
 
 
 def _peer_dep_conflicts(output: str) -> list[tuple[str, str]]:
-    """Return unique (package, required_range) pairs from npm peer dep warnings.
+    """Return unique (package, target_range) pairs to write into package.json.
 
-    npm emits lines like:
-        npm warn   peer some-pkg@"^2.0.0" from other-pkg@3.0.0
-    The package named after 'peer' is the one that is too new; downgrade it
-    to the stated range to satisfy the peer requirement.
+    Two strategies:
+    1. Tight peer constraints: ``peer X@"range" from Y`` where the range has
+       no ``||`` (i.e. it actually constrains the version, e.g. ``>=4.8.4 <6.0.0``).
+       Apply that range directly.
+    2. "Could not resolve" direct deps: npm refused to install ``X@^N.x`` as a
+       direct dependency.  Try the previous major: ``^(N-1).0.0``.
+
+    Ranges with ``||`` (e.g. ``^6.0.0 || ^7.0.0 || >=8.0.0``) are skipped for
+    strategy 1 — they are broad compatibility declarations that still include the
+    latest major, so applying them never converges.
     """
     seen: set[tuple[str, str]] = set()
     conflicts = []
+
+    # Strategy 1: tight peer constraint (no OR, actually bounds the version)
     for m in re.finditer(r'peer (\S+)@"([^"]+)" from', output):
         pkg, rng = m.group(1), m.group(2)
-        if (pkg, rng) not in seen:
+        if "||" not in rng and (pkg, rng) not in seen:
             seen.add((pkg, rng))
             conflicts.append((pkg, rng))
+
+    # Strategy 2: direct dep that couldn't be resolved — try previous major
+    for m in re.finditer(
+        r"Could not resolve dependency:\nnpm error (?:dev|peer) (\S+)@\"\^(\d+)",
+        output,
+        re.MULTILINE,
+    ):
+        pkg, major_str = m.group(1), m.group(2)
+        major = int(major_str)
+        if major > 0:
+            rng = f"^{major - 1}.0.0"
+            if (pkg, rng) not in seen:
+                seen.add((pkg, rng))
+                conflicts.append((pkg, rng))
+
     return conflicts
+
+
+def _apply_downgrades(cwd: Path, conflicts: list[tuple[str, str]]) -> None:
+    """Write downgraded version ranges directly into package.json.
+
+    Modifying package.json avoids the problem of passing space-containing
+    semver ranges (e.g. ">=4.8.4 <6.0.0") to the npm CLI, and ensures all
+    conflicts are applied atomically before the next npm install attempt.
+    """
+    pkg_json = cwd / "package.json"
+    data = json.loads(pkg_json.read_text())
+    for pkg, rng in conflicts:
+        for section in ("dependencies", "devDependencies"):
+            if section in data and pkg in data[section]:
+                print(f"    {pkg}: {data[section][pkg]!r} → {rng!r}")
+                data[section][pkg] = rng
+                break
+        else:
+            print(f"    {pkg} not found in package.json deps, skipping")
+    pkg_json.write_text(json.dumps(data, indent=2) + "\n")
 
 
 def npm_bump_and_resolve(cwd: Path) -> None:
     """Bump all npm deps to absolute latest, then resolve peer dep conflicts.
 
-    Strategy: use npm-check-updates to rewrite package.json to the newest
-    published version of every dependency, then iteratively downgrade any
-    package that triggers a peer dep warning until npm install is clean.
+    Strategy: restore package.json from git for a clean slate, use
+    npm-check-updates to rewrite it to the newest published versions, then
+    iteratively apply peer dep conflict fixes until npm install is clean.
     """
     print(f"\n=== npm bump-to-latest: {cwd.relative_to(ROOT)} ===")
+
+    # Restore package.json to its committed state for a clean baseline.
+    run("git", "checkout", "--", "package.json", cwd=cwd)
 
     # Rewrite package.json with the latest published versions of all deps.
     conda_run("npx", "--yes", "npm-check-updates", "--upgrade", cwd=cwd)
 
     for attempt in range(1, _MAX_RESOLVE_ATTEMPTS + 1):
-        output = _npm_install(cwd)
+        output, success = _npm_install(cwd)
         conflicts = _peer_dep_conflicts(output)
-        if not conflicts:
+        if success and not conflicts:
             print(f"  Clean install on attempt {attempt}.")
             return
         print(f"  Attempt {attempt}: {len(conflicts)} peer dep conflict(s)")
-        for pkg, rng in conflicts:
-            print(f"    Downgrading {pkg} → '{rng}'")
-            conda_run("npm", "install", f"{pkg}@{rng}", "--include=dev", cwd=cwd)
+        _apply_downgrades(cwd, conflicts)
 
     print(
         f"WARNING: peer dep conflicts not fully resolved after {_MAX_RESOLVE_ATTEMPTS} attempts.",
@@ -103,7 +155,7 @@ def main() -> None:
     npm_bump_and_resolve(ROOT / "Extension")
 
     # Rebuild the extension XPI after dependency changes
-    run("./build-extension.sh", cwd=SCRIPTS)
+    run(str(SCRIPTS / "build-extension.sh"))
 
     # Check for a newer Firefox release and update install-firefox.sh if available
     sys.path.insert(0, str(SCRIPTS))

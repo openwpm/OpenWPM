@@ -23,12 +23,12 @@
   },
   "homepage": "",
   "devDependencies": {
-    "@adobe/jsonschema2md": "^7.1.5",
-    "@commitlint/cli": "^18.6.1",
-    "@commitlint/config-conventional": "^18.6.1",
-    "commitlint": "^18.6.1",
-    "markdown-link-check": "^3.11.2",
-    "markdownlint-cli": "^0.39.0"
+    "@adobe/jsonschema2md": "^8.0.11",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "commitlint": "^20.5.0",
+    "markdown-link-check": "^3.14.2",
+    "markdownlint-cli": "^0.48.0"
   },
   "resolutions": {
     "glob-parent": "^6.0.2",
