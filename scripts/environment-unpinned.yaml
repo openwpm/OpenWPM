@@ -18,8 +18,7 @@ dependencies:
     - plyvel
     - psutil
     - pyarrow
-    # See https://github.com/openwpm/OpenWPM/issues/1111
-    - python=3.12
+    - python
     - pyvirtualdisplay
     - redis-py
     - s3fs
