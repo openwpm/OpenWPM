@@ -2,7 +2,7 @@ channels:
 - conda-forge
 dependencies:
 - beautifulsoup4=4.14.3
-- black=26.3.1
+- black=26.1.0
 - click=8.3.1
 - dill=0.4.1
 - easyprocess=1.1
@@ -24,7 +24,7 @@ dependencies:
 - pytest-asyncio=1.3.0
 - pytest-cov=7.1.0
 - pytest=9.0.2
-- python=3.12.13
+- python=3.14.3
 - pyvirtualdisplay=3.0
 - recommonmark=0.7.1
 - redis-py=7.4.0
