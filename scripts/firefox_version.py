@@ -22,11 +22,11 @@ from pathlib import Path
 
 INSTALL_SCRIPT = Path(__file__).resolve().parent / "install-firefox.sh"
 TAGS_URL = "https://hg.mozilla.org/releases/mozilla-release/json-tags"
-_TAG_RE = re.compile(r"FIREFOX_\d+_\d+(?:_\d+)?_RELEASE")
+_TAG_RE = re.compile(r"FIREFOX_(\d+)_(\d+)(?:_(\d+))?_RELEASE")
 
 
 def _version_key(tag: str) -> tuple[int, int, int]:
-    m = re.fullmatch(r"FIREFOX_(\d+)_(\d+)(?:_(\d+))?_RELEASE", tag)
+    m = _TAG_RE.fullmatch(tag)
     if not m:
         return (0, 0, 0)
     return (int(m.group(1)), int(m.group(2)), int(m.group(3) or 0))
