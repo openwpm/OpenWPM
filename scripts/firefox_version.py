@@ -66,12 +66,16 @@ def update_if_needed() -> bool:
 
     print(f"Updating Firefox: {current} → {latest_tag}")
     text = INSTALL_SCRIPT.read_text()
-    new_text = re.sub(
+    new_text, count = re.subn(
         r"^TAG='[^']*' # .*$",
         f"TAG='{latest_hash}' # {latest_tag}",
         text,
         flags=re.MULTILINE,
     )
+    if count == 0:
+        raise RuntimeError(
+            f"Failed to update TAG line in {INSTALL_SCRIPT}: no matching line found"
+        )
     INSTALL_SCRIPT.write_text(new_text)
     print(f"Updated {INSTALL_SCRIPT.name} to {latest_tag} ({latest_hash})")
     print("Remember to run ./scripts/install-firefox.sh and test before releasing.")
