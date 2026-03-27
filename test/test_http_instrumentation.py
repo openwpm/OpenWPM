@@ -661,6 +661,11 @@ class TestHTTPInstrument(OpenWPMTest):
     def test_service_worker_requests(self):
         """Check correct URL attribution for requests made by service worker"""
         test_url = utilities.BASE_TEST_URL + "/http_service_worker_page.html"
+        # sleep_after gives the webRequest pipeline (extension → socket → StorageController)
+        # time to flush the SW's fetch before manager.close() shuts down the browser.
+        # The SW uses event.waitUntil() so the fetch itself completes, but the async
+        # instrumentation path still needs a moment. The storage controller drains all
+        # pending tasks on shutdown, so any request captured before close() will land.
         db = self.visit(test_url, sleep_after=5)
 
         request_id_to_url = dict()

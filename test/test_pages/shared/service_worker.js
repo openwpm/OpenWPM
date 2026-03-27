@@ -1,15 +1,13 @@
-var request = new Request(
-  'http://localhost:8000/test_pages/shared/test_image_2.png'
-);
+var IMAGE_URL = 'http://localhost:8000/test_pages/shared/test_image_2.png';
 
 self.addEventListener('install', function(event) {
-  // Skip waiting so the worker activates immediately.
+  // Skip the waiting phase so this worker activates immediately after install.
   self.skipWaiting();
 });
 
 self.addEventListener('activate', function(event) {
   console.log("Service Worker activated. Fetches image.");
-  // event.waitUntil keeps the worker alive until the fetch completes,
-  // ensuring webRequest captures it before the browser shuts down.
-  event.waitUntil(fetch(request));
+  // waitUntil() extends the worker's lifetime until the fetch completes, so the
+  // webRequest event fires before the browser is allowed to terminate the worker.
+  event.waitUntil(fetch(IMAGE_URL));
 });
