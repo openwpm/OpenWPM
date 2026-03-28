@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "locks": {},
+  "settings": {
+    "stale_lock_timeout_minutes": 60
+  }
+}
