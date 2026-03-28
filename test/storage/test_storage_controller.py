@@ -1,4 +1,7 @@
+from typing import Any, Type, Union
+
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
 from openwpm.mp_logger import MPLogger
@@ -6,18 +9,31 @@ from openwpm.storage.in_memory_storage import (
     MemoryArrowProvider,
     MemoryStructuredProvider,
 )
+from openwpm.storage.in_process_storage import InProcessStorageControllerHandle
 from openwpm.storage.storage_controller import (
     INVALID_VISIT_ID,
     DataSocket,
     StorageControllerHandle,
 )
-from test.storage.fixtures import dt_test_values
+from test.storage.test_values import dt_test_values
+
+HandleCls = Type[Union[StorageControllerHandle, InProcessStorageControllerHandle]]
 
 
-def test_startup_and_shutdown(mp_logger: MPLogger, test_values: dt_test_values) -> None:
+@pytest.fixture(params=["subprocess", "in_process"])
+def controller_handle_cls(request: Any) -> HandleCls:
+    if request.param == "subprocess":
+        return StorageControllerHandle
+    else:
+        return InProcessStorageControllerHandle
+
+
+def test_startup_and_shutdown(
+    mp_logger: MPLogger, test_values: dt_test_values, controller_handle_cls: HandleCls
+) -> None:
     test_table, visit_ids = test_values
     structured = MemoryStructuredProvider()
-    controller_handle = StorageControllerHandle(structured, None)
+    controller_handle = controller_handle_cls(structured, None)
     controller_handle.launch()
     assert controller_handle.listener_address is not None
     cs = DataSocket(controller_handle.listener_address, "Test")
@@ -40,10 +56,12 @@ def test_startup_and_shutdown(mp_logger: MPLogger, test_values: dt_test_values) 
         assert handle.storage[table] == [data]
 
 
-def test_arrow_provider(mp_logger: MPLogger, test_values: dt_test_values) -> None:
+def test_arrow_provider(
+    mp_logger: MPLogger, test_values: dt_test_values, controller_handle_cls: HandleCls
+) -> None:
     test_table, visit_ids = test_values
     structured = MemoryArrowProvider()
-    controller_handle = StorageControllerHandle(structured, None)
+    controller_handle = controller_handle_cls(structured, None)
     controller_handle.launch()
 
     assert controller_handle.listener_address is not None
