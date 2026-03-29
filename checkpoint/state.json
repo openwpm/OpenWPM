@@ -8,8 +8,8 @@
       "claimed_at": "2026-03-29T22:59:02.703258239Z"
     },
     "2": {
-      "agent_id": "claude",
-      "claimed_at": "2026-03-29T20:48:57.786157404Z"
+      "agent_id": "claude-bugfix",
+      "claimed_at": "2026-03-29T23:00:03.016981349Z"
     },
     "3": {
       "agent_id": "claude-worktree",
@@ -36,13 +36,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "claude-bugfix",
-      "agent_seq": 5,
-      "timestamp": "2026-03-29T22:59:53.004621259Z"
+      "agent_seq": 6,
+      "timestamp": "2026-03-29T23:00:03.016981349Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-29T22:59:53.004621259Z",
+    "timestamp": "2026-03-29T23:00:03.016981349Z",
     "agent_id": "claude-bugfix",
-    "agent_seq": 5
+    "agent_seq": 6
   }
 }
