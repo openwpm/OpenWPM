@@ -1,0 +1,8 @@
+{
+  "uuid": "47d09c40-8b88-4412-b175-5456b9f00571",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "claude-bugfix",
+  "content": "Plan: Fix 6 bugs from adversarial review. CRITICAL: (1) Object.prototype pollution in instrument.ts - move 3 utility methods to module-level functions, (2) innerHTML/outerHTML setter in stealth.ts uses wrong descriptor lookup - fix to use Element.prototype. MAJOR: (3) Memory leaks in wrappedObjects/proxies - use WeakSet/FinalizationRegistry, (4) generateErrorObject crashes on non-Error types - add try/catch fallback, (5) getLineInfo/getFileName crash on empty stacks - add null/bounds checks, (6) cleanErrorStack only replaces first occurrence with confused type handling - fix replace logic. Need to get stealth files from remote commit 8cf50d5 first.",
+  "created_at": "2026-03-29T23:02:18.292712255Z",
+  "kind": "plan"
+}
