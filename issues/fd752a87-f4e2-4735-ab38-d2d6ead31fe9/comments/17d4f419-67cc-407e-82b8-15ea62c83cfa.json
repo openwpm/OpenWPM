@@ -1,0 +1,10 @@
+{
+  "uuid": "17d4f419-67cc-407e-82b8-15ea62c83cfa",
+  "issue_uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "author": "claude",
+  "content": "**Hater review of PR #1151 (dynamic CI test durations):**\n\nVerdict: Mediocre. Data flow and consolidation design are correct, but two real issues:\n\n1. `.test_durations_group_*` and `.test_durations_cached` are NOT in `.gitignore` — local devs running `GROUP=1 SPLITS=7 ./scripts/ci.sh` will get untracked dotfiles, one `git add .` away from being committed.\n\n2. The `GROUP` env var gate is insufficient — hook writes files whenever `GROUP` is set, no check for `CI` or `GITHUB_ACTIONS`. Since `GROUP` is the local split-testing knob, this silently pollutes working directories for local developers.\n\nAlso: orphaned entries grow forever (minor), debug commit in branch history (sloppy), `$TESTS` unquoted (inherited debt).",
+  "created_at": "2026-03-29T20:53:15.688048529Z",
+  "kind": "review",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADFl9g6WLhpv//Cnhw3El1Q2f2N0Rpl+heR6LudccLvid0h9GTgL7ZqQ0DoY7cY4SFGl6TjM/eJwfT67cEwX9Cg=="
+}
