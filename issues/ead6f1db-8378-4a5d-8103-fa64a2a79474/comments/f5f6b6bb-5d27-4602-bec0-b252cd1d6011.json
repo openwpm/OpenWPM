@@ -1,0 +1,10 @@
+{
+  "uuid": "f5f6b6bb-5d27-4602-bec0-b252cd1d6011",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "Design doc drafted: .design/sqlalchemy-postgresql-tests.md — 0 open questions, ready for kickoff.",
+  "created_at": "2026-03-29T22:32:50.394417834Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAba++tYHAafsMVcNodx00UEoySmL6nM8YCCksXggJhfI8PK9CrLGbWYtGKsAM41y0VLEwmz+17mqwhXSnVcEzBA=="
+}
