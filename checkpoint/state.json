@@ -36,13 +36,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "claude-bugfix",
-      "agent_seq": 4,
-      "timestamp": "2026-03-29T22:59:51.315253179Z"
+      "agent_seq": 5,
+      "timestamp": "2026-03-29T22:59:53.004621259Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-29T22:59:51.315253179Z",
+    "timestamp": "2026-03-29T22:59:53.004621259Z",
     "agent_id": "claude-bugfix",
-    "agent_seq": 4
+    "agent_seq": 5
   }
 }
