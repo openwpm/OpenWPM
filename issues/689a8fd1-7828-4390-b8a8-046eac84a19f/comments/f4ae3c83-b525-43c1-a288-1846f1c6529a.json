@@ -1,0 +1,10 @@
+{
+  "uuid": "f4ae3c83-b525-43c1-a288-1846f1c6529a",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "claude",
+  "content": "**Hater review of PR #1148 (stealth extension) — CRITICAL issues found:**\n\n**Critical (blocks merge):**\n1. `instrument.ts:98-159`: Three methods added to `Object.prototype` via plain assignment are **enumerable** — visible in every `for...in` loop on every object. Directly defeats the stealth claim and makes the extension detectable.\n2. `stealth.ts:219-231`: innerHTML/outerHTML setter protection does `Object.getOwnPropertyDescriptor(temp, 'innerHTML')` on an object with no such property → returns `undefined` → `.set` throws TypeError. Dead on arrival.\n\n**Major:**\n- Memory leaks: `wrappedObjects` array and `proxies` Map hold strong references forever\n- `generateErrorObject` crashes on non-standard error types (DOMException, custom errors)\n- `getLineInfo`/`getFileName` crash on empty/malformed stacks with no defensive checks\n- `cleanErrorStack` confused string/array type handling, only replaces first occurrence\n- No extension-side mutual exclusion between stealth and legacy instruments\n- Hardcoded settings in `settings.ts` ignore user configuration\n- Test page's 10 detection vectors don't catch the Object.prototype pollution\n\n**Minor:** `Object.getPropertyDescriptor` monkey-patched (detectable), `allowCrossOriginArguments: true` undocumented, pervasive `any` types, TODO!!!! comments in production code.\n\n**Status: NOT ready to merge. Critical issues require fixes before re-review.**",
+  "created_at": "2026-03-29T20:56:03.335952307Z",
+  "kind": "review",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAml8ld0H9XLXBKz5FGncD7gNqSFRi5kpmC6xmrqq6hDk77QhX+4+VAds1Suj4rw9gKSZM9wSczeRi+bqIelwoAA=="
+}
