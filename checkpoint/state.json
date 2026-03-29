@@ -28,8 +28,8 @@
       "claimed_at": "2026-03-29T20:49:28.739592174Z"
     },
     "7": {
-      "agent_id": "claude",
-      "claimed_at": "2026-03-29T20:49:36.155393294Z"
+      "agent_id": "claude-research",
+      "claimed_at": "2026-03-29T21:38:55.488879633Z"
     },
     "8": {
       "agent_id": "claude",
@@ -40,13 +40,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "claude-research",
-      "agent_seq": 2,
-      "timestamp": "2026-03-29T21:38:48.684344225Z"
+      "agent_seq": 3,
+      "timestamp": "2026-03-29T21:38:55.488879633Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-29T21:38:48.684344225Z",
+    "timestamp": "2026-03-29T21:38:55.488879633Z",
     "agent_id": "claude-research",
-    "agent_seq": 2
+    "agent_seq": 3
   }
 }
