@@ -1,0 +1,10 @@
+{
+  "uuid": "9b503863-053e-4a4e-ab2d-cb3af5ab5223",
+  "issue_uuid": "5f3c564a-6559-4301-aac7-0102bd4077c4",
+  "author": "claude",
+  "content": "Closing — PR #1144 combines three major refactors (WebSocket, OTel, StorageController threading) in a broken state. Extension and Python layers are mismatched and OTel deps are missing from environment.yaml. Too large to rescue as-is; individual pieces should be scoped separately if needed.",
+  "created_at": "2026-03-29T22:33:42.582998464Z",
+  "kind": "decision",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFwxr9MSNH54ytenHJ7jaboMhAepdfC5hKU+0ojrzRXew9QZ4h8VDdvabIhNIavKMcrp7GXyxXMoEisY1GFqOAg=="
+}
