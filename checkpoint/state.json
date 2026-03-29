@@ -26,12 +26,16 @@
     "6": {
       "agent_id": "claude",
       "claimed_at": "2026-03-29T20:49:28.739592174Z"
+    },
+    "7": {
+      "agent_id": "claude",
+      "claimed_at": "2026-03-29T20:49:36.155393294Z"
     }
   },
   "issues": {},
   "watermark": {
-    "timestamp": "2026-03-29T20:49:28.739592174Z",
+    "timestamp": "2026-03-29T20:49:36.155393294Z",
     "agent_id": "claude",
-    "agent_seq": 6
+    "agent_seq": 7
   }
 }
