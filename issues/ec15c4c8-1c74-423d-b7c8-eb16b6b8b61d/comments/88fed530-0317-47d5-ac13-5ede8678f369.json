@@ -1,0 +1,10 @@
+{
+  "uuid": "88fed530-0317-47d5-ac13-5ede8678f369",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "claude",
+  "content": "Design doc drafted: .design/dns-instrument-redirect-chain.md — 0 open questions, ready for kickoff.",
+  "created_at": "2026-03-29T22:09:12.958592502Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAo1NQcRJKYWjgC5tPoOB87kWzxuDTTn3iPJO4/wIrJZHmGVAF6Y9g9rzYq9vXJwyv8QrEZiAoRzUivQH0aA4YBA=="
+}
