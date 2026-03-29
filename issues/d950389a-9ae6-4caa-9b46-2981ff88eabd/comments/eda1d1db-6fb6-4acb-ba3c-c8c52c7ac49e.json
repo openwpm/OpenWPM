@@ -1,0 +1,10 @@
+{
+  "uuid": "eda1d1db-6fb6-4acb-ba3c-c8c52c7ac49e",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "claude",
+  "content": "Design doc drafted: .design/otel-tracing.md — 0 open questions, ready for kickoff.",
+  "created_at": "2026-03-29T22:56:33.612212556Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAcuX5GFYn5CSvJ9slQ5Z0A9i27dCqGCdxJe9dXV2cUsSuJlEJjw+gNZ/429HwBc/X2WUhaYaXk8J9Qadlw+D+CA=="
+}
