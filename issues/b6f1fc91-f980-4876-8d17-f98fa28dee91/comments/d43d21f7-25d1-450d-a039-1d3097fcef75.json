@@ -1,0 +1,10 @@
+{
+  "uuid": "d43d21f7-25d1-450d-a039-1d3097fcef75",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "claude",
+  "content": "Design doc drafted: .design/dns-error-failure-limit.md — 0 open questions, ready for kickoff.",
+  "created_at": "2026-03-29T22:15:55.152263245Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA9PTwKybr5F3yl6dCsEU1Y3/A/S0eRJRgX2lTNE/UaBEm8z1ozZFNZklNZ8jzdAuv6SJk6uYbz/SCZMsJt2pTCg=="
+}
