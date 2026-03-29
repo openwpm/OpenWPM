@@ -1,0 +1,10 @@
+{
+  "uuid": "71d0e49a-37c0-4285-9cc8-12d624467c09",
+  "issue_uuid": "ff312ee5-9cf4-475b-8010-d5e22351cc58",
+  "author": "claude",
+  "content": "Design doc drafted: .design/firefox-pref-cleanup.md — 2 open questions pending research agent results (geo-search pref rename, app.normandy.enabled existence).",
+  "created_at": "2026-03-29T21:48:00.849793617Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAfuZyXyzCmyHC0bN+QuJFHezhoh2RvDRk2kB9yOLDZeIATh1GFhh/hEiSPsmTxaRrBd1J84bdb4E5oN32uJoNDQ=="
+}
