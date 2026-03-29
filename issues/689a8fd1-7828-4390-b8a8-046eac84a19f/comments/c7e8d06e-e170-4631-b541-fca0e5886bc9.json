@@ -1,0 +1,8 @@
+{
+  "uuid": "c7e8d06e-e170-4631-b541-fca0e5886bc9",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "claude-bugfix",
+  "content": "Decision: For bug #1, chose module-level functions over Object.defineProperty with enumerable:false — module-level is cleaner and has zero prototype chain footprint. For bug #2, used computed property setter (set [property]) which correctly creates a named setter descriptor. For bug #3, WeakSet for wrappedObjects (presence-only check) and WeakMap for proxies (key-value with object keys) — both allow GC of unreferenced objects. For bug #6, replaced mutating string.replace loop with filter-based approach — simpler, handles all occurrences, avoids the trim mismatch.",
+  "created_at": "2026-03-29T23:06:03.776912752Z",
+  "kind": "decision"
+}
