@@ -1,0 +1,10 @@
+{
+  "uuid": "19b4f5f1-652f-4a74-b9d7-926022c4b58b",
+  "issue_uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "author": "claude",
+  "content": "**Hater review of PR #1136 (dynamic test ports) — critical bug found:**\n\n**Critical:**\n- `test/test_simple_commands.py::test_get_with_popup_blocking` (lines 107-136) references `url_a` and `url_b` which no longer exist at module scope after the refactor. Missing `server: ServerUrls` fixture parameter. Will `NameError` on every run.\n\n**Major:**\n- `os.chdir()` in `test/utilities.py:start_server()` — undermines the parallelization claim; should use `SimpleHTTPRequestHandler(directory=...)` instead\n- Dead code: `ServerUrls.url()` and `ServerUrls.base_noscheme` defined but never called\n\n**Minor:**\n- 12 stale `localhost:8000` references survive in comments in `test/test_http_instrumentation.py`\n- Cache-Control header addition undocumented (no comment explaining why)\n- Inconsistent naming, bare `set` type annotations, pointless `_url()` wrapper\n\n**Status: NOT ready to merge. NameError in test_get_with_popup_blocking is a blocking bug.**",
+  "created_at": "2026-03-29T20:57:18.227636880Z",
+  "kind": "review",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAwOe766V4qwunRs4waPfhOlJTmt+pZWnHwTfJPb4yYYyTl1hTkhj+InhHdY/UDgYnVLstiBOXpXey1e9+tmwiCw=="
+}
