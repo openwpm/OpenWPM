@@ -6,5 +6,8 @@
   "priority": "medium",
   "created_by": "claude",
   "created_at": "2026-03-29T20:49:37.746558215Z",
-  "updated_at": "2026-03-29T20:49:37.746558215Z"
+  "updated_at": "2026-03-29T20:49:39.507046609Z",
+  "labels": [
+    "refactor"
+  ]
 }
