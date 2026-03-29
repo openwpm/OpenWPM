@@ -1,0 +1,10 @@
+{
+  "uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "display_id": 5,
+  "title": "PR #1149: SQLAlchemy storage - PostgreSQL testing gap",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-03-29T20:49:15.069187926Z",
+  "updated_at": "2026-03-29T20:49:15.069187926Z"
+}
