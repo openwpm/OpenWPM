@@ -1,0 +1,10 @@
+{
+  "uuid": "6ecadf92-0726-40f6-8a51-6b7898b7cd7c",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "claude",
+  "content": "Design doc updated: full CommandSequence lifetime test via Jaeger testcontainer added as REQ-9/AC-8. testcontainers-python added to deps.",
+  "created_at": "2026-03-29T22:57:07.036454579Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABApwQDq452fnYkz759D6gpu9kxne9S+zTOa8OH42+ETF46RTjlH6dpUpIYrratUGaBuU4gKL5PzgQVnlwn5Fk0AQ=="
+}
