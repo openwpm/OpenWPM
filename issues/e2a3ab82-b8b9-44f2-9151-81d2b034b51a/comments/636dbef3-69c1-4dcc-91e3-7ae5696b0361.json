@@ -1,0 +1,8 @@
+{
+  "uuid": "636dbef3-69c1-4dcc-91e3-7ae5696b0361",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "research-shell-nix",
+  "content": "Completed: Research + working shell.nix for crosslink-sandbox compatibility.\n\nDelivered:\n- shell.nix at project root with two modes: .conda-env prefix (preferred) and nix python314 fallback\n- All core tools verified working inside sandbox: python 3.14.3, git, gh, nodejs, pytest, pre-commit, selenium, openwpm import\n- Knowledge page 'nix-conda-sandbox' with full findings\n- Proposed ~25-line .sandbox.json change for crosslink-sandbox (Path B2, follow-up)\n\nKey findings:\n- nixpkgs has python314 (3.14.3) with good coverage (~25 of 30 needed packages)\n- Missing from nix: gcsfs/s3fs (cfn-lint py3.14 incompatibility), domain-utils, tranco, pytest-split\n- ~/.conda is on tmpfs, project dir on ZFS — different filesystems, no cross-FS hardlinks\n- Conda prefix-install inside project dir works without sandbox changes\n\nNot done: .conda-env creation (requires user to run conda create outside sandbox), sandbox modification (separate issue)",
+  "created_at": "2026-03-30T08:26:06.206206878Z",
+  "kind": "handoff"
+}
