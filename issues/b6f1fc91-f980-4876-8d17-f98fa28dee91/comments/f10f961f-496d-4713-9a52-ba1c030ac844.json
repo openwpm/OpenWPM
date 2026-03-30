@@ -1,0 +1,8 @@
+{
+  "uuid": "f10f961f-496d-4713-9a52-ba1c030ac844",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-error-impl",
+  "content": "Plan: The fix/dns-crash-handling branch (commit dc14497) has the right idea but over-exempts DNS errors — it gates the ENTIRE 'if command_status \\!= ok' block, which also skips restart_required=True. Per the design spec (REQ-3/AC-3), DNS errors must still trigger browser restart, only the failure_count increment should be skipped. I will: (1) cherry-pick dc14497 onto this branch, (2) adjust the guard so is_dns_error only wraps failure_count increment, not restart_required, (3) add scale test (AC-4) navigating 100+ invalid domains with low failure_limit, (4) add unit test for is_dns_error predicate (AC-5).",
+  "created_at": "2026-03-30T08:04:49.149469208Z",
+  "kind": "plan"
+}
