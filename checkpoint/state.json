@@ -39,14 +39,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "implement-sqlalchemy-postgresql-tests",
-      "agent_seq": 3,
-      "timestamp": "2026-03-30T08:03:14.270932356Z"
+      "agent_id": "fix-pr1151",
+      "agent_seq": 2,
+      "timestamp": "2026-03-30T08:03:15.765137661Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:03:14.270932356Z",
-    "agent_id": "implement-sqlalchemy-postgresql-tests",
-    "agent_seq": 3
+    "timestamp": "2026-03-30T08:03:15.765137661Z",
+    "agent_id": "fix-pr1151",
+    "agent_seq": 2
   }
 }
