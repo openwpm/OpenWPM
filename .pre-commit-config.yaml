@@ -4,7 +4,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.1.0
     hooks:
       - id: black
         language_version: python3
@@ -13,7 +13,7 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          [pytest, types-tabulate, types-PyYAML, types-redis]
+          [pytest, types-tabulate, types-PyYAML, types-redis, types-requests]
         # We may need to add more and more dependencies here, as pre-commit
         # runs in an environment without our dependencies
   - repo: https://github.com/rhysd/actionlint
