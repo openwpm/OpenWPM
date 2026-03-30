@@ -1,0 +1,8 @@
+{
+  "uuid": "52352e95-a66d-4a78-a112-096c5797e7a2",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "claude-dns-fix",
+  "content": "Plan: Implement is_dns_error predicate in browser_manager.py. Prior commit dc14497 incorrectly skips both failure_count AND restart_required. The spec requires only failure_count be skipped (REQ-3: restart_required must still be set True). Will also add scale test (AC-4: 100+ non-existent domains) and unit test (AC-5: non-DNS neterrors still count).",
+  "created_at": "2026-03-30T07:53:04.572654667Z",
+  "kind": "plan"
+}
