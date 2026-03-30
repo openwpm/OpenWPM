@@ -19,10 +19,6 @@
       "agent_id": "claude-dns-fix",
       "claimed_at": "2026-03-30T07:52:16.089316246Z"
     },
-    "5": {
-      "agent_id": "implement-sqlalchemy-postgresql-tests",
-      "claimed_at": "2026-03-30T08:03:14.270932356Z"
-    },
     "6": {
       "agent_id": "dns-impl",
       "claimed_at": "2026-03-30T08:04:25.408966139Z"
@@ -35,14 +31,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "claude-research",
+      "agent_id": "implement-sqlalchemy-postgresql-tests",
       "agent_seq": 4,
-      "timestamp": "2026-03-30T08:36:36.217661471Z"
+      "timestamp": "2026-03-30T08:40:02.683944351Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:36:36.217661471Z",
-    "agent_id": "claude-research",
+    "timestamp": "2026-03-30T08:40:02.683944351Z",
+    "agent_id": "implement-sqlalchemy-postgresql-tests",
     "agent_seq": 4
   }
 }
