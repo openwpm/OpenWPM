@@ -1,0 +1,8 @@
+{
+  "uuid": "444f8145-c2da-4730-b1b7-0411e35a2a16",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "dns-fix-agent",
+  "content": "Plan: swap onCompleted for onHeadersReceived in dns-instrument.ts, add type interface, add redirect chain test",
+  "created_at": "2026-03-30T07:52:07.393814234Z",
+  "kind": "plan"
+}
