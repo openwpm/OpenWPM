@@ -1,0 +1,8 @@
+{
+  "uuid": "c3d1ec3e-4b0a-445d-9b94-29fbe006c6ee",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-bugs",
+  "content": "Committed: fix(stealth): fix critical bugs in stealth JS instrumentation [CL-2] | Files: 4 files changed, 145 insertions(+), 64 deletions(-) | Commit: abfeb80",
+  "created_at": "2026-03-30T08:54:33.480749123Z",
+  "kind": "result"
+}
