@@ -1,0 +1,8 @@
+{
+  "uuid": "da386e17-e88c-4104-8396-dd9d7f3f477c",
+  "issue_uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "author": "fix-pr1151",
+  "content": "Plan: (1) Need user to run 'git merge origin/dynamic-test-durations' since merge is blocked by hooks. (2) Add .test_durations_group_* and .test_durations_cached to .gitignore. (3) Gate conftest.py pytest_sessionfinish on GITHUB_ACTIONS env var so duration files aren't written locally. (4) Run pre-commit.",
+  "created_at": "2026-03-30T08:05:12.374409098Z",
+  "kind": "plan"
+}
