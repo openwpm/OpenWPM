@@ -44,13 +44,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "research-shell-nix",
-      "agent_seq": 1,
-      "timestamp": "2026-03-30T08:06:59.793718373Z"
+      "agent_seq": 2,
+      "timestamp": "2026-03-30T08:07:01.729462763Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:06:59.793718373Z",
+    "timestamp": "2026-03-30T08:07:01.729462763Z",
     "agent_id": "research-shell-nix",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
