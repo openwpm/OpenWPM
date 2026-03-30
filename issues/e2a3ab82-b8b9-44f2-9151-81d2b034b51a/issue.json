@@ -6,5 +6,8 @@
   "priority": "medium",
   "created_by": "claude",
   "created_at": "2026-03-30T08:06:02.872434295Z",
-  "updated_at": "2026-03-30T08:06:02.872434295Z"
+  "updated_at": "2026-03-30T08:06:04.569708221Z",
+  "labels": [
+    "devops"
+  ]
 }
