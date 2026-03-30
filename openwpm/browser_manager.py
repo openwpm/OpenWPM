@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 import psutil
 from multiprocess import Queue
+from opentelemetry import propagate
+from opentelemetry.trace import StatusCode
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
 
@@ -34,6 +36,7 @@ from .errors import (
 from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
+from .utilities import otel
 from .utilities.multiprocess_utils import (
     Process,
     kill_process_and_children,
@@ -324,7 +327,7 @@ class BrowserManagerHandle:
 
             # Send the shutdown command
             command = ShutdownSignal()
-            self.command_queue.put(command)
+            self.command_queue.put((command, {}))
 
             # Verify that webdriver has closed (30 second timeout)
             try:
@@ -369,8 +372,23 @@ class BrowserManagerHandle:
         """
         Sends CommandSequence to the BrowserManager one command at a time
         """
+        with otel.start_span(task_manager.tracer, "execute_command_sequence") as span:
+            span.set_attributes(
+                {
+                    "openwpm.browser_id": self.browser_id,
+                    "openwpm.visit_id": self.curr_visit_id,
+                    "url.full": command_sequence.url,
+                }
+            )
+            self._execute_command_sequence(task_manager, command_sequence)
+
+    def _execute_command_sequence(
+        self, task_manager: "TaskManager", command_sequence: CommandSequence
+    ) -> None:
         assert self.browser_id is not None
         assert self.curr_visit_id is not None
+        tracer = task_manager.tracer
+
         task_manager.sock.store_record(
             TableName("site_visits"),
             self.curr_visit_id,
@@ -395,160 +413,175 @@ class BrowserManagerHandle:
 
         for command_and_timeout in command_sequence.get_commands_with_timeout():
             command, timeout = command_and_timeout
-            command.set_visit_browser_id(self.curr_visit_id, self.browser_id)
-            command.set_start_time(time.time())
-            self.current_timeout = timeout
+            with otel.start_span(tracer, type(command).__name__) as span:
+                span.set_attribute("openwpm.timeout", timeout)
+                command.set_visit_browser_id(self.curr_visit_id, self.browser_id)
+                command.set_start_time(time.time())
+                self.current_timeout = timeout
 
-            # Adding timer to track performance of commands
-            t1 = time.time_ns()
+                # Adding timer to track performance of commands
+                t1 = time.time_ns()
 
-            # passes off command and waits for a success (or failure signal)
-            self.command_queue.put(command)
+                carrier: Dict[str, str] = {}
+                if tracer is not None:
+                    propagate.inject(carrier)
 
-            # received reply from BrowserManager, either success or failure
-            error_text = None
-            tb = None
-            status = None
-            try:
-                status = self.status_queue.get(True, self.current_timeout)
-            except EmptyQueue:
-                self.logger.info(
-                    "BROWSER %i: Timeout while executing command, %s, killing "
-                    "browser manager" % (self.browser_id, repr(command))
+                # passes off command and waits for a success (or failure signal)
+                self.command_queue.put((command, carrier))
+
+                # received reply from BrowserManager, either success or failure
+                error_text = None
+                tb = None
+                status = None
+                try:
+                    status = self.status_queue.get(True, self.current_timeout)
+                except EmptyQueue:
+                    self.logger.info(
+                        "BROWSER %i: Timeout while executing command, %s, killing "
+                        "browser manager" % (self.browser_id, repr(command))
+                    )
+
+                if status is None:
+                    # allows us to skip this entire block without having to bloat
+                    # every if statement
+                    command_status = "timeout"
+                    pass
+                elif status == "OK":
+                    command_status = "ok"
+                elif status[0] == "CRITICAL":
+                    command_status = "critical"
+                    self.logger.critical(
+                        "BROWSER %i: Received critical error from browser "
+                        "process while executing command %s. Setting failure "
+                        "status." % (self.browser_id, str(command))
+                    )
+                    task_manager.failure_status = {
+                        "ErrorType": "CriticalChildException",
+                        "CommandSequence": command_sequence,
+                        "Exception": status[1],
+                    }
+                    error_text, tb = self._unpack_pickled_error(status[1])
+                elif status[0] == "FAILED":
+                    command_status = "error"
+                    error_text, tb = self._unpack_pickled_error(status[1])
+                    self.logger.info(
+                        "BROWSER %i: Received failure status while executing "
+                        "command: %s" % (self.browser_id, repr(command))
+                    )
+                elif status[0] == "NETERROR":
+                    command_status = "neterror"
+                    error_text, tb = self._unpack_pickled_error(status[1])
+                    error_text = parse_neterror(error_text)
+                    self.logger.info(
+                        "BROWSER %i: Received neterror %s while executing "
+                        "command: %s" % (self.browser_id, error_text, repr(command))
+                    )
+                else:
+                    raise ValueError("Unknown browser status message %s" % status)
+
+                task_manager.sock.store_record(
+                    TableName("crawl_history"),
+                    self.curr_visit_id,
+                    {
+                        "browser_id": self.browser_id,
+                        "visit_id": self.curr_visit_id,
+                        "command": type(command).__name__,
+                        "arguments": json.dumps(
+                            command.__dict__, default=lambda x: repr(x)
+                        ).encode("utf-8"),
+                        "retry_number": command_sequence.retry_number,
+                        "command_status": command_status,
+                        "error": error_text,
+                        "traceback": tb,
+                        "duration": int((time.time_ns() - t1) / 1000000),
+                    },
                 )
-
-            if status is None:
-                # allows us to skip this entire block without having to bloat
-                # every if statement
-                command_status = "timeout"
-                pass
-            elif status == "OK":
-                command_status = "ok"
-            elif status[0] == "CRITICAL":
-                command_status = "critical"
-                self.logger.critical(
-                    "BROWSER %i: Received critical error from browser "
-                    "process while executing command %s. Setting failure "
-                    "status." % (self.browser_id, str(command))
+                span.set_attributes(
+                    {
+                        "openwpm.command_status": command_status,
+                        "openwpm.retry_number": command_sequence.retry_number,
+                    }
                 )
-                task_manager.failure_status = {
-                    "ErrorType": "CriticalChildException",
-                    "CommandSequence": command_sequence,
-                    "Exception": status[1],
-                }
-                error_text, tb = self._unpack_pickled_error(status[1])
-            elif status[0] == "FAILED":
-                command_status = "error"
-                error_text, tb = self._unpack_pickled_error(status[1])
-                self.logger.info(
-                    "BROWSER %i: Received failure status while executing "
-                    "command: %s" % (self.browser_id, repr(command))
-                )
-            elif status[0] == "NETERROR":
-                command_status = "neterror"
-                error_text, tb = self._unpack_pickled_error(status[1])
-                error_text = parse_neterror(error_text)
-                self.logger.info(
-                    "BROWSER %i: Received neterror %s while executing "
-                    "command: %s" % (self.browser_id, error_text, repr(command))
-                )
-            else:
-                raise ValueError("Unknown browser status message %s" % status)
+                if command_status != "ok":
+                    span.set_status(StatusCode.ERROR, error_text or command_status)
 
-            task_manager.sock.store_record(
-                TableName("crawl_history"),
-                self.curr_visit_id,
-                {
-                    "browser_id": self.browser_id,
-                    "visit_id": self.curr_visit_id,
-                    "command": type(command).__name__,
-                    "arguments": json.dumps(
-                        command.__dict__, default=lambda x: repr(x)
-                    ).encode("utf-8"),
-                    "retry_number": command_sequence.retry_number,
-                    "command_status": command_status,
-                    "error": error_text,
-                    "traceback": tb,
-                    "duration": int((time.time_ns() - t1) / 1000000),
-                },
-            )
+                if command_status == "critical":
+                    task_manager.sock.finalize_visit_id(
+                        success=False,
+                        visit_id=self.curr_visit_id,
+                    )
+                    return
 
-            if command_status == "critical":
-                task_manager.sock.finalize_visit_id(
-                    success=False,
-                    visit_id=self.curr_visit_id,
-                )
-                return
-
-            if command_status != "ok":
-                if not is_dns_error(command_status, error_text):
+                if command_status != "ok":
+                    if not is_dns_error(command_status, error_text):
+                        with task_manager.threadlock:
+                            task_manager.failure_count += 1
+                            exceeded_limit = (
+                                task_manager.failure_count > task_manager.failure_limit
+                            )
+                        if exceeded_limit:
+                            self.logger.critical(
+                                "BROWSER %i: Command execution failure pushes failure "
+                                "count above the allowable limit. Setting "
+                                "failure_status." % self.browser_id
+                            )
+                            task_manager.failure_status = {
+                                "ErrorType": "ExceedCommandFailureLimit",
+                                "CommandSequence": command_sequence,
+                            }
+                            return
+                    self.restart_required = True
+                    self.logger.debug(
+                        "BROWSER %i: Browser restart required" % self.browser_id
+                    )
+                # Reset failure_count at the end of each successful command sequence
+                elif type(command) is FinalizeCommand:
                     with task_manager.threadlock:
-                        task_manager.failure_count += 1
-                        exceeded_limit = (
-                            task_manager.failure_count > task_manager.failure_limit
-                        )
-                    if exceeded_limit:
-                        self.logger.critical(
-                            "BROWSER %i: Command execution failure pushes failure "
-                            "count above the allowable limit. Setting "
-                            "failure_status." % self.browser_id
-                        )
-                        task_manager.failure_status = {
-                            "ErrorType": "ExceedCommandFailureLimit",
-                            "CommandSequence": command_sequence,
-                        }
-                        return
-                self.restart_required = True
-                self.logger.debug(
-                    "BROWSER %i: Browser restart required" % self.browser_id
-                )
-            # Reset failure_count at the end of each successful command sequence
-            elif type(command) is FinalizeCommand:
-                with task_manager.threadlock:
-                    task_manager.failure_count = 0
+                        task_manager.failure_count = 0
 
-            if self.restart_required:
-                task_manager.sock.finalize_visit_id(
-                    success=False, visit_id=self.curr_visit_id
-                )
-                break
-
-        self.logger.info(
-            "Finished working on CommandSequence with "
-            "visit_id %d on browser with id %d",
-            self.curr_visit_id,
-            self.browser_id,
-        )
-        # Sleep after executing CommandSequence to provide extra time for
-        # internal buffers to drain. Stopgap in support of #135
-        time.sleep(2)
-
-        if task_manager.closing:
-            return
-
-        # Allow StorageWatchdog to utilize built-in browser reset functionality
-        # which results in a graceful restart of the browser instance
-        if self.browser_params.maximum_profile_size:
-            assert self.current_profile_path is not None
-
-            reset = reset or profile_size_exceeds_max_size(
-                self.current_profile_path,
-                self.browser_params.maximum_profile_size,
+                if self.restart_required:
+                    task_manager.sock.finalize_visit_id(
+                        success=False, visit_id=self.curr_visit_id
+                    )
+                    break
+        with otel.start_span(tracer, "post_cs_chores"):
+            self.logger.info(
+                "Finished working on CommandSequence with "
+                "visit_id %d on browser with id %d",
+                self.curr_visit_id,
+                self.browser_id,
             )
+            # Sleep after executing CommandSequence to provide extra time for
+            # internal buffers to drain. Stopgap in support of #135
+            time.sleep(2)
 
-        if self.restart_required or reset:
-            success = self.restart_browser_manager(clear_profile=reset)
-            if not success:
-                self.logger.critical(
-                    "BROWSER %i: Exceeded the maximum allowable consecutive "
-                    "browser launch failures. Setting failure_status." % self.browser_id
-                )
-                task_manager.failure_status = {
-                    "ErrorType": "ExceedLaunchFailureLimit",
-                    "CommandSequence": command_sequence,
-                }
+            if task_manager.closing:
                 return
-            self.restart_required = False
+
+            # Allow StorageWatchdog to utilize built-in browser reset functionality
+            # which results in a graceful restart of the browser instance
+            if self.browser_params.maximum_profile_size:
+                assert self.current_profile_path is not None
+
+                reset = reset or profile_size_exceeds_max_size(
+                    self.current_profile_path,
+                    self.browser_params.maximum_profile_size,
+                )
+
+            if self.restart_required or reset:
+                success = self.restart_browser_manager(clear_profile=reset)
+                if not success:
+                    self.logger.critical(
+                        "BROWSER %i: Exceeded the maximum allowable consecutive "
+                        "browser launch failures. Setting failure_status."
+                        % self.browser_id
+                    )
+                    task_manager.failure_status = {
+                        "ErrorType": "ExceedLaunchFailureLimit",
+                        "CommandSequence": command_sequence,
+                    }
+                    return
+                self.restart_required = False
 
     def _unpack_pickled_error(self, pickled_error: bytes) -> Tuple[str, str]:
         """Unpacks `pickled_error` into an error `message` and `tb` string."""
@@ -682,7 +715,12 @@ class BrowserManager(Process):
         manager_params: ManagerParamsInternal,
         crash_recovery: bool,
     ) -> None:
-        super().__init__()
+        super().__init__(
+            otel_service=(
+                otel.BROWSER_MANAGER_SERVICE if manager_params.tracing else None
+            ),
+            otel_attributes={"openwpm.browser_id": browser_params.browser_id},
+        )
         self.logger = logging.getLogger("openwpm")
         self.command_queue = command_queue
         self.status_queue = status_queue
@@ -753,6 +791,7 @@ class BrowserManager(Process):
     def run_impl(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
+        tracer = otel.process_tracer()
 
         if self.browser_params.echo_mode:
             raise BrowserConfigError(
@@ -763,25 +802,27 @@ class BrowserManager(Process):
             )
 
         try:
-            # Start Xvfb (if necessary), webdriver, and browser
-            driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
-                self.status_queue,
-                self.browser_params,
-                self.manager_params,
-                self.crash_recovery,
-            )
+            with otel.start_span(tracer, "browser_startup"):
+                # Start Xvfb (if necessary), webdriver, and browser
+                driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
+                    self.status_queue,
+                    self.browser_params,
+                    self.manager_params,
+                    self.crash_recovery,
+                )
 
-            extension_socket = self._start_extension(browser_profile_path)
+                with otel.start_span(tracer, "start_extension"):
+                    extension_socket = self._start_extension(browser_profile_path)
 
-            self.logger.debug(
-                "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
-            )
+                self.logger.debug(
+                    "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
+                )
 
-            # passes "READY" to the TaskManager to signal a successful startup
-            self.status_queue.put(("STATUS", "Browser Ready", "READY"))
-            self.browser_params.profile_path = browser_profile_path
+                # passes "READY" to the TaskManager to signal a successful startup
+                self.status_queue.put(("STATUS", "Browser Ready", "READY"))
+                self.browser_params.profile_path = browser_profile_path
 
-            assert extension_socket is not None
+                assert extension_socket is not None
             # starts accepting arguments until told to die
             while True:
                 # no command for now -> sleep to avoid pegging CPU on blocking get
@@ -789,7 +830,9 @@ class BrowserManager(Process):
                     time.sleep(0.001)
                     continue
 
-                command: Union[ShutdownSignal, BaseCommand] = self.command_queue.get()
+                command: Union[ShutdownSignal, BaseCommand]
+                carrier: Dict[str, str]
+                command, carrier = self.command_queue.get()
 
                 if isinstance(command, ShutdownSignal):
                     driver.quit()
@@ -802,16 +845,21 @@ class BrowserManager(Process):
                     % (self.browser_params.browser_id, str(command))
                 )
 
+                parent_ctx = propagate.extract(carrier) if carrier else None
+
                 # attempts to perform an action and return an OK signal
                 # if command fails for whatever reason, tell the TaskManager to
                 # kill and restart its worker processes
                 try:
-                    command.execute(
-                        driver,
-                        self.browser_params,
-                        self.manager_params,
-                        extension_socket,
-                    )
+                    with otel.start_span(
+                        tracer, type(command).__name__, context=parent_ctx
+                    ):
+                        command.execute(
+                            driver,
+                            self.browser_params,
+                            self.manager_params,
+                            extension_socket,
+                        )
                     self.status_queue.put("OK")
                 except WebDriverException:
                     # We handle WebDriverExceptions separately here because they
