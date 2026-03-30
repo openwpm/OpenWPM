@@ -35,14 +35,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "refactor-ports",
-      "agent_seq": 3,
-      "timestamp": "2026-03-30T07:49:41.351727687Z"
+      "agent_id": "claude--fix-critical-and-major-bugs-in-pr-1148-stealth-js-1274",
+      "agent_seq": 2,
+      "timestamp": "2026-03-30T07:49:42.297136835Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T07:49:41.351727687Z",
-    "agent_id": "refactor-ports",
-    "agent_seq": 3
+    "timestamp": "2026-03-30T07:49:42.297136835Z",
+    "agent_id": "claude--fix-critical-and-major-bugs-in-pr-1148-stealth-js-1274",
+    "agent_seq": 2
   }
 }
