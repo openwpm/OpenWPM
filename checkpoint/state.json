@@ -30,19 +30,23 @@
     "7": {
       "agent_id": "claude-research",
       "claimed_at": "2026-03-29T21:38:55.488879633Z"
+    },
+    "10": {
+      "agent_id": "refactor-ports",
+      "claimed_at": "2026-03-30T07:52:33.927826935Z"
     }
   },
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "claude-dns-fix",
-      "agent_seq": 3,
-      "timestamp": "2026-03-30T07:52:16.089316246Z"
+      "agent_id": "refactor-ports",
+      "agent_seq": 4,
+      "timestamp": "2026-03-30T07:52:33.927826935Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T07:52:16.089316246Z",
-    "agent_id": "claude-dns-fix",
-    "agent_seq": 3
+    "timestamp": "2026-03-30T07:52:33.927826935Z",
+    "agent_id": "refactor-ports",
+    "agent_seq": 4
   }
 }
