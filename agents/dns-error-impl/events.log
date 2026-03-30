@@ -1,1 +1,2 @@
 {"agent_id":"dns-error-impl","agent_seq":1,"timestamp":"2026-03-30T08:03:07.699579105Z","event":{"type":"LockClaimed","issue_display_id":4}}
+{"agent_id":"dns-error-impl","agent_seq":2,"timestamp":"2026-03-30T08:03:09.481796584Z","event":{"type":"LockReleased","issue_display_id":4}}
