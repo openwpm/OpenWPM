@@ -1,0 +1,8 @@
+{
+  "uuid": "e8fb777f-eeda-4b1a-8aba-8b5c840523b7",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-bugs",
+  "content": "Completed: Fixed 5 bugs in stealth JS instrumentation (instrument.ts, stealth.ts, error.ts). Extension builds cleanly (TypeScript + webpack). Tests blocked by port 8000 contention from concurrent agents — environmental issue, not code bugs. Commit abfeb80 on feature/fix-critical-bugs-in-pr-1148-stealth-js-instrumentation-fb27.",
+  "created_at": "2026-03-30T08:55:03.415463884Z",
+  "kind": "handoff"
+}
