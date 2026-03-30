@@ -1,6 +1,6 @@
 {
   "agent_id": "claude-dns-fix",
-  "last_heartbeat": "2026-03-30T07:52:08.579924114Z",
-  "active_issue_id": null,
+  "last_heartbeat": "2026-03-30T07:54:16.386277060Z",
+  "active_issue_id": 4,
   "machine_id": "sz1"
 }
