@@ -36,21 +36,21 @@
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
     },
     "12": {
-      "agent_id": "claude",
-      "claimed_at": "2026-03-30T08:06:09.102254441Z"
+      "agent_id": "research-shell-nix",
+      "claimed_at": "2026-03-30T08:07:09.243838057Z"
     }
   },
   "issues": {},
   "unsigned_event_warnings": [
     {
       "agent_id": "research-shell-nix",
-      "agent_seq": 2,
-      "timestamp": "2026-03-30T08:07:01.729462763Z"
+      "agent_seq": 3,
+      "timestamp": "2026-03-30T08:07:09.243838057Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:07:01.729462763Z",
+    "timestamp": "2026-03-30T08:07:09.243838057Z",
     "agent_id": "research-shell-nix",
-    "agent_seq": 2
+    "agent_seq": 3
   }
 }
