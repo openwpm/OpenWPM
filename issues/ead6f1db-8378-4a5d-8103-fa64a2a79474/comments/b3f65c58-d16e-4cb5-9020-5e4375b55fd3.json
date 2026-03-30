@@ -1,0 +1,8 @@
+{
+  "uuid": "b3f65c58-d16e-4cb5-9020-5e4375b55fd3",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "implement-sqlalchemy-postgresql-tests",
+  "content": "Completed: Added postgresql=17.9, psycopg2=2.9.10, pytest-postgresql=7.0.1 to environment.yaml; extended test/storage/fixtures.py with postgresql scenario using pytest-postgresql + SQLAlchemyStorageProvider. All 4 ACs pass, 7 storage tests green. Pre-existing SAWarning on javascript/javascript_cookies PK columns is out of scope.",
+  "created_at": "2026-03-30T08:40:05.032450190Z",
+  "kind": "handoff"
+}
