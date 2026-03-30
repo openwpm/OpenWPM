@@ -35,14 +35,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "claude--fix-critical-and-major-bugs-in-pr-1148-stealth-js-1274",
+      "agent_id": "claude-dns-fix",
       "agent_seq": 2,
-      "timestamp": "2026-03-30T07:49:42.297136835Z"
+      "timestamp": "2026-03-30T07:49:42.791939937Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T07:49:42.297136835Z",
-    "agent_id": "claude--fix-critical-and-major-bugs-in-pr-1148-stealth-js-1274",
+    "timestamp": "2026-03-30T07:49:42.791939937Z",
+    "agent_id": "claude-dns-fix",
     "agent_seq": 2
   }
 }
