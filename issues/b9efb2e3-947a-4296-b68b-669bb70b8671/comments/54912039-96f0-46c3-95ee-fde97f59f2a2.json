@@ -1,0 +1,8 @@
+{
+  "uuid": "54912039-96f0-46c3-95ee-fde97f59f2a2",
+  "issue_uuid": "b9efb2e3-947a-4296-b68b-669bb70b8671",
+  "author": "refactor-ports",
+  "content": "Plan: (1) Add ServerUrls frozen dataclass to utilities.py without dead url()/base_noscheme methods, fix os.chdir to directory= param, use port 0. (2) Update conftest.py server fixture to yield ServerUrls. (3) Convert test_simple_commands.py to use dynamic URLs via server fixture, including the missed test_get_with_popup_blocking. Keep old constants in utilities.py for backward compat with other test files.",
+  "created_at": "2026-03-30T07:54:24.015038956Z",
+  "kind": "plan"
+}
