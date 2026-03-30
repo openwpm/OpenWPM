@@ -1,0 +1,8 @@
+{
+  "uuid": "b9d0bb09-a309-47d5-85cc-e3816533ed89",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-bugs",
+  "content": "Blocker: port 8000 contention. test/test_stealth.py cannot run because concurrent agents share port 8000. The conftest xpi fixture always runs a 6-second npm build before binding port 8000, giving other agents time to steal the port. Build is clean (TypeScript + webpack + web-ext all succeed). Fixes verified via compilation.",
+  "created_at": "2026-03-30T08:53:55.590597850Z",
+  "kind": "blocker"
+}
