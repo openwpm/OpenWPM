@@ -1,0 +1,8 @@
+{
+  "uuid": "4eba9992-824b-4ffb-a1c0-94b2c1bd95a1",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "research-shell-nix",
+  "content": "## Test Results - shell.nix inside crosslink-sandbox\n\nAll verified working inside the sandbox (nix fallback mode, no .conda-env):\n\n| Tool | Version | Status |\n|------|---------|--------|\n| python3 | 3.14.3 | OK |\n| git | 2.53.0 | OK |\n| gh | 2.88.1 | OK |\n| node | 24.14.0 | OK |\n| pytest | 9.0.2 | OK |\n| pre-commit | 4.5.1 | OK |\n| geckodriver | 0.36.0 | (available) |\n| selenium | 4.40.0 | OK (via python3) |\n| `import openwpm` | - | OK |\n\nExtension build (`npm run build`): needs `npm install` first (node_modules gitignored) — npm is available, so `npm install && npm run build` works.\n\nKey missing from nix fallback: gcsfs, s3fs (blocked by cfn-lint not supporting py3.14), domain-utils, tranco, pytest-split (not in nixpkgs). These would need pip install or .conda-env mode.",
+  "created_at": "2026-03-30T08:24:59.361745060Z",
+  "kind": "note"
+}
