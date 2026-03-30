@@ -1,0 +1,8 @@
+{
+  "uuid": "ce15d862-43e7-4f70-8e3c-ab16d83979fd",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "dns-impl",
+  "content": "Decision: Used relative paths in MAGIC_REDIRECT dst params (dst=/MAGIC_REDIRECT/hop2&dst=/test_pages/simple_b.html) rather than full URLs. The handler extracts dst values and puts them directly in the Location header, so relative paths work correctly and keep the URL simple. Used test.localhost to match the existing test_name_resolution pattern.",
+  "created_at": "2026-03-30T08:07:29.155180516Z",
+  "kind": "decision"
+}
