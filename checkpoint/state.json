@@ -15,10 +15,6 @@
       "agent_id": "claude-dns-fix",
       "claimed_at": "2026-03-30T07:52:16.089316246Z"
     },
-    "6": {
-      "agent_id": "dns-impl",
-      "claimed_at": "2026-03-30T08:04:25.408966139Z"
-    },
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
@@ -27,14 +23,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "fix-stealth-bugs",
-      "agent_seq": 4,
-      "timestamp": "2026-03-30T08:55:01.275077689Z"
+      "agent_id": "dns-impl",
+      "agent_seq": 2,
+      "timestamp": "2026-03-30T09:02:29.918089218Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:55:01.275077689Z",
-    "agent_id": "fix-stealth-bugs",
-    "agent_seq": 4
+    "timestamp": "2026-03-30T09:02:29.918089218Z",
+    "agent_id": "dns-impl",
+    "agent_seq": 2
   }
 }
