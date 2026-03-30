@@ -8,8 +8,8 @@
       "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
     "2": {
-      "agent_id": "claude-bugfix",
-      "claimed_at": "2026-03-29T23:00:03.016981349Z"
+      "agent_id": "fix-stealth-bugs",
+      "claimed_at": "2026-03-30T08:03:06.060611033Z"
     },
     "3": {
       "agent_id": "claude-worktree",
@@ -39,14 +39,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "implement-sqlalchemy-postgresql-tests",
-      "agent_seq": 1,
-      "timestamp": "2026-03-30T08:03:05.212816003Z"
+      "agent_id": "fix-stealth-bugs",
+      "agent_seq": 3,
+      "timestamp": "2026-03-30T08:03:06.060611033Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:03:05.212816003Z",
-    "agent_id": "implement-sqlalchemy-postgresql-tests",
-    "agent_seq": 1
+    "timestamp": "2026-03-30T08:03:06.060611033Z",
+    "agent_id": "fix-stealth-bugs",
+    "agent_seq": 3
   }
 }
