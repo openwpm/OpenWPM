@@ -40,13 +40,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "fix-ports-agent",
-      "agent_seq": 1,
-      "timestamp": "2026-03-30T08:03:10.659242696Z"
+      "agent_seq": 2,
+      "timestamp": "2026-03-30T08:03:12.515244314Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:03:10.659242696Z",
+    "timestamp": "2026-03-30T08:03:12.515244314Z",
     "agent_id": "fix-ports-agent",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
