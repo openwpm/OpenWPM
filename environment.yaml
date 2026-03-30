@@ -18,11 +18,14 @@ dependencies:
 - pillow=12.2.0
 - pip=26.1.2
 - plyvel=1.5.1
+- postgresql=17.9
 - pre-commit=4.6.0
 - psutil=7.2.2
+- psycopg2=2.9.10
 - pyarrow=24.0.0
 - pytest-asyncio=1.4.0
 - pytest-cov=7.1.0
+- pytest-postgresql=7.0.1
 - pytest=9.1.0
 - python=3.14.6
 - pyvirtualdisplay=3.0
