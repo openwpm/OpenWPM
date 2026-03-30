@@ -24,8 +24,8 @@
       "claimed_at": "2026-03-30T08:03:14.270932356Z"
     },
     "6": {
-      "agent_id": "claude",
-      "claimed_at": "2026-03-29T20:49:28.739592174Z"
+      "agent_id": "dns-impl",
+      "claimed_at": "2026-03-30T08:04:25.408966139Z"
     },
     "7": {
       "agent_id": "claude-research",
@@ -39,14 +39,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "fix-pr1151",
-      "agent_seq": 2,
-      "timestamp": "2026-03-30T08:03:15.765137661Z"
+      "agent_id": "dns-impl",
+      "agent_seq": 1,
+      "timestamp": "2026-03-30T08:04:25.408966139Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:03:15.765137661Z",
-    "agent_id": "fix-pr1151",
-    "agent_seq": 2
+    "timestamp": "2026-03-30T08:04:25.408966139Z",
+    "agent_id": "dns-impl",
+    "agent_seq": 1
   }
 }
