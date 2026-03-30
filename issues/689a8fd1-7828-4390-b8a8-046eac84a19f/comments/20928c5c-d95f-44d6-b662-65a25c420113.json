@@ -1,0 +1,8 @@
+{
+  "uuid": "20928c5c-d95f-44d6-b662-65a25c420113",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-bugs",
+  "content": "Plan: Fix 5 bugs in stealth JS instrumentation:\n1. CRITICAL: instrument.ts - Object.prototype.getPrototypeByDepth/getPropertyNamesPerDepth/findPropertyInChain use plain assignment which makes them enumerable and detectable. Fix: use Object.defineProperty with {enumerable:false, configurable:false, writable:false}.\n2. CRITICAL: stealth.ts - innerHTML/outerHTML setter protection in protectDOMModifications creates a temp object with a method named 'set' instead of a setter for the dynamic property name. getOwnPropertyDescriptor(temp, property).set returns undefined. Fix: use `set [property](value)` computed property syntax like the getter pattern does.\n3. MAJOR: instrument.ts - wrappedObjects is an array holding strong references. Fix: replace with WeakSet (WeakMap not needed since we only check membership, not store values).\n4. error.ts - generateErrorObject blindly does `new context.wrappedJSObject[err.name](...)` which crashes for DOMException or custom error types. Fix: add instanceof/existence checks and fallback to generic Error.\n5. error.ts - getLineInfo/getFileName access stack[0] without null/empty checks and assume matchAll returns enough matches. Fix: add guards.",
+  "created_at": "2026-03-30T08:04:20.675657354Z",
+  "kind": "plan"
+}
