@@ -1,0 +1,8 @@
+{
+  "uuid": "5d244d8a-4dba-45f2-9aab-2568d02b6cec",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-error-impl",
+  "content": "Committed: fix: exclude dnsNotFound neterrors from consecutive failure limit [CL-4] | Files: 3 files changed, 132 insertions(+), 3 deletions(-)",
+  "created_at": "2026-03-30T09:05:28.348195579Z",
+  "kind": "result"
+}
