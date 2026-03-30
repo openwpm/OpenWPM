@@ -39,14 +39,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "dns-error-impl",
-      "agent_seq": 2,
-      "timestamp": "2026-03-30T08:03:09.481796584Z"
+      "agent_id": "fix-ports-agent",
+      "agent_seq": 1,
+      "timestamp": "2026-03-30T08:03:10.659242696Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:03:09.481796584Z",
-    "agent_id": "dns-error-impl",
-    "agent_seq": 2
+    "timestamp": "2026-03-30T08:03:10.659242696Z",
+    "agent_id": "fix-ports-agent",
+    "agent_seq": 1
   }
 }
