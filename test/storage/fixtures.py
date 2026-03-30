@@ -2,6 +2,7 @@ from typing import Any, List
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from pytest_postgresql import factories
 
 from openwpm.storage.in_memory_storage import (
     MemoryArrowProvider,
@@ -19,9 +20,13 @@ from openwpm.storage.storage_providers import (
 )
 from test.storage.test_values import dt_test_values, generate_test_values
 
+postgresql_proc = factories.postgresql_proc()
+postgresql = factories.postgresql("postgresql_proc")
+
 memory_structured = "memory_structured"
 sqlite = "sqlite"
 sqlalchemy_sqlite = "sqlalchemy_sqlite"
+postgresql_scenario = "postgresql"
 memory_arrow = "memory_arrow"
 
 
@@ -37,6 +42,14 @@ def structured_provider(
     elif request.param == sqlalchemy_sqlite:
         tmp_path = tmp_path_factory.mktemp("sqlalchemy_sqlite")
         return SQLAlchemyStorageProvider(f"sqlite:///{tmp_path / 'test_db.sqlite'}")
+    elif request.param == postgresql_scenario:
+        pg = request.getfixturevalue("postgresql")
+        info = pg.info
+        pg_url = (
+            f"postgresql+psycopg2://{info.user}:{info.password or ''}"
+            f"@{info.host}:{info.port}/{info.dbname}"
+        )
+        return SQLAlchemyStorageProvider(pg_url)
     elif request.param == memory_arrow:
         return MemoryArrowProvider()
     assert isinstance(
@@ -49,6 +62,7 @@ structured_scenarios: List[str] = [
     memory_structured,
     sqlite,
     sqlalchemy_sqlite,
+    postgresql_scenario,
     memory_arrow,
 ]
 
