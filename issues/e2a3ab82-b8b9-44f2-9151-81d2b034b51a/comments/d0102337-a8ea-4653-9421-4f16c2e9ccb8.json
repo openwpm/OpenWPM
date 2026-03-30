@@ -1,0 +1,8 @@
+{
+  "uuid": "d0102337-a8ea-4653-9421-4f16c2e9ccb8",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "research-shell-nix",
+  "content": "Decision: Delivered a working shell.nix (verified inside crosslink-sandbox) rather than recommending only one path.\n\nThe shell.nix supports TWO modes:\n1. **Preferred: .conda-env prefix** — full conda env fidelity, requires one-time setup outside sandbox\n2. **Fallback: pure nix python314** — works out of the box, covers most agent tasks, missing 5 packages (gcsfs, s3fs, domain-utils, tranco, pytest-split)\n\nAlso documented a proposed ~25-line sandbox change (.sandbox.json) for full conda support as a follow-up.\n\nChose this over pure nix-only because: conda env has 185 packages with exact version pinning — replicating that entirely in nix would be fragile and a maintenance burden.\nChose this over conda-only because: conda binary isn't available in sandbox without modification, and the nix fallback works for most tasks today.",
+  "created_at": "2026-03-30T08:25:47.093688199Z",
+  "kind": "note"
+}
