@@ -12,6 +12,7 @@ dependencies:
     - leveldb
     - multiprocess
     - nodejs
+    - opentelemetry-api
     - pandas
     - pip
     - pillow
@@ -36,4 +37,6 @@ dependencies:
         - dataclasses-json
         - domain-utils
         - jsonschema
+        - opentelemetry-exporter-otlp-proto-http
+        - opentelemetry-sdk
         - tranco

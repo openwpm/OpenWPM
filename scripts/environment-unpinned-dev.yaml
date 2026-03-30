@@ -17,7 +17,9 @@ dependencies:
     - tomlkit
     - pip:
         - pytest-split
+        - testcontainers
         - types-pyyaml
         - types-redis
+        - types-requests
         - types-tabulate
 
