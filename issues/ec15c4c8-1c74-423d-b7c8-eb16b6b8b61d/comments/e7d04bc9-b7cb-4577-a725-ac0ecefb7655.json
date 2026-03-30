@@ -1,0 +1,8 @@
+{
+  "uuid": "e7d04bc9-b7cb-4577-a725-ac0ecefb7655",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "dns-impl",
+  "content": "Plan: (1) Verify AC-1 satisfied by merge of dns_instrument_fix — onHeadersReceived and onHeadersReceivedListener confirmed in dns-instrument.ts. (2) Fix TODO on ip?: string in browser-web-request-event-details.ts with proper MDN-based comment (AC-2). (3) Add test_redirect_chain_dns using MAGIC_REDIRECT 2-hop chain, assert len==3 (AC-3). (4) Build extension and run tests to verify AC-4 and AC-5.",
+  "created_at": "2026-03-30T08:06:49.904556106Z",
+  "kind": "plan"
+}
