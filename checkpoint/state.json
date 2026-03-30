@@ -39,14 +39,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "implement-sqlalchemy-postgresql-tests",
-      "agent_seq": 2,
-      "timestamp": "2026-03-30T08:03:06.990603067Z"
+      "agent_id": "dns-error-impl",
+      "agent_seq": 1,
+      "timestamp": "2026-03-30T08:03:07.699579105Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T08:03:06.990603067Z",
-    "agent_id": "implement-sqlalchemy-postgresql-tests",
-    "agent_seq": 2
+    "timestamp": "2026-03-30T08:03:07.699579105Z",
+    "agent_id": "dns-error-impl",
+    "agent_seq": 1
   }
 }
