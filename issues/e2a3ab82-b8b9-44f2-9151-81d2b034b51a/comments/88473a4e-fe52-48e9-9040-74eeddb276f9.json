@@ -1,0 +1,8 @@
+{
+  "uuid": "88473a4e-fe52-48e9-9040-74eeddb276f9",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "research-shell-nix",
+  "content": "Plan: Research two approaches - (A) pure nix shell.nix reproducing conda env, (B) minimal crosslink-sandbox modification to support project-level conda config. Investigating nixpkgs package coverage for python314, conda env structure, filesystem constraints.",
+  "created_at": "2026-03-30T08:19:49.467194782Z",
+  "kind": "note"
+}
