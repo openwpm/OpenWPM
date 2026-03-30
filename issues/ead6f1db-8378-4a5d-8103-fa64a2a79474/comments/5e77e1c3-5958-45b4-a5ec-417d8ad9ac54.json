@@ -1,0 +1,8 @@
+{
+  "uuid": "5e77e1c3-5958-45b4-a5ec-417d8ad9ac54",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude-sqlalchemy",
+  "content": "Plan: (1) Apply changes from commit 5819a06 (SQLAlchemy provider, schema, tests, fixtures) since this worktree is 1 commit behind feat/sqlalchemy-storage. (2) Add psycopg2 and pytest-postgresql to environment.yaml. (3) Extend fixtures.py with postgresql scenario using pytest-postgresql factories. (4) Run tests to verify all 13-table insertion tests pass against PostgreSQL.",
+  "created_at": "2026-03-30T07:54:22.165306802Z",
+  "kind": "plan"
+}
