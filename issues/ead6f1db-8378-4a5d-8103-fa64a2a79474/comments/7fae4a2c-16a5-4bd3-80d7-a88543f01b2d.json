@@ -1,0 +1,8 @@
+{
+  "uuid": "7fae4a2c-16a5-4bd3-80d7-a88543f01b2d",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "implement-sqlalchemy-postgresql-tests",
+  "content": "Observation: PostgreSQL server binaries (pg_ctl, initdb, psql) are not installed. pytest-postgresql requires these to spawn a local PostgreSQL instance. Need to add postgresql package to conda dependencies alongside psycopg2 and pytest-postgresql.",
+  "created_at": "2026-03-30T08:04:53.635533919Z",
+  "kind": "observation"
+}
