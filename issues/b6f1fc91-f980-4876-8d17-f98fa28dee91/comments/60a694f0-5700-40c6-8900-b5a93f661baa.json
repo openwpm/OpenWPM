@@ -1,0 +1,8 @@
+{
+  "uuid": "60a694f0-5700-40c6-8900-b5a93f661baa",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-error-impl",
+  "content": "Decision: Implementing the change directly rather than merging fix/dns-crash-handling because (1) git merge is blocked by project policy, and (2) the existing branch over-exempts DNS errors — it also skips restart_required=True, violating REQ-3. Will implement the correct version: is_dns_error guards ONLY the failure_count increment.",
+  "created_at": "2026-03-30T08:05:00.514081781Z",
+  "kind": "decision"
+}
