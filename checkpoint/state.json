@@ -4,8 +4,8 @@
   "display_id_map": {},
   "locks": {
     "1": {
-      "agent_id": "claude-bugfix",
-      "claimed_at": "2026-03-29T22:59:02.703258239Z"
+      "agent_id": "refactor-ports",
+      "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
     "2": {
       "agent_id": "claude-bugfix",
@@ -35,14 +35,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "claude-dns-fix",
-      "agent_seq": 1,
-      "timestamp": "2026-03-30T07:49:40.993527040Z"
+      "agent_id": "refactor-ports",
+      "agent_seq": 3,
+      "timestamp": "2026-03-30T07:49:41.351727687Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-03-30T07:49:40.993527040Z",
-    "agent_id": "claude-dns-fix",
-    "agent_seq": 1
+    "timestamp": "2026-03-30T07:49:41.351727687Z",
+    "agent_id": "refactor-ports",
+    "agent_seq": 3
   }
 }
