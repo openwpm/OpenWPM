@@ -1,0 +1,8 @@
+{
+  "uuid": "be74cffc-9782-4aac-ab69-e7425514d0c3",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "dns-impl",
+  "content": "Committed: feat(dns-instrument): record all redirect-chain hops via onHeadersReceived [CL-6] | Files: 5 files changed, 83 insertions(+), 18 deletions(-) | SHA: 0a18796",
+  "created_at": "2026-03-30T09:01:19.025462803Z",
+  "kind": "result"
+}
