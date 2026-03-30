@@ -1,4 +1,3 @@
-import os
 import socketserver
 import threading
 from dataclasses import dataclass
@@ -23,13 +22,6 @@ class ServerUrls:
     @property
     def base(self) -> str:
         return f"{self.base_nopath}/test_pages"
-
-    @property
-    def base_noscheme(self) -> str:
-        return self.base.split("//")[1]
-
-    def url(self, path: str) -> str:
-        return self.base + path
 
 
 class MyTCPServer(socketserver.TCPServer):
@@ -70,8 +62,8 @@ class MyHandler(SimpleHTTPRequestHandler):
     `dst` parameter defined, a `404` response is returned.
     """
 
-    def __init__(self, *args, **kwargs):
-        SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
+    def __init__(self, *args, directory=None, **kwargs):
+        SimpleHTTPRequestHandler.__init__(self, *args, directory=directory, **kwargs)
 
     def send_response(self, code, message=None):
         self._response_code = code
@@ -135,9 +127,9 @@ def start_server() -> tuple[MyTCPServer, threading.Thread, ServerUrls]:
     Binds to port 0 (OS-assigned free port) to allow parallel test runs.
     """
     print("Starting HTTP Server in a separate thread")
-    # switch to test dir, this is where the test files are
-    os.chdir(dirname(realpath(__file__)))
-    server = MyTCPServer(("0.0.0.0", 0), MyHandler)
+    test_dir = dirname(realpath(__file__))
+    handler = lambda *args, **kwargs: MyHandler(*args, directory=test_dir, **kwargs)
+    server = MyTCPServer(("0.0.0.0", 0), handler)
     port = server.server_address[1]
     urls = ServerUrls(port=port)
     thread = threading.Thread(target=server.serve_forever)
