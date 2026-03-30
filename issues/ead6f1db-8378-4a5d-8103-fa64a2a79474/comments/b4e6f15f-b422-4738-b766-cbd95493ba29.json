@@ -1,0 +1,8 @@
+{
+  "uuid": "b4e6f15f-b422-4738-b766-cbd95493ba29",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "implement-sqlalchemy-postgresql-tests",
+  "content": "Plan: (1) Add psycopg2 and pytest-postgresql to environment.yaml conda-forge section in alphabetical order. (2) Modify test/storage/fixtures.py to import pytest_postgresql factories, create postgresql_proc and postgresql fixtures, add postgresql scenario to structured_scenarios, handle request.param==postgresql by constructing SQLAlchemyStorageProvider with postgresql+psycopg2:// URL. (3) Install deps. (4) Run tests.",
+  "created_at": "2026-03-30T08:04:21.900117388Z",
+  "kind": "plan"
+}
