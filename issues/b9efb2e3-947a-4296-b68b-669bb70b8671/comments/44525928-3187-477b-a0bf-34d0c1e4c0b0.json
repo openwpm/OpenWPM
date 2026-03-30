@@ -1,0 +1,8 @@
+{
+  "uuid": "44525928-3187-477b-a0bf-34d0c1e4c0b0",
+  "issue_uuid": "b9efb2e3-947a-4296-b68b-669bb70b8671",
+  "author": "fix-ports-agent",
+  "content": "Plan: Fix 3 bugs from PR #1136 review: (1) CRITICAL: test_get_with_popup_blocking — add server: ServerUrls fixture param, replace url_a/url_b with dynamic construction using _url(server.base, ...). (2) MAJOR: start_server() — replace os.chdir() with SimpleHTTPRequestHandler directory= parameter to avoid global state mutation. (3) Remove dead code: ServerUrls.url() method and ServerUrls.base_noscheme property (never used anywhere).",
+  "created_at": "2026-03-30T08:05:17.207257666Z",
+  "kind": "plan"
+}
