@@ -1,6 +1,6 @@
 {
   "agent_id": "dns-impl",
-  "last_heartbeat": "2026-03-30T08:03:08.386720133Z",
-  "active_issue_id": null,
+  "last_heartbeat": "2026-03-30T08:05:14.235939507Z",
+  "active_issue_id": 6,
   "machine_id": "sz1"
 }
