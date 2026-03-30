@@ -1,0 +1,8 @@
+{
+  "uuid": "65cd785e-08e4-4794-a037-91aed3458ba9",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "implement-sqlalchemy-postgresql-tests",
+  "content": "Committed: test(storage): add PostgreSQL scenario to structured_provider fixture [CL-5] | Files: 2 files changed, 17 insertions(+)",
+  "created_at": "2026-03-30T08:39:21.720851059Z",
+  "kind": "result"
+}
