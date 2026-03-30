@@ -1,0 +1,8 @@
+{
+  "uuid": "3aa4208d-3695-492f-9d94-3749342180a6",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-error-impl",
+  "content": "Completed: DNS error exemption from failure_count in browser_manager.py. is_dns_error predicate gates only failure_count increment (not restart_required). All 5 ACs pass: scale test (110 domains, failure_limit=5), integration test (website.invalid → dnsNotFound in crawl_history), and predicate unit tests. Commit 1c764e7.",
+  "created_at": "2026-03-30T09:06:29.784372372Z",
+  "kind": "handoff"
+}
