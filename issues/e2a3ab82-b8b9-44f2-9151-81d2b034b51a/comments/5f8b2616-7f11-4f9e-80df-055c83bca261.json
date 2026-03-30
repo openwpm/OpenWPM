@@ -1,0 +1,10 @@
+{
+  "uuid": "5f8b2616-7f11-4f9e-80df-055c83bca261",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "claude",
+  "content": "Shell.nix research complete. Solution: project-local conda prefix + nix tools.\n\n**Approach**: Two-mode shell.nix created at repo root:\n\n**Mode 1 (preferred)** — project-local conda prefix:\n- User runs once outside sandbox: `conda create --prefix .conda-env -f environment.yaml`\n- shell.nix detects `.conda-env/` and prepends it to PATH\n- Sandbox sees the env via the project dir bind-mount (already mounted read-write)\n- Each project/worktree gets its own isolated prefix — no sharing\n\n**Mode 2 (fallback)** — nix Python 3.14 + venv:\n- If `.conda-env/` doesn't exist, uses `pkgs.python314` with a `.nix-venv/` venv\n- Cloud storage tests won't work (gcsfs/s3fs incompatible with Python 3.14 in nixpkgs yet)\n\n**Nix provides regardless of mode**: git, gh, nodejs, geckodriver, pre-commit, leveldb\n\n**What needs to happen**:\n1. Add `shell.nix` to the repo (created in research worktree)\n2. Add `.conda-env/` to `.gitignore` \n3. Add `.nix-venv/` to `.gitignore`\n4. Each worktree needs its own `.conda-env/` created before running agents\n5. crosslink-sandbox auto-detects `shell.nix` and uses nix-shell — no invocation changes needed\n\n**Key finding**: No changes needed to crosslink-sandbox itself. The shell.nix detection already works in 0.5.2. The only limitation: someone must run `conda create --prefix .conda-env -f environment.yaml` in each worktree before agents can use it (or agents run in nix-only fallback mode for code-only tasks).",
+  "created_at": "2026-03-30T08:37:35.913591698Z",
+  "kind": "decision",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAa1RRfFmfhvaRvYLI0N4jcu3H8yStW8Z6F+sPD9o9rft51D6MMfiYzsBgUHZuhD2SoRlYqw7HINelged1FBWFBw=="
+}
