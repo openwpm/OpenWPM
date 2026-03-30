@@ -1,0 +1,8 @@
+{
+  "uuid": "2a691c77-4cc6-4510-8df5-98ab02a06fc2",
+  "issue_uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "author": "claude-worktree",
+  "content": "Committed: feat(ci): dynamic test duration tracking with CI-only guard (33add8b) | Files: 4 files changed, 124 insertions(+), 2 deletions(-)",
+  "created_at": "2026-03-30T07:53:00.176608518Z",
+  "kind": "result"
+}
