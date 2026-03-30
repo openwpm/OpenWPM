@@ -277,10 +277,9 @@ function protectDOMModifications({
       const descriptor = Object.getOwnPropertyDescriptor(object, property);
       const setter = descriptor.set;
       const temp = {
-        set(obj, _prop, value) {
-          const ret = setter.call(obj, value);
+        set [property](value) {
+          setter.call(this, value);
           allCallback();
-          return ret;
         },
       };
       changeWindowProperty(
