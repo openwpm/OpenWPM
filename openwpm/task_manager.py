@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 import psutil
 import tblib
+from opentelemetry import trace
 
 from openwpm.config import (
     BrowserParams,
@@ -28,7 +29,10 @@ from .storage.storage_providers import (
     StructuredStorageProvider,
     UnstructuredStorageProvider,
 )
-from .utilities.multiprocess_utils import kill_process_and_children
+from .utilities.multiprocess_utils import (
+    configure_otel_for_process,
+    kill_process_and_children,
+)
 from .utilities.platform_utils import get_configuration_string, get_version
 from .utilities.storage_watchdog import StorageLogger
 
@@ -38,6 +42,8 @@ SLEEP_CONS = 0.1  # command sleep constant (in seconds)
 BROWSER_MEMORY_LIMIT = 1500  # in MB
 
 STORAGE_CONTROLLER_JOB_LIMIT = 10000  # number of records in the queue
+
+_tracer = trace.get_tracer(__name__)
 
 
 class TaskManager:
@@ -123,6 +129,12 @@ class TaskManager:
         # Sets up the BrowserManager(s) + associated queues
         self.browsers = self._initialize_browsers(browser_params)
         self._launch_browsers()
+
+        # Configure OTel after forking browser processes.
+        # The SDK exporter runs on a background thread that doesn't
+        # survive fork, so we must set up the TracerProvider in each
+        # process after all forks are complete.
+        configure_otel_for_process("openwpm-task-manager")
 
         # Start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
@@ -503,5 +515,8 @@ class TaskManager:
             return
         start_time = time.time()
         self._shutdown_manager(relaxed=relaxed)
+        provider = trace.get_tracer_provider()
+        if hasattr(provider, "shutdown"):
+            provider.shutdown()
         # We don't have a logging thread at this time anymore
         print("Shutdown took %s seconds" % str(time.time() - start_time))
