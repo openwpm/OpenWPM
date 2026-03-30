@@ -354,65 +354,80 @@ declare global {
   }
 }
 
-Object.prototype.getPrototypeByDepth = function (subject, depth) {
-  if (subject === undefined) {
-    throw new Error("Can't get property names for undefined");
-  }
-  if (depth === undefined || typeof depth !== "number") {
-    throw new Error("Depth " + depth + " is invalid");
-  }
-  let proto = subject;
-  for (let i = 1; i <= depth; i++) {
-    proto = Object.getPrototypeOf(proto);
-  }
-  if (proto === undefined) {
-    throw new Error("Prototype was undefined. Too deep iteration?");
-  }
-  return proto;
-};
+Object.defineProperty(Object.prototype, "getPrototypeByDepth", {
+  enumerable: false,
+  configurable: false,
+  writable: false,
+  value: function (subject, depth) {
+    if (subject === undefined) {
+      throw new Error("Can't get property names for undefined");
+    }
+    if (depth === undefined || typeof depth !== "number") {
+      throw new Error("Depth " + depth + " is invalid");
+    }
+    let proto = subject;
+    for (let i = 1; i <= depth; i++) {
+      proto = Object.getPrototypeOf(proto);
+    }
+    if (proto === undefined) {
+      throw new Error("Prototype was undefined. Too deep iteration?");
+    }
+    return proto;
+  },
+});
 
 /**
  * Traverses the prototype chain to collect properties. Returns an array containing
  * an object with the depth, propertyNames and scanned subject
  */
-Object.prototype.getPropertyNamesPerDepth = function (subject, maxDepth = 0) {
-  if (subject === undefined) {
-    throw new Error("Can't get property names for undefined");
-  }
-  const res = [];
-  let depth = 0;
-  let properties = Object.getOwnPropertyNames(subject);
-  res.push({ depth, propertyNames: properties, object: subject });
-  let proto = Object.getPrototypeOf(subject);
+Object.defineProperty(Object.prototype, "getPropertyNamesPerDepth", {
+  enumerable: false,
+  configurable: false,
+  writable: false,
+  value: function (subject, maxDepth = 0) {
+    if (subject === undefined) {
+      throw new Error("Can't get property names for undefined");
+    }
+    const res = [];
+    let depth = 0;
+    let properties = Object.getOwnPropertyNames(subject);
+    res.push({ depth, propertyNames: properties, object: subject });
+    let proto = Object.getPrototypeOf(subject);
 
-  while (proto !== null && depth < maxDepth) {
-    depth++;
-    properties = Object.getOwnPropertyNames(proto);
-    res.push({ depth, propertyNames: properties, object: proto });
-    proto = Object.getPrototypeOf(proto);
-  }
-  return res;
-};
+    while (proto !== null && depth < maxDepth) {
+      depth++;
+      properties = Object.getOwnPropertyNames(proto);
+      res.push({ depth, propertyNames: properties, object: proto });
+      proto = Object.getPrototypeOf(proto);
+    }
+    return res;
+  },
+});
 
 /**
  * Finds a property along the prototype chain
  */
-Object.prototype.findPropertyInChain = function (subject, propertyName) {
-  if (subject === undefined || propertyName === undefined) {
-    throw new Error("Object and property name must be defined");
-  }
-  let properties = [];
-  let depth = 0;
-  while (subject !== null) {
-    properties = Object.getOwnPropertyNames(subject);
-    if (properties.includes(propertyName)) {
-      return { depth, propertyName };
+Object.defineProperty(Object.prototype, "findPropertyInChain", {
+  enumerable: false,
+  configurable: false,
+  writable: false,
+  value: function (subject, propertyName) {
+    if (subject === undefined || propertyName === undefined) {
+      throw new Error("Object and property name must be defined");
     }
-    depth++;
-    subject = Object.getPrototypeOf(subject);
-  }
-  throw Error("Property not found. Check whether configuration is correct!");
-};
+    let properties = [];
+    let depth = 0;
+    while (subject !== null) {
+      properties = Object.getOwnPropertyNames(subject);
+      if (properties.includes(propertyName)) {
+        return { depth, propertyName };
+      }
+      depth++;
+      subject = Object.getPrototypeOf(subject);
+    }
+    throw Error("Property not found. Check whether configuration is correct!");
+  },
+});
 
 /*
  * Get all keys for properties that shall be overwritten
@@ -814,12 +829,12 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
  * Checks if an object was already wrapped
  * Unwrapped objects should be wrapped immediately
  */
-const wrappedObjects = [];
+const wrappedObjects = new WeakSet();
 function needsWrapper(object) {
-  if (wrappedObjects.some((obj) => object === obj)) {
+  if (wrappedObjects.has(object)) {
     return false;
   }
-  wrappedObjects.push(object);
+  wrappedObjects.add(object);
   return true;
 }
 

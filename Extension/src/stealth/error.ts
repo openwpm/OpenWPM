@@ -5,7 +5,6 @@ function generateErrorObject(
   err: { stack: any; name: string | number; message: any },
   context = undefined,
 ) {
-  // TODO: Pass context
   context = context !== undefined ? context : window;
   const cleaned = cleanErrorStack(err.stack);
   const stack = splitStack(cleaned);
@@ -13,11 +12,34 @@ function generateErrorObject(
   const fileName = getFileName(stack);
   let fakeError: { lineNumber: any; columnNumber: any };
   try {
-    // fake type, message, filename, column and line
-    // const propertyName = "stack";
-    fakeError = new context.wrappedJSObject[err.name](err.message, fileName);
-    fakeError.lineNumber = lineInfo.lineNumber;
-    fakeError.columnNumber = lineInfo.columnNumber;
+    const wrappedJS = context.wrappedJSObject;
+    const ErrorConstructor =
+      typeof err.name === "string" && wrappedJS[err.name]
+        ? wrappedJS[err.name]
+        : null;
+
+    if (
+      err instanceof DOMException ||
+      (typeof err.name === "string" && err.name === "DOMException")
+    ) {
+      // DOMException constructor takes (message, name) not (message, fileName)
+      fakeError = new wrappedJS.DOMException(err.message);
+    } else if (
+      ErrorConstructor &&
+      typeof ErrorConstructor === "function" &&
+      (ErrorConstructor === wrappedJS.Error ||
+        ErrorConstructor.prototype instanceof wrappedJS.Error)
+    ) {
+      fakeError = new ErrorConstructor(err.message, fileName);
+    } else {
+      // Fallback for custom errors or unknown error types
+      fakeError = new wrappedJS.Error(err.message, fileName);
+    }
+
+    if (lineInfo) {
+      fakeError.lineNumber = lineInfo.lineNumber;
+      fakeError.columnNumber = lineInfo.columnNumber;
+    }
   } catch (error) {
     console.log("ERROR creation failed. Error was:" + error);
   }
@@ -66,8 +88,14 @@ function splitStack(stack) {
  * calling before the extension was involved
  */
 function getLineInfo(stack) {
+  if (!stack || !stack.length || !stack[0]) {
+    return null;
+  }
   const firstLine = stack[0];
-  const matches = [...firstLine.matchAll(":")];
+  const matches = [...firstLine.matchAll(/:/g)];
+  if (matches.length < 2) {
+    return null;
+  }
   const column = firstLine.slice(
     matches[matches.length - 1].index + 1,
     firstLine.length,
@@ -87,9 +115,15 @@ function getLineInfo(stack) {
  * that called before the extension got involved
  */
 function getFileName(stack) {
+  if (!stack || !stack.length || !stack[0]) {
+    return "";
+  }
   const firstLine = stack[0];
-  const matches_at = [...firstLine.matchAll("@")];
-  const matches_colon = [...firstLine.matchAll(":")];
+  const matches_at = [...firstLine.matchAll(/@/g)];
+  const matches_colon = [...firstLine.matchAll(/:/g)];
+  if (!matches_at.length || matches_colon.length < 2) {
+    return "";
+  }
   return firstLine.slice(
     matches_at[matches_at.length - 1].index + 1,
     matches_colon[matches_colon.length - 2].index,
