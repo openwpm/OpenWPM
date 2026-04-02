@@ -1,0 +1,10 @@
+{
+  "uuid": "f4bc5b6c-0391-4e0d-8722-e65fe2047ca4",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "**Hater review of commits 5819a06 + 21ea05f — Verdict: Broken**\n\n**CRITICAL (2):**\n- **INTEGER overflow**: sqlalchemy_schema.py uses Integer (4-byte, max 2^31-1) but test_values.py generates values up to 2^63-1. Every PostgreSQL test run will crash with DataError on the first large int.\n- **Global scenario pollution**: postgresql_scenario added to shared structured_scenarios list — every existing test using that fixture now requires a live PostgreSQL instance with zero skip/guard mechanism. CI will fail without pg.\n\n**MAJOR (3):**\n- Missing from environment-unpinned.yaml: postgresql, psycopg2, pytest-postgresql — next repin.sh run will erase them from environment.yaml\n- Bare 'except Exception' with silent rollback — swallows all errors including the rollback failure itself\n- Synchronous create_engine() behind async interface — blocks the event loop on every INSERT\n\n**MINOR (4):**\n- Unused Task import\n- FK divergence from schema.sql (documented but untested)\n- Reflection cache never invalidates\n- postgresql_proc fixture registered unconditionally (always starts pg server even for non-pg tests)\n\n**NITPICK:** Commit type 'feat' should be 'refactor' for the SQLAlchemy rewrite.",
+  "created_at": "2026-04-02T23:59:10.033644219Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAILMKZIbIK6Li8CFlaMDTihVdsfH3Nej6BZ2nErVV3UC5zUO/OWwX7ITaU1V/IAtstjgRkKks4xppBrWJKiEZBw=="
+}
