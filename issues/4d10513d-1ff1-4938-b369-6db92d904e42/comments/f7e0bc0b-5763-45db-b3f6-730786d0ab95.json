@@ -1,0 +1,10 @@
+{
+  "uuid": "f7e0bc0b-5763-45db-b3f6-730786d0ab95",
+  "issue_uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "author": "claude",
+  "content": "**Hater review of fix commit cd3999c — Verdict: Mediocre**\n\nFix corrects the NameError in test_get_with_popup_blocking and removes dead code. But introduces a new critical FileNotFoundError:\n\n**CRITICAL**: Removing os.chdir() breaks two tests that depended on CWD being test/:\n- test_dump_page_source_valid (line 482): open('./test_pages/expected_source.html', 'rb') — FileNotFoundError\n- test_recursive_dump_page_source_valid (line 521): open('.' + path, 'r') — same\n\nThe original review explicitly called out test_dump_page_source_valid by name as the os.chdir() dependency. The fix addressed the HTTP server side and ignored the test code side.\n\nFix: use os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_pages', 'expected_source.html') or equivalent absolute paths.\n\nOther findings:\n- MyHandler.__init__ explicit directory= param is a no-op (**kwargs already forwarded it) (nitpick)\n- lambda handler is functional but functools.partial is idiomatic (nitpick)",
+  "created_at": "2026-04-02T23:57:40.573080676Z",
+  "kind": "review",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABApIsS83a0if5bMMgTkBVj1/VB+fvW6Q4pca7ulA3yK3Trq5bHk865ev4KJ601u/r79SpkrLVq27ptQU7pyLzuAg=="
+}
