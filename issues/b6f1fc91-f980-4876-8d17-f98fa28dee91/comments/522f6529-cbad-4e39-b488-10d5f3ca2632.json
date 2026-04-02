@@ -1,0 +1,10 @@
+{
+  "uuid": "522f6529-cbad-4e39-b488-10d5f3ca2632",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "claude",
+  "content": "**Hater review of fix commit 1c764e7 — Verdict: Begrudgingly Adequate**\n\nCore fix is correct: three lines gate failure_count increment on dnsNotFound check, logic is sound, integration test covers actual end-to-end behavior with 110 domains.\n\n**MAJOR**: test_is_dns_error_predicate tests a local copy of the predicate, not the actual code in browser_manager.py. If the real predicate changes, this test still passes. Mirrors lie.\n\n**MINOR**: Unused import of CommandExecutionError in test file (F401).\n\n**MINOR**: Same 33 lines of .gitignore Crosslink tooling as issue #2 — second consecutive commit smuggling this in.\n\n**MINOR**: Only dnsNotFound excluded — other DNS neterrors (netTimeout from DoH failures) still count. Defensible but undocumented design decision. Needs a comment: '# Only NXDOMAIN; DNS timeouts/SERVFAIL intentionally still count'\n\n**MINOR**: DNS errors still trigger browser restart (restart_required=True) — commit message says 'DNS failures are not browser crashes' but we still restart after each one. Acknowledged in code comment but contradicts stated rationale.\n\n**NITPICK**: error_text is not None check is redundant — error_text is always a string in the neterror path.",
+  "created_at": "2026-04-02T23:58:01.106916677Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAkb2Jy47AcrnTIzj6g+asS8N0SwwZANGmFpOSEfCdb3aip1uy+vsoHowwAUKjt2VVBHgiWykov+pqQSYn/NONAw=="
+}
