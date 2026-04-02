@@ -1,0 +1,10 @@
+{
+  "uuid": "ad34fe72-dd65-4813-a6b2-d9ea08c0c7b8",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "claude",
+  "content": "**Hater review of fix commit abfeb80 — Verdict: Mediocre**\n\nFixes genuine crash-causing bugs (broken setter in protectDOMModifications, matchAll string-vs-regex TypeError, array-as-identity-set memory leak, null guards). But:\n\n**MAJOR**: generateErrorObject can return undefined; caller throws it — 'throw undefined' loses all error info. Pre-existing but the commit restructured this function and added a 'fallback' inside the try block which doesn't actually fall back if the try itself throws.\n\n**MAJOR**: Cross-compartment instanceof check (ErrorConstructor.prototype instanceof wrappedJS.Error) is unreliable through Xray wrappers — can silently downgrade TypeError/RangeError to plain Error.\n\n**MINOR**: DOMException branch passes only err.message, drops err.name — 'SecurityError' becomes 'Error' name. Should be: new wrappedJS.DOMException(err.message, err.name)\n\n**MINOR**: Object.getPropertyDescriptor on Object static is left enumerable while its three Object.prototype siblings were made non-enumerable — incomplete fix.\n\n**MINOR**: 33 lines of unrelated .gitignore Crosslink tooling smuggled into a 'fix critical bugs' commit (same pattern repeated in issue #4).",
+  "created_at": "2026-04-02T23:57:52.219912975Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAt6gJWbKQuuqvoykARusGfr+NmJSCxTujz3sSjsaGV+k0ixnijb8O7kllhAk7825c0/S0VOciwM/B79TgCt6iCQ=="
+}
