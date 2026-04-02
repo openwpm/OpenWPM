@@ -24,13 +24,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "fix-pr1151-bugs",
-      "agent_seq": 1,
-      "timestamp": "2026-04-02T23:57:38.774709477Z"
+      "agent_seq": 2,
+      "timestamp": "2026-04-02T23:57:39.933056905Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-02T23:57:38.774709477Z",
+    "timestamp": "2026-04-02T23:57:39.933056905Z",
     "agent_id": "fix-pr1151-bugs",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
