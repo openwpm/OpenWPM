@@ -1,0 +1,8 @@
+{
+  "uuid": "6124e757-8a2a-4ba6-80f1-6ae59c0d056b",
+  "issue_uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "author": "fix-pr1151-bugs",
+  "content": "Plan: Two fixes needed. (1) Add .test_durations_cached and .test_durations_group_* to .gitignore — these are generated files from CI duration tracking. (2) Change conftest.py pytest_sessionfinish to gate on CI env var instead of GROUP, since GROUP is also set when running ci.sh locally.",
+  "created_at": "2026-04-02T23:58:28.793313556Z",
+  "kind": "plan"
+}
