@@ -8,8 +8,8 @@
       "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
     "3": {
-      "agent_id": "fix-pr1151",
-      "claimed_at": "2026-03-30T08:04:28.858271068Z"
+      "agent_id": "fix-pr1151-bugs",
+      "claimed_at": "2026-04-02T23:57:44.957094336Z"
     },
     "4": {
       "agent_id": "claude-dns-fix",
@@ -24,13 +24,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "fix-pr1151-bugs",
-      "agent_seq": 2,
-      "timestamp": "2026-04-02T23:57:39.933056905Z"
+      "agent_seq": 3,
+      "timestamp": "2026-04-02T23:57:44.957094336Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-02T23:57:39.933056905Z",
+    "timestamp": "2026-04-02T23:57:44.957094336Z",
     "agent_id": "fix-pr1151-bugs",
-    "agent_seq": 2
+    "agent_seq": 3
   }
 }
