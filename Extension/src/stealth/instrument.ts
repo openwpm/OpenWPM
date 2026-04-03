@@ -92,18 +92,23 @@ function serializeObject(
 
 // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
 // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-Object.getPropertyDescriptor = function (subject, name) {
-  if (subject === undefined) {
-    throw new Error("Can't get property descriptor for undefined");
-  }
-  let pd = Object.getOwnPropertyDescriptor(subject, name);
-  let proto = Object.getPrototypeOf(subject);
-  while (pd === undefined && proto !== null) {
-    pd = Object.getOwnPropertyDescriptor(proto, name);
-    proto = Object.getPrototypeOf(proto);
-  }
-  return pd;
-};
+Object.defineProperty(Object, "getPropertyDescriptor", {
+  enumerable: false,
+  configurable: true,
+  writable: false,
+  value: function (subject, name) {
+    if (subject === undefined) {
+      throw new Error("Can't get property descriptor for undefined");
+    }
+    let pd = Object.getOwnPropertyDescriptor(subject, name);
+    let proto = Object.getPrototypeOf(subject);
+    while (pd === undefined && proto !== null) {
+      pd = Object.getOwnPropertyDescriptor(proto, name);
+      proto = Object.getPrototypeOf(proto);
+    }
+    return pd;
+  },
+});
 
 function updateCounterAndCheckIfOver(scriptUrl, symbol) {
   const key = scriptUrl + "|" + symbol;
