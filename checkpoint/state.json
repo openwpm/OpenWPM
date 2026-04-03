@@ -8,8 +8,8 @@
       "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
     "4": {
-      "agent_id": "claude-dns-fix",
-      "claimed_at": "2026-03-30T07:52:16.089316246Z"
+      "agent_id": "dns-fix-predicate",
+      "claimed_at": "2026-04-03T00:10:01.755977682Z"
     },
     "10": {
       "agent_id": "refactor-ports",
@@ -19,14 +19,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "fix-paths-agent",
-      "agent_seq": 4,
-      "timestamp": "2026-04-03T00:09:59.959921377Z"
+      "agent_id": "dns-fix-predicate",
+      "agent_seq": 3,
+      "timestamp": "2026-04-03T00:10:01.755977682Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:09:59.959921377Z",
-    "agent_id": "fix-paths-agent",
-    "agent_seq": 4
+    "timestamp": "2026-04-03T00:10:01.755977682Z",
+    "agent_id": "dns-fix-predicate",
+    "agent_seq": 3
   }
 }
