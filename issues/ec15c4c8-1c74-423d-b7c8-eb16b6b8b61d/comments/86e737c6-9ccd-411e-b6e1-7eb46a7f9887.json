@@ -1,0 +1,8 @@
+{
+  "uuid": "86e737c6-9ccd-411e-b6e1-7eb46a7f9887",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "fix-pendingresponse",
+  "content": "Plan: Fix three issues found by the hater review in the DNS redirect chain implementation.\n\n1. PendingResponse pollution: The prior branch adds onHeadersReceivedEventDetails to PendingResponse and includes it in resolved() Promise.all. This breaks HttpInstrument because resolved() now waits for a promise that HTTP instrument never resolves. Fix: Do NOT modify PendingResponse. The DNS instrument should directly use the details passed to the listener callback instead of going through PendingResponse. Remove all PendingResponse usage from DnsInstrument entirely since it never needed it.\n\n2. Non-unique request_id: Firefox reuses requestId across redirect hops. Add a redirect_url TEXT column to dns_responses schema (SQL, Parquet, TypeScript DnsResolved type). Record details.url for each hop so rows can be distinguished.\n\n3. Test verifies count not content: Fix test_redirect_chain_dns to check that captured rows have different redirect_url values corresponding to each hop in the chain.\n\n4. Rename onCompleteDnsHandler to onHeadersReceivedDnsHandler.\n\nKey files: dns-instrument.ts, pending-response.ts, schema.ts, schema.sql, parquet_schema.py, browser-web-request-event-details.ts, test_dns_instrument.py",
+  "created_at": "2026-04-03T00:11:31.918319456Z",
+  "kind": "plan"
+}
