@@ -11,7 +11,7 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
-from opentelemetry import trace
+from opentelemetry import propagate, trace
 
 from openwpm.utilities.multiprocess_utils import Process
 
@@ -103,14 +103,12 @@ class StorageController:
         writer.close()
         await writer.wait_closed()
 
-    @_tracer.start_as_current_span("request_handler")
     async def handler(
         self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
         self.logger.info(f"Initializing new handler for {client_name}")
-        trace.get_current_span().set_attribute("client_name", client_name)
 
         while True:
             try:
@@ -127,39 +125,54 @@ class StorageController:
             self._last_record_received = time.time()
             record_type, data = record
 
-            if record_type == RECORD_TYPE_CREATE:
-                raise RuntimeError(f"""{RECORD_TYPE_CREATE} is no longer supported.
-                    Please change the schema before starting the StorageController.
-                    For an example of that see test/test_custom_function.py
-                    """)
+            # Extract propagated OTel context so spans in the
+            # StorageController are children of the caller's span.
+            parent_ctx = None
+            if isinstance(data, dict):
+                otel_carrier = data.pop("__otel_ctx", None)
+                if otel_carrier:
+                    parent_ctx = propagate.extract(otel_carrier)
 
-            if record_type == RECORD_TYPE_CONTENT:
-                assert len(data) == 2
-                if self.unstructured_storage is None:
-                    self.logger.error("""Tried to save content while not having
-                        provided any unstructured storage provider.""")
+            with _tracer.start_as_current_span(
+                "process_record", context=parent_ctx
+            ) as span:
+                span.set_attributes(
+                    {"record_type": record_type, "client_name": client_name}
+                )
+
+                if record_type == RECORD_TYPE_CREATE:
+                    raise RuntimeError(f"""{RECORD_TYPE_CREATE} is no longer supported.
+                        Please change the schema before starting the StorageController.
+                        For an example of that see test/test_custom_function.py
+                        """)
+
+                if record_type == RECORD_TYPE_CONTENT:
+                    assert len(data) == 2
+                    if self.unstructured_storage is None:
+                        self.logger.error("""Tried to save content while not having
+                            provided any unstructured storage provider.""")
+                        continue
+                    content, content_hash = data
+                    content = base64.b64decode(content)
+                    await self.unstructured_storage.store_blob(
+                        filename=content_hash, blob=content
+                    )
                     continue
-                content, content_hash = data
-                content = base64.b64decode(content)
-                await self.unstructured_storage.store_blob(
-                    filename=content_hash, blob=content
-                )
-                continue
 
-            if "visit_id" not in data:
-                self.logger.error(
-                    "Skipping record: No visit_id contained in record %r", record
-                )
-                continue
+                if "visit_id" not in data:
+                    self.logger.error(
+                        "Skipping record: No visit_id contained in record %r", record
+                    )
+                    continue
 
-            visit_id = VisitId(data["visit_id"])
+                visit_id = VisitId(data["visit_id"])
 
-            if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
-                continue
+                if record_type == RECORD_TYPE_META:
+                    await self._handle_meta(visit_id, data)
+                    continue
 
-            table_name = TableName(record_type)
-            await self.store_record(table_name, visit_id, data)
+                table_name = TableName(record_type)
+                await self.store_record(table_name, visit_id, data)
 
     async def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -408,6 +421,10 @@ class DataSocket:
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
         data["visit_id"] = visit_id
+        carrier: Dict[str, str] = {}
+        propagate.inject(carrier)
+        if carrier:
+            data["__otel_ctx"] = carrier
         self.socket.send(
             (
                 table_name,
@@ -416,14 +433,19 @@ class DataSocket:
         )
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
+        meta_data: Dict[str, Any] = {
+            "action": ACTION_TYPE_FINALIZE,
+            "visit_id": visit_id,
+            "success": success,
+        }
+        carrier: Dict[str, str] = {}
+        propagate.inject(carrier)
+        if carrier:
+            meta_data["__otel_ctx"] = carrier
         self.socket.send(
             (
                 RECORD_TYPE_META,
-                {
-                    "action": ACTION_TYPE_FINALIZE,
-                    "visit_id": visit_id,
-                    "success": success,
-                },
+                meta_data,
             )
         )
 
