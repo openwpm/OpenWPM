@@ -19,14 +19,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "fix-pr1151-bugs",
-      "agent_seq": 4,
-      "timestamp": "2026-04-03T00:00:17.600211548Z"
+      "agent_id": "fix-paths-agent",
+      "agent_seq": 1,
+      "timestamp": "2026-04-03T00:09:48.869297661Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:00:17.600211548Z",
-    "agent_id": "fix-pr1151-bugs",
-    "agent_seq": 4
+    "timestamp": "2026-04-03T00:09:48.869297661Z",
+    "agent_id": "fix-paths-agent",
+    "agent_seq": 1
   }
 }
