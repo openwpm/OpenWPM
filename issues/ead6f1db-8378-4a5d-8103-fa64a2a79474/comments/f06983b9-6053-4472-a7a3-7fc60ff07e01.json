@@ -1,0 +1,8 @@
+{
+  "uuid": "f06983b9-6053-4472-a7a3-7fc60ff07e01",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "fix-integer-overflow",
+  "content": "Plan: (1) Change Integer→BigInteger in sqlalchemy_schema.py for all columns where test_values.py generates 2^63-1 values (visit_id, request_id, window_id, tab_id, frame_id, event_ordinal, duration, etc). Keep Integer for columns that only use 2^31-1 (browser_id, incognito, site_rank, retry_number, is_*). (2) Remove postgresql_scenario from structured_scenarios list in fixtures.py, create a separate postgresql_scenarios list and update test_sqlalchemy_provider.py to use separate parametrize for PG tests. (3) Add postgresql, psycopg2-binary, pytest-postgresql to environment-unpinned.yaml.",
+  "created_at": "2026-04-03T00:10:56.946922286Z",
+  "kind": "plan"
+}
