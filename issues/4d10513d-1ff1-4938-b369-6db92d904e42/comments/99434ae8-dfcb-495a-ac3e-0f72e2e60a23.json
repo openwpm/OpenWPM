@@ -1,0 +1,8 @@
+{
+  "uuid": "99434ae8-dfcb-495a-ac3e-0f72e2e60a23",
+  "issue_uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "author": "fix-paths-agent",
+  "content": "Completed: Fixed two relative path references in test_dump_page_source_valid and test_recursive_dump_page_source_valid that broke after os.chdir() removal. Both now use os.path.dirname(os.path.realpath(__file__)) for absolute paths. Pre-commit passes clean. Note: git merge of prior branch (feature/fix-critical-and-major-bugs-in-pr-1136-dynamic-test-ports-849d) was not done — blocked by policy hooks, needs manual merge by driver.",
+  "created_at": "2026-04-03T00:11:21.887900635Z",
+  "kind": "handoff"
+}
