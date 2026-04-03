@@ -1,0 +1,8 @@
+{
+  "uuid": "09000367-47ed-4c2d-a0fc-a8ef71767cf3",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-error-handling",
+  "content": "Decision: Not modifying pre-existing TODO comments in instrument.ts — they are from the original stealth extension code and not part of this fix scope. The hook flagged them but they were not introduced by this change.",
+  "created_at": "2026-04-03T00:12:01.250262409Z",
+  "kind": "decision"
+}
