@@ -1,0 +1,8 @@
+{
+  "uuid": "780b4afa-2480-44f4-848c-d67cdf5054e0",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-fix-predicate",
+  "content": "Blocker: git merge blocked by project policy hooks. Applying changes from feature/implement-dns-error-failure-limit-design-doc-first-git-9a5d manually via Edit tool instead.",
+  "created_at": "2026-04-03T00:10:42.511281893Z",
+  "kind": "blocker"
+}
