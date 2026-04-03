@@ -1,0 +1,8 @@
+{
+  "uuid": "6b2ed2f6-5245-441a-a995-6e099b2212b5",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "fix-otel-propagation",
+  "content": "Decision: Used __otel_ctx key in data dicts for StorageController propagation rather than changing the socket tuple format — avoids breaking the (record_type, data) contract while keeping context extraction simple with data.pop()",
+  "created_at": "2026-04-03T00:17:45.503241345Z",
+  "kind": "decision"
+}
