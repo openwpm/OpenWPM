@@ -3,6 +3,10 @@
   "next_comment_id": 1,
   "display_id_map": {},
   "locks": {
+    "1": {
+      "agent_id": "refactor-ports",
+      "claimed_at": "2026-03-30T07:49:41.351727687Z"
+    },
     "4": {
       "agent_id": "claude-dns-fix",
       "claimed_at": "2026-03-30T07:52:16.089316246Z"
@@ -15,14 +19,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "fix-paths-agent",
-      "agent_seq": 2,
-      "timestamp": "2026-04-03T00:09:49.984048312Z"
+      "agent_id": "dns-fix-predicate",
+      "agent_seq": 1,
+      "timestamp": "2026-04-03T00:09:55.290286032Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:09:49.984048312Z",
-    "agent_id": "fix-paths-agent",
-    "agent_seq": 2
+    "timestamp": "2026-04-03T00:09:55.290286032Z",
+    "agent_id": "dns-fix-predicate",
+    "agent_seq": 1
   }
 }
