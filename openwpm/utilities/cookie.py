@@ -207,7 +207,6 @@ fact, this simply returns a SmartCookie.
 Finis.
 """
 
-
 # Import our required modules
 #
 
@@ -641,9 +640,7 @@ class Morsel(dict):
         document.cookie = \"%s\";
         // end hiding -->
         </script>
-        """ % (
-            self.OutputString(attrs).replace('"', r"\""),
-        )
+        """ % (self.OutputString(attrs).replace('"', r"\""),)
 
     # end js_output()
 

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union, cast
 
 import psutil
 from multiprocess import Queue
-from opentelemetry import trace
+from opentelemetry import propagate, trace
 from opentelemetry.util.types import AttributeValue
 from selenium.common.exceptions import WebDriverException
 from tblib import Traceback, pickling_support
@@ -309,7 +309,7 @@ class BrowserManagerHandle:
 
             # Send the shutdown command
             command = ShutdownSignal()
-            self.command_queue.put(command)
+            self.command_queue.put((command, {}))
 
             # Verify that webdriver has closed (30 second timeout)
             try:
@@ -395,8 +395,13 @@ class BrowserManagerHandle:
                 # Adding timer to track performance of commands
                 t1 = time.time_ns()
 
+                # Inject OTel span context so BrowserManager can
+                # create child spans linked to this command span.
+                carrier: Dict[str, str] = {}
+                propagate.inject(carrier)
+
                 # passes off command and waits for a success (or failure signal)
-                self.command_queue.put(command)
+                self.command_queue.put((command, carrier))
 
                 # received reply from BrowserManager, either success or failure
                 error_text = None
@@ -788,7 +793,12 @@ class BrowserManager(Process):
                     time.sleep(0.001)
                     continue
 
-                command: Union[ShutdownSignal, BaseCommand] = self.command_queue.get()
+                command: Union[ShutdownSignal, BaseCommand]
+                item = self.command_queue.get()
+                if isinstance(item, tuple):
+                    command, carrier = item
+                else:
+                    command, carrier = item, {}
 
                 if isinstance(command, ShutdownSignal):
                     driver.quit()
@@ -801,16 +811,23 @@ class BrowserManager(Process):
                     % (self.browser_params.browser_id, str(command))
                 )
 
+                # Extract the parent span context propagated from
+                # TaskManager so this span is linked in the same trace.
+                parent_ctx = propagate.extract(carrier)
+
                 # attempts to perform an action and return an OK signal
                 # if command fails for whatever reason, tell the TaskManager to
                 # kill and restart its worker processes
                 try:
-                    command.execute(
-                        driver,
-                        self.browser_params,
-                        self.manager_params,
-                        extension_socket,
-                    )
+                    with _tracer.start_as_current_span(
+                        type(command).__name__, context=parent_ctx
+                    ):
+                        command.execute(
+                            driver,
+                            self.browser_params,
+                            self.manager_params,
+                            extension_socket,
+                        )
                     self.status_queue.put("OK")
                 except WebDriverException:
                     # We handle WebDriverExceptions separately here because they
