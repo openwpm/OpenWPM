@@ -1,0 +1,10 @@
+{
+  "uuid": "20787a28-b984-4d35-b755-696846c0e5c7",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "claude",
+  "content": "**Hater review of commits 3377d26 + 0a18796 — Verdict: Sloppy**\n\n**MAJOR (3):**\n- **PendingResponse mutation breaks HTTP instrument**: Adding onHeadersReceivedEventDetails to the shared PendingResponse class means Promise.all in resolved() now includes a promise that HttpInstrument never resolves. Any future resolved() consumer on the HTTP side hangs forever. The DNS instrument doesn't even read the pending response data — the whole interaction is vestigial cargo-cult code.\n- **request_id is non-unique for redirect chain rows**: Firefox reuses requestId across redirect hops. Three rows get same request_id, same hostname, same addresses — no url column, no hop ordinal. Schema wasn't updated. The data is indistinguishable noise.\n- **Test verifies count, not content**: Asserts len(results)==3 and hostname=='test.localhost' — can't verify rows correspond to different hops (because the schema doesn't support it), doesn't check used_address or any distinguishing field.\n\n**MINOR (5):**\n- onCompleteDnsHandler method name is a lie (it's now on onHeadersReceived, not onCompleted)\n- Listener type doesn't include 'ip' field\n- .gitignore pollution (repeat offense, 4th consecutive commit)\n- parquet_schema.py missing used_address column\n- Deleted file header comment left orphaned",
+  "created_at": "2026-04-03T00:03:15.393236025Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA406+kZG1aODImWYNOk3B9q6HsMSxu7ZqVYF+TEz9WrXsgEMxKKa3pJ0AS8vV7ka/StkyXz1ZmdlijoPBXC1oBQ=="
+}
