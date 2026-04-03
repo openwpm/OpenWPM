@@ -1,0 +1,8 @@
+{
+  "uuid": "f806b9f7-fd18-42f5-b00a-14a5ecd681ce",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-error-handling",
+  "content": "Plan: Fix 3 bugs in stealth extension code and verify test coverage.\n\n1. error.ts: generateErrorObject can return undefined when try block throws — add fallback return `fakeError || err` after try/catch\n2. error.ts: DOMException constructor loses err.name ('SecurityError' → 'Error') — pass err.name as second arg  \n3. instrument.ts: Object.getPropertyDescriptor assigned with plain '=' (enumerable) — wrap in Object.defineProperty to match siblings\n4. Verify test_stealth_records_js_calls covers JS recording + error preservation\n\nKey files: Extension/src/stealth/error.ts, Extension/src/stealth/instrument.ts, test/test_stealth.py",
+  "created_at": "2026-04-03T00:11:29.813196022Z",
+  "kind": "plan"
+}
