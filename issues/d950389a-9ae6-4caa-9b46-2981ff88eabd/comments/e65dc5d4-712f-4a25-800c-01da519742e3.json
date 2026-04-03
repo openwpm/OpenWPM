@@ -1,0 +1,8 @@
+{
+  "uuid": "e65dc5d4-712f-4a25-800c-01da519742e3",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "fix-otel-propagation",
+  "content": "Result: Implemented cross-process OTel context propagation across all 3 processes. (1) TaskManager injects span context into command queue tuples, BrowserManager extracts and creates child spans around command.execute(). (2) DataSocket injects context into data dicts, StorageController extracts before per-record span. (3) Moved request_handler from connection-level to per-record process_record spans. (4) Test now asserts all 3 services present + verifies shared trace IDs for cross-process linking. Pre-commit passes.",
+  "created_at": "2026-04-03T00:17:52.250203997Z",
+  "kind": "result"
+}
