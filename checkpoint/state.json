@@ -7,10 +7,6 @@
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
-    "2": {
-      "agent_id": "fix-stealth-error-handling",
-      "claimed_at": "2026-04-03T00:10:52.270386282Z"
-    },
     "4": {
       "agent_id": "dns-fix-predicate",
       "claimed_at": "2026-04-03T00:10:01.755977682Z"
@@ -36,13 +32,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "fix-stealth-error-handling",
-      "agent_seq": 1,
-      "timestamp": "2026-04-03T00:10:52.270386282Z"
+      "agent_seq": 2,
+      "timestamp": "2026-04-03T00:14:32.014810110Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:10:52.270386282Z",
+    "timestamp": "2026-04-03T00:14:32.014810110Z",
     "agent_id": "fix-stealth-error-handling",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
