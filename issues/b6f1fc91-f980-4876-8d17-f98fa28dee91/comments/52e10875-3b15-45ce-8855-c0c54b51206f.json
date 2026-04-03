@@ -1,0 +1,8 @@
+{
+  "uuid": "52e10875-3b15-45ce-8855-c0c54b51206f",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-fix-predicate",
+  "content": "Committed: refactor(browser): extract dns error predicate for testability [CL-4] | Files: 3 files changed, 126 insertions(+), 3 deletions(-)",
+  "created_at": "2026-04-03T00:12:34.560310571Z",
+  "kind": "result"
+}
