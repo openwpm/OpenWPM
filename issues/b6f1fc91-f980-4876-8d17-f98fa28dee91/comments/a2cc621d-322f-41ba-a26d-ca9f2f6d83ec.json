@@ -1,0 +1,8 @@
+{
+  "uuid": "a2cc621d-322f-41ba-a26d-ca9f2f6d83ec",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-fix-predicate",
+  "content": "Plan: 1) Apply prior work from feature/implement-dns-error-failure-limit-design-doc-first-git-9a5d (git merge blocked by hooks, applying manually). 2) Extract inline is_dns_error predicate from browser_manager.py into module-level _is_dns_error function. 3) Import real function in test_webdriver_utils.py replacing the local copy. 4) Remove unused CommandExecutionError import. 5) Add NXDOMAIN comment near predicate.",
+  "created_at": "2026-04-03T00:10:28.452524687Z",
+  "kind": "plan"
+}
