@@ -479,7 +479,12 @@ def test_dump_page_source_valid(
     source_file = glob.glob(outfile)[0]
     with open(source_file, "rb") as f:
         actual_source = f.read()
-    with open("./test_pages/expected_source.html", "rb") as f:
+    expected_source_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "test_pages",
+        "expected_source.html",
+    )
+    with open(expected_source_path, "rb") as f:
         expected_source = f.read()
 
     assert actual_source == expected_source
@@ -518,7 +523,9 @@ def test_recursive_dump_page_source_valid(
         # Verify source
         path = urlparse(frame["doc_url"]).path
         expected_source = ""
-        with open("." + path, "r") as f:
+        test_dir = os.path.dirname(os.path.realpath(__file__))
+        abs_path = os.path.join(test_dir, path.lstrip("/"))
+        with open(abs_path, "r") as f:
             expected_source = re.sub(r"\s", "", f.read().lower())
             if expected_source.startswith("<!doctypehtml>"):
                 expected_source = expected_source[14:]
