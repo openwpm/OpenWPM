@@ -1,0 +1,8 @@
+{
+  "uuid": "799f106a-15f4-4930-99ba-12666613cc84",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-fix-predicate",
+  "content": "Result: Extracted _is_dns_error(command_status, error_text) as module-level function in browser_manager.py. Test imports and tests the real function. Removed local copy from test. Removed unused CommandExecutionError import. Added NXDOMAIN comment in docstring. Pre-commit passes, unit test passes.",
+  "created_at": "2026-04-03T00:12:12.470873856Z",
+  "kind": "result"
+}
