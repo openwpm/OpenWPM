@@ -1,0 +1,8 @@
+{
+  "uuid": "252d0f72-3119-4095-8e8c-11785a47a453",
+  "issue_uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "author": "fix-paths-agent",
+  "content": "Plan: Merge prior branch (feature/fix-critical-and-major-bugs-in-pr-1136-dynamic-test-ports-849d) then fix two relative path references in test/test_simple_commands.py that broke when os.chdir() was removed. Replace relative paths with os.path.dirname(os.path.realpath(__file__)) based absolute paths in test_dump_page_source_valid (~line 482) and test_recursive_dump_page_source_valid (~line 521).",
+  "created_at": "2026-04-03T00:10:19.040361743Z",
+  "kind": "plan"
+}
