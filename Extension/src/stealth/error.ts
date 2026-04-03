@@ -23,7 +23,7 @@ function generateErrorObject(
       (typeof err.name === "string" && err.name === "DOMException")
     ) {
       // DOMException constructor takes (message, name) not (message, fileName)
-      fakeError = new wrappedJS.DOMException(err.message);
+      fakeError = new wrappedJS.DOMException(err.message, err.name);
     } else if (
       ErrorConstructor &&
       typeof ErrorConstructor === "function" &&
@@ -43,7 +43,7 @@ function generateErrorObject(
   } catch (error) {
     console.log("ERROR creation failed. Error was:" + error);
   }
-  return fakeError;
+  return fakeError || err;
 }
 
 /*
