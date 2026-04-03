@@ -1,0 +1,8 @@
+{
+  "uuid": "4a74a030-43fe-4734-8bad-cd0204e80d10",
+  "issue_uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "author": "fix-pr1151-bugs",
+  "content": "Result: Fixed both bugs — (1) added .test_durations_cached and .test_durations_group_* to .gitignore, (2) gated conftest.py duration file writing on CI env var so it only triggers in GitHub Actions, not local ci.sh runs. Pre-commit passes clean.",
+  "created_at": "2026-04-03T00:00:04.315284165Z",
+  "kind": "result"
+}
