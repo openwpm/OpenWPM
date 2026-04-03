@@ -1,0 +1,8 @@
+{
+  "uuid": "9d77f6d6-e345-4e94-8121-0d38dcc0e6a9",
+  "issue_uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
+  "author": "fix-stealth-error-handling",
+  "content": "Result: Fixed 3 bugs in stealth JS instrumentation and enhanced test coverage.\n\nFixes applied:\n1. error.ts: generateErrorObject now returns `fakeError || err` — never returns undefined\n2. error.ts: DOMException preserves err.name via `new DOMException(err.message, err.name)`\n3. instrument.ts: Object.getPropertyDescriptor wrapped in Object.defineProperty with enumerable:false\n\nTests enhanced:\n- test_stealth_records_js_calls: added assertions for non-empty symbols, operations, and values\n- Added test_legacy_records_with_call_stacks: baseline test for legacy recording\n\nIntentional error stack sanitization (removing extension URLs) was preserved as designed.",
+  "created_at": "2026-04-03T00:14:24.540212989Z",
+  "kind": "result"
+}
