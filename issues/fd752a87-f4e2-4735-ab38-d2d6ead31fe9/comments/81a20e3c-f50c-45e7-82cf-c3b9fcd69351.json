@@ -1,0 +1,8 @@
+{
+  "uuid": "81a20e3c-f50c-45e7-82cf-c3b9fcd69351",
+  "issue_uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "author": "fix-pr1151-bugs",
+  "content": "Completed: Fixed two bugs in PR #1151 dynamic CI test duration tracking. (1) Added .test_durations_cached and .test_durations_group_* to .gitignore. (2) Changed conftest.py pytest_sessionfinish to gate on CI env var instead of GROUP. Pre-commit passes clean. Committed as e3c986c.",
+  "created_at": "2026-04-03T00:00:19.054045321Z",
+  "kind": "handoff"
+}
