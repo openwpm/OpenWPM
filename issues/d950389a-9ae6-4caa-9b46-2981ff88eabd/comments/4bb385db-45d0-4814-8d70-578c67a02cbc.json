@@ -1,0 +1,8 @@
+{
+  "uuid": "4bb385db-45d0-4814-8d70-578c67a02cbc",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "fix-otel-propagation",
+  "content": "Completed: Merged prior OTel implementation branch, then fixed cross-process span context propagation. Injected/extracted OTel context via command queue (TaskManager→BrowserManager) and DataSocket data dicts (TaskManager→StorageController). Moved request_handler span to per-record granularity. Hardened test to assert all 3 services and verify shared trace IDs. Pre-commit passes. Committed as f81766d.",
+  "created_at": "2026-04-03T00:18:23.458410851Z",
+  "kind": "handoff"
+}
