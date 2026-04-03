@@ -1,0 +1,10 @@
+{
+  "uuid": "9219aa39-d7ce-4258-8732-807a1b897fb1",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "claude",
+  "content": "**Hater review of commit 6b7b0aa — Verdict: Broken**\n\n**CRITICAL (1):**\n- **No trace context propagation across process boundaries**: Each of the 3 processes (TaskManager, BrowserManager, StorageController) creates an independent TracerProvider with no inject()/extract() calls between them. Jaeger shows 3 disconnected trace trees. The entire value proposition — seeing the causal chain from command dispatch through browser execution to storage — is absent.\n\n**MAJOR (2):**\n- **request_handler span wraps entire socket connection lifetime** (storage_controller.py:106-162): Single span lives for the entire crawl (hours), useless for diagnostics and creating thousands of flat child spans.\n- **Test soft-fails silently**: if task_manager_service: and if storage_service: guards mean the test passes even when those services don't appear in Jaeger. The 5s sleep may not be enough to flush BatchSpanProcessor (default 5000ms interval).\n\n**MINOR (5):**\n- cast(dict[str, AttributeValue], table_entry) lies to the type checker\n- Span noise: post_cs_chores measures a sleep(2), shutdown sub-spans measure instant cancel() calls\n- os.environ mutation in test is not thread-safe and relies on fork semantics\n- No instrumentation of individual store_record database writes\n- Unrelated .gitignore/.pre-commit-config.yaml bundled in (repeat offense)\n\n**NITPICK (2):**\n- types-requests pinned without requests being a declared dependency\n- Module-scoped server fixture shadows session-scoped one from conftest",
+  "created_at": "2026-04-03T00:01:06.576441115Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAYotEeqrLIrFUoCVwlNYlm38tejIjxs7tZCaarfq3tP7Fqzf4gm2l9eL/eCJprGqB4XKojQntmLq8dbrB83jNDQ=="
+}
