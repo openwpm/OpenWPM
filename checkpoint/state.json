@@ -20,13 +20,13 @@
   "unsigned_event_warnings": [
     {
       "agent_id": "fix-paths-agent",
-      "agent_seq": 1,
-      "timestamp": "2026-04-03T00:09:48.869297661Z"
+      "agent_seq": 2,
+      "timestamp": "2026-04-03T00:09:49.984048312Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:09:48.869297661Z",
+    "timestamp": "2026-04-03T00:09:49.984048312Z",
     "agent_id": "fix-paths-agent",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
