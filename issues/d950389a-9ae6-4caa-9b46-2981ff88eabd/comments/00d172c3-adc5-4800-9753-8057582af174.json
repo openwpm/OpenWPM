@@ -1,0 +1,8 @@
+{
+  "uuid": "00d172c3-adc5-4800-9753-8057582af174",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "fix-otel-propagation",
+  "content": "Plan: Fix cross-process OTel context propagation across TaskManager → BrowserManager (via command queue) and TaskManager → StorageController (via DataSocket). 4 changes: (1) inject/extract span context through command_queue tuples, (2) inject/extract context through DataSocket data dicts, (3) move request_handler span from connection-level to per-record level, (4) remove soft-fail guards in test. Key files: browser_manager.py, storage_controller.py, test_otel.py",
+  "created_at": "2026-04-03T00:14:15.148903991Z",
+  "kind": "plan"
+}
