@@ -19,10 +19,6 @@
       "agent_id": "fix-pendingresponse",
       "claimed_at": "2026-04-03T00:10:20.155202979Z"
     },
-    "9": {
-      "agent_id": "fix-otel-propagation",
-      "claimed_at": "2026-04-03T00:10:31.693939394Z"
-    },
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
@@ -31,14 +27,14 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
-      "agent_id": "fix-stealth-error-handling",
+      "agent_id": "fix-otel-propagation",
       "agent_seq": 2,
-      "timestamp": "2026-04-03T00:14:32.014810110Z"
+      "timestamp": "2026-04-03T00:18:22.172492930Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:14:32.014810110Z",
-    "agent_id": "fix-stealth-error-handling",
+    "timestamp": "2026-04-03T00:18:22.172492930Z",
+    "agent_id": "fix-otel-propagation",
     "agent_seq": 2
   }
 }
