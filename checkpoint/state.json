@@ -19,14 +19,19 @@
   "issues": {},
   "unsigned_event_warnings": [
     {
+      "agent_id": "fix-paths-agent",
+      "agent_seq": 3,
+      "timestamp": "2026-04-03T00:09:55.304725635Z"
+    },
+    {
       "agent_id": "dns-fix-predicate",
-      "agent_seq": 1,
-      "timestamp": "2026-04-03T00:09:55.290286032Z"
+      "agent_seq": 2,
+      "timestamp": "2026-04-03T00:09:56.413633167Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-03T00:09:55.290286032Z",
+    "timestamp": "2026-04-03T00:09:56.413633167Z",
     "agent_id": "dns-fix-predicate",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
