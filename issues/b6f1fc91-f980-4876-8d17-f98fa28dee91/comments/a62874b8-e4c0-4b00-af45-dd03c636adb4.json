@@ -1,0 +1,8 @@
+{
+  "uuid": "a62874b8-e4c0-4b00-af45-dd03c636adb4",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "dns-fix-predicate",
+  "content": "Decision: Placed _is_dns_error as a module-level function (not a method) since it's a pure predicate with no self dependency, and this makes it directly importable in tests without instantiating BrowserManagerHandle.",
+  "created_at": "2026-04-03T00:12:06.683288460Z",
+  "kind": "decision"
+}
