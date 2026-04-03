@@ -1,6 +1,6 @@
 {
   "agent_id": "fix-integer-overflow",
-  "last_heartbeat": "2026-04-03T00:09:59.662728169Z",
-  "active_issue_id": null,
+  "last_heartbeat": "2026-04-03T00:12:27.127621912Z",
+  "active_issue_id": 5,
   "machine_id": "sz1"
 }
