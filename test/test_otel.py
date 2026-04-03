@@ -7,7 +7,6 @@ expected span tree exists with correct parentage.
 
 import os
 import time
-from pathlib import Path
 
 import pytest
 import requests
@@ -116,16 +115,29 @@ def test_command_sequence_full_trace(jaeger_container, server, tmp_path, xpi):
                 browser_service = svc
                 break
 
-        # Also check for task manager service
+        # Check for task manager service
         task_manager_service = None
         for svc in services:
             if svc == "openwpm-task-manager":
                 task_manager_service = svc
                 break
 
+        # Check for storage controller service
+        storage_service = None
+        for svc in services:
+            if svc == "StorageController":
+                storage_service = svc
+                break
+
         assert (
             browser_service is not None
         ), f"No BrowserManager service found in Jaeger. Available services: {services}"
+        assert (
+            task_manager_service is not None
+        ), f"No openwpm-task-manager service found in Jaeger. Available services: {services}"
+        assert (
+            storage_service is not None
+        ), f"No StorageController service found in Jaeger. Available services: {services}"
 
         # Query traces for the browser manager
         traces_resp = requests.get(
@@ -152,95 +164,101 @@ def test_command_sequence_full_trace(jaeger_container, server, tmp_path, xpi):
             "start_extension" in span_names
         ), f"start_extension span not found. Spans: {span_names}"
 
-        # Now check the task manager service for command sequence spans
-        if task_manager_service:
-            tm_traces_resp = requests.get(
-                f"{jaeger_query_url}/api/traces",
-                params={"service": task_manager_service, "limit": 10},
-            )
-            tm_traces_resp.raise_for_status()
-            tm_traces = tm_traces_resp.json().get("data", [])
+        # Check the task manager service for command sequence spans
+        tm_traces_resp = requests.get(
+            f"{jaeger_query_url}/api/traces",
+            params={"service": task_manager_service, "limit": 10},
+        )
+        tm_traces_resp.raise_for_status()
+        tm_traces = tm_traces_resp.json().get("data", [])
 
-            tm_spans = []
-            for trace_data in tm_traces:
-                tm_spans.extend(trace_data.get("spans", []))
+        tm_spans = []
+        for trace_data in tm_traces:
+            tm_spans.extend(trace_data.get("spans", []))
 
-            # The execute_command_sequence and per-command spans run in the
-            # TaskManager process (on the command thread), so they use the
-            # task-manager tracer provider.
-            tm_span_names = [s["operationName"] for s in tm_spans]
+        # The execute_command_sequence and per-command spans run in the
+        # TaskManager process (on the command thread), so they use the
+        # task-manager tracer provider.
+        tm_span_names = [s["operationName"] for s in tm_spans]
 
-            assert (
-                "execute_command_sequence" in tm_span_names
-            ), f"execute_command_sequence span not found. TM Spans: {tm_span_names}"
-            assert (
-                "GetCommand" in tm_span_names
-            ), f"GetCommand span not found. TM Spans: {tm_span_names}"
-            assert (
-                "FinalizeCommand" in tm_span_names
-            ), f"FinalizeCommand span not found. TM Spans: {tm_span_names}"
-            assert (
-                "post_cs_chores" in tm_span_names
-            ), f"post_cs_chores span not found. TM Spans: {tm_span_names}"
+        assert (
+            "execute_command_sequence" in tm_span_names
+        ), f"execute_command_sequence span not found. TM Spans: {tm_span_names}"
+        assert (
+            "GetCommand" in tm_span_names
+        ), f"GetCommand span not found. TM Spans: {tm_span_names}"
+        assert (
+            "FinalizeCommand" in tm_span_names
+        ), f"FinalizeCommand span not found. TM Spans: {tm_span_names}"
+        assert (
+            "post_cs_chores" in tm_span_names
+        ), f"post_cs_chores span not found. TM Spans: {tm_span_names}"
 
-            # Verify parentage: GetCommand should be child of execute_command_sequence
-            span_by_id = {s["spanID"]: s for s in tm_spans}
-            ecs_span = next(
-                s for s in tm_spans if s["operationName"] == "execute_command_sequence"
-            )
-            get_span = next(s for s in tm_spans if s["operationName"] == "GetCommand")
-            finalize_span = next(
-                s for s in tm_spans if s["operationName"] == "FinalizeCommand"
-            )
+        # Verify parentage: GetCommand should be child of execute_command_sequence
+        ecs_span = next(
+            s for s in tm_spans if s["operationName"] == "execute_command_sequence"
+        )
+        get_span = next(s for s in tm_spans if s["operationName"] == "GetCommand")
+        finalize_span = next(
+            s for s in tm_spans if s["operationName"] == "FinalizeCommand"
+        )
 
-            # In Jaeger, references[0].spanID is the parent
-            def get_parent_span_id(span):
-                refs = span.get("references", [])
-                for ref in refs:
-                    if ref.get("refType") == "CHILD_OF":
-                        return ref.get("spanID")
-                return None
+        # In Jaeger, references[0].spanID is the parent
+        def get_parent_span_id(span):
+            refs = span.get("references", [])
+            for ref in refs:
+                if ref.get("refType") == "CHILD_OF":
+                    return ref.get("spanID")
+            return None
 
-            assert (
-                get_parent_span_id(get_span) == ecs_span["spanID"]
-            ), "GetCommand should be a child of execute_command_sequence"
-            assert (
-                get_parent_span_id(finalize_span) == ecs_span["spanID"]
-            ), "FinalizeCommand should be a child of execute_command_sequence"
+        assert (
+            get_parent_span_id(get_span) == ecs_span["spanID"]
+        ), "GetCommand should be a child of execute_command_sequence"
+        assert (
+            get_parent_span_id(finalize_span) == ecs_span["spanID"]
+        ), "FinalizeCommand should be a child of execute_command_sequence"
 
-            # Verify execute_command_sequence has browser_id and visit_id attributes
-            ecs_tags = {t["key"]: t["value"] for t in ecs_span.get("tags", [])}
-            assert (
-                "browser_id" in ecs_tags
-            ), "execute_command_sequence should have browser_id attribute"
-            assert (
-                "visit_id" in ecs_tags
-            ), "execute_command_sequence should have visit_id attribute"
+        # Verify execute_command_sequence has browser_id and visit_id attributes
+        ecs_tags = {t["key"]: t["value"] for t in ecs_span.get("tags", [])}
+        assert (
+            "browser_id" in ecs_tags
+        ), "execute_command_sequence should have browser_id attribute"
+        assert (
+            "visit_id" in ecs_tags
+        ), "execute_command_sequence should have visit_id attribute"
 
-        # Check storage controller service
-        storage_service = None
-        for svc in services:
-            if svc == "StorageController":
-                storage_service = svc
-                break
+        # Check storage controller spans
+        sc_traces_resp = requests.get(
+            f"{jaeger_query_url}/api/traces",
+            params={"service": storage_service, "limit": 10},
+        )
+        sc_traces_resp.raise_for_status()
+        sc_traces = sc_traces_resp.json().get("data", [])
 
-        if storage_service:
-            sc_traces_resp = requests.get(
-                f"{jaeger_query_url}/api/traces",
-                params={"service": storage_service, "limit": 10},
-            )
-            sc_traces_resp.raise_for_status()
-            sc_traces = sc_traces_resp.json().get("data", [])
+        sc_spans = []
+        for trace_data in sc_traces:
+            sc_spans.extend(trace_data.get("spans", []))
 
-            sc_spans = []
-            for trace_data in sc_traces:
-                sc_spans.extend(trace_data.get("spans", []))
+        sc_span_names = [s["operationName"] for s in sc_spans]
 
-            sc_span_names = [s["operationName"] for s in sc_spans]
+        assert (
+            "process_record" in sc_span_names
+        ), f"process_record span not found. SC Spans: {sc_span_names}"
+        assert (
+            "finalize_visit_id" in sc_span_names
+        ), f"finalize_visit_id span not found. SC Spans: {sc_span_names}"
 
-            assert (
-                "finalize_visit_id" in sc_span_names
-            ), f"finalize_visit_id span not found. SC Spans: {sc_span_names}"
+        # Verify cross-process trace linking: all three services
+        # should share at least one trace ID
+        browser_trace_ids = {t["traceID"] for t in traces_data}
+        tm_trace_ids = {t["traceID"] for t in tm_traces}
+        sc_trace_ids = {t["traceID"] for t in sc_traces}
+        shared_traces = browser_trace_ids & tm_trace_ids & sc_trace_ids
+        assert shared_traces, (
+            "No shared trace IDs across all three services — "
+            "cross-process context propagation is broken. "
+            f"Browser: {browser_trace_ids}, TM: {tm_trace_ids}, SC: {sc_trace_ids}"
+        )
 
     finally:
         os.environ.pop("OTEL_EXPORTER_OTLP_ENDPOINT", None)
