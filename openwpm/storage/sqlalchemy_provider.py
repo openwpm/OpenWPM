@@ -76,8 +76,8 @@ class SQLAlchemyStorageProvider(StructuredStorageProvider):
             # subsequent inserts can succeed.
             try:
                 self._connection.rollback()
-            except Exception:
-                pass  # Best-effort rollback
+            except Exception as rollback_err:
+                self.logger.error("Rollback failed: %s", rollback_err)
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
