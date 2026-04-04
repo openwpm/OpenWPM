@@ -1,0 +1,8 @@
+{
+  "uuid": "7471cab4-7775-4ce9-a498-51b6d18c13f6",
+  "issue_uuid": "ec15c4c8-1c74-423d-b7c8-eb16b6b8b61d",
+  "author": "Ls5N",
+  "content": "Completed: synced parquet_schema.py with schema.sql (added redirect_url + used_address to dns_responses), added both columns to test_values.py, added redirect_url assertions in test_dns_instrument.py, fixed type annotation inconsistency in dns-instrument.ts listener",
+  "created_at": "2026-04-04T20:48:37.171105781Z",
+  "kind": "handoff"
+}
