@@ -26,7 +26,7 @@ export class DnsInstrument {
      * Attach handlers to event listeners
      */
     this.onHeadersReceivedListener = (
-      details: browser.webRequest._OnHeadersReceivedDetails,
+      details: WebRequestOnHeadersReceivedDetails,
     ) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
