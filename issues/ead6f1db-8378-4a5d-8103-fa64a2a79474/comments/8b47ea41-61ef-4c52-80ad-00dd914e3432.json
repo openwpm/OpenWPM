@@ -1,0 +1,8 @@
+{
+  "uuid": "8b47ea41-61ef-4c52-80ad-00dd914e3432",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "fix-pendingresponse",
+  "content": "VDD R2 NOT CONVERGED — Verdict: Mediocre. 3 Major issues remain: (1) pytest-postgresql missing from environment-unpinned.yaml — next repin drops it, (2) unconditional 'from pytest_postgresql import factories' at module level makes ALL storage tests require pg, (3) fixture discovery fragility — pg fixtures in fixtures.py not conftest.py. Also: response_status as BigInteger is semantically wrong (HTTP codes are 3 digits), silent except Exception: pass on rollback. Needs R3.",
+  "created_at": "2026-04-04T20:43:59.749474813Z",
+  "kind": "note"
+}
