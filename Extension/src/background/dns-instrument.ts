@@ -1,14 +1,11 @@
-import { PendingResponse } from "../lib/pending-response";
 import { DnsResolved } from "../schema";
 import { allTypes } from "./http-instrument";
+import { WebRequestOnHeadersReceivedDetails } from "../types/browser-web-request-event-details";
 import RequestFilter = browser.webRequest.RequestFilter;
 
 export class DnsInstrument {
   private readonly dataReceiver;
-  private onCompleteListener;
-  private pendingResponses: {
-    [requestId: number]: PendingResponse;
-  } = {};
+  private onHeadersReceivedListener;
 
   constructor(dataReceiver) {
     this.dataReceiver = dataReceiver;
@@ -28,37 +25,33 @@ export class DnsInstrument {
     /*
      * Attach handlers to event listeners
      */
-    this.onCompleteListener = (
-      details: browser.webRequest._OnCompletedDetails,
+    this.onHeadersReceivedListener = (
+      details: browser.webRequest._OnHeadersReceivedDetails,
     ) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
       }
-      const pendingResponse = this.getPendingResponse(details.requestId);
-      pendingResponse.resolveOnCompletedEventDetails(details);
 
-      this.onCompleteDnsHandler(details, crawlID);
+      this.onHeadersReceivedDnsHandler(details, crawlID);
     };
 
-    browser.webRequest.onCompleted.addListener(this.onCompleteListener, filter);
+    browser.webRequest.onHeadersReceived.addListener(
+      this.onHeadersReceivedListener,
+      filter,
+    );
   }
 
   public cleanup() {
-    if (this.onCompleteListener) {
-      browser.webRequest.onCompleted.removeListener(this.onCompleteListener);
+    if (this.onHeadersReceivedListener) {
+      browser.webRequest.onHeadersReceived.removeListener(
+        this.onHeadersReceivedListener,
+      );
     }
   }
 
-  private getPendingResponse(requestId): PendingResponse {
-    if (!this.pendingResponses[requestId]) {
-      this.pendingResponses[requestId] = new PendingResponse();
-    }
-    return this.pendingResponses[requestId];
-  }
-
-  private async onCompleteDnsHandler(
-    details: browser.webRequest._OnCompletedDetails,
+  private async onHeadersReceivedDnsHandler(
+    details: WebRequestOnHeadersReceivedDetails,
     crawlID,
   ) {
     // Create and populate DnsResolve object
@@ -66,6 +59,7 @@ export class DnsInstrument {
     dnsRecord.browser_id = crawlID;
     dnsRecord.request_id = Number(details.requestId);
     dnsRecord.used_address = details.ip;
+    dnsRecord.redirect_url = details.url;
     const currentTime = new Date(details.timeStamp);
     dnsRecord.time_stamp = currentTime.toISOString();
 
