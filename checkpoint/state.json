@@ -35,11 +35,16 @@
       "agent_id": "svTa",
       "agent_seq": 1,
       "timestamp": "2026-04-04T20:45:00.829316772Z"
+    },
+    {
+      "agent_id": "svTa",
+      "agent_seq": 2,
+      "timestamp": "2026-04-04T20:45:05.596435432Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-04T20:45:00.829316772Z",
+    "timestamp": "2026-04-04T20:45:05.596435432Z",
     "agent_id": "svTa",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }

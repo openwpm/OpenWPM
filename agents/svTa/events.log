@@ -1,1 +1,2 @@
 {"agent_id":"svTa","agent_seq":1,"timestamp":"2026-04-04T20:45:00.829316772Z","event":{"type":"LockClaimed","issue_display_id":5}}
+{"agent_id":"svTa","agent_seq":2,"timestamp":"2026-04-04T20:45:05.596435432Z","event":{"type":"LockReleased","issue_display_id":5}}
