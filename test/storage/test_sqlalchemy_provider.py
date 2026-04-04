@@ -17,7 +17,7 @@ from openwpm.storage.sqlalchemy_provider import SQLAlchemyStorageProvider
 from openwpm.storage.storage_providers import StructuredStorageProvider, TableName
 from openwpm.types import VisitId
 
-from .fixtures import structured_scenarios
+from .fixtures import postgresql_scenarios, structured_scenarios
 from .test_values import dt_test_values
 
 SCHEMA_FILE = os.path.join(
@@ -77,10 +77,12 @@ async def test_schema_equivalence(tmp_path):
         ), f"Table sets differ: legacy={legacy_tables}, sa={sa_tables}"
 
         # Type normalization: schema.sql uses DATETIME, VARCHAR, STRING
-        # which SQLAlchemy normalizes to TEXT
+        # which SQLAlchemy normalizes to TEXT. BIGINT (from BigInteger) has
+        # INTEGER affinity in SQLite, so treat them as equivalent.
         type_map = {
             "DATETIME": "TEXT",
             "STRING": "TEXT",
+            "BIGINT": "INTEGER",
         }
 
         def normalize_type(t: str) -> str:
@@ -196,3 +198,30 @@ def test_coerce_record_edge_cases():
         "n": 42,
         "x": None,
     }
+
+
+@pytest.mark.pyonly
+@pytest.mark.parametrize("structured_provider", postgresql_scenarios, indirect=True)
+@pytest.mark.asyncio
+async def test_all_tables_access_postgresql(
+    structured_provider: StructuredStorageProvider,
+    test_values: dt_test_values,
+) -> None:
+    """Insert one record into every table using the PostgreSQL provider.
+
+    Separated from test_all_tables_access so that a running PostgreSQL
+    instance is only required when this test is explicitly selected.
+    """
+    test_table, visit_ids = test_values
+    await structured_provider.init()
+
+    for table_name, test_data in test_table.items():
+        await structured_provider.store_record(
+            TableName(table_name), test_data["visit_id"], test_data
+        )
+
+    for visit_id in visit_ids:
+        await structured_provider.finalize_visit_id(visit_id)
+
+    await structured_provider.flush_cache()
+    await structured_provider.shutdown()
