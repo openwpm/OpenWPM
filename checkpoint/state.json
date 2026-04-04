@@ -12,8 +12,8 @@
       "claimed_at": "2026-04-03T00:10:01.755977682Z"
     },
     "5": {
-      "agent_id": "fix-integer-overflow",
-      "claimed_at": "2026-04-03T00:10:07.796416471Z"
+      "agent_id": "svTa",
+      "claimed_at": "2026-04-04T20:45:18.568012536Z"
     },
     "6": {
       "agent_id": "fix-pendingresponse",
@@ -40,11 +40,16 @@
       "agent_id": "svTa",
       "agent_seq": 2,
       "timestamp": "2026-04-04T20:45:05.596435432Z"
+    },
+    {
+      "agent_id": "svTa",
+      "agent_seq": 3,
+      "timestamp": "2026-04-04T20:45:18.568012536Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-04T20:45:05.596435432Z",
+    "timestamp": "2026-04-04T20:45:18.568012536Z",
     "agent_id": "svTa",
-    "agent_seq": 2
+    "agent_seq": 3
   }
 }
