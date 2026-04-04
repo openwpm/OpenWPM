@@ -64,7 +64,7 @@ crawl_history = Table(
     Column("command_status", Text),
     Column("error", Text),
     Column("traceback", Text),
-    Column("duration", BigInteger),
+    Column("duration", Integer),
     Column("dtg", Text, server_default=text("CURRENT_TIMESTAMP")),
 )
 
@@ -116,7 +116,7 @@ http_responses = Table(
     Column("frame_id", BigInteger),
     Column("url", Text, nullable=False),
     Column("method", Text, nullable=False),
-    Column("response_status", BigInteger),
+    Column("response_status", Integer),
     Column("response_status_text", Text, nullable=False),
     Column("is_cached", Integer, nullable=False),
     Column("headers", Text, nullable=False),
@@ -143,7 +143,7 @@ http_redirects = Table(
     Column("window_id", BigInteger),
     Column("tab_id", BigInteger),
     Column("frame_id", BigInteger),
-    Column("response_status", BigInteger, nullable=False),
+    Column("response_status", Integer, nullable=False),
     Column("response_status_text", Text, nullable=False),
     Column("headers", Text, nullable=False),
     Column("time_stamp", Text, nullable=False),

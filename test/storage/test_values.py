@@ -56,7 +56,7 @@ def generate_test_values() -> dt_test_values:
         "command_status": random_word(12),
         "error": random_word(12),
         "traceback": random_word(12),
-        "duration": random.randint(0, 2**63 - 1),
+        "duration": random.randint(0, 2**31 - 1),
     }
     test_values[TableName("crawl_history")] = fields
     # http_requests
@@ -102,7 +102,7 @@ def generate_test_values() -> dt_test_values:
         "frame_id": random.randint(0, 2**63 - 1),
         "url": random_word(12),
         "method": random_word(12),
-        "response_status": random.randint(0, 2**63 - 1),
+        "response_status": random.randint(0, 2**31 - 1),
         "response_status_text": random_word(12),
         "is_cached": random.choice([True, False]),
         "headers": random_word(12),
@@ -126,7 +126,7 @@ def generate_test_values() -> dt_test_values:
         "window_id": random.randint(0, 2**63 - 1),
         "tab_id": random.randint(0, 2**63 - 1),
         "frame_id": random.randint(0, 2**63 - 1),
-        "response_status": random.randint(0, 2**63 - 1),
+        "response_status": random.randint(0, 2**31 - 1),
         "response_status_text": random_word(12),
         "headers": random_word(12),
         "time_stamp": random_word(12),
