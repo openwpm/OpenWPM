@@ -19,3 +19,9 @@ def test_name_resolution(default_params, task_manager_creator):
     assert result["addresses"] == "127.0.0.1,::1"
     assert result["hostname"] == "test.localhost"
     assert result["canonical_name"] == "test.localhost"
+    assert result["redirect_url"] is not None
+    assert "test.localhost:8000" in result["redirect_url"]
+
+    # Each redirect hop should record the URL it was associated with
+    redirect_urls = [r["redirect_url"] for r in results]
+    assert all(url is not None for url in redirect_urls)
