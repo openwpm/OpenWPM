@@ -29,7 +29,7 @@ from testcontainers.core.waiting_utils import wait_for_logs
 def jaeger_container():
     """Start a Jaeger all-in-one container exposing OTLP HTTP and query API."""
     container = (
-        DockerContainer("jaegertracing/all-in-one:1.65")
+        DockerContainer("jaegertracing/all-in-one:1.76.0")
         .with_env("COLLECTOR_OTLP_ENABLED", "true")
         .with_exposed_ports(4318, 16686)
     )
