@@ -1,1 +1,0 @@
-{"agent_id":"fix-integer-overflow","agent_seq":1,"timestamp":"2026-04-03T00:10:07.796416471Z","event":{"type":"LockClaimed","issue_display_id":5}}
