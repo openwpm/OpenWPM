@@ -16,8 +16,8 @@
       "claimed_at": "2026-04-04T20:45:18.568012536Z"
     },
     "6": {
-      "agent_id": "fix-pendingresponse",
-      "claimed_at": "2026-04-03T00:10:20.155202979Z"
+      "agent_id": "Ls5N",
+      "claimed_at": "2026-04-04T20:45:45.057602265Z"
     },
     "10": {
       "agent_id": "refactor-ports",
@@ -55,11 +55,16 @@
       "agent_id": "Ls5N",
       "agent_seq": 2,
       "timestamp": "2026-04-04T20:45:33.482100347Z"
+    },
+    {
+      "agent_id": "Ls5N",
+      "agent_seq": 3,
+      "timestamp": "2026-04-04T20:45:45.057602265Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-04T20:45:33.482100347Z",
+    "timestamp": "2026-04-04T20:45:45.057602265Z",
     "agent_id": "Ls5N",
-    "agent_seq": 2
+    "agent_seq": 3
   }
 }
