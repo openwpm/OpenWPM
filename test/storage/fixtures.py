@@ -62,8 +62,13 @@ structured_scenarios: List[str] = [
     memory_structured,
     sqlite,
     sqlalchemy_sqlite,
-    postgresql_scenario,
     memory_arrow,
+]
+
+# PostgreSQL scenarios are separate so that tests not requiring a running
+# PostgreSQL instance (the vast majority) can run without one.
+postgresql_scenarios: List[str] = [
+    postgresql_scenario,
 ]
 
 # Unstructured Providers
