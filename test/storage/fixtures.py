@@ -2,7 +2,6 @@ from typing import Any, List
 
 import pytest
 from _pytest.fixtures import FixtureRequest
-from pytest_postgresql import factories
 
 from openwpm.storage.in_memory_storage import (
     MemoryArrowProvider,
@@ -20,8 +19,12 @@ from openwpm.storage.storage_providers import (
 )
 from test.storage.test_values import dt_test_values, generate_test_values
 
-postgresql_proc = factories.postgresql_proc()
-postgresql = factories.postgresql("postgresql_proc")
+try:
+    from pytest_postgresql import factories
+
+    HAS_PYTEST_POSTGRESQL = True
+except ImportError:
+    HAS_PYTEST_POSTGRESQL = False
 
 memory_structured = "memory_structured"
 sqlite = "sqlite"
