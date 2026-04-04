@@ -90,12 +90,9 @@ def test_custom_function(
     db = sqlite3.connect(path)
     cur = db.cursor()
 
-    cur.execute(
-        """CREATE TABLE IF NOT EXISTS %s (
+    cur.execute("""CREATE TABLE IF NOT EXISTS %s (
             top_url TEXT, link TEXT,
-            visit_id INTEGER, browser_id INTEGER);"""
-        % table_name
-    )
+            visit_id INTEGER, browser_id INTEGER);""" % table_name)
     cur.close()
     db.close()
 

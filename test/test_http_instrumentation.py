@@ -454,6 +454,7 @@ def _http_cached_requests(server: ServerUrls) -> set[tuple[Union[str, None, int]
         ),
     }
 
+
 # format: (request_url, referrer, is_cached)
 # TODO: referrer isn't recorded by webext instrumentation yet.
 def _http_cached_responses(server: ServerUrls) -> set[tuple[str, int]]:
@@ -487,6 +488,7 @@ def _http_cached_responses(server: ServerUrls) -> set[tuple[str, int]]:
         (f"{server.base}/shared/test_style.css", 1),
         (f"{server.base}/shared/test_image.png", 1),
     }
+
 
 # format: (source_url, destination_url)
 def _http_cached_redirects(server: ServerUrls) -> set[tuple[str, str]]:
@@ -879,9 +881,7 @@ def test_page_visit(
     manager_params, browser_params = http_params()
     if delayed:
         for browser_param in browser_params:
-            browser_param.custom_params[
-                "pre_instrumentation_code"
-            ] = """
+            browser_param.custom_params["pre_instrumentation_code"] = """
                 const startTime = Date.now();
                 while (Date.now() - startTime < 5000) { // Delaying for 5s
                     console.log("delaying startup");
