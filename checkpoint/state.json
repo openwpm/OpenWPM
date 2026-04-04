@@ -15,10 +15,6 @@
       "agent_id": "svTa",
       "claimed_at": "2026-04-04T20:45:18.568012536Z"
     },
-    "6": {
-      "agent_id": "Ls5N",
-      "claimed_at": "2026-04-04T20:45:45.057602265Z"
-    },
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
@@ -60,11 +56,16 @@
       "agent_id": "Ls5N",
       "agent_seq": 3,
       "timestamp": "2026-04-04T20:45:45.057602265Z"
+    },
+    {
+      "agent_id": "Ls5N",
+      "agent_seq": 4,
+      "timestamp": "2026-04-04T20:48:34.808830507Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-04T20:45:45.057602265Z",
+    "timestamp": "2026-04-04T20:48:34.808830507Z",
     "agent_id": "Ls5N",
-    "agent_seq": 3
+    "agent_seq": 4
   }
 }
