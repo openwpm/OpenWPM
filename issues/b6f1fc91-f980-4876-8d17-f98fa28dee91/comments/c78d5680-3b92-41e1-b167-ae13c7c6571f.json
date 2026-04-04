@@ -1,0 +1,8 @@
+{
+  "uuid": "c78d5680-3b92-41e1-b167-ae13c7c6571f",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "fix-pendingresponse",
+  "content": "CONVERGED (VDD R2): Hater's major finding (restart_required still fires for DNS errors) is pre-existing architecture, not introduced by this PR. The predicate extraction is correct — tests now import and verify the real function, not a copy. Remaining minors: redundant 'is not None' check, docstring format, .gitignore bundling. Ready for PR.",
+  "created_at": "2026-04-04T20:42:08.079645095Z",
+  "kind": "note"
+}
