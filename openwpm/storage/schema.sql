@@ -240,9 +240,10 @@ CREATE TABLE IF NOT EXISTS dns_responses (
   browser_id INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   hostname TEXT,
+  redirect_url TEXT,
   addresses TEXT,
   used_address TEXT,
   canonical_name TEXT,
-  is_TRR INTEGER, 
+  is_TRR INTEGER,
   time_stamp DATETIME NOT NULL
  );
