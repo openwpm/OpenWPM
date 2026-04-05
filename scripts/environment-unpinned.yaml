@@ -16,7 +16,6 @@ dependencies:
     - pip
     - pillow
     - postgresql
-    - psycopg2
     - psycopg2-binary
     - plyvel
     - psutil
