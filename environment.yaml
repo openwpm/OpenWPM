@@ -20,6 +20,7 @@ dependencies:
 - plyvel=1.5.1
 - postgresql=17.9
 - pre-commit=4.5.1
+- psycopg2=2.9.11
 - psutil=7.2.2
 - pyarrow=23.0.1
 - pytest-asyncio=1.3.0
