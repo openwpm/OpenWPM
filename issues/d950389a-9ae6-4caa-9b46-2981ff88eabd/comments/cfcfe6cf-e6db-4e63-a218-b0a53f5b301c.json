@@ -1,0 +1,8 @@
+{
+  "uuid": "cfcfe6cf-e6db-4e63-a218-b0a53f5b301c",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "7oYD",
+  "content": "Completed: Fixed polling loop race condition in test/test_otel.py. The break condition now requires all three OTel services (BrowserManager-*, openwpm-task-manager, StorageController) to be present in Jaeger before exiting the loop, preventing assertions from failing when BrowserManager appears before the others.",
+  "created_at": "2026-04-05T17:32:37.401531085Z",
+  "kind": "handoff"
+}
