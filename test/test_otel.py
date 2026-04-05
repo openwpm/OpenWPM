@@ -106,7 +106,11 @@ def test_command_sequence_full_trace(jaeger_container, server, tmp_path, xpi):
             services_resp = requests.get(f"{jaeger_query_url}/api/services")
             services_resp.raise_for_status()
             services = services_resp.json().get("data", [])
-            if any(s.startswith("BrowserManager-") for s in services):
+            if (
+                any(s.startswith("BrowserManager-") for s in services)
+                and "openwpm-task-manager" in services
+                and "StorageController" in services
+            ):
                 break
         browser_service = None
         for svc in services:
