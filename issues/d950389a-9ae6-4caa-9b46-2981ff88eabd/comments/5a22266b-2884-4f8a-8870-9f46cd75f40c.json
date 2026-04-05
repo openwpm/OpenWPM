@@ -1,0 +1,10 @@
+{
+  "uuid": "5a22266b-2884-4f8a-8870-9f46cd75f40c",
+  "issue_uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "author": "claude",
+  "content": "VDD Copilot fix hater: Begrudgingly Adequate. reset=False fix correct, context manager correct, dead var removed, polling loop replaces sleep. BUT Major: polling loop break condition only checks BrowserManager-*, not openwpm-task-manager or StorageController. Race: loop exits early, subsequent assertions fail. Fix: break when ALL THREE services present. Needs one more round.",
+  "created_at": "2026-04-05T17:30:18.071819923Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAsByxWDTVODxFRzU488f1HIQXLvch16JRHiGdyUaEsl5gyNwnGJ3etqsm21xGu6gVvgaDRq9xv/Q3DO1G4zXgDA=="
+}
