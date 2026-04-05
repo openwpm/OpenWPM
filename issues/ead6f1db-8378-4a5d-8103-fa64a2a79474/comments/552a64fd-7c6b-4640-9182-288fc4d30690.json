@@ -1,0 +1,8 @@
+{
+  "uuid": "552a64fd-7c6b-4640-9182-288fc4d30690",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "2lSY",
+  "content": "[action] Switching psycopg2 to psycopg in environment files and test fixtures",
+  "created_at": "2026-04-05T19:48:59.292597012Z",
+  "kind": "note"
+}
