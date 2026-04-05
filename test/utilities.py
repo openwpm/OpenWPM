@@ -83,6 +83,15 @@ class MyHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+        # 2. Abort connection after sending partial response.
+        if self.path.startswith("/CONNECTION_ABORT/"):
+            self.send_response(200)
+            self.send_header("Content-Length", "99999")
+            self.end_headers()
+            self.wfile.write(b"partial")
+            self.wfile.close()
+            return
+
         # Otherwise, return file from disk
         return SimpleHTTPRequestHandler.do_GET(self, *args, **kwargs)
 
