@@ -1,0 +1,10 @@
+{
+  "uuid": "ba5a00c9-4f10-4764-b20e-ff35b3364d01",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "claude",
+  "content": "VDD pipeline complete. All issues converged. PRs ready for review:\n- #1153 (test ports) — pre-commit green, test failures all pre-existing ProfileLoadError\n- #1154 (stealth) — green, Copilot fixes pushed\n- #1155 (CI durations) — green\n- #1156 (DNS error limit) — green (pre-existing flake only)\n- #1157 (OTel) — Copilot fixes + polling race fix pushed\n- #1158 (DNS redirect) — green, connection abort regression test added\n- #1161 (PostgreSQL) — NEW PR, 5 rounds to converge",
+  "created_at": "2026-04-05T18:51:41.797677702Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAvE12/ZJkIOP1X43OmdUznGBXQ4qsdYtzD0Hv2FiIOT1IxKSgSeWFLnm6OADoQYzBLu2sdeLU0dmZ654XQWLfDw=="
+}
