@@ -10,4 +10,6 @@ try:
     postgresql_proc = factories.postgresql_proc()
     postgresql = factories.postgresql("postgresql_proc")
 except ImportError:
+    # pytest-postgresql is optional; when absent, PostgreSQL test scenarios
+    # are excluded via HAS_PYTEST_POSTGRESQL in fixtures.py.
     pass

@@ -70,9 +70,7 @@ structured_scenarios: List[str] = [
 
 # PostgreSQL scenarios are separate so that tests not requiring a running
 # PostgreSQL instance (the vast majority) can run without one.
-postgresql_scenarios: List[str] = [
-    postgresql_scenario,
-]
+postgresql_scenarios: List[str] = [postgresql_scenario] if HAS_PYTEST_POSTGRESQL else []
 
 # Unstructured Providers
 memory_unstructured = "memory_unstructured"
