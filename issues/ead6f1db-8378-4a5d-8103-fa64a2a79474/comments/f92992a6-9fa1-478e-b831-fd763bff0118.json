@@ -1,0 +1,10 @@
+{
+  "uuid": "f92992a6-9fa1-478e-b831-fd763bff0118",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "VDD R3 NOT CONVERGED — Verdict: Sloppy. HAS_PYTEST_POSTGRESQL flag is defined but never referenced — postgresql_scenarios is always ['postgresql'] unconditionally. SQLite-only envs get FixtureLookupError. Also: psycopg2 AND psycopg2-binary both listed (mutually exclusive), silent except ImportError: pass hides broken installs. Needs R4.",
+  "created_at": "2026-04-05T12:38:59.798583933Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA73EXtDAZMwrCclHrWt7YICTGZfyMME8FcgGQ0033fLBjy3YJTr67kaTgLFDHPEeCkpYL5gn6Me03wCKxj5o9Bg=="
+}
