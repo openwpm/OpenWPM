@@ -5,6 +5,7 @@ function generateErrorObject(
   err: { stack: any; name: string | number; message: any },
   context = undefined,
 ) {
+  if (!err || typeof err.stack !== "string") return err;
   context = context !== undefined ? context : window;
   const cleaned = cleanErrorStack(err.stack);
   const stack = splitStack(cleaned);

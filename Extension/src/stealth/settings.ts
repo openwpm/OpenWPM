@@ -2,7 +2,7 @@ import { JSInstrumentSettings } from "../types/js_instrument_settings";
 
 export const jsInstrumentationSettings: JSInstrumentSettings = [
   {
-    object: "ScriptProcessorNode", // Depcrecated. Replaced by AudioWorkletNode
+    object: "ScriptProcessorNode", // Deprecated. Replaced by AudioWorkletNode
     instrumentedName: "ScriptProcessorNode",
     depth: 0,
     logSettings: {
@@ -146,10 +146,10 @@ export const jsInstrumentationSettings: JSInstrumentSettings = [
     },
   },
 
-  // Add shared prototype by AudioContenxt/OfflineAudioContext
+  // Add shared prototype by AudioContext/OfflineAudioContext
   {
     object: "AudioContext",
-    instrumentedName: "[AudioContenxt|OfflineAudioContext]",
+    instrumentedName: "[AudioContext|OfflineAudioContext]",
     depth: 1,
     logSettings: {
       propertiesToInstrument: [],
