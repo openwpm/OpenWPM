@@ -392,7 +392,6 @@ class BrowserManagerHandle:
         )
         self.is_fresh = False
 
-        reset = command_sequence.reset
         self.logger.info(
             "Starting to work on CommandSequence with "
             "visit_id %d on browser with id %d",
@@ -497,6 +496,10 @@ class BrowserManagerHandle:
                     "duration",
                     "arguments",
                     "traceback",
+                    # store_record mutates table_entry to inject the OTel
+                    # context carrier (a dict); drop it so set_attributes
+                    # below is not handed a non-primitive value.
+                    "__otel_ctx",
                 ]:
                     table_entry.pop(k, None)
                 for k in list(table_entry.keys()):
@@ -559,11 +562,14 @@ class BrowserManagerHandle:
                 return
 
             # Allow StorageWatchdog to utilize built-in browser reset functionality
-            # which results in a graceful restart of the browser instance
+            # which results in a graceful restart of the browser instance.
+            # Preserve an explicitly requested stateless-crawl reset; the
+            # profile-size check can only add to it, never clear it.
+            reset = command_sequence.reset
             if self.browser_params.maximum_profile_size:
                 assert self.current_profile_path is not None
 
-                reset = profile_size_exceeds_max_size(
+                reset = reset or profile_size_exceeds_max_size(
                     self.current_profile_path,
                     self.browser_params.maximum_profile_size,
                 )
