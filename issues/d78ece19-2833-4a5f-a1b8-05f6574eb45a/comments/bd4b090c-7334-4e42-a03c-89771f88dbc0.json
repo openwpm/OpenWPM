@@ -1,0 +1,8 @@
+{
+  "uuid": "bd4b090c-7334-4e42-a03c-89771f88dbc0",
+  "issue_uuid": "d78ece19-2833-4a5f-a1b8-05f6574eb45a",
+  "author": "cChE",
+  "content": "Completed: Added /CONNECTION_ABORT/ handler in test/utilities.py and test_dns_captured_on_connection_abort in test/test_dns_instrument.py. Pre-commit passes. Committed as 577f1f5.",
+  "created_at": "2026-04-05T17:51:43.528728651Z",
+  "kind": "handoff"
+}
