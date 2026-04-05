@@ -1,0 +1,10 @@
+{
+  "uuid": "9004148a-99e6-4632-8429-bca6263f9479",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "CONVERGED (VDD R5): psycopg2 swap correct — psycopg2=2.9.11 in environment.yaml, psycopg2 in unpinned, zero trace of psycopg2-binary. Hater verdict: '...Fine.' Five rounds for a one-line dep swap, but the full chain (BigInteger, scenario gating, conditional imports, fixture discovery, correct dep) is solid. Ready for PR.",
+  "created_at": "2026-04-05T18:47:41.030757885Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAPjj5AKemvzaai3yVf6+95TEhyZkF6BpCo+TNsSa48AmRFyX3P5aA7KS+DErxXeD+A2qw+UHtUiFYWeDDFiDYCQ=="
+}
