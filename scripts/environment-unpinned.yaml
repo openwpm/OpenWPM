@@ -15,22 +15,22 @@ dependencies:
     - pandas
     - pip
     - pillow
-    - psycopg
     - plyvel
     - psutil
-    - pytest-postgresql
     - pyarrow
     - python
     - pyvirtualdisplay
     - redis-py
     - s3fs
     - selenium
-    - sqlalchemy
     - sentry-sdk
     - tabulate
     - tblib
     - wget
     - pip:
+        - psycopg[binary]
+        - pytest-postgresql
+        - sqlalchemy
         - dataclasses-json
         - domain-utils
         - jsonschema
