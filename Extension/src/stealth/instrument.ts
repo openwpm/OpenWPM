@@ -854,7 +854,7 @@ function startInstrument(context) {
       continue;
     }
     // Instrument each Property per object/prototype
-    if (propertyCollection[0] !== "") {
+    if (propertyCollection.length > 0) {
       propertyCollection.forEach(({ depth, propertyNames, object }) => {
         if (needsWrapper(object)) {
           propertyNames.forEach((propertyName) =>

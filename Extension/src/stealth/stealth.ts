@@ -164,7 +164,6 @@ function protectFrameProperties({
       constructor.prototype,
       "contentWindow",
     );
-    // TODO: Continue here!!!!
     const originalContentWindowGetter = contentWindowDescriptor.get;
     const contentWindowTemp = {
       get contentWindow() {
