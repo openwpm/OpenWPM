@@ -15,8 +15,7 @@ dependencies:
     - pandas
     - pip
     - pillow
-    - postgresql
-    - psycopg2
+    - psycopg
     - plyvel
     - psutil
     - pytest-postgresql

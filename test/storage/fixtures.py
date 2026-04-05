@@ -49,7 +49,7 @@ def structured_provider(
         pg = request.getfixturevalue("postgresql")
         info = pg.info
         pg_url = (
-            f"postgresql+psycopg2://{info.user}:{info.password or ''}"
+            f"postgresql+psycopg://{info.user}:{info.password or ''}"
             f"@{info.host}:{info.port}/{info.dbname}"
         )
         return SQLAlchemyStorageProvider(pg_url)
