@@ -1,0 +1,10 @@
+{
+  "uuid": "87ef9221-11a9-4217-ac98-29e3d1e4b151",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "CI STILL BROKEN: sqlalchemy=2.0.36 has no conda-forge build for Python 3.14 (cp314t). Same problem class as psycopg2 — conda-forge C-extension packages lag behind Python releases. Fix: move sqlalchemy, psycopg, pytest-postgresql to pip section of environment.yaml.",
+  "created_at": "2026-04-05T21:46:10.743395269Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAyJFDEWTnhdacINrC8hm6v1723raup7hsaexrzQ7fcTC3gp7MiYj8JHBm5HutfDXNWaHNs5CqtIHkY28e5OkABA=="
+}
