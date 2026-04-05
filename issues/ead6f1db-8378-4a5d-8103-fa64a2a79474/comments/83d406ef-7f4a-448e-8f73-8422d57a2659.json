@@ -1,0 +1,10 @@
+{
+  "uuid": "83d406ef-7f4a-448e-8f73-8422d57a2659",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "CI BROKEN: LibMambaUnsatisfiableError — postgresql-17.9 requires libpq which conflicts with python_abi 3.14 cp314t. psycopg2 (C extension) cannot be installed via conda on Python 3.14. Options: (1) use psycopg (pure Python, psycopg3) instead, (2) pip-install psycopg2-binary, (3) remove from conda deps and make PostgreSQL support pip-only.",
+  "created_at": "2026-04-05T19:46:30.869553361Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAtfJL6/yKEXa/2key6uOI8lTWlHKK8hHeKZxQa0UT/Oy7lH0eP0Jh2pP2pyAdsqWyjBzxX5aLzp+9KZl7RPWqCA=="
+}
