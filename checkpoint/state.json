@@ -7,10 +7,6 @@
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
-    "2": {
-      "agent_id": "Ziqo",
-      "claimed_at": "2026-04-05T12:44:32.682453151Z"
-    },
     "4": {
       "agent_id": "dns-fix-predicate",
       "claimed_at": "2026-04-03T00:10:01.755977682Z"
@@ -96,11 +92,16 @@
       "agent_id": "TqzF",
       "agent_seq": 2,
       "timestamp": "2026-04-05T12:47:02.872700842Z"
+    },
+    {
+      "agent_id": "Ziqo",
+      "agent_seq": 2,
+      "timestamp": "2026-04-05T12:47:21.107391494Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-05T12:47:02.872700842Z",
-    "agent_id": "TqzF",
+    "timestamp": "2026-04-05T12:47:21.107391494Z",
+    "agent_id": "Ziqo",
     "agent_seq": 2
   }
 }
