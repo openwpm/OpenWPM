@@ -1,0 +1,10 @@
+{
+  "uuid": "d29e2f2c-cbb6-47f8-8647-1f5a2f5a78da",
+  "issue_uuid": "d78ece19-2833-4a5f-a1b8-05f6574eb45a",
+  "author": "claude",
+  "content": "## Implementation Plan\n\nThe test server (test/utilities.py) uses http.server.SimpleHTTPRequestHandler with a custom MyHandler that already supports special paths (e.g. /MAGIC_REDIRECT/). No secondary server needed.\n\n### Approach\nAdd a /CONNECTION_ABORT/ path in MyHandler.do_GET that:\n1. Sends response headers (200 OK, Content-Length: 99999)\n2. Writes a few bytes of body\n3. Forcibly closes the socket (self.wfile.close() or self.connection.close())\n\nThis simulates a server abort after headers are sent. onHeadersReceived fires (headers arrived), but onCompleted does NOT fire (body never completes).\n\n### Test\nIn test/test_dns_instrument.py, add a test that:\n1. Navigates to http://localhost:<port>/CONNECTION_ABORT/\n2. Asserts a dns_responses row exists with populated ip/addresses\n3. This test would FAIL on master (onCompleted never fires for aborted connections)\n\n### Files to modify\n- test/utilities.py — add /CONNECTION_ABORT/ handler in MyHandler.do_GET\n- test/test_dns_instrument.py — add test_dns_captured_on_connection_abort\n\nGH issue #1160 deleted (crosslink-only per user request).",
+  "created_at": "2026-04-05T17:49:11.568755916Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABArhalo7M8BM9nSmV2/ttv/0WRbYJaYakSELZ2If95VxBFMe3RfY3LRAgY7bL9Gpv6WSqWcjQ2qTyT0jbgBROFAQ=="
+}
