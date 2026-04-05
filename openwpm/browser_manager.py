@@ -536,6 +536,7 @@ class BrowserManagerHandle:
 
             # Allow StorageWatchdog to utilize built-in browser reset functionality
             # which results in a graceful restart of the browser instance
+            reset = False
             if self.browser_params.maximum_profile_size:
                 assert self.current_profile_path is not None
 

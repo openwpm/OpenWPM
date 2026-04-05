@@ -87,28 +87,27 @@ def test_command_sequence_full_trace(jaeger_container, server, tmp_path, xpi):
         db_path = tmp_path / "crawl-data.sqlite"
         structured_provider = SQLiteStorageProvider(db_path)
 
-        manager = TaskManager(
+        with TaskManager(
             manager_params,
             browser_params,
             structured_provider,
             None,
-        )
+        ) as manager:
+            test_url = utilities.BASE_TEST_URL + "/simple_a.html"
+            cs = CommandSequence(test_url, blocking=True)
+            cs.get(sleep=0, timeout=60)
+            manager.execute_command_sequence(cs)
 
-        test_url = utilities.BASE_TEST_URL + "/simple_a.html"
-        cs = CommandSequence(test_url, blocking=True)
-        cs.get(sleep=0, timeout=60)
-        manager.execute_command_sequence(cs)
-        manager.close()
-
-        # Give Jaeger time to process and index the spans
-        time.sleep(5)
-
-        # Query Jaeger for traces from the browser manager service
-        service_name = "BrowserManager-"
-        # First, discover the actual service name (it includes the browser_id)
-        services_resp = requests.get(f"{jaeger_query_url}/api/services")
-        services_resp.raise_for_status()
-        services = services_resp.json().get("data", [])
+        # Poll Jaeger until spans are indexed (up to 30s)
+        services = []
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            time.sleep(2)
+            services_resp = requests.get(f"{jaeger_query_url}/api/services")
+            services_resp.raise_for_status()
+            services = services_resp.json().get("data", [])
+            if any(s.startswith("BrowserManager-") for s in services):
+                break
         browser_service = None
         for svc in services:
             if svc.startswith("BrowserManager-"):
