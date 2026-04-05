@@ -1,0 +1,10 @@
+{
+  "uuid": "d0f1dd48-81b1-411d-8a1c-d197be3daa25",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "claude",
+  "content": "VDD R4 NOT CONVERGED — Mediocre. Gating flag correctly wired but wrong psycopg2 variant: kept psycopg2-binary (abandoned on conda-forge, stuck at 2.9.1, no Python 3.14 support), removed psycopg2 (actively maintained at 2.9.11). The pinned environment.yaml now has zero working psycopg2 driver. Fix: reverse — keep psycopg2, remove psycopg2-binary. Needs R5.",
+  "created_at": "2026-04-05T17:32:19.135721980Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAOi1F/Bxa/cfZ3barPHPTysAIVFVk2vV4MOrZBkMg1n3ZwT7o3tbu5PMk8ZHsm+8+QAZcFW/t9wO7GMasAeY6DA=="
+}
