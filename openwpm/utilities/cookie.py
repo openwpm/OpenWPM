@@ -207,7 +207,6 @@ fact, this simply returns a SmartCookie.
 Finis.
 """
 
-
 # Import our required modules
 #
 

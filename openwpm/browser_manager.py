@@ -156,7 +156,7 @@ class BrowserManagerHandle:
                 "BROWSER %i: Spawn attempt %i " % (self.browser_id, unsuccessful_spawns)
             )
             # Resets the command/status queues
-            (self.command_queue, self.status_queue) = (Queue(), Queue())
+            self.command_queue, self.status_queue = (Queue(), Queue())
 
             # builds and launches the browser_manager
 

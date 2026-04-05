@@ -881,7 +881,9 @@ def test_page_visit(
     manager_params, browser_params = http_params()
     if delayed:
         for browser_param in browser_params:
-            browser_param.custom_params["pre_instrumentation_code"] = """
+            browser_param.custom_params[
+                "pre_instrumentation_code"
+            ] = """
                 const startTime = Date.now();
                 while (Date.now() - startTime < 5000) { // Delaying for 5s
                     console.log("delaying startup");

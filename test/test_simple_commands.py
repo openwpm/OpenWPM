@@ -20,7 +20,7 @@ from PIL import Image
 from openwpm import command_sequence
 from openwpm.utilities import db_utils
 
-from .conftest import HttpParams, TaskManagerCreator
+from .conftest import FullConfig, HttpParams, TaskManagerCreator
 from .utilities import ServerUrls
 
 NESTED_TEST_DIR = "/recursive_iframes/"
@@ -105,8 +105,10 @@ def test_get_site_visits_table_valid(
 
 
 def test_get_with_popup_blocking(
-    default_params, task_manager_creator, server: ServerUrls
-):
+    default_params: FullConfig,
+    task_manager_creator: TaskManagerCreator,
+    server: ServerUrls,
+) -> None:
     """Verify that visits complete when popup blocking is enabled.
 
     Regression test for #741: dom.disable_open_during_load causes
