@@ -1,1 +1,2 @@
 {"agent_id":"W2kW","agent_seq":1,"timestamp":"2026-04-05T12:39:45.311789854Z","event":{"type":"LockClaimed","issue_display_id":5}}
+{"agent_id":"W2kW","agent_seq":2,"timestamp":"2026-04-05T12:41:22.985494864Z","event":{"type":"LockReleased","issue_display_id":5}}
