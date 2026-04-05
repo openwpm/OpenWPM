@@ -1,0 +1,10 @@
+{
+  "uuid": "f58d9bea-d54c-444d-bf0a-7a4765587095",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "claude",
+  "content": "## Scope\n\nAdd an onErrorOccurred listener to dns-instrument.ts that writes a dns_responses row for failed DNS resolutions. Failed lookups (NXDOMAIN, timeouts, SERVFAIL) are invisible to the DNS instrument because onHeadersReceived never fires when DNS fails. For large-scale crawls, failed resolutions are a meaningful signal (dead domains, censorship, misconfiguration).\n\n## Acceptance Criteria\n\n- Register browser.webRequest.onErrorOccurred listener in dns-instrument.ts\n- On DNS-related errors (dnsNotFound, netTimeout where DNS is the cause), write a dns_responses row with addresses=NULL, used_address=NULL, and the error code\n- example.invalid must be captured as a failed resolution in the dns_responses table (reserved domain, guaranteed NXDOMAIN per RFC 2606)\n- Add a test that navigates to http://example.invalid/ and asserts a dns_responses row exists with NULL addresses and an error indicator\n- Schema update: add an error column (TEXT, nullable) to dns_responses in schema.sql, parquet_schema.py, and schema.ts\n- Existing successful DNS resolution behavior must not change\n\n## Context\n\nPR #1158 moved DNS capture to onHeadersReceived for redirect chain support. This extends coverage to the failure case. Can be a follow-up PR or folded into #1158.",
+  "created_at": "2026-04-05T17:44:03.018360178Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAY54z6VjOn0FGDmrRo1IOVg3oRnG7T6+4h56p8d7ovqpXVbCgs+gA1yPF63z+3kM0F3rUY0/03CPzhRsCS5VbAw=="
+}
