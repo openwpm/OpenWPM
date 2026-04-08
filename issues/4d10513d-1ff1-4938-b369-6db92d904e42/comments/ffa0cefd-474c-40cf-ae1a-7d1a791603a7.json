@@ -1,0 +1,8 @@
+{
+  "uuid": "ffa0cefd-474c-40cf-ae1a-7d1a791603a7",
+  "issue_uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "author": "jQHu",
+  "content": "Fixed mypy call-overload error on test/test_dns_instrument.py:33. Added type: ignore comment for list comprehension iterating query_db results (Union[Row, Tuple] not narrowed). All pre-commit checks pass.",
+  "created_at": "2026-04-08T00:49:26.912798352Z",
+  "kind": "handoff"
+}
