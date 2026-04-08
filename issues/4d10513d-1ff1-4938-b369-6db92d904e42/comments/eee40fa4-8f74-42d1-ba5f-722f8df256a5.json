@@ -1,0 +1,8 @@
+{
+  "uuid": "eee40fa4-8f74-42d1-ba5f-722f8df256a5",
+  "issue_uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "author": "hP5U",
+  "content": "Completed: Fixed two test failures from PR #1153 dynamic port changes. (1) test_dns_instrument - replaced hardcoded :8000 with server.port in assertion and connection_abort test. (2) test_profile - replaced relative profile.tar.gz paths with Path(__file__).parent / 'profile.tar.gz' in 3 locations. Pre-commit passes.",
+  "created_at": "2026-04-08T02:47:34.823266064Z",
+  "kind": "handoff"
+}
