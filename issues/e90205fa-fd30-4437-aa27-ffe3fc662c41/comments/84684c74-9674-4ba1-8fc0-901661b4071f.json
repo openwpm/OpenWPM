@@ -1,0 +1,8 @@
+{
+  "uuid": "84684c74-9674-4ba1-8fc0-901661b4071f",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "CP9M",
+  "content": "Result: All 3 DNS instrument tests pass (test_name_resolution, test_dns_captured_on_connection_abort, test_dns_failure_captured). All 10 storage tests pass. Extension builds successfully. Pre-commit checks all pass.",
+  "created_at": "2026-04-08T20:09:26.883961659Z",
+  "kind": "result"
+}
