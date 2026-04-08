@@ -1,0 +1,8 @@
+{
+  "uuid": "cc7953a2-6149-48ad-b085-276f8b3d7913",
+  "issue_uuid": "9168613c-5115-4dd8-831c-1f8f20aaf926",
+  "author": "aL8o",
+  "content": "Plan: Read test_browser_profile_coverage, trace data flow through HTTP instrument and crawl_history and places.sqlite, check Firefox prefs for missing network/search isolation, analyze CI environment",
+  "created_at": "2026-04-08T12:51:41.819515951Z",
+  "kind": "plan"
+}
