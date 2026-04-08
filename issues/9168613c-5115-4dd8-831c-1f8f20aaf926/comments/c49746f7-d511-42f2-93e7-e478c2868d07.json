@@ -1,0 +1,10 @@
+{
+  "uuid": "c49746f7-d511-42f2-93e7-e478c2868d07",
+  "issue_uuid": "9168613c-5115-4dd8-831c-1f8f20aaf926",
+  "author": "claude",
+  "content": "## Revised fix approach (depends on #13 / GH #1159)\n\nInstead of removing live sites or marking xfail, restructure the test to leverage DNS instrumentation:\n\nFor each site in TEST_SITES:\n1. Assert a dns_responses row exists (proves browser attempted resolution — works whether site is up or not)\n2. If addresses IS NOT NULL (DNS succeeded):\n   - Assert http_requests row exists for that domain\n   - Assert places.sqlite contains the domain\n3. If addresses IS NULL / error column set (DNS failed):\n   - Skip HTTP/places assertions — site was unreachable, not a test failure\n\nThis makes the test deterministic regardless of network conditions. baidu.com timing out becomes a valid test path rather than a failure. The test still exercises live DNS (proving instrumentation works on real domains) without being flaky on live HTTP.\n\nBlocked on: issue #13 (onErrorOccurred) for the DNS failure capture path.",
+  "created_at": "2026-04-08T19:54:56.815383989Z",
+  "kind": "plan",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAVQ91GfQn2/QwNtDnYxW+/7snRwWYmVUjLK9atGE8gT+8QOP/lPQMrQkxqrKAlbSC+aBjzsywL8Co+cyhV5f2Dg=="
+}
