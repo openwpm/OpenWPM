@@ -27,7 +27,7 @@ metadata = MetaData()
 task = Table(
     "task",
     metadata,
-    Column("task_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("task_id", Integer, primary_key=True, autoincrement=True),
     Column("start_time", Text, server_default=text("CURRENT_TIMESTAMP")),
     Column("manager_params", Text, nullable=False),
     Column("openwpm_version", Text, nullable=False),
@@ -39,7 +39,7 @@ crawl = Table(
     "crawl",
     metadata,
     Column("browser_id", Integer, primary_key=True, autoincrement=False),
-    Column("task_id", BigInteger, nullable=False),
+    Column("task_id", Integer, nullable=False),
     Column("browser_params", Text, nullable=False),
     Column("start_time", Text, server_default=text("CURRENT_TIMESTAMP")),
 )
@@ -269,6 +269,7 @@ dns_responses = Table(
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),
     Column("hostname", Text),
+    Column("redirect_url", Text),
     Column("addresses", Text),
     Column("used_address", Text),
     Column("canonical_name", Text),

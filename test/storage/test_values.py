@@ -25,7 +25,7 @@ def generate_test_values() -> dt_test_values:
 
     # task
     fields = {
-        "task_id": random.randint(0, 2**63 - 1),
+        "task_id": random.randint(0, 2**31 - 1),
         "manager_params": random_word(12),
         "openwpm_version": random_word(12),
         "browser_version": random_word(12),
@@ -34,7 +34,7 @@ def generate_test_values() -> dt_test_values:
     # crawl
     fields = {
         "browser_id": random.randint(0, 2**31 - 1),
-        "task_id": random.randint(0, 2**63 - 1),
+        "task_id": random.randint(0, 2**31 - 1),
         "browser_params": random_word(12),
     }
     test_values[TableName("crawl")] = fields
