@@ -1,0 +1,8 @@
+{
+  "uuid": "57eae30b-75b5-4d21-b984-efada3036f98",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "CP9M",
+  "content": "Completed: DNS failure capture via onErrorOccurred. Added onErrorOccurred listener to dns-instrument.ts filtering for NS_ERROR_UNKNOWN_HOST, new 'error' column in all schema files (SQLite, Parquet, TypeScript), test_values.py updated, new test_dns_failure_captured test using example.invalid. All 3 DNS tests and 10 storage tests pass. Pre-commit clean.",
+  "created_at": "2026-04-08T20:10:18.131840665Z",
+  "kind": "handoff"
+}
