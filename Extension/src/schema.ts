@@ -175,6 +175,7 @@ export interface DnsResolved {
   used_address?: string;
   canonical_name?: string;
   is_TRR?: string;
+  error?: string;
 }
 
 /**

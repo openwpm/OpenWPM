@@ -46,3 +46,27 @@ def test_dns_captured_on_connection_abort(default_params, task_manager_creator):
     assert result["used_address"] is not None
     assert result["addresses"] is not None
     assert result["hostname"] == "localhost"
+
+
+def test_dns_failure_captured(default_params, task_manager_creator):
+    """DNS failures (NXDOMAIN) should be captured via onErrorOccurred
+    with error details and null addresses."""
+    manager_params, browser_params = default_params
+    for browser_param in browser_params:
+        browser_param.dns_instrument = True
+
+    manager, db = task_manager_creator((manager_params, browser_params))
+    # example.invalid is guaranteed NXDOMAIN per RFC 2606
+    manager.get("http://example.invalid/")
+    manager.close()
+
+    results = db_utils.query_db(db, "SELECT * FROM dns_responses")
+    assert len(results) > 0, "No DNS responses captured for failed resolution"
+    # Find the row for example.invalid
+    dns_failure = [r for r in results if "example.invalid" in (r["hostname"] or "")]
+    assert len(dns_failure) > 0, "No DNS failure row for example.invalid"
+    result = dns_failure[0]
+    assert isinstance(result, Row)
+    assert result["addresses"] is None
+    assert result["used_address"] is None
+    assert result["error"] is not None

@@ -233,6 +233,7 @@ def generate_test_values() -> dt_test_values:
         "used_address": random_word(12),
         "canonical_name": random_word(12),
         "is_TRR": random.choice([True, False]),
+        "error": random_word(12),
         "time_stamp": random_word(12),
     }
     test_values[TableName("dns_responses")] = fields
