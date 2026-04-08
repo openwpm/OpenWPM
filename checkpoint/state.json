@@ -11,10 +11,6 @@
       "agent_id": "dns-fix-predicate",
       "claimed_at": "2026-04-03T00:10:01.755977682Z"
     },
-    "5": {
-      "agent_id": "hMVp",
-      "claimed_at": "2026-04-08T00:46:55.302250344Z"
-    },
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
@@ -176,11 +172,16 @@
       "agent_id": "hMVp",
       "agent_seq": 5,
       "timestamp": "2026-04-08T00:46:55.302250344Z"
+    },
+    {
+      "agent_id": "hMVp",
+      "agent_seq": 6,
+      "timestamp": "2026-04-08T00:57:46.078529732Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-08T00:46:55.302250344Z",
+    "timestamp": "2026-04-08T00:57:46.078529732Z",
     "agent_id": "hMVp",
-    "agent_seq": 5
+    "agent_seq": 6
   }
 }
