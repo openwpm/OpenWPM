@@ -1,0 +1,10 @@
+{
+  "uuid": "439953be-abcd-4bfb-906c-026338f845c0",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "claude",
+  "content": "VDD poll: #1161 CI-clean (AUTOINCREMENT fix worked, only baidu.com flake remains). #1153 pre-commit now passes (mypy fix worked) but has 2 real test failures: (1) DNS test hardcodes port 8000, (2) profile test uses relative path for profile.tar.gz. Fix agent running. PRs #1154, #1155, #1156 have only transient flakes. #1157 has pre-existing ProfileLoadError flakes.",
+  "created_at": "2026-04-08T02:44:02.195173464Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAu3YpbwI0IeL01QHV0VzoLmSdGXIcIU73Se5HMbEBkln6dE0puzWR55cOu5ikGbSOFWExvcEO2cBREk3VbRELCw=="
+}
