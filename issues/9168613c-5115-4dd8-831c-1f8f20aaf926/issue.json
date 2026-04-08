@@ -1,0 +1,10 @@
+{
+  "uuid": "9168613c-5115-4dd8-831c-1f8f20aaf926",
+  "display_id": 16,
+  "title": "Flaky test: test_browser_profile_coverage finds baidu.com",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-04-08T12:37:13.975189321Z",
+  "updated_at": "2026-04-08T12:37:13.975189321Z"
+}
