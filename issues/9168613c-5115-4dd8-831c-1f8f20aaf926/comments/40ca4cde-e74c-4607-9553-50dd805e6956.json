@@ -1,0 +1,10 @@
+{
+  "uuid": "40ca4cde-e74c-4607-9553-50dd805e6956",
+  "issue_uuid": "9168613c-5115-4dd8-831c-1f8f20aaf926",
+  "author": "claude",
+  "content": "GitHub issue: openwpm/OpenWPM#1163. Firefox contacts baidu.com during startup on some CI runs. Search engine initialization or DNS prefetch suspected.",
+  "created_at": "2026-04-08T12:37:17.535765096Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAiL33cB05uLOG2saDYj8AGmx1wwJe6A8CYIZxPYwYwP6qBO4f/vtF1iv6QeeSIoVb0voc/gfU90hojcHgMl9MDw=="
+}
