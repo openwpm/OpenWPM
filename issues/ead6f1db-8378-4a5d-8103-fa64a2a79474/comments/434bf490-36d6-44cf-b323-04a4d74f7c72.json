@@ -1,0 +1,8 @@
+{
+  "uuid": "434bf490-36d6-44cf-b323-04a4d74f7c72",
+  "issue_uuid": "ead6f1db-8378-4a5d-8103-fa64a2a79474",
+  "author": "hMVp",
+  "content": "Fixed test timeout on PR #1161. Root cause: task_id used BigInteger with sqlite_autoincrement=True in sqlalchemy_schema.py, but SQLite requires exactly INTEGER for AUTOINCREMENT. This caused OperationalError in SQLAlchemyStorageProvider.init(), crashing StorageController, which made TaskManager block forever on status_queue.get(). Fix: task_id → Integer, capped test_values task_id range, added missing dns_responses.redirect_url column. All storage tests pass locally.",
+  "created_at": "2026-04-08T00:57:48.830589806Z",
+  "kind": "handoff"
+}
