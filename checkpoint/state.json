@@ -226,11 +226,16 @@
       "agent_id": "Ap28",
       "agent_seq": 3,
       "timestamp": "2026-04-08T20:01:19.771032143Z"
+    },
+    {
+      "agent_id": "Ap28",
+      "agent_seq": 4,
+      "timestamp": "2026-04-08T20:01:22.976972333Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-08T20:01:19.771032143Z",
+    "timestamp": "2026-04-08T20:01:22.976972333Z",
     "agent_id": "Ap28",
-    "agent_seq": 3
+    "agent_seq": 4
   }
 }
