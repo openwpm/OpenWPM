@@ -30,7 +30,7 @@ def test_name_resolution(
     assert "test.localhost:8000" in result["redirect_url"]
 
     # Each redirect hop should record the URL it was associated with
-    redirect_urls = [r["redirect_url"] for r in results]
+    redirect_urls = [r["redirect_url"] for r in results]  # type: ignore[call-overload]
     assert all(url is not None for url in redirect_urls)
 
 
