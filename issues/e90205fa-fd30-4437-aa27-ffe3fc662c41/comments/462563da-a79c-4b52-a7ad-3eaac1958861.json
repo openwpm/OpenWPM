@@ -1,0 +1,8 @@
+{
+  "uuid": "462563da-a79c-4b52-a7ad-3eaac1958861",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "CP9M",
+  "content": "Plan: Add DNS failure capture via onErrorOccurred. Key files: dns-instrument.ts, schema.ts, schema.sql, parquet_schema.py, test_values.py, test_dns_instrument.py. Strategy: filter for NS_ERROR_UNKNOWN_HOST in onErrorOccurred, write dns_responses row with null addresses and error string.",
+  "created_at": "2026-04-08T19:57:01.084728212Z",
+  "kind": "plan"
+}
