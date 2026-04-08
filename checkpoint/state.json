@@ -161,11 +161,16 @@
       "agent_id": "jQHu",
       "agent_seq": 1,
       "timestamp": "2026-04-08T00:46:39.285250838Z"
+    },
+    {
+      "agent_id": "hMVp",
+      "agent_seq": 3,
+      "timestamp": "2026-04-08T00:46:44.257652679Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-08T00:46:39.285250838Z",
-    "agent_id": "jQHu",
-    "agent_seq": 1
+    "timestamp": "2026-04-08T00:46:44.257652679Z",
+    "agent_id": "hMVp",
+    "agent_seq": 3
   }
 }
