@@ -1,0 +1,10 @@
+{
+  "uuid": "c2f18a88-4151-4289-8087-5f73d8317a93",
+  "display_id": 15,
+  "title": "Flaky test: test_cache_hits_recorded wrong cache counts",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-04-08T12:37:08.645397437Z",
+  "updated_at": "2026-04-08T12:37:08.645397437Z"
+}
