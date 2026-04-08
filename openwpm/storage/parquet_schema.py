@@ -242,6 +242,7 @@ fields = [
     pa.field("used_address", pa.string()),
     pa.field("canonical_name", pa.string()),
     pa.field("is_TRR", pa.bool_()),
+    pa.field("error", pa.string()),
     pa.field("time_stamp", pa.string(), nullable=False),
     pa.field("instance_id", pa.uint32(), nullable=False),
 ]

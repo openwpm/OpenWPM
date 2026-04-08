@@ -245,5 +245,6 @@ CREATE TABLE IF NOT EXISTS dns_responses (
   used_address TEXT,
   canonical_name TEXT,
   is_TRR INTEGER,
+  error TEXT,
   time_stamp DATETIME NOT NULL
  );
