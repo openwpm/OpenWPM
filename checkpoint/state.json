@@ -14,6 +14,10 @@
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
+    },
+    "15": {
+      "agent_id": "bNj3",
+      "claimed_at": "2026-04-08T12:38:11.461431890Z"
     }
   },
   "issues": {},
@@ -182,11 +186,16 @@
       "agent_id": "hP5U",
       "agent_seq": 1,
       "timestamp": "2026-04-08T02:44:36.450582716Z"
+    },
+    {
+      "agent_id": "bNj3",
+      "agent_seq": 1,
+      "timestamp": "2026-04-08T12:38:11.461431890Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-08T02:44:36.450582716Z",
-    "agent_id": "hP5U",
+    "timestamp": "2026-04-08T12:38:11.461431890Z",
+    "agent_id": "bNj3",
     "agent_seq": 1
   }
 }
