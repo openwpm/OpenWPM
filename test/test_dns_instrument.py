@@ -27,14 +27,14 @@ def test_name_resolution(
     assert result["hostname"] == "test.localhost"
     assert result["canonical_name"] == "test.localhost"
     assert result["redirect_url"] is not None
-    assert "test.localhost:8000" in result["redirect_url"]
+    assert f"test.localhost:{server.port}" in result["redirect_url"]
 
     # Each redirect hop should record the URL it was associated with
     redirect_urls = [r["redirect_url"] for r in results]  # type: ignore[call-overload]
     assert all(url is not None for url in redirect_urls)
 
 
-def test_dns_captured_on_connection_abort(default_params, task_manager_creator):
+def test_dns_captured_on_connection_abort(default_params, task_manager_creator, server):
     """Regression test: DNS data must be captured even when the connection
     aborts before completion. This verifies that the extension uses
     onHeadersReceived (not onCompleted) to record DNS responses."""
@@ -43,7 +43,7 @@ def test_dns_captured_on_connection_abort(default_params, task_manager_creator):
         browser_param.dns_instrument = True
 
     manager, db = task_manager_creator((manager_params, browser_params))
-    manager.get("http://localhost:8000/CONNECTION_ABORT/")
+    manager.get(f"http://localhost:{server.port}/CONNECTION_ABORT/")
     manager.close()
 
     results = db_utils.query_db(db, "SELECT * FROM dns_responses")

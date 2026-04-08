@@ -115,7 +115,7 @@ def test_profile_saved_when_launch_crashes(
 
 def test_seed_persistence(default_params, task_manager_creator, server):
     manager_params, browser_params = default_params
-    p = Path("profile.tar.gz")
+    p = Path(__file__).parent / "profile.tar.gz"
     for browser_param in browser_params:
         browser_param.seed_tar = p
     manager, db = task_manager_creator(default_params)
@@ -184,7 +184,7 @@ def test_dump_profile_command(default_params, task_manager_creator, server):
 
 def test_load_tar_file(tmp_path):
     """Test that load_profile does not delete or modify the tar file."""
-    tar_path = Path("profile.tar.gz")
+    tar_path = Path(__file__).parent / "profile.tar.gz"
     profile_path = tmp_path / "browser_profile"
     browser_params = BrowserParamsInternal(browser_id=1)
     modified_time_before_load = tar_path.stat().st_mtime
@@ -209,7 +209,11 @@ def test_crash_during_init(default_params, task_manager_creator):
 
 @pytest.mark.parametrize(
     "stateful,seed_tar",
-    [(True, None), (True, Path("profile.tar.gz")), (False, Path("profile.tar.gz"))],
+    [
+        (True, None),
+        (True, Path(__file__).parent / "profile.tar.gz"),
+        (False, Path(__file__).parent / "profile.tar.gz"),
+    ],
     ids=[
         "stateful-without_seed_tar",
         "stateful-with_seed_tar",
