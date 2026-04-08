@@ -1,1 +1,2 @@
 {"agent_id":"bNj3","agent_seq":1,"timestamp":"2026-04-08T12:38:11.461431890Z","event":{"type":"LockClaimed","issue_display_id":15}}
+{"agent_id":"bNj3","agent_seq":2,"timestamp":"2026-04-08T13:02:02.444127807Z","event":{"type":"LockReleased","issue_display_id":15}}
