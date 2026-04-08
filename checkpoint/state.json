@@ -8,8 +8,8 @@
       "claimed_at": "2026-03-30T07:49:41.351727687Z"
     },
     "4": {
-      "agent_id": "dns-fix-predicate",
-      "claimed_at": "2026-04-03T00:10:01.755977682Z"
+      "agent_id": "Ap28",
+      "claimed_at": "2026-04-08T20:01:32.755147412Z"
     },
     "10": {
       "agent_id": "refactor-ports",
@@ -231,11 +231,16 @@
       "agent_id": "Ap28",
       "agent_seq": 4,
       "timestamp": "2026-04-08T20:01:22.976972333Z"
+    },
+    {
+      "agent_id": "Ap28",
+      "agent_seq": 5,
+      "timestamp": "2026-04-08T20:01:32.755147412Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-08T20:01:22.976972333Z",
+    "timestamp": "2026-04-08T20:01:32.755147412Z",
     "agent_id": "Ap28",
-    "agent_seq": 4
+    "agent_seq": 5
   }
 }

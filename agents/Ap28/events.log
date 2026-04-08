@@ -2,3 +2,4 @@
 {"agent_id":"Ap28","agent_seq":2,"timestamp":"2026-04-08T20:01:10.459037395Z","event":{"type":"LockReleased","issue_display_id":4}}
 {"agent_id":"Ap28","agent_seq":3,"timestamp":"2026-04-08T20:01:19.771032143Z","event":{"type":"LockClaimed","issue_display_id":4}}
 {"agent_id":"Ap28","agent_seq":4,"timestamp":"2026-04-08T20:01:22.976972333Z","event":{"type":"LockReleased","issue_display_id":4}}
+{"agent_id":"Ap28","agent_seq":5,"timestamp":"2026-04-08T20:01:32.755147412Z","event":{"type":"LockClaimed","issue_display_id":4}}
