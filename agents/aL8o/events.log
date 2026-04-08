@@ -1,1 +1,2 @@
 {"agent_id":"aL8o","agent_seq":1,"timestamp":"2026-04-08T12:38:26.608707322Z","event":{"type":"LockClaimed","issue_display_id":16}}
+{"agent_id":"aL8o","agent_seq":2,"timestamp":"2026-04-08T12:52:32.148332520Z","event":{"type":"LockReleased","issue_display_id":16}}
