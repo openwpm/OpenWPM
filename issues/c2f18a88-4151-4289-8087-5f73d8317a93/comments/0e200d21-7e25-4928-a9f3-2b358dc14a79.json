@@ -1,0 +1,10 @@
+{
+  "uuid": "0e200d21-7e25-4928-a9f3-2b358dc14a79",
+  "issue_uuid": "c2f18a88-4151-4289-8087-5f73d8317a93",
+  "author": "claude",
+  "content": "GitHub issue: openwpm/OpenWPM#1162. Intermittent cache count mismatch — resources report 1 cache hit when 0 expected. Fails on master and all PRs.",
+  "created_at": "2026-04-08T12:37:12.170838167Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA7Y3j8TJKyrQCOfbXBiz03HOCRx/psgO9omWDXyNyWynTMdhtWVkPQ1LN5lRYMHWeLxrK5PVXRKi6rVWfsWeaCA=="
+}
