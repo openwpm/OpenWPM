@@ -1,0 +1,8 @@
+{
+  "uuid": "46918b62-66ea-439c-b2ff-744892b9d806",
+  "issue_uuid": "9168613c-5115-4dd8-831c-1f8f20aaf926",
+  "author": "aL8o",
+  "content": "Completed: Root cause analysis for flaky test_browser_profile_coverage. Primary cause is intermittent network failures to baidu.com from US-based CI runners — HTTP requests are recorded by the extension but Firefox does not add failed navigations to places.sqlite, causing the assertion to fail. Documented 5 contributing factors and 4 fix options. Research only, no code changes.",
+  "created_at": "2026-04-08T12:52:35.283076045Z",
+  "kind": "handoff"
+}
