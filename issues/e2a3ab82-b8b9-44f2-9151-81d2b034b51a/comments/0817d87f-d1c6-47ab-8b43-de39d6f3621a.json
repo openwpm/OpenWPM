@@ -1,0 +1,10 @@
+{
+  "uuid": "0817d87f-d1c6-47ab-8b43-de39d6f3621a",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "claude",
+  "content": "VDD poll: Pushed dns port + profile path fix to #1153. Hater: '...Fine.' CI re-running. All 6 PRs are now hater-converged. Awaiting final CI green on #1153.",
+  "created_at": "2026-04-08T03:45:05.652534678Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAdvBAmVkAFr8LE0Y3ZO0hQBq9Z9E06ZuJabi7N3zwzdSceDjRxpkoFQdD41yTtquw47sW7QlWwHn0Z4MsH6DQDQ=="
+}
