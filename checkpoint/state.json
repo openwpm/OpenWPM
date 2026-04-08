@@ -12,8 +12,8 @@
       "claimed_at": "2026-04-03T00:10:01.755977682Z"
     },
     "5": {
-      "agent_id": "lksL",
-      "claimed_at": "2026-04-05T21:46:52.432616829Z"
+      "agent_id": "hMVp",
+      "claimed_at": "2026-04-08T00:46:55.302250344Z"
     },
     "10": {
       "agent_id": "refactor-ports",
@@ -171,11 +171,16 @@
       "agent_id": "hMVp",
       "agent_seq": 4,
       "timestamp": "2026-04-08T00:46:46.962212261Z"
+    },
+    {
+      "agent_id": "hMVp",
+      "agent_seq": 5,
+      "timestamp": "2026-04-08T00:46:55.302250344Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-08T00:46:46.962212261Z",
+    "timestamp": "2026-04-08T00:46:55.302250344Z",
     "agent_id": "hMVp",
-    "agent_seq": 4
+    "agent_seq": 5
   }
 }
