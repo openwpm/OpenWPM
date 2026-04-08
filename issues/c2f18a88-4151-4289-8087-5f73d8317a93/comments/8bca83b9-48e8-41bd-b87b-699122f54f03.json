@@ -1,0 +1,8 @@
+{
+  "uuid": "8bca83b9-48e8-41bd-b87b-699122f54f03",
+  "issue_uuid": "c2f18a88-4151-4289-8087-5f73d8317a93",
+  "author": "bNj3",
+  "content": "Completed: Root cause analysis of test_cache_hits_recorded flakiness. Three interacting causes identified: (1) non-deterministic image cache isolation between new_window tabs, (2) no Cache-Control headers from test server causing heuristic caching, (3) async handler race condition in extension with visitID stamping. Research only, no code changes.",
+  "created_at": "2026-04-08T13:02:05.677658049Z",
+  "kind": "handoff"
+}
