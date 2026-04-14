@@ -1,6 +1,6 @@
 import pytest
 
-from openwpm.browser_manager import _is_dns_error
+from openwpm.browser_manager import is_dns_error
 from openwpm.commands.utils.webdriver_utils import parse_neterror
 from openwpm.utilities import db_utils
 
@@ -58,29 +58,29 @@ def test_dns_error_does_not_count_against_failure_limit(
     assert len(dns_rows) == num_domains
 
 
-def test_is_dns_error_predicate():
-    """AC-5: Verify that _is_dns_error is True only for dnsNotFound neterrors.
+def testis_dns_error_predicate():
+    """AC-5: Verify that is_dns_error is True only for dnsNotFound neterrors.
 
     Non-DNS neterror types (connectionRefused, netOffline, etc.) and other
     command statuses must NOT be treated as DNS errors, so they continue to
     increment failure_count as before.
     """
     # Only this exact combination qualifies
-    assert _is_dns_error("neterror", "dnsNotFound") is True
+    assert is_dns_error("neterror", "dnsNotFound") is True
 
     # Other neterror types must NOT be exempt
-    assert _is_dns_error("neterror", "connectionRefused") is False
-    assert _is_dns_error("neterror", "netOffline") is False
-    assert _is_dns_error("neterror", "proxyConnectFailure") is False
+    assert is_dns_error("neterror", "connectionRefused") is False
+    assert is_dns_error("neterror", "netOffline") is False
+    assert is_dns_error("neterror", "proxyConnectFailure") is False
 
     # Missing error_text must NOT be exempt
-    assert _is_dns_error("neterror", None) is False
+    assert is_dns_error("neterror", None) is False
 
     # Non-neterror statuses must NOT be exempt
-    assert _is_dns_error("ok", "dnsNotFound") is False
-    assert _is_dns_error("critical", "dnsNotFound") is False
-    assert _is_dns_error("error", "dnsNotFound") is False
-    assert _is_dns_error("timeout", "dnsNotFound") is False
+    assert is_dns_error("ok", "dnsNotFound") is False
+    assert is_dns_error("critical", "dnsNotFound") is False
+    assert is_dns_error("error", "dnsNotFound") is False
+    assert is_dns_error("timeout", "dnsNotFound") is False
 
     # parse_neterror returns the right code for a DNS failure message
     dns_msg = (
@@ -90,7 +90,7 @@ def test_is_dns_error_predicate():
         "f=regular&d=We+can%27t+connect"
     )
     assert parse_neterror(dns_msg) == "dnsNotFound"
-    assert _is_dns_error("neterror", parse_neterror(dns_msg)) is True
+    assert is_dns_error("neterror", parse_neterror(dns_msg)) is True
 
     # A different neterror code does NOT trigger the exemption
     conn_msg = (
@@ -100,4 +100,4 @@ def test_is_dns_error_predicate():
         "f=regular&d=refused."
     )
     assert parse_neterror(conn_msg) == "connectionRefused"
-    assert _is_dns_error("neterror", parse_neterror(conn_msg)) is False
+    assert is_dns_error("neterror", parse_neterror(conn_msg)) is False
