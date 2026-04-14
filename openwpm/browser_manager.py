@@ -43,12 +43,13 @@ if TYPE_CHECKING:
     from .task_manager import TaskManager
 
 
-def _is_dns_error(command_status: str, error_text: Optional[str]) -> bool:
+def is_dns_error(command_status: str, error_text: Optional[str]) -> bool:
     """Return True when the failure is a DNS resolution error (NXDOMAIN).
 
     DNS resolution errors are expected when crawling large domain lists
     (e.g. Tranco top-100k) and don't indicate a browser or instrumentation
-    failure.  # Only NXDOMAIN; DNS timeouts/SERVFAIL intentionally still count
+    failure.  Only NXDOMAIN is excluded; DNS timeouts and SERVFAIL
+    intentionally still count.
     """
     return (
         command_status == "neterror"
@@ -476,7 +477,7 @@ class BrowserManagerHandle:
                 return
 
             if command_status != "ok":
-                if not _is_dns_error(command_status, error_text):
+                if not is_dns_error(command_status, error_text):
                     with task_manager.threadlock:
                         task_manager.failure_count += 1
                 if task_manager.failure_count > task_manager.failure_limit:
