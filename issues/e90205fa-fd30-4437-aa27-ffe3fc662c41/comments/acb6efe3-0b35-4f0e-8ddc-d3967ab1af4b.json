@@ -1,0 +1,8 @@
+{
+  "uuid": "acb6efe3-0b35-4f0e-8ddc-d3967ab1af4b",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "Mp1e",
+  "content": "Completed: Removed NS_ERROR_NET_TIMEOUT and NS_ERROR_DNS_RESOLVE_UNKNOWN_HOST from DNS_ERROR_STRINGS. NS_ERROR_NET_TIMEOUT is a generic network timeout (false positive for DNS). NS_ERROR_DNS_RESOLVE_UNKNOWN_HOST doesn't exist in Firefox. Only NS_ERROR_UNKNOWN_HOST remains. Added explanatory comment. Research saved to knowledge page firefox-dns-errors.",
+  "created_at": "2026-04-15T10:51:08.142958318Z",
+  "kind": "handoff"
+}
