@@ -1,12 +1,16 @@
 import { DnsResolved } from "../schema";
 import { allTypes } from "./http-instrument";
-import { WebRequestOnHeadersReceivedDetails } from "../types/browser-web-request-event-details";
+import {
+  WebRequestOnErrorOccurredDetails,
+  WebRequestOnHeadersReceivedDetails,
+} from "../types/browser-web-request-event-details";
 import RequestFilter = browser.webRequest.RequestFilter;
 
 // Firefox error strings that indicate DNS resolution failure
 const DNS_ERROR_STRINGS = [
   "NS_ERROR_UNKNOWN_HOST",
   "NS_ERROR_DNS_RESOLVE_UNKNOWN_HOST",
+  "NS_ERROR_NET_TIMEOUT",
 ];
 
 export class DnsInstrument {
@@ -49,7 +53,7 @@ export class DnsInstrument {
     );
 
     this.onErrorOccurredListener = (
-      details: browser.webRequest._OnErrorOccurredDetails,
+      details: WebRequestOnErrorOccurredDetails,
     ) => {
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
@@ -113,7 +117,7 @@ export class DnsInstrument {
   }
 
   private onErrorOccurredDnsHandler(
-    details: browser.webRequest._OnErrorOccurredDetails,
+    details: WebRequestOnErrorOccurredDetails,
     crawlID,
   ) {
     const dnsRecord = {} as DnsResolved;

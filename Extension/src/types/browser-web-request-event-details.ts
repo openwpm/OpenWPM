@@ -23,3 +23,6 @@ export interface WebRequestOnHeadersReceivedDetails
    */
   ip?: string;
 }
+
+export type WebRequestOnErrorOccurredDetails =
+  browser.webRequest._OnErrorOccurredDetails;
