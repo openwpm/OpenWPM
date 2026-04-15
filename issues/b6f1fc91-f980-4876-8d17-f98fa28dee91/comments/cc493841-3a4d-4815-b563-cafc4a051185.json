@@ -1,0 +1,10 @@
+{
+  "uuid": "cc493841-3a4d-4815-b563-cafc4a051185",
+  "issue_uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
+  "author": "claude",
+  "content": "VDD Copilot fix hater: rename was too greedy — test_is_dns_error_predicate became testis_dns_error_predicate (missing underscore). Needs one more fix.",
+  "created_at": "2026-04-15T08:59:43.545423288Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA9KAQUS+4bgk86Koymr01W0gi90eVkymWQSUoO4b/bZWw3fwwMg+0UpiuHsu3+D5id/k6oRsI4AkEsa/l6rHoCA=="
+}
