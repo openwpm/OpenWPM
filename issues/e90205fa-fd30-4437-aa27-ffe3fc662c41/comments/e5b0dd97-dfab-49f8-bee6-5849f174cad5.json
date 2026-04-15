@@ -1,0 +1,10 @@
+{
+  "uuid": "e5b0dd97-dfab-49f8-bee6-5849f174cad5",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "claude",
+  "content": "VDD Copilot fix hater: Major finding — NS_ERROR_NET_TIMEOUT is a generic network timeout (TCP/TLS/HTTP), not DNS-specific. Adding it to DNS_ERROR_STRINGS pollutes dns_responses with non-DNS failures. Either find a Firefox-specific DNS timeout error string, or remove it and keep only the NXDOMAIN errors. Needs fix.",
+  "created_at": "2026-04-15T10:47:48.278025354Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA7BT8h8GlDuM5rnejdFJhmDr6uAEF9vkGrgKoGmsDV7LwRuKD6fOdFbAyA54fND4hB0xTK/ibmO7tQc74bQVwCg=="
+}
