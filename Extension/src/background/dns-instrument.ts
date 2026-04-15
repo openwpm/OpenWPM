@@ -6,12 +6,12 @@ import {
 } from "../types/browser-web-request-event-details";
 import RequestFilter = browser.webRequest.RequestFilter;
 
-// Firefox error strings that indicate DNS resolution failure
-const DNS_ERROR_STRINGS = [
-  "NS_ERROR_UNKNOWN_HOST",
-  "NS_ERROR_DNS_RESOLVE_UNKNOWN_HOST",
-  "NS_ERROR_NET_TIMEOUT",
-];
+// Firefox error strings that indicate DNS resolution failure.
+// Note: NS_ERROR_NET_TIMEOUT is intentionally excluded — it is a generic
+// network timeout (TCP connect, TLS handshake, HTTP read, etc.), not
+// DNS-specific. DNS timeouts in Firefox surface as NS_ERROR_UNKNOWN_HOST
+// when the resolver gives up; there is no dedicated DNS timeout error.
+const DNS_ERROR_STRINGS = ["NS_ERROR_UNKNOWN_HOST"];
 
 export class DnsInstrument {
   private readonly dataReceiver;
