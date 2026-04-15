@@ -48,7 +48,7 @@ def is_dns_error(command_status: str, error_text: Optional[str]) -> bool:
 
     DNS resolution errors are expected when crawling large domain lists
     (e.g. Tranco top-100k) and don't indicate a browser or instrumentation
-    failure.  Only NXDOMAIN is excluded; DNS timeouts and SERVFAIL
+    failure. Only NXDOMAIN is excluded; DNS timeouts and SERVFAIL
     intentionally still count.
     """
     return (

@@ -58,7 +58,7 @@ def test_dns_error_does_not_count_against_failure_limit(
     assert len(dns_rows) == num_domains
 
 
-def testis_dns_error_predicate():
+def test_is_dns_error_predicate():
     """AC-5: Verify that is_dns_error is True only for dnsNotFound neterrors.
 
     Non-DNS neterror types (connectionRefused, netOffline, etc.) and other
