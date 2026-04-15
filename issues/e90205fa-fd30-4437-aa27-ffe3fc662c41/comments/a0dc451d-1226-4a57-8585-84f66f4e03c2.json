@@ -1,0 +1,8 @@
+{
+  "uuid": "a0dc451d-1226-4a57-8585-84f66f4e03c2",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "Mp1e",
+  "content": "[action] Fixing DNS_ERROR_STRINGS: removing NS_ERROR_NET_TIMEOUT (generic timeout, not DNS-specific)",
+  "created_at": "2026-04-15T10:49:30.495692167Z",
+  "kind": "note"
+}
