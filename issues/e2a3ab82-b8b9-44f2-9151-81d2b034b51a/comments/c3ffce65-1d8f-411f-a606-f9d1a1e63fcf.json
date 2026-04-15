@@ -1,0 +1,10 @@
+{
+  "uuid": "c3ffce65-1d8f-411f-a606-f9d1a1e63fcf",
+  "issue_uuid": "e2a3ab82-b8b9-44f2-9151-81d2b034b51a",
+  "author": "claude",
+  "content": "VDD poll: #1153, #1156, #1164 all CI green. #1164 Copilot fix had NS_ERROR_NET_TIMEOUT false positive (generic timeout, not DNS-specific) — fix agent running to remove it. 6 of 7 PRs fully done. #1164 needs one more round.",
+  "created_at": "2026-04-15T10:48:09.844670804Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABABHNcplXFpVt+JFir9wR0CCAaxIE230awqIVkW9/8U/stx+AmHT3V24NM6fv+6sXw7+cpukWcbAVKoUFQ1vn1AQ=="
+}
