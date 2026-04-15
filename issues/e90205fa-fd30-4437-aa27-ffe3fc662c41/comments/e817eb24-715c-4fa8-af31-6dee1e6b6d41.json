@@ -1,0 +1,8 @@
+{
+  "uuid": "e817eb24-715c-4fa8-af31-6dee1e6b6d41",
+  "issue_uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "author": "hrpZ",
+  "content": "Completed: Added WebRequestOnErrorOccurredDetails type alias wrapper, replaced direct underscore-prefixed type usage in dns-instrument.ts, added NS_ERROR_NET_TIMEOUT to DNS error filter for timeout capture.",
+  "created_at": "2026-04-15T09:50:09.511008536Z",
+  "kind": "handoff"
+}
