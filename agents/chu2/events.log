@@ -1,1 +1,2 @@
 {"agent_id":"chu2","agent_seq":1,"timestamp":"2026-04-19T21:37:28.529141883Z","event":{"type":"LockClaimed","issue_display_id":19}}
+{"agent_id":"chu2","agent_seq":2,"timestamp":"2026-04-19T21:39:22.855061335Z","event":{"type":"LockReleased","issue_display_id":19}}

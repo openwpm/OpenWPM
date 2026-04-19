@@ -15,10 +15,6 @@
       "agent_id": "5ebR",
       "claimed_at": "2026-04-19T21:37:02.464282492Z"
     },
-    "19": {
-      "agent_id": "chu2",
-      "claimed_at": "2026-04-19T21:37:28.529141883Z"
-    },
     "21": {
       "agent_id": "bgpz",
       "claimed_at": "2026-04-19T21:37:54.447493083Z"
@@ -315,11 +311,16 @@
       "agent_id": "um2t",
       "agent_seq": 2,
       "timestamp": "2026-04-19T21:38:14.795198683Z"
+    },
+    {
+      "agent_id": "chu2",
+      "agent_seq": 2,
+      "timestamp": "2026-04-19T21:39:22.855061335Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-19T21:38:14.795198683Z",
-    "agent_id": "um2t",
+    "timestamp": "2026-04-19T21:39:22.855061335Z",
+    "agent_id": "chu2",
     "agent_seq": 2
   }
 }
