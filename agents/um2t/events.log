@@ -1,1 +1,2 @@
 {"agent_id":"um2t","agent_seq":1,"timestamp":"2026-04-19T21:36:55.816561693Z","event":{"type":"LockClaimed","issue_display_id":20}}
+{"agent_id":"um2t","agent_seq":2,"timestamp":"2026-04-19T21:38:14.795198683Z","event":{"type":"LockReleased","issue_display_id":20}}
