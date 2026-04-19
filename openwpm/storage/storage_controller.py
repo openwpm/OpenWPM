@@ -11,6 +11,7 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
+from opentelemetry import propagate, trace
 
 from openwpm.utilities.multiprocess_utils import Process
 
@@ -36,6 +37,8 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 INVALID_VISIT_ID = VisitId(-1)
+
+_tracer = trace.get_tracer(__name__)
 
 
 class StorageController:
@@ -106,6 +109,7 @@ class StorageController:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
         self.logger.info(f"Initializing new handler for {client_name}")
+
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
@@ -121,43 +125,54 @@ class StorageController:
             self._last_record_received = time.time()
             record_type, data = record
 
-            if record_type == RECORD_TYPE_CREATE:
-                raise RuntimeError(
-                    f"""{RECORD_TYPE_CREATE} is no longer supported.
-                    Please change the schema before starting the StorageController.
-                    For an example of that see test/test_custom_function.py
-                    """
+            # Extract propagated OTel context so spans in the
+            # StorageController are children of the caller's span.
+            parent_ctx = None
+            if isinstance(data, dict):
+                otel_carrier = data.pop("__otel_ctx", None)
+                if otel_carrier:
+                    parent_ctx = propagate.extract(otel_carrier)
+
+            with _tracer.start_as_current_span(
+                "process_record", context=parent_ctx
+            ) as span:
+                span.set_attributes(
+                    {"record_type": record_type, "client_name": client_name}
                 )
 
-            if record_type == RECORD_TYPE_CONTENT:
-                assert len(data) == 2
-                if self.unstructured_storage is None:
-                    self.logger.error(
-                        """Tried to save content while not having
-                        provided any unstructured storage provider."""
+                if record_type == RECORD_TYPE_CREATE:
+                    raise RuntimeError(f"""{RECORD_TYPE_CREATE} is no longer supported.
+                        Please change the schema before starting the StorageController.
+                        For an example of that see test/test_custom_function.py
+                        """)
+
+                if record_type == RECORD_TYPE_CONTENT:
+                    assert len(data) == 2
+                    if self.unstructured_storage is None:
+                        self.logger.error("""Tried to save content while not having
+                            provided any unstructured storage provider.""")
+                        continue
+                    content, content_hash = data
+                    content = base64.b64decode(content)
+                    await self.unstructured_storage.store_blob(
+                        filename=content_hash, blob=content
                     )
                     continue
-                content, content_hash = data
-                content = base64.b64decode(content)
-                await self.unstructured_storage.store_blob(
-                    filename=content_hash, blob=content
-                )
-                continue
 
-            if "visit_id" not in data:
-                self.logger.error(
-                    "Skipping record: No visit_id contained in record %r", record
-                )
-                continue
+                if "visit_id" not in data:
+                    self.logger.error(
+                        "Skipping record: No visit_id contained in record %r", record
+                    )
+                    continue
 
-            visit_id = VisitId(data["visit_id"])
+                visit_id = VisitId(data["visit_id"])
 
-            if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
-                continue
+                if record_type == RECORD_TYPE_META:
+                    await self._handle_meta(visit_id, data)
+                    continue
 
-            table_name = TableName(record_type)
-            await self.store_record(table_name, visit_id, data)
+                table_name = TableName(record_type)
+                await self.store_record(table_name, visit_id, data)
 
     async def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -195,6 +210,7 @@ class StorageController:
         else:
             raise ValueError("Unexpected action: %s", action)
 
+    @_tracer.start_as_current_span("finalize_visit_id")
     async def finalize_visit_id(
         self, visit_id: VisitId, success: bool
     ) -> Optional[Task[None]]:
@@ -205,6 +221,9 @@ class StorageController:
         See StructuredStorageProvider::finalize_visit_id for additional
         documentation
         """
+        trace.get_current_span().set_attributes(
+            {"success": success, "visit_id": visit_id}
+        )
 
         # If the following critical section contains any await statement
         # we can run into race conditions as reported by https://github.com/openwpm/OpenWPM/issues/1068
@@ -258,6 +277,7 @@ class StorageController:
                 visit_id_count,
             )
 
+    @_tracer.start_as_current_span("data_saving")
     async def shutdown(self, completion_queue_task: Task[None]) -> None:
         self.logger.info("Entering self.shutdown")
         completion_tokens = {}
@@ -338,13 +358,15 @@ class StorageController:
             self.finalize_tasks = new_finalize_tasks
             await asyncio.sleep(5)
 
+    @_tracer.start_as_current_span("storage_controller")
     async def _run(self) -> None:
-        await self.structured_storage.init()
-        if self.unstructured_storage:
-            await self.unstructured_storage.init()
-        server: Server = await asyncio.start_server(
-            self._handler, "localhost", 0, family=socket.AF_INET
-        )
+        with _tracer.start_as_current_span("startup"):
+            await self.structured_storage.init()
+            if self.unstructured_storage:
+                await self.unstructured_storage.init()
+            server: Server = await asyncio.start_server(
+                self._handler, "localhost", 0, family=socket.AF_INET
+            )
         sockets = server.sockets
         assert sockets is not None
         socketname = sockets[0].getsockname()
@@ -361,20 +383,25 @@ class StorageController:
         )
         # Blocks until we should shut down
         await self.should_shutdown()
-        self.logger.info(f"Closing Server")
-        server.close()
-        self.logger.info("Closed Server")
-        self.logger.info("Cancelling status_queue_update")
-        status_queue_update.cancel()
-        self.logger.info("Cancelled status_queue_update")
-        self.logger.info("Cancelling timeout_check")
-        timeout_check.cancel()
-        self.logger.info("Cancelled timeout_check")
-        self.logger.info("Starting wait_closed")
-        await server.wait_closed()
-        self.logger.info("Completed wait_closed")
+        with _tracer.start_as_current_span("storage_controller_shutdown"):
+            with _tracer.start_as_current_span("server_close"):
+                self.logger.info("Closing Server")
+                server.close()
+                self.logger.info("Closed Server")
+            with _tracer.start_as_current_span("status_queue_cancel"):
+                self.logger.info("Cancelling status_queue_update")
+                status_queue_update.cancel()
+                self.logger.info("Cancelled status_queue_update")
+            with _tracer.start_as_current_span("timeout_check_cancel"):
+                self.logger.info("Cancelling timeout_check")
+                timeout_check.cancel()
+                self.logger.info("Cancelled timeout_check")
+            with _tracer.start_as_current_span("server_wait_closed"):
+                self.logger.info("Starting wait_closed")
+                await server.wait_closed()
+                self.logger.info("Completed wait_closed")
 
-        await self.shutdown(update_completion_queue)
+            await self.shutdown(update_completion_queue)
 
     def run(self) -> None:
         logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -394,6 +421,10 @@ class DataSocket:
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
         data["visit_id"] = visit_id
+        carrier: Dict[str, str] = {}
+        propagate.inject(carrier)
+        if carrier:
+            data["__otel_ctx"] = carrier
         self.socket.send(
             (
                 table_name,
@@ -402,14 +433,19 @@ class DataSocket:
         )
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
+        meta_data: Dict[str, Any] = {
+            "action": ACTION_TYPE_FINALIZE,
+            "visit_id": visit_id,
+            "success": success,
+        }
+        carrier: Dict[str, str] = {}
+        propagate.inject(carrier)
+        if carrier:
+            meta_data["__otel_ctx"] = carrier
         self.socket.send(
             (
                 RECORD_TYPE_META,
-                {
-                    "action": ACTION_TYPE_FINALIZE,
-                    "visit_id": visit_id,
-                    "success": success,
-                },
+                meta_data,
             )
         )
 

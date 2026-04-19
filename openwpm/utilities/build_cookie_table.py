@@ -153,17 +153,14 @@ def build_http_cookie_table(database, verbose=False):
     cur1 = con.cursor()
     cur2 = con.cursor()
 
-    cur1.execute(
-        "CREATE TABLE IF NOT EXISTS http_request_cookies ( \
+    cur1.execute("CREATE TABLE IF NOT EXISTS http_request_cookies ( \
                     id INTEGER PRIMARY KEY AUTOINCREMENT, \
                     browser_id INTEGER NOT NULL, \
                     header_id INTEGER NOT NULL, \
                     name VARCHAR(200) NOT NULL, \
                     value TEXT NOT NULL, \
-                    accessed DATETIME);"
-    )
-    cur1.execute(
-        "CREATE TABLE IF NOT EXISTS http_response_cookies ( \
+                    accessed DATETIME);")
+    cur1.execute("CREATE TABLE IF NOT EXISTS http_response_cookies ( \
                     id INTEGER PRIMARY KEY AUTOINCREMENT, \
                     browser_id INTEGER NOT NULL, \
                     header_id INTEGER NOT NULL, \
@@ -177,20 +174,17 @@ def build_http_cookie_table(database, verbose=False):
                     secure BOOLEAN, \
                     comment VARCHAR(200), \
                     version VARCHAR(100), \
-                    accessed DATETIME);"
-    )
+                    accessed DATETIME);")
     con.commit()
 
     # Parse http request cookies
     commit = 0
     last_commit = 0
 
-    cur1.execute(
-        """SELECT id, browser_id, headers, time_stamp
+    cur1.execute("""SELECT id, browser_id, headers, time_stamp
                     FROM http_requests
                     WHERE id NOT IN (SELECT header_id FROM
-                    http_request_cookies)"""
-    )
+                    http_request_cookies)""")
 
     row = cur1.fetchone()
     if row is None:
@@ -225,12 +219,10 @@ def build_http_cookie_table(database, verbose=False):
     # Parse http response cookies
     commit = 0
     last_commit = 0
-    cur1.execute(
-        """SELECT id, browser_id, url, headers, time_stamp
+    cur1.execute("""SELECT id, browser_id, url, headers, time_stamp
                     FROM http_responses
                     WHERE id NOT IN (SELECT header_id
-                    FROM http_response_cookies)"""
-    )
+                    FROM http_response_cookies)""")
 
     row = cur1.fetchone()
     if row is None:
