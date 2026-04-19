@@ -1,0 +1,10 @@
+{
+  "uuid": "c3432f7e-fec2-4915-860c-1dc149475f7a",
+  "display_id": 17,
+  "title": "Strip internal AC/CL references from PR #1156",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-04-19T21:25:48.253216650Z",
+  "updated_at": "2026-04-19T21:25:48.253216650Z"
+}
