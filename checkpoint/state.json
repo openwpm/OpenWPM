@@ -22,6 +22,10 @@
     "20": {
       "agent_id": "um2t",
       "claimed_at": "2026-04-19T21:36:55.816561693Z"
+    },
+    "21": {
+      "agent_id": "bgpz",
+      "claimed_at": "2026-04-19T21:37:54.447493083Z"
     }
   },
   "issues": {},
@@ -305,11 +309,16 @@
       "agent_id": "chu2",
       "agent_seq": 1,
       "timestamp": "2026-04-19T21:37:28.529141883Z"
+    },
+    {
+      "agent_id": "bgpz",
+      "agent_seq": 1,
+      "timestamp": "2026-04-19T21:37:54.447493083Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-19T21:37:28.529141883Z",
-    "agent_id": "chu2",
+    "timestamp": "2026-04-19T21:37:54.447493083Z",
+    "agent_id": "bgpz",
     "agent_seq": 1
   }
 }
