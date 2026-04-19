@@ -43,6 +43,21 @@ if TYPE_CHECKING:
     from .task_manager import TaskManager
 
 
+def is_dns_error(command_status: str, error_text: Optional[str]) -> bool:
+    """Return True when the failure is a DNS resolution error (NXDOMAIN).
+
+    DNS resolution errors are expected when crawling large domain lists
+    (e.g. Tranco top-100k) and don't indicate a browser or instrumentation
+    failure. Only NXDOMAIN is excluded; DNS timeouts and SERVFAIL
+    intentionally still count.
+    """
+    return (
+        command_status == "neterror"
+        and error_text is not None
+        and error_text == "dnsNotFound"
+    )
+
+
 class BrowserManagerHandle:
     """The BrowserManagerHandle class is responsible for holding all the
     configuration and status information on BrowserManager process
@@ -156,7 +171,7 @@ class BrowserManagerHandle:
                 "BROWSER %i: Spawn attempt %i " % (self.browser_id, unsuccessful_spawns)
             )
             # Resets the command/status queues
-            (self.command_queue, self.status_queue) = (Queue(), Queue())
+            self.command_queue, self.status_queue = (Queue(), Queue())
 
             # builds and launches the browser_manager
 
@@ -462,8 +477,9 @@ class BrowserManagerHandle:
                 return
 
             if command_status != "ok":
-                with task_manager.threadlock:
-                    task_manager.failure_count += 1
+                if not is_dns_error(command_status, error_text):
+                    with task_manager.threadlock:
+                        task_manager.failure_count += 1
                 if task_manager.failure_count > task_manager.failure_limit:
                     self.logger.critical(
                         "BROWSER %i: Command execution failure pushes failure "
