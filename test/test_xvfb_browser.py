@@ -7,7 +7,8 @@ from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
 from openwpm.socket_interface import ClientSocket
 
-from .utilities import BASE_TEST_URL
+from .conftest import FullConfig, TaskManagerCreator
+from .utilities import ServerUrls
 
 
 class ExceptionCommand(BaseCommand):
@@ -21,12 +22,16 @@ class ExceptionCommand(BaseCommand):
         raise RuntimeError("We simulate a Command failing")
 
 
-def test_display_shutdown(task_manager_creator, default_params):
+def test_display_shutdown(
+    task_manager_creator: TaskManagerCreator,
+    default_params: FullConfig,
+    server: ServerUrls,
+) -> None:
     """Test the XVFB display option to see if it runs and deletes the lockfile upon shutdown"""
     manager_params, browser_params = default_params
     for browser_param in browser_params:
         browser_param.display_mode = "xvfb"
-    TEST_SITE = BASE_TEST_URL + "/test_pages/simple_a.html"
+    TEST_SITE = server.base + "/simple_a.html"
     manager, db = task_manager_creator((manager_params, browser_params))
     port = manager.browsers[0].display_port
 
