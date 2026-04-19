@@ -35,8 +35,8 @@ def test_parse_neterror_integration(default_params, task_manager_creator):
 def test_dns_error_does_not_count_against_failure_limit(
     default_params, task_manager_creator
 ):
-    """AC-4: 100+ DNS errors must not trigger CommandExecutionError even with
-    a low failure_limit.  Each navigation to a non-existent domain produces a
+    """100+ DNS errors must not trigger CommandExecutionError even with a low
+    failure_limit.  Each navigation to a non-existent domain produces a
     dnsNotFound neterror that should be excluded from the failure counter."""
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
@@ -59,7 +59,7 @@ def test_dns_error_does_not_count_against_failure_limit(
 
 
 def test_is_dns_error_predicate():
-    """AC-5: Verify that is_dns_error is True only for dnsNotFound neterrors.
+    """Verify that is_dns_error is True only for dnsNotFound neterrors.
 
     Non-DNS neterror types (connectionRefused, netOffline, etc.) and other
     command statuses must NOT be treated as DNS errors, so they continue to
