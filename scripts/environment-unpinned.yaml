@@ -28,6 +28,9 @@ dependencies:
     - tblib
     - wget
     - pip:
+        - psycopg[binary]
+        - pytest-postgresql
+        - sqlalchemy
         - dataclasses-json
         - domain-utils
         - jsonschema
