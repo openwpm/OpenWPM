@@ -1,0 +1,8 @@
+{
+  "uuid": "2f53ab93-8689-42e2-95bd-6d88ae3ffe6c",
+  "issue_uuid": "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2",
+  "author": "chu2",
+  "content": "Plan: Rebase origin/feat/stealth-js-instrument-v2 to strip [CL-2] suffix from 3 commit messages. Use non-interactive git rebase with GIT_SEQUENCE_EDITOR and GIT_EDITOR.",
+  "created_at": "2026-04-19T21:37:46.378751182Z",
+  "kind": "plan"
+}
