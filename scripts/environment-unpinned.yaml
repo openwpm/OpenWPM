@@ -31,4 +31,8 @@ dependencies:
         - dataclasses-json
         - domain-utils
         - jsonschema
+        - opentelemetry-api
+        - opentelemetry-sdk
+        - opentelemetry-exporter-otlp-proto-http
+        - pytest-split
         - tranco
