@@ -1,0 +1,10 @@
+{
+  "uuid": "77f8b9a5-0d0b-4629-8613-a8ff7bf36788",
+  "display_id": 26,
+  "title": "VDD gate: merge PR #1165, rebase all open PRs against master",
+  "status": "open",
+  "priority": "high",
+  "created_by": "4dpN",
+  "created_at": "2026-04-20T17:47:04.172355749Z",
+  "updated_at": "2026-04-20T17:47:04.172355749Z"
+}
