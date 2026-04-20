@@ -1,0 +1,8 @@
+{
+  "uuid": "6b9a343b-e048-4569-b059-6018a5c422a0",
+  "issue_uuid": "77f8b9a5-0d0b-4629-8613-a8ff7bf36788",
+  "author": "4dpN",
+  "content": "## Sequencing\n\n1. **Wait for agent WCWM-fFiy on issue #25** to finish (aligning .pre-commit-config.yaml black→26.1.0, removing stale #1111 ref, reformatting)\n2. **Review PR #1165** — should have: sync function in update.py, aligned .pre-commit-config.yaml, reformatted files, clean Release Checklist\n3. **Merge PR #1165** to master (squash or regular merge)\n4. **Rebase all 7 open PRs** against updated master. Kick off one crosslink agent per branch:\n   - fix/dynamic-test-ports-v2 (PR #1153)\n   - feat/stealth-js-instrument-v2 (PR #1154)\n   - feat/dynamic-ci-test-durations-v2 (PR #1155)\n   - fix/dns-error-failure-limit-v2 (PR #1156)\n   - feat/otel-tracing-v2 (PR #1157) — this one had spurious black reformats in build_cookie_table.py that should disappear after rebase\n   - feat/sqlalchemy-postgresql-v2 (PR #1161)\n   - feat/dns-failure-capture (PR #1164)\n5. **Verify CI green** on all rebased PRs\n\n## Why\nBlack version drift (24.10.0 in pre-commit vs 26.1.0 in conda) caused spurious reformats in PR #1157 and potentially others. Merging the alignment first means rebasing will produce clean diffs.\n\n## Also pending (not blocked on this)\n- Issue #15 / GH #1162: fix test_cache_hits_recorded (root cause identified, agent not kicked off)\n- Issue #16 / GH #1163: fix test_browser_profile_coverage (DNS-gated assertions approach, depends on #1164 merge)\n- Issue #7: Firefox pref cleanup (never completed)",
+  "created_at": "2026-04-20T17:47:23.924323804Z",
+  "kind": "note"
+}
