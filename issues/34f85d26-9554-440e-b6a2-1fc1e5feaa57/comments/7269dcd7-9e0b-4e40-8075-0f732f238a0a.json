@@ -1,0 +1,8 @@
+{
+  "uuid": "7269dcd7-9e0b-4e40-8075-0f732f238a0a",
+  "issue_uuid": "34f85d26-9554-440e-b6a2-1fc1e5feaa57",
+  "author": "8LcK",
+  "content": "Plan: 1) Create two knowledge pages (strip-references, pre-push-checklist) via crosslink knowledge add. 2) Create .design/templates/ directory with three template files (strip-references.md, fix-flaky-test.md, code-review-fix.md).",
+  "created_at": "2026-04-20T07:47:21.148022863Z",
+  "kind": "plan"
+}
