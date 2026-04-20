@@ -1,4 +1,4 @@
-""" OpenWPM Custom Errors """
+"""OpenWPM Custom Errors"""
 
 
 class CommandExecutionError(Exception):

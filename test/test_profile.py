@@ -152,8 +152,7 @@ class AssertConfigSetCommand(BaseCommand):
         extension_socket,
     ):
         webdriver.get("about:config")
-        result = webdriver.execute_script(
-            f"""
+        result = webdriver.execute_script(f"""
                 var prefs = Components
                             .classes["@mozilla.org/preferences-service;1"]
                             .getService(Components.interfaces.nsIPrefBranch);
@@ -162,8 +161,7 @@ class AssertConfigSetCommand(BaseCommand):
                 }} catch (e) {{
                     return false;
                 }}
-            """
-        )
+            """)
         self.logger.error(f"Got result: {result}")
         assert result == self.expected_value
 
