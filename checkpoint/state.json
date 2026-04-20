@@ -10,6 +10,10 @@
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
+    },
+    "22": {
+      "agent_id": "8LcK",
+      "claimed_at": "2026-04-20T07:46:56.403844758Z"
     }
   },
   "issues": {},
@@ -318,11 +322,16 @@
       "agent_id": "bgpz",
       "agent_seq": 2,
       "timestamp": "2026-04-19T21:39:45.655418296Z"
+    },
+    {
+      "agent_id": "8LcK",
+      "agent_seq": 1,
+      "timestamp": "2026-04-20T07:46:56.403844758Z"
     }
   ],
   "watermark": {
-    "timestamp": "2026-04-19T21:39:45.655418296Z",
-    "agent_id": "bgpz",
-    "agent_seq": 2
+    "timestamp": "2026-04-20T07:46:56.403844758Z",
+    "agent_id": "8LcK",
+    "agent_seq": 1
   }
 }
