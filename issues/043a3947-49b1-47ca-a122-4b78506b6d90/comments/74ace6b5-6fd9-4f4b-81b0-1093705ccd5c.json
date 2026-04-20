@@ -1,0 +1,8 @@
+{
+  "uuid": "74ace6b5-6fd9-4f4b-81b0-1093705ccd5c",
+  "issue_uuid": "043a3947-49b1-47ca-a122-4b78506b6d90",
+  "author": "4dpN",
+  "content": "Plan: Add sync_precommit_linter_versions() to scripts/update.py. Parses environment.yaml for black/isort/mypy versions, compares with .pre-commit-config.yaml revs, updates pre-commit to match conda. Regex-based to preserve formatting. Called after repin.sh, before npm bumps. Also update Release-Checklist.md.",
+  "created_at": "2026-04-20T08:09:59.291971547Z",
+  "kind": "plan"
+}
