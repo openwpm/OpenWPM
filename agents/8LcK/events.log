@@ -1,1 +1,2 @@
 {"agent_id":"8LcK","agent_seq":1,"timestamp":"2026-04-20T07:46:56.403844758Z","event":{"type":"LockClaimed","issue_display_id":22}}
+{"agent_id":"8LcK","agent_seq":2,"timestamp":"2026-04-20T07:50:58.917299166Z","event":{"type":"LockReleased","issue_display_id":22}}
