@@ -32,12 +32,10 @@ def _validate(python_list_to_validate):
             propertiesToInstrument = set(propertiesToInstrument)
             excludedProperties = set(setting["logSettings"]["excludedProperties"])
             if len(propertiesToInstrument.intersection(excludedProperties)) != 0:
-                raise ValueError(
-                    f"excludedProperties and \
+                raise ValueError(f"excludedProperties and \
                     propertiesToInstrument collide. This \
                     may have occurred after a merge. \
-                    Setting with collision: {setting}."
-                )
+                    Setting with collision: {setting}.")
     return True
 
 
@@ -127,11 +125,9 @@ def _build_full_settings_object(setting):
 
     elif isinstance(setting, dict):
         if len(setting.keys()) != 1:
-            raise ValueError(
-                f"Invalid settings request. \
+            raise ValueError(f"Invalid settings request. \
                 Settings item is a dictionary with more \
-                than one key. Received {setting}."
-            )
+                than one key. Received {setting}.")
 
         setting_key = list(setting.keys())[0]
         props = setting[setting_key]
@@ -142,18 +138,14 @@ def _build_full_settings_object(setting):
             for k, v in props.items():
                 logSettings[k] = v
         else:
-            raise ValueError(
-                f"Invalid settings request. \
+            raise ValueError(f"Invalid settings request. \
                 Setting was a dictionary. Settings value \
                 must be a list or a dictionary. Received \
-                {setting}."
-            )
+                {setting}.")
     else:
-        raise ValueError(
-            f"Invalid settings request. \
+        raise ValueError(f"Invalid settings request. \
             Must be a string or a dictionary. \
-            Received {setting}."
-        )
+            Received {setting}.")
 
     return {
         "object": obj,
@@ -228,10 +220,8 @@ def clean_js_instrumentation_settings(
 
     """
     if not isinstance(user_requested_settings, list):
-        raise TypeError(
-            f"js_instrumentation_settings must be a list. \
-              Received {user_requested_settings}"
-        )
+        raise TypeError(f"js_instrumentation_settings must be a list. \
+              Received {user_requested_settings}")
     settings = []
     for setting in user_requested_settings:
         if isinstance(setting, str) and (setting in shortcut_specs):

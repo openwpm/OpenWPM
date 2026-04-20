@@ -23,6 +23,14 @@ SCRIPTS = ROOT / "scripts"
 
 _MAX_RESOLVE_ATTEMPTS = 10
 
+# Mapping: conda package name → (pre-commit repo URL, rev prefix)
+# The prefix is prepended to the conda version to form the pre-commit rev tag.
+_LINTER_MAP: dict[str, tuple[str, str]] = {
+    "black": ("https://github.com/psf/black", ""),
+    "isort": ("https://github.com/timothycrosley/isort", ""),
+    "mypy": ("https://github.com/pre-commit/mirrors-mypy", "v"),
+}
+
 
 def run(*cmd: str, cwd: Path = ROOT) -> None:
     print(f"+ {' '.join(cmd)}")
@@ -31,6 +39,80 @@ def run(*cmd: str, cwd: Path = ROOT) -> None:
 
 def conda_run(*cmd: str, cwd: Path = ROOT) -> None:
     run("conda", "run", "-n", "openwpm", *cmd, cwd=cwd)
+
+
+def _parse_conda_versions(env_yaml: Path) -> dict[str, str]:
+    """Extract version-pinned package versions from environment.yaml.
+
+    Parses lines like ``- black=26.1.0`` and returns ``{"black": "26.1.0"}``.
+    Skips pip-style ``==`` pins and non-versioned entries.
+    """
+    versions: dict[str, str] = {}
+    for line in env_yaml.read_text().splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("- ") or stripped.startswith("- pip"):
+            continue
+        spec = stripped[2:]
+        if "==" in spec or "=" not in spec:
+            continue
+        name, _, version = spec.partition("=")
+        versions[name] = version
+    return versions
+
+
+def sync_precommit_linter_versions() -> None:
+    """Sync linter revs in .pre-commit-config.yaml to match environment.yaml."""
+    env_yaml = ROOT / "environment.yaml"
+    precommit_yaml = ROOT / ".pre-commit-config.yaml"
+
+    print("\n=== Syncing pre-commit linter versions with conda ===")
+
+    conda_versions = _parse_conda_versions(env_yaml)
+    content = precommit_yaml.read_text()
+
+    updated = False
+    for pkg, (repo_url, prefix) in _LINTER_MAP.items():
+        if pkg not in conda_versions:
+            print(
+                f"WARNING: {pkg} not found in environment.yaml, skipping",
+                file=sys.stderr,
+            )
+            continue
+
+        target_rev = f"{prefix}{conda_versions[pkg]}"
+
+        # Match the repo URL line followed by the rev line, preserving whitespace.
+        pattern = re.compile(
+            rf"(- repo: {re.escape(repo_url)}\s*\n\s*rev:\s*)\S+",
+        )
+        match = pattern.search(content)
+        if not match:
+            print(
+                f"WARNING: repo {repo_url} ({pkg}) not found in "
+                f".pre-commit-config.yaml",
+                file=sys.stderr,
+            )
+            continue
+
+        current_rev = content[match.start(0) + len(match.group(1)) : match.end(0)]
+        if current_rev == target_rev:
+            print(f"  {pkg}: already in sync ({current_rev})")
+            continue
+
+        print(f"  {pkg}: {current_rev} -> {target_rev}")
+        content = (
+            content[: match.start(0)]
+            + match.group(1)
+            + target_rev
+            + content[match.end(0) :]
+        )
+        updated = True
+
+    if updated:
+        precommit_yaml.write_text(content)
+        print("Updated .pre-commit-config.yaml")
+    else:
+        print("All linter versions already in sync.")
 
 
 def _npm_install(cwd: Path) -> tuple[str, bool]:
@@ -149,6 +231,9 @@ def npm_bump_and_resolve(cwd: Path) -> None:
 def main() -> None:
     # Repin the conda environment from unpinned sources
     run("./repin.sh", cwd=SCRIPTS)
+
+    # Sync pre-commit linter versions to match the freshly pinned conda env
+    sync_precommit_linter_versions()
 
     # Bump npm deps to latest and resolve peer dep conflicts
     npm_bump_and_resolve(ROOT)
