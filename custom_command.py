@@ -1,4 +1,4 @@
-""" This file aims to demonstrate how to write custom commands in OpenWPM
+"""This file aims to demonstrate how to write custom commands in OpenWPM
 
 Steps to have a custom command run as part of a CommandSequence
 

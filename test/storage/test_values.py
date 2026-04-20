@@ -1,4 +1,4 @@
-""" This file should contain one entry for every table
+"""This file should contain one entry for every table
 so that we can test storing and loading for every single entry
 for every structured storage provider.
 

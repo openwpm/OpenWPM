@@ -88,12 +88,10 @@ def deploy_firefox(
             display.start()
             display_pid, display_port = display.pid, display.display
         except EasyProcessError:
-            raise RuntimeError(
-                "Xvfb could not be started. \
+            raise RuntimeError("Xvfb could not be started. \
                 Please ensure it's on your path. \
                 See www.X.org for full details. \
-                Commonly solved on ubuntu with `sudo apt install xvfb`"
-            )
+                Commonly solved on ubuntu with `sudo apt install xvfb`")
     # Must do this for all display modes,
     # because status_queue is read off no matter what.
     status_queue.put(("STATUS", "Display", (display_pid, display_port)))

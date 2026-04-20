@@ -122,20 +122,16 @@ class StorageController:
             record_type, data = record
 
             if record_type == RECORD_TYPE_CREATE:
-                raise RuntimeError(
-                    f"""{RECORD_TYPE_CREATE} is no longer supported.
+                raise RuntimeError(f"""{RECORD_TYPE_CREATE} is no longer supported.
                     Please change the schema before starting the StorageController.
                     For an example of that see test/test_custom_function.py
-                    """
-                )
+                    """)
 
             if record_type == RECORD_TYPE_CONTENT:
                 assert len(data) == 2
                 if self.unstructured_storage is None:
-                    self.logger.error(
-                        """Tried to save content while not having
-                        provided any unstructured storage provider."""
-                    )
+                    self.logger.error("""Tried to save content while not having
+                        provided any unstructured storage provider.""")
                     continue
                 content, content_hash = data
                 content = base64.b64decode(content)
