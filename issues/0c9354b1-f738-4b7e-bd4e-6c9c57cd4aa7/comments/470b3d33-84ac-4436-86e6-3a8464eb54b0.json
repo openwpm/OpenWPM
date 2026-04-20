@@ -1,0 +1,8 @@
+{
+  "uuid": "470b3d33-84ac-4436-86e6-3a8464eb54b0",
+  "issue_uuid": "0c9354b1-f738-4b7e-bd4e-6c9c57cd4aa7",
+  "author": "4dpN",
+  "content": "Completed: (1) Aligned .pre-commit-config.yaml versions with environment.yaml (black 26.1.0, isort 8.0.1, mypy v1.19.1) + reformatted 16 files. (2) Removed stale #1111 reference from Release-Checklist.md and renumbered steps. Both changes committed separately and pushed.",
+  "created_at": "2026-04-20T17:48:14.660428651Z",
+  "kind": "handoff"
+}
