@@ -17,7 +17,7 @@ from openwpm.deploy_browsers import configure_firefox
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import xpi
-from .utilities import BASE_TEST_URL, start_server
+from .utilities import start_server
 
 # import commonly used modules and utilities so they can be easily accessed
 # in the interactive session
@@ -103,10 +103,10 @@ def start_webdriver(
     firefox_binary_path = get_firefox_binary_path()
 
     fb = FirefoxBinary(firefox_path=firefox_binary_path)
-    server, thread = start_server()
+    server, thread, urls = start_server()
 
     def register_cleanup(driver):
-        driver.get(BASE_TEST_URL)
+        driver.get(urls.base)
 
         def cleanup_server():
             print("Cleanup before shutdown...")
@@ -160,12 +160,12 @@ def start_webdriver(
 
 def start_webext():
     firefox_binary_path = get_firefox_binary_path()
+    server, thread, urls = start_server()
     cmd_webext_run = f"""
     npm start -- \
-            --start-url '{BASE_TEST_URL}' \
+            --start-url '{urls.base}' \
             --firefox '{firefox_binary_path}'
     """
-    server, thread = start_server()
     try:
         # http://stackoverflow.com/a/4417735/3104416
         for line in get_command_output(cmd_webext_run, cwd=EXT_PATH):
