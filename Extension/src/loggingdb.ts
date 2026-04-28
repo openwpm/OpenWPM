@@ -1,24 +1,25 @@
-import * as socket from "./socket";
+import { OpenWPMWebSocket } from "./websocket-client";
 
 let crawlID = null;
 let visitID = null;
 let debugging = false;
-let storageController = null;
-let logAggregator = null;
-let listeningSocket = null;
+let wsClient: OpenWPMWebSocket | null = null;
 
-const listeningSocketCallback = async (data) => {
-  // This works even if data is an int
-  const action = data.action;
-  let newVisitID = data.visit_id;
+const commandCallback = async (msg) => {
+  // Handle commands from Python (Initialize, Finalize, legacy visit_id)
+  const action = msg.action;
+  let newVisitID = msg.visit_id;
   switch (action) {
     case "Initialize":
       if (visitID) {
         logWarn("Set visit_id while another visit_id was set");
       }
       visitID = newVisitID;
-      data.browser_id = crawlID;
-      storageController.send(JSON.stringify(["meta_information", data]));
+      wsClient.sendRecord("meta_information", {
+        action: "Initialize",
+        visit_id: newVisitID,
+        browser_id: crawlID,
+      });
       break;
     case "Finalize":
       if (!visitID) {
@@ -30,84 +31,48 @@ const listeningSocketCallback = async (data) => {
             `Current visit_id ${newVisitID}, received visit_id ${visitID}.`,
         );
       }
-      data.browser_id = crawlID;
-      data.success = true;
-      storageController.send(JSON.stringify(["meta_information", data]));
+      wsClient.sendRecord("meta_information", {
+        action: "Finalize",
+        visit_id: newVisitID,
+        browser_id: crawlID,
+        success: true,
+      });
       visitID = null;
       break;
     default:
-      // Just making sure that it's a valid number before logging
-      newVisitID = parseInt(data, 10);
-      logDebug("Setting visit_id the legacy way");
-      visitID = newVisitID;
+      // Legacy: command contains just visit_id (no action field)
+      if (newVisitID !== undefined) {
+        newVisitID = parseInt(newVisitID, 10);
+        logDebug("Setting visit_id the legacy way");
+        visitID = newVisitID;
+      } else {
+        logWarn("Received unknown command: " + JSON.stringify(msg));
+      }
   }
 };
+
 export const open = async function (
-  storageControllerAddress: any[],
-  logAddress: any[],
+  websocketPort: number,
   curr_crawlID: number,
 ) {
-  if (
-    storageControllerAddress == null &&
-    logAddress == null &&
-    curr_crawlID === 0
-  ) {
+  if (websocketPort == null && curr_crawlID === 0) {
     console.log("Debugging, everything will output to console");
     debugging = true;
     return;
   }
   crawlID = curr_crawlID;
 
-  console.log("Opening socket connections...");
+  console.log("Opening WebSocket connection...");
 
-  // Connect to MPLogger for extension info/debug/error logging
-  if (logAddress != null) {
-    logAggregator = new socket.SendingSocket();
-    const rv = await logAggregator.connect(logAddress[0], logAddress[1]);
-    console.log("logSocket started?", rv);
-  }
-
-  // Connect to databases for saving data
-  if (storageControllerAddress != null) {
-    storageController = new socket.SendingSocket();
-    const rv = await storageController.connect(
-      storageControllerAddress[0],
-      storageControllerAddress[1],
-    );
-    console.log("StorageController started?", rv);
-  }
-  storageController.send(JSON.stringify(`Browser-${crawlID}`));
-  // Listen for incoming urls as visit ids
-  listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
-  console.log("Starting socket listening for incoming connections.");
-  await listeningSocket.startListening();
-  browser.profileDirIO.writeFile(
-    "extension_port.txt",
-    `${listeningSocket.port}`,
-  );
+  wsClient = new OpenWPMWebSocket(commandCallback);
+  await wsClient.connect(websocketPort);
+  console.log("WebSocket connected to port", websocketPort);
 };
 
 export const close = function () {
-  if (storageController != null) {
-    storageController.close();
+  if (wsClient != null) {
+    wsClient.close();
   }
-  if (logAggregator != null) {
-    logAggregator.close();
-  }
-};
-
-const makeLogJSON = function (lvl, msg) {
-  const log_json = {
-    name: "Extension-Logger",
-    level: lvl,
-    pathname: "FirefoxExtension",
-    lineno: 1,
-    msg: escapeString(msg),
-    args: null,
-    exc_info: null,
-    func: null,
-  };
-  return log_json;
 };
 
 export const logInfo = function (msg) {
@@ -118,9 +83,8 @@ export const logInfo = function (msg) {
     return;
   }
 
-  // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(20, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level INFO == 20
+  wsClient.sendLog(20, escapeString(msg));
 };
 
 export const logDebug = function (msg) {
@@ -131,9 +95,8 @@ export const logDebug = function (msg) {
     return;
   }
 
-  // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(10, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level DEBUG == 10
+  wsClient.sendLog(10, escapeString(msg));
 };
 
 export const logWarn = function (msg) {
@@ -144,9 +107,8 @@ export const logWarn = function (msg) {
     return;
   }
 
-  // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(30, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level WARN == 30
+  wsClient.sendLog(30, escapeString(msg));
 };
 
 export const logError = function (msg) {
@@ -157,9 +119,8 @@ export const logError = function (msg) {
     return;
   }
 
-  // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(40, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level ERROR == 40
+  wsClient.sendLog(40, escapeString(msg));
 };
 
 export const logCritical = function (msg) {
@@ -170,9 +131,8 @@ export const logCritical = function (msg) {
     return;
   }
 
-  // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(50, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level CRITICAL == 50
+  wsClient.sendLog(50, escapeString(msg));
 };
 
 export const dataReceiver = {
@@ -206,7 +166,7 @@ export const saveRecord = function (instrument, record) {
     console.log("EXTENSION", instrument, record);
     return;
   }
-  storageController.send(JSON.stringify([instrument, record]));
+  wsClient.sendRecord(instrument, record);
 };
 
 // Stub for now
@@ -220,12 +180,8 @@ export const saveContent = async function (content, contentHash) {
   // Since the content might not be a valid utf8 string and it needs to be
   // json encoded later, it is encoded using base64 first.
   const b64 = Uint8ToBase64(content);
-  storageController.send(JSON.stringify(["page_content", [b64, contentHash]]));
+  wsClient.sendRecord("page_content", [b64, contentHash]);
 };
-
-function encode_utf8(s) {
-  return unescape(encodeURIComponent(s));
-}
 
 // Base64 encoding, found on:
 // https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
@@ -246,8 +202,7 @@ function Uint8ToBase64(u8Arr) {
 export const escapeString = function (string) {
   // Convert to string if necessary
   if (typeof string !== "string") string = "" + string;
-
-  return encode_utf8(string);
+  return string;
 };
 
 export const boolToInt = function (bool) {

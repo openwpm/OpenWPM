@@ -208,8 +208,6 @@ class BrowserParamsInternal(BrowserParams):
 
 @dataclass
 class ManagerParamsInternal(ManagerParams):
-    storage_controller_address: Optional[Tuple[str, int]] = None
-    logger_address: Optional[Tuple[str, ...]] = None
     screenshot_path: Optional[Path] = field(
         default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
     )

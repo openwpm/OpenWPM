@@ -4,10 +4,10 @@ from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 
 from openwpm import command_sequence
-from openwpm.commands.types import BaseCommand
+from openwpm.commands.types import BaseCommand, ExtensionSocket
 from openwpm.config import BrowserParams, ManagerParamsInternal
-from openwpm.socket_interface import ClientSocket
 from openwpm.storage.sql_provider import SQLiteStorageProvider
+from openwpm.storage.storage_controller import DataSocket
 from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
@@ -44,7 +44,7 @@ class CollectLinksCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: BrowserParams,
         manager_params: ManagerParamsInternal,
-        extension_socket: ClientSocket,
+        extension_socket: ExtensionSocket,
     ) -> None:
         browser_id = self.browser_id
         visit_id = self.visit_id
@@ -58,22 +58,18 @@ class CollectLinksCommand(BaseCommand):
         ]
         current_url = webdriver.current_url
 
-        sock = ClientSocket()
-        assert manager_params.storage_controller_address is not None
-        sock.connect(*manager_params.storage_controller_address)
-        sock.send("custom_command")
+        sock = DataSocket(manager_params.data_queue)
 
         for link in link_urls:
-            query = (
+            sock.store_record(
                 self.table_name,
+                visit_id,
                 {
                     "top_url": current_url,
                     "link": link,
-                    "visit_id": visit_id,
                     "browser_id": browser_id,
                 },
             )
-            sock.send(query)
         sock.close()
 
 
