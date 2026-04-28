@@ -8,12 +8,15 @@ from pathlib import Path
 import click
 import IPython
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 
 from openwpm import js_instrumentation as jsi
-from openwpm.config import BrowserParams
+from openwpm.config import BrowserParams, BrowserParamsInternal, ManagerParamsInternal
 from openwpm.deploy_browsers import configure_firefox
+from openwpm.deploy_browsers.deploy_firefox import apply_extension_configuration
 from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .conftest import xpi
@@ -102,11 +105,10 @@ def start_webdriver(
     """
     firefox_binary_path = get_firefox_binary_path()
 
-    fb = FirefoxBinary(firefox_path=firefox_binary_path)
     server, thread = start_server()
 
     def register_cleanup(driver):
-        driver.get(BASE_TEST_URL)
+        # driver.get(BASE_TEST_URL)
 
         def cleanup_server():
             print("Cleanup before shutdown...")
@@ -131,14 +133,24 @@ def start_webdriver(
         # fp.set_preference("extensions.@openwpm.sdk.console.logLevel", "all")
         configure_firefox.optimize_prefs(fo)
 
-    driver = webdriver.Firefox(firefox_binary=fb, options=fo)
+        fo.binary_location = firefox_binary_path
+        geckodriver_path = subprocess.check_output(
+            "which geckodriver", encoding="utf-8", shell=True
+        ).strip()
+        driver = webdriver.Firefox(
+            options=fo,
+            service=Service(
+                executable_path=geckodriver_path,
+            ),
+        )
+    browser_params = BrowserParamsInternal()
+
     if load_browser_params is True:
         # There's probably more we could do here
         # to set more preferences and better emulate
         # what happens in TaskManager. But this lets
         # us pass some basic things.
 
-        browser_params = BrowserParams()
         if browser_params_file is not None:
             with open(browser_params_file, "r") as f:
                 browser_params.from_json(f.read())
@@ -146,15 +158,17 @@ def start_webdriver(
         js_request_as_string = jsi.clean_js_instrumentation_settings(js_request)
         browser_params.js_instrument_settings = js_request_as_string
 
-        with open(browser_profile_path / "browser_params.json", "w") as f:
-            f.write(browser_params.to_json())
-
     if with_extension:
         # add openwpm extension to profile
         xpi()
         ext_xpi = join(EXT_PATH, "dist", "openwpm-1.0.zip")
         driver.install_addon(ext_xpi, temporary=True)
-
+        manager_params = ManagerParamsInternal()
+        manager_params.logger_address = None
+        manager_params.storage_controller_address = None
+        manager_params.testing = True
+        browser_params.browser_id = 1
+        apply_extension_configuration(driver, browser_params, manager_params)
     return register_cleanup(driver)
 
 
