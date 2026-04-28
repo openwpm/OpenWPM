@@ -14,6 +14,23 @@ from openwpm.task_manager import TaskManager
 from . import utilities
 from .openwpmtest import NUM_BROWSERS
 
+_test_durations: dict[str, float] = {}
+
+
+def pytest_runtest_logreport(report):
+    if report.when == "call":
+        _test_durations[report.nodeid] = round(report.duration, 2)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    import json
+
+    group = os.environ.get("GROUP")
+    if os.environ.get("CI") and group and _test_durations:
+        with open(f".test_durations_group_{group}", "w") as f:
+            json.dump(_test_durations, f, indent=2, sort_keys=True)
+
+
 EXTENSION_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "..",
