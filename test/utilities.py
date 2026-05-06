@@ -65,15 +65,6 @@ class MyHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, directory=None, **kwargs):
         SimpleHTTPRequestHandler.__init__(self, *args, directory=directory, **kwargs)
 
-    def send_response(self, code, message=None):
-        self._response_code = code
-        super().send_response(code, message)
-
-    def end_headers(self):
-        if getattr(self, "_response_code", None) == 200:
-            self.send_header("Cache-Control", "max-age=3600")
-        super().end_headers()
-
     def do_GET(self, *args, **kwargs):
         # 1. Redirect all requests to `/MAGIC_REDIRECT/`.
         if self.path.startswith("/MAGIC_REDIRECT/"):
