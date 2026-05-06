@@ -3,10 +3,11 @@
 Steps
 -----
 1. Repin the conda environment (scripts/repin.sh)
-2. Update root npm dependencies to latest, resolving peer dep conflicts
-3. Update Extension npm dependencies to latest, resolving peer dep conflicts
-4. Rebuild the extension
-5. Check hg.mozilla.org for a newer Firefox and update install-firefox.sh if found
+2. Sync pre-commit linter revs to the freshly pinned conda env
+3. Update root npm dependencies to latest, resolving peer dep conflicts
+4. Update Extension npm dependencies to latest, resolving peer dep conflicts
+5. Rebuild the extension
+6. Check hg.mozilla.org for a newer Firefox and update install-firefox.sh if found
 
 Run from the project root:
     python scripts/update.py
@@ -41,43 +42,63 @@ def conda_run(*cmd: str, cwd: Path = ROOT) -> None:
     run("conda", "run", "-n", "openwpm", *cmd, cwd=cwd)
 
 
-def _parse_conda_versions(env_yaml: Path) -> dict[str, str]:
-    """Extract version-pinned package versions from environment.yaml.
+def _versions_from_conda_list_json(json_str: str) -> dict[str, str]:
+    """Parse the output of ``conda list --json`` into ``{name: version}``.
 
-    Parses lines like ``- black=26.1.0`` and returns ``{"black": "26.1.0"}``.
-    Skips pip-style ``==`` pins and non-versioned entries.
+    Separated from the subprocess call so it can be unit-tested without
+    invoking conda.
     """
-    versions: dict[str, str] = {}
-    for line in env_yaml.read_text().splitlines():
-        stripped = line.strip()
-        if not stripped.startswith("- ") or stripped.startswith("- pip"):
-            continue
-        spec = stripped[2:]
-        if "==" in spec or "=" not in spec:
-            continue
-        name, _, version = spec.partition("=")
-        versions[name] = version
-    return versions
+    data = json.loads(json_str)
+    return {pkg["name"]: pkg["version"] for pkg in data}
 
 
-def sync_precommit_linter_versions() -> None:
-    """Sync linter revs in .pre-commit-config.yaml to match environment.yaml."""
-    env_yaml = ROOT / "environment.yaml"
+def _query_conda_versions(env_name: str = "openwpm") -> dict[str, str]:
+    """Return ``{package_name: version}`` for all packages in the conda env.
+
+    Uses ``conda list -n <env> --json`` so we get authoritative, fully-resolved
+    versions without re-parsing environment.yaml ourselves.
+    """
+    try:
+        result = subprocess.run(
+            ["conda", "list", "-n", env_name, "--json"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError(
+            "conda not found on PATH. Install it via ./install.sh or activate "
+            "your conda installation before running this script."
+        ) from e
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"`conda list -n {env_name} --json` failed (exit {result.returncode}). "
+            f"Does the env exist? Run ./install.sh to create it.\n"
+            f"stderr: {result.stderr.strip()}"
+        )
+
+    return _versions_from_conda_list_json(result.stdout)
+
+
+def sync_precommit_linter_versions(env_name: str = "openwpm") -> None:
+    """Sync linter revs in ``.pre-commit-config.yaml`` to the conda env.
+
+    Fails loud if a linter from ``_LINTER_MAP`` is missing from the env or
+    if its hook is missing from ``.pre-commit-config.yaml`` — environment.yaml
+    is supposed to be fully pinned, so silent gaps would mask real bugs.
+    """
     precommit_yaml = ROOT / ".pre-commit-config.yaml"
 
     print("\n=== Syncing pre-commit linter versions with conda ===")
 
-    conda_versions = _parse_conda_versions(env_yaml)
+    conda_versions = _query_conda_versions(env_name)
     content = precommit_yaml.read_text()
 
     updated = False
     for pkg, (repo_url, prefix) in _LINTER_MAP.items():
         if pkg not in conda_versions:
-            print(
-                f"WARNING: {pkg} not found in environment.yaml, skipping",
-                file=sys.stderr,
-            )
-            continue
+            raise RuntimeError(f"{pkg} not found in conda env '{env_name}'.")
 
         target_rev = f"{prefix}{conda_versions[pkg]}"
 
@@ -87,12 +108,9 @@ def sync_precommit_linter_versions() -> None:
         )
         match = pattern.search(content)
         if not match:
-            print(
-                f"WARNING: repo {repo_url} ({pkg}) not found in "
-                f".pre-commit-config.yaml",
-                file=sys.stderr,
+            raise RuntimeError(
+                f"No rev: line found for {repo_url} in .pre-commit-config.yaml"
             )
-            continue
 
         current_rev = content[match.start(0) + len(match.group(1)) : match.end(0)]
         if current_rev == target_rev:
