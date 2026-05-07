@@ -35,19 +35,22 @@ def test_parse_neterror_integration(default_params, task_manager_creator):
 def test_dns_error_does_not_count_against_failure_limit(
     default_params, task_manager_creator
 ):
-    """100+ DNS errors must not trigger CommandExecutionError even with a low
-    failure_limit.  Each navigation to a non-existent domain produces a
-    dnsNotFound neterror that should be excluded from the failure counter."""
+    """DNS errors past failure_limit must not trigger CommandExecutionError.
+
+    Each navigation to a non-existent domain produces a dnsNotFound neterror
+    that should be excluded from the failure counter.
+    """
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     manager_params.failure_limit = 5
     manager, db = task_manager_creator((manager_params, browser_params[:1]))
 
-    num_domains = 110
-    for i in range(num_domains):
-        manager.get(f"http://domain-{i}.invalid")
-
-    manager.close()
+    num_domains = manager_params.failure_limit * 3
+    try:
+        for i in range(num_domains):
+            manager.get(f"http://domain-{i}.invalid")
+    finally:
+        manager.close()
 
     rows = db_utils.query_db(
         db,
