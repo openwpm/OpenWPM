@@ -480,17 +480,20 @@ class BrowserManagerHandle:
                 if not is_dns_error(command_status, error_text):
                     with task_manager.threadlock:
                         task_manager.failure_count += 1
-                if task_manager.failure_count > task_manager.failure_limit:
-                    self.logger.critical(
-                        "BROWSER %i: Command execution failure pushes failure "
-                        "count above the allowable limit. Setting "
-                        "failure_status." % self.browser_id
-                    )
-                    task_manager.failure_status = {
-                        "ErrorType": "ExceedCommandFailureLimit",
-                        "CommandSequence": command_sequence,
-                    }
-                    return
+                        exceeded_limit = (
+                            task_manager.failure_count > task_manager.failure_limit
+                        )
+                    if exceeded_limit:
+                        self.logger.critical(
+                            "BROWSER %i: Command execution failure pushes failure "
+                            "count above the allowable limit. Setting "
+                            "failure_status." % self.browser_id
+                        )
+                        task_manager.failure_status = {
+                            "ErrorType": "ExceedCommandFailureLimit",
+                            "CommandSequence": command_sequence,
+                        }
+                        return
                 self.restart_required = True
                 self.logger.debug(
                     "BROWSER %i: Browser restart required" % self.browser_id
