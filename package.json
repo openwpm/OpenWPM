@@ -24,9 +24,9 @@
   "homepage": "",
   "devDependencies": {
     "@adobe/jsonschema2md": "^8.0.11",
-    "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
-    "commitlint": "^20.5.0",
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "commitlint": "^20.5.3",
     "markdown-link-check": "^3.14.2",
     "markdownlint-cli": "^0.48.0"
   },

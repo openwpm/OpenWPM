@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.34.0 - 2026-05-07
+
+Bump to Firefox 150
+
+### Fixes & improvements
+
+- Capture failed DNS resolutions via `onErrorOccurred`, including each hop of redirect chains
+- Exclude DNS errors (NXDOMAIN) from the consecutive failure limit so large-list crawls aren't aborted by invalid domains
+- Fix `failure_count` race by holding `threadlock` across the increment and the threshold check
+- Fix DNS instrument `PendingResponse` pollution and sync parquet/SQLite schemas
+
+### Tooling
+
+- `scripts/firefox_version.py`: send `Accept: application/json` so the migrated `hg-edge.mozilla.org` returns JSON instead of HTML (silent auto-detect regression). Also pins the manifest's `strict_min_version` to the bundled Firefox major (was stuck at 60.0; each release ships its own Firefox, so the floor should match)
+- `Extension/tsconfig*.json`: switch `moduleResolution: "node"` → `"node16"` to drop the deprecated alias (TS 6 will remove it)
+- `scripts/update.py`: pin TypeScript to 5.x in Extension; TS 6's stricter inference defaults surface ~200 latent type issues that need their own migration
+- Sync pre-commit linter versions with conda environment automatically (`scripts/update.py`)
+- `scripts/update.py`: catch silent `VERSION` drift by auto-bumping to next-minor after the latest `v*` git tag when behind (this release recovers from v0.33.0's missed VERSION bump: 0.32.0 → 0.34.0)
+
 ## v0.33.0 - 2026-03-26
 
 Bump to Firefox 149

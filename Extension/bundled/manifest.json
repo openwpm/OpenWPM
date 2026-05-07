@@ -10,7 +10,7 @@
   "applications": {
     "gecko": {
       "id": "openwpm@mozilla.org",
-      "strict_min_version": "60.0"
+      "strict_min_version": "150.0"
     }
   },
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self';",

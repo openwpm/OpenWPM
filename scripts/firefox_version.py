@@ -21,6 +21,9 @@ import urllib.request
 from pathlib import Path
 
 INSTALL_SCRIPT = Path(__file__).resolve().parent / "install-firefox.sh"
+MANIFEST = (
+    Path(__file__).resolve().parent.parent / "Extension" / "bundled" / "manifest.json"
+)
 TAGS_URL = "https://hg.mozilla.org/releases/mozilla-release/json-tags"
 _TAG_RE = re.compile(r"FIREFOX_(\d+)_(\d+)(?:_(\d+))?_RELEASE")
 
@@ -34,7 +37,8 @@ def _version_key(tag: str) -> tuple[int, int, int]:
 
 def fetch_latest() -> tuple[str, str]:
     """Return (tag_name, commit_hash) for the newest Firefox release on hg.mozilla.org."""
-    with urllib.request.urlopen(TAGS_URL, timeout=15) as resp:
+    req = urllib.request.Request(TAGS_URL, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
         data = json.load(resp)
     tags = [(t["tag"], t["node"]) for t in data["tags"] if _TAG_RE.fullmatch(t["tag"])]
     if not tags:
@@ -52,16 +56,39 @@ def get_current() -> str:
     return m.group(1)
 
 
-def update_if_needed() -> bool:
-    """Rewrite install-firefox.sh if a newer Firefox is available.
+def _update_manifest_min_version(major: int) -> None:
+    """Pin Extension/bundled/manifest.json's strict_min_version to ``{major}.0``.
 
-    Returns True if the file was updated, False if already current.
+    Each OpenWPM release ships only with the Firefox we bundle, so the
+    manifest's compatibility floor should match — there is no third-party
+    Firefox we need to support.
+    """
+    target = f"{major}.0"
+    data = json.loads(MANIFEST.read_text())
+    gecko = data.get("applications", {}).get("gecko", {})
+    current = gecko.get("strict_min_version")
+
+    if current == target:
+        return
+
+    print(f"  manifest strict_min_version: {current!r} -> {target!r}")
+    data["applications"]["gecko"]["strict_min_version"] = target
+    MANIFEST.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def update_if_needed() -> bool:
+    """Rewrite install-firefox.sh and the Extension manifest if a newer Firefox
+    is available.
+
+    Returns True if any file was updated, False if already current.
     """
     current = get_current()
     latest_tag, latest_hash = fetch_latest()
 
     if latest_tag == current:
         print(f"Firefox is already at the latest release ({current}).")
+        # Still re-check the manifest in case it drifted independently.
+        _update_manifest_min_version(_version_key(current)[0])
         return False
 
     print(f"Updating Firefox: {current} → {latest_tag}")
@@ -78,6 +105,9 @@ def update_if_needed() -> bool:
         )
     INSTALL_SCRIPT.write_text(new_text)
     print(f"Updated {INSTALL_SCRIPT.name} to {latest_tag} ({latest_hash})")
+
+    _update_manifest_min_version(_version_key(latest_tag)[0])
+
     print("Remember to run ./scripts/install-firefox.sh and test before releasing.")
     return True
 

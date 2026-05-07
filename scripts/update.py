@@ -229,7 +229,19 @@ def npm_bump_and_resolve(cwd: Path) -> None:
     run("git", "checkout", "--", "package.json", cwd=cwd)
 
     # Rewrite package.json with the latest published versions of all deps.
-    conda_run("npx", "--yes", "npm-check-updates", "--upgrade", cwd=cwd)
+    # typescript is pinned to 5.x: TS 6 enables stricter inference defaults
+    # (TS7006/TS7008/TS2564/TS18046) that surface ~200 latent type issues
+    # in Extension/src. Migration tracked in #1168; until that lands the
+    # bumper stays inside 5.x.
+    conda_run(
+        "npx",
+        "--yes",
+        "npm-check-updates",
+        "--upgrade",
+        "--reject",
+        "typescript",
+        cwd=cwd,
+    )
 
     for attempt in range(1, _MAX_RESOLVE_ATTEMPTS + 1):
         output, success = _npm_install(cwd)
@@ -246,12 +258,102 @@ def npm_bump_and_resolve(cwd: Path) -> None:
     )
 
 
+def sync_extension_node_engine(env_name: str = "openwpm") -> None:
+    """Sync ``engines.node`` in ``Extension/package.json`` to the conda env.
+
+    The Extension is built only inside this project, with Node provided by the
+    conda env, so the engines field documents what we actually exercise rather
+    than a public compatibility floor. Keeping it pinned to the conda nodejs
+    version prevents the two from drifting after a repin.
+    """
+    pkg_json = ROOT / "Extension" / "package.json"
+
+    print("\n=== Syncing Extension engines.node with conda nodejs ===")
+
+    versions = _query_conda_versions(env_name)
+    if "nodejs" not in versions:
+        raise RuntimeError(f"nodejs not found in conda env '{env_name}'.")
+
+    target = f">={versions['nodejs']}"
+    data = json.loads(pkg_json.read_text())
+    current = data.get("engines", {}).get("node")
+
+    if current == target:
+        print(f"  engines.node: already in sync ({current})")
+        return
+
+    print(f"  engines.node: {current!r} -> {target!r}")
+    data.setdefault("engines", {})["node"] = target
+    pkg_json.write_text(json.dumps(data, indent=2) + "\n")
+
+
+_VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+_TAG_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
+
+
+def bump_version_if_behind() -> None:
+    """Bump VERSION to ``<latest-tag-major>.<latest-tag-minor + 1>.0`` if it
+    sits at or below the latest release tag.
+
+    Catches the silent-drift case where a previous release tagged a version
+    but forgot to bump the VERSION file (which is exactly what happened
+    between v0.32.0 and v0.33.0). Idempotent: if VERSION is already ahead
+    of next-minor, does nothing.
+
+    Why next-minor and not next-patch: every OpenWPM release historically
+    bumps minor (each new Firefox gets a new minor). Patch and major bumps
+    are rare enough to do by hand.
+    """
+    version_file = ROOT / "VERSION"
+
+    print("\n=== Checking VERSION against latest release tag ===")
+
+    result = subprocess.run(
+        ["git", "describe", "--tags", "--abbrev=0", "--match", "v*"],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+    if result.returncode != 0:
+        print("  No matching git tag found; skipping VERSION bump")
+        return
+
+    tag = result.stdout.strip()
+    tag_match = _TAG_RE.match(tag)
+    if not tag_match:
+        print(f"  Latest tag {tag!r} doesn't match vX.Y.Z; skipping VERSION bump")
+        return
+    tag_v = tuple(int(x) for x in tag_match.groups())
+
+    current_text = version_file.read_text().strip()
+    current_match = _VERSION_RE.match(current_text)
+    if not current_match:
+        raise RuntimeError(f"Can't parse VERSION: {current_text!r}")
+    current_v = tuple(int(x) for x in current_match.groups())
+
+    next_v = (tag_v[0], tag_v[1] + 1, 0)
+
+    if current_v >= next_v:
+        print(f"  VERSION ({current_text}) already ahead of next-minor; nothing to do")
+        return
+
+    target = ".".join(str(x) for x in next_v)
+    print(f"  VERSION: {current_text} -> {target} (latest tag {tag})")
+    version_file.write_text(target + "\n")
+
+
 def main() -> None:
     # Repin the conda environment from unpinned sources
     run("./repin.sh", cwd=SCRIPTS)
 
     # Sync pre-commit linter versions to match the freshly pinned conda env
     sync_precommit_linter_versions()
+
+    # Sync Extension's engines.node to match the freshly pinned conda env
+    sync_extension_node_engine()
+
+    # Catch silent VERSION drift relative to the latest release tag
+    bump_version_if_behind()
 
     # Bump npm deps to latest and resolve peer dep conflicts
     npm_bump_and_resolve(ROOT)
