@@ -1,0 +1,11 @@
+{
+  "uuid": "38da4b5f-6781-4f3b-8ba1-471e079be296",
+  "display_id": 27,
+  "title": "Make test_browser_profile_coverage deterministic via DNS instrumentation",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\n## Goal\n\nRestructure `test_browser_profile_coverage` (in `test/test_crawl.py`) so it is deterministic regardless of network conditions. The current test asserts no unexpected domains appear in the browser profile, but `baidu.com` shows up intermittently when Firefox contacts search partners during initialization, causing flakes across all open PRs (tests group 1).\n\n## Approach\n\nUse the DNS instrumentation that landed in #1158 (redirect chain capture) and #1164 (failure capture via `onErrorOccurred`). For each site in `TEST_SITES`:\n\n1. Assert a `dns_responses` row exists — proves the browser attempted resolution.\n2. If `addresses IS NOT NULL` (DNS succeeded) → assert `http_requests` and `places.sqlite` entries exist for that site.\n3. If DNS failed (`error IS NOT NULL`) → skip the HTTP / `places.sqlite` assertions for that domain.\n\nA timeout/failure on a flaky live site (like `baidu.com`) becomes a valid test path, not a failure.\n\n## References\n\n- Upstream issue: https://github.com/openwpm/OpenWPM/issues/1163\n- Comment with the revised approach: https://github.com/openwpm/OpenWPM/issues/1163#issuecomment-4209193720\n- Prerequisites: #1158 (merged 2026-04-06), #1164 (merged 2026-04-16)\n\n## Definition of done\n\n- `test_browser_profile_coverage` is restructured to query `dns_responses` and gate HTTP / places assertions on DNS success.\n- Test passes locally and in CI against `master`.\n- Baidu (or any other intermittently-reachable site) no longer causes failures when DNS times out.\n- A PR is opened against `openwpm/OpenWPM` master and linked back to GitHub issue #1163.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-05-07T09:52:29.567135067Z",
+  "updated_at": "2026-05-07T09:52:29.567135067Z"
+}
