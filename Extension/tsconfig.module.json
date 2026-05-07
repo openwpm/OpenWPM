@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "esnext",
     "outDir": "build/module",
-    "module": "esnext"
+    "module": "node16"
   },
   "exclude": ["node_modules/**"]
 }
