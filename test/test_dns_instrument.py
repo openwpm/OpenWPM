@@ -1,6 +1,9 @@
 from sqlite3 import Row
+from urllib.parse import urlparse
 
 from openwpm.utilities import db_utils
+
+from . import utilities
 
 
 def test_name_resolution(default_params, task_manager_creator):
@@ -70,3 +73,56 @@ def test_dns_failure_captured(default_params, task_manager_creator):
     assert result["addresses"] is None
     assert result["used_address"] is None
     assert result["error"] is not None
+
+
+def test_redirect_chain_dns(default_params, task_manager_creator):
+    """A 2-hop redirect chain (hop1 -> hop2 -> simple_b.html) should produce
+    exactly three dns_responses rows that, ordered by time_stamp, reconstruct
+    the original chain — one row per redirect step, all sharing the same
+    browser_id and request_id (Firefox preserves request_id across redirects).
+    """
+    manager_params, browser_params = default_params
+    for browser_param in browser_params:
+        browser_param.dns_instrument = True
+
+    manager, db = task_manager_creator((manager_params, browser_params))
+
+    chain_url = (
+        f"http://test.localhost:{utilities.LOCAL_WEBSERVER_PORT}"
+        f"/MAGIC_REDIRECT/hop1"
+        f"?dst=/MAGIC_REDIRECT/hop2"
+        f"&dst=/test_pages/simple_b.html"
+    )
+    manager.get(chain_url)
+    manager.close()
+
+    expected_paths = [
+        "/MAGIC_REDIRECT/hop1",
+        "/MAGIC_REDIRECT/hop2",
+        "/test_pages/simple_b.html",
+    ]
+    rows = db_utils.query_db(
+        db,
+        "SELECT * FROM dns_responses WHERE hostname = 'test.localhost' "
+        "ORDER BY time_stamp",
+    )
+    chain_rows = [r for r in rows if urlparse(r["redirect_url"]).path in expected_paths]
+
+    paths = [urlparse(r["redirect_url"]).path for r in chain_rows]
+    assert paths == expected_paths, (
+        f"Reconstructed chain does not match expected sequence.\n"
+        f"  expected: {expected_paths}\n"
+        f"  got:      {paths}"
+    )
+
+    # The whole chain ran in one browser, on one request_id (Firefox keeps
+    # request_id stable across redirects).
+    browser_ids = {r["browser_id"] for r in chain_rows}
+    request_ids = {r["request_id"] for r in chain_rows}
+    assert len(browser_ids) == 1, f"Chain split across browsers: {browser_ids}"
+    assert (
+        len(request_ids) == 1
+    ), f"Expected single request_id across redirect chain, got: {request_ids}"
+
+    for r in chain_rows:
+        assert isinstance(r, Row)
