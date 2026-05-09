@@ -10,7 +10,7 @@ import asyncio
 import logging
 from asyncio import Event, Lock, Task
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List
+from typing import Any, DefaultDict, Dict, List, Tuple
 
 from multiprocess import Queue
 from pyarrow import Table
@@ -104,7 +104,7 @@ class MemoryProviderHandle:
     at self.storage
     """
 
-    def __init__(self, queue: Queue) -> None:
+    def __init__(self, queue: "Queue[Tuple[str, Any]]") -> None:
         self.queue = queue
         self.storage: DefaultDict[str, List[Any]] = defaultdict(list)
 
@@ -132,14 +132,12 @@ class MemoryUnstructuredProvider(UnstructuredStorageProvider):
         self,
         filename: str,
         blob: bytes,
-        compressed: bool = True,
-        skip_if_exists: bool = True,
+        overwrite: bool = False,
     ) -> None:
-        if skip_if_exists and filename in self.storage:
+        if not overwrite and filename in self.storage:
             return
-        if compressed:
-            bytesIO = self._compress(blob)
-            blob = bytesIO.getvalue()
+        bytesIO = self._compress(blob)
+        blob = bytesIO.getvalue()
         self.storage[filename] = blob
         self.queue.put((filename, blob))
 

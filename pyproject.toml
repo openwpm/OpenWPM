@@ -19,7 +19,6 @@ skip = ["venv", "Extension", "firefox-bin"]
 pythonVersion = "3.10"
 typeCheckingMode = "recommended"
 include = ["openwpm", "test", "demo.py", "custom_command.py"]
-exclude = ["openwpm/utilities/cookie.py"]
 stubPath = "stubs"
 
 [tool.coverage.run]

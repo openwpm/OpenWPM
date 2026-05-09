@@ -252,6 +252,7 @@ class SaveScreenshotCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
+        assert manager_params.screenshot_path is not None
         if self.suffix != "":
             self.suffix = "-" + self.suffix
 
@@ -270,6 +271,7 @@ def _stitch_screenshot_parts(visit_id, browser_id, manager_params):
     max_width = -1
     images = dict()
     parts = list()
+    outname = ""
     for f in glob(
         os.path.join(
             manager_params.screenshot_path, "parts", "%i*-part-*.png" % visit_id
@@ -338,6 +340,7 @@ class ScreenshotFullPageCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
+        assert manager_params.screenshot_path is not None
         self.outdir = os.path.join(manager_params.screenshot_path, "parts")
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
@@ -409,6 +412,7 @@ class DumpPageSourceCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
+        assert manager_params.source_dump_path is not None
         if self.suffix != "":
             self.suffix = "-" + self.suffix
 
@@ -438,6 +442,7 @@ class RecursiveDumpPageSourceCommand(BaseCommand):
         extension_socket,
     ):
         """Dump a compressed html tree for the current page visit"""
+        assert manager_params.source_dump_path is not None
         if self.suffix != "":
             self.suffix = "-" + self.suffix
 

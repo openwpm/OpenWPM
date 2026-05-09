@@ -34,7 +34,9 @@ def parse_neterror(error_message):
     If any errors occur while parsing, we fall back to the unparsed message
     """
     try:
-        qs = NETERROR_RE.match(error_message).group(1)
+        match = NETERROR_RE.match(error_message)
+        assert match is not None
+        qs = match.group(1)
         params = urlparse.parse_qs(qs)
         return "&".join(params["e"])
     except Exception:
