@@ -1,14 +1,36 @@
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, AnyStr, Iterator, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    AnyStr,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import plyvel
 
 
+@overload
+def query_db(
+    db: Path, query: str, params: Any = ..., as_tuple: Literal[False] = False
+) -> List[sqlite3.Row]: ...
+@overload
+def query_db(
+    db: Path, query: str, params: Any = ..., *, as_tuple: Literal[True]
+) -> List[Tuple[Any, ...]]: ...
+@overload
+def query_db(
+    db: Path, query: str, params: Any = ..., as_tuple: bool = False
+) -> Union[List[sqlite3.Row], List[Tuple[Any, ...]]]: ...
 def query_db(
     db: Path, query: str, params: Any = None, as_tuple: bool = False
-) -> List[Union[sqlite3.Row, Tuple[Any, ...]]]:
+) -> Union[List[sqlite3.Row], List[Tuple[Any, ...]]]:
     """Run a query against the given db.
 
     If params is not None, securely construct a query from the given
@@ -38,9 +60,21 @@ def get_content(db_name: Path) -> Iterator[Tuple[AnyStr, AnyStr]]:
     db.close()
 
 
+@overload
+def get_javascript_entries(
+    db: Path, all_columns: bool = ..., as_tuple: Literal[False] = False
+) -> List[sqlite3.Row]: ...
+@overload
+def get_javascript_entries(
+    db: Path, all_columns: bool = ..., *, as_tuple: Literal[True]
+) -> List[Tuple[Any, ...]]: ...
+@overload
+def get_javascript_entries(
+    db: Path, all_columns: bool = ..., as_tuple: bool = False
+) -> Union[List[sqlite3.Row], List[Tuple[Any, ...]]]: ...
 def get_javascript_entries(
     db: Path, all_columns: bool = False, as_tuple: bool = False
-) -> List[Union[Tuple[Any, ...], sqlite3.Row]]:
+) -> Union[List[sqlite3.Row], List[Tuple[Any, ...]]]:
     if all_columns:
         select_columns = "*"
     else:
