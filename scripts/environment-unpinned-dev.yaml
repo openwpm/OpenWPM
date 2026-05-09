@@ -8,12 +8,12 @@ dependencies:
     - pip
     - pre-commit
     - pytest
-    - mypy
     - pytest-asyncio
     - sphinx
     - recommonmark
     - sphinx-markdown-tables
     - pip:
+        - basedpyright
         - pytest-split
         - types-pyyaml
         - types-redis
