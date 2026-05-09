@@ -69,9 +69,11 @@ def get_firefox_binary_path():
 def get_version():
     """Return OpenWPM version tag/current commit and Firefox version"""
     try:
-        openwpm = subprocess.check_output(
-            ["git", "describe", "--tags", "--always"]
-        ).strip()
+        openwpm = (
+            subprocess.check_output(["git", "describe", "--tags", "--always"])
+            .strip()
+            .decode("utf-8")
+        )
     except subprocess.CalledProcessError:
         ver = os.path.join(os.path.dirname(__file__), "../../VERSION")
         with open(ver, "r") as f:
@@ -83,7 +85,7 @@ def get_version():
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Firefox not found. " " Did you run `./install.sh`?") from e
 
-    ff = firefox.split()[-1]
+    ff = firefox.split()[-1].decode("utf-8")
     return openwpm, ff
 
 

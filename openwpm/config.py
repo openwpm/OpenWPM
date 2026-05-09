@@ -79,7 +79,7 @@ class BrowserParams(DataClassJsonMixin):
 
     cookie_instrument: bool = True
     js_instrument: bool = False
-    js_instrument_settings: List[Union[str, dict]] = field(
+    js_instrument_settings: List[Union[str, dict[str, Any]]] = field(
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
@@ -92,7 +92,7 @@ class BrowserParams(DataClassJsonMixin):
     )
     display_mode: Literal["native", "headless", "xvfb"] = "native"
     browser: str = "firefox"
-    prefs: dict = field(default_factory=dict)
+    prefs: dict[str, Any] = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
     profile_archive_dir: Optional[Path] = field(
@@ -344,7 +344,7 @@ def validate_crawl_configs(
 
 
 class ConfigEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Path):
-            return str(obj.resolve())
-        return JSONEncoder.default(self, obj)
+    def default(self, o: Any) -> Any:
+        if isinstance(o, Path):
+            return str(o.resolve())
+        return JSONEncoder.default(self, o)
