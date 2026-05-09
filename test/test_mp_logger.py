@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from pathlib import Path
 
 from openwpm import mp_logger
 from openwpm.utilities.multiprocess_utils import Process
@@ -75,7 +76,7 @@ def child_proc_logging_exception():
 
 
 def get_logfile_path(directory):
-    return os.path.join(directory, "mplogger.log")
+    return Path(directory) / "mplogger.log"
 
 
 def get_logfile_contents(logfile):
