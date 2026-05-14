@@ -756,13 +756,28 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
     // More details about how this function is invoked are in
     // content/javascript-instrument-content-scope.ts
-    JSInstrumentRequests.forEach(function (item) {
-      instrumentObject(
-        eval(item.object),
-        item.instrumentedName,
-        item.logSettings,
-      );
-    });
+    for (const item of JSInstrumentRequests) {
+      try {
+        instrumentObject(
+          eval(item.object),
+          item.instrumentedName,
+          item.logSettings,
+        );
+      } catch (e) {
+        // Signal failure via the DOM; GetCommand reads + clears this.
+        try {
+          const message =
+            e && (e as Error).message ? (e as Error).message : String(e);
+          document.documentElement.setAttribute(
+            "data-openwpm-instrument-error",
+            `${item.instrumentedName}: ${message}`,
+          );
+        } catch {
+          // documentElement unwritable; probe will see nothing.
+        }
+        return;
+      }
+    }
   }
 
   // This whole function getInstrumentJS returns just the function `instrumentJS`.
