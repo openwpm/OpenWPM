@@ -21,6 +21,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from ..config import BrowserParams, ManagerParams
+from ..errors import CommandExecutionError
 from ..socket_interface import ClientSocket
 from .types import BaseCommand
 from .utils.webdriver_utils import (
@@ -139,8 +140,26 @@ class GetCommand(BaseCommand):
 
         close_other_windows(webdriver)
 
+        if browser_params.js_instrument:
+            _check_js_instrumentation_status(webdriver, self)
+
         if browser_params.bot_mitigation:
             bot_mitigation(webdriver)
+
+
+def _check_js_instrumentation_status(webdriver: Firefox, command: BaseCommand) -> None:
+    try:
+        error = webdriver.execute_script(
+            "var e = document.documentElement.getAttribute("
+            "'data-openwpm-instrument-error');"
+            "document.documentElement.removeAttribute("
+            "'data-openwpm-instrument-error');"
+            "return e;"
+        )
+    except WebDriverException:
+        return
+    if error:
+        raise CommandExecutionError(f"JS instrumentation failed for {error}", command)
 
 
 class BrowseCommand(BaseCommand):

@@ -395,3 +395,36 @@ class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
             expected_method_calls=self.METHOD_CALLS,
             expected_gets_and_sets=self.GETS_AND_SETS,
         )
+
+
+class TestJSInstrumentFailurePropagates(OpenWPMJSTest):
+    TEST_PAGE = "instrument_pyside.html"
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].js_instrument_settings = [
+            {"window.NonExistent.deeplyMissing": ["foo"]},
+        ]
+        return manager_params, browser_params
+
+    def test_failure_marks_visit_failed(self):
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        rows = db_utils.query_db(
+            db,
+            "SELECT command, command_status, error FROM crawl_history "
+            "WHERE command = 'GetCommand'",
+        )
+        assert rows, "expected a GetCommand row in crawl_history"
+        statuses = [row["command_status"] for row in rows]
+        errors = [row["error"] or "" for row in rows]
+        assert any(
+            s != "ok" for s in statuses
+        ), f"expected a failed GetCommand, got statuses={statuses}"
+        assert any(
+            "JS instrumentation failed" in e for e in errors
+        ), f"expected instrumentation error message, got errors={errors}"
+        assert any(
+            "window.NonExistent.deeplyMissing" in e for e in errors
+        ), f"expected failing item name in error, got errors={errors}"
