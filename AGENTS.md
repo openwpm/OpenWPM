@@ -29,6 +29,10 @@ pytest -m pyonly  # Python-only tests (no browser)
 pytest -m slow    # Slow tests
 ```
 
+Testing philosophy: test as much as possible, nothing should silently rot; the
+critical surface is the WebExtension↔Firefox interaction. See
+[docs/design-principles.rst](docs/design-principles.rst).
+
 ### Linting & Formatting
 
 **Python:**
@@ -68,6 +72,11 @@ TaskManager (orchestrator)
     └── UnstructuredStorageProvider (LevelDB/Gzip/S3/GCS)
 ```
 
+Deep docs (read when relevant): [docs/design-principles.rst](docs/design-principles.rst)
+— the *why* (trust model, non-goals, working norms);
+[docs/Architecture-Internals.rst](docs/Architecture-Internals.rst) — process
+model, channels, rationale, custom-command pitfalls.
+
 ### Core Components
 
 - **TaskManager** (`openwpm/task_manager.py`): Orchestrates browsers, manages command queues, runs watchdogs for crash recovery
@@ -86,6 +95,7 @@ TaskManager (orchestrator)
 ### Known Issues
 
 - `callstack_instrument` is broken — enabling it raises `ConfigError`. See [#557](https://github.com/openwpm/OpenWPM/issues/557).
+- Known-broken-but-aspirational code (e.g. `callstack_instrument`) is kept on purpose as a reference for an eventual fix. Do not delete it as "dead code" — see [docs/design-principles.rst](docs/design-principles.rst).
 
 ### Large Test Fixtures (jj users)
 
@@ -97,11 +107,23 @@ Schema files must be kept in sync:
 - `openwpm/storage/schema.sql` (SQLite)
 - `openwpm/storage/parquet_schema.py` (Parquet)
 
+Direction: the SQLAlchemy storage work ([#1161](https://github.com/openwpm/OpenWPM/pull/1161))
+is moving the schema toward a single SQLAlchemy model as the source of truth.
+Do not deepen the hand-synced two-file split in new code while that lands.
+
 ## Scratch Space
 
 Use `datadir/` (project root) for any temporary or scratch data — crawl outputs, test databases, logs, etc. This directory is gitignored and is the conventional location for local data. Do not use `/tmp`, `~`, or other locations outside the project.
 
 `demo.py` defaults to writing here (`manager_params.data_directory = Path("./datadir/")`). The directory is created on demand.
+
+## Governance
+
+OpenWPM has a single active maintainer who makes architectural decisions. The
+project optimizes for architectural quality and is not bound to track every
+researcher feature request. It will avoid breaking things deliberately, but
+some surfaces (e.g. the SQL schema) are explicitly not guaranteed stable — see
+[docs/design-principles.rst](docs/design-principles.rst).
 
 ## Release Process
 

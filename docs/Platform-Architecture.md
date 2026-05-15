@@ -100,7 +100,7 @@ The currently supported instruments can be found in [Configuration.md](Configura
 The Storage Controller, contained in `openwpm/storage/storage_controller.py`, gets spawned in a separate process and receives data from the WebExtension and the platform alike. It supports both local and remote data saving via pluggable `StructuredStorageProvider` and `UnstructuredStorageProvider` implementations.
 The Storage Controller is isolated from the other processes through a network socket interface (see `openwpm/socket_interface.py`).
 
-For detailed internals (communication channels, timeouts, coupling analysis), see [Architecture-Internals.md](Architecture-Internals.md).
+For detailed internals (communication channels, timeouts, coupling analysis), see [Architecture-Internals](Architecture-Internals.html).
 
 ### Data Logged
 

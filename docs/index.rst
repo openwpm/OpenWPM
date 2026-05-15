@@ -34,6 +34,10 @@ We're hoping to improve this setup in the future.
 
    Platform-Architecture
 
+   Architecture-Internals
+
+   design-principles
+
    Release-Checklist
 
    developers/JS-Instrument
