@@ -38,6 +38,10 @@ We're hoping to improve this setup in the future.
 
    developers/JS-Instrument
 
+   developers/Stealth-Instrumentation
+
+   developers/Stealth-Requirements
+
 
 Indices and tables
 ==================
