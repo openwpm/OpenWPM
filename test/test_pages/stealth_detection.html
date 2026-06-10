@@ -100,18 +100,38 @@
         return true;
     }
 
-    // Test 9: Check that Object.getOwnPropertyNames doesn't show extra
-    // instrumentation properties on prototypes
+    // Test 9: Detect prototype pollution from ancestor-prototype flattening.
+    //
+    // The legacy instrument, when given an empty propertiesToInstrument list,
+    // calls Object.getPropertyNames(object) — which it (re)defines to walk the
+    // ENTIRE prototype chain and concatenate every ancestor's own-property
+    // names (lib/js-instruments.ts) — then Object.defineProperty()s each name
+    // back onto the FIRST object. The fingerprinting collection instruments
+    // CanvasRenderingContext2D with only excludedProperties set (empty
+    // propertiesToInstrument), so under legacy the methods that legitimately
+    // live on Object.prototype (hasOwnProperty, valueOf, isPrototypeOf,
+    // propertyIsEnumerable, toLocaleString) get flattened DOWN onto
+    // CanvasRenderingContext2D.prototype as OWN properties.
+    //
+    // In a clean Firefox (and under the stealth per-prototype instrument)
+    // those names are NOT own properties of CanvasRenderingContext2D.prototype
+    // — they are inherited from Object.prototype. We assert that invariant: a
+    // browser is "normal" (returns true) iff none of Object.prototype's own
+    // methods have leaked down as own properties of an instrumented prototype.
     function testNoExtraPrototypeProperties() {
-        // In a normal browser, CanvasRenderingContext2D.prototype should not
-        // have any properties added by instrumentation
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
-        const proto = Object.getPrototypeOf(ctx);
-        const propNames = Object.getOwnPropertyNames(proto);
-        // Check none of the properties look like OpenWPM instrumentation artifacts
-        for (const name of propNames) {
-            if (name.startsWith("__openWPM") || name.startsWith("__openwpm")) {
+        const proto = Object.getPrototypeOf(ctx); // CanvasRenderingContext2D.prototype
+
+        // Names that exist on Object.prototype but must NOT be own properties
+        // of CanvasRenderingContext2D.prototype in an un-flattened chain.
+        const ancestorOnly = Object.getOwnPropertyNames(Object.prototype).filter(
+            (name) => name !== "constructor",
+        );
+        for (const name of ancestorOnly) {
+            if (Object.prototype.hasOwnProperty.call(proto, name)) {
+                // An Object.prototype member leaked down onto an instrumented
+                // prototype as an own property — the flattening artifact.
                 return false;
             }
         }

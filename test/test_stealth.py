@@ -137,17 +137,25 @@ def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Pa
 #                              only the stealth direction is asserted.
 # See docs/developers/Stealth-Requirements.md for the rationale per row.
 # --------------------------------------------------------------------------- #
+# legacy_detectable values below were ratcheted from an empirical Firefox 150
+# run (unbranded add-on-devel) recording the legacy detection page results:
+#   webdriver_flag=False, canvas/storage/rtc native=False, navigator_native=True,
+#   no_global_leaks=False, constructors_present=False ("too much recursion"),
+#   bind_integrity=True, clean_error_stacks=True, no_extra_prototype_properties=False.
+# A False result means the legacy instrument was DETECTED, so legacy_detectable=True.
+# D3/D6/D7 legacy results were True (not detected) in this build, so they stay
+# None (stealth-only assertion) rather than asserting a control that does not hold.
 DETECTABILITY_REQUIREMENTS: List[Tuple[str, str, Optional[bool]]] = [
-    ("D1-webdriver-flag", "webdriver_flag", None),
+    ("D1-webdriver-flag", "webdriver_flag", True),
     ("D2-native-fn-canvas", "canvas_functions_native", True),
     ("D2-native-fn-storage", "storage_functions_native", True),
     ("D2-native-fn-rtc", "rtc_native", True),
-    ("D3-native-getter-navigator", "navigator_native", True),
+    ("D3-native-getter-navigator", "navigator_native", None),
     ("D4-no-global-leaks", "no_global_leaks", True),
-    ("D5-constructors-present", "constructors_present", None),
+    ("D5-constructors-present", "constructors_present", True),
     ("D6-bind-integrity", "bind_integrity", None),
     ("D7-clean-error-stacks", "clean_error_stacks", None),
-    ("D8-no-prototype-pollution", "no_extra_prototype_properties", None),
+    ("D8-no-prototype-pollution", "no_extra_prototype_properties", True),
 ]
 
 _LEGACY_DETECTABLE = [r for r in DETECTABILITY_REQUIREMENTS if r[2]]

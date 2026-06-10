@@ -19,9 +19,8 @@ export type InstrumentedName = string;
 export type PropertiesToInstrument =
   | (
       | {
-          depth?: number;
-          propertyNames?: string[];
-          [k: string]: unknown;
+          depth: number;
+          propertyNames: string[];
         }
       | string
     )[]

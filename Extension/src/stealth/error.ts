@@ -76,6 +76,17 @@ function getBeginOfScriptCalls(stack) {
 }
 
 /*
+ * Drops every frame that belongs to the extension (moz-extension:// frames)
+ * from a stack-trace frame array, leaving only page frames. Used to keep the
+ * recorded call_stack free of extension frames even when the page calls back
+ * into instrumented APIs (which interleaves extension frames mid-stack).
+ */
+function filterExtensionFrames(frames: string[]): string[] {
+  const extensionID = browser.runtime.getURL("");
+  return frames.filter((frame) => !frame.includes(extensionID));
+}
+
+/*
  * Get the stack as array
  */
 function splitStack(stack) {
@@ -169,4 +180,9 @@ function getStackTrace() {
   return stack;
 }
 
-export { generateErrorObject, getBeginOfScriptCalls, getStackTrace };
+export {
+  filterExtensionFrames,
+  generateErrorObject,
+  getBeginOfScriptCalls,
+  getStackTrace,
+};

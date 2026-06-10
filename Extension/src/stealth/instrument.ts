@@ -1,5 +1,6 @@
 import { jsInstrumentationSettings as defaultSettings } from "./settings";
 import {
+  filterExtensionFrames,
   generateErrorObject,
   getBeginOfScriptCalls,
   getStackTrace,
@@ -179,7 +180,7 @@ function getPathToDomElement(element, visibilityAttr: boolean = false) {
   }
 }
 
-function getOriginatingScriptContext(getCallStack = false, isCall = false) {
+function getOriginatingScriptContext(getCallStack = false) {
   const trace = getStackTrace().trim().split("\n");
   // return a context object even if there is an error
   const empty_context = {
@@ -194,10 +195,14 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
     return empty_context;
   }
 
-  let traceStart = getBeginOfScriptCalls(trace);
+  const traceStart = getBeginOfScriptCalls(trace);
   if (traceStart === -1) {
-    // If not included, use heuristic, 0-3 or 0-2 are OpenWPMs functions
-    traceStart = isCall ? 3 : 4;
+    // Every frame is an extension frame (e.g. an API invoked purely from
+    // within instrumentation, or a stack truncated to extension frames).
+    // There is no honest page attribution, so emit a blank context rather
+    // than guessing a fixed offset — guessing would slice extension frames
+    // into the recorded call_stack and re-leak moz-extension:// URLs.
+    return empty_context;
   }
   const callSite: string | null = trace[traceStart];
   if (!callSite) {
@@ -237,12 +242,16 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
       scriptCol: columnNo,
       funcName,
       scriptLocEval,
-      // Slice from traceStart (the first non-extension frame), NOT a hardcoded
-      // index: the extension-frame prefix varies in length, so slicing at a
-      // fixed offset would leak moz-extension:// frames into the recorded
-      // call_stack and make it inconsistent with script_url (parsed from
-      // trace[traceStart]). Legacy records only page frames; match that.
-      callStack: getCallStack ? trace.slice(traceStart).join("\n").trim() : "",
+      // Record only page frames. Slicing from traceStart (the first
+      // non-extension frame) drops the leading extension prefix, but the page
+      // can call back into instrumented APIs, interleaving extension frames
+      // deeper in the stack — so additionally filter EVERY moz-extension://
+      // frame out. If nothing remains, emit "" rather than an extension frame.
+      // This keeps call_stack consistent with script_url and never re-leaks
+      // the extension origin.
+      callStack: getCallStack
+        ? filterExtensionFrames(trace.slice(traceStart)).join("\n").trim()
+        : "",
     };
     return callContext;
   } catch (e) {
@@ -768,7 +777,7 @@ function instrumentGetterSetter(
 function functionGenerator(_context, identifier, original, _funcName) {
   function temp() {
     let result;
-    const callContext = getOriginatingScriptContext(true, true);
+    const callContext = getOriginatingScriptContext(true);
     logCall(identifier, arguments, callContext);
     try {
       result =

@@ -21,6 +21,12 @@ async function main() {
       navigation_instrument: true,
       cookie_instrument: true,
       js_instrument: true,
+      // Stealth is intentionally OFF in this manual-test fallback (used only
+      // when browser_params.json is absent). Because it is off,
+      // cleaned_stealth_js_instrument_settings is deliberately omitted —
+      // resolveInstrumentationSettings() never runs. To manually test stealth,
+      // set stealth_js_instrument:true AND js_instrument:false here and add a
+      // cleaned_stealth_js_instrument_settings array in the stealth shape.
       stealth_js_instrument: false,
       cleaned_js_instrument_settings: [
         {
