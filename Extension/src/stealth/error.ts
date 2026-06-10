@@ -55,7 +55,9 @@ function cleanErrorStack(stack) {
   const lines = typeof stack !== "string" ? stack : splitStack(stack);
   lines.forEach((line) => {
     if (line.includes(extensionID)) {
-      stack = stack.replace(line + "\n", "");
+      // Strip the frame whether or not it is followed by a newline — a
+      // trailing extension frame (last line, no trailing "\n") must also go.
+      stack = stack.replace(line + "\n", "").replace(line, "");
     }
   });
   return stack;
@@ -76,14 +78,18 @@ function getBeginOfScriptCalls(stack) {
 }
 
 /*
- * Drops every frame that belongs to the extension (moz-extension:// frames)
+ * Drops every frame that belongs to ANY extension (moz-extension:// frames)
  * from a stack-trace frame array, leaving only page frames. Used to keep the
  * recorded call_stack free of extension frames even when the page calls back
  * into instrumented APIs (which interleaves extension frames mid-stack).
+ *
+ * Filters on the literal "moz-extension://" scheme rather than only this
+ * extension's own UUID URL: a co-installed extension instrumenting the same
+ * page could otherwise leak its frames into the recorded call_stack. The
+ * own-UUID check is a strict subset of this scheme check.
  */
 function filterExtensionFrames(frames: string[]): string[] {
-  const extensionID = browser.runtime.getURL("");
-  return frames.filter((frame) => !frame.includes(extensionID));
+  return frames.filter((frame) => !frame.includes("moz-extension://"));
 }
 
 /*

@@ -608,9 +608,10 @@ function instrumentGetObjectProperty(
   newValue,
   object,
   args,
+  logCallStack = false,
 ) {
   const originalValue = original.call(object, ...args);
-  const callContext = getOriginatingScriptContext(true);
+  const callContext = getOriginatingScriptContext(logCallStack);
   const returnValue = newValue !== undefined ? newValue : originalValue;
   logValue(
     identifier,
@@ -634,8 +635,9 @@ function instrumentSetObjectProperty(
   newValue,
   object,
   _args,
+  logCallStack = false,
 ) {
-  const callContext = getOriginatingScriptContext(true);
+  const callContext = getOriginatingScriptContext(logCallStack);
   logValue(
     identifier,
     newValue,
@@ -658,6 +660,7 @@ function generateGetter(
   descriptor,
   propertyName,
   newValue = undefined,
+  logCallStack = false,
 ) {
   const original = descriptor.get;
   return Object.getOwnPropertyDescriptor(
@@ -669,6 +672,7 @@ function generateGetter(
           newValue,
           this,
           arguments,
+          logCallStack,
         );
       },
     },
@@ -688,6 +692,7 @@ function generateSetter(
   descriptor,
   propertyName,
   _newValue: any | undefined = undefined,
+  logCallStack = false,
 ) {
   const original = descriptor.set;
   return Object.getOwnPropertyDescriptor(
@@ -699,6 +704,7 @@ function generateSetter(
           value,
           this,
           arguments,
+          logCallStack,
         );
       },
     },
@@ -739,6 +745,7 @@ function instrumentGetterSetter(
   pageObject,
   propertyName,
   newValue = undefined,
+  logCallStack = false,
 ) {
   let instrumentedFunction;
   const getFuncType = "get";
@@ -750,6 +757,7 @@ function instrumentGetterSetter(
       descriptor,
       propertyName,
       newValue,
+      logCallStack,
     );
     injectFunction(
       instrumentedFunction,
@@ -760,7 +768,13 @@ function instrumentGetterSetter(
     );
   }
   if (Object.prototype.hasOwnProperty.call(descriptor, setFuncType)) {
-    instrumentedFunction = generateSetter(identifier, descriptor, propertyName);
+    instrumentedFunction = generateSetter(
+      identifier,
+      descriptor,
+      propertyName,
+      undefined,
+      logCallStack,
+    );
     injectFunction(
       instrumentedFunction,
       descriptor,
@@ -774,10 +788,16 @@ function instrumentGetterSetter(
 /*
  * TODO: Add description
  */
-function functionGenerator(_context, identifier, original, _funcName) {
+function functionGenerator(
+  _context,
+  identifier,
+  original,
+  _funcName,
+  logCallStack = false,
+) {
   function temp() {
     let result;
-    const callContext = getOriginatingScriptContext(true);
+    const callContext = getOriginatingScriptContext(logCallStack);
     logCall(identifier, arguments, callContext);
     try {
       result =
@@ -802,6 +822,7 @@ function instrumentFunction(
   identifier,
   pageObject,
   propertyName,
+  logCallStack = false,
 ) {
   const original = descriptor.value;
   const tempFunction = functionGenerator(
@@ -809,6 +830,7 @@ function instrumentFunction(
     identifier,
     original,
     propertyName,
+    logCallStack,
   );
   const exportedFunction = exportCustomFunction(
     tempFunction,
@@ -843,6 +865,7 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
       // Do not do undefined descriptor. We can safely skip them
       return;
     }
+    const logCallStack = Boolean(item.logSettings.logCallStack);
     if (typeof descriptor.value === "function") {
       instrumentFunction(
         context,
@@ -850,6 +873,7 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
         identifier,
         pageObject,
         propertyName,
+        logCallStack,
       );
     } else {
       instrumentGetterSetter(
@@ -858,6 +882,7 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
         pageObject,
         propertyName,
         newValue,
+        logCallStack,
       );
     }
   } catch (error) {

@@ -293,7 +293,9 @@ export const jsInstrumentationSettings: JSInstrumentSettings = [
     instrumentedName: "document",
     depth: 0,
     logSettings: {
-      propertiesToInstrument: [{ depth: 2, propertyNames: ["referrer"] }],
+      propertiesToInstrument: [
+        { depth: 2, propertyNames: ["cookie", "referrer"] },
+      ],
       nonExistingPropertiesToInstrument: [],
       excludedProperties: [],
       overwrittenProperties: [],
