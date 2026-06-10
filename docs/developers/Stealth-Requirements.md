@@ -67,13 +67,26 @@ forge records. The stealth instrument calls the privileged
 |----|-------------|------------------|----------------|------------------|------|
 | **X1** | A page cannot **suppress** record delivery | override `document.dispatchEvent` to swallow events, then call instrumented APIs | post-hijack calls dropped ❌ | privileged messaging bypasses the DOM | `stealth_disruption_suppress.html` |
 | **X2** | A page cannot **forge** records | grab `eventId` (via an intercepted dispatch), emit `CustomEvent(eventId, {detail:[forged]})` | forged rows enter the DB ❌ | no page-reachable channel to inject into | `stealth_disruption_forge.html` |
-| **X3** | Dynamically-created **iframes** are instrumented | JS-create an iframe that runs an API call before injection | timing gap can miss frames | `stealth.ts` frame protection + `MutationObserver` | *(spec'd; differential is timing-sensitive — investigate before implementing)* |
+| **X3** | Dynamically-created **iframes** are instrumented | JS-create an iframe that runs an API call before injection | records the call only under the frame's own `about:blank`, never the parent context | `stealth.ts` frame protection + `MutationObserver` instruments the new frame within the parent's context | `stealth_disruption_iframe.html` |
+
+> **X3 empirical finding (Firefox 150, headless, 3 runs — stable).** The page
+> JS-creates an iframe (`createElement('iframe')` + `appendChild`) and calls
+> `canvas.toDataURL` inside the new frame's document. **Both** modes record the
+> in-iframe call, so "legacy misses the call entirely" does **not** hold in this
+> build. The stable differential is *attribution*: stealth records **two**
+> `toDataURL` rows — one under the frame's `about:blank` and one under the
+> **parent page** `document_url` — because frame protection injects into the new
+> frame as part of the parent's instrumented context. Legacy records **one** row,
+> only under `about:blank`. The shipped paired test asserts on the parent-URL
+> attribution (`test_x3_stealth_instruments_dynamic_iframe` /
+> `test_x3_legacy_misses_dynamic_iframe_parent_attribution`), which is the
+> reproducible distinction, rather than a flaky raw-count race.
 
 ## Attribution requirement
 
 | ID | Requirement | Why it matters | Stealth defense | Test |
 |----|-------------|----------------|------------------|------|
-| **A1** | Records attribute to the **page script** with a stack free of extension frames | a polluted `call_stack` (or wrong `script_url`) corrupts provenance analysis and re-leaks `moz-extension://` | `instrument.ts` parses `script_url` from the first non-extension frame; the recorded `call_stack` then has **every** extension frame filtered out (not just the leading prefix), so an API invoked purely from instrumentation, or a page that calls back into instrumented APIs, can never leak `moz-extension://`. When no page frame remains the context is blank. | `stealth_attribution.html` |
+| **A1** | Records attribute to the **page script** with a stack free of extension frames | a polluted `call_stack` (or wrong `script_url`) corrupts provenance analysis and re-leaks `moz-extension://` | `instrument.ts` parses `script_url` from the first non-extension frame; the recorded `call_stack` then has **every** extension frame filtered out (matching the literal `moz-extension://` scheme, not just this extension's UUID), so an API invoked purely from instrumentation, or a page that calls back into instrumented APIs, can never leak `moz-extension://` — even a co-installed extension's frame. When no page frame remains the context is blank. Stack collection is gated by the per-object `logSettings.logCallStack` flag (honoured like legacy), so the attribution test runs with a custom surface that sets `logCallStack: true` for the canvas object, which doubly proves the flag is respected. | `stealth_attribution.html` |
 
 ## Configurability requirement
 
@@ -112,8 +125,11 @@ shared results; X* tests each run their own attack page per mode.
   (a custom `instrumentedName` proves the configured surface replaced the
   default) and `test_custom_settings_stay_undetectable` (a custom surface still
   passes every D* vector).
-- **X3** → specified above; same paired pattern, pending investigation (the
-  differential is timing-sensitive, so no test is shipped to avoid flakiness).
+- **X3** → `TestStealthDisruption` —
+  `test_x3_stealth_instruments_dynamic_iframe` (stealth attributes the
+  dynamic-iframe `toDataURL` to the parent page `document_url`) and
+  `test_x3_legacy_misses_dynamic_iframe_parent_attribution` (legacy records it
+  only under the frame's `about:blank`). See the X3 empirical finding above.
 
 > The new browser-driven tests require a Firefox + xpi run to validate; they are
 > written from the code paths above but have not been executed in CI yet.

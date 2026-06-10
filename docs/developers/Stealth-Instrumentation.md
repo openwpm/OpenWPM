@@ -147,7 +147,7 @@ Compared to the legacy `collection_fingerprinting` preset (the default):
 **Captured identically:** ScriptProcessorNode, GainNode, AnalyserNode,
 OscillatorNode, AudioContext, OfflineAudioContext, RTCPeerConnection,
 HTMLCanvasElement, CanvasRenderingContext2D, Storage (`getItem`/`setItem`/…),
-Navigator, `document.referrer`.
+Navigator, `document.cookie`, `document.referrer`.
 
 **Captured additionally by stealth:** `AudioWorkletNode` (the modern
 replacement legacy lacks); all `Screen` properties (legacy records only
@@ -157,7 +157,6 @@ replacement legacy lacks); all `Screen` properties (legacy records only
 
 | Lost signal | Legacy | Stealth | Notes |
 |---|---|---|---|
-| `document.cookie` get/set | instrumented | **not instrumented** (only `referrer`) | Script-set/read cookies are not recorded in the `javascript` table. HTTP `Set-Cookie` is still captured by the cookie instrument; this affects only the JS API path. |
 | `window.name` | instrumented | not instrumented | Loses a cross-origin tracking vector. |
 | `window.localStorage` / `window.sessionStorage` property access | instrumented at `window` level | only the `Storage` prototype methods | The actual `getItem`/`setItem` calls are still recorded; only the property *access* logging is lost. |
 | `nonExistingPropertiesToInstrument` (honey properties) | supported | unused | Cannot instrument access to non-existent properties. |
@@ -176,9 +175,10 @@ configurability (C1) matrices and the per-requirement test names. In summary:
 - **Detectability** — `stealth_detection.html` exercises the D1–D8 vectors;
   `TestStealthDetectability` asserts stealth passes every vector and that legacy
   trips the reliable subset (D2/D3/D4) as a control.
-- **Disruptability** — `TestStealthDisruption` runs the X1 (suppression) and X2
-  (forgery) attack pages both ways: legacy is shown to lose/accept records,
-  stealth to resist.
+- **Disruptability** — `TestStealthDisruption` runs the X1 (suppression), X2
+  (forgery) and X3 (dynamic iframe) attack pages both ways: legacy is shown to
+  lose/accept records or miss the parent-context attribution, stealth to resist
+  and instrument the dynamic frame.
 - **Attribution** — the A1 test asserts stealth records name the page script and
   carry a `call_stack` free of `moz-extension://` frames.
 - **Configurability** — `TestStealthConfigurability` proves a custom surface
@@ -187,12 +187,15 @@ configurability (C1) matrices and the per-requirement test names. In summary:
 
 ## Known limitations / future work
 
-- **X3 (unobserved iframes) has no shipped test.** The implementation defends
-  against dynamically-created iframes via `stealth.ts` frame protection and a
-  `MutationObserver`, but the legacy/stealth differential is timing-sensitive,
-  so no regression test is shipped (it is spec'd in the requirements doc).
-- **`document.cookie` is not captured by the default surface** (see table
-  above); a custom surface can add it.
+- **X3 (dynamic iframes).** Stealth's frame protection (`stealth.ts`
+  contentWindow/contentDocument hooks + `MutationObserver`) instruments
+  dynamically-created iframes; a paired regression test ships
+  (`test_x3_*` in `test/test_stealth.py`, page
+  `stealth_disruption_iframe.html`). Empirically both modes record an in-iframe
+  `toDataURL`, but only stealth additionally attributes it to the **parent
+  page** `document_url` (frame protection runs in the parent's instrumented
+  context); legacy records it solely under the frame's own `about:blank`. See
+  `Stealth-Requirements.md` for the full empirical finding.
 - Out of scope (environment fingerprints, not instrumentation artifacts):
   screen/window position, font enumeration, WebGL deviations, timezone. Also
   out of scope: silent JS delivery via non-`.js` MIME/extension, which concerns
