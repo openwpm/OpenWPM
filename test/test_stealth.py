@@ -1,21 +1,22 @@
-"""Tests that verify the stealth extension makes OpenWPM undetectable.
+"""Requirement-driven tests for the stealth JavaScript instrumentation.
 
-These tests are based on the detection methods described in:
-- Krumnow et al., "Fingerprint surface-based detection of web bot detectors" (ESORICS 2019)
-- https://github.com/bkrumnow/DetectOpenWPM
-- https://github.com/IAIK/jstemplate
+Each test maps to a numbered requirement in
+``docs/developers/Stealth-Requirements.md``. Detectability requirements (D*)
+assert the stealth instrument is undetectable where the legacy instrument is
+detectable; disruptability requirements (X*) assert a hostile page cannot drop
+or forge records under stealth where it can under legacy.
 
-Each test visits a detection page and checks that the browser appears
-indistinguishable from a normal (non-instrumented) Firefox browser.
+Based on Krumnow, Jonker & Karsch, "Analysing and strengthening OpenWPM's
+reliability" (arXiv:2205.08890, 2022).
 
-These tests are expected to:
-- PASS when stealth_js_instrument=True (stealth extension active)
-- FAIL when js_instrument=True (legacy instrumentation, which pollutes prototypes)
+These tests:
+- PASS when ``stealth_js_instrument=True`` (stealth extension active)
+- demonstrate detection/disruption when ``js_instrument=True`` (legacy)
 """
 
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pytest
 from selenium.webdriver import Firefox
@@ -31,14 +32,46 @@ from openwpm.utilities import db_utils
 
 from . import utilities
 
-STEALTH_DETECTION_URL = f"{utilities.BASE_TEST_URL}/stealth_detection.html"
+DETECTION_URL = f"{utilities.BASE_TEST_URL}/stealth_detection.html"
+SUPPRESS_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_suppress.html"
+FORGE_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_forge.html"
+ATTRIBUTION_URL = f"{utilities.BASE_TEST_URL}/stealth_attribution.html"
 
 
+# --------------------------------------------------------------------------- #
+# Config helpers
+# --------------------------------------------------------------------------- #
+def _stealth_params(data_dir: Path) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params = ManagerParams(num_browsers=1)
+    browser_params = [BrowserParams()]
+    manager_params.data_directory = data_dir
+    manager_params.log_path = data_dir / "openwpm.log"
+    manager_params.testing = True
+    browser_params[0].display_mode = "headless"
+    browser_params[0].stealth_js_instrument = True
+    browser_params[0].js_instrument = False
+    return manager_params, browser_params
+
+
+def _legacy_params(data_dir: Path) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params = ManagerParams(num_browsers=1)
+    browser_params = [BrowserParams()]
+    manager_params.data_directory = data_dir
+    manager_params.log_path = data_dir / "openwpm.log"
+    manager_params.testing = True
+    browser_params[0].display_mode = "headless"
+    browser_params[0].stealth_js_instrument = False
+    browser_params[0].js_instrument = True
+    return manager_params, browser_params
+
+
+# --------------------------------------------------------------------------- #
+# Crawl helpers
+# --------------------------------------------------------------------------- #
 class ReadDetectionResults(BaseCommand):
-    """Command that reads detection test results from the page DOM.
+    """Read the detection page's ``data-results`` JSON into a file.
 
-    Writes results to a JSON file so they can be read back from the
-    main process (commands execute in a subprocess).
+    Commands execute in a subprocess, so results are passed back via file.
     """
 
     def __init__(self, results_file: Path) -> None:
@@ -63,228 +96,348 @@ class ReadDetectionResults(BaseCommand):
         self.results_file.write_text(results_json or "{}")
 
 
-def _run_detection(
-    manager_params: ManagerParams,
-    browser_params: List[BrowserParams],
-    results_file: Path,
-) -> dict:
-    """Run the detection page and return results."""
+def _collect_detection(
+    params: Tuple[ManagerParams, List[BrowserParams]], results_file: Path
+) -> Dict:
+    """Run the detection page once and return its result dict."""
+    manager_params, browser_params = params
     db_path = manager_params.data_directory / "crawl-data.sqlite"
-    structured_provider = SQLiteStorageProvider(db_path)
     manager = TaskManager(
-        manager_params,
-        browser_params,
-        structured_provider,
-        None,
+        manager_params, browser_params, SQLiteStorageProvider(db_path), None
     )
-
-    cs = CommandSequence(STEALTH_DETECTION_URL)
+    cs = CommandSequence(DETECTION_URL)
     cs.get(sleep=2)
     cs.append_command(ReadDetectionResults(results_file))
     manager.execute_command_sequence(cs)
     manager.close()
+    return json.loads(results_file.read_text()) if results_file.exists() else {}
 
-    if results_file.exists():
-        return json.loads(results_file.read_text())
-    return {}
+
+def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Path:
+    """Visit ``url`` and return the sqlite db path for inspection."""
+    manager_params, browser_params = params
+    db_path = manager_params.data_directory / "crawl-data.sqlite"
+    manager = TaskManager(
+        manager_params, browser_params, SQLiteStorageProvider(db_path), None
+    )
+    cs = CommandSequence(url)
+    cs.get(sleep=2)
+    manager.execute_command_sequence(cs)
+    manager.close()
+    return db_path
+
+
+# --------------------------------------------------------------------------- #
+# Detectability requirements (D*)
+#
+# (requirement id, detection-page result key, legacy_detectable)
+#   legacy_detectable=True  -> legacy is expected to TRIP this check
+#                              (results[key] is not True under legacy)
+#   legacy_detectable=None  -> legacy behaviour is environment/path-dependent;
+#                              only the stealth direction is asserted.
+# See docs/developers/Stealth-Requirements.md for the rationale per row.
+# --------------------------------------------------------------------------- #
+DETECTABILITY_REQUIREMENTS: List[Tuple[str, str, Optional[bool]]] = [
+    ("D1-webdriver-flag", "webdriver_flag", None),
+    ("D2-native-fn-canvas", "canvas_functions_native", True),
+    ("D2-native-fn-storage", "storage_functions_native", True),
+    ("D2-native-fn-rtc", "rtc_native", True),
+    ("D3-native-getter-navigator", "navigator_native", True),
+    ("D4-no-global-leaks", "no_global_leaks", True),
+    ("D5-constructors-present", "constructors_present", None),
+    ("D6-bind-integrity", "bind_integrity", None),
+    ("D7-clean-error-stacks", "clean_error_stacks", None),
+    ("D8-no-prototype-pollution", "no_extra_prototype_properties", None),
+]
+
+_LEGACY_DETECTABLE = [r for r in DETECTABILITY_REQUIREMENTS if r[2]]
 
 
 @pytest.mark.usefixtures("xpi", "server")
-class TestStealthDetection:
-    """Tests that verify stealth mode defeats common detection vectors.
+class TestStealthDetectability:
+    """D* — the stealth instrument must be indistinguishable from a normal Firefox."""
 
-    These tests PASS when the stealth extension is active, meaning
-    the browser appears as a normal, non-instrumented Firefox.
-    """
+    @pytest.fixture(scope="class")
+    def stealth_results(self, tmp_path_factory: pytest.TempPathFactory) -> Dict:
+        data_dir = tmp_path_factory.mktemp("stealth_detect")
+        results = _collect_detection(
+            _stealth_params(data_dir), data_dir / "results.json"
+        )
+        assert results, "no stealth detection results collected"
+        return results
 
-    @pytest.fixture(autouse=True)
-    def set_tmpdir(self, tmp_path: Path) -> None:
-        self.tmpdir = tmp_path
+    @pytest.fixture(scope="class")
+    def legacy_results(self, tmp_path_factory: pytest.TempPathFactory) -> Dict:
+        data_dir = tmp_path_factory.mktemp("legacy_detect")
+        results = _collect_detection(
+            _legacy_params(data_dir), data_dir / "results.json"
+        )
+        assert results, "no legacy detection results collected"
+        return results
 
-    def _get_stealth_config(
-        self,
-    ) -> Tuple[ManagerParams, List[BrowserParams]]:
-        manager_params = ManagerParams(num_browsers=1)
-        browser_params = [BrowserParams()]
-        manager_params.data_directory = self.tmpdir
-        manager_params.log_path = self.tmpdir / "openwpm.log"
-        manager_params.testing = True
-        browser_params[0].display_mode = "headless"
-        browser_params[0].stealth_js_instrument = True
-        browser_params[0].js_instrument = False
-        return manager_params, browser_params
-
-    def _get_legacy_config(
-        self,
-    ) -> Tuple[ManagerParams, List[BrowserParams]]:
-        manager_params = ManagerParams(num_browsers=1)
-        browser_params = [BrowserParams()]
-        manager_params.data_directory = self.tmpdir
-        manager_params.log_path = self.tmpdir / "openwpm.log"
-        manager_params.testing = True
-        browser_params[0].display_mode = "headless"
-        browser_params[0].stealth_js_instrument = False
-        browser_params[0].js_instrument = True
-        return manager_params, browser_params
-
-    def test_stealth_passes_all_detection_checks(self):
-        """With stealth enabled, all detection checks should pass.
-
-        This test will only pass once the stealth extension is
-        properly integrated and rebased onto master.
-        """
-        manager_params, browser_params = self._get_stealth_config()
-        results_file = self.tmpdir / "detection_results.json"
-        results = _run_detection(manager_params, browser_params, results_file)
-
-        assert results, "No detection results collected"
-
-        # navigator.webdriver should be hidden
-        assert (
-            results.get("webdriver_flag") is True
-        ), "navigator.webdriver was not hidden by stealth extension"
-
-        # Canvas functions should still appear native (no prototype pollution)
-        assert (
-            results.get("canvas_functions_native") is True
-        ), "Canvas functions are not native - stealth instrument should avoid prototype pollution"
-
-        # Storage functions should still appear native
-        assert (
-            results.get("storage_functions_native") is True
-        ), "Storage functions are not native - stealth instrument should avoid prototype pollution"
-
-        # Navigator getters should appear native
-        assert (
-            results.get("navigator_native") is True
-        ), "Navigator getters are not native - stealth instrument should avoid prototype pollution"
-
-        # No OpenWPM globals should be exposed
-        assert (
-            results.get("no_global_leaks") is True
-        ), "OpenWPM globals detected (jsInstruments, instrumentFingerprintingApis, etc.)"
-
-        # Constructor properties should be preserved
-        assert (
-            results.get("constructors_present") is True
-        ), "Constructor properties missing on instrumented objects"
-
-        # Function.prototype.bind should not be tampered
-        assert (
-            results.get("bind_integrity") is True
-        ), "Function.prototype.bind integrity check failed"
-
-        # Error stacks should not contain extension URLs
-        assert (
-            results.get("clean_error_stacks") is True
-        ), "Error stack traces contain moz-extension:// URLs"
-
-        # No extra properties added to prototypes
-        assert (
-            results.get("no_extra_prototype_properties") is True
-        ), "Extra instrumentation properties found on prototypes"
-
-        # RTC functions should appear native
-        assert (
-            results.get("rtc_native") is True
-        ), "RTCPeerConnection functions are not native"
-
-    def test_stealth_records_js_calls(self):
-        """Verify that the stealth extension actually records JS instrumentation data.
-
-        The detection tests above check that stealth is undetectable, but we also
-        need to confirm it is actually capturing API calls to the database
-        with meaningful data (symbols, operations, values).
-        """
-        manager_params, browser_params = self._get_stealth_config()
-        db_path = manager_params.data_directory / "crawl-data.sqlite"
-        structured_provider = SQLiteStorageProvider(db_path)
-        manager = TaskManager(
-            manager_params,
-            browser_params,
-            structured_provider,
-            None,
+    @pytest.mark.parametrize(
+        "req_id,key",
+        [(r[0], r[1]) for r in DETECTABILITY_REQUIREMENTS],
+        ids=[r[0] for r in DETECTABILITY_REQUIREMENTS],
+    )
+    def test_stealth_undetectable(
+        self, stealth_results: Dict, req_id: str, key: str
+    ) -> None:
+        """Stealth must pass every detection vector (appear native)."""
+        assert stealth_results.get(key) is True, (
+            f"{req_id}: stealth is detectable via '{key}' "
+            f"(page error: {stealth_results.get(key + '_error')})"
         )
 
-        # Visit the stealth detection page, which exercises canvas, storage,
-        # and navigator APIs that should be instrumented.
-        cs = CommandSequence(STEALTH_DETECTION_URL)
-        cs.get(sleep=2)
-        manager.execute_command_sequence(cs)
-        manager.close()
+    @pytest.mark.parametrize(
+        "req_id,key",
+        [(r[0], r[1]) for r in _LEGACY_DETECTABLE],
+        ids=[r[0] for r in _LEGACY_DETECTABLE],
+    )
+    def test_legacy_detectable(
+        self, legacy_results: Dict, req_id: str, key: str
+    ) -> None:
+        """Control: legacy must TRIP the reliable detection vectors.
 
-        # Query the javascript table and assert data was captured
+        Proves the detection page actually works for each vector, so a stealth
+        pass is meaningful rather than a no-op.
+        """
+        assert legacy_results.get(key) is not True, (
+            f"{req_id}: legacy was NOT detected via '{key}' — the detection "
+            f"page may be ineffective for this vector, weakening the stealth claim"
+        )
+
+    def test_stealth_records_js_calls(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Stealth must still actually capture JS API calls to the database."""
+        data_dir = tmp_path_factory.mktemp("stealth_records")
+        db_path = _run_page(_stealth_params(data_dir), DETECTION_URL)
         rows = db_utils.get_javascript_entries(db_path)
-        assert len(rows) > 0, (
-            "Stealth extension did not record any JS instrumentation data "
-            "in the javascript table"
-        )
+        assert len(rows) > 0, "stealth instrument recorded no JS calls"
 
-        # Verify data quality: rows should have non-empty symbols and operations
-        symbols = {row["symbol"] for row in rows}
-        operations = {row["operation"] for row in rows}
-        assert len(symbols) > 0, "No symbols recorded in JS instrumentation data"
-        assert len(operations) > 0, "No operations recorded in JS instrumentation data"
 
-        # At least some rows should have non-empty values (proving data capture works)
-        rows_with_values = [r for r in rows if r["value"] and r["value"] != ""]
-        assert len(rows_with_values) > 0, (
-            "Stealth extension recorded JS calls but no values — "
-            "error handling may be discarding data"
-        )
+# --------------------------------------------------------------------------- #
+# Disruptability requirements (X*)
+# --------------------------------------------------------------------------- #
+def _todataurl_count(db_path: Path) -> int:
+    rows = db_utils.query_db(
+        db_path,
+        "SELECT COUNT(*) FROM javascript WHERE symbol LIKE ?",
+        ("%toDataURL%",),
+    )
+    return rows[0][0]
 
-    def test_legacy_records_with_call_stacks(self):
-        """Verify that legacy JS instrumentation records calls with full stack traces.
 
-        This serves as a baseline comparison: legacy mode captures call stacks
-        that include extension URLs (which stealth intentionally sanitizes).
+def _forged_count(db_path: Path) -> int:
+    """Count rows bearing the symbol the forgery page tries to inject."""
+    rows = db_utils.query_db(
+        db_path,
+        "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+        ("FORGED.injectedByPage",),
+    )
+    return rows[0][0]
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthDisruption:
+    """X* — a hostile page must not be able to drop or forge records."""
+
+    def test_x1_legacy_channel_can_be_suppressed(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """X1 control: under legacy, neutering document.dispatchEvent drops records.
+
+        Demonstrates the attack is real before asserting stealth resists it.
         """
-        manager_params, browser_params = self._get_legacy_config()
-        db_path = manager_params.data_directory / "crawl-data.sqlite"
-        structured_provider = SQLiteStorageProvider(db_path)
-        manager = TaskManager(
-            manager_params,
-            browser_params,
-            structured_provider,
-            None,
+        data_dir = tmp_path_factory.mktemp("x1_legacy")
+        db_path = _run_page(_legacy_params(data_dir), SUPPRESS_URL)
+        assert _todataurl_count(db_path) == 0, (
+            "X1: legacy still recorded toDataURL calls after the page neutered "
+            "document.dispatchEvent — the suppression control is ineffective"
         )
 
-        cs = CommandSequence(STEALTH_DETECTION_URL)
-        cs.get(sleep=2)
-        manager.execute_command_sequence(cs)
-        manager.close()
+    def test_x1_stealth_channel_resists_suppression(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """X1: under stealth, the same attack must NOT drop records."""
+        data_dir = tmp_path_factory.mktemp("x1_stealth")
+        db_path = _run_page(_stealth_params(data_dir), SUPPRESS_URL)
+        assert _todataurl_count(db_path) > 0, (
+            "X1: stealth lost toDataURL records after the page neutered "
+            "document.dispatchEvent — privileged messaging is not isolating delivery"
+        )
 
-        rows = db_utils.get_javascript_entries(db_path, all_columns=True)
-        assert len(rows) > 0, "Legacy JS instrumentation did not record any data"
+    def test_x2_legacy_channel_can_be_forged(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """X2 control: under legacy, a page can inject a forged record.
 
-    def test_legacy_instrument_is_detectable(self):
-        """With legacy JS instrumentation, detection checks should catch it.
-
-        This serves as a control test - proving the detection page
-        actually works by showing the legacy instrument IS detectable.
-        At minimum, the toString/native checks should fail.
+        The page learns the secret DOM event id from a real dispatch and emits
+        its own ``CustomEvent`` with that id, writing a fabricated row.
         """
-        manager_params, browser_params = self._get_legacy_config()
-        results_file = self.tmpdir / "detection_results.json"
-        results = _run_detection(manager_params, browser_params, results_file)
-
-        assert results, "No detection results collected"
-
-        # The legacy instrument wraps Canvas functions, so toString()
-        # will not show "[native code]" — this is the most reliable detection
-        assert results.get("canvas_functions_native") is not True, (
-            "Canvas functions still appear native under legacy instrumentation - "
-            "the detection page may not be working correctly"
+        data_dir = tmp_path_factory.mktemp("x2_legacy")
+        db_path = _run_page(_legacy_params(data_dir), FORGE_URL)
+        assert _forged_count(db_path) > 0, (
+            "X2: legacy did NOT accept the forged record — the forgery control "
+            "is ineffective, so a stealth pass would be meaningless"
         )
 
-        # Secondary check: at least one other detection vector should also fire
-        detectable = (
-            not results.get("canvas_functions_native", True)
-            or not results.get("storage_functions_native", True)
-            or not results.get("no_global_leaks", True)
-            or not results.get("constructors_present", True)
+    def test_x2_stealth_channel_rejects_forgery(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """X2: under stealth, the same forgery must NOT enter the database."""
+        data_dir = tmp_path_factory.mktemp("x2_stealth")
+        db_path = _run_page(_stealth_params(data_dir), FORGE_URL)
+        assert _forged_count(db_path) == 0, (
+            "X2: stealth accepted a forged record — a page-reachable channel "
+            "into the dataset exists"
         )
-        assert detectable, (
-            "Legacy JS instrumentation was not detected by any check - "
-            "the detection page may not be working correctly"
+
+    def test_attribution_stealth_records_page_script_and_clean_stack(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Stealth must attribute records to the page script with a clean stack.
+
+        Guards the ``instrument.ts`` call_stack fix: the recorded toDataURL row
+        must be attributed to this page's script (``script_url``) and its
+        ``call_stack`` must contain only page frames, never ``moz-extension://``.
+        """
+        data_dir = tmp_path_factory.mktemp("attr_stealth")
+        db_path = _run_page(_stealth_params(data_dir), ATTRIBUTION_URL)
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT script_url, call_stack FROM javascript WHERE symbol LIKE ?",
+            ("%toDataURL%",),
+            as_tuple=True,
         )
+        assert rows, "stealth recorded no toDataURL row for the attribution page"
+        assert any(
+            "stealth_attribution.html" in (script_url or "") for script_url, _ in rows
+        ), "stealth did not attribute the toDataURL call to the page script"
+        for _, call_stack in rows:
+            assert "moz-extension://" not in (call_stack or ""), (
+                "stealth leaked a moz-extension:// frame into call_stack — "
+                "the recorded stack is polluted with extension frames"
+            )
+
+    def test_attribution_legacy_records_page_script(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Reference: legacy also attributes the toDataURL call to the page."""
+        data_dir = tmp_path_factory.mktemp("attr_legacy")
+        db_path = _run_page(_legacy_params(data_dir), ATTRIBUTION_URL)
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT script_url FROM javascript WHERE symbol LIKE ?",
+            ("%toDataURL%",),
+            as_tuple=True,
+        )
+        assert rows, "legacy recorded no toDataURL row for the attribution page"
+        assert any(
+            "stealth_attribution.html" in (script_url or "") for (script_url,) in rows
+        ), "legacy did not attribute the toDataURL call to the page script"
+
+
+# --------------------------------------------------------------------------- #
+# Configurability (the stealth surface is runtime-configurable)
+# --------------------------------------------------------------------------- #
+# A custom stealth surface that instruments HTMLCanvasElement under a distinctive
+# instrumentedName so the recorded symbol (``CustomCanvasMarker.toDataURL``) can
+# ONLY appear if this config replaced the bundled default (which uses
+# instrumentedName "HTMLCanvasElement"). The Navigator entry keeps the
+# webdriver->false override so the instrument stays undetectable.
+CUSTOM_INSTRUMENTED_NAME = "CustomCanvasMarker"
+CUSTOM_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "HTMLCanvasElement",
+        "instrumentedName": CUSTOM_INSTRUMENTED_NAME,
+        "depth": 1,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": ["style", "offsetWidth", "offsetHeight"],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+    {
+        "object": "Navigator",
+        "instrumentedName": "Navigator",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [{"key": "webdriver", "value": False, "level": 0}],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+]
+
+
+def _custom_stealth_params(
+    data_dir: Path,
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = CUSTOM_STEALTH_SETTINGS
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthConfigurability:
+    """The stealth instrumentation surface is configurable at runtime."""
+
+    def test_custom_settings_take_effect(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """A custom surface replaces the bundled default.
+
+        The distinctive instrumentedName proves the configured set was used:
+        ``CustomCanvasMarker.toDataURL`` cannot appear under the default config.
+        """
+        data_dir = tmp_path_factory.mktemp("config_custom")
+        db_path = _run_page(_custom_stealth_params(data_dir), ATTRIBUTION_URL)
+        custom_rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+            (f"{CUSTOM_INSTRUMENTED_NAME}.toDataURL",),
+        )
+        assert custom_rows[0][0] > 0, (
+            "custom stealth_js_instrument_settings did not take effect: no "
+            f"'{CUSTOM_INSTRUMENTED_NAME}.toDataURL' records were captured"
+        )
+        default_rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+            ("HTMLCanvasElement.toDataURL",),
+        )
+        assert default_rows[0][0] == 0, (
+            "the bundled default surface was still active alongside the custom "
+            "one ('HTMLCanvasElement.toDataURL' present)"
+        )
+
+    def test_custom_settings_stay_undetectable(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """A custom surface must remain undetectable on every vector."""
+        data_dir = tmp_path_factory.mktemp("config_undetect")
+        results = _collect_detection(
+            _custom_stealth_params(data_dir), data_dir / "results.json"
+        )
+        assert results, "no detection results collected for custom stealth config"
+        for req_id, key, _ in DETECTABILITY_REQUIREMENTS:
+            assert results.get(key) is True, (
+                f"{req_id}: custom stealth config is detectable via '{key}' "
+                f"(page error: {results.get(key + '_error')})"
+            )
