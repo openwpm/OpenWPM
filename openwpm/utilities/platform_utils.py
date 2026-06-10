@@ -126,6 +126,7 @@ def get_configuration_string(manager_params, browser_params, versions):
         profile_dirs[browser_id] = str(item.pop("seed_tar"))
         archive_dirs[browser_id] = str(item.pop("profile_archive_dir"))
         js_config[browser_id] = item.pop("cleaned_js_instrument_settings")
+        item.pop("cleaned_stealth_js_instrument_settings", None)
 
         # Copy items in sorted order
         dct = OrderedDict()

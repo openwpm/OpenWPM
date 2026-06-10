@@ -120,17 +120,35 @@ export class JavascriptInstrument {
     testing?: boolean,
     jsInstrumentationSettings?: JSInstrumentRequest[],
   ) {
-    const contentScriptConfig = {
-      testing,
-      jsInstrumentationSettings,
-    };
-    if (contentScriptConfig && this.legacy) {
+    if (this.legacy) {
+      const contentScriptConfig = {
+        testing,
+        jsInstrumentationSettings,
+      };
       // TODO: Avoid using window to pass the content script config
       await browser.contentScripts.register({
         js: [
           {
             code: `window.openWpmContentScriptConfig = ${JSON.stringify(
               contentScriptConfig,
+            )};`,
+          },
+        ],
+        matches: ["<all_urls>"],
+        allFrames: true,
+        runAt: "document_start",
+        matchAboutBlank: true,
+      });
+    } else if (jsInstrumentationSettings) {
+      // Stealth mode: only inject a settings global when the study configured a
+      // custom instrumentation set. When undefined, the stealth content script
+      // falls back to its bundled default (settings.ts). A stealth-specific
+      // global avoids colliding with the legacy page-script global above.
+      await browser.contentScripts.register({
+        js: [
+          {
+            code: `window.openWpmStealthInstrumentSettings = ${JSON.stringify(
+              jsInstrumentationSettings,
             )};`,
           },
         ],

@@ -78,7 +78,10 @@ async function main() {
     loggingDB.logDebug("Stealth JavaScript Instrumentation enabled");
     const stealthJSInstrument = new JavascriptInstrument(loggingDB, false);
     stealthJSInstrument.run(config.browser_id);
-    await stealthJSInstrument.registerContentScript(config.testing);
+    await stealthJSInstrument.registerContentScript(
+      config.testing,
+      config.cleaned_stealth_js_instrument_settings,
+    );
   }
 
   if (config.js_instrument) {

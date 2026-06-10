@@ -1,10 +1,33 @@
-import { jsInstrumentationSettings } from "./settings";
+import { jsInstrumentationSettings as defaultSettings } from "./settings";
 import {
   generateErrorObject,
   getBeginOfScriptCalls,
   getStackTrace,
 } from "./error";
-import { LogSettings } from "../types/js_instrument_settings";
+import {
+  JSInstrumentSettings,
+  LogSettings,
+} from "../types/js_instrument_settings";
+
+declare global {
+  interface Window {
+    openWpmStealthInstrumentSettings?: JSInstrumentSettings;
+  }
+}
+
+/**
+ * Resolves the stealth instrumentation settings.
+ *
+ * When a study configures a custom set, the background script injects it into
+ * the page as ``window.openWpmStealthInstrumentSettings`` (see
+ * ``background/javascript-instrument.ts``). When absent, fall back to the
+ * bundled default (``settings.ts``), so the out-of-the-box behaviour is the
+ * curated fingerprinting surface.
+ */
+function resolveInstrumentationSettings(): JSInstrumentSettings {
+  const injected = window.openWpmStealthInstrumentSettings;
+  return injected && injected.length ? injected : defaultSettings;
+}
 
 /** ************************************
  * OpenWPM legacy code
@@ -214,7 +237,12 @@ function getOriginatingScriptContext(getCallStack = false, isCall = false) {
       scriptCol: columnNo,
       funcName,
       scriptLocEval,
-      callStack: getCallStack ? trace.slice(3).join("\n").trim() : "",
+      // Slice from traceStart (the first non-extension frame), NOT a hardcoded
+      // index: the extension-frame prefix varies in length, so slicing at a
+      // fixed offset would leak moz-extension:// frames into the recorded
+      // call_stack and make it inconsistent with script_url (parsed from
+      // trace[traceStart]). Legacy records only page frames; match that.
+      callStack: getCallStack ? trace.slice(traceStart).join("\n").trim() : "",
     };
     return callContext;
   } catch (e) {
@@ -844,7 +872,7 @@ function needsWrapper(object) {
 }
 
 function startInstrument(context) {
-  for (const item of jsInstrumentationSettings) {
+  for (const item of resolveInstrumentationSettings()) {
     // retrieve Object properties alont the chain
     let propertyCollection;
     try {

@@ -28,7 +28,12 @@ def _validate(python_list_to_validate):
     # Check properties to instrument and excluded properties don't collide
     for setting in python_list_to_validate:
         propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
-        if propertiesToInstrument is not None:
+        # Stealth-shaped settings express propertiesToInstrument as
+        # {depth, propertyNames} dicts rather than flat strings; the legacy
+        # collision check only applies to the flat-string (legacy) form.
+        if propertiesToInstrument is not None and all(
+            isinstance(p, str) for p in propertiesToInstrument
+        ):
             propertiesToInstrument = set(propertiesToInstrument)
             excludedProperties = set(setting["logSettings"]["excludedProperties"])
             if len(propertiesToInstrument.intersection(excludedProperties)) != 0:
@@ -234,3 +239,42 @@ def clean_js_instrumentation_settings(
     settings = _merge_settings(settings)
     _validate(settings)
     return settings
+
+
+def clean_stealth_js_instrumentation_settings(
+    user_requested_settings: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Validate a custom stealth instrumentation surface.
+
+    The stealth instrument (``Extension/src/stealth``) consumes settings in the
+    full, stealth-shaped form already described by
+    ``schemas/js_instrument_settings.schema.json`` — including the top-level
+    ``depth`` and ``overwrittenProperties`` fields and the nested
+    ``propertiesToInstrument`` ``{depth, propertyNames}`` form. Unlike the legacy
+    path, ``object`` is a BARE global name (e.g. ``"CanvasRenderingContext2D"``,
+    ``"Navigator"``, ``"document"``) because the stealth instrument resolves it
+    against the page's global scope rather than a dotted ``window`` path.
+
+    This function therefore does not rewrite ``object`` or apply the legacy
+    shortcut expansion; it only validates the caller-supplied list against the
+    shared schema and returns it unchanged. When the caller passes ``None`` the
+    extension falls back to its bundled default, so this is only invoked for an
+    explicitly customised surface.
+
+    Parameters
+    ----------
+    user_requested_settings: list
+        Stealth-shaped settings objects.
+
+    Returns
+    -------
+    list
+        The validated settings, unchanged.
+    """
+    if not isinstance(user_requested_settings, list):
+        raise TypeError(
+            "stealth_js_instrument_settings must be a list. "
+            f"Received {user_requested_settings}"
+        )
+    _validate(user_requested_settings)
+    return user_requested_settings
