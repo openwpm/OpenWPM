@@ -36,6 +36,8 @@ DETECTION_URL = f"{utilities.BASE_TEST_URL}/stealth_detection.html"
 SUPPRESS_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_suppress.html"
 FORGE_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_forge.html"
 ATTRIBUTION_URL = f"{utilities.BASE_TEST_URL}/stealth_attribution.html"
+COOKIE_URL = f"{utilities.BASE_TEST_URL}/stealth_cookie.html"
+IFRAME_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_iframe.html"
 
 
 # --------------------------------------------------------------------------- #
@@ -62,6 +64,57 @@ def _legacy_params(data_dir: Path) -> Tuple[ManagerParams, List[BrowserParams]]:
     browser_params[0].display_mode = "headless"
     browser_params[0].stealth_js_instrument = False
     browser_params[0].js_instrument = True
+    return manager_params, browser_params
+
+
+# A stealth surface that instruments HTMLCanvasElement with logCallStack=True so
+# the attribution test can assert a NON-EMPTY call_stack. The bundled default
+# leaves logCallStack False for canvas, so capturing a stack here doubles as
+# proof the per-object logCallStack flag is honoured. Navigator keeps the
+# webdriver->false override so the instrument stays undetectable.
+ATTRIBUTION_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "HTMLCanvasElement",
+        "instrumentedName": "HTMLCanvasElement",
+        "depth": 1,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": ["style", "offsetWidth", "offsetHeight"],
+            "overwrittenProperties": [],
+            "logCallStack": True,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+    {
+        "object": "Navigator",
+        "instrumentedName": "Navigator",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [{"key": "webdriver", "value": False, "level": 0}],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+]
+
+
+def _attribution_stealth_params(
+    data_dir: Path,
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = ATTRIBUTION_STEALTH_SETTINGS
     return manager_params, browser_params
 
 
@@ -310,9 +363,16 @@ class TestStealthDisruption:
         Guards the ``instrument.ts`` call_stack fix: the recorded toDataURL row
         must be attributed to this page's script (``script_url``) and its
         ``call_stack`` must contain only page frames, never ``moz-extension://``.
+
+        Uses a custom ``stealth_js_instrument_settings`` that sets
+        ``logCallStack: True`` for the canvas object. The bundled default leaves
+        ``logCallStack`` False for ``HTMLCanvasElement``, so capturing a
+        non-empty stack here ALSO proves the instrument honours the per-object
+        ``logCallStack`` flag from settings (configurability) rather than
+        hardcoding stack collection.
         """
         data_dir = tmp_path_factory.mktemp("attr_stealth")
-        db_path = _run_page(_stealth_params(data_dir), ATTRIBUTION_URL)
+        db_path = _run_page(_attribution_stealth_params(data_dir), ATTRIBUTION_URL)
         rows = db_utils.query_db(
             db_path,
             "SELECT script_url, call_stack FROM javascript WHERE symbol LIKE ?",
@@ -323,6 +383,10 @@ class TestStealthDisruption:
         assert any(
             "stealth_attribution.html" in (script_url or "") for script_url, _ in rows
         ), "stealth did not attribute the toDataURL call to the page script"
+        assert any((call_stack or "").strip() for _, call_stack in rows), (
+            "stealth recorded an EMPTY call_stack despite logCallStack=True in "
+            "the custom settings — the per-object logCallStack flag is ignored"
+        )
         for _, call_stack in rows:
             assert "moz-extension://" not in (call_stack or ""), (
                 "stealth leaked a moz-extension:// frame into call_stack — "
@@ -345,6 +409,61 @@ class TestStealthDisruption:
         assert any(
             "stealth_attribution.html" in (script_url or "") for (script_url,) in rows
         ), "legacy did not attribute the toDataURL call to the page script"
+
+    def test_x3_stealth_instruments_dynamic_iframe(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """X3: stealth records the in-iframe toDataURL under the parent's URL.
+
+        The page JS-creates an iframe (``createElement`` + ``appendChild``) and
+        runs ``canvas.toDataURL`` inside the new frame's document. Stealth's
+        frame protection (``stealth.ts`` contentWindow/contentDocument hooks +
+        MutationObserver) injects into the dynamic frame within the parent
+        page's instrumented context, so a toDataURL row is recorded bearing the
+        PARENT page's ``document_url``.
+
+        Empirical (Firefox 150, headless, 3 runs): stealth records 2 toDataURL
+        rows (``about:blank`` AND the parent URL); legacy records 1 (only
+        ``about:blank``). The parent-URL row is the stable differential — see
+        ``test_x3_legacy_misses_dynamic_iframe_parent_attribution``.
+        """
+        data_dir = tmp_path_factory.mktemp("x3_stealth")
+        db_path = _run_page(_stealth_params(data_dir), IFRAME_URL)
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript "
+            "WHERE symbol LIKE ? AND document_url LIKE ?",
+            ("%toDataURL%", "%stealth_disruption_iframe.html%"),
+        )
+        assert rows[0][0] > 0, (
+            "X3: stealth did not record the dynamic-iframe toDataURL under the "
+            "parent page document_url — frame protection did not instrument the "
+            "dynamically-created iframe"
+        )
+
+    def test_x3_legacy_misses_dynamic_iframe_parent_attribution(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """X3 control: legacy attributes the in-iframe call only to about:blank.
+
+        Demonstrates the differential is real: legacy records the dynamic-frame
+        toDataURL solely under ``about:blank`` (the frame's own URL), never
+        under the parent page URL, so it lacks the parent-context attribution
+        stealth's frame protection provides.
+        """
+        data_dir = tmp_path_factory.mktemp("x3_legacy")
+        db_path = _run_page(_legacy_params(data_dir), IFRAME_URL)
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript "
+            "WHERE symbol LIKE ? AND document_url LIKE ?",
+            ("%toDataURL%", "%stealth_disruption_iframe.html%"),
+        )
+        assert rows[0][0] == 0, (
+            "X3 control: legacy unexpectedly attributed the dynamic-iframe "
+            "toDataURL to the parent page document_url — the stealth/legacy "
+            "differential this test relies on no longer holds"
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -449,3 +568,33 @@ class TestStealthConfigurability:
                 f"{req_id}: custom stealth config is detectable via '{key}' "
                 f"(page error: {results.get(key + '_error')})"
             )
+
+
+# --------------------------------------------------------------------------- #
+# Default-surface coverage (the bundled stealth default captures cookies)
+# --------------------------------------------------------------------------- #
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthDefaultSurface:
+    """The bundled stealth default captures the documented fingerprint surface."""
+
+    def test_default_captures_document_cookie(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Under the stealth DEFAULT, document.cookie get/set is recorded.
+
+        Legacy's ``collection_fingerprinting`` instruments
+        ``document -> [cookie, referrer]``; the stealth default must match (the
+        ``cookie`` entry was previously missing). Asserts a ``document.cookie``
+        row lands in the ``javascript`` table without any custom settings.
+        """
+        data_dir = tmp_path_factory.mktemp("default_cookie")
+        db_path = _run_page(_stealth_params(data_dir), COOKIE_URL)
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+            ("document.cookie",),
+        )
+        assert rows[0][0] > 0, (
+            "the stealth default surface did not record document.cookie access "
+            "— the 'cookie' property is missing from the default document entry"
+        )
