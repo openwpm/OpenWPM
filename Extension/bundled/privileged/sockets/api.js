@@ -1,3 +1,5 @@
+Cu.importGlobalProperties(["TextDecoder"]);
+
 const tm = Cc["@mozilla.org/thread-manager;1"].getService();
 const socketService = Cc[
   "@mozilla.org/network/socket-transport-service;1"
@@ -13,6 +15,30 @@ const gManager = {
 };
 
 let bufferpack;
+
+// Write the full byte array to a *blocking* nsIBinaryOutputStream. On a
+// blocking stream (we open with OPEN_BLOCKING; see connect()) writeByteArray
+// writes every byte or throws, so a partial write cannot silently truncate a
+// length-framed payload. writeByteArray also returns void there, so the single
+// call below is all that ever runs; the loop guards only against a
+// hypothetical build where writeByteArray reports a positive short-write count,
+// in which case we advance and retry. A reported 0 (or void/NaN) cannot
+// represent progress, so we stop to avoid spinning forever — this is safe only
+// because the stream is blocking and so a true "wrote nothing, would block"
+// short write never occurs here.
+function writeAll(bOutputStream, bytes) {
+  let offset = 0;
+  while (offset < bytes.length) {
+    const written = bOutputStream.writeByteArray(
+      offset === 0 ? bytes : bytes.subarray(offset),
+      bytes.length - offset,
+    );
+    if (!written || Number.isNaN(written)) {
+      break;
+    }
+    offset += written;
+  }
+}
 
 this.sockets = class extends ExtensionAPI {
   getAPI(context) {
@@ -60,16 +86,36 @@ this.sockets = class extends ExtensionAPI {
                   bis.setInputStream(inputStream);
                   const buff = bis.readByteArray(5); // 32 bit int followed by a char = 5 bytes
                   const meta = bufferpack.unpack(">Lc", buff);
-                  const string = bis.readBytes(meta[0]);
+                  // Read the payload as raw bytes. Using bis.readBytes()
+                  // narrows each byte to a Latin-1 char and would corrupt any
+                  // multi-byte UTF-8 payload (the mirror of the send-side
+                  // bug). The byte count is consumed regardless of tag, so the
+                  // frame stays aligned even for an unsupported serialization
+                  // type.
+                  const payloadBytes = bis.readByteArray(meta[0]);
+                  const tag = meta[1];
 
-                  if (["j", "n"].includes(meta[1])) {
+                  // Tag parity with the Python reader (socket_interface._parse):
+                  //   "j" -> UTF-8 + JSON.parse, "u" -> UTF-8 string,
+                  //   "n" -> RAW BYTES (returned unchanged on the Python side).
+                  // Only "j" and "u" are UTF-8 text; "n" must be delivered as
+                  // raw bytes, NOT UTF-8-decoded, or it would diverge from
+                  // Python (which returns the bytes untouched) and could throw
+                  // on a non-UTF-8 payload.
+                  if (tag === "j" || tag === "u") {
+                    const string = new TextDecoder("utf-8").decode(
+                      new Uint8Array(payloadBytes),
+                    );
                     gManager.onDataReceivedListeners.forEach((listener) => {
-                      listener(port, string, meta[1] === "j");
+                      listener(port, string, tag === "j");
+                    });
+                  } else if (tag === "n") {
+                    const rawBytes = new Uint8Array(payloadBytes);
+                    gManager.onDataReceivedListeners.forEach((listener) => {
+                      listener(port, rawBytes, false);
                     });
                   } else {
-                    console.error(
-                      `Unsupported serialization type ('${meta[1]}').`,
-                    );
+                    console.error(`Unsupported serialization type ('${tag}').`);
                   }
 
                   inputStream.asyncWait(socketListener, 0, 0, tm.mainThread);
@@ -122,6 +168,10 @@ this.sockets = class extends ExtensionAPI {
               null,
               null,
             );
+            // openFlags = 1 = OPEN_BLOCKING (NOT OPEN_UNBUFFERED, which is 2).
+            // A blocking stream makes writeByteArray all-or-throw, so framed
+            // payloads can never be partially written (which would desync the
+            // length-prefixed stream). See writeAll().
             socket.stream = transport.openOutputStream(1, 4096, 1048575);
             socket.bOutputStream.setOutputStream(socket.stream);
             return true;
@@ -136,18 +186,48 @@ this.sockets = class extends ExtensionAPI {
             console.error(
               "Unknown socket ID; trying to use a socket that doesn't exist yet?",
             );
-            return;
+            return false;
           }
 
           const socket = gManager.sendingSocketMap.get(id);
           try {
             const serializationSymbol = json ? "j" : "n";
+            // `data` is ALREADY a byte-string, NOT a Unicode string. Every
+            // caller funnels payloads through escapeString()/encode_utf8()
+            // (see Extension/src/lib/string-utils.ts), which converts the
+            // source text to UTF-8 and exposes each byte as a Latin-1 char
+            // (code points 0-255); binary POST bodies arrive the same way. The
+            // bytes we must put on the wire are therefore exactly those char
+            // codes narrowed to one byte each -- this is the lossless byte
+            // pass-through the Python reader (socket_interface._parse) decodes
+            // as UTF-8. Running TextEncoder over this already-encoded
+            // byte-string would double-encode it (the UTF-8 of "你好" turns
+            // into the UTF-8 of "ä½\xa0å¥½" mojibake), so we narrow instead of
+            // re-encode (api.js narrows each char to a byte below). Framing on
+            // bytes.length (== data.length here, since every char is one byte)
+            // keeps the length prefix consistent with the payload.
+            // Assigning into a Uint8Array applies ToUint8 (mod 256), so each
+            // already-byte-sized char code lands as the intended raw byte.
+            const bytes = new Uint8Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+              bytes[i] = data.charCodeAt(i);
+            }
+            // The length field is a big-endian u32 (`>L`); bufferpack silently
+            // clamps out-of-range values, which would emit a wrong length and
+            // permanently desync the stream. Reject oversized payloads instead.
+            if (bytes.length > 0xffffffff) {
+              throw new Error(
+                `Payload of ${bytes.length} bytes exceeds the u32 length ` +
+                  `field (max ${0xffffffff}); refusing to send to avoid ` +
+                  `framing desync.`,
+              );
+            }
             const buff = bufferpack.pack(">Lc", [
-              data.length,
+              bytes.length,
               serializationSymbol,
             ]);
-            socket.bOutputStream.writeByteArray(buff, buff.length);
-            socket.stream.write(data, data.length);
+            writeAll(socket.bOutputStream, buff);
+            writeAll(socket.bOutputStream, bytes);
             return true;
           } catch (err) {
             console.error(err, err.message);

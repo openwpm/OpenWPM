@@ -1,4 +1,5 @@
 import asyncio
+import errno
 import json
 import socket
 import struct
@@ -47,10 +48,26 @@ class ServerSocket:
                 )
                 thread.daemon = True
                 thread.start()
-            except ConnectionAbortedError:
-                # Workaround for #278
-                print("A connection establish request was performed on a closed socket")
-                return
+            except OSError as e:
+                # Only treat genuine teardown of the listening socket as a
+                # normal shutdown. Closing the socket while we are blocked in
+                # accept() surfaces as ConnectionAbortedError (#278) or as
+                # OSError: [Errno 9] Bad file descriptor; both mean the server
+                # is shutting down, so exit the accept loop quietly instead of
+                # letting the daemon thread die with an unhandled exception.
+                #
+                # Any other OSError (e.g. EMFILE/ENFILE — out of file
+                # descriptors, ENOBUFS — out of buffer space) is a transient
+                # accept() failure, NOT a shutdown: swallowing it here would
+                # silently kill the accept loop and drop every subsequent
+                # connection. Re-raise so it is surfaced rather than masked.
+                if isinstance(e, ConnectionAbortedError) or e.errno == errno.EBADF:
+                    print(
+                        "A connection establish request was performed on a "
+                        "closed socket"
+                    )
+                    return
+                raise
 
     def _handle_conn(self, client, address):
         """
@@ -150,6 +167,17 @@ class ClientSocket:
         if self.verbose:
             print("Sending message with serialization %s" % serialization)
 
+        # The length field is a big-endian u32. struct.pack already raises on
+        # overflow (no silent truncation), but guard explicitly so an oversized
+        # record produces a clear, actionable error rather than a raw
+        # struct.error -- and never a desynced stream.
+        if len(msg) > 0xFFFFFFFF:
+            raise RuntimeError(
+                "Message of %d bytes exceeds the u32 length field "
+                "(max %d); refusing to send to avoid framing desync."
+                % (len(msg), 0xFFFFFFFF)
+            )
+
         # prepend with message length
         msg = struct.pack(">Lc", len(msg), serialization) + msg
         totalsent = 0
@@ -185,6 +213,19 @@ async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
 
 
 def _parse(serialization: bytes, msg: bytes) -> Any:
+    # SECURITY NOTE (single-tenant known issue; tracked in
+    # https://github.com/openwpm/OpenWPM/issues/1179):
+    # The instrumentation sockets are loopback-only, bound to a random
+    # ephemeral port, and NOT reachable from web content or off-host -- but they
+    # are UNAUTHENTICATED. Any local process running as the same (or a more
+    # privileged) user can connect during the window the port is open and inject
+    # or forge framed records. In particular, a forged "d" (dill) frame is
+    # deserialized via dill.loads below, which is full pickle and therefore an
+    # arbitrary-code-execution primitive in the StorageController process.
+    # This is acceptable for single-tenant deployments (the typical OpenWPM
+    # measurement host) but a real risk on shared / multi-tenant hosts. The wire
+    # protocol is intentionally left unchanged here; see the tracked issue for
+    # the auth-token / drop-dill-on-the-wire hardening follow-up.
     if serialization == b"n":
         return msg
     if serialization == b"d":  # dill serialization

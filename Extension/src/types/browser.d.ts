@@ -5,8 +5,15 @@ declare namespace browser.profileDirIO {
 
 declare namespace browser.sockets {
   export const onDataReceived: {
+    // `data` is a UTF-8 string for the "j"/"u" tags (isJson is true only for
+    // "j") and a raw Uint8Array for the "n" (no-serialization) tag, mirroring
+    // the Python reader (socket_interface._parse).
     addListener(
-      receiver: (socketId: number, data: string, isJson: boolean) => void,
+      receiver: (
+        socketId: number,
+        data: string | Uint8Array,
+        isJson: boolean,
+      ) => void,
     ): void;
   };
   export type ServerSocketId = number;
@@ -19,10 +26,12 @@ declare namespace browser.sockets {
     host: string,
     port: number,
   ): void;
+  // Returns true on a successful framed write, false if the write failed
+  // (e.g. the connection dropped) or the socket id is unknown.
   export function sendData(
     id: SendingSocketId,
     data: string,
     json: boolean,
-  ): void;
+  ): boolean;
   export function close(id: SendingSocketId | ServerSocketId): void;
 }
