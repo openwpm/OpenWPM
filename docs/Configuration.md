@@ -279,9 +279,12 @@ is currently untested.
 The two cases reach the instrument through two different Firefox mechanisms:
 
 - **Synchronous path.** The channel is opened on the JS stack, so a child
-  JSWindowActor running in the content process reads `Components.stack` at the
-  `http-on-opening-request`/`document-on-opening-request` observer topics, walks
-  the frames, formats them, and sends them to the parent actor.
+  [JSWindowActor](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html)
+  running in the content process reads `Components.stack` at the
+  `http-on-opening-request`/`document-on-opening-request`
+  [`nsIObserverService`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/xpcom/ds/nsIObserverService.idl#20)
+  [HTTP topics](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/netwerk/protocol/http/nsIHttpProtocolHandler.idl#141),
+  walks the frames, formats them, and sends them to the parent actor.
 - **Asynchronous path** (closes
   [#1177](https://github.com/openwpm/OpenWPM/issues/1177)**).** For requests
   opened off the JS stack, `Components.stack` in the content process is empty.
@@ -318,15 +321,98 @@ the same observer is not appended per page over a long crawl.
 #### Extension install location
 
 The instrument loads a privileged JSWindowActor child ES module into the content
-process. So the content sandbox can read it, OpenWPM installs the extension into
-the Firefox profile's `extensions/` directory (which the content sandbox broker
-grants read-only by default) rather than via geckodriver's temporary install. The
-content sandbox stays fully enabled at its default level -- no sandbox relaxation
-or path whitelist. This profile sideload is the single install mechanism used for
-all crawls (the extension does not require privilege; its experiment APIs load
-under `AddonSettings.EXPERIMENTS_ENABLED` on the unbranded build OpenWPM uses).
+process. So the
+[content sandbox](https://wiki.mozilla.org/Security/Sandbox) can read it, OpenWPM
+installs the extension into the Firefox profile's `extensions/` directory (which
+the content sandbox broker grants read-only by default) rather than via
+geckodriver's temporary install. The content sandbox stays fully enabled at its
+default level -- no sandbox relaxation or path whitelist. This profile sideload is
+the single install mechanism used for all crawls (the extension does not require
+privilege; its
+[experiment APIs](https://firefox-source-docs.mozilla.org/toolkit/components/extensions/webextensions/index.html)
+load under `AddonSettings.EXPERIMENTS_ENABLED` on the unbranded build OpenWPM
+uses).
 
 - See [#557](https://github.com/openwpm/OpenWPM/issues/557) for history.
+
+#### References
+
+Firefox internals the call stack instrument mirrors or depends on. Searchfox
+permalinks are pinned to the `firefox-main` revision
+[`ad704963dac696aa26a7cb39eded9642c10c0ae0`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/source);
+this is a recent indexed mozilla-central revision (FF150-equivalent — searchfox
+does not serve the exact `FIREFOX_150_0_2_RELEASE` mozilla-release revision the
+crawler runs).
+
+DevTools request-stack mechanism (the dual-observer model this extension ports):
+
+- [`network-events-stacktraces.js`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#41-43) —
+  registers the same dual observer set (`http-on-opening-request` /
+  `document-on-opening-request` / `network-monitor-alternate-stack`); the
+  [`network-monitor-alternate-stack` case](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#157-170)
+  `JSON.parse`s the data and walks `parent || asyncParent`, which the parent
+  actor's `deserializeAlternateStack` mirrors.
+- [`network-event-actor.js`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/network-monitor/network-event-actor.js) —
+  the DevTools actor that consumes those collected stacks.
+
+Alternate-stack serialization (parent-process deserialization mirrors this):
+
+- [`SerializedStackHolder.cpp` `ConvertSerializedStackToJSON`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/base/SerializedStackHolder.cpp#111-137) —
+  `JS::ConvertSavedFrameToPlainObject` + `StringifyJSON` produce the JSON string
+  delivered with the notification.
+- [`SavedStacks.cpp` `ConvertSavedFrameToPlainObject`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/js/src/vm/SavedStacks.cpp#1132) —
+  defines the `source`/`line`/`column`/`functionDisplayName`/`asyncCause`/`parent`/`asyncParent`
+  field names the deserializer walks.
+
+`watchedByDevTools` gating of async origin-stack capture:
+
+- [`Fetch.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/fetch/Fetch.cpp#801,835),
+  [`XMLHttpRequestMainThread.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/xhr/XMLHttpRequestMainThread.cpp#2915),
+  [`WebSocket.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/websocket/WebSocket.cpp#1510) —
+  each captures/emits the alternate stack only when the context is watched by
+  DevTools.
+- [`BrowsingContext.webidl`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/chrome-webidl/BrowsingContext.webidl#84-85,235) —
+  `[Exposed=Window, ChromeOnly]` interface; `[SetterThrows] attribute boolean
+  watchedByDevTools` (page JS cannot read it).
+- [`CanonicalBrowsingContext::SupportsLoadingInParent`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/docshell/base/CanonicalBrowsingContext.cpp#2696-2704) —
+  returns false when `WatchedByDevTools()`, forcing the top-level document load
+  through the content process (the disclosed side effect).
+
+Extension install / sandbox (why the profile sideload works):
+
+- [`SandboxBrokerPolicyFactory.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp#719-750) —
+  grants the profile's `extensions/` directory read-only to the content sandbox
+  broker.
+- [`firefox.js`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/browser/app/profile/firefox.js#1628) —
+  Linux content sandbox defaults to `security.sandbox.content.level = 6`.
+- [`Extension.sys.mjs` `canUseAPIExperiment`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/toolkit/components/extensions/Extension.sys.mjs#1567) —
+  experiment APIs allowed when `AddonSettings.EXPERIMENTS_ENABLED`.
+- [`AddonSettings.sys.mjs` `EXPERIMENTS_ENABLED`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/toolkit/mozapps/extensions/internal/AddonSettings.sys.mjs#84-116) —
+  true on unbranded `MOZ_REQUIRE_SIGNING=0` builds (which OpenWPM uses).
+
+Actor / window plumbing:
+
+- [`JSWindowActorChild::GetContentWindow`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/ipc/jsactor/JSWindowActorChild.cpp#95-120) —
+  throws `InvalidStateError` once the actor's manager is gone and returns null
+  for a non-current inner window (the child observer guards both).
+
+Background:
+
+- [`nsIObserverService`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/xpcom/ds/nsIObserverService.idl#20)
+  and the
+  [HTTP observer topics](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/netwerk/protocol/http/nsIHttpProtocolHandler.idl#141)
+  (`http-on-opening-request` etc.).
+- [JSActors / `JSWindowActor` framework](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html)
+  (firefox-source-docs).
+- [Content-process sandboxing & levels](https://wiki.mozilla.org/Security/Sandbox)
+  (MozillaWiki).
+- [WebExtensions Experiments / experimental APIs](https://firefox-source-docs.mozilla.org/toolkit/components/extensions/webextensions/index.html)
+  (firefox-source-docs).
+- Bugzilla [Bug 1881888](https://bugzilla.mozilla.org/show_bug.cgi?id=1881888)
+  (JSM / `EXPORTED_SYMBOLS` removal in FF136, why the legacy `.jsm` modules were
+  ported to `.sys.mjs`) and
+  [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073)
+  (cache-image observer behavior the HTTP request tests account for).
 
 ### `dns_instrument`
 
