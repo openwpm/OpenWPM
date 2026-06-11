@@ -257,10 +257,62 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 
 ### `callstack_instrument`
 
-- **Currently broken.** The callstack instrument requires intricate machinery that broke in a previous Firefox version. Enabling it will raise a `ConfigError`.
-- When functional, it recorded JavaScript call stacks for HTTP requests.
-- Data is saved to the `callstacks` table.
-- See [#557](https://github.com/openwpm/OpenWPM/issues/557) for status.
+- Records the JavaScript call stack responsible for each captured HTTP request.
+- Requires `js_instrument` to also be enabled (enforced in `config.py`).
+- Data is saved to the `callstacks` table, joined to `http_requests` by
+  `request_id`/`visit_id`/`browser_id`. Each call stack is a newline-separated
+  list of `functionName@file:line:column;asyncCause` frames, outermost-last.
+
+#### Capture scope
+
+The instrument captures the initiator stack for both **synchronously
+script-initiated** requests (e.g. injecting a `<script>`/`<link>`, or any
+request opened directly on the JS stack) and **asynchronously initiated**
+requests (`fetch`, `XHR`, `WebSocket`, and worker variants), whose channels are
+opened off the JS stack.
+
+The two cases reach the instrument through two different Firefox mechanisms:
+
+- **Synchronous path.** The channel is opened on the JS stack, so a child
+  JSWindowActor running in the content process reads `Components.stack` at the
+  `http-on-opening-request`/`document-on-opening-request` observer topics, walks
+  the frames, formats them, and sends them to the parent actor.
+- **Asynchronous path** (closes
+  [#1177](https://github.com/openwpm/OpenWPM/issues/1177)**).** For requests
+  opened off the JS stack, `Components.stack` in the content process is empty.
+  Firefox instead captures the initiator stack at request time, serializes it
+  (`SerializedStackHolder`, converted to a plain SavedFrame object and
+  JSON-stringified), and delivers it in the parent process via the
+  `network-monitor-alternate-stack` observer notification — the subject is the
+  request channel and the data is the JSON stack. The parent actor observes that
+  topic, `JSON.parse`s the stack, walks `parent`/`asyncParent` links (preserving
+  `asyncCause` for async boundaries), and reformats each frame into the **same**
+  `name@file:line:column;asyncCause` string the synchronous path produces, so
+  both paths feed identical rows into the `callstacks` table.
+
+  Firefox only captures and emits the alternate stack when the top-level
+  `BrowsingContext` is flagged `watchedByDevTools` (the same gecko behavior the
+  DevTools network monitor relies on; the `fetch`/`XHR`/`WebSocket` C++ paths all
+  gate origin-stack capture on it). The parent actor sets that flag on the top
+  browsing context in `actorCreated`, which turns on alternate-stack capture
+  without attaching an actual DevTools client. Its only other documented side
+  effect is HTML-content reporting, which is benign for measurement.
+
+Both the synchronous child observer and the asynchronous parent observer are
+registered once as guarded module-global singletons (the observer service does
+not deduplicate, and a parent actor is created per top-level content window), so
+the same observer is not appended per page over a long crawl.
+
+#### Extension install location
+
+The instrument loads a privileged JSWindowActor child ES module into the content
+process. So the content sandbox can read it, enabling the instrument installs the
+extension non-temporarily into the Firefox profile's `extensions/` directory
+(which the content sandbox broker grants read-only by default) rather than via
+geckodriver's temporary install. The content sandbox stays fully enabled at its
+default level -- no sandbox relaxation or path whitelist.
+
+- See [#557](https://github.com/openwpm/OpenWPM/issues/557) for history.
 
 ### `dns_instrument`
 
