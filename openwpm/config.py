@@ -386,11 +386,13 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        raise
+    except Exception as e:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"
-        )
+        ) from e
 
 
 def validate_manager_params(manager_params: ManagerParams) -> None:

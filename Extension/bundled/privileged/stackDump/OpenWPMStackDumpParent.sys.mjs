@@ -13,6 +13,16 @@ import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 // They're cleared at on-examine-*-response when we won't need them anymore.
 const gChannelMap = new Map();
 
+// Upper bound on how long receiveMessage waits for the *-on-opening-request
+// observer to record a channel before giving up and dropping the stack. The
+// child frequently sends its formatted stack before the parent observer fires,
+// so we poll briefly; the deadline only guards the pathological case where the
+// channel never arrives, preventing an unbounded spin that leaks the task.
+const CHANNEL_WAIT_TIMEOUT_MS = 5000;
+// Poll interval while waiting. 0 yields to the event loop each turn (fast path);
+// a small non-zero value caps busy-spinning if the channel is slow to appear.
+const CHANNEL_WAIT_POLL_MS = 10;
+
 // Serializes a request's initiator call stack into the same one-frame-per-line
 // `name@file:line:col;asyncCause` format the content-process child emits for
 // synchronously script-initiated requests, so both the sync and async paths
@@ -202,10 +212,20 @@ export class OpenWPMStackDumpParent extends JSWindowActorParent {
 
   // receiving messages from the child
   async receiveMessage({ data: { channelId, stacktrace } }) {
-    // Check if we've already got the channel, and if not, wait.
+    // Check if we've already got the channel, and if not, wait for the
+    // *-on-opening-request observer to record it. The child can format and send
+    // its stack before the parent-process observer fires, so a brief wait is
+    // expected. Bound it with a deadline: if the channel never arrives (e.g. the
+    // request was canceled before opening, or the observer dropped it), bail
+    // rather than spinning forever and leaking this pending task.
+    const deadline = Date.now() + CHANNEL_WAIT_TIMEOUT_MS;
     while (!gChannelMap.has(channelId)) {
+      if (Date.now() >= deadline) {
+        // Channel never showed up; drop this stack instead of hanging.
+        return;
+      }
       // Spin the event loop - this lets us observe new channels while waiting here.
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, CHANNEL_WAIT_POLL_MS));
     }
     // ChannelWrapper.get(someChannel).id in the parent process corresponds to
     // WebRequest requestId values.
