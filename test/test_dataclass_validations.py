@@ -76,6 +76,47 @@ def test_echo_mode():
     validate_browser_params(browser_params)
 
 
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        {"security.allow_unsafe_subscript_loads": False},
+        {"extensions.experiments.enabled": False},
+        # Firefox ignores a user value whose type differs from the default's.
+        {"extensions.experiments.enabled": "true"},
+        {"extensions.experiments.enabled": 1},
+        {"security.allow_unsafe_subscript_loads": "true"},
+    ],
+)
+def test_extension_incompatible_prefs_raise(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    with pytest.raises(ConfigError):
+        validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize("prefs", [None, [], "a.pref"])
+def test_non_dict_prefs_raise(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    with pytest.raises(ConfigError, match="browser_params.prefs must be a dict"):
+        validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        {},
+        {"some.unrelated.pref": False},
+        {"security.allow_unsafe_subscript_loads": True},
+        {"extensions.experiments.enabled": True},
+    ],
+)
+def test_extension_compatible_prefs_pass(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    validate_browser_params(browser_params)
+
+
 def test_log_file_extension():
     manager_params = ManagerParams()
 
