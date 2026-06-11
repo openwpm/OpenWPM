@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+<head>
+<script>
+  function inject_from_iframe() {
+    var js = document.createElement("script");
+    js.src = "inject_pixel.js?from_iframe";
+    document.body.appendChild(js);
+  }
+</script>
+</head>
+<body onload="inject_from_iframe()"></body></html>
