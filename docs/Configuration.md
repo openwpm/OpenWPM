@@ -286,7 +286,7 @@ The two cases reach the instrument through two different Firefox mechanisms:
   [HTTP topics](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/netwerk/protocol/http/nsIHttpProtocolHandler.idl#141),
   walks the frames, formats them, and sends them to the parent actor.
 - **Asynchronous path** (closes
-  [#1177](https://github.com/openwpm/OpenWPM/issues/1177)**).** For requests
+  [#1177](https://github.com/openwpm/OpenWPM/issues/1177)). For requests
   opened off the JS stack, `Components.stack` in the content process is empty.
   Firefox instead captures the initiator stack at request time, serializes it
   (`SerializedStackHolder`, converted to a plain SavedFrame object and
