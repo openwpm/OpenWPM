@@ -160,8 +160,17 @@ ensureObserverRegistered();
 // dom/fetch, dom/xhr, dom/websocket, all gated on WatchedByDevTools). Setting it
 // here, on the top BrowsingContext only (the flag is rejected on subframes),
 // turns on alternate-stack capture without attaching an actual devtools client.
-// Its only other documented side effect is HTML-content reporting, which is
-// benign for measurement.
+//
+// The flag is `[ChromeOnly]`, so page JS cannot read it directly, and it does
+// not trip the standard anti-debugging vectors (devtools-detect, console.log
+// getter, `debugger` timing). It does have side effects beyond stack capture:
+//   - HTML-content reporting (used by view-source/devtools), benign here.
+//   - `CanonicalBrowsingContext::SupportsLoadingInParent` returns false when set
+//     (docshell/base/CanonicalBrowsingContext.cpp), so the top-level document
+//     load is no longer eligible for parent-process initiation and is forced
+//     through the content process. This is not page-script-visible, but it does
+//     change the document load path and can perturb navigation timing. Judged
+//     benign for measurement, but disclosed here so it is not overlooked.
 function ensureAlternateStackCaptureEnabled(browsingContext) {
   const top = browsingContext?.top;
   if (!top || top.watchedByDevTools) {
