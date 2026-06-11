@@ -2,6 +2,7 @@
 // ESM module (.sys.mjs). In system ES modules `Services`, `Components`, `Ci`
 // and `JSWindowActorChild` are available as ambient globals, so no
 // ChromeUtils.import of the (removed) Services.jsm is required.
+// ref: Bug 1881888 https://bugzilla.mozilla.org/show_bug.cgi?id=1881888 (JSM/EXPORTED_SYMBOLS removal, FF136)
 
 class Controller {
   constructor(actor) {
@@ -121,6 +122,7 @@ class Controller {
         // navigation/tab teardown. Once the manager is cleared, accessing
         // contentWindow throws InvalidStateError; while the inner window is
         // mid-navigation it can return null. In either case there is no window
+        // ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/ipc/jsactor/JSWindowActorChild.cpp#95-120 (GetContentWindow: throws StateError when mManager is gone, returns null when the window global is not the current inner window)
         // to attribute this request to, so bail quietly rather than throwing
         // (which spams the error log over long crawls) or misattributing the
         // request to every window via the no-filter short-circuit in

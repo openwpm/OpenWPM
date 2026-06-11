@@ -1,7 +1,8 @@
 // ESM module (.sys.mjs). `Services`, `ChromeUtils`, `Ci`, `ChannelWrapper` and
 // `JSWindowActorParent` are ambient globals in system ES modules. The legacy
 // Services.jsm / XPCOMUtils.jsm imports were removed in Firefox 136
-// (Bug 1881888); setTimeout now comes from Timer.sys.mjs directly.
+// (Bug 1881888 https://bugzilla.mozilla.org/show_bug.cgi?id=1881888);
+// setTimeout now comes from Timer.sys.mjs directly.
 import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 // ChannelWrapper.get(someChannel).id in the parent process corresponds to
@@ -34,6 +35,10 @@ function formatStackFrame(name, filename, line, column, asyncCause) {
 // `parent`, with async boundaries linked via `asyncParent`/`asyncCause`. We walk
 // that chain and reformat each frame to match the sync path. Mirrors devtools'
 // network-events-stacktraces.js handling of the same topic.
+//
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#157-170 (the "network-monitor-alternate-stack" case: JSON.parse(data) then walk frame.parent || frame.asyncParent — the loop this mirrors)
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/base/SerializedStackHolder.cpp#111-137 (ConvertSerializedStackToJSON: JS::ConvertSavedFrameToPlainObject + StringifyJSON produce the JSON string we parse)
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/js/src/vm/SavedStacks.cpp#1132 (ConvertSavedFrameToPlainObject: defines the source/line/column/functionDisplayName/asyncCause/parent/asyncParent field names this walks)
 function deserializeAlternateStack(data) {
   let frame;
   try {
@@ -62,6 +67,7 @@ function deserializeAlternateStack(data) {
 // `network-monitor-alternate-stack` carries the initiator stack for requests
 // whose channel is opened off the JS stack (fetch/XHR/WebSocket/worker), for
 // which Components.stack in the content process is empty; see #1177.
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#41-43 (DevTools registers the same dual observer set: http-on-opening-request / document-on-opening-request / network-monitor-alternate-stack)
 const OBSERVED_TOPICS = [
   "http-on-opening-request",
   "document-on-opening-request",
@@ -160,8 +166,12 @@ ensureObserverRegistered();
 // dom/fetch, dom/xhr, dom/websocket, all gated on WatchedByDevTools). Setting it
 // here, on the top BrowsingContext only (the flag is rejected on subframes),
 // turns on alternate-stack capture without attaching an actual devtools client.
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/fetch/Fetch.cpp#801,835 (fetch captures the origin stack only when IsWatchedByDevTools())
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/xhr/XMLHttpRequestMainThread.cpp#2915 (XHR hands its origin stack to NotifyNetworkMonitorAlternateStack, which emits the topic we observe)
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/websocket/WebSocket.cpp#1510 (WebSocket gates origin-stack capture on browsingContext->WatchedByDevTools())
 //
 // The flag is `[ChromeOnly]`, so page JS cannot read it directly, and it does
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/chrome-webidl/BrowsingContext.webidl#84-85,235 ([Exposed=Window, ChromeOnly] interface; [SetterThrows] attribute boolean watchedByDevTools)
 // not trip the standard anti-debugging vectors (devtools-detect, console.log
 // getter, `debugger` timing). It does have side effects beyond stack capture:
 //   - HTML-content reporting (used by view-source/devtools), benign here.
@@ -169,6 +179,7 @@ ensureObserverRegistered();
 //     (docshell/base/CanonicalBrowsingContext.cpp), so the top-level document
 //     load is no longer eligible for parent-process initiation and is forced
 //     through the content process. This is not page-script-visible, but it does
+//     ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/docshell/base/CanonicalBrowsingContext.cpp#2696-2704 (SupportsLoadingInParent returns false when WatchedByDevTools())
 //     change the document load path and can perturb navigation timing. Judged
 //     benign for measurement, but disclosed here so it is not overlooked.
 function ensureAlternateStackCaptureEnabled(browsingContext) {

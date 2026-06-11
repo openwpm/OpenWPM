@@ -144,6 +144,8 @@ def deploy_firefox(
     # SandboxBrokerPolicyFactory.cpp), so a profile sideload lets the content
     # process read the module with the content sandbox fully enabled at its
     # default level -- no whitelist pref, no sandbox relaxation required.
+    # ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp#719-750 (grants the profile's "extensions/" dir rdonly to the content sandbox broker)
+    # ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/browser/app/profile/firefox.js#1628 (Linux content sandbox defaults to security.sandbox.content.level = 6)
     #
     # This works for ALL crawls (not just the call stack instrument) because the
     # extension does not need to be privileged: its experiment APIs (sockets,
@@ -153,6 +155,8 @@ def deploy_firefox(
     # Extension.sys.mjs). The only privileged manifest permission the extension
     # ever requested was mozillaAddons (which only governs restrictSchemes), and
     # OpenWPM never observed privileged-scheme channels, so it has been dropped.
+    # ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/toolkit/components/extensions/Extension.sys.mjs#1567 (canUseAPIExperiment: experiment APIs allowed when AddonSettings.EXPERIMENTS_ENABLED)
+    # ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/toolkit/mozapps/extensions/internal/AddonSettings.sys.mjs#111-116 (EXPERIMENTS_ENABLED constant; true on unbranded MOZ_REQUIRE_SIGNING=0 builds)
     ext_loc = os.path.normpath(os.path.join(root_dir, "../../Extension/openwpm.xpi"))
     # Sideloaded add-ons in the profile scope are auto-disabled (and not even
     # scanned) by default. Enable scanning of the profile scope at startup and
