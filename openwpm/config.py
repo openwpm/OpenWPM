@@ -32,6 +32,20 @@ GENERAL_ERROR_STRING = (
     "Please look at docs/Configuration.md for more information"
 )
 
+# AddonManager.SCOPE_PROFILE is the bit (value 1) that controls whether add-ons
+# installed into the browser profile -- where OpenWPM sideloads its mandatory web
+# extension -- are scanned and enabled at startup. See deploy_firefox.py, which
+# sets extensions.startupScanScopes=1 and extensions.autoDisableScopes=0 (and
+# configure_firefox.optimize_prefs sets xpinstall.signatures.required=False) so
+# the sideloaded extension actually loads.
+ADDON_SCOPE_PROFILE = 1
+EXTENSION_PREF_ERROR_STRING = (
+    "browser_params.prefs sets `{pref}` to `{value}`, which is incompatible "
+    "with the required OpenWPM web extension ({reason}). OpenWPM cannot collect "
+    "any data without its web extension loaded, so this pref value is not "
+    "allowed. Remove it from browser_params.prefs or use a compatible value."
+)
+
 ALL_RESOURCE_TYPES = {
     "beacon",
     "csp_report",
@@ -218,9 +232,104 @@ class ManagerParamsInternal(ManagerParams):
     )
 
 
+def _coerce_pref_int(value: Any) -> Optional[int]:
+    """Best-effort conversion of a Firefox pref value to an int.
+
+    Pref values may arrive as ints or as strings (e.g. "1"). Returns the int
+    value, or ``None`` if it cannot be interpreted as one.
+    """
+    if isinstance(value, bool):
+        # bool is a subclass of int; treat True/False as 1/0.
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
+def _pref_truthy(value: Any) -> bool:
+    """Interpret a Firefox pref value as a boolean.
+
+    Handles bools, ints, and common string spellings (e.g. "false", "0").
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ("", "0", "false", "no", "off"):
+            return False
+        return True
+    return bool(value)
+
+
+def validate_extension_prefs(prefs: dict) -> None:
+    """Reject ``browser_params.prefs`` values that would break the web extension.
+
+    OpenWPM requires its web extension (sideloaded into the profile) to collect
+    any data. A handful of Firefox prefs, if set to the wrong value, would
+    prevent the extension from loading -- silently disabling all
+    instrumentation. We catch those here at config-validation time (before any
+    browser launches) and raise a hard ``ConfigError`` rather than letting the
+    user value override the extension-load prefs at browser launch.
+    """
+    # extensions.startupScanScopes must include SCOPE_PROFILE so the profile
+    # sideloaded extension is scanned at startup.
+    if "extensions.startupScanScopes" in prefs:
+        value = prefs["extensions.startupScanScopes"]
+        scopes = _coerce_pref_int(value)
+        if scopes is None or not (scopes & ADDON_SCOPE_PROFILE):
+            raise ConfigError(
+                EXTENSION_PREF_ERROR_STRING.format(
+                    pref="extensions.startupScanScopes",
+                    value=value,
+                    reason="it must include the SCOPE_PROFILE bit (value 1) so "
+                    "the profile-sideloaded extension is scanned at startup",
+                )
+            )
+
+    # extensions.autoDisableScopes must NOT include SCOPE_PROFILE, otherwise the
+    # profile sideloaded extension is auto-disabled.
+    if "extensions.autoDisableScopes" in prefs:
+        value = prefs["extensions.autoDisableScopes"]
+        scopes = _coerce_pref_int(value)
+        if scopes is None or (scopes & ADDON_SCOPE_PROFILE):
+            raise ConfigError(
+                EXTENSION_PREF_ERROR_STRING.format(
+                    pref="extensions.autoDisableScopes",
+                    value=value,
+                    reason="it must NOT include the SCOPE_PROFILE bit (value 1), "
+                    "otherwise the profile-sideloaded extension is auto-disabled",
+                )
+            )
+
+    # xpinstall.signatures.required must be falsy: OpenWPM ships an unsigned
+    # extension, which Firefox refuses to load when signatures are required.
+    if "xpinstall.signatures.required" in prefs:
+        value = prefs["xpinstall.signatures.required"]
+        if _pref_truthy(value):
+            raise ConfigError(
+                EXTENSION_PREF_ERROR_STRING.format(
+                    pref="xpinstall.signatures.required",
+                    value=value,
+                    reason="OpenWPM ships an unsigned extension, which Firefox "
+                    "refuses to load when signature enforcement is required",
+                )
+            )
+
+
 def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
+    # Validate extension-load-critical prefs outside the broad try/except below
+    # so the specific, actionable error message reaches the user instead of
+    # being wrapped in a generic "Something went wrong" ConfigError.
+    validate_extension_prefs(browser_params.prefs)
     try:
         if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
             raise ConfigError(

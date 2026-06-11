@@ -65,6 +65,57 @@ def test_save_content_type():
     validate_browser_params(browser_params)
 
 
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        # startupScanScopes omits the SCOPE_PROFILE bit (value 1)
+        {"extensions.startupScanScopes": 0},
+        {"extensions.startupScanScopes": 4},  # SCOPE_SYSTEM only
+        {"extensions.startupScanScopes": "0"},
+        {"extensions.startupScanScopes": "not an int"},
+        # autoDisableScopes includes the SCOPE_PROFILE bit (value 1)
+        {"extensions.autoDisableScopes": 1},
+        {"extensions.autoDisableScopes": 15},  # all scopes
+        {"extensions.autoDisableScopes": "1"},
+        {"extensions.autoDisableScopes": "not an int"},
+        # signatures required is truthy
+        {"xpinstall.signatures.required": True},
+        {"xpinstall.signatures.required": 1},
+        {"xpinstall.signatures.required": "true"},
+    ],
+)
+def test_extension_incompatible_prefs_raise(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    with pytest.raises(ConfigError):
+        validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        {},  # no extension-critical prefs
+        {"some.unrelated.pref": True},
+        # startupScanScopes includes the SCOPE_PROFILE bit (value 1)
+        {"extensions.startupScanScopes": 1},
+        {"extensions.startupScanScopes": 5},  # SCOPE_PROFILE | SCOPE_SYSTEM
+        {"extensions.startupScanScopes": "1"},
+        # autoDisableScopes omits the SCOPE_PROFILE bit (value 1)
+        {"extensions.autoDisableScopes": 0},
+        {"extensions.autoDisableScopes": 4},  # SCOPE_SYSTEM only
+        {"extensions.autoDisableScopes": "0"},
+        # signatures required is falsy
+        {"xpinstall.signatures.required": False},
+        {"xpinstall.signatures.required": 0},
+        {"xpinstall.signatures.required": "false"},
+    ],
+)
+def test_extension_compatible_prefs_pass(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    validate_browser_params(browser_params)
+
+
 def test_log_file_extension():
     manager_params = ManagerParams()
 
