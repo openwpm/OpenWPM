@@ -40,7 +40,6 @@ of configurations of `class<BrowserParams>`.
     - [Screenshots](#screenshots)
     - [`save_content`](#save_content)
 
-
 ## Platform Configuration Options
 
 - `data_directory`
@@ -66,8 +65,8 @@ of configurations of `class<BrowserParams>`.
 ## Browser Configuration Options
 
 Note: Instrumentation configuration options are described in the
-*Instruments* section and profile configuration options are
-described in the *Browser Profile Support* section. As such, these options are
+_Instruments_ section and profile configuration options are
+described in the _Browser Profile Support_ section. As such, these options are
 left out of this section.
 
 - `bot_mitigation`
@@ -79,9 +78,9 @@ left out of this section.
     - Launch the browser normally - GUI will be visible
   - `headless`:
     - Launch the browser in headless mode (supported as of Firefox 56),
-        no GUI will be visible.
+      no GUI will be visible.
     - Use this when running browsers on a remote machine or to run crawls in the
-        background on a local machine.
+      background on a local machine.
   - `xvfb`:
     - Launch the browser using the X virtual frame buffer. In this mode, Firefox
       is not running in its own headless mode, but no GUI will be displayed.
@@ -165,21 +164,21 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 - HTTP Request and Response Headers, redirects, and POST request bodies
 - Data is saved to the `http_requests`, `http_responses`, and `http_redirects` tables.
   - `http_requests` schema
-        [documentation](Schema-Documentation.md#http-requests)
+    [documentation](Schema-Documentation.md#http-requests)
   - `channel_id` can be used to link a request saved in the
-        `http_requests` table to its corresponding response in the
-        `http_responses` table.
+    `http_requests` table to its corresponding response in the
+    `http_responses` table.
   - `channel_id` can also be used to link a request to the subsequent
-        request that results after an HTTP redirect (3XX response). Use the
-        `http_redirects` table, which includes a mapping between
-        `old_channel_id`, the `channel_id` of the HTTP request that
-        resulted in a 3XX response, and `new_channel_id`, the HTTP request
-        that resulted from that redirect.
-        TODO: `channel_id`s are now persisted across redirects
+    request that results after an HTTP redirect (3XX response). Use the
+    `http_redirects` table, which includes a mapping between
+    `old_channel_id`, the `channel_id` of the HTTP request that
+    resulted in a 3XX response, and `new_channel_id`, the HTTP request
+    that resulted from that redirect.
+    TODO: `channel_id`s are now persisted across redirects
 - OCSP POST request bodies are not recorded
 - Note: request and response headers for cached content are also saved,
-    except for images.
-    See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
+  except for images.
+  See: [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073).
 
 ### `js_instrument`
 
@@ -204,7 +203,7 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
   - Plugin access (via `navigator.plugins`)
   - MIMEType access (via `navigator.mimeTypes`)
   - `window.Storage`, `window.localStorage`, `window.sessionStorage`,
-          and `window.name` access.
+    and `window.name` access.
   - Navigator properties (e.g. `appCodeName`, `oscpu`, `userAgent`, ...)
   - Window properties (via `window.screen`)
 - `collection_fingerprinting` is the default if `js_instrument` is `True`.
@@ -214,38 +213,38 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
   shortcuts.
 - Shortcuts:
   - Specifying just a string will instrument
-      the whole API with the [default log settings](../docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
+    the whole API with the [default log settings](../docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md)
   - For just strings you can specify a [Web API](https://developer.mozilla.org/en-US/docs/Web/API)
-      such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
+    such as `XMLHttpRequest`. Or you can specify instances on window e.g. `window.document`.
   - Alternatively, you can specify a single-key dictionary that maps an API name to the properties / settings you'd
-      like to use. The key of this dictionary can be an instance on `window` or a Web API.
-      The value of this dictionary can be:
+    like to use. The key of this dictionary can be an instance on `window` or a Web API.
+    The value of this dictionary can be:
     - A list - this is a shortcut for `propertiesToInstrument` (see [log settings](../docs/schemas/js_instrument_settings-settings-objects-properties-log-settings.md))
     - A dictionary - with non default log settings. Items missing from this dictionary
-          will be filled in with the default log settings.
+      will be filled in with the default log settings.
   - Here are some examples:
 
-      ```json
-      // Collections
-      "collection_fingerprinting",
-      // APIs, with or without settings details
-      "Storage",
-      "XMLHttpRequest",
-      {"XMLHttpRequest": {"excludedProperties": ["send"]}},
-      // APIs with shortcut to includedProperties
-      {"Prop1": ["hi"], "Prop2": ["hi2"]},
-      {"XMLHttpRequest": ["send"]},
-      // Specific instances on window
-      {"window.document": ["cookie", "referrer"]},
-      {"window": ["name", "localStorage", "sessionStorage"]}
-      ```
+    ```json
+    // Collections
+    "collection_fingerprinting",
+    // APIs, with or without settings details
+    "Storage",
+    "XMLHttpRequest",
+    {"XMLHttpRequest": {"excludedProperties": ["send"]}},
+    // APIs with shortcut to includedProperties
+    {"Prop1": ["hi"], "Prop2": ["hi2"]},
+    {"XMLHttpRequest": ["send"]},
+    // Specific instances on window
+    {"window.document": ["cookie", "referrer"]},
+    {"window": ["name", "localStorage", "sessionStorage"]}
+    ```
 
   - Note, the key / string will only have it's properties instrumented. That is, if you want to instrument
-      `window.fetch` function, you must specify `{"window": ["fetch",]}`. If you specify just `window.fetch` the
-      instrumentation will try to instrument sub properties of `window.fetch` (which won't work as fetch is a
-      function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
-      In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
-      in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
+    `window.fetch` function, you must specify `{"window": ["fetch",]}`. If you specify just `window.fetch` the
+    instrumentation will try to instrument sub properties of `window.fetch` (which won't work as fetch is a
+    function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
+    In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
+    in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
 
 ### `navigation_instrument`
 
@@ -257,10 +256,119 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 
 ### `callstack_instrument`
 
-- **Currently broken.** The callstack instrument requires intricate machinery that broke in a previous Firefox version. Enabling it will raise a `ConfigError`.
-- When functional, it recorded JavaScript call stacks for HTTP requests.
-- Data is saved to the `callstacks` table.
-- See [#557](https://github.com/openwpm/OpenWPM/issues/557) for status.
+- Records the JavaScript call stack that initiated each HTTP request.
+- Data is saved to the `callstacks` table, joined to `http_requests` by
+  `request_id`/`visit_id`/`browser_id`, so enable `http_instrument` too.
+- Each call stack is a newline-separated list of
+  `functionName@file:line:column;asyncCause` frames, innermost first. At most
+  64 frames are kept. Function names are page-controlled (they can be any
+  string), so in all fields backslashes, control characters, line/paragraph
+  separators and unpaired surrogates are escaped as `\\` and `\uXXXX`, and in
+  function names `@` is escaped as `\u0040`. To parse a frame, split the name
+  off at the first `@`, the async cause at the last `;`, and line and column at
+  the last two `:` (file URLs can contain `@`, `:` and `;`). A page can thus
+  not inject extra frames, but it can still choose misleading names.
+- Frames from Firefox's own code (`resource://`, `chrome://`) are dropped, and a
+  request with no remaining frames gets no row, so browser-initiated requests
+  (e.g. favicon loads) are not attributed to the page.
+
+#### Capture mechanism
+
+A [JSWindowActor](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html)
+module runs one observer per content process:
+
+- For a request whose channel is opened while the initiating JavaScript is on
+  the stack (e.g. `<script>` insertion, main-thread `fetch` and `XHR`), it
+  reads `Components.stack` at `http-on-opening-request` /
+  `document-on-opening-request`.
+- For a request opened without the initiator on the stack, Firefox fires
+  `network-monitor-alternate-stack` in the content process with a serialized
+  stack captured at the call site. This covers a worker's own `fetch`/`XHR`,
+  the worker script request (attributed to `new Worker`), and `WebSocket`
+  handshakes from windows and dedicated workers. Firefox only does this while
+  the top-level `BrowsingContext` is `watchedByDevTools`. The parent process
+  sets that flag on every top-level content `BrowsingContext` when it is
+  attached, before it loads anything. Since Firefox 158 the flag can only be
+  set from the parent process while DevTools are reported open, so OpenWPM
+  calls `ChromeUtils.notifyDevToolsOpened()` in the parent process. That is a
+  per-process counter; content processes do not see it. In the parent process
+  it has two other effects, neither visible to pages: every event dispatched in
+  the browser UI also runs a debugger-notification guard, and since Firefox 158
+  the parent creates heap-snapshot temporary files when a content process asks,
+  instead of killing the requesting process.
+
+The parent process maps each channel to its WebRequest `requestId` and hands
+the stack to the extension. A WebSocket's HTTP channel exists only in the
+parent process; it is matched by the WebSocket's serial, which is only unique
+within a content process, qualified by the id of the window that owns the
+WebSocket. A stack that arrives before its channel opens (e.g. a WebSocket
+queued behind another connecting to the same host) is held until it does; at
+most 1024 are held, each for at most 10 minutes.
+
+Limitations:
+
+- Image loads a script triggers (setting `img.src`, inserting `<img>` markup)
+  start from a microtask without the script on the stack, and Firefox emits no
+  alternate stack for them, so they get no row
+  ([#1177](https://github.com/openwpm/OpenWPM/issues/1177)).
+- WebSockets opened by shared or service workers have no owning window and get
+  no row.
+- Async parent frames are not recorded: Firefox keeps them only for DevTools
+  debuggees, so a request made after an `await` or in a timer callback has a
+  stack that starts at that callback.
+- `watchedByDevTools` is chrome-only (page script cannot read it), but it also
+  makes Firefox start top-level document loads in the content process instead
+  of the parent
+  ([`SupportsLoadingInParent`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/docshell/base/CanonicalBrowsingContext.cpp#2748-2757)),
+  which can change navigation timing.
+- Reading a frame costs a few microseconds, so a synchronous `fetch`, `XHR` or
+  element insertion made from 64 or more frames deep costs about 0.4 ms more
+  than one made from a shallow stack (about 0.6 ms vs 0.2 ms per `fetch`,
+  against a flat 0.2 ms without the instrument). A page timing such calls at
+  different recursion depths can detect the instrument.
+
+#### Extension install
+
+The actor's child module is loaded by the content process, which the
+[content sandbox](https://wiki.mozilla.org/Security/Sandbox) only lets read
+files under a few directories, including the profile's `extensions/`.
+geckodriver's temporary install copies the extension to the system temp
+directory, so OpenWPM copies it to `extensions/openwpm-temporary.xpi` in the
+profile and temporarily installs it from there (for all crawls). The install
+stays privileged; the file name is not the add-on id, so Firefox's scan of the
+profile does not also load it as a sideloaded add-on.
+
+#### References
+
+Searchfox permalinks are pinned to `firefox-main` revision
+[`66b70484481a`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/source) (Firefox 159 nightly). The
+`watchedByDevTools` restrictions are new in Firefox 158; earlier releases let
+any process set the flag.
+
+- [`network-events-stacktraces.js`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/devtools/server/actors/resources/network-events-stacktraces.js#83-188):
+  the DevTools watcher the content-process observer mirrors, including the
+  subject types of `network-monitor-alternate-stack`.
+- [`SerializedStackHolder.cpp`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/dom/base/SerializedStackHolder.cpp#111-150):
+  produces the JSON stack delivered with that notification.
+- [`Fetch.cpp`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/dom/fetch/Fetch.cpp#812,846),
+  [`WebSocket.cpp`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/dom/websocket/WebSocket.cpp#1519,1537): capture the
+  alternate stack only for a context watched by DevTools.
+- [`BrowsingContext.webidl`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/dom/chrome-webidl/BrowsingContext.webidl#84,233-235):
+  `watchedByDevTools` is `[ChromeOnly]`;
+  [`BrowsingContext.cpp`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/docshell/base/BrowsingContext.cpp#3806-3834):
+  it can only be set from the parent process while DevTools are open;
+  [`ChromeUtils.webidl`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/dom/chrome-webidl/ChromeUtils.webidl#159-175):
+  `notifyDevToolsOpened`.
+- [`BaseWebSocketChannel.cpp`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/netwerk/protocol/websocket/BaseWebSocketChannel.cpp#29-66):
+  the 53-bit WebSocket id is truncated to a 32-bit `serial`, which keeps only
+  the lowest bit of the process id.
+- [`SandboxBrokerPolicyFactory.cpp`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp#749-777):
+  grants the content process read access to the profile's `extensions/`.
+- [`XPIProvider.sys.mjs`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/toolkit/mozapps/extensions/internal/XPIProvider.sys.mjs#307-315):
+  the profile scan ignores files not named after an add-on id.
+- [JSWindowActors](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html),
+  [`JSActor.webidl`](https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/dom/chrome-webidl/JSActor.webidl#74-82)
+  (`safeForUntrustedWebProcess`).
 
 ### `dns_instrument`
 
@@ -338,13 +446,13 @@ deliberately reset (i.e., using the `reset=True` CommandSequence argument),
 but will not be used during crash recovery. Specifically:
 
 - For stateful crawls the initial load of Firefox will use the
-profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
-restart for some reason during the crawl, it will use the profile from
-the most recent page visit (pre-crash) rather than the `seed_tar` profile.
+  profile specified by `seed_tar`. If OpenWPM determines that Firefox needs to
+  restart for some reason during the crawl, it will use the profile from
+  the most recent page visit (pre-crash) rather than the `seed_tar` profile.
 - For stateless crawls, the initial `seed_tar` will be loaded during each
-new page visit. Note that this means the profile will very likely be
-_incomplete_, as cookies or storage may have been set or changed during the
-page load that are **not** reflected back into the seed profile.
+  new page visit. Note that this means the profile will very likely be
+  _incomplete_, as cookies or storage may have been set or changed during the
+  page load that are **not** reflected back into the seed profile.
 
 ## Non instrument data gathering
 
@@ -356,17 +464,17 @@ page load that are **not** reflected back into the seed profile.
 ### Browser Profile
 
 - Contains cookies, Flash objects, and so on that are dumped after a crawl
-    is finished
+  is finished
 - Automatically saved when the platform closes or crashes by specifying
-    `browser_params.profile_archive_dir`.
+  `browser_params.profile_archive_dir`.
 - Save on-demand with the `CommandSequence::dump_profile` command.
 
 ### Rendered Page Source
 
 - Save the top-level frame's rendered source with the
-`CommandSequence::dump_page_source` command.
+  `CommandSequence::dump_page_source` command.
 - Save the full rendered source (including all nested iframes) with the
-`CommandSequence::recursive_dump_page_source` command.
+  `CommandSequence::recursive_dump_page_source` command.
   - The page source is saved in the following nested json structure:
 
         ```json
@@ -388,44 +496,44 @@ page load that are **not** reflected back into the seed profile.
 ### Screenshots
 
 - Selenium can be used to screenshot an individual element. None of the
-    built-in commands offer this functionality, but you can use it when
-    [writing your own](Using_OpenWPM.md#adding-a-new-command). See the [Selenium documentation](https://www.selenium.dev/selenium/docs/api/py/selenium_webdriver_remote/selenium.webdriver.remote.webelement.html#selenium.webdriver.remote.webelement.WebElement.screenshot).
+  built-in commands offer this functionality, but you can use it when
+  [writing your own](Using_OpenWPM.md#adding-a-new-command). See the [Selenium documentation](https://www.selenium.dev/selenium/docs/api/py/selenium_webdriver_remote/selenium.webdriver.remote.webelement.html#selenium.webdriver.remote.webelement.WebElement.screenshot).
 - Viewport screenshots (i.e. a screenshot of the portion of the website
-    visible in the browser's window) are available with the
-    `CommandSequence::save_screenshot` command.
+  visible in the browser's window) are available with the
+  `CommandSequence::save_screenshot` command.
 - Full-page screenshots (i.e. a screenshot of the entire rendered DOM) are
-    available with the `CommandSequence::screenshot_full_page` command.
+  available with the `CommandSequence::screenshot_full_page` command.
   - This functionality is not yet supported by Selenium/geckodriver,
-      though [it is planned](https://github.com/mozilla/geckodriver/issues/570).
-      We produce screenshots by using JS to scroll the page and take a
-      viewport screenshot at each location. This method will save the parts
-      and a stitched version in the `screenshot_path`.
+    though [it is planned](https://github.com/mozilla/geckodriver/issues/570).
+    We produce screenshots by using JS to scroll the page and take a
+    viewport screenshot at each location. This method will save the parts
+    and a stitched version in the `screenshot_path`.
   - Since the screenshots are stitched they have some limitations:
     - On the area of the page present when the command is called will
-          be captured. Sites which dynamically expand when scrolled (i.e.,
-          infinite scroll) will only go as far as the original height.
+      be captured. Sites which dynamically expand when scrolled (i.e.,
+      infinite scroll) will only go as far as the original height.
     - We only scroll vertically, so pages that are wider than the
-          viewport will be clipped.
+      viewport will be clipped.
     - In geckodriver v0.15 doing any scrolling (or having devtools
-          open) seems to break element-only screenshots. So using this
-          command will cause any future element-only screenshots to be
-          misaligned.
+      open) seems to break element-only screenshots. So using this
+      command will cause any future element-only screenshots to be
+      misaligned.
 
 ### `save_content`
 
 Response body content
 
 - Saves all files encountered during the crawl to a `LevelDB`
-    database de-duplicated by the md5 hash of the content.
+  database de-duplicated by the md5 hash of the content.
 - The `content_hash` column of the `http_responses` table contains the md5
-    hash for each script, and can be used to do content lookups in the
-    LevelDB content database.
+  hash for each script, and can be used to do content lookups in the
+  LevelDB content database.
 - NOTE: this instrumentation may lead to performance issues when a large
-    number of browsers are in use.
+  number of browsers are in use.
 - Set `browser_params.save_content` to a comma-separated list of
-    [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
-    to save only specific types of files, for instance
-    `browser_params.save_content = "image,script"` to save Images and Javascript
-    files. This will lessen the performance impact of this instrumentation
-    when a large number of browsers are used in parallel. 
+  [resource_types](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType)
+  to save only specific types of files, for instance
+  `browser_params.save_content = "image,script"` to save Images and Javascript
+  files. This will lessen the performance impact of this instrumentation
+  when a large number of browsers are used in parallel.
 - You will also need to import LevelDbProvider from openwpm/storage/leveldb.py and instantiate it in the TaskManager in demo.py

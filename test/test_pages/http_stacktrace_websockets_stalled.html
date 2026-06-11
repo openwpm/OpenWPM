@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+<title>WebSockets queued behind a stalled connection</title>
+<script>
+  const stalled = new URLSearchParams(location.search).get("stalled");
+  function open_stalled(name) {
+    new WebSocket(`ws://${stalled}/${name}`);
+  }
+  function run_all() {
+    open_stalled("stall_1");
+    open_stalled("stall_2");
+    new WebSocket(location.origin.replace("http", "ws") + "/control_ws");
+  }
+</script>
+</head>
+<body onload="run_all()">
+<p>Opens two WebSockets to a host that never answers, and one to the test server.</p>
+</body></html>

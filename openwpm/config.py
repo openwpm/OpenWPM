@@ -272,20 +272,6 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 "which drives deploy_firefox directly."
             )
 
-        if browser_params.callstack_instrument:
-            raise ConfigError(
-                "The callstacks instrument currently doesn't work "
-                "as it is requires intricate machinery that broke "
-                "in one of the previous Firefox versions."
-            )
-
-        if browser_params.callstack_instrument and not browser_params.js_instrument:
-            raise ConfigError(
-                "The callstacks instrument currently doesn't work without "
-                "the JS instrument enabled. see: "
-                "https://github.com/openwpm/OpenWPM/issues/557"
-            )
-
         if not isinstance(browser_params.save_content, bool) and not isinstance(
             browser_params.save_content, str
         ):
