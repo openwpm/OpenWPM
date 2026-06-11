@@ -145,6 +145,33 @@
                isNative(RTCPeerConnection.prototype.createDataChannel);
     }
 
+    // Test 11: The stealth instrument defines helper functions
+    // (getPrototypeByDepth, getPropertyNamesPerDepth, findPropertyInChain) on
+    // Object.prototype and getPropertyDescriptor on Object — but in the
+    // ISOLATED content-script compartment, not the page's. A page that probes
+    // its OWN Object.prototype / Object must not see any of them; if it does,
+    // the instrument is trivially detectable. This asserts the compartment
+    // isolation that makes those helpers safe (returns true = clean).
+    function testNoInstrumentHelpersLeaked() {
+        const protoHelpers = [
+            "getPrototypeByDepth",
+            "getPropertyNamesPerDepth",
+            "findPropertyInChain",
+        ];
+        const protoNames = Object.getOwnPropertyNames(Object.prototype);
+        for (const name of protoHelpers) {
+            if (name in Object.prototype) return false;
+            if (typeof Object.prototype[name] !== "undefined") return false;
+            if (protoNames.indexOf(name) !== -1) return false;
+        }
+        // getPropertyDescriptor is added to the Object constructor itself
+        const ctorNames = Object.getOwnPropertyNames(Object);
+        if ("getPropertyDescriptor" in Object) return false;
+        if (typeof Object.getPropertyDescriptor !== "undefined") return false;
+        if (ctorNames.indexOf("getPropertyDescriptor") !== -1) return false;
+        return true;
+    }
+
     // Run all tests and store results, wrapping each in try/catch
     // so that one failing test doesn't prevent others from running
     function safeRun(name, fn) {
@@ -166,6 +193,7 @@
     safeRun("clean_error_stacks", testCleanErrorStacks);
     safeRun("no_extra_prototype_properties", testNoExtraPrototypeProperties);
     safeRun("rtc_native", testRTCNative);
+    safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
 
     // Write results to DOM for Selenium to read
     const resultsDiv = document.getElementById("results");

@@ -160,11 +160,23 @@ function protectFrameProperties({
     const constructor = context[constructorName];
     const wrappedConstructor = wrappedWindow[constructorName];
 
+    // This runs at document_start on every frame, including non-HTML or
+    // otherwise restricted contexts where these constructors (or their
+    // prototype property descriptors) may be absent. Skip gracefully rather
+    // than throwing.
+    if (!constructor || !constructor.prototype || !wrappedConstructor) {
+      return;
+    }
+
     const contentWindowDescriptor = Object.getOwnPropertyDescriptor(
       constructor.prototype,
       "contentWindow",
     );
-    const originalContentWindowGetter = contentWindowDescriptor.get;
+    const originalContentWindowGetter =
+      contentWindowDescriptor && contentWindowDescriptor.get;
+    if (!originalContentWindowGetter) {
+      return;
+    }
     const contentWindowTemp = {
       get contentWindow() {
         const window = originalContentWindowGetter.call(this);
@@ -185,7 +197,11 @@ function protectFrameProperties({
       constructor.prototype,
       "contentDocument",
     );
-    const originalContentDocumentGetter = contentDocumentDescriptor.get;
+    const originalContentDocumentGetter =
+      contentDocumentDescriptor && contentDocumentDescriptor.get;
+    if (!originalContentDocumentGetter) {
+      return;
+    }
     const contentDocumentTemp = {
       get contentDocument() {
         const document = originalContentDocumentGetter.call(this);
@@ -239,8 +255,17 @@ function protectDOMModifications({
     },
   ].forEach(function (protectionDefinition) {
     const object = protectionDefinition.object;
+    if (!object) {
+      return;
+    }
     protectionDefinition.methods.forEach(function (method) {
       const descriptor = Object.getOwnPropertyDescriptor(object, method);
+      // Runs at document_start in arbitrary (incl. non-HTML) contexts where a
+      // listed method may be absent or not a data-descriptor. Skip rather than
+      // throwing, which would abort the rest of stealth setup for this frame.
+      if (!descriptor || typeof descriptor.value !== "function") {
+        return;
+      }
       const original = descriptor.value;
       changeWindowProperty(
         object,
@@ -274,6 +299,11 @@ function protectDOMModifications({
     });
     protectionDefinition.setters.forEach(function (property) {
       const descriptor = Object.getOwnPropertyDescriptor(object, property);
+      // The descriptor (or its setter) may be missing for some
+      // properties/contexts; skip non-settable properties instead of throwing.
+      if (!descriptor || !descriptor.set) {
+        return;
+      }
       const setter = descriptor.set;
       const temp = {
         set [property](value) {
@@ -301,12 +331,14 @@ function enableMutationObserver({ context, allCallback }) {
     }
   }
   observe();
-  context.document.addEventListener("DOMContentLoaded", function () {
-    if (observing) {
-      observer.disconnect();
-      observing = false;
-    }
-  });
+  if (context.document) {
+    context.document.addEventListener("DOMContentLoaded", function () {
+      if (observing) {
+        observer.disconnect();
+        observing = false;
+      }
+    });
+  }
   return observe;
 }
 
@@ -317,18 +349,29 @@ function protectDocumentWrite({
   observe,
   allCallback,
 }) {
-  const documentWriteDescriptorOnHTMLDocument = Object.getOwnPropertyDescriptor(
-    wrappedWindow.HTMLDocument.prototype,
-    "write",
-  );
+  // Runs at document_start on every frame, including non-HTML / restricted
+  // contexts where HTMLDocument (or the write/writeln descriptors) may be
+  // absent. Resolve the prototypes defensively and bail out instead of
+  // throwing, which would disable the rest of stealth setup for this frame.
+  const htmlDocProto =
+    wrappedWindow.HTMLDocument && wrappedWindow.HTMLDocument.prototype;
+  const docProto = wrappedWindow.Document && wrappedWindow.Document.prototype;
+
+  const documentWriteDescriptorOnHTMLDocument = htmlDocProto
+    ? Object.getOwnPropertyDescriptor(htmlDocProto, "write")
+    : undefined;
   const documentWriteDescriptor =
     documentWriteDescriptorOnHTMLDocument ||
-    Object.getOwnPropertyDescriptor(wrappedWindow.Document.prototype, "write");
+    (docProto ? Object.getOwnPropertyDescriptor(docProto, "write") : undefined);
+  if (
+    !documentWriteDescriptor ||
+    typeof documentWriteDescriptor.value !== "function"
+  ) {
+    return;
+  }
   const documentWrite = documentWriteDescriptor.value;
   changeWindowProperty(
-    documentWriteDescriptorOnHTMLDocument
-      ? wrappedWindow.HTMLDocument.prototype
-      : wrappedWindow.Document.prototype,
+    documentWriteDescriptorOnHTMLDocument ? htmlDocProto : docProto,
     "write",
     "value",
     function write(_markup) {
@@ -352,22 +395,23 @@ function protectDocumentWrite({
     },
   );
 
-  const documentWritelnDescriptorOnHTMLDocument =
-    Object.getOwnPropertyDescriptor(
-      wrappedWindow.HTMLDocument.prototype,
-      "writeln",
-    );
+  const documentWritelnDescriptorOnHTMLDocument = htmlDocProto
+    ? Object.getOwnPropertyDescriptor(htmlDocProto, "writeln")
+    : undefined;
   const documentWritelnDescriptor =
     documentWritelnDescriptorOnHTMLDocument ||
-    Object.getOwnPropertyDescriptor(
-      wrappedWindow.Document.prototype,
-      "writeln",
-    );
+    (docProto
+      ? Object.getOwnPropertyDescriptor(docProto, "writeln")
+      : undefined);
+  if (
+    !documentWritelnDescriptor ||
+    typeof documentWritelnDescriptor.value !== "function"
+  ) {
+    return;
+  }
   const documentWriteln = documentWritelnDescriptor.value;
   changeWindowProperty(
-    documentWritelnDescriptorOnHTMLDocument
-      ? wrappedWindow.HTMLDocument.prototype
-      : wrappedWindow.Document.prototype,
+    documentWritelnDescriptorOnHTMLDocument ? htmlDocProto : docProto,
     "writeln",
     "value",
     function writeln(_markup) {
@@ -399,8 +443,22 @@ function protectWindowOpen({
     wrappedWindow,
     "open",
   );
+  const documentDescriptor = Object.getOwnPropertyDescriptor(
+    context,
+    "document",
+  );
+  // Defensive: in restricted contexts these descriptors may be missing. Skip
+  // rather than throwing and aborting the rest of stealth setup.
+  if (
+    !windowOpenDescriptor ||
+    typeof windowOpenDescriptor.value !== "function" ||
+    !documentDescriptor ||
+    !documentDescriptor.get
+  ) {
+    return;
+  }
   const windowOpen = windowOpenDescriptor.value;
-  const getDocument = Object.getOwnPropertyDescriptor(context, "document").get;
+  const getDocument = documentDescriptor.get;
   changeWindowProperty(wrappedWindow, "open", "value", function open() {
     const newWindow = arguments.length
       ? windowOpen.call(this, ...arguments)

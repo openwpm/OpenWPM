@@ -114,25 +114,30 @@ function serializeObject(
   }
 }
 
-// Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
+// Rough implementations of getPropertyDescriptor and getPropertyNames.
 // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-Object.defineProperty(Object, "getPropertyDescriptor", {
-  enumerable: false,
-  configurable: true,
-  writable: false,
-  value: function (subject, name) {
-    if (subject === undefined) {
-      throw new Error("Can't get property descriptor for undefined");
-    }
-    let pd = Object.getOwnPropertyDescriptor(subject, name);
-    let proto = Object.getPrototypeOf(subject);
-    while (pd === undefined && proto !== null) {
-      pd = Object.getOwnPropertyDescriptor(proto, name);
-      proto = Object.getPrototypeOf(proto);
-    }
-    return pd;
-  },
-});
+//
+// These are module-local helpers — deliberately NOT installed on the page's
+// (or the content-script's) Object/Object.prototype. Defining them on a
+// prototype would be observable to a hostile page and defeat the whole point
+// of the stealth instrument. See the ``no_instrument_helpers_leaked``
+// detection vector (test/test_pages/stealth_detection.html) which locks in
+// that the page cannot observe them.
+function getPropertyDescriptor(
+  subject: any,
+  name: string,
+): PropertyDescriptor | undefined {
+  if (subject === undefined) {
+    throw new Error("Can't get property descriptor for undefined");
+  }
+  let pd = Object.getOwnPropertyDescriptor(subject, name);
+  let proto = Object.getPrototypeOf(subject);
+  while (pd === undefined && proto !== null) {
+    pd = Object.getOwnPropertyDescriptor(proto, name);
+    proto = Object.getPrototypeOf(proto);
+  }
+  return pd;
+}
 
 function updateCounterAndCheckIfOver(scriptUrl, symbol) {
   const key = scriptUrl + "|" + symbol;
@@ -379,97 +384,79 @@ function logCall(instrumentedFunctionName, args, callContext) {
  **********************************************************************************/
 
 /**
- * Provides the properties per prototype object
+ * Provides the properties per prototype object.
+ *
+ * The three helpers below (``getPrototypeByDepth``, ``getPropertyNamesPerDepth``,
+ * ``findPropertyInChain``) used to be installed on ``Object.prototype`` and
+ * called as if they were statics. They are now plain module-local functions:
+ * defining them on a prototype is observable to a hostile page (see the
+ * ``no_instrument_helpers_leaked`` detection vector) and there is no reason for
+ * the prototype indirection — every call site already passed the subject
+ * explicitly.
  */
 
-declare global {
-  interface Object {
-    getPrototypeByDepth(subject: string | undefined, depth: number): any;
-    getPropertyNamesPerDepth(subject: any, maxDepth: number): any;
-    findPropertyInChain(subject, propertyName);
+/**
+ * Walks ``depth`` steps up the prototype chain of ``subject``.
+ */
+function getPrototypeByDepth(subject: any, depth: number): any {
+  if (subject === undefined) {
+    throw new Error("Can't get property names for undefined");
   }
-  interface ObjectConstructor {
-    getPropertyDescriptor(
-      subject: any,
-      name: string,
-    ): PropertyDescriptor | undefined;
+  if (depth === undefined || typeof depth !== "number") {
+    throw new Error("Depth " + depth + " is invalid");
   }
+  let proto = subject;
+  for (let i = 1; i <= depth; i++) {
+    proto = Object.getPrototypeOf(proto);
+  }
+  if (proto === undefined) {
+    throw new Error("Prototype was undefined. Too deep iteration?");
+  }
+  return proto;
 }
-
-Object.defineProperty(Object.prototype, "getPrototypeByDepth", {
-  enumerable: false,
-  configurable: false,
-  writable: false,
-  value: function (subject, depth) {
-    if (subject === undefined) {
-      throw new Error("Can't get property names for undefined");
-    }
-    if (depth === undefined || typeof depth !== "number") {
-      throw new Error("Depth " + depth + " is invalid");
-    }
-    let proto = subject;
-    for (let i = 1; i <= depth; i++) {
-      proto = Object.getPrototypeOf(proto);
-    }
-    if (proto === undefined) {
-      throw new Error("Prototype was undefined. Too deep iteration?");
-    }
-    return proto;
-  },
-});
 
 /**
  * Traverses the prototype chain to collect properties. Returns an array containing
  * an object with the depth, propertyNames and scanned subject
  */
-Object.defineProperty(Object.prototype, "getPropertyNamesPerDepth", {
-  enumerable: false,
-  configurable: false,
-  writable: false,
-  value: function (subject, maxDepth = 0) {
-    if (subject === undefined) {
-      throw new Error("Can't get property names for undefined");
-    }
-    const res = [];
-    let depth = 0;
-    let properties = Object.getOwnPropertyNames(subject);
-    res.push({ depth, propertyNames: properties, object: subject });
-    let proto = Object.getPrototypeOf(subject);
+function getPropertyNamesPerDepth(subject: any, maxDepth = 0): any {
+  if (subject === undefined) {
+    throw new Error("Can't get property names for undefined");
+  }
+  const res = [];
+  let depth = 0;
+  let properties = Object.getOwnPropertyNames(subject);
+  res.push({ depth, propertyNames: properties, object: subject });
+  let proto = Object.getPrototypeOf(subject);
 
-    while (proto !== null && depth < maxDepth) {
-      depth++;
-      properties = Object.getOwnPropertyNames(proto);
-      res.push({ depth, propertyNames: properties, object: proto });
-      proto = Object.getPrototypeOf(proto);
-    }
-    return res;
-  },
-});
+  while (proto !== null && depth < maxDepth) {
+    depth++;
+    properties = Object.getOwnPropertyNames(proto);
+    res.push({ depth, propertyNames: properties, object: proto });
+    proto = Object.getPrototypeOf(proto);
+  }
+  return res;
+}
 
 /**
  * Finds a property along the prototype chain
  */
-Object.defineProperty(Object.prototype, "findPropertyInChain", {
-  enumerable: false,
-  configurable: false,
-  writable: false,
-  value: function (subject, propertyName) {
-    if (subject === undefined || propertyName === undefined) {
-      throw new Error("Object and property name must be defined");
+function findPropertyInChain(subject: any, propertyName: string) {
+  if (subject === undefined || propertyName === undefined) {
+    throw new Error("Object and property name must be defined");
+  }
+  let properties = [];
+  let depth = 0;
+  while (subject !== null) {
+    properties = Object.getOwnPropertyNames(subject);
+    if (properties.includes(propertyName)) {
+      return { depth, propertyName };
     }
-    let properties = [];
-    let depth = 0;
-    while (subject !== null) {
-      properties = Object.getOwnPropertyNames(subject);
-      if (properties.includes(propertyName)) {
-        return { depth, propertyName };
-      }
-      depth++;
-      subject = Object.getPrototypeOf(subject);
-    }
-    throw Error("Property not found. Check whether configuration is correct!");
-  },
-});
+    depth++;
+    subject = Object.getPrototypeOf(subject);
+  }
+  throw Error("Property not found. Check whether configuration is correct!");
+}
 
 /*
  * Get all keys for properties that shall be overwritten
@@ -504,7 +491,7 @@ function getObjectProperties(context, item) {
   }
 
   if (propertiesToInstrument === undefined || !propertiesToInstrument.length) {
-    propertiesToInstrument = Object.getPropertyNamesPerDepth(proto, item.depth);
+    propertiesToInstrument = getPropertyNamesPerDepth(proto, item.depth);
     // filter excluded and overwritten properties
     const excluded = getPropertyKeysToOverwrite(item).concat(
       item.logSettings.excludedProperties,
@@ -514,12 +501,18 @@ function getObjectProperties(context, item) {
       excluded,
     );
   } else {
+    // The schema allows each entry to be either a {depth, propertyNames}
+    // object or a bare property-name string. Normalise bare strings to the
+    // object shape (depth 0) so the rest of the pipeline — which assumes
+    // .depth / .propertyNames / .object — does not crash on them.
+    propertiesToInstrument = propertiesToInstrument.map((propertyList) =>
+      typeof propertyList === "string"
+        ? { depth: 0, propertyNames: [propertyList] }
+        : propertyList,
+    );
     // include the object to each item
     propertiesToInstrument.forEach((propertyList) => {
-      propertyList.object = Object.getPrototypeByDepth(
-        proto,
-        propertyList.depth,
-      );
+      propertyList.object = getPrototypeByDepth(proto, propertyList.depth);
     });
   }
   return propertiesToInstrument;
@@ -859,8 +852,8 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
       context.wrappedJSObject,
       item.object,
     );
-    const pageObject = Object.getPrototypeByDepth(initialPageObject, depth);
-    const descriptor = Object.getPropertyDescriptor(pageObject, propertyName);
+    const pageObject = getPrototypeByDepth(initialPageObject, depth);
+    const descriptor = getPropertyDescriptor(pageObject, propertyName);
     if (descriptor === undefined) {
       // Do not do undefined descriptor. We can safely skip them
       return;
@@ -930,10 +923,7 @@ function startInstrument(context) {
       item.logSettings.overwrittenProperties.forEach(({ key: name, value }) => {
         const proto = getContextualPrototypeFromString(context, item.object);
         if (proto) {
-          const { depth, propertyName } = Object.findPropertyInChain(
-            proto,
-            name,
-          );
+          const { depth, propertyName } = findPropertyInChain(proto, name);
           instrument(context, item, depth, propertyName, value);
         } else {
           console.error(

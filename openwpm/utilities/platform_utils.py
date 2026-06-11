@@ -112,6 +112,7 @@ def get_configuration_string(manager_params, browser_params, versions):
     profile_dirs = OrderedDict()
     archive_dirs = OrderedDict()
     js_config = OrderedDict()
+    stealth_js_config = OrderedDict()
     profile_all_none = archive_all_none = True
     for item in print_params:
         browser_id = item["browser_id"]
@@ -126,7 +127,9 @@ def get_configuration_string(manager_params, browser_params, versions):
         profile_dirs[browser_id] = str(item.pop("seed_tar"))
         archive_dirs[browser_id] = str(item.pop("profile_archive_dir"))
         js_config[browser_id] = item.pop("cleaned_js_instrument_settings")
-        item.pop("cleaned_stealth_js_instrument_settings", None)
+        stealth_js_config[browser_id] = item.pop(
+            "cleaned_stealth_js_instrument_settings", None
+        )
 
         # Copy items in sorted order
         dct = OrderedDict()
@@ -147,6 +150,12 @@ def get_configuration_string(manager_params, browser_params, versions):
 
     config_str += "\n\n========== JS Instrument Settings ==========\n"
     config_str += json.dumps(js_config, indent=None, separators=(",", ":"))
+
+    config_str += "\n\n========== Stealth JS Instrument Settings ==========\n"
+    if all(v is None for v in stealth_js_config.values()):
+        config_str += "  No custom stealth JS instrument settings specified"
+    else:
+        config_str += json.dumps(stealth_js_config, indent=None, separators=(",", ":"))
 
     config_str += "\n\n========== Input profile tar files ==========\n"
     if profile_all_none:

@@ -209,6 +209,14 @@ DETECTABILITY_REQUIREMENTS: List[Tuple[str, str, Optional[bool]]] = [
     ("D6-bind-integrity", "bind_integrity", None),
     ("D7-clean-error-stacks", "clean_error_stacks", None),
     ("D8-no-prototype-pollution", "no_extra_prototype_properties", True),
+    # D9: the stealth instrument's prototype-walk helpers
+    # (getPrototypeByDepth / getPropertyNamesPerDepth / findPropertyInChain on
+    # Object.prototype, getPropertyDescriptor on Object) live in the isolated
+    # content-script compartment, NOT on the page's Object. A page probing its
+    # own Object must not observe them. legacy_detectable=None: legacy does not
+    # define these helpers either, so this asserts only the stealth direction —
+    # locking in the compartment isolation that keeps the helpers undetectable.
+    ("D9-no-instrument-helpers", "no_instrument_helpers_leaked", None),
 ]
 
 _LEGACY_DETECTABLE = [r for r in DETECTABILITY_REQUIREMENTS if r[2]]
