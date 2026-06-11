@@ -267,11 +267,8 @@ def validate_extension_prefs(prefs: dict) -> None:
 def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
-    # Validate extension-load-critical prefs outside the broad try/except below
-    # so the specific, actionable error message reaches the user instead of
-    # being wrapped in a generic "Something went wrong" ConfigError.
-    validate_extension_prefs(browser_params.prefs)
     try:
+        validate_extension_prefs(browser_params.prefs)
         if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
             raise ConfigError(
                 CONFIG_ERROR_STRING.format(
@@ -329,11 +326,13 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        raise
+    except Exception as e:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"
-        )
+        ) from e
 
 
 def validate_manager_params(manager_params: ManagerParams) -> None:

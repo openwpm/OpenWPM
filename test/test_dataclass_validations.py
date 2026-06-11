@@ -25,6 +25,26 @@ def test_display_mode():
     validate_browser_params(browser_params)
 
 
+def test_specific_config_error_surfaces():
+    browser_params = BrowserParams()
+    browser_params.display_mode = "not_a_mode"
+    with pytest.raises(ConfigError) as exc_info:
+        validate_browser_params(browser_params)
+    message = str(exc_info.value)
+    assert "display_mode" in message
+    assert "Something went wrong" not in message
+
+
+def test_unexpected_type_is_wrapped():
+    browser_params = BrowserParams()
+    # An int has no .lower(), triggering an unexpected AttributeError that
+    # should be wrapped in the generic ConfigError.
+    browser_params.display_mode = 123
+    with pytest.raises(ConfigError) as exc_info:
+        validate_browser_params(browser_params)
+    assert "Something went wrong" in str(exc_info.value)
+
+
 def test_browser_type():
     browser_params = BrowserParams()
 
