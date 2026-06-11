@@ -32,6 +32,22 @@ GENERAL_ERROR_STRING = (
     "Please look at docs/Configuration.md for more information"
 )
 
+# Prefs the extension cannot load without; both are on in the Firefox build and
+# configuration OpenWPM uses.
+EXTENSION_REQUIRED_PREFS = {
+    "security.allow_unsafe_subscript_loads": "its experiment API scripts are "
+    "loaded from a jar:file: URL, which Firefox refuses to run as a subscript "
+    "without this opt-in",
+    "extensions.experiments.enabled": "the temporarily installed extension is "
+    "only privileged, and its experiment APIs only load, while this is on",
+}
+EXTENSION_PREF_ERROR_STRING = (
+    "browser_params.prefs sets `{pref}` to `{value!r}`, but the OpenWPM web "
+    "extension requires the boolean True ({reason}; Firefox ignores a value of "
+    "the wrong type). OpenWPM cannot collect any data without its extension, so "
+    "remove the pref from browser_params.prefs or set it to True."
+)
+
 ALL_RESOURCE_TYPES = {
     "beacon",
     "csp_report",
@@ -232,9 +248,29 @@ class ManagerParamsInternal(ManagerParams):
     )
 
 
+def validate_extension_prefs(prefs: dict) -> None:
+    """Reject browser_params.prefs values that keep the web extension from
+    loading, which would otherwise silently disable all instrumentation."""
+    if not isinstance(prefs, dict):
+        raise ConfigError(
+            f"browser_params.prefs must be a dict, not {type(prefs).__name__}"
+        )
+    for pref, reason in EXTENSION_REQUIRED_PREFS.items():
+        if pref in prefs and prefs[pref] is not True:
+            raise ConfigError(
+                EXTENSION_PREF_ERROR_STRING.format(
+                    pref=pref, value=prefs[pref], reason=reason
+                )
+            )
+
+
 def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
+    # Validate extension-load-critical prefs outside the broad try/except below
+    # so the specific, actionable error message reaches the user instead of
+    # being wrapped in a generic "Something went wrong" ConfigError.
+    validate_extension_prefs(browser_params.prefs)
     try:
         if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
             raise ConfigError(

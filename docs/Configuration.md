@@ -124,6 +124,10 @@ left out of this section.
   - Any `about:config` preference can be specified. See the
     [Firefox source](https://searchfox.org/mozilla-release/source/modules/libpref/init/all.js)
     for a list of available preferences.
+  - `security.allow_unsafe_subscript_loads` and
+    `extensions.experiments.enabled` must stay `True`: the extension does not
+    load without them. Any other value, including one of another type (which
+    Firefox ignores), is rejected at config validation.
 
 ## Validations
 
