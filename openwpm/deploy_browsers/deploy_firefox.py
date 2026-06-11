@@ -128,38 +128,45 @@ def deploy_firefox(
     # Set various prefs to improve speed and eliminate traffic to Mozilla
     configure_firefox.optimize_prefs(fo)
 
-    # The call stack instrument loads a privileged JSWindowActor child ES module
-    # into the content process. The content sandbox (Linux level 6 by default)
-    # blocks the content process from reading the extension's files unless they
-    # live under a path the sandbox broker already whitelists. geckodriver's
-    # temporary install copies the xpi into the system temp directory, which the
-    # content sandbox cannot read, so the child module fails to load and no call
-    # stacks are captured. The sandbox broker DOES grant a read-only tree for the
-    # Firefox profile's "extensions/" directory unconditionally (see
-    # SandboxBrokerPolicyFactory.cpp). So, when the instrument is enabled, we
-    # install the extension non-temporarily by dropping the xpi into the profile's
-    # extensions/ directory before launch, where the content process can read it
-    # with the content sandbox fully enabled and at its default level -- no
-    # whitelist pref, no sandbox relaxation required. See the install block after
-    # the driver is launched for the prefs needed to auto-enable this unsigned
-    # sideloaded add-on.
+    # Install the extension by dropping the xpi into the profile's extensions/
+    # directory before launch (a "profile sideload"), for every crawl. This is
+    # the single install mechanism for OpenWPM.
+    #
+    # Why profile sideload rather than geckodriver's temporary install: the call
+    # stack instrument loads a privileged JSWindowActor child ES module into the
+    # content process. The content sandbox (Linux level 6 by default) blocks the
+    # content process from reading the extension's files unless they live under a
+    # path the sandbox broker already whitelists. geckodriver's temporary install
+    # copies the xpi into the system temp directory, which the content sandbox
+    # cannot read, so the child module would fail to load and no call stacks would
+    # be captured. The sandbox broker DOES grant a read-only tree for the Firefox
+    # profile's "extensions/" directory unconditionally (see
+    # SandboxBrokerPolicyFactory.cpp), so a profile sideload lets the content
+    # process read the module with the content sandbox fully enabled at its
+    # default level -- no whitelist pref, no sandbox relaxation required.
+    #
+    # This works for ALL crawls (not just the call stack instrument) because the
+    # extension does not need to be privileged: its experiment APIs (sockets,
+    # profileDirIO, stackDump) load on a non-privileged profile sideload thanks to
+    # AddonSettings.EXPERIMENTS_ENABLED, which defaults true on the unbranded
+    # MOZ_REQUIRE_SIGNING=0 build OpenWPM uses (canUseAPIExperiment in
+    # Extension.sys.mjs). The only privileged manifest permission the extension
+    # ever requested was mozillaAddons (which only governs restrictSchemes), and
+    # OpenWPM never observed privileged-scheme channels, so it has been dropped.
     ext_loc = os.path.normpath(os.path.join(root_dir, "../../Extension/openwpm.xpi"))
-    if browser_params.callstack_instrument:
-        # Sideloaded add-ons in the profile scope are auto-disabled (and not even
-        # scanned) by default. Enable scanning of the profile scope at startup
-        # and disable auto-disabling so the add-on is active without a user
-        # approval prompt. Signature enforcement is already off
-        # (xpinstall.signatures.required=False in configure_firefox.optimize_prefs)
-        # for the unbranded add-on-devel Firefox build OpenWPM uses.
-        fo.set_preference(
-            "extensions.startupScanScopes", 1
-        )  # AddonManager.SCOPE_PROFILE
-        fo.set_preference("extensions.autoDisableScopes", 0)
-        extensions_dir = browser_profile_path / "extensions"
-        extensions_dir.mkdir(exist_ok=True)
-        # Firefox loads a profile-scoped add-on from a file named after its
-        # add-on id (openwpm@mozilla.org) in the profile's extensions/ directory.
-        shutil.copyfile(ext_loc, extensions_dir / "openwpm@mozilla.org.xpi")
+    # Sideloaded add-ons in the profile scope are auto-disabled (and not even
+    # scanned) by default. Enable scanning of the profile scope at startup and
+    # disable auto-disabling so the add-on is active without a user approval
+    # prompt. Signature enforcement is already off
+    # (xpinstall.signatures.required=False in configure_firefox.optimize_prefs)
+    # for the unbranded add-on-devel Firefox build OpenWPM uses.
+    fo.set_preference("extensions.startupScanScopes", 1)  # AddonManager.SCOPE_PROFILE
+    fo.set_preference("extensions.autoDisableScopes", 0)
+    extensions_dir = browser_profile_path / "extensions"
+    extensions_dir.mkdir(exist_ok=True)
+    # Firefox loads a profile-scoped add-on from a file named after its add-on id
+    # (openwpm@mozilla.org) in the profile's extensions/ directory.
+    shutil.copyfile(ext_loc, extensions_dir / "openwpm@mozilla.org.xpi")
 
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.
@@ -190,12 +197,8 @@ def deploy_firefox(
         ),
     )
 
-    # Install extension. When the callstack instrument is enabled the extension
-    # was already installed non-temporarily into the profile's extensions/
-    # directory before launch (so the content sandbox can read its files); in
-    # that case it is loaded at startup and must not be installed again here.
-    if not browser_params.callstack_instrument:
-        driver.install_addon(ext_loc, temporary=True)
+    # The extension was installed into the profile's extensions/ directory before
+    # launch (see above) and is loaded at startup, so nothing to install here.
     logger.debug(
         "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
     )

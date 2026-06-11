@@ -268,8 +268,13 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 The instrument captures the initiator stack for both **synchronously
 script-initiated** requests (e.g. injecting a `<script>`/`<link>`, or any
 request opened directly on the JS stack) and **asynchronously initiated**
-requests (`fetch`, `XHR`, `WebSocket`, and worker variants), whose channels are
-opened off the JS stack.
+requests, whose channels are opened off the JS stack.
+
+The test suite verifies the synchronous (`<script>`) path and the asynchronous
+`fetch`/`XHR` paths. `WebSocket` and worker initiators are gated by the same
+gecko mechanism (their C++ origin-stack paths key off the same
+`watchedByDevTools` flag) and are therefore expected to be captured too, but this
+is currently untested.
 
 The two cases reach the instrument through two different Firefox mechanisms:
 
@@ -295,8 +300,15 @@ The two cases reach the instrument through two different Firefox mechanisms:
   DevTools network monitor relies on; the `fetch`/`XHR`/`WebSocket` C++ paths all
   gate origin-stack capture on it). The parent actor sets that flag on the top
   browsing context in `actorCreated`, which turns on alternate-stack capture
-  without attaching an actual DevTools client. Its only other documented side
-  effect is HTML-content reporting, which is benign for measurement.
+  without attaching an actual DevTools client. The flag is chrome-only (page JS
+  cannot read it) and does not trip the standard anti-debugging vectors. It does
+  have side effects beyond stack capture: HTML-content reporting (benign here),
+  and — more notably — it forces the top-level document load through the content
+  process instead of the parent process
+  (`CanonicalBrowsingContext::SupportsLoadingInParent` returns false when set).
+  That is not page-script-visible, but it does change the document load path and
+  can perturb navigation timing. We judge this benign for measurement, but
+  disclose it here rather than claim a single side effect.
 
 Both the synchronous child observer and the asynchronous parent observer are
 registered once as guarded module-global singletons (the observer service does
@@ -306,11 +318,13 @@ the same observer is not appended per page over a long crawl.
 #### Extension install location
 
 The instrument loads a privileged JSWindowActor child ES module into the content
-process. So the content sandbox can read it, enabling the instrument installs the
-extension non-temporarily into the Firefox profile's `extensions/` directory
-(which the content sandbox broker grants read-only by default) rather than via
-geckodriver's temporary install. The content sandbox stays fully enabled at its
-default level -- no sandbox relaxation or path whitelist.
+process. So the content sandbox can read it, OpenWPM installs the extension into
+the Firefox profile's `extensions/` directory (which the content sandbox broker
+grants read-only by default) rather than via geckodriver's temporary install. The
+content sandbox stays fully enabled at its default level -- no sandbox relaxation
+or path whitelist. This profile sideload is the single install mechanism used for
+all crawls (the extension does not require privilege; its experiment APIs load
+under `AddonSettings.EXPERIMENTS_ENABLED` on the unbranded build OpenWPM uses).
 
 - See [#557](https://github.com/openwpm/OpenWPM/issues/557) for history.
 
