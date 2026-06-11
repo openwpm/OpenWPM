@@ -154,6 +154,27 @@ export default tseslint.config(
     },
   },
 
+  // Privileged system ES modules (.sys.mjs) loaded into the shared system
+  // global. Components, Services, Ci, ChromeUtils, the JSWindowActor base
+  // classes and ChannelWrapper are all ambient globals in that environment.
+  {
+    files: ["bundled/privileged/**/*.sys.mjs"],
+    languageOptions: {
+      sourceType: "module",
+      globals: {
+        ChannelWrapper: "readonly",
+        ChromeUtils: "readonly",
+        Ci: "readonly",
+        Components: "readonly",
+        console: "readonly",
+        Cu: "readonly",
+        JSWindowActorChild: "readonly",
+        JSWindowActorParent: "readonly",
+        Services: "readonly",
+      },
+    },
+  },
+
   // TypeScript files
   ...tseslint.configs.recommended.map((config) => ({
     ...config,

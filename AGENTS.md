@@ -85,7 +85,12 @@ TaskManager (orchestrator)
 
 ### Known Issues
 
-- `callstack_instrument` is broken — enabling it raises `ConfigError`. See [#557](https://github.com/openwpm/OpenWPM/issues/557).
+- `callstack_instrument` requires `js_instrument`; it captures both script- and
+  fetch/XHR/WebSocket-initiated request stacks into the `callstacks` table. See
+  the `callstack_instrument` section in
+  [docs/Configuration.md](docs/Configuration.md) for the capture mechanism and
+  extension-install details, and [#557](https://github.com/openwpm/OpenWPM/issues/557)
+  for history.
 
 ### Large Test Fixtures (jj users)
 

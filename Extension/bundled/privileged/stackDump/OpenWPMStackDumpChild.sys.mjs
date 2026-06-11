@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file */
-"use strict";
-// eslint-disable-next-line no-unused-vars
-const EXPORTED_SYMBOLS = ["OpenWPMStackDumpChild"];
+// ESM module (.sys.mjs). In system ES modules `Services`, `Components`, `Ci`
+// and `JSWindowActorChild` are available as ambient globals, so no
+// ChromeUtils.import of the (removed) Services.jsm is required.
 
 class Controller {
   constructor(actor) {
@@ -34,10 +34,10 @@ class Controller {
       // frame, so that we can't only compare with win.top.
       let win = this.getWindowForRequest(channel);
       while (win) {
-        if (win == filters.window) {
+        if (win === filters.window) {
           return true;
         }
-        if (win.parent == win) {
+        if (win.parent === win) {
           break;
         }
         win = win.parent;
@@ -49,10 +49,10 @@ class Controller {
       // topFrame is typically null for some chrome requests like favicons
       if (topFrame) {
         try {
-          if (topFrame.outerWindowID == filters.outerWindowID) {
+          if (topFrame.outerWindowID === filters.outerWindowID) {
             return true;
           }
-        } catch (e) {
+        } catch {
           // outerWindowID getter from browser.js (non-remote <xul:browser>) may
           // throw when closing a tab while resources are still loading.
         }
@@ -65,7 +65,7 @@ class Controller {
   getTopFrameForRequest(request) {
     try {
       return this.getRequestLoadContext(request).topFrameElement;
-    } catch (ex) {
+    } catch {
       // request loadContent is not always available.
     }
     return null;
@@ -74,7 +74,7 @@ class Controller {
   getWindowForRequest(request) {
     try {
       return this.getRequestLoadContext(request).associatedWindow;
-    } catch (ex) {
+    } catch {
       // TODO: bug 802246 - getWindowForRequest() throws on b2g: there is no
       // associatedWindow property.
     }
@@ -90,7 +90,7 @@ class Controller {
   getRequestLoadContext(request) {
     try {
       return request.notificationCallbacks.getInterface(Ci.nsILoadContext);
-    } catch (ex) {
+    } catch {
       // Ignore.
     }
 
@@ -98,7 +98,7 @@ class Controller {
       return request.loadGroup.notificationCallbacks.getInterface(
         Ci.nsILoadContext,
       );
-    } catch (ex) {
+    } catch {
       // Ignore.
     }
 
@@ -108,16 +108,33 @@ class Controller {
   observe(subject, topic, _data) {
     switch (topic) {
       case "http-on-opening-request":
-      case "document-on-opening-request":
+      case "document-on-opening-request": {
         let channel;
         let channelId;
         try {
           channel = subject.QueryInterface(Ci.nsIHttpChannel);
           channelId = channel.channelId;
-        } catch (e) {
+        } catch {
           return;
         }
-        if (!this.matchRequest(channel, { window: this.actor.contentWindow })) {
+        // The Controller's nsIObserver can outlive the actor's manager during
+        // navigation/tab teardown. Once the manager is cleared, accessing
+        // contentWindow throws InvalidStateError; while the inner window is
+        // mid-navigation it can return null. In either case there is no window
+        // to attribute this request to, so bail quietly rather than throwing
+        // (which spams the error log over long crawls) or misattributing the
+        // request to every window via the no-filter short-circuit in
+        // matchRequest.
+        let contentWindow;
+        try {
+          contentWindow = this.actor.contentWindow;
+        } catch {
+          return;
+        }
+        if (!contentWindow) {
+          return;
+        }
+        if (!this.matchRequest(channel, { window: contentWindow })) {
           return;
         }
         let frame = Components.stack;
@@ -125,11 +142,6 @@ class Controller {
         if (frame && frame.caller) {
           frame = frame.caller;
           while (frame) {
-            const scheme = frame.filename.split("://")[0];
-            /*  Maybe enable this later if we need to
-            if (["resource", "chrome", "file"].contains(scheme)) {
-            return;
-          } */
             // Format described here https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
             stacktrace.push(
               frame.name +
@@ -153,6 +165,7 @@ class Controller {
           channelId,
         });
         break;
+      }
     }
   }
   willDestroy() {
@@ -163,7 +176,7 @@ class Controller {
 
 // JSWindowActorChild (which is a WebIDL class) instances are not directly
 // usable as nsIObserver instances, so we need to use a separate object to observe requests.
-class OpenWPMStackDumpChild extends JSWindowActorChild {
+export class OpenWPMStackDumpChild extends JSWindowActorChild {
   constructor() {
     super();
   }
@@ -171,9 +184,13 @@ class OpenWPMStackDumpChild extends JSWindowActorChild {
     this.controller = new Controller(this);
   }
   willDestroy() {
-    this.controller.willDestroy();
+    if (this.controller) {
+      this.controller.willDestroy();
+    }
   }
-  observe() {
-    // stuff
+  handleEvent() {
+    // The DOMWindowCreated event is only used to force this child actor to
+    // instantiate (which sets up the Controller in actorCreated). No per-event
+    // work is required here.
   }
 }
