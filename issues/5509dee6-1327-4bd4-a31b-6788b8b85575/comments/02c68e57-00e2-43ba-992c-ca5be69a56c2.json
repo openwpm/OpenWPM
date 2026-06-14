@@ -1,0 +1,10 @@
+{
+  "uuid": "02c68e57-00e2-43ba-992c-ca5be69a56c2",
+  "issue_uuid": "5509dee6-1327-4bd4-a31b-6788b8b85575",
+  "author": "claude",
+  "content": "Related: GH #1143 (Rewrite SQLiteStorageProvider to use SQLAlchemy) is the natural place to resolve this -- the rewrite owns _create_tables/store_record and the unknown-table handling. Also relates to crosslink #5 (PR #1149 SQLAlchemy storage) and the local feat/sqlalchemy-postgresql-v2 branch. No GH issue directly reports the silent 'Unsupported record' drop as of 2026-06-14.",
+  "created_at": "2026-06-14T21:09:43.126181474Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAcuYBB7pdUrKNbKclOObZOnEEQyqql3VptXmX0zOa1xFcygD7QHm26a9SF37dodkHPF6w7nZtxEtmy1Ib4b0LDg=="
+}
