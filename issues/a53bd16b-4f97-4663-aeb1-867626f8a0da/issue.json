@@ -7,9 +7,10 @@
   "priority": "low",
   "created_by": "claude",
   "created_at": "2026-06-14T21:44:00.032054430Z",
-  "updated_at": "2026-06-14T21:44:03.917589787Z",
+  "updated_at": "2026-06-14T21:44:05.766986922Z",
   "labels": [
     "refactor",
-    "ci"
+    "ci",
+    "testing"
   ]
 }
