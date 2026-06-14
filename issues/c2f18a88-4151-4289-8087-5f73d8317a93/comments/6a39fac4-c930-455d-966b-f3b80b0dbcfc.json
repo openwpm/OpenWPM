@@ -1,0 +1,10 @@
+{
+  "uuid": "6a39fac4-c930-455d-966b-f3b80b0dbcfc",
+  "issue_uuid": "c2f18a88-4151-4289-8087-5f73d8317a93",
+  "author": "claude",
+  "content": "Posted detailed investigation report to GH #1162: https://github.com/openwpm/OpenWPM/issues/1162#issuecomment-4703240780\n\nKey findings: (1) Cause-2 Cache-Control is NOT a fix — already tried+reverted (commit 709c4ca1), made flakiness WORSE (3/8 vs 7/8). (2) Cause-1 image/memory-cache-across-tabs is genuinely uncontrollable via FF prefs (no pref forces a webRequest for memory-cache-served images; HTTP-cache prefs don't touch imgLoader). (3) Cause-3 visitID race CONFIRMED in code — saveRecord stamps a mutable global after an unguarded 'await browser.tabs.get', a real PRODUCTION data-corruption bug. Recommendation: fix Cause-3 (event-time visit_id capture) + restructure assertions to deterministic invariants/ranges (like DNS); a bare retry would mask Cause-3. Empirical run skipped (port 8000 busy).",
+  "created_at": "2026-06-14T22:13:30.859748402Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA9g6QGGnwraEX6roeMMKMrZu7kqcpAdgXuFt4M5BCaz74yRJ8CtpmzwKTPGgYlSQSpULei7E4Iamk79267mhpDA=="
+}
