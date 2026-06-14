@@ -7,8 +7,9 @@
   "priority": "high",
   "created_by": "claude",
   "created_at": "2026-06-14T21:07:01.931154052Z",
-  "updated_at": "2026-06-14T21:07:04.026024150Z",
+  "updated_at": "2026-06-14T21:07:06.367765318Z",
   "labels": [
-    "bug"
+    "bug",
+    "storage"
   ]
 }
