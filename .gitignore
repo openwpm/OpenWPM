@@ -95,6 +95,9 @@ node_modules
 
 datadir
 
+# Code-review scratch artifact (transient; never commit)
+HATER.md
+
 # === Crosslink managed (do not edit between markers) ===
 # .crosslink/ — machine-local state (never commit)
 .crosslink/issues.db
