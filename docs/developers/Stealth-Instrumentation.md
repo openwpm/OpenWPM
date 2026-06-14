@@ -179,15 +179,52 @@ Navigator, `document.cookie`, `document.referrer`, `window.name` (get/set),
 replacement legacy lacks); all `Screen` properties (legacy records only
 `colorDepth`/`pixelDepth`).
 
-**Not captured by stealth (regressions vs legacy fingerprinting preset):**
-
-| Lost signal | Legacy | Stealth | Notes |
-|---|---|---|---|
-| `nonExistingPropertiesToInstrument` (honey properties) | supported | unused | Cannot instrument access to non-existent properties. |
-
-These are properties of the **bundled default** surface, not hard limits of
-stealth mode: a study can capture any of these by supplying a custom
+There are no `logSettings`-level capture regressions versus legacy: every
+`logSettings` field is now honoured by the stealth instrument (see
+"`logSettings` semantics" below). The bundled default leaves the optional
+fields (`recursive`, `preventSets`, `logFunctionGets`,
+`nonExistingPropertiesToInstrument`) off, exactly like legacy's
+`collection_fingerprinting` preset; a study can enable any of them via a custom
 `stealth_js_instrument_settings` (see "Configuring the instrumented surface").
+
+### `logSettings` semantics
+
+All `logSettings` fields are read by the stealth instrument
+(`Extension/src/stealth/instrument.ts`) and match the legacy semantics defined
+in `Extension/src/lib/js-instruments.ts`:
+
+| Field | Stealth behaviour |
+|---|---|
+| `propertiesToInstrument` | Named list (with `{depth, propertyNames}`) or, when empty, every own property to `depth`. `excludedProperties`/`overwrittenProperties` are filtered out on **both** paths. |
+| `excludedProperties` | Skipped on the named-list path and the instrument-everything path. |
+| `overwrittenProperties` | Property value overwritten on read (e.g. `Navigator.webdriver → false`). |
+| `logCallStack` | Per-object call-stack capture (page frames only; never `moz-extension://`). |
+| `logFunctionsAsStrings` | Function values serialised as their source instead of `"FUNCTION"`. |
+| `logFunctionGets` | When an instrumented getter returns a **function**, a `get(function)` row is emitted (and no plain `get`), matching legacy. |
+| `preventSets` | When the property currently holds a **function/object**, an assignment is logged as `set(prevented)` and the original setter is **not** called, blocking the write. Plain (string/number) values still pass through. |
+| `recursive` + `depth` | The object **returned by an instrumented getter** is instrumented one level down, decrementing `depth`, done lazily at access time so page-built nested objects are reachable. Captures e.g. `obj.nested.leaf` accesses. |
+| `nonExistingPropertiesToInstrument` | Names absent from the target get a synthesized, `[native code]`-reporting accessor (backed by a closure variable), so a study can capture access to decoy "honey" property names. |
+
+**Native-arity preservation.** Instrumented functions report the **same
+`.length` (arity)** as the native function they replace (e.g.
+`canvas.getContext.length === 1`). A naive wrapper forwards via `arguments` and
+would expose `.length === 0` — a fingerprint. `copyFunctionArity` redefines
+`.length` on the exported, page-visible wrapper using the native descriptor
+shape (`{ writable: false, enumerable: false, configurable: true }`). The
+frame-protection replacements in `stealth.ts` are wrapped in a `Proxy` over the
+native original, so their `.length` is forwarded from that target. The
+`function_arity_native` detection vector (`stealth_detection.html`,
+`D8b-native-fn-arity`) locks this in; legacy trips it.
+
+**Detectability of `nonExistingPropertiesToInstrument`.** Honey properties are
+*intentionally* page-observable — they are bait a tracker is meant to probe.
+Stealth makes them native-looking (the synthesized accessor reports
+`[native code]`), so they are not identifiable as OpenWPM specifically, but a
+page that *knows* a given name should not exist on a real Firefox object could
+still notice the decoy. This is inherent to the technique (legacy is identical),
+the names are study-chosen rather than an OpenWPM signature, and the field is
+empty in the default surface — so the out-of-the-box instrument adds no such
+artifact.
 
 ## Test coverage
 
@@ -196,9 +233,17 @@ requirement in `docs/developers/Stealth-Requirements.md`. See that document for
 the full detectability (D1–D8), disruptability (X1–X3), attribution (A1) and
 configurability (C1) matrices and the per-requirement test names. In summary:
 
-- **Detectability** — `stealth_detection.html` exercises the D1–D8 vectors;
+- **Detectability** — `stealth_detection.html` exercises the D1–D8 vectors plus
+  `D8b-native-fn-arity` (instrumented `.length` matches native);
   `TestStealthDetectability` asserts stealth passes every vector and that legacy
-  trips the reliable subset (D2/D3/D4) as a control.
+  trips the reliable subset (D2/D3/D4/D8b) as a control.
+- **`logSettings` fidelity** — `TestStealthLogSettings` proves the stealth
+  instrument honours `preventSets` (logs `set(prevented)` and blocks the write),
+  `logFunctionGets` (emits `get(function)`), `recursive`/`depth` (captures
+  nested-object access), and `nonExistingPropertiesToInstrument` (synthesized
+  honey accessor), each with a native-looking / undetectability check where the
+  target is a native object (pages `stealth_prevent_sets.html`,
+  `stealth_honey_props.html`, `stealth_recursive.html`).
 - **Disruptability** — `TestStealthDisruption` runs the X1 (suppression), X2
   (forgery) and X3 (dynamic iframe) attack pages both ways: legacy is shown to
   lose/accept records or miss the parent-context attribution, stealth to resist

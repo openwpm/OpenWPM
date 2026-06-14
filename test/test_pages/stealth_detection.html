@@ -138,6 +138,28 @@
         return true;
     }
 
+    // Test 10b: Instrumented functions must report the SAME arity (.length) as
+    // the native function they replace. A naive wrapper forwards via
+    // `arguments` and therefore has .length === 0, whereas e.g.
+    // canvas.getContext.length === 1 natively — a fingerprint. Stealth copies
+    // the native arity onto the exported wrapper, so every check must hold.
+    // Expected arities are the stable, spec-defined declared-argument counts.
+    function testFunctionArityNative() {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const checks = [
+            [canvas.toDataURL, 0],     // toDataURL([type[, quality]])
+            [canvas.getContext, 1],    // getContext(contextType[, options])
+            [ctx.fillText, 3],         // fillText(text, x, y[, maxWidth])
+            [ctx.fillRect, 4],         // fillRect(x, y, width, height)
+            [window.localStorage.getItem, 1],
+            [window.localStorage.setItem, 2],
+            [window.sessionStorage.getItem, 1],
+            [window.sessionStorage.setItem, 2],
+        ];
+        return checks.every(([fn, arity]) => typeof fn === "function" && fn.length === arity);
+    }
+
     // Test 10: Check RTCPeerConnection functions are native (if available)
     function testRTCNative() {
         if (typeof RTCPeerConnection === "undefined") return true;
@@ -193,6 +215,7 @@
     safeRun("clean_error_stacks", testCleanErrorStacks);
     safeRun("no_extra_prototype_properties", testNoExtraPrototypeProperties);
     safeRun("rtc_native", testRTCNative);
+    safeRun("function_arity_native", testFunctionArityNative);
     safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
 
     // Write results to DOM for Selenium to read

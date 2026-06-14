@@ -272,7 +272,7 @@ function protectDOMModifications({
         method,
         "value",
         class {
-          /* eslint-disable prefer-rest-params -- this method replaces a native DOM method and must keep the native arity (0 declared params); `arguments` forwards all call args to the original without changing the visible signature. Rest params would change the signature. */
+          /* eslint-disable prefer-rest-params -- this replacement is wrapped by createProxyFunction in a Proxy whose target is the native `original`, so the page-visible `.length` is forwarded from that target (arity is preserved by the Proxy, not by this function's own signature). `arguments` is used here only to forward the variadic call to `original`; switching to rest params would not change observable arity but is avoided to keep the forwarding shape uniform with the other replacements. */
           [method]() {
             const value = arguments.length
               ? original.call(this, ...arguments)
@@ -376,7 +376,7 @@ function protectDocumentWrite({
     documentWriteDescriptorOnHTMLDocument ? htmlDocProto : docProto,
     "write",
     "value",
-    /* eslint-disable prefer-rest-params -- replaces native document.write; the single declared `_markup` param preserves the native arity while `arguments` handles the variadic call. Rest params would change the visible signature. */
+    /* eslint-disable prefer-rest-params -- replaces native document.write via createProxyFunction, which wraps this in a Proxy over the native `original`; the page-visible `.length` comes from that Proxy target, not from this signature. `arguments` handles the variadic call; rest params are avoided only to keep the forwarding shape uniform. */
     function write(_markup) {
       for (let i = 0, l = arguments.length; i < l; i += 1) {
         const str = "" + arguments[i];
@@ -418,7 +418,7 @@ function protectDocumentWrite({
     documentWritelnDescriptorOnHTMLDocument ? htmlDocProto : docProto,
     "writeln",
     "value",
-    /* eslint-disable prefer-rest-params -- replaces native document.writeln; the single declared `_markup` param preserves the native arity while `arguments` handles the variadic call. Rest params would change the visible signature. */
+    /* eslint-disable prefer-rest-params -- replaces native document.writeln via createProxyFunction, which wraps this in a Proxy over the native `original`; the page-visible `.length` comes from that Proxy target, not from this signature. `arguments` handles the variadic call; rest params are avoided only to keep the forwarding shape uniform. */
     function writeln(_markup) {
       for (let i = 0, l = arguments.length; i < l; i += 1) {
         const str = "" + arguments[i];
@@ -465,7 +465,7 @@ function protectWindowOpen({
   }
   const windowOpen = windowOpenDescriptor.value;
   const getDocument = documentDescriptor.get;
-  /* eslint-disable prefer-rest-params -- replaces native window.open; declaring no params (arity 0) and forwarding via `arguments` preserves the native-looking signature. Rest params would alter it. */
+  /* eslint-disable prefer-rest-params -- replaces native window.open via createProxyFunction, which wraps this in a Proxy over the native `original`; the page-visible `.length` is forwarded from that Proxy target, not from this function's (zero-param) signature. `arguments` forwards the variadic call; rest params are avoided only to keep the forwarding shape uniform. */
   changeWindowProperty(wrappedWindow, "open", "value", function open() {
     const newWindow = arguments.length
       ? windowOpen.call(this, ...arguments)

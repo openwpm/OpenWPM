@@ -46,6 +46,9 @@ ATTRIBUTION_URL = f"{utilities.BASE_TEST_URL}/stealth_attribution.html"
 COOKIE_URL = f"{utilities.BASE_TEST_URL}/stealth_cookie.html"
 IFRAME_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_iframe.html"
 WINDOW_NAME_URL = f"{utilities.BASE_TEST_URL}/stealth_window_name.html"
+PREVENT_SETS_URL = f"{utilities.BASE_TEST_URL}/stealth_prevent_sets.html"
+HONEY_PROPS_URL = f"{utilities.BASE_TEST_URL}/stealth_honey_props.html"
+RECURSIVE_URL = f"{utilities.BASE_TEST_URL}/stealth_recursive.html"
 
 
 # --------------------------------------------------------------------------- #
@@ -170,10 +173,10 @@ class ReadDetectionResults(BaseCommand):
 def _read_detection_results(storage: MemoryStructuredProvider) -> Dict:
     """Drain the in-memory provider and decode the detection JSON it received.
 
-    ``manager.close()`` blocks until the StorageController subprocess has
+    ``manager.close()`` joins the StorageController subprocess after it has
     finalized the visit and flushed its cache onto the shared (process-safe)
-    queue, so by the time this is called every record is already enqueued and a
-    single ``poll_queue()`` is guaranteed to see it.
+    queue. Because that shutdown-join happens before this is called, the records
+    are already enqueued, so a single ``poll_queue()`` reliably drains them.
     """
     handle = storage.handle
     handle.poll_queue(block=False)
@@ -242,6 +245,12 @@ DETECTABILITY_REQUIREMENTS: List[Tuple[str, str, Optional[bool]]] = [
     ("D6-bind-integrity", "bind_integrity", None),
     ("D7-clean-error-stacks", "clean_error_stacks", None),
     ("D8-no-prototype-pollution", "no_extra_prototype_properties", True),
+    # D8b: instrumented functions must report the same arity (.length) as the
+    # native function they replace. The legacy wrapper is `function () {...}`
+    # (arity 0), so e.g. getContext.length becomes 0 where native is 1 — a
+    # fingerprint; legacy_detectable=True. Stealth copies the native arity onto
+    # the exported wrapper (copyFunctionArity in instrument.ts).
+    ("D8b-native-fn-arity", "function_arity_native", True),
     # D9: the stealth instrument's prototype-walk helpers
     # (getPrototypeByDepth / getPropertyNamesPerDepth / findPropertyInChain on
     # Object.prototype, getPropertyDescriptor on Object) live in the isolated
@@ -770,4 +779,255 @@ class TestStealthWindowName:
             "legacy left window.name looking pristine (native accessors, no "
             "instance own-property) — the detection vector is ineffective, so a "
             "stealth pass on the same vector would be meaningless"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# logSettings fidelity: preventSets, logFunctionGets, recursive/depth,
+# nonExistingPropertiesToInstrument. Each was previously inert in the stealth
+# instrument (present in settings/schema but never read). These tests prove the
+# stealth instrument now honours each, matching legacy semantics, while staying
+# native-looking where the property is on a native object.
+# --------------------------------------------------------------------------- #
+def _probe_results(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Dict:
+    """Visit a probe page that publishes a self-check JSON on #results."""
+    manager_params, browser_params = params
+    storage = MemoryStructuredProvider()
+    manager = TaskManager(manager_params, browser_params, storage, None)
+    cs = CommandSequence(url)
+    cs.get(sleep=2)
+    cs.append_command(ReadDetectionResults())
+    manager.execute_command_sequence(cs)
+    manager.close()
+    return _read_detection_results(storage)
+
+
+def _log_settings(**overrides: object) -> Dict:
+    """A fully-defaulted stealth logSettings object with optional overrides."""
+    base = {
+        "propertiesToInstrument": [],
+        "nonExistingPropertiesToInstrument": [],
+        "excludedProperties": [],
+        "overwrittenProperties": [],
+        "logCallStack": False,
+        "logFunctionsAsStrings": False,
+        "logFunctionGets": False,
+        "preventSets": False,
+        "recursive": False,
+        "depth": 5,
+    }
+    base.update(overrides)
+    return base
+
+
+# preventSets: instrument document.body (an accessor whose value is the <body>
+# element, an object) with preventSets:true. Assignments must be logged as
+# set(prevented) and blocked.
+PREVENT_SETS_SETTINGS: List[Dict] = [
+    {
+        "object": "document",
+        "instrumentedName": "document",
+        "depth": 0,
+        "logSettings": _log_settings(
+            propertiesToInstrument=[{"depth": 1, "propertyNames": ["body"]}],
+            preventSets=True,
+        ),
+    },
+]
+
+# nonExisting + logFunctionGets on Navigator (a honey property).
+HONEY_SETTINGS: List[Dict] = [
+    {
+        "object": "Navigator",
+        "instrumentedName": "Navigator",
+        "depth": 0,
+        "logSettings": _log_settings(
+            nonExistingPropertiesToInstrument=["openwpmHoneyProp"],
+            logFunctionGets=True,
+        ),
+    },
+]
+
+# recursive/depth: a honey object on Navigator instrumented recursively. Lazy
+# recursion descends into the object the getter returns at access time.
+RECURSIVE_SETTINGS: List[Dict] = [
+    {
+        "object": "Navigator",
+        "instrumentedName": "Recursive",
+        "depth": 0,
+        "logSettings": _log_settings(
+            nonExistingPropertiesToInstrument=["openwpmRecObj"],
+            recursive=True,
+            depth=3,
+        ),
+    },
+]
+
+
+def _params_with(
+    data_dir: Path, settings: List[Dict]
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = settings
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthLogSettings:
+    """The previously-inert logSettings are honoured by the stealth instrument."""
+
+    def test_prevent_sets_blocks_and_logs(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """preventSets logs set(prevented) and does NOT call the original setter.
+
+        document.body holds an object value, so under preventSets an assignment
+        is recorded as set(prevented) and blocked — document.body is unchanged.
+        """
+        data_dir = tmp_path_factory.mktemp("prevent_sets")
+        db_path = _run_page(
+            _params_with(data_dir, PREVENT_SETS_SETTINGS), PREVENT_SETS_URL
+        )
+        prevented = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("document.body", "set(prevented)"),
+        )
+        assert (
+            prevented[0][0] > 0
+        ), "preventSets did not record a set(prevented) row for document.body"
+        # And the original setter must NOT have run.
+        plain_set = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("document.body", "set"),
+        )
+        assert plain_set[0][0] == 0, (
+            "preventSets still emitted a plain 'set' for document.body — the "
+            "write was not actually prevented"
+        )
+
+    def test_prevent_sets_stays_undetectable_and_blocks(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """The page sees the write blocked AND the accessor still native."""
+        data_dir = tmp_path_factory.mktemp("prevent_sets_detect")
+        results = _probe_results(
+            _params_with(data_dir, PREVENT_SETS_SETTINGS), PREVENT_SETS_URL
+        )
+        assert results, "no preventSets probe results collected"
+        assert results.get("body_unchanged") is True, (
+            "preventSets did not block the document.body assignment "
+            f"(probe error: {results.get('descriptor_error')})"
+        )
+        assert results.get("body_not_replaced") is True
+        # The instrumented accessor must still report [native code].
+        assert (
+            results.get("body_setter_native") is True
+        ), "document.body setter no longer reports [native code] under preventSets"
+        assert results.get("body_getter_native") is True
+
+    def test_non_existing_property_captured_and_native(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """A honey property is captured (get/set) and looks native.
+
+        nonExistingPropertiesToInstrument synthesizes a native-looking accessor
+        for a name absent from Navigator.prototype, so get/set on it are
+        recorded under the javascript table.
+        """
+        data_dir = tmp_path_factory.mktemp("honey")
+        db_path = _run_page(_params_with(data_dir, HONEY_SETTINGS), HONEY_PROPS_URL)
+        sets = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("Navigator.openwpmHoneyProp", "set"),
+        )
+        assert sets[0][0] > 0, (
+            "nonExistingPropertiesToInstrument did not capture a set on the "
+            "synthesized honey property"
+        )
+        gets = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("Navigator.openwpmHoneyProp", "get"),
+        )
+        assert gets[0][0] > 0, (
+            "nonExistingPropertiesToInstrument did not capture a get on the "
+            "synthesized honey property"
+        )
+
+    def test_log_function_gets_emits_get_function(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """logFunctionGets records get(function) when the value is a function.
+
+        After the page assigns a function to the honey property, reading it
+        WITHOUT calling must emit a get(function) row (and no plain get for the
+        function value), matching legacy.
+        """
+        data_dir = tmp_path_factory.mktemp("fn_gets")
+        db_path = _run_page(_params_with(data_dir, HONEY_SETTINGS), HONEY_PROPS_URL)
+        fn_gets = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("Navigator.openwpmHoneyProp", "get(function)"),
+        )
+        assert fn_gets[0][0] > 0, (
+            "logFunctionGets did not record a get(function) row when the honey "
+            "property held a function value"
+        )
+
+    def test_honey_property_stays_native(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """The synthesized honey accessor reports [native code]."""
+        data_dir = tmp_path_factory.mktemp("honey_detect")
+        results = _probe_results(
+            _params_with(data_dir, HONEY_SETTINGS), HONEY_PROPS_URL
+        )
+        assert results, "no honey-property probe results collected"
+        assert results.get("value_roundtrips") is True
+        assert results.get("function_roundtrips") is True
+        assert results.get("honey_getter_native") is True, (
+            "synthesized honey getter does not report [native code] "
+            f"(probe error: {results.get('descriptor_error')})"
+        )
+        assert (
+            results.get("honey_setter_native") is True
+        ), "synthesized honey setter does not report [native code]"
+
+    def test_recursive_captures_nested_access(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """recursive/depth instruments objects returned by instrumented getters.
+
+        Reading a deep leaf of a nested object stored on the honey property is
+        captured under the recursive symbol path.
+        """
+        data_dir = tmp_path_factory.mktemp("recursive")
+        db_path = _run_page(_params_with(data_dir, RECURSIVE_SETTINGS), RECURSIVE_URL)
+        leaf = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+            ("Recursive.openwpmRecObj.inner.leaf",),
+        )
+        assert leaf[0][0] > 0, (
+            "recursive instrumentation did not capture the nested leaf access "
+            "Recursive.openwpmRecObj.inner.leaf — recursion did not descend into "
+            "the object returned by the instrumented getter"
+        )
+
+    def test_recursive_roundtrips(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Recursion must not corrupt values the page reads back."""
+        data_dir = tmp_path_factory.mktemp("recursive_detect")
+        results = _probe_results(
+            _params_with(data_dir, RECURSIVE_SETTINGS), RECURSIVE_URL
+        )
+        assert results, "no recursive probe results collected"
+        assert results.get("leaf_roundtrips") is True, (
+            "recursive instrumentation corrupted the nested leaf value the page "
+            "read back"
         )

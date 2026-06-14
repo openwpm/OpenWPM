@@ -510,6 +510,17 @@ function getObjectProperties(context, item) {
         ? { depth: 0, propertyNames: [propertyList] }
         : propertyList,
     );
+    // Apply the same excluded/overwritten filtering as the instrument-everything
+    // branch above. Without this, excludedProperties was silently ignored for
+    // named-list entries (e.g. the document/window settings), a trap where a
+    // configured exclusion had no effect.
+    const excluded = getPropertyKeysToOverwrite(item).concat(
+      item.logSettings.excludedProperties,
+    );
+    propertiesToInstrument = filterPropertiesPerDepth(
+      propertiesToInstrument,
+      excluded,
+    );
     // include the object to each item
     propertiesToInstrument.forEach((propertyList) => {
       propertyList.object = getPrototypeByDepth(proto, propertyList.depth);
@@ -596,47 +607,109 @@ function injectFunction(
  * @param args:
  */
 function instrumentGetObjectProperty(
+  context,
   identifier,
   original,
   newValue,
   object,
   args,
-  logCallStack = false,
+  logSettings: LogSettings,
 ) {
   const originalValue = original.call(object, ...args);
-  const callContext = getOriginatingScriptContext(logCallStack);
+  const callContext = getOriginatingScriptContext(logSettings.logCallStack);
   const returnValue = newValue !== undefined ? newValue : originalValue;
-  logValue(
-    identifier,
-    returnValue,
-    JSOperation.get,
-    callContext,
-    // logSettings
-  );
+  // Match legacy semantics for function-valued gets: a plain `get` is only
+  // logged for non-function values. When the property resolves to a function,
+  // legacy emits a `get(function)` row IFF logFunctionGets is enabled, and
+  // never a plain `get`. (Accessing `obj.method` without calling it.)
+  if (typeof returnValue === "function") {
+    if (logSettings.logFunctionGets) {
+      logValue(
+        identifier,
+        returnValue,
+        JSOperation.get_function,
+        callContext,
+        logSettings,
+      );
+    }
+    return returnValue;
+  }
+  // Recursive instrumentation (legacy `recursive` + `depth`): when the getter
+  // returns an OBJECT and recursion is enabled, instrument that returned
+  // object's properties one level down and return it raw WITHOUT logging a plain
+  // `get` — exactly like legacy, which returns instrumented sub-objects without
+  // a get row. Done lazily at access time so page-built nested objects are
+  // reachable (unlike a document_start prototype walk).
+  if (
+    typeof returnValue === "object" &&
+    returnValue !== null &&
+    logSettings.recursive &&
+    logSettings.depth > 0
+  ) {
+    instrumentReturnedObject(
+      context,
+      identifier,
+      returnValue,
+      logSettings,
+      logSettings.depth,
+    );
+    return returnValue;
+  }
+  logValue(identifier, returnValue, JSOperation.get, callContext, logSettings);
   return returnValue;
 }
 /*
  * Add notifications when a property is set
  *
+ * Honors ``preventSets``: matching legacy, when ``preventSets`` is enabled and
+ * the property currently holds a function or object value, the assignment is
+ * LOGGED (as ``set(prevented)``) but the original setter is NOT invoked, so the
+ * page cannot clobber an instrumented nested object/function. Plain (string,
+ * number, …) values are still written through, exactly like legacy.
+ *
  * @param original: the original getter/setter function
+ * @param originalGetter: the native getter (used only to type-check the current
+ *   value when preventSets is on); undefined when the property has no getter.
  * @param object:
  * @param args:
  */
 function instrumentSetObjectProperty(
   identifier,
   original,
+  originalGetter,
   newValue,
   object,
   _args,
-  logCallStack = false,
+  logSettings: LogSettings,
 ) {
-  const callContext = getOriginatingScriptContext(logCallStack);
+  const callContext = getOriginatingScriptContext(logSettings.logCallStack);
+
+  if (logSettings.preventSets && originalGetter) {
+    let currentValue;
+    try {
+      currentValue = originalGetter.call(object);
+    } catch {
+      currentValue = undefined;
+    }
+    const t = typeof currentValue;
+    if (t === "function" || (t === "object" && currentValue !== null)) {
+      logValue(
+        identifier,
+        newValue,
+        JSOperation.set_prevented,
+        callContext,
+        logSettings,
+      );
+      return newValue;
+    }
+  }
+
   logValue(
     identifier,
     newValue,
     original ? JSOperation.set : JSOperation.set_failed,
     callContext,
-    // logSettings
+    logSettings,
   );
   return !original ? newValue : original.call(object, newValue);
 }
@@ -649,24 +722,26 @@ function instrumentSetObjectProperty(
  * @param newValue: in Case the value shall be changed
  */
 function generateGetter(
+  context,
   identifier,
   descriptor,
   propertyName,
   newValue = undefined,
-  logCallStack = false,
+  logSettings: LogSettings,
 ) {
   const original = descriptor.get;
   return Object.getOwnPropertyDescriptor(
     {
       get [propertyName]() {
         return instrumentGetObjectProperty(
+          context,
           identifier,
           original,
           newValue,
           this,
-          // eslint-disable-next-line prefer-rest-params -- getters must have arity 0; rest params are a syntax error here, and `arguments` forwards the call args for instrumentation without altering the native-looking signature
+          // eslint-disable-next-line prefer-rest-params -- this is a computed-accessor getter (`get [propertyName]()`), so its arity is 0 by construction — matching native getters — regardless of `arguments`. Rest params are a syntax error in a getter. `arguments` only forwards any call args into the instrumentation helper.
           arguments,
-          logCallStack,
+          logSettings,
         );
       },
     },
@@ -686,20 +761,24 @@ function generateSetter(
   descriptor,
   propertyName,
   _newValue: any | undefined = undefined,
-  logCallStack = false,
+  logSettings: LogSettings,
 ) {
   const original = descriptor.set;
+  // The native getter is captured so the setter can type-check the current
+  // value when preventSets is enabled (see instrumentSetObjectProperty).
+  const originalGetter = descriptor.get;
   return Object.getOwnPropertyDescriptor(
     {
       set [propertyName](value) {
         instrumentSetObjectProperty(
           identifier,
           original,
+          originalGetter,
           value,
           this,
-          // eslint-disable-next-line prefer-rest-params -- setters must have arity 1; rest params would change the signature, and `arguments` forwards the call args for instrumentation while preserving the native-looking setter shape
+          // eslint-disable-next-line prefer-rest-params -- this is a computed-accessor setter (`set [propertyName](value)`), so its arity is 1 by construction — matching native setters — regardless of `arguments`. `arguments` only forwards the assigned value into the instrumentation helper.
           arguments,
-          logCallStack,
+          logSettings,
         );
       },
     },
@@ -735,12 +814,13 @@ function getPageObjectInContext(context, context_object) {
  * context
  */
 function instrumentGetterSetter(
+  context,
   descriptor,
   identifier,
   pageObject,
   propertyName,
   newValue = undefined,
-  logCallStack = false,
+  logSettings: LogSettings,
 ) {
   let instrumentedFunction;
   const getFuncType = "get";
@@ -748,11 +828,12 @@ function instrumentGetterSetter(
 
   if (Object.prototype.hasOwnProperty.call(descriptor, getFuncType)) {
     instrumentedFunction = generateGetter(
+      context,
       identifier,
       descriptor,
       propertyName,
       newValue,
-      logCallStack,
+      logSettings,
     );
     injectFunction(
       instrumentedFunction,
@@ -768,7 +849,7 @@ function instrumentGetterSetter(
       descriptor,
       propertyName,
       undefined,
-      logCallStack,
+      logSettings,
     );
     injectFunction(
       instrumentedFunction,
@@ -777,6 +858,42 @@ function instrumentGetterSetter(
       pageObject,
       propertyName,
     );
+  }
+}
+
+/*
+ * Copies a native function's arity onto an instrumented wrapper.
+ *
+ * A real function exposes ``.length`` (its declared arity) as a
+ * ``{ writable: false, enumerable: false, configurable: true }`` data
+ * property — e.g. ``CanvasRenderingContext2D.prototype.getContext.length === 1``.
+ * Our wrappers are declared with no parameters and forward via ``arguments``, so
+ * their ``.length`` is 0. A page that compares ``fn.length`` against the known
+ * native arity would therefore detect the instrument.
+ *
+ * We redefine ``.length`` on the wrapper to the original's value using the SAME
+ * descriptor shape the engine uses for native functions, so the property is
+ * indistinguishable from a genuine one. ``.length`` is ``configurable: true`` on
+ * functions, so this redefinition is always permitted.
+ */
+function copyFunctionArity(wrapper, original) {
+  try {
+    if (typeof original !== "function") {
+      return;
+    }
+    const arityDescriptor = Object.getOwnPropertyDescriptor(original, "length");
+    if (!arityDescriptor || typeof arityDescriptor.value !== "number") {
+      return;
+    }
+    Object.defineProperty(wrapper, "length", {
+      value: arityDescriptor.value,
+      writable: false,
+      enumerable: false,
+      configurable: true,
+    });
+  } catch {
+    // Defensive: if length is somehow non-configurable, leave it. Failing to
+    // copy arity is a minor fidelity loss, never a crash.
   }
 }
 
@@ -790,7 +907,7 @@ function functionGenerator(
   _funcName,
   logCallStack = false,
 ) {
-  /* eslint-disable prefer-rest-params -- `temp` is exported via exportFunction to masquerade as the native `original`; declaring it with no params (arity 0) and forwarding via `arguments` preserves that masquerade. Rest params would force a different signature. */
+  /* eslint-disable prefer-rest-params -- `temp` masquerades as the native `original` once exported via exportFunction. Its arity (.length) is restored from the original by copyFunctionArity() below; `arguments` (not rest params) is used purely to forward the variadic call without an unused binding. */
   function temp() {
     let result;
     const callContext = getOriginatingScriptContext(logCallStack);
@@ -807,6 +924,11 @@ function functionGenerator(
     return result;
   }
   /* eslint-enable prefer-rest-params */
+  // Match the native function's arity so `fn.length` is not a fingerprint.
+  // Set on the source function too (cheap, and `exportFunction` may copy it),
+  // but the authoritative copy is on the EXPORTED page-visible function — see
+  // instrumentFunction below.
+  copyFunctionArity(temp, original);
   return temp;
 }
 
@@ -834,6 +956,13 @@ function instrumentFunction(
     context,
     original.name,
   );
+  // Restore the native arity (.length) on the PAGE-VISIBLE exported function.
+  // `exportFunction` builds a fresh forwarder whose declared arity is 0, so the
+  // page would otherwise see `fn.length === 0` where the native function has a
+  // specific arity (e.g. getContext.length === 1) — a fingerprint. Defining it
+  // here, through the privileged compartment, lands it on the object the page
+  // actually inspects.
+  copyFunctionArity(exportedFunction, original);
   changeProperty(
     descriptor,
     pageObject,
@@ -841,6 +970,30 @@ function instrumentFunction(
     "value",
     exportedFunction,
   );
+}
+
+/*
+ * Builds a synthetic accessor descriptor for a property that does not yet exist
+ * on the target ("honey" property). A closure variable backs a native-shaped
+ * get/set pair; ``instrumentGetterSetter`` then wraps both with
+ * ``exportFunction`` so the page sees getters/setters that report
+ * ``[native code]`` — indistinguishable from a real accessor of that name. This
+ * mirrors legacy ``nonExistingPropertiesToInstrument`` (``undefinedPropDesc`` in
+ * ``lib/js-instruments.ts``), letting a study capture access to decoy property
+ * names a tracker might probe.
+ */
+function makeNonExistingPropertyDescriptor(): PropertyDescriptor {
+  let backingValue: any;
+  return {
+    get() {
+      return backingValue;
+    },
+    set(value) {
+      backingValue = value;
+    },
+    enumerable: false,
+    configurable: true,
+  };
 }
 
 /*
@@ -857,12 +1010,19 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
       item.object,
     );
     const pageObject = getPrototypeByDepth(initialPageObject, depth);
-    const descriptor = getPropertyDescriptor(pageObject, propertyName);
+    let descriptor = getPropertyDescriptor(pageObject, propertyName);
+    const logSettings: LogSettings = item.logSettings;
     if (descriptor === undefined) {
-      // Do not do undefined descriptor. We can safely skip them
-      return;
+      // The property does not exist on the target. Only instrument it when the
+      // study explicitly opted this name in via nonExistingPropertiesToInstrument
+      // (a honey property); otherwise there is nothing to instrument and adding
+      // an accessor would be a gratuitous, page-observable artifact.
+      const nonExisting = logSettings.nonExistingPropertiesToInstrument || [];
+      if (!nonExisting.includes(propertyName)) {
+        return;
+      }
+      descriptor = makeNonExistingPropertyDescriptor();
     }
-    const logCallStack = Boolean(item.logSettings.logCallStack);
     if (typeof descriptor.value === "function") {
       instrumentFunction(
         context,
@@ -870,16 +1030,17 @@ function instrument(context, item, depth, propertyName, newValue = undefined) {
         identifier,
         pageObject,
         propertyName,
-        logCallStack,
+        Boolean(logSettings.logCallStack),
       );
     } else {
       instrumentGetterSetter(
+        context,
         descriptor,
         identifier,
         pageObject,
         propertyName,
         newValue,
-        logCallStack,
+        logSettings,
       );
     }
   } catch (error) {
@@ -902,6 +1063,167 @@ function needsWrapper(object) {
   return true;
 }
 
+/*
+ * Converts a plain data property into an instrumented accessor IN PLACE,
+ * capturing its get/set while preserving the stored value. Used by recursive
+ * instrumentation for scalar (non-function, non-object) data properties of a
+ * page object — mirroring legacy, which routes every property (data or accessor)
+ * through an instrumented accessor (``instrumentObjectProperty`` in
+ * ``lib/js-instruments.ts``).
+ */
+function instrumentDataProperty(
+  pageObject,
+  identifier,
+  propertyName,
+  logSettings: LogSettings,
+) {
+  const descriptor = Object.getOwnPropertyDescriptor(pageObject, propertyName);
+  if (
+    !descriptor ||
+    !("value" in descriptor) ||
+    descriptor.configurable === false
+  ) {
+    return;
+  }
+  let backingValue = descriptor.value;
+  Object.defineProperty(pageObject, propertyName, {
+    configurable: true,
+    enumerable: descriptor.enumerable,
+    get() {
+      const callContext = getOriginatingScriptContext(logSettings.logCallStack);
+      logValue(
+        identifier,
+        backingValue,
+        JSOperation.get,
+        callContext,
+        logSettings,
+      );
+      return backingValue;
+    },
+    set(value) {
+      const callContext = getOriginatingScriptContext(logSettings.logCallStack);
+      if (
+        logSettings.preventSets &&
+        (typeof backingValue === "function" ||
+          (typeof backingValue === "object" && backingValue !== null))
+      ) {
+        logValue(
+          identifier,
+          value,
+          JSOperation.set_prevented,
+          callContext,
+          logSettings,
+        );
+        return;
+      }
+      logValue(identifier, value, JSOperation.set, callContext, logSettings);
+      backingValue = value;
+    },
+  });
+}
+
+/*
+ * Lazily instruments the own properties of an object RETURNED by an
+ * instrumented getter, mirroring legacy's ``recursive``/``depth`` semantics
+ * (``instrumentObject`` in ``lib/js-instruments.ts``). Unlike a document_start
+ * walk, this runs at ACCESS time, so page-built nested objects are reachable.
+ * For each own property: functions are wrapped, accessors are instrumented,
+ * scalar data properties become instrumented accessors, and nested object values
+ * are recursed into with ``depth`` decremented. Every property is instrumented
+ * IN PLACE with the same native-looking technique used at the top level, so no
+ * new detection surface is introduced beyond the instrumented properties.
+ */
+function instrumentReturnedObject(
+  context,
+  instrumentedName,
+  pageObject,
+  logSettings: LogSettings,
+  depth: number,
+) {
+  if (depth <= 0 || pageObject === null || typeof pageObject !== "object") {
+    return;
+  }
+  if (!needsWrapper(pageObject)) {
+    return;
+  }
+  let propertyNames: string[];
+  try {
+    propertyNames = Object.getOwnPropertyNames(pageObject);
+  } catch {
+    return;
+  }
+  for (const propertyName of propertyNames) {
+    if (
+      propertyName === "__proto__" ||
+      propertyName === "constructor" ||
+      logSettings.excludedProperties.includes(propertyName)
+    ) {
+      continue;
+    }
+    let descriptor;
+    try {
+      descriptor = getPropertyDescriptor(pageObject, propertyName);
+    } catch {
+      continue;
+    }
+    if (descriptor === undefined) {
+      continue;
+    }
+    const identifier = instrumentedName + "." + propertyName;
+    try {
+      if (typeof descriptor.value === "function") {
+        instrumentFunction(
+          context,
+          descriptor,
+          identifier,
+          pageObject,
+          propertyName,
+          Boolean(logSettings.logCallStack),
+        );
+      } else if (descriptor.get || descriptor.set) {
+        instrumentGetterSetter(
+          context,
+          descriptor,
+          identifier,
+          pageObject,
+          propertyName,
+          undefined,
+          logSettings,
+        );
+      } else if (
+        typeof descriptor.value === "object" &&
+        descriptor.value !== null
+      ) {
+        // Recurse one level down into the nested object (legacy recurses on the
+        // live nested value before instrumenting the property itself).
+        instrumentReturnedObject(
+          context,
+          identifier,
+          descriptor.value,
+          logSettings,
+          depth - 1,
+        );
+        // Instrument the property slot too, so reassignments are captured.
+        instrumentDataProperty(
+          pageObject,
+          identifier,
+          propertyName,
+          logSettings,
+        );
+      } else {
+        instrumentDataProperty(
+          pageObject,
+          identifier,
+          propertyName,
+          logSettings,
+        );
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+}
+
 function startInstrument(context) {
   for (const item of resolveInstrumentationSettings()) {
     // retrieve Object properties alont the chain
@@ -920,6 +1242,20 @@ function startInstrument(context) {
             instrument(context, item, depth, propertyName),
           );
         }
+      });
+    }
+    // Instrument honey ("non-existing") properties: names that do not yet exist
+    // on the target. instrument() synthesizes a native-looking accessor for any
+    // name listed here (see makeNonExistingPropertyDescriptor). Mirrors legacy's
+    // dedicated nonExistingPropertiesToInstrument loop.
+    const nonExisting =
+      item.logSettings.nonExistingPropertiesToInstrument || [];
+    if (nonExisting.length) {
+      nonExisting.forEach((propertyName) => {
+        if (item.logSettings.excludedProperties.includes(propertyName)) {
+          return;
+        }
+        instrument(context, item, item.depth || 0, propertyName);
       });
     }
     // Instrument properties and overwrite their return value

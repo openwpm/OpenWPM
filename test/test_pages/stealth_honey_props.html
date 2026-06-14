@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — nonExisting + logFunctionGets probe</title>
+</head>
+<body>
+    <div id="results"></div>
+    <script>
+    /*
+     * Exercises two logSettings together against a custom surface:
+     *
+     *  - nonExistingPropertiesToInstrument: the test config lists a property
+     *    name ("openwpmHoneyProp") that does NOT exist on Navigator.prototype.
+     *    Stealth synthesizes a native-looking accessor for it, so the page's
+     *    get/set of navigator.openwpmHoneyProp is captured.
+     *
+     *  - logFunctionGets: when the honey property holds a FUNCTION value,
+     *    reading it (without calling) must emit a get(function) row. Reading a
+     *    non-function value emits a plain get row.
+     *
+     * Self-check: the honey accessor must report [native code] so it is
+     * indistinguishable from a real native accessor of that name.
+     */
+    var results = {};
+
+    // set a plain value, then read it back (plain get path)
+    navigator.openwpmHoneyProp = "honey-value";
+    results.value_roundtrips = navigator.openwpmHoneyProp === "honey-value";
+
+    // set a FUNCTION value, then read it WITHOUT calling (get(function) path)
+    navigator.openwpmHoneyProp = function honeyFn() { return 42; };
+    var fnRead = navigator.openwpmHoneyProp;
+    results.function_roundtrips = typeof fnRead === "function";
+
+    // Undetectability: the synthesized accessor must look native.
+    function isNative(fn) {
+        try {
+            return Function.prototype.toString
+                .call(fn).indexOf("[native code]") !== -1;
+        } catch (e) { return false; }
+    }
+    try {
+        var desc = Object.getOwnPropertyDescriptor(
+            Navigator.prototype, "openwpmHoneyProp");
+        results.honey_getter_native = !!(desc && desc.get && isNative(desc.get));
+        results.honey_setter_native = !!(desc && desc.set && isNative(desc.set));
+    } catch (e) {
+        results.descriptor_error = e.message;
+    }
+
+    var resultsDiv = document.getElementById("results");
+    resultsDiv.setAttribute("data-results", JSON.stringify(results));
+    resultsDiv.textContent = JSON.stringify(results, null, 2);
+    </script>
+</body>
+</html>

@@ -102,9 +102,12 @@ class TaskManager:
             cleaned_js_settings = clean_js_instrumentation_settings(js_settings)
             a_browsers_params.cleaned_js_instrument_settings = cleaned_js_settings
             # A custom stealth surface is optional; when None the extension uses
-            # its bundled default (Extension/src/stealth/settings.ts).
+            # its bundled default (Extension/src/stealth/settings.ts). Only
+            # validate it when stealth is actually enabled — a custom surface
+            # left on a browser with stealth off is inert and must not be
+            # processed.
             stealth_settings = a_browsers_params.stealth_js_instrument_settings
-            if stealth_settings is not None:
+            if a_browsers_params.stealth_js_instrument and stealth_settings is not None:
                 a_browsers_params.cleaned_stealth_js_instrument_settings = (
                     clean_stealth_js_instrumentation_settings(stealth_settings)
                 )
