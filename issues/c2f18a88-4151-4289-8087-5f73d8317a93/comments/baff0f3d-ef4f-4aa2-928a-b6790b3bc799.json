@@ -1,0 +1,10 @@
+{
+  "uuid": "baff0f3d-ef4f-4aa2-928a-b6790b3bc799",
+  "issue_uuid": "c2f18a88-4151-4289-8087-5f73d8317a93",
+  "author": "claude",
+  "content": "PUMP-CLAIMED: user notes the FF caching behavior is not guaranteed + a prior Moz-central investigation was inconclusive. Dispatching an INVESTIGATION agent to post a detailed report on GH #1162 so we can DECIDE whether retry is the correct approach. Key angles: (1) can FF cache prefs make cause-1 (tab image/memory cache sharing) deterministic; (2) can the test be RESTRUCTURED to tolerate cache-nondeterminism (assert only deterministic parts, like #1163's DNS approach); (3) the cause-3 visitID data-corruption race is a SEPARATE real bug to fix regardless of the retry decision.",
+  "created_at": "2026-06-14T22:09:58.328819919Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAOCQmwY46wyQQieqwGRa1zN3EGOMuHr5sd+POfOzDzHkBZ60rrf4DuFVjrBuSz1TLDBOLpEm+sHPVO9eSQLmODw=="
+}
