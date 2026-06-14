@@ -1,5 +1,12 @@
 Cu.importGlobalProperties(["TextDecoder"]);
 
+// Cache a single UTF-8 decoder for the instrumentation hot path. A new
+// TextDecoder per received frame would allocate on every "j"/"u" decode; one
+// shared instance is safe because decode() is synchronous and stateless for
+// our one-shot (non-streaming) calls. Only the "j"/"u" UTF-8 text path uses
+// this; the "n" raw-bytes path never decodes.
+const gUtf8Decoder = new TextDecoder("utf-8");
+
 const tm = Cc["@mozilla.org/thread-manager;1"].getService();
 const socketService = Cc[
   "@mozilla.org/network/socket-transport-service;1"
@@ -103,7 +110,7 @@ this.sockets = class extends ExtensionAPI {
                   // Python (which returns the bytes untouched) and could throw
                   // on a non-UTF-8 payload.
                   if (tag === "j" || tag === "u") {
-                    const string = new TextDecoder("utf-8").decode(
+                    const string = gUtf8Decoder.decode(
                       new Uint8Array(payloadBytes),
                     );
                     gManager.onDataReceivedListeners.forEach((listener) => {

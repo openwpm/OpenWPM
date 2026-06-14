@@ -62,10 +62,11 @@ class ServerSocket:
                 # silently kill the accept loop and drop every subsequent
                 # connection. Re-raise so it is surfaced rather than masked.
                 if isinstance(e, ConnectionAbortedError) or e.errno == errno.EBADF:
-                    print(
-                        "A connection establish request was performed on a "
-                        "closed socket"
-                    )
+                    if self.verbose:
+                        print(
+                            "A connection establish request was performed on a "
+                            "closed socket"
+                        )
                     return
                 raise
 
