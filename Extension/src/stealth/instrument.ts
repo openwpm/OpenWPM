@@ -99,7 +99,7 @@ function serializeObject(
         }
 
         // Prevent serialization cycles
-        if (key === "" || seenObjects.indexOf(value) < 0) {
+        if (key === "" || !seenObjects.includes(value)) {
           seenObjects.push(value);
           return value;
         } else {
@@ -327,7 +327,7 @@ function logValue(
 
   try {
     notify("logValue", msg);
-  } catch (error) {
+  } catch {
     console.log("OpenWPM: Unsuccessful value log!");
     // Activate for debugging purpose
     // logErrorToConsole(error);
@@ -370,7 +370,7 @@ function logCall(instrumentedFunctionName, args, callContext) {
       ordinal: ordinal++,
     };
     notify("logCall", msg);
-  } catch (error) {
+  } catch {
     console.log("OpenWPM: Unsuccessful call log: " + instrumentedFunctionName);
     // Activate for debugging purpose
     // console.log(error);
@@ -664,6 +664,7 @@ function generateGetter(
           original,
           newValue,
           this,
+          // eslint-disable-next-line prefer-rest-params -- getters must have arity 0; rest params are a syntax error here, and `arguments` forwards the call args for instrumentation without altering the native-looking signature
           arguments,
           logCallStack,
         );
@@ -696,6 +697,7 @@ function generateSetter(
           original,
           value,
           this,
+          // eslint-disable-next-line prefer-rest-params -- setters must have arity 1; rest params would change the signature, and `arguments` forwards the call args for instrumentation while preserving the native-looking setter shape
           arguments,
           logCallStack,
         );
@@ -788,6 +790,7 @@ function functionGenerator(
   _funcName,
   logCallStack = false,
 ) {
+  /* eslint-disable prefer-rest-params -- `temp` is exported via exportFunction to masquerade as the native `original`; declaring it with no params (arity 0) and forwarding via `arguments` preserves that masquerade. Rest params would force a different signature. */
   function temp() {
     let result;
     const callContext = getOriginatingScriptContext(logCallStack);
@@ -803,6 +806,7 @@ function functionGenerator(
     }
     return result;
   }
+  /* eslint-enable prefer-rest-params */
   return temp;
 }
 

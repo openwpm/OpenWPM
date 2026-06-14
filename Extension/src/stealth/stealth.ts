@@ -31,7 +31,7 @@ function interceptWindow(context: ModifiedWindow) {
   let wrappedTry;
   try {
     wrappedTry = getWrapped(context);
-  } catch (error) {
+  } catch {
     // we are unable to read the location due to SOP
     // therefore we also can not intercept anything.
     // console.log("NOT intercepting window due to SOP: ", context);
@@ -127,10 +127,10 @@ function createProxyFunction(context, original, replacement) {
         return args.length
           ? replacement.call(thisArgs, ...args)
           : replacement.call(thisArgs);
-      } catch (error) {
+      } catch {
         try {
           return original.apply(thisArgs, args);
-        } catch (error) {
+        } catch {
           return target.apply(thisArgs, args);
         }
       }
@@ -272,6 +272,7 @@ function protectDOMModifications({
         method,
         "value",
         class {
+          /* eslint-disable prefer-rest-params -- this method replaces a native DOM method and must keep the native arity (0 declared params); `arguments` forwards all call args to the original without changing the visible signature. Rest params would change the signature. */
           [method]() {
             const value = arguments.length
               ? original.call(this, ...arguments)
@@ -279,6 +280,7 @@ function protectDOMModifications({
             allCallback();
             return value;
           }
+          /* eslint-enable prefer-rest-params */
         }.prototype[method],
       );
     });
@@ -374,6 +376,7 @@ function protectDocumentWrite({
     documentWriteDescriptorOnHTMLDocument ? htmlDocProto : docProto,
     "write",
     "value",
+    /* eslint-disable prefer-rest-params -- replaces native document.write; the single declared `_markup` param preserves the native arity while `arguments` handles the variadic call. Rest params would change the visible signature. */
     function write(_markup) {
       for (let i = 0, l = arguments.length; i < l; i += 1) {
         const str = "" + arguments[i];
@@ -393,6 +396,7 @@ function protectDocumentWrite({
         }
       }
     },
+    /* eslint-enable prefer-rest-params */
   );
 
   const documentWritelnDescriptorOnHTMLDocument = htmlDocProto
@@ -414,6 +418,7 @@ function protectDocumentWrite({
     documentWritelnDescriptorOnHTMLDocument ? htmlDocProto : docProto,
     "writeln",
     "value",
+    /* eslint-disable prefer-rest-params -- replaces native document.writeln; the single declared `_markup` param preserves the native arity while `arguments` handles the variadic call. Rest params would change the visible signature. */
     function writeln(_markup) {
       for (let i = 0, l = arguments.length; i < l; i += 1) {
         const str = "" + arguments[i];
@@ -430,6 +435,7 @@ function protectDocumentWrite({
       }
       documentWriteln.call(this, "");
     },
+    /* eslint-enable prefer-rest-params */
   );
 }
 
@@ -459,6 +465,7 @@ function protectWindowOpen({
   }
   const windowOpen = windowOpenDescriptor.value;
   const getDocument = documentDescriptor.get;
+  /* eslint-disable prefer-rest-params -- replaces native window.open; declaring no params (arity 0) and forwarding via `arguments` preserves the native-looking signature. Rest params would alter it. */
   changeWindowProperty(wrappedWindow, "open", "value", function open() {
     const newWindow = arguments.length
       ? windowOpen.call(this, ...arguments)
@@ -470,4 +477,5 @@ function protectWindowOpen({
     }
     return newWindow;
   });
+  /* eslint-enable prefer-rest-params */
 }
