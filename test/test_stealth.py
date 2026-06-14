@@ -26,11 +26,18 @@ from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParams, ManagerParamsInternal
 from openwpm.socket_interface import ClientSocket
+from openwpm.storage.in_memory_storage import MemoryStructuredProvider
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
 from . import utilities
+
+# Dynamic table the detection page's self-report JSON is routed into. It only
+# exists in-memory for the duration of a detection run (MemoryStructuredProvider
+# accepts arbitrary table names without a predefined schema), so it never
+# touches the production schema.sql / parquet_schema.py.
+DETECTION_RESULTS_TABLE = "stealth_detection_results"
 
 DETECTION_URL = f"{utilities.BASE_TEST_URL}/stealth_detection.html"
 SUPPRESS_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_suppress.html"
@@ -123,13 +130,14 @@ def _attribution_stealth_params(
 # Crawl helpers
 # --------------------------------------------------------------------------- #
 class ReadDetectionResults(BaseCommand):
-    """Read the detection page's ``data-results`` JSON into a file.
+    """Scrape the detection page's ``data-results`` JSON and send it to storage.
 
-    Commands execute in a subprocess, so results are passed back via file.
+    Commands execute in a subprocess, so the result is passed back through the
+    running storage machinery: the JSON is sent over ``extension_socket`` into
+    the ``stealth_detection_results`` table (same wire shape as any other
+    record), and the test reads it back from the storage provider once the
+    visit is finalized. No bespoke file side-channel.
     """
-
-    def __init__(self, results_file: Path) -> None:
-        self.results_file = results_file
 
     def __repr__(self) -> str:
         return "ReadDetectionResults"
@@ -147,24 +155,48 @@ class ReadDetectionResults(BaseCommand):
         results_json = webdriver.execute_script(
             "return document.getElementById('results').getAttribute('data-results');"
         )
-        self.results_file.write_text(results_json or "{}")
+        extension_socket.send(
+            (
+                DETECTION_RESULTS_TABLE,
+                {
+                    "browser_id": self.browser_id,
+                    "visit_id": self.visit_id,
+                    "results": results_json or "{}",
+                },
+            )
+        )
+
+
+def _read_detection_results(storage: MemoryStructuredProvider) -> Dict:
+    """Drain the in-memory provider and decode the detection JSON it received.
+
+    ``manager.close()`` blocks until the StorageController subprocess has
+    finalized the visit and flushed its cache onto the shared (process-safe)
+    queue, so by the time this is called every record is already enqueued and a
+    single ``poll_queue()`` is guaranteed to see it.
+    """
+    handle = storage.handle
+    handle.poll_queue(block=False)
+    records = handle.storage[DETECTION_RESULTS_TABLE]
+    if not records:
+        return {}
+    # A detection run visits a single page, so there is exactly one record.
+    return json.loads(records[-1]["results"])
 
 
 def _collect_detection(
-    params: Tuple[ManagerParams, List[BrowserParams]], results_file: Path
+    params: Tuple[ManagerParams, List[BrowserParams]],
 ) -> Dict:
     """Run the detection page once and return its result dict."""
     manager_params, browser_params = params
-    db_path = manager_params.data_directory / "crawl-data.sqlite"
-    manager = TaskManager(
-        manager_params, browser_params, SQLiteStorageProvider(db_path), None
-    )
+    storage = MemoryStructuredProvider()
+    manager = TaskManager(manager_params, browser_params, storage, None)
     cs = CommandSequence(DETECTION_URL)
     cs.get(sleep=2)
-    cs.append_command(ReadDetectionResults(results_file))
+    cs.append_command(ReadDetectionResults())
     manager.execute_command_sequence(cs)
     manager.close()
-    return json.loads(results_file.read_text()) if results_file.exists() else {}
+    return _read_detection_results(storage)
 
 
 def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Path:
@@ -230,18 +262,14 @@ class TestStealthDetectability:
     @pytest.fixture(scope="class")
     def stealth_results(self, tmp_path_factory: pytest.TempPathFactory) -> Dict:
         data_dir = tmp_path_factory.mktemp("stealth_detect")
-        results = _collect_detection(
-            _stealth_params(data_dir), data_dir / "results.json"
-        )
+        results = _collect_detection(_stealth_params(data_dir))
         assert results, "no stealth detection results collected"
         return results
 
     @pytest.fixture(scope="class")
     def legacy_results(self, tmp_path_factory: pytest.TempPathFactory) -> Dict:
         data_dir = tmp_path_factory.mktemp("legacy_detect")
-        results = _collect_detection(
-            _legacy_params(data_dir), data_dir / "results.json"
-        )
+        results = _collect_detection(_legacy_params(data_dir))
         assert results, "no legacy detection results collected"
         return results
 
@@ -568,9 +596,7 @@ class TestStealthConfigurability:
     ) -> None:
         """A custom surface must remain undetectable on every vector."""
         data_dir = tmp_path_factory.mktemp("config_undetect")
-        results = _collect_detection(
-            _custom_stealth_params(data_dir), data_dir / "results.json"
-        )
+        results = _collect_detection(_custom_stealth_params(data_dir))
         assert results, "no detection results collected for custom stealth config"
         for req_id, key, _ in DETECTABILITY_REQUIREMENTS:
             assert results.get(key) is True, (
@@ -621,20 +647,18 @@ class TestStealthDefaultSurface:
 # window.name was touched.
 # --------------------------------------------------------------------------- #
 def _window_name_results(
-    params: Tuple[ManagerParams, List[BrowserParams]], results_file: Path
+    params: Tuple[ManagerParams, List[BrowserParams]],
 ) -> Dict:
     """Run the window.name probe page and return its self-detection dict."""
     manager_params, browser_params = params
-    db_path = manager_params.data_directory / "crawl-data.sqlite"
-    manager = TaskManager(
-        manager_params, browser_params, SQLiteStorageProvider(db_path), None
-    )
+    storage = MemoryStructuredProvider()
+    manager = TaskManager(manager_params, browser_params, storage, None)
     cs = CommandSequence(WINDOW_NAME_URL)
     cs.get(sleep=2)
-    cs.append_command(ReadDetectionResults(results_file))
+    cs.append_command(ReadDetectionResults())
     manager.execute_command_sequence(cs)
     manager.close()
-    return json.loads(results_file.read_text()) if results_file.exists() else {}
+    return _read_detection_results(storage)
 
 
 @pytest.mark.usefixtures("xpi", "server")
@@ -704,9 +728,7 @@ class TestStealthWindowName:
         property shadows them on the window instance. Every check must be True.
         """
         data_dir = tmp_path_factory.mktemp("window_name_stealth_detect")
-        results = _window_name_results(
-            _stealth_params(data_dir), data_dir / "results.json"
-        )
+        results = _window_name_results(_stealth_params(data_dir))
         assert results, "no window.name probe results collected under stealth"
         for key in (
             "name_getter_native",
@@ -733,9 +755,7 @@ class TestStealthWindowName:
         longer reports ``[native code]``, so at least one nativeness check trips.
         """
         data_dir = tmp_path_factory.mktemp("window_name_legacy_detect")
-        results = _window_name_results(
-            _legacy_params(data_dir), data_dir / "results.json"
-        )
+        results = _window_name_results(_legacy_params(data_dir))
         assert results, "no window.name probe results collected under legacy"
         # Legacy is detectable if it leaves ANY page-observable artifact on the
         # window.name plumbing: either the Window.prototype accessor stopped
