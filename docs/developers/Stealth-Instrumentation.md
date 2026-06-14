@@ -73,9 +73,13 @@ browser_params.js_instrument = False  # mutually exclusive — see below
 ```
 
 `stealth_js_instrument` and `js_instrument` **cannot both be enabled** on the
-same browser; doing so raises `ConfigError`. Choose stealth for undetectable
-fingerprinting measurements, or legacy for the historic configurable
-instrumentation.
+same browser; doing so raises `ConfigError`. Both instruments are
+runtime-configurable — legacy via `js_instrument_settings`, stealth via
+`stealth_js_instrument_settings` (see "Configuring the instrumented surface"
+below). The reason to choose between them is **detectability**: stealth is
+undetectable by the page (at the cost of a handful of capture trade-offs
+documented below), whereas legacy leaks the artifacts described above and can be
+fingerprinted and disrupted.
 
 ## Configuring the instrumented surface
 
