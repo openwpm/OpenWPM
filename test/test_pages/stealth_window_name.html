@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — window.name capture probe</title>
+</head>
+<body>
+    <h1>window.name</h1>
+    <div id="results"></div>
+    <script>
+    /*
+     * Exercises the window.name get AND set paths plus the window-level
+     * localStorage / sessionStorage gets so the tests can assert the stealth
+     * DEFAULT surface records them in the javascript table. Legacy OpenWPM
+     * instruments the window instance via
+     * {"window": ["name", "localStorage", "sessionStorage"]}; the stealth
+     * default must match.
+     *
+     * It ALSO self-checks that this specific instrumentation stays
+     * undetectable: window.name's get/set accessors (and the localStorage /
+     * sessionStorage getters) must still report [native code] and must NOT have
+     * become own properties of the window instance. The result is published on
+     * #results[data-results] exactly like stealth_detection.html, so the test
+     * can assert the page itself cannot tell window.name was instrumented.
+     */
+
+    // --- exercise the capture paths ---------------------------------------
+    window.name = "openwpm_stealth_window_name_probe";  // set path
+    var readBack = window.name;                          // get path
+    var ls = window.localStorage;                        // window-level get
+    var ss = window.sessionStorage;                      // window-level get
+    void ls;
+    void ss;
+
+    // --- self-detection: the instrumentation must be invisible ------------
+    function isNative(fn) {
+        try {
+            return Function.prototype.toString
+                .call(fn)
+                .indexOf("[native code]") !== -1;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    var results = {};
+
+    // The accessors must live on Window.prototype and still look native.
+    try {
+        var nameDesc = Object.getOwnPropertyDescriptor(Window.prototype, "name");
+        results.name_getter_native =
+            !!(nameDesc && nameDesc.get && isNative(nameDesc.get));
+        results.name_setter_native =
+            !!(nameDesc && nameDesc.set && isNative(nameDesc.set));
+        var lsDesc = Object.getOwnPropertyDescriptor(
+            Window.prototype, "localStorage");
+        results.localStorage_getter_native =
+            !!(lsDesc && lsDesc.get && isNative(lsDesc.get));
+        var ssDesc = Object.getOwnPropertyDescriptor(
+            Window.prototype, "sessionStorage");
+        results.sessionStorage_getter_native =
+            !!(ssDesc && ssDesc.get && isNative(ssDesc.get));
+    } catch (e) {
+        results.descriptor_error = e.message;
+    }
+
+    // Instrumenting on the prototype must NOT shadow with an instance
+    // own-property — that would be the giveaway a page could detect.
+    results.name_not_own_on_instance =
+        !Object.prototype.hasOwnProperty.call(window, "name");
+    results.localStorage_not_own_on_instance =
+        !Object.prototype.hasOwnProperty.call(window, "localStorage");
+    results.sessionStorage_not_own_on_instance =
+        !Object.prototype.hasOwnProperty.call(window, "sessionStorage");
+
+    // window.name must still round-trip its value transparently.
+    results.name_roundtrips =
+        readBack === "openwpm_stealth_window_name_probe";
+
+    var resultsDiv = document.getElementById("results");
+    resultsDiv.setAttribute("data-results", JSON.stringify(results));
+    resultsDiv.textContent = JSON.stringify(results, null, 2);
+    </script>
+</body>
+</html>

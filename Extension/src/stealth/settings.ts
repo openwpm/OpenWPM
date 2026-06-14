@@ -307,4 +307,37 @@ export const jsInstrumentationSettings: JSInstrumentSettings = [
       depth: 5,
     },
   },
+
+  // Window instance properties. Legacy OpenWPM instruments the window INSTANCE
+  // via {"window": ["name", "localStorage", "sessionStorage"]}. Those members
+  // are accessor properties that live on ``Window.prototype`` (depth 1 from the
+  // ``window`` instance), so we target them there — exactly like the
+  // ``document -> [cookie, referrer]`` entry above resolves the instance and
+  // walks to ``Document.prototype``. This modifies the native accessor on the
+  // prototype in place (no own property added to the window instance), so it
+  // preserves the native-function masquerade and stays undetectable.
+  //
+  // The list is DELIBERATELY restricted to exactly these three names. Do NOT
+  // add dimension/layout properties (innerWidth, innerHeight, screenX, etc.):
+  // they fire constantly and would explode capture volume without adding
+  // tracking signal.
+  {
+    object: "window",
+    instrumentedName: "window",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [
+        { depth: 1, propertyNames: ["name", "localStorage", "sessionStorage"] },
+      ],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
 ];

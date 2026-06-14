@@ -38,6 +38,7 @@ FORGE_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_forge.html"
 ATTRIBUTION_URL = f"{utilities.BASE_TEST_URL}/stealth_attribution.html"
 COOKIE_URL = f"{utilities.BASE_TEST_URL}/stealth_cookie.html"
 IFRAME_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_iframe.html"
+WINDOW_NAME_URL = f"{utilities.BASE_TEST_URL}/stealth_window_name.html"
 
 
 # --------------------------------------------------------------------------- #
@@ -605,4 +606,148 @@ class TestStealthDefaultSurface:
         assert rows[0][0] > 0, (
             "the stealth default surface did not record document.cookie access "
             "— the 'cookie' property is missing from the default document entry"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# window.name (and window-level localStorage / sessionStorage) capture
+#
+# Legacy OpenWPM instruments the window INSTANCE via
+# {"window": ["name", "localStorage", "sessionStorage"]}. Those members are
+# accessor properties on Window.prototype (depth 1 from the window instance);
+# the stealth default reaches them via that depth and redefines the native
+# accessor in place. These tests assert (a) get/set are captured at legacy
+# fidelity and (b) the instrumentation stays undetectable — the page cannot tell
+# window.name was touched.
+# --------------------------------------------------------------------------- #
+def _window_name_results(
+    params: Tuple[ManagerParams, List[BrowserParams]], results_file: Path
+) -> Dict:
+    """Run the window.name probe page and return its self-detection dict."""
+    manager_params, browser_params = params
+    db_path = manager_params.data_directory / "crawl-data.sqlite"
+    manager = TaskManager(
+        manager_params, browser_params, SQLiteStorageProvider(db_path), None
+    )
+    cs = CommandSequence(WINDOW_NAME_URL)
+    cs.get(sleep=2)
+    cs.append_command(ReadDetectionResults(results_file))
+    manager.execute_command_sequence(cs)
+    manager.close()
+    return json.loads(results_file.read_text()) if results_file.exists() else {}
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthWindowName:
+    """The bundled stealth default captures window.name get/set, undetectably."""
+
+    def test_default_captures_window_name_get_and_set(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Under the stealth DEFAULT, window.name get AND set are recorded.
+
+        Legacy instruments the window instance with
+        ``{"window": ["name", "localStorage", "sessionStorage"]}``; the stealth
+        default must match. Asserts both a ``set`` and a ``get`` row for
+        ``window.name`` land in the ``javascript`` table without custom settings.
+        """
+        data_dir = tmp_path_factory.mktemp("window_name_capture")
+        db_path = _run_page(_stealth_params(data_dir), WINDOW_NAME_URL)
+        get_rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ? AND operation = ?",
+            ("window.name", "get"),
+        )
+        assert get_rows[0][0] > 0, (
+            "the stealth default surface did not record a window.name GET — the "
+            "'name' property is missing from the default window entry"
+        )
+        set_rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ? AND operation = ?",
+            ("window.name", "set"),
+        )
+        assert set_rows[0][0] > 0, (
+            "the stealth default surface did not record a window.name SET — the "
+            "setter on Window.prototype was not instrumented"
+        )
+
+    def test_default_captures_window_storage_property_gets(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Window-level localStorage / sessionStorage property GETS are recorded.
+
+        Legacy's narrow window list also instruments the window-level
+        ``localStorage`` / ``sessionStorage`` getters (distinct from the Storage
+        prototype methods). Asserts both land in the ``javascript`` table.
+        """
+        data_dir = tmp_path_factory.mktemp("window_storage_capture")
+        db_path = _run_page(_stealth_params(data_dir), WINDOW_NAME_URL)
+        for prop in ("window.localStorage", "window.sessionStorage"):
+            rows = db_utils.query_db(
+                db_path,
+                "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+                (prop, "get"),
+            )
+            assert rows[0][0] > 0, (
+                f"the stealth default surface did not record a {prop} GET — the "
+                "window-level storage getter was not instrumented"
+            )
+
+    def test_window_name_instrumentation_undetectable(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Under stealth, the page cannot tell window.name was instrumented.
+
+        The probe page reads the Window.prototype accessor descriptors and
+        checks (1) the get/set still report ``[native code]`` and (2) no own
+        property shadows them on the window instance. Every check must be True.
+        """
+        data_dir = tmp_path_factory.mktemp("window_name_stealth_detect")
+        results = _window_name_results(
+            _stealth_params(data_dir), data_dir / "results.json"
+        )
+        assert results, "no window.name probe results collected under stealth"
+        for key in (
+            "name_getter_native",
+            "name_setter_native",
+            "localStorage_getter_native",
+            "sessionStorage_getter_native",
+            "name_not_own_on_instance",
+            "localStorage_not_own_on_instance",
+            "sessionStorage_not_own_on_instance",
+            "name_roundtrips",
+        ):
+            assert results.get(key) is True, (
+                f"stealth window.name instrumentation is detectable via '{key}' "
+                f"(probe error: {results.get('descriptor_error')})"
+            )
+
+    def test_legacy_window_name_is_detectable(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Control: legacy's window.name getter is NOT native (detectable).
+
+        Proves the undetectability check above is meaningful: the legacy
+        instrument replaces the accessor with a JS wrapper whose ``toString`` no
+        longer reports ``[native code]``, so at least one nativeness check trips.
+        """
+        data_dir = tmp_path_factory.mktemp("window_name_legacy_detect")
+        results = _window_name_results(
+            _legacy_params(data_dir), data_dir / "results.json"
+        )
+        assert results, "no window.name probe results collected under legacy"
+        # Legacy is detectable if it leaves ANY page-observable artifact on the
+        # window.name plumbing: either the Window.prototype accessor stopped
+        # reporting [native code], or a wrapper shadowed it as an own property
+        # on the window instance. The stealth test above asserts NEITHER holds.
+        undetectable_signals = [
+            results.get("name_getter_native") is True,
+            results.get("name_setter_native") is True,
+            results.get("name_not_own_on_instance") is True,
+        ]
+        assert not all(undetectable_signals), (
+            "legacy left window.name looking pristine (native accessors, no "
+            "instance own-property) — the detection vector is ineffective, so a "
+            "stealth pass on the same vector would be meaningless"
         )

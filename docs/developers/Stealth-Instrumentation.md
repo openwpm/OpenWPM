@@ -125,6 +125,27 @@ This is **not** the legacy convention. Legacy `js_instrument_settings` express
 formats are intentionally separate: the legacy path is untouched, and stealth
 settings are supplied in the stealth shape directly.
 
+**Instance vs. prototype properties.** For most objects the named global is a
+constructor and stealth instruments its `.prototype` (where the native accessors
+live). Some globals are *instances*, though — `document` and `window` — and a
+few of their attributes (e.g. `document.cookie`, `window.name`) are accessor
+properties defined on the corresponding *interface* prototype
+(`Document.prototype`, `Window.prototype`), not on the instance. The `depth`
+field in a `propertiesToInstrument` entry walks that many steps up the prototype
+chain from the resolved instance to reach the prototype carrying the accessor,
+and stealth redefines the property **there**. For example,
+`{ object: "window", propertiesToInstrument: [{ depth: 1, propertyNames:
+["name", "localStorage", "sessionStorage"] }] }` resolves the `window` instance,
+walks one step to `Window.prototype`, and instruments the native accessors in
+place. Because the descriptor is replaced on the prototype where the browser
+natively defines it — with `exportFunction`-backed getters/setters that report
+`[native code]` — no own property is added to the `window` instance and the
+masquerade is preserved (this is why instrumenting `window.name` is
+undetectable). The default surface deliberately restricts the `window` list to
+exactly `name`, `localStorage`, and `sessionStorage`; it does **not** instrument
+layout/dimension properties (`innerWidth`, `innerHeight`, `screenX`, …), which
+fire constantly and would inflate capture volume without adding tracking signal.
+
 ## Data capture: differences from legacy `js_instrument`
 
 The bundled default surface (`Extension/src/stealth/settings.ts`) is a curated,
@@ -151,7 +172,8 @@ Compared to the legacy `collection_fingerprinting` preset (the default):
 **Captured identically:** ScriptProcessorNode, GainNode, AnalyserNode,
 OscillatorNode, AudioContext, OfflineAudioContext, RTCPeerConnection,
 HTMLCanvasElement, CanvasRenderingContext2D, Storage (`getItem`/`setItem`/…),
-Navigator, `document.cookie`, `document.referrer`.
+Navigator, `document.cookie`, `document.referrer`, `window.name` (get/set),
+`window.localStorage` / `window.sessionStorage` (property get).
 
 **Captured additionally by stealth:** `AudioWorkletNode` (the modern
 replacement legacy lacks); all `Screen` properties (legacy records only
@@ -161,8 +183,6 @@ replacement legacy lacks); all `Screen` properties (legacy records only
 
 | Lost signal | Legacy | Stealth | Notes |
 |---|---|---|---|
-| `window.name` | instrumented | not instrumented | Loses a cross-origin tracking vector. |
-| `window.localStorage` / `window.sessionStorage` property access | instrumented at `window` level | only the `Storage` prototype methods | The actual `getItem`/`setItem` calls are still recorded; only the property *access* logging is lost. |
 | `nonExistingPropertiesToInstrument` (honey properties) | supported | unused | Cannot instrument access to non-existent properties. |
 
 These are properties of the **bundled default** surface, not hard limits of
