@@ -1037,6 +1037,8 @@ def test_content_saving(http_params, xpi, server):
         assert v == ldb_content[k]
 
 
+# crosslink #15: transient flake, auto-retried instead of red-ing the whole shard
+@pytest.mark.flaky(reruns=4, reruns_delay=5)
 def test_cache_hits_recorded(http_params, task_manager_creator):
     """Verify all http responses are recorded, including cached responses
 

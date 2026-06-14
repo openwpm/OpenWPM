@@ -6,6 +6,7 @@ addopts = "--strict-markers"
 markers = [
     "pyonly: marks a test as being python only and so server and xpi not needed",
     "slow: marks a test as slow (omit slow tests with '-m \"not slow\"')",
+    "flaky: known-flaky test auto-retried via pytest-rerunfailures; cite its tracking issue",
 ]
 
 [tool.isort]

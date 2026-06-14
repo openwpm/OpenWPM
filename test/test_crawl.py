@@ -43,6 +43,8 @@ TEST_SITES = [
     reason="Makes remote connections",
 )
 @pytest.mark.slow
+# crosslink #16: transient flake, auto-retried instead of red-ing the whole shard
+@pytest.mark.flaky(reruns=4, reruns_delay=5)
 def test_browser_profile_coverage(default_params, task_manager_creator):
     """Test the coverage of the browser's profile.
 

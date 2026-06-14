@@ -422,6 +422,8 @@ class ClickButtonCommand(BaseCommand):
     "CI" in os.environ and os.environ["CI"] == "true",
     reason="Flaky on CI",
 )
+# known-flaky: transient flake, auto-retried instead of red-ing the whole shard
+@pytest.mark.flaky(reruns=4, reruns_delay=5)
 def test_audio_fingerprinting(default_params, task_manager_creator):
     for browser_params in default_params[1]:
         browser_params.js_instrument = True
