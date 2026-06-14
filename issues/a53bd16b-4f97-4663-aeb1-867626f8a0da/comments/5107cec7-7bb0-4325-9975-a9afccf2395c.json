@@ -1,0 +1,10 @@
+{
+  "uuid": "5107cec7-7bb0-4325-9975-a9afccf2395c",
+  "issue_uuid": "a53bd16b-4f97-4663-aeb1-867626f8a0da",
+  "author": "claude",
+  "content": "the-hater + crosslink #15 RCA show the quarantine approach is WRONG for these tests: test_cache_hits_recorded's flakiness includes a REAL data-corruption race (event-time visitID, #15 cause-3) with deterministic fixes already scoped in #15; test_browser_profile_coverage has scoped fix #27; test_audio_fingerprinting is skipif-skipped (marker = dead code). Auto-retry would mask real bugs in a measurement framework. Pivoting: close PR #1182, pursue the deterministic root-cause fixes (#15, #27) instead. PUMP-SKIP: needs user decision on disposition.",
+  "created_at": "2026-06-14T21:59:31.023716859Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAJ75fbJxEqBFRYglCMk2hkrtb1lURfPh/sAy1dnmE+Dwi+59Sqf8yKsS14LDqd3cUXE+Lw44FcJU6Cf4Qha99Dg=="
+}
