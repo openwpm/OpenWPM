@@ -148,32 +148,7 @@ function getFileName(stack) {
   );
 }
 
-// function getOriginFromStackTrace(err, includeStack){
-//   console.log(err.stack);
-
-//   const stack = splitStack(err.stack);
-//   const lineInfo = getLineInfo(stack);
-//   const fileName = getFileName(stack);
-
-//   const callSite = stack[1];
-//   const callSiteParts = callSite.split("@");
-//   const funcName = callSiteParts[0] || "";
-//   const items = rsplit(callSiteParts[1], ":", 2);
-//   const scriptFileName = items[items.length - 3] || "";
-
-//   const callContext = {
-//     scriptUrl,
-//     scriptLine: lineInfo.lineNumber,
-//     scriptCol: lineInfo.columnNumber,
-//     funcName,
-//     scriptLocEval,
-//     callStack: includeStack ? trace.slice(3).join("\n").trim() : "",
-//   };
-
-// }
-
 // Helper to get originating script urls
-// Legacy code
 function getStackTrace() {
   let stack;
 
