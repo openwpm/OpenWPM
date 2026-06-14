@@ -144,6 +144,20 @@ class BrowserParams(DataClassJsonMixin):
     tracking_protection: bool = False
     custom_params: Dict[Any, Any] = field(default_factory=lambda: {})
 
+    echo_mode: bool = False
+    """Test-only, single-process socket-echo mode. When set, the WebExtension
+    skips all instruments and instead emits a fixed set of synthetic payloads
+    over the storage socket to exercise the extension->Python wire protocol end
+    to end (see ``test/test_socket_echo.py``). This field rides ``to_dict()``
+    into ``browser_params.json`` like any other flag; ``deploy_firefox`` needs
+    no change.
+
+    This mode is INCOMPATIBLE with ``BrowserManager``: the single-process test
+    harness calls ``deploy_firefox`` directly and binds the sockets in-process.
+    Running it through the normal multi-process crawl path (``BrowserManager``)
+    is a hard error -- it produces no useful records and there is no
+    StorageController to consume them. Default ``False``."""
+
 
 @dataclass
 class ManagerParams(DataClassJsonMixin):
