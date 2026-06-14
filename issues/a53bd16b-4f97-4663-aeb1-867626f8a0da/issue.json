@@ -1,0 +1,11 @@
+{
+  "uuid": "a53bd16b-4f97-4663-aeb1-867626f8a0da",
+  "display_id": 31,
+  "title": "Quarantine known-flaky tests with pytest-rerunfailures @pytest.mark.flaky(reruns=N)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nCI shards (tests 1-7 via pytest-split, least_duration) mix flaky browser tests with reliable ones, so a transient flake reds a whole group and blocks PRs -> recurring manual re-runs (hit repeatedly this session). Fix (minimal, in-place): add pytest-rerunfailures to environment.yaml + scripts/environment-unpinned-dev.yaml; register a 'flaky' marker in pyproject.toml (needed for --strict-markers); decorate the known flakies with @pytest.mark.flaky(reruns=4, reruns_delay=5) so a transient flake self-heals in place (passes if it passes within 5 runs) WITHOUT a CI restructure. Known flakies: test_cache_hits_recorded (#15), test_browser_profile_coverage (#16), test_audio_fingerprinting. Each @flaky must cite its tracking issue so the quarantine doesn't rot; a test failing all 5 reruns is REAL and should still block. Considered + DEFERRED as over-engineered: a separate tests(flaky) CI job for provably-clean per-group signal.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-14T21:44:00.032054430Z",
+  "updated_at": "2026-06-14T21:44:00.032054430Z"
+}
