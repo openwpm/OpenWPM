@@ -1,0 +1,10 @@
+{
+  "uuid": "2f0233e9-099b-47c4-911f-5cd8dbfd8aec",
+  "issue_uuid": "38da4b5f-6781-4f3b-8ba1-471e079be296",
+  "author": "claude",
+  "content": "PUMP-CLAIMED: user confirmed #1159 merged so the DNS-instrumentation prereq is on master; dispatching a worker to make test_browser_profile_coverage deterministic per the dns_responses approach (GH #1163). Adversarial pass (the-hater) before ready. No automerge.",
+  "created_at": "2026-06-14T22:06:51.005134536Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADt1DKM4E20h9SX4yhlnnjoYUWtJN9ljZb2VlxXbCLNQw0Ao77w1VZXhdSD+IAuBf896Li3+gvo4PApd8/iEiDg=="
+}
