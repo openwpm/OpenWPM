@@ -263,6 +263,15 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 )
             )
 
+        if browser_params.echo_mode:
+            raise ConfigError(
+                "echo_mode is a single-process, test-only socket echo mode "
+                "that makes the WebExtension skip all instruments and emit "
+                "synthetic payloads. It cannot be used with a "
+                "TaskManager/BrowserManager crawl. See test/test_socket_echo.py, "
+                "which drives deploy_firefox directly."
+            )
+
         if browser_params.callstack_instrument:
             raise ConfigError(
                 "The callstacks instrument currently doesn't work "

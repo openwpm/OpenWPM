@@ -29,7 +29,6 @@ from .deploy_browsers import deploy_firefox
 from .errors import (
     BrowserConfigError,
     BrowserCrashError,
-    ConfigError,
     ProfileLoadError,
 )
 from .socket_interface import ClientSocket
@@ -756,7 +755,7 @@ class BrowserManager(Process):
         display = None
 
         if self.browser_params.echo_mode:
-            raise ConfigError(
+            raise BrowserConfigError(
                 "echo_mode is a single-process, test-only socket mode and "
                 "cannot be run through BrowserManager. Use the in-process "
                 "harness in test/test_socket_echo.py, which calls "

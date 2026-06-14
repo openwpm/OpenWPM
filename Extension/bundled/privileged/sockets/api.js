@@ -23,28 +23,13 @@ const gManager = {
 
 let bufferpack;
 
-// Write the full byte array to a *blocking* nsIBinaryOutputStream. On a
-// blocking stream (we open with OPEN_BLOCKING; see connect()) writeByteArray
-// writes every byte or throws, so a partial write cannot silently truncate a
-// length-framed payload. writeByteArray also returns void there, so the single
-// call below is all that ever runs; the loop guards only against a
-// hypothetical build where writeByteArray reports a positive short-write count,
-// in which case we advance and retry. A reported 0 (or void/NaN) cannot
-// represent progress, so we stop to avoid spinning forever — this is safe only
-// because the stream is blocking and so a true "wrote nothing, would block"
-// short write never occurs here.
+// Write the full byte array to a *blocking* nsIBinaryOutputStream. We open the
+// stream with OPEN_BLOCKING (see connect()), where writeByteArray has all-or-
+// throw semantics: it writes every byte or throws. A partial/short write
+// therefore cannot silently truncate a length-framed payload, so a single call
+// suffices.
 function writeAll(bOutputStream, bytes) {
-  let offset = 0;
-  while (offset < bytes.length) {
-    const written = bOutputStream.writeByteArray(
-      offset === 0 ? bytes : bytes.subarray(offset),
-      bytes.length - offset,
-    );
-    if (!written || Number.isNaN(written)) {
-      break;
-    }
-    offset += written;
-  }
+  bOutputStream.writeByteArray(bytes, bytes.length);
 }
 
 this.sockets = class extends ExtensionAPI {

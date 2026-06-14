@@ -13,17 +13,18 @@ import { escapeString } from "./lib/string-utils";
  * or a real crawl. See `test/test_socket_echo.py`.
  *
  * Payloads (matching the real wire path):
- *  - A `j` (JSON) record whose string values were run through `escapeString`
- *    just like every real instrument does. `escapeString` =
- *    `unescape(encodeURIComponent(s))`, i.e. it turns the source text into
- *    UTF-8 and exposes each byte as a Latin-1 char. `JSON.stringify` therefore
- *    produces a byte-string; api.js narrows each char to a byte; the Python
- *    reader decodes the frame as UTF-8 and `json.loads` it back to the
- *    original Unicode record.
- *  - An `n` (raw byte-string) payload sent via `send(data, false)` (json=false).
- *    `data` is `escapeString("café/🌍")` -- the UTF-8 bytes as Latin-1 chars --
- *    so api.js puts the raw UTF-8 bytes on the wire and the Python reader
- *    returns them as `bytes`, untouched.
+ *
+ * A `j` (JSON) record whose string values were run through `escapeString` just
+ * like every real instrument does. `escapeString` = `unescape(encodeURIComponent(s))`,
+ * i.e. it turns the source text into UTF-8 and exposes each byte as a Latin-1
+ * char. `JSON.stringify` therefore produces a byte-string; api.js narrows each
+ * char to a byte; the Python reader decodes the frame as UTF-8 and `json.loads`
+ * it back to the original Unicode record.
+ *
+ * An `n` (raw byte-string) payload sent via `send(data, false)` (json=false).
+ * `data` is `escapeString("café/🌍")` -- the UTF-8 bytes as Latin-1 chars -- so
+ * api.js puts the raw UTF-8 bytes on the wire and the Python reader returns them
+ * as `bytes`, untouched.
  *
  * The non-ASCII content mirrors what `test/test_socket_interface.py` pins: a
  * double UTF-8 encode on the send side would turn it into mojibake, so an exact
