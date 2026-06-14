@@ -7,5 +7,8 @@
   "priority": "high",
   "created_by": "claude",
   "created_at": "2026-06-14T22:33:56.430257039Z",
-  "updated_at": "2026-06-14T22:33:56.430257039Z"
+  "updated_at": "2026-06-14T22:33:58.350069056Z",
+  "labels": [
+    "feature"
+  ]
 }
