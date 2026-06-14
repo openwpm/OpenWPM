@@ -1,0 +1,11 @@
+{
+  "uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
+  "display_id": 32,
+  "title": "#1154: stealth as default instrument + gate legacy behind consent env var",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nTwo changes to PR #1154 (branch feat/stealth-js-instrument-v2):\n1. STEALTH AS DEFAULT: flip the config so stealth JS instrumentation is the default; legacy js_instrument becomes the gated opt-out. Worker determines the cleanest config-API change (BrowserParams defaults + instrument selection + mutual-exclusion logic).\n2. GATE LEGACY behind env var I_AM_KNOWINGLY_DOING_BAD_SCIENCE_BY_RECORDING_NON_REPRESENTATIVE_DATA (=true). If legacy js_instrument is enabled WITHOUT it: logger.error with a link to the paper (Krumnow, Jonker, Karsch arXiv:2205.08890 — legacy is page-detectable, records non-representative data) AND raise ConfigError (hard gate; the env var is a deliberate consent flag). [User to confirm: hard-block vs warn-only; confirm env var spelling.]\nAlso: docs (Stealth-Instrumentation.md / Configuration.md) + tests for both. Plain English, no AI-tells; GH refs not crosslink in any artifact.\nSEQUENCING: must land AFTER verify worker a7c786f3 (detection-collection fix + stealth tests green on FF150) and AFTER #1154 is rebased onto master. Then the-hater pass.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-14T22:33:56.430257039Z",
+  "updated_at": "2026-06-14T22:33:56.430257039Z"
+}
