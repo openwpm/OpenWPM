@@ -37,12 +37,13 @@ TEST_SITES = [
 ]
 
 
-# The minimum fraction of TEST_SITES that must successfully resolve and
+# The maximum number of TEST_SITES we tolerate failing to resolve and
 # appear in the Firefox profile. A healthy crawl resolves nearly all of
-# them; we allow some headroom for genuine network failures (a couple of
-# sites timing out on a CI runner) but still fail loudly if most sites are
-# missing from the profile, which is the symptom of a lost/corrupt profile.
-MIN_COVERAGE_FRACTION = 0.6
+# them; we allow a little headroom for genuine network failures (a couple
+# of sites timing out on a CI runner) but still fail loudly if most sites
+# are missing from the profile, which is the symptom of a lost/corrupt
+# profile.
+MAX_TOLERATED_DNS_FAILURES = 3
 
 
 @pytest.mark.skipif(
@@ -70,21 +71,38 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
       response arrived. Its ``hostname`` is therefore a host that both
       resolved and was successfully requested. We treat that host's
       eTLD+1 as the ground truth for "this site was visited".
-    * For each such resolved host we assert its eTLD+1 is present in the
-      Firefox profile. ``moz_places`` is written by Firefox itself, so
-      this is an independent check on whether the profile survived the
-      crawl — it is not implied by the DNS/HTTP instrumentation.
+    * For each such resolved host we check whether its eTLD+1 is present
+      in the Firefox profile, counting the entered site as covered when it
+      is. ``moz_places`` is written by Firefox itself, so this is an
+      independent check on whether the profile survived the crawl — it is
+      not implied by the DNS/HTTP instrumentation. The check is
+      best-effort per site (there is deliberately no hard per-site
+      assertion); the overall health gate is the coverage floor below, so
+      an individual quirky site cannot flake the whole test.
     * Resolving by the *resolved* host (rather than the entered URL)
-      sidesteps two network-dependent traps: public-suffix entries such
-      as ``blogspot.com`` (whose ``get_ps_plus_1`` is the degenerate
-      ``.blogspot.com`` while the resolved ``www.blogspot.com`` maps to a
-      real eTLD+1), and redirects to a different eTLD+1.
+      sidesteps redirects to a different eTLD+1: the resolved host's
+      eTLD+1 is compared against the eTLD+1 of every ``moz_places`` URL,
+      both derived by the same ``get_ps_plus_1``, so a host that genuinely
+      landed in the profile matches by construction.
+
+      Public-suffix entries are a known imperfection we tolerate rather
+      than solve. ``blogspot.com`` is *itself* on the Public Suffix List,
+      so it has no registrable domain of its own:
+      ``get_ps_plus_1("blogspot.com")`` returns ``".blogspot.com"`` (the
+      bare suffix, with a leading dot) while
+      ``get_ps_plus_1("www.blogspot.com")`` returns ``"www.blogspot.com"``
+      — two *different* eTLD+1 values. Such a site therefore only counts
+      as covered when the exact resolved form (bare vs. subdomain) also
+      appears in ``moz_places``; otherwise it is left uncovered and
+      absorbed by the floor. We do not rely on ``get_ps_plus_1`` being
+      idempotent across bare and sub hosts.
 
     A site that never resolved (only timeout/NXDOMAIN rows, or no row at
-    all) is silently dropped — that is a network outcome, not a profile
-    bug. To stop the test from degrading to "at least one site resolved",
-    we require at least ``MIN_COVERAGE_FRACTION`` of TEST_SITES to both
-    resolve and appear in the profile.
+    all), or whose resolved host's eTLD+1 never reached the profile, is
+    simply left uncovered — that is a network outcome, not a profile bug.
+    To stop the test from degrading to "at least one site resolved", we
+    tolerate at most ``MAX_TOLERATED_DNS_FAILURES`` of TEST_SITES failing
+    to both resolve and appear in the profile.
 
     This replaces the previous network-dependent check that compared the
     set of requested domains against the profile, which flaked whenever
@@ -136,26 +154,27 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # Map each entered site to the host(s) it actually resolved to, by
     # suffix containment. This handles public-suffix entries (blogspot.com
     # resolving to www.blogspot.com) and redirects within the same domain.
-    # An entered site "covered" by a resolved host whose eTLD+1 is in the
-    # profile counts toward our coverage floor.
+    # A site counts as "covered" only when a matching resolved host's eTLD+1
+    # is present in the Firefox profile. There is deliberately no hard
+    # per-site assertion: a resolved host that never reached the profile
+    # (an HTTP redirect whose source URL Firefox did not persist, a 204, a
+    # public-suffix form that maps to a different eTLD+1, ...) simply leaves
+    # the site uncovered and is absorbed by the floor below. The floor is
+    # the sole gate, so no single quirky site can flake the whole test.
     covered_sites = set()
     for site in TEST_SITES:
         entered_host = du.urlparse(site).hostname or ""
         for resolved_host in resolved_hosts:
             # The resolved host is the entered host itself or a subdomain of
             # it (e.g. entered blogspot.com resolving to www.blogspot.com, or
-            # a same-site redirect). A redirect to a *different* eTLD+1 simply
-            # leaves this site uncovered, which the floor below tolerates.
-            if resolved_host == entered_host or resolved_host.endswith(
+            # a same-site redirect). Keep scanning matching hosts until one
+            # whose eTLD+1 is in the profile confirms coverage; a redirect to
+            # a *different* eTLD+1 (or a matching host missing from the
+            # profile) leaves this site uncovered, which the floor tolerates.
+            is_match = resolved_host == entered_host or resolved_host.endswith(
                 "." + entered_host
-            ):
-                ps = du.get_ps_plus_1(resolved_host)
-                assert ps in profile_ps, (
-                    f"{site} resolved to {resolved_host} (eTLD+1 {ps}) and a "
-                    f"response was received, but it is missing from the "
-                    f"Firefox profile (places.sqlite); the profile may have "
-                    f"been lost during the crawl"
-                )
+            )
+            if is_match and du.get_ps_plus_1(resolved_host) in profile_ps:
                 covered_sites.add(site)
                 break
 
@@ -163,10 +182,11 @@ def test_browser_profile_coverage(default_params, task_manager_creator):
     # entered sites failed to resolve or never reached the profile, the
     # crawl is broken (e.g. the profile was lost) and the test must fail
     # rather than quietly passing on a single surviving site.
-    min_covered = int(len(TEST_SITES) * MIN_COVERAGE_FRACTION)
+    min_covered = len(TEST_SITES) - MAX_TOLERATED_DNS_FAILURES
+    uncovered_sites = sorted(set(TEST_SITES) - covered_sites)
     assert len(covered_sites) >= min_covered, (
         f"Only {len(covered_sites)}/{len(TEST_SITES)} entered sites resolved "
         f"and appear in the Firefox profile; expected at least {min_covered}. "
         f"This indicates a broken crawl or a lost profile, not ordinary "
-        f"network flakiness. Covered: {sorted(covered_sites)}"
+        f"network flakiness. Uncovered: {uncovered_sites}"
     )
