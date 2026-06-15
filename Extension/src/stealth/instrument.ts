@@ -946,7 +946,65 @@ function functionGenerator(
   // but the authoritative copy is on the EXPORTED page-visible function — see
   // instrumentFunction below.
   copyFunctionArity(temp, original);
-  return temp;
+  // PROTOTYPE (arity fix): wrap `temp` in a forwarder that NATIVELY declares the
+  // same number of parameters as `original`, so the forwarder's OWN `.length`
+  // equals the native arity. Xray computes a function's page-visible `.length`
+  // from the underlying target, so a privileged-side `Object.defineProperty`
+  // redefine (copyFunctionArity) does NOT reach the page — only the target's
+  // real declared arity does.
+  const arity = getNativeArity(original);
+  return makeArityForwarder(temp, arity);
+}
+
+/*
+ * PROTOTYPE: read a native function's declared arity (.length) defensively.
+ */
+function getNativeArity(original): number {
+  try {
+    if (typeof original !== "function") {
+      return 0;
+    }
+    const d = Object.getOwnPropertyDescriptor(original, "length");
+    return d && typeof d.value === "number" ? d.value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/*
+ * PROTOTYPE: build a forwarder that NATIVELY declares `arity` parameters and
+ * delegates every call (this + all args) to `impl`. The returned function's own
+ * `.length` is `arity` by construction, so once exported via `exportFunction`
+ * the page sees the native arity through Xray (which reads `.length` from the
+ * target). Uses the `Function` constructor so the parameter count is real, not a
+ * redefined property.
+ */
+const arityForwarderCache: Record<number, (impl) => any> = {};
+function makeArityForwarder(impl, arity: number) {
+  if (!Number.isInteger(arity) || arity < 0 || arity > 32) {
+    arity = 0;
+  }
+  let factory = arityForwarderCache[arity];
+  if (!factory) {
+    const params = [];
+    for (let i = 0; i < arity; i++) {
+      params.push("a" + i);
+    }
+    /* eslint-disable no-new-func -- the generated forwarder must declare exactly
+       `arity` named params so its NATIVE `.length` matches the wrapped function;
+       a redefined `.length` does not survive Xray. `arguments` forwards the real
+       (possibly variadic) call. The script is a fixed template over an integer
+       arity (0..32), never page-controlled input. */
+    factory = new Function(
+      "__impl",
+      "return function (" +
+        params.join(", ") +
+        ") { return __impl.apply(this, arguments); };",
+    ) as (impl) => any;
+    /* eslint-enable no-new-func */
+    arityForwarderCache[arity] = factory;
+  }
+  return factory(impl);
 }
 
 /*
