@@ -15,6 +15,7 @@ These tests:
 """
 
 import json
+import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -26,18 +27,23 @@ from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParams, ManagerParams, ManagerParamsInternal
 from openwpm.socket_interface import ClientSocket
-from openwpm.storage.in_memory_storage import MemoryStructuredProvider
 from openwpm.storage.sql_provider import SQLiteStorageProvider
+from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
 from . import utilities
 
-# Dynamic table the detection page's self-report JSON is routed into. It only
-# exists in-memory for the duration of a detection run (MemoryStructuredProvider
-# accepts arbitrary table names without a predefined schema), so it never
-# touches the production schema.sql / parquet_schema.py.
-DETECTION_RESULTS_TABLE = "stealth_detection_results"
+# Custom table the detection page's self-report JSON is routed into. Commands run
+# in a subprocess and the StorageController runs in yet another process, so the
+# on-disk crawl SQLite DB is the only reliable cross-process channel for the
+# self-report. Following the proven custom-table idiom
+# (``test/test_custom_function_command.py::test_custom_function``): the test
+# CREATEs this table in the crawl DB before the crawl, the command sends rows over
+# the storage socket, and the test reads them back AFTER ``manager.close()``. The
+# table is created per-crawl in the test's temp DB, so it never touches the
+# production schema.sql / parquet_schema.py.
+DETECTION_RESULTS_TABLE = TableName("stealth_detection_results")
 
 DETECTION_URL = f"{utilities.BASE_TEST_URL}/stealth_detection.html"
 SUPPRESS_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_suppress.html"
@@ -135,11 +141,14 @@ def _attribution_stealth_params(
 class ReadDetectionResults(BaseCommand):
     """Scrape the detection page's ``data-results`` JSON and send it to storage.
 
-    Commands execute in a subprocess, so the result is passed back through the
-    running storage machinery: the JSON is sent over ``extension_socket`` into
-    the ``stealth_detection_results`` table (same wire shape as any other
-    record), and the test reads it back from the storage provider once the
-    visit is finalized. No bespoke file side-channel.
+    Commands execute in a subprocess and the StorageController runs in yet
+    another process, so the result is passed back through the on-disk crawl
+    SQLite DB. Following ``test_custom_function``, this opens its OWN
+    ``ClientSocket`` directly to the storage controller (NOT ``extension_socket``,
+    which talks to the extension's port and would mangle a raw record), sends a
+    client name, then sends ``(table_name, {...,"visit_id":..., "browser_id":...})``.
+    The StorageController INSERTs it into the ``stealth_detection_results`` custom
+    table, and the test reads it back from the DB after ``manager.close()``.
     """
 
     def __repr__(self) -> str:
@@ -158,7 +167,11 @@ class ReadDetectionResults(BaseCommand):
         results_json = webdriver.execute_script(
             "return document.getElementById('results').getAttribute('data-results');"
         )
-        extension_socket.send(
+        sock = ClientSocket()
+        assert manager_params.storage_controller_address is not None
+        sock.connect(*manager_params.storage_controller_address)
+        sock.send("stealth_detection")
+        sock.send(
             (
                 DETECTION_RESULTS_TABLE,
                 {
@@ -168,38 +181,75 @@ class ReadDetectionResults(BaseCommand):
                 },
             )
         )
+        sock.close()
 
 
-def _read_detection_results(storage: MemoryStructuredProvider) -> Dict:
-    """Drain the in-memory provider and decode the detection JSON it received.
+def _create_detection_results_table(db_path: Path) -> None:
+    """Create the custom detection-results table in the crawl DB.
 
-    ``manager.close()`` joins the StorageController subprocess after it has
-    finalized the visit and flushed its cache onto the shared (process-safe)
-    queue. Because that shutdown-join happens before this is called, the records
-    are already enqueued, so a single ``poll_queue()`` reliably drains them.
+    Must run BEFORE the manager launches: the SQLiteStorageProvider INSERTs into
+    a table named in the incoming record and does not create it, so the table has
+    to exist on disk first (mirrors ``test_custom_function``).
     """
-    handle = storage.handle
-    handle.poll_queue(block=False)
-    records = handle.storage[DETECTION_RESULTS_TABLE]
-    if not records:
+    db = sqlite3.connect(db_path)
+    cur = db.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS %s ("
+        "  browser_id INTEGER, visit_id INTEGER, results TEXT);"
+        % DETECTION_RESULTS_TABLE
+    )
+    db.commit()
+    cur.close()
+    db.close()
+
+
+def _read_detection_results(db_path: Path) -> Dict:
+    """Read back and decode the detection JSON from the on-disk crawl DB.
+
+    Called AFTER ``manager.close()``, which joins the StorageController
+    subprocess once it has finalized the visit and flushed its cache to the
+    SQLite file. A detection run visits a single page, so there is at most one
+    row; absence means the self-report never reached storage.
+    """
+    rows = db_utils.query_db(
+        db_path,
+        f"SELECT results FROM {DETECTION_RESULTS_TABLE} ORDER BY rowid;",
+        as_tuple=True,
+    )
+    if not rows:
         return {}
-    # A detection run visits a single page, so there is exactly one record.
-    return json.loads(records[-1]["results"])
+    return json.loads(rows[-1][0])
+
+
+def _collect_results(
+    params: Tuple[ManagerParams, List[BrowserParams]], url: str
+) -> Dict:
+    """Run a self-reporting probe page once and return its result dict.
+
+    The probe page publishes a JSON self-check on ``#results``;
+    ``ReadDetectionResults`` ships it into the ``stealth_detection_results``
+    custom table over the storage socket, and we read it back from the on-disk
+    crawl DB after shutdown.
+    """
+    manager_params, browser_params = params
+    db_path = manager_params.data_directory / "crawl-data.sqlite"
+    _create_detection_results_table(db_path)
+    manager = TaskManager(
+        manager_params, browser_params, SQLiteStorageProvider(db_path), None
+    )
+    cs = CommandSequence(url)
+    cs.get(sleep=2)
+    cs.append_command(ReadDetectionResults())
+    manager.execute_command_sequence(cs)
+    manager.close()
+    return _read_detection_results(db_path)
 
 
 def _collect_detection(
     params: Tuple[ManagerParams, List[BrowserParams]],
 ) -> Dict:
     """Run the detection page once and return its result dict."""
-    manager_params, browser_params = params
-    storage = MemoryStructuredProvider()
-    manager = TaskManager(manager_params, browser_params, storage, None)
-    cs = CommandSequence(DETECTION_URL)
-    cs.get(sleep=2)
-    cs.append_command(ReadDetectionResults())
-    manager.execute_command_sequence(cs)
-    manager.close()
-    return _read_detection_results(storage)
+    return _collect_results(params, DETECTION_URL)
 
 
 def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Path:
@@ -659,15 +709,7 @@ def _window_name_results(
     params: Tuple[ManagerParams, List[BrowserParams]],
 ) -> Dict:
     """Run the window.name probe page and return its self-detection dict."""
-    manager_params, browser_params = params
-    storage = MemoryStructuredProvider()
-    manager = TaskManager(manager_params, browser_params, storage, None)
-    cs = CommandSequence(WINDOW_NAME_URL)
-    cs.get(sleep=2)
-    cs.append_command(ReadDetectionResults())
-    manager.execute_command_sequence(cs)
-    manager.close()
-    return _read_detection_results(storage)
+    return _collect_results(params, WINDOW_NAME_URL)
 
 
 @pytest.mark.usefixtures("xpi", "server")
@@ -791,15 +833,7 @@ class TestStealthWindowName:
 # --------------------------------------------------------------------------- #
 def _probe_results(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Dict:
     """Visit a probe page that publishes a self-check JSON on #results."""
-    manager_params, browser_params = params
-    storage = MemoryStructuredProvider()
-    manager = TaskManager(manager_params, browser_params, storage, None)
-    cs = CommandSequence(url)
-    cs.get(sleep=2)
-    cs.append_command(ReadDetectionResults())
-    manager.execute_command_sequence(cs)
-    manager.close()
-    return _read_detection_results(storage)
+    return _collect_results(params, url)
 
 
 def _log_settings(**overrides: object) -> Dict:
