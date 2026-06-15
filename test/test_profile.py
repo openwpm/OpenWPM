@@ -19,6 +19,13 @@ from .utilities import ServerUrls
 
 # TODO update these tests to make use of blocking commands
 
+# The seed profile (test/profile.tar.gz) is primed with the PREVIOUS stable
+# Firefox (N-1) and ships with uBlock Origin installed. Loading it on the
+# current Firefox (N) exercises the cross-version profile-compatibility path
+# and confirms a baked-in extension still starts up. See
+# scripts/regenerate-test-profile.py for how the fixture is produced.
+SEED_PROFILE_ADDON_ID = "uBlock0@raymondhill.net"
+
 
 def test_saving(default_params, task_manager_creator, server):
     manager_params, browser_params = default_params
@@ -125,6 +132,9 @@ def test_seed_persistence(default_params, task_manager_creator, server):
             cs = CommandSequence(url=server.base)
             cs.get()
             cs.append_command(AssertConfigSetCommand("test_pref", True))
+            # The seed profile ships with uBlock Origin installed; assert it
+            # was restored AND started up (not merely that its files survived).
+            cs.append_command(AssertExtensionActiveCommand(SEED_PROFILE_ADDON_ID))
             command_sequences.append(cs)
 
         for cs in command_sequences:
@@ -170,6 +180,64 @@ class AssertConfigSetCommand(BaseCommand):
                 """)
         self.logger.error(f"Got result: {result}")
         assert result == self.expected_value
+
+
+class AssertExtensionActiveCommand(BaseCommand):
+    """Assert that a baked-in addon is installed AND active.
+
+    This checks extension *startup*, not just that the addon files survived
+    the profile save/restore: it queries the privileged AddonManager for the
+    addon's live state, so it only passes if Firefox actually loaded and
+    enabled the extension after restoring the seed profile.
+    """
+
+    def __init__(self, addon_id: str) -> None:
+        self.addon_id = addon_id
+        self.logger = logging.getLogger("openwpm")
+
+    def __repr__(self) -> str:
+        return f"AssertExtensionActiveCommand({self.addon_id})"
+
+    def execute(
+        self,
+        webdriver,
+        browser_params,
+        manager_params,
+        extension_socket,
+    ):
+        # Query the AddonManager from the privileged chrome context. As with
+        # AssertConfigSetCommand this needs Firefox launched with
+        # -remote-allow-system-access (deploy_firefox sets it).
+        script = """
+            const callback = arguments[arguments.length - 1];
+            const { AddonManager } = ChromeUtils.importESModule(
+                "resource://gre/modules/AddonManager.sys.mjs"
+            );
+            AddonManager.getAddonByID(arguments[0]).then((addon) => {
+                if (!addon) {
+                    callback({ installed: false });
+                    return;
+                }
+                callback({
+                    installed: true,
+                    isActive: addon.isActive,
+                    userDisabled: addon.userDisabled,
+                    version: addon.version,
+                });
+            }, (err) => callback({ error: String(err) }));
+        """
+        with webdriver.context(webdriver.CONTEXT_CHROME):
+            webdriver.set_script_timeout(30)
+            result = webdriver.execute_async_script(script, self.addon_id)
+        self.logger.info(f"Addon {self.addon_id} status: {result}")
+        assert result.get("installed"), (
+            f"Addon {self.addon_id} was not restored from the seed profile: "
+            f"{result}"
+        )
+        assert result.get("isActive"), (
+            f"Addon {self.addon_id} was restored but did not start up "
+            f"(isActive is false): {result}"
+        )
 
 
 def test_dump_profile_command(default_params, task_manager_creator, server):
@@ -266,6 +334,11 @@ def test_profile_recovery(
     cs = CommandSequence("about:config", reset=not stateful)
     expected_value = True if seed_tar else False
     cs.append_command(AssertConfigSetCommand("test_pref", expected_value))
+    if seed_tar:
+        # The seed profile carries uBlock Origin; after recovery it must be
+        # restored AND active, proving the baked-in extension starts up on the
+        # current (N) Firefox after a profile primed by the previous (N-1) one.
+        cs.append_command(AssertExtensionActiveCommand(SEED_PROFILE_ADDON_ID))
     tar_directory = manager_params.data_directory / "browser_profile"
     tar_path = tar_directory / "profile.tar.gz"
     cs.dump_profile(tar_path, True)
