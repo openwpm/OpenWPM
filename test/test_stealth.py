@@ -427,9 +427,7 @@ class TestStealthDisruption:
         Demonstrates the attack is real before asserting stealth resists it.
         """
         data_dir = tmp_path_factory.mktemp("x1_legacy")
-        db_path = _run_page(
-            _legacy_params(data_dir), _page_url(server, SUPPRESS_PAGE)
-        )
+        db_path = _run_page(_legacy_params(data_dir), _page_url(server, SUPPRESS_PAGE))
         assert _todataurl_count(db_path) == 0, (
             "X1: legacy still recorded toDataURL calls after the page neutered "
             "document.dispatchEvent — the suppression control is ineffective"
@@ -440,9 +438,7 @@ class TestStealthDisruption:
     ) -> None:
         """X1: under stealth, the same attack must NOT drop records."""
         data_dir = tmp_path_factory.mktemp("x1_stealth")
-        db_path = _run_page(
-            _stealth_params(data_dir), _page_url(server, SUPPRESS_PAGE)
-        )
+        db_path = _run_page(_stealth_params(data_dir), _page_url(server, SUPPRESS_PAGE))
         assert _todataurl_count(db_path) > 0, (
             "X1: stealth lost toDataURL records after the page neutered "
             "document.dispatchEvent — privileged messaging is not isolating delivery"

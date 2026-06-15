@@ -269,3 +269,10 @@ configurability (C1) matrices and the per-requirement test names. In summary:
   screen/window position, font enumeration, WebGL deviations, timezone. Also
   out of scope: silent JS delivery via non-`.js` MIME/extension, which concerns
   the HTTP instrument rather than the JS instrument.
+
+## Design decisions
+
+- [ADR 0001: Stealth and legacy JS instrumentation are complementary,
+  composable tools](adr/0001-stealth-legacy-coexistence.md) — why stealth
+  cannot fully subsume legacy, and the proposed shared-base / partition / XOR-frontier
+  architecture for letting the two instruments coexist.

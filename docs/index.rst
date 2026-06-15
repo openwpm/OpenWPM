@@ -42,6 +42,8 @@ We're hoping to improve this setup in the future.
 
    developers/Stealth-Requirements
 
+   developers/adr/0001-stealth-legacy-coexistence
+
 
 Indices and tables
 ==================
