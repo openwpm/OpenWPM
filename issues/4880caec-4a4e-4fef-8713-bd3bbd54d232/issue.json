@@ -1,13 +1,13 @@
 {
   "uuid": "4880caec-4a4e-4fef-8713-bd3bbd54d232",
   "display_id": 34,
-  "title": "Replace explicit cast('list[Row]') in test_dns_instrument with query_db @overload — land in #1154",
+  "title": "Remove explicit cast('list[Row]') in test_dns_instrument once query_db overloads land — address in #1170 (type-checker migration)",
   "description": "Current state: \n\nDesired state: \n\nReason: \n\nPR #1136 fixes mypy on the dynamic-port dns tests with explicit `cast(\"list[Row]\", db_utils.query_db(...))` band-aids. Maintainer dislikes these and wants the root fix landed in PR #1154 (not by re-churning the converged #1136 trunk).\n\nLocations (on refactor/test-dynamic-ports @ 03b5a49e):\n- test/test_dns_instrument.py:2  (`from typing import cast` import)\n- test/test_dns_instrument.py:24, :79, :121  (the cast call sites)\n\nRoot cause: `openwpm/utilities/db_utils.py::query_db` returns `List[Union[sqlite3.Row, Tuple]]`, so string-key indexing on the un-narrowed union fails type-checking, forcing the casts.\n\nProper fix (reference impl already exists on fix/dynamic-test-ports-v2 / #1153):\n- Add `@overload`s to `query_db`: `as_tuple=False` (default) -> `List[sqlite3.Row]`; `as_tuple=True` -> `List[Tuple]`. Do the same for `get_javascript_entries`.\n- Then delete the casts and the `from typing import cast` import in test_dns_instrument.py (and any other call sites that no longer need them).\n\nSequencing: removing #1136's casts requires #1154 to be stacked on #1136 (the casts live in #1136's file). So this lands as part of #1154 once #1154 is rebased onto #1136. The `query_db` overload itself is shared infra (db_utils.py) and is independent of the stealth-vector decisions blocking the rest of #1154.\n\nVerification: mypy clean with no `cast` import in test_dns_instrument.py; the dns tests still pass.",
   "status": "open",
   "priority": "low",
   "created_by": "claude",
   "created_at": "2026-06-15T18:23:48.973040531Z",
-  "updated_at": "2026-06-15T18:23:56.434840465Z",
+  "updated_at": "2026-06-15T18:33:52.970496993Z",
   "labels": [
     "refactor",
     "1154",
