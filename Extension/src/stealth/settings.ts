@@ -309,13 +309,18 @@ export const jsInstrumentationSettings: JSInstrumentSettings = [
   },
 
   // Window instance properties. Legacy OpenWPM instruments the window INSTANCE
-  // via {"window": ["name", "localStorage", "sessionStorage"]}. Those members
-  // are accessor properties that live on ``Window.prototype`` (depth 1 from the
-  // ``window`` instance), so we target them there — exactly like the
-  // ``document -> [cookie, referrer]`` entry above resolves the instance and
-  // walks to ``Document.prototype``. This modifies the native accessor on the
-  // prototype in place (no own property added to the window instance), so it
-  // preserves the native-function masquerade and stays undetectable.
+  // via {"window": ["name", "localStorage", "sessionStorage"]}. In Firefox these
+  // three members are NATIVE accessor properties that live as OWN properties on
+  // the window INSTANCE (depth 0), NOT on ``Window.prototype`` — verified against
+  // a clean Firefox: ``Object.getOwnPropertyDescriptor(Window.prototype, "name")``
+  // is ``undefined`` while ``Object.getOwnPropertyDescriptor(window, "name")`` is
+  // a native accessor. (window.name is a ``[Replaceable]`` WebIDL attribute.)
+  // Targeting them at depth 1 (the prototype) finds no descriptor, so the entry
+  // was silently a no-op and captured nothing. We therefore target depth 0 and
+  // redefine the native accessor on the instance in place. Because the property
+  // is natively own-on-instance and the exported get/set still report
+  // ``[native code]``, the redefined descriptor matches the native shape exactly,
+  // preserving the native-function masquerade.
   //
   // The list is DELIBERATELY restricted to exactly these three names. Do NOT
   // add dimension/layout properties (innerWidth, innerHeight, screenX, etc.):
@@ -327,7 +332,7 @@ export const jsInstrumentationSettings: JSInstrumentSettings = [
     depth: 0,
     logSettings: {
       propertiesToInstrument: [
-        { depth: 1, propertyNames: ["name", "localStorage", "sessionStorage"] },
+        { depth: 0, propertyNames: ["name", "localStorage", "sessionStorage"] },
       ],
       nonExistingPropertiesToInstrument: [],
       excludedProperties: [],
