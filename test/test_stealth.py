@@ -310,6 +310,17 @@ DETECTABILITY_REQUIREMENTS: List[Tuple[str, str, Optional[bool]]] = [
     # fingerprint; legacy_detectable=True. Stealth copies the native arity onto
     # the exported wrapper (copyFunctionArity in instrument.ts).
     ("D8b-native-fn-arity", "function_arity_native", True),
+    # D8c: instrumented ACCESSORS must report the same function .name as the
+    # native accessor they replace ("get userAgent" / "get name" / ...). A naive
+    # computed-accessor wrapper is named the bare property, and exportFunction's
+    # defineAs sets the bare name too, so `.get.name === "name"` (vs native
+    # "get name") is a one-line detector latent on every wrapped accessor. Stealth
+    # restores the spec-prefixed name (copyAccessorName in instrument.ts).
+    # legacy_detectable=None: which accessors legacy actually wraps is
+    # environment/config-dependent (cf. D3 navigator_native), so this row asserts
+    # only the stealth direction; the legacy .name detection is covered explicitly
+    # by TestStealthWindowName.test_legacy_window_name_is_detectable.
+    ("D8c-native-accessor-name", "accessor_name_native", None),
     # D9: the stealth instrument's prototype-walk helpers
     # (getPrototypeByDepth / getPropertyNamesPerDepth / findPropertyInChain on
     # Object.prototype, getPropertyDescriptor on Object) live in the isolated
@@ -726,12 +737,16 @@ class TestStealthDefaultSurface:
 # window.name (and window-level localStorage / sessionStorage) capture
 #
 # Legacy OpenWPM instruments the window INSTANCE via
-# {"window": ["name", "localStorage", "sessionStorage"]}. Those members are
-# accessor properties on Window.prototype (depth 1 from the window instance);
-# the stealth default reaches them via that depth and redefines the native
-# accessor in place. These tests assert (a) get/set are captured at legacy
+# {"window": ["name", "localStorage", "sessionStorage"]}. In Firefox those
+# members are NATIVE accessor properties that live as OWN properties on the
+# window INSTANCE (depth 0), NOT on Window.prototype — verified against a clean
+# Firefox: Object.getOwnPropertyDescriptor(Window.prototype, "name") is undefined
+# while Object.getOwnPropertyDescriptor(window, "name") is a native accessor. The
+# stealth default reaches them at depth 0 and redefines the native accessor on
+# the instance in place. These tests assert (a) get/set are captured at legacy
 # fidelity and (b) the instrumentation stays undetectable — the page cannot tell
-# window.name was touched.
+# window.name was touched (the instance descriptor still looks native:
+# own-on-instance, [native code], spec-prefixed accessor name).
 # --------------------------------------------------------------------------- #
 def _window_name_results(
     params: Tuple[ManagerParams, List[BrowserParams]],
@@ -775,7 +790,7 @@ class TestStealthWindowName:
         )
         assert set_rows[0][0] > 0, (
             "the stealth default surface did not record a window.name SET — the "
-            "setter on Window.prototype was not instrumented"
+            "setter on the window instance was not instrumented"
         )
 
     def test_default_captures_window_storage_property_gets(
@@ -807,9 +822,15 @@ class TestStealthWindowName:
     ) -> None:
         """Under stealth, the page cannot tell window.name was instrumented.
 
-        The probe page reads the Window.prototype accessor descriptors and
-        checks (1) the get/set still report ``[native code]`` and (2) no own
-        property shadows them on the window instance. Every check must be True.
+        The probe page reads the window INSTANCE accessor descriptors (window.name
+        / localStorage / sessionStorage are native OWN accessors on the instance in
+        Firefox, not on Window.prototype) and checks the instrumented descriptor
+        matches the native shape: (1) get/set still report ``[native code]``,
+        (2) the accessor functions carry the spec-prefixed native name
+        (``get name`` / ``set name`` / ``get localStorage`` / ...), (3) they stay
+        own properties of the window instance (as Firefox natively has them), and
+        (4) the getter-only storage props gained no synthetic setter. Every check
+        must be True.
         """
         data_dir = tmp_path_factory.mktemp("window_name_stealth_detect")
         results = _window_name_results(
@@ -819,11 +840,17 @@ class TestStealthWindowName:
         for key in (
             "name_getter_native",
             "name_setter_native",
+            "name_getter_name_native",
+            "name_setter_name_native",
             "localStorage_getter_native",
+            "localStorage_getter_name_native",
+            "localStorage_no_setter",
             "sessionStorage_getter_native",
-            "name_not_own_on_instance",
-            "localStorage_not_own_on_instance",
-            "sessionStorage_not_own_on_instance",
+            "sessionStorage_getter_name_native",
+            "sessionStorage_no_setter",
+            "name_own_on_instance",
+            "localStorage_own_on_instance",
+            "sessionStorage_own_on_instance",
             "name_roundtrips",
         ):
             assert results.get(key) is True, (
@@ -834,11 +861,13 @@ class TestStealthWindowName:
     def test_legacy_window_name_is_detectable(
         self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
-        """Control: legacy's window.name getter is NOT native (detectable).
+        """Control: legacy's window.name accessor is NOT native (detectable).
 
-        Proves the undetectability check above is meaningful: the legacy
-        instrument replaces the accessor with a JS wrapper whose ``toString`` no
-        longer reports ``[native code]``, so at least one nativeness check trips.
+        Proves the undetectability check above is meaningful. The legacy
+        instrument replaces the window-instance accessor with a JS wrapper whose
+        ``toString`` no longer reports ``[native code]`` and whose ``.name`` is not
+        the spec-prefixed native value (legacy does not fix ``.name``/``toString``),
+        so at least one nativeness check on the instance descriptor trips.
         """
         data_dir = tmp_path_factory.mktemp("window_name_legacy_detect")
         results = _window_name_results(
@@ -846,17 +875,19 @@ class TestStealthWindowName:
         )
         assert results, "no window.name probe results collected under legacy"
         # Legacy is detectable if it leaves ANY page-observable artifact on the
-        # window.name plumbing: either the Window.prototype accessor stopped
-        # reporting [native code], or a wrapper shadowed it as an own property
-        # on the window instance. The stealth test above asserts NEITHER holds.
+        # window-instance window.name plumbing: the accessor stopped reporting
+        # [native code], or its function name is no longer the spec-prefixed native
+        # value ("get name"/"set name"). The stealth test above asserts the
+        # instance descriptor matches the native shape on ALL these signals.
         undetectable_signals = [
             results.get("name_getter_native") is True,
             results.get("name_setter_native") is True,
-            results.get("name_not_own_on_instance") is True,
+            results.get("name_getter_name_native") is True,
+            results.get("name_setter_name_native") is True,
         ]
         assert not all(undetectable_signals), (
-            "legacy left window.name looking pristine (native accessors, no "
-            "instance own-property) — the detection vector is ineffective, so a "
+            "legacy left window.name looking pristine (native accessors with "
+            "spec-prefixed names) — the detection vector is ineffective, so a "
             "stealth pass on the same vector would be meaningless"
         )
 

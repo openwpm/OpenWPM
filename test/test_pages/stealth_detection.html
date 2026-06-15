@@ -160,6 +160,39 @@
         return checks.every(([fn, arity]) => typeof fn === "function" && fn.length === arity);
     }
 
+    // Test 10c: Instrumented ACCESSORS must report the SAME function .name as
+    // the native accessor they replace. Native accessor functions are named with
+    // the spec prefix — Object.getOwnPropertyDescriptor(Navigator.prototype,
+    // "userAgent").get.name === "get userAgent". A naive computed-accessor wrapper
+    // (`get [propertyName]()`) is named the BARE property ("userAgent"), and
+    // exportFunction's defineAs also sets the bare name — so .get.name === "userAgent"
+    // is a one-line detector latent on EVERY wrapped accessor. Stealth restores the
+    // prefixed name (copyAccessorName in instrument.ts), so every check must hold.
+    function testAccessorNameNative() {
+        const checks = [
+            [Navigator.prototype, "userAgent", "get userAgent", null],
+            [Navigator.prototype, "platform", "get platform", null],
+            // window.name / localStorage / sessionStorage are native OWN accessors
+            // on the window INSTANCE in Firefox (not on Window.prototype).
+            [window, "name", "get name", "set name"],
+            [window, "localStorage", "get localStorage", null],
+            [window, "sessionStorage", "get sessionStorage", null],
+        ];
+        return checks.every(([obj, prop, getName, setName]) => {
+            const desc = Object.getOwnPropertyDescriptor(obj, prop);
+            if (!desc) return false;
+            if (getName !== null) {
+                if (typeof desc.get !== "function") return false;
+                if (desc.get.name !== getName) return false;
+            }
+            if (setName !== null) {
+                if (typeof desc.set !== "function") return false;
+                if (desc.set.name !== setName) return false;
+            }
+            return true;
+        });
+    }
+
     // Test 10: Check RTCPeerConnection functions are native (if available)
     function testRTCNative() {
         if (typeof RTCPeerConnection === "undefined") return true;
@@ -216,6 +249,7 @@
     safeRun("no_extra_prototype_properties", testNoExtraPrototypeProperties);
     safeRun("rtc_native", testRTCNative);
     safeRun("function_arity_native", testFunctionArityNative);
+    safeRun("accessor_name_native", testAccessorNameNative);
     safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
 
     // Write results to DOM for Selenium to read

@@ -584,10 +584,18 @@ function injectFunction(
   pageObject,
   propertyName,
 ) {
+  // Export with the spec-prefixed native name ("get <prop>" / "set <prop>") so
+  // the PAGE-VISIBLE accessor matches native. `exportFunction` builds a fresh
+  // forwarder in the page compartment and names it via `defineAs`; passing the
+  // bare property name there would leave the page seeing `descriptor.get.name ===
+  // "name"` where the native accessor reports "get name" — a one-line detector
+  // latent on EVERY wrapped accessor. (`defineAs` is the only hook that names the
+  // page-side forwarder; redefining `.name` on the privileged Xray reference
+  // afterwards does NOT propagate to the page's view of the function.)
   const exportedFunction = exportCustomFunction(
     instrumentedFunction,
     window,
-    propertyName,
+    functionType + " " + propertyName,
   );
   changeProperty(
     descriptor,
@@ -826,7 +834,16 @@ function instrumentGetterSetter(
   const getFuncType = "get";
   const setFuncType = "set";
 
-  if (Object.prototype.hasOwnProperty.call(descriptor, getFuncType)) {
+  // Guard on the accessor actually BEING a function, not merely on the
+  // descriptor key existing. Object.getOwnPropertyDescriptor returns an accessor
+  // descriptor with BOTH `get` and `set` keys present, even for a getter-only
+  // property (e.g. window.localStorage / window.sessionStorage), where `set` is
+  // `undefined`. A `hasOwnProperty(descriptor, "set")` check is therefore true
+  // for such properties and would inject a synthetic setter where the native
+  // accessor has none — a page-observable artifact (native localStorage has no
+  // setter). Checking `typeof === "function"` instruments only the accessors the
+  // native property genuinely exposes.
+  if (typeof descriptor[getFuncType] === "function") {
     instrumentedFunction = generateGetter(
       context,
       identifier,
@@ -843,7 +860,7 @@ function instrumentGetterSetter(
       propertyName,
     );
   }
-  if (Object.prototype.hasOwnProperty.call(descriptor, setFuncType)) {
+  if (typeof descriptor[setFuncType] === "function") {
     instrumentedFunction = generateSetter(
       identifier,
       descriptor,
