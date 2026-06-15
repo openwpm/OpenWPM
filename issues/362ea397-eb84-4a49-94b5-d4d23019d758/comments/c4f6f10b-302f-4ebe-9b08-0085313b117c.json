@@ -1,0 +1,10 @@
+{
+  "uuid": "c4f6f10b-302f-4ebe-9b08-0085313b117c",
+  "issue_uuid": "362ea397-eb84-4a49-94b5-d4d23019d758",
+  "author": "claude",
+  "content": "Explicitly SEPARATE from the Firefox 151 bump PR (#1186). #1186 fixes only the production crawl launch path (deploy_firefox + the test helper) and intentionally does NOT touch manual_test.py. This issue owns the manual_test.py rot end-to-end (Selenium-4 API fix + the -remote-allow-system-access flag + the new CI smoke test), as its own PR. Do not fold into #1186.",
+  "created_at": "2026-06-15T21:24:20.942012503Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAn9n/6iHc6DQUO8ycv/XvtKW+L+thJpw6IGFuEf/kDZ07f/UZx8jaxV9yezF97NZvAejMekzCWG73vr6oO5GKAw=="
+}
