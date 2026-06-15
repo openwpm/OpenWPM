@@ -32,7 +32,7 @@ from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import db_utils
 
-from . import utilities
+from .utilities import ServerUrls
 
 # Custom table the detection page's self-report JSON is routed into. Commands run
 # in a subprocess and the StorageController runs in yet another process, so the
@@ -45,16 +45,24 @@ from . import utilities
 # production schema.sql / parquet_schema.py.
 DETECTION_RESULTS_TABLE = TableName("stealth_detection_results")
 
-DETECTION_URL = f"{utilities.BASE_TEST_URL}/stealth_detection.html"
-SUPPRESS_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_suppress.html"
-FORGE_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_forge.html"
-ATTRIBUTION_URL = f"{utilities.BASE_TEST_URL}/stealth_attribution.html"
-COOKIE_URL = f"{utilities.BASE_TEST_URL}/stealth_cookie.html"
-IFRAME_URL = f"{utilities.BASE_TEST_URL}/stealth_disruption_iframe.html"
-WINDOW_NAME_URL = f"{utilities.BASE_TEST_URL}/stealth_window_name.html"
-PREVENT_SETS_URL = f"{utilities.BASE_TEST_URL}/stealth_prevent_sets.html"
-HONEY_PROPS_URL = f"{utilities.BASE_TEST_URL}/stealth_honey_props.html"
-RECURSIVE_URL = f"{utilities.BASE_TEST_URL}/stealth_recursive.html"
+# Probe-page paths (relative to ``server.base``). The full URL is built per-test
+# from the dynamic-port ``server`` fixture via ``_page_url`` so the suite can run
+# against an OS-assigned port (see test/utilities.py::ServerUrls).
+DETECTION_PAGE = "/stealth_detection.html"
+SUPPRESS_PAGE = "/stealth_disruption_suppress.html"
+FORGE_PAGE = "/stealth_disruption_forge.html"
+ATTRIBUTION_PAGE = "/stealth_attribution.html"
+COOKIE_PAGE = "/stealth_cookie.html"
+IFRAME_PAGE = "/stealth_disruption_iframe.html"
+WINDOW_NAME_PAGE = "/stealth_window_name.html"
+PREVENT_SETS_PAGE = "/stealth_prevent_sets.html"
+HONEY_PROPS_PAGE = "/stealth_honey_props.html"
+RECURSIVE_PAGE = "/stealth_recursive.html"
+
+
+def _page_url(server: ServerUrls, page: str) -> str:
+    """Build a full probe-page URL from the dynamic test server base."""
+    return server.base + page
 
 
 # --------------------------------------------------------------------------- #
@@ -247,9 +255,10 @@ def _collect_results(
 
 def _collect_detection(
     params: Tuple[ManagerParams, List[BrowserParams]],
+    url: str,
 ) -> Dict:
     """Run the detection page once and return its result dict."""
-    return _collect_results(params, DETECTION_URL)
+    return _collect_results(params, url)
 
 
 def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Path:
@@ -319,16 +328,24 @@ class TestStealthDetectability:
     """D* — the stealth instrument must be indistinguishable from a normal Firefox."""
 
     @pytest.fixture(scope="class")
-    def stealth_results(self, tmp_path_factory: pytest.TempPathFactory) -> Dict:
+    def stealth_results(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> Dict:
         data_dir = tmp_path_factory.mktemp("stealth_detect")
-        results = _collect_detection(_stealth_params(data_dir))
+        results = _collect_detection(
+            _stealth_params(data_dir), _page_url(server, DETECTION_PAGE)
+        )
         assert results, "no stealth detection results collected"
         return results
 
     @pytest.fixture(scope="class")
-    def legacy_results(self, tmp_path_factory: pytest.TempPathFactory) -> Dict:
+    def legacy_results(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> Dict:
         data_dir = tmp_path_factory.mktemp("legacy_detect")
-        results = _collect_detection(_legacy_params(data_dir))
+        results = _collect_detection(
+            _legacy_params(data_dir), _page_url(server, DETECTION_PAGE)
+        )
         assert results, "no legacy detection results collected"
         return results
 
@@ -365,11 +382,13 @@ class TestStealthDetectability:
         )
 
     def test_stealth_records_js_calls(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Stealth must still actually capture JS API calls to the database."""
         data_dir = tmp_path_factory.mktemp("stealth_records")
-        db_path = _run_page(_stealth_params(data_dir), DETECTION_URL)
+        db_path = _run_page(
+            _stealth_params(data_dir), _page_url(server, DETECTION_PAGE)
+        )
         rows = db_utils.get_javascript_entries(db_path)
         assert len(rows) > 0, "stealth instrument recorded no JS calls"
 
@@ -401,32 +420,36 @@ class TestStealthDisruption:
     """X* — a hostile page must not be able to drop or forge records."""
 
     def test_x1_legacy_channel_can_be_suppressed(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """X1 control: under legacy, neutering document.dispatchEvent drops records.
 
         Demonstrates the attack is real before asserting stealth resists it.
         """
         data_dir = tmp_path_factory.mktemp("x1_legacy")
-        db_path = _run_page(_legacy_params(data_dir), SUPPRESS_URL)
+        db_path = _run_page(
+            _legacy_params(data_dir), _page_url(server, SUPPRESS_PAGE)
+        )
         assert _todataurl_count(db_path) == 0, (
             "X1: legacy still recorded toDataURL calls after the page neutered "
             "document.dispatchEvent — the suppression control is ineffective"
         )
 
     def test_x1_stealth_channel_resists_suppression(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """X1: under stealth, the same attack must NOT drop records."""
         data_dir = tmp_path_factory.mktemp("x1_stealth")
-        db_path = _run_page(_stealth_params(data_dir), SUPPRESS_URL)
+        db_path = _run_page(
+            _stealth_params(data_dir), _page_url(server, SUPPRESS_PAGE)
+        )
         assert _todataurl_count(db_path) > 0, (
             "X1: stealth lost toDataURL records after the page neutered "
             "document.dispatchEvent — privileged messaging is not isolating delivery"
         )
 
     def test_x2_legacy_channel_can_be_forged(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """X2 control: under legacy, a page can inject a forged record.
 
@@ -434,25 +457,25 @@ class TestStealthDisruption:
         its own ``CustomEvent`` with that id, writing a fabricated row.
         """
         data_dir = tmp_path_factory.mktemp("x2_legacy")
-        db_path = _run_page(_legacy_params(data_dir), FORGE_URL)
+        db_path = _run_page(_legacy_params(data_dir), _page_url(server, FORGE_PAGE))
         assert _forged_count(db_path) > 0, (
             "X2: legacy did NOT accept the forged record — the forgery control "
             "is ineffective, so a stealth pass would be meaningless"
         )
 
     def test_x2_stealth_channel_rejects_forgery(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """X2: under stealth, the same forgery must NOT enter the database."""
         data_dir = tmp_path_factory.mktemp("x2_stealth")
-        db_path = _run_page(_stealth_params(data_dir), FORGE_URL)
+        db_path = _run_page(_stealth_params(data_dir), _page_url(server, FORGE_PAGE))
         assert _forged_count(db_path) == 0, (
             "X2: stealth accepted a forged record — a page-reachable channel "
             "into the dataset exists"
         )
 
     def test_attribution_stealth_records_page_script_and_clean_stack(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Stealth must attribute records to the page script with a clean stack.
 
@@ -468,7 +491,10 @@ class TestStealthDisruption:
         hardcoding stack collection.
         """
         data_dir = tmp_path_factory.mktemp("attr_stealth")
-        db_path = _run_page(_attribution_stealth_params(data_dir), ATTRIBUTION_URL)
+        db_path = _run_page(
+            _attribution_stealth_params(data_dir),
+            _page_url(server, ATTRIBUTION_PAGE),
+        )
         rows = db_utils.query_db(
             db_path,
             "SELECT script_url, call_stack FROM javascript WHERE symbol LIKE ?",
@@ -490,11 +516,13 @@ class TestStealthDisruption:
             )
 
     def test_attribution_legacy_records_page_script(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Reference: legacy also attributes the toDataURL call to the page."""
         data_dir = tmp_path_factory.mktemp("attr_legacy")
-        db_path = _run_page(_legacy_params(data_dir), ATTRIBUTION_URL)
+        db_path = _run_page(
+            _legacy_params(data_dir), _page_url(server, ATTRIBUTION_PAGE)
+        )
         rows = db_utils.query_db(
             db_path,
             "SELECT script_url FROM javascript WHERE symbol LIKE ?",
@@ -507,7 +535,7 @@ class TestStealthDisruption:
         ), "legacy did not attribute the toDataURL call to the page script"
 
     def test_x3_stealth_instruments_dynamic_iframe(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """X3: stealth records the in-iframe toDataURL under the parent's URL.
 
@@ -524,7 +552,7 @@ class TestStealthDisruption:
         ``test_x3_legacy_misses_dynamic_iframe_parent_attribution``.
         """
         data_dir = tmp_path_factory.mktemp("x3_stealth")
-        db_path = _run_page(_stealth_params(data_dir), IFRAME_URL)
+        db_path = _run_page(_stealth_params(data_dir), _page_url(server, IFRAME_PAGE))
         rows = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript "
@@ -538,7 +566,7 @@ class TestStealthDisruption:
         )
 
     def test_x3_legacy_misses_dynamic_iframe_parent_attribution(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """X3 control: legacy attributes the in-iframe call only to about:blank.
 
@@ -548,7 +576,7 @@ class TestStealthDisruption:
         stealth's frame protection provides.
         """
         data_dir = tmp_path_factory.mktemp("x3_legacy")
-        db_path = _run_page(_legacy_params(data_dir), IFRAME_URL)
+        db_path = _run_page(_legacy_params(data_dir), _page_url(server, IFRAME_PAGE))
         rows = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript "
@@ -622,7 +650,7 @@ class TestStealthConfigurability:
     """The stealth instrumentation surface is configurable at runtime."""
 
     def test_custom_settings_take_effect(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """A custom surface replaces the bundled default.
 
@@ -630,7 +658,9 @@ class TestStealthConfigurability:
         ``CustomCanvasMarker.toDataURL`` cannot appear under the default config.
         """
         data_dir = tmp_path_factory.mktemp("config_custom")
-        db_path = _run_page(_custom_stealth_params(data_dir), ATTRIBUTION_URL)
+        db_path = _run_page(
+            _custom_stealth_params(data_dir), _page_url(server, ATTRIBUTION_PAGE)
+        )
         custom_rows = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
@@ -651,11 +681,13 @@ class TestStealthConfigurability:
         )
 
     def test_custom_settings_stay_undetectable(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """A custom surface must remain undetectable on every vector."""
         data_dir = tmp_path_factory.mktemp("config_undetect")
-        results = _collect_detection(_custom_stealth_params(data_dir))
+        results = _collect_detection(
+            _custom_stealth_params(data_dir), _page_url(server, DETECTION_PAGE)
+        )
         assert results, "no detection results collected for custom stealth config"
         for req_id, key, _ in DETECTABILITY_REQUIREMENTS:
             assert results.get(key) is True, (
@@ -672,7 +704,7 @@ class TestStealthDefaultSurface:
     """The bundled stealth default captures the documented fingerprint surface."""
 
     def test_default_captures_document_cookie(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Under the stealth DEFAULT, document.cookie get/set is recorded.
 
@@ -682,7 +714,7 @@ class TestStealthDefaultSurface:
         row lands in the ``javascript`` table without any custom settings.
         """
         data_dir = tmp_path_factory.mktemp("default_cookie")
-        db_path = _run_page(_stealth_params(data_dir), COOKIE_URL)
+        db_path = _run_page(_stealth_params(data_dir), _page_url(server, COOKIE_PAGE))
         rows = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
@@ -707,9 +739,10 @@ class TestStealthDefaultSurface:
 # --------------------------------------------------------------------------- #
 def _window_name_results(
     params: Tuple[ManagerParams, List[BrowserParams]],
+    url: str,
 ) -> Dict:
     """Run the window.name probe page and return its self-detection dict."""
-    return _collect_results(params, WINDOW_NAME_URL)
+    return _collect_results(params, url)
 
 
 @pytest.mark.usefixtures("xpi", "server")
@@ -717,7 +750,7 @@ class TestStealthWindowName:
     """The bundled stealth default captures window.name get/set, undetectably."""
 
     def test_default_captures_window_name_get_and_set(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Under the stealth DEFAULT, window.name get AND set are recorded.
 
@@ -727,7 +760,9 @@ class TestStealthWindowName:
         ``window.name`` land in the ``javascript`` table without custom settings.
         """
         data_dir = tmp_path_factory.mktemp("window_name_capture")
-        db_path = _run_page(_stealth_params(data_dir), WINDOW_NAME_URL)
+        db_path = _run_page(
+            _stealth_params(data_dir), _page_url(server, WINDOW_NAME_PAGE)
+        )
         get_rows = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript WHERE symbol = ? AND operation = ?",
@@ -748,7 +783,7 @@ class TestStealthWindowName:
         )
 
     def test_default_captures_window_storage_property_gets(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Window-level localStorage / sessionStorage property GETS are recorded.
 
@@ -757,7 +792,9 @@ class TestStealthWindowName:
         prototype methods). Asserts both land in the ``javascript`` table.
         """
         data_dir = tmp_path_factory.mktemp("window_storage_capture")
-        db_path = _run_page(_stealth_params(data_dir), WINDOW_NAME_URL)
+        db_path = _run_page(
+            _stealth_params(data_dir), _page_url(server, WINDOW_NAME_PAGE)
+        )
         for prop in ("window.localStorage", "window.sessionStorage"):
             rows = db_utils.query_db(
                 db_path,
@@ -770,7 +807,7 @@ class TestStealthWindowName:
             )
 
     def test_window_name_instrumentation_undetectable(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Under stealth, the page cannot tell window.name was instrumented.
 
@@ -779,7 +816,9 @@ class TestStealthWindowName:
         property shadows them on the window instance. Every check must be True.
         """
         data_dir = tmp_path_factory.mktemp("window_name_stealth_detect")
-        results = _window_name_results(_stealth_params(data_dir))
+        results = _window_name_results(
+            _stealth_params(data_dir), _page_url(server, WINDOW_NAME_PAGE)
+        )
         assert results, "no window.name probe results collected under stealth"
         for key in (
             "name_getter_native",
@@ -797,7 +836,7 @@ class TestStealthWindowName:
             )
 
     def test_legacy_window_name_is_detectable(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Control: legacy's window.name getter is NOT native (detectable).
 
@@ -806,7 +845,9 @@ class TestStealthWindowName:
         longer reports ``[native code]``, so at least one nativeness check trips.
         """
         data_dir = tmp_path_factory.mktemp("window_name_legacy_detect")
-        results = _window_name_results(_legacy_params(data_dir))
+        results = _window_name_results(
+            _legacy_params(data_dir), _page_url(server, WINDOW_NAME_PAGE)
+        )
         assert results, "no window.name probe results collected under legacy"
         # Legacy is detectable if it leaves ANY page-observable artifact on the
         # window.name plumbing: either the Window.prototype accessor stopped
@@ -911,7 +952,7 @@ class TestStealthLogSettings:
     """The previously-inert logSettings are honoured by the stealth instrument."""
 
     def test_prevent_sets_blocks_and_logs(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """preventSets logs set(prevented) and does NOT call the original setter.
 
@@ -920,7 +961,8 @@ class TestStealthLogSettings:
         """
         data_dir = tmp_path_factory.mktemp("prevent_sets")
         db_path = _run_page(
-            _params_with(data_dir, PREVENT_SETS_SETTINGS), PREVENT_SETS_URL
+            _params_with(data_dir, PREVENT_SETS_SETTINGS),
+            _page_url(server, PREVENT_SETS_PAGE),
         )
         prevented = db_utils.query_db(
             db_path,
@@ -942,12 +984,13 @@ class TestStealthLogSettings:
         )
 
     def test_prevent_sets_stays_undetectable_and_blocks(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """The page sees the write blocked AND the accessor still native."""
         data_dir = tmp_path_factory.mktemp("prevent_sets_detect")
         results = _probe_results(
-            _params_with(data_dir, PREVENT_SETS_SETTINGS), PREVENT_SETS_URL
+            _params_with(data_dir, PREVENT_SETS_SETTINGS),
+            _page_url(server, PREVENT_SETS_PAGE),
         )
         assert results, "no preventSets probe results collected"
         assert results.get("body_unchanged") is True, (
@@ -962,7 +1005,7 @@ class TestStealthLogSettings:
         assert results.get("body_getter_native") is True
 
     def test_non_existing_property_captured_and_native(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """A honey property is captured (get/set) and looks native.
 
@@ -971,7 +1014,10 @@ class TestStealthLogSettings:
         recorded under the javascript table.
         """
         data_dir = tmp_path_factory.mktemp("honey")
-        db_path = _run_page(_params_with(data_dir, HONEY_SETTINGS), HONEY_PROPS_URL)
+        db_path = _run_page(
+            _params_with(data_dir, HONEY_SETTINGS),
+            _page_url(server, HONEY_PROPS_PAGE),
+        )
         sets = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
@@ -992,7 +1038,7 @@ class TestStealthLogSettings:
         )
 
     def test_log_function_gets_emits_get_function(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """logFunctionGets records get(function) when the value is a function.
 
@@ -1001,7 +1047,10 @@ class TestStealthLogSettings:
         function value), matching legacy.
         """
         data_dir = tmp_path_factory.mktemp("fn_gets")
-        db_path = _run_page(_params_with(data_dir, HONEY_SETTINGS), HONEY_PROPS_URL)
+        db_path = _run_page(
+            _params_with(data_dir, HONEY_SETTINGS),
+            _page_url(server, HONEY_PROPS_PAGE),
+        )
         fn_gets = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
@@ -1013,12 +1062,13 @@ class TestStealthLogSettings:
         )
 
     def test_honey_property_stays_native(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """The synthesized honey accessor reports [native code]."""
         data_dir = tmp_path_factory.mktemp("honey_detect")
         results = _probe_results(
-            _params_with(data_dir, HONEY_SETTINGS), HONEY_PROPS_URL
+            _params_with(data_dir, HONEY_SETTINGS),
+            _page_url(server, HONEY_PROPS_PAGE),
         )
         assert results, "no honey-property probe results collected"
         assert results.get("value_roundtrips") is True
@@ -1032,7 +1082,7 @@ class TestStealthLogSettings:
         ), "synthesized honey setter does not report [native code]"
 
     def test_recursive_captures_nested_access(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """recursive/depth instruments objects returned by instrumented getters.
 
@@ -1040,7 +1090,10 @@ class TestStealthLogSettings:
         captured under the recursive symbol path.
         """
         data_dir = tmp_path_factory.mktemp("recursive")
-        db_path = _run_page(_params_with(data_dir, RECURSIVE_SETTINGS), RECURSIVE_URL)
+        db_path = _run_page(
+            _params_with(data_dir, RECURSIVE_SETTINGS),
+            _page_url(server, RECURSIVE_PAGE),
+        )
         leaf = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
@@ -1053,12 +1106,13 @@ class TestStealthLogSettings:
         )
 
     def test_recursive_roundtrips(
-        self, tmp_path_factory: pytest.TempPathFactory
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
         """Recursion must not corrupt values the page reads back."""
         data_dir = tmp_path_factory.mktemp("recursive_detect")
         results = _probe_results(
-            _params_with(data_dir, RECURSIVE_SETTINGS), RECURSIVE_URL
+            _params_with(data_dir, RECURSIVE_SETTINGS),
+            _page_url(server, RECURSIVE_PAGE),
         )
         assert results, "no recursive probe results collected"
         assert results.get("leaf_roundtrips") is True, (
