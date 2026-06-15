@@ -151,17 +151,23 @@ class AssertConfigSetCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-        webdriver.get("about:config")
-        result = webdriver.execute_script(f"""
-                var prefs = Components
-                            .classes["@mozilla.org/preferences-service;1"]
-                            .getService(Components.interfaces.nsIPrefBranch);
-                try {{
-                    return prefs.getBoolPref("{self.pref_name}")
-                }} catch (e) {{
-                    return false;
-                }}
-            """)
+        # Read the preference from the chrome context. Navigating to
+        # about:config and running execute_script there is no longer supported
+        # (Firefox 151 rejects ExecuteScript in parent process browsing
+        # contexts), so we switch into the privileged chrome context instead.
+        # This requires Firefox to be launched with -remote-allow-system-access,
+        # which deploy_firefox sets.
+        with webdriver.context(webdriver.CONTEXT_CHROME):
+            result = webdriver.execute_script(f"""
+                    var prefs = Components
+                                .classes["@mozilla.org/preferences-service;1"]
+                                .getService(Components.interfaces.nsIPrefBranch);
+                    try {{
+                        return prefs.getBoolPref("{self.pref_name}")
+                    }} catch (e) {{
+                        return false;
+                    }}
+                """)
         self.logger.error(f"Got result: {result}")
         assert result == self.expected_value
 
