@@ -1,0 +1,11 @@
+{
+  "uuid": "362ea397-eb84-4a49-94b5-d4d23019d758",
+  "display_id": 35,
+  "title": "Smoke-test manual_test.py in CI so the debug-tool-of-last-resort stops bit-rotting",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\n`test/manual_test.py` is the interactive debugging tool of last resort (`python -m test.manual_test --selenium`), but it is NOT exercised by CI — so it silently bit-rots, and you only discover it's broken at the exact moment you reach for it under pressure.\n\nCurrent rot (already broken, undetected by CI):\n- **Selenium 4 bitrot:** uses `FirefoxBinary` / `firefox_binary=` (~lines 105/134), which were removed from Selenium years ago.\n- **Firefox 151 gap:** builds its own `Options()` at ~line 125 WITHOUT `-remote-allow-system-access`, so privileged-context scripting (the kind you'd be debugging) fails on FF151 — the exact failure PR #1186 fixes in the production launch path. Surfaced by the adversarial review of the FF151 bump.\n\nAcknowledged contradiction: it's an *interactive* tool, so a full functional test doesn't make sense. The goal is a **minimal CI smoke check** that exercises its setup/launch path — e.g. a non-interactive `--selftest`/dry-run that constructs the WebDriver + Options the same way the real tool does, launches Firefox, and tears down — so that framework changes (Selenium API drift, new launch flags, FF policy changes) that break the tool are caught when they happen, not months later.\n\nScope (pumpable):\n1. Add a non-interactive entry path to `manual_test.py` (or refactor its driver/Options construction into a small importable helper) that can be invoked headlessly.\n2. Add a CI test that runs it (build extension, launch, basic sanity, teardown) — kept light, marked appropriately (it needs a browser).\n3. While there: fix the current rot (Selenium 4 API + the `-remote-allow-system-access` flag) so the new test passes.\n\nValue: stops the slow-rot of the one tool people reach for when everything else has failed.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-15T21:23:00.817060789Z",
+  "updated_at": "2026-06-15T21:23:00.817060789Z"
+}
