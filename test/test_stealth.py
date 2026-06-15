@@ -25,7 +25,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
-from openwpm.config import BrowserParams, ManagerParams, ManagerParamsInternal
+from openwpm.config import (
+    BrowserParams,
+    ManagerParams,
+    ManagerParamsInternal,
+    validate_browser_params,
+)
+from openwpm.errors import ConfigError
 from openwpm.socket_interface import ClientSocket
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_providers import TableName
@@ -57,7 +63,9 @@ IFRAME_PAGE = "/stealth_disruption_iframe.html"
 WINDOW_NAME_PAGE = "/stealth_window_name.html"
 PREVENT_SETS_PAGE = "/stealth_prevent_sets.html"
 HONEY_PROPS_PAGE = "/stealth_honey_props.html"
-RECURSIVE_PAGE = "/stealth_recursive.html"
+# Recursive instrumentation is unsupported under stealth (rejected at config
+# time, see TestStealthRecursiveRejected), so there is no stealth recursive
+# probe page — the rejection is verified purely at the config layer.
 
 
 def _page_url(server: ServerUrls, page: str) -> str:
@@ -1108,41 +1116,39 @@ class TestStealthLogSettings:
             results.get("honey_setter_native") is True
         ), "synthesized honey setter does not report [native code]"
 
+
+# --------------------------------------------------------------------------- #
+# Recursive is the ONE legacy logSetting the stealth instrument cannot support.
+# It requires defining accessors on the in-page Object/Array instances returned
+# by instrumented getters, which Firefox's Xray wrappers forbid for stealth's
+# isolated compartment (``js/xpconnect/wrappers/XrayWrapper.cpp``,
+# ``JSXrayTraits::defineProperty``); waiving to ``wrappedJSObject`` yields a
+# different object identity so page-side reads never see the instrumentation.
+# This is fundamental to the isolation that makes stealth undetectable, so a
+# stealth surface requesting recursive is rejected at config-validation time
+# rather than silently crashing the page at runtime. Legacy ``js_instrument``
+# still supports recursive because it runs in the page compartment. See
+# ``docs/developers/Stealth-Instrumentation.md`` (Limitations).
+# --------------------------------------------------------------------------- #
+class TestStealthRecursiveRejected:
+    """Recursive under stealth is rejected with an actionable ConfigError."""
+
+    @pytest.mark.pyonly
     def test_recursive_captures_nested_access(
-        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+        self, tmp_path_factory: pytest.TempPathFactory
     ) -> None:
-        """recursive/depth instruments objects returned by instrumented getters.
-
-        Reading a deep leaf of a nested object stored on the honey property is
-        captured under the recursive symbol path.
-        """
+        """A stealth surface requesting recursive is rejected at config time."""
         data_dir = tmp_path_factory.mktemp("recursive")
-        db_path = _run_page(
-            _params_with(data_dir, RECURSIVE_SETTINGS),
-            _page_url(server, RECURSIVE_PAGE),
-        )
-        leaf = db_utils.query_db(
-            db_path,
-            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
-            ("Recursive.openwpmRecObj.inner.leaf",),
-        )
-        assert leaf[0][0] > 0, (
-            "recursive instrumentation did not capture the nested leaf access "
-            "Recursive.openwpmRecObj.inner.leaf — recursion did not descend into "
-            "the object returned by the instrumented getter"
-        )
+        _, browser_params = _params_with(data_dir, RECURSIVE_SETTINGS)
+        with pytest.raises(ConfigError, match="[Rr]ecursive"):
+            validate_browser_params(browser_params[0])
 
+    @pytest.mark.pyonly
     def test_recursive_roundtrips(
-        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+        self, tmp_path_factory: pytest.TempPathFactory
     ) -> None:
-        """Recursion must not corrupt values the page reads back."""
+        """The recursive rejection points users at js_instrument as the remedy."""
         data_dir = tmp_path_factory.mktemp("recursive_detect")
-        results = _probe_results(
-            _params_with(data_dir, RECURSIVE_SETTINGS),
-            _page_url(server, RECURSIVE_PAGE),
-        )
-        assert results, "no recursive probe results collected"
-        assert results.get("leaf_roundtrips") is True, (
-            "recursive instrumentation corrupted the nested leaf value the page "
-            "read back"
-        )
+        _, browser_params = _params_with(data_dir, RECURSIVE_SETTINGS)
+        with pytest.raises(ConfigError, match="js_instrument"):
+            validate_browser_params(browser_params[0])

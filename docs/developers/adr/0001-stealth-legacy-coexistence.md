@@ -51,6 +51,7 @@ Is legacy detectable **only via the APIs it wraps**, or does its injection **foo
 - **Long-term maintenance of both instruments is expected.** Stealth is not a replacement for legacy; they serve different threat models (legacy: sites that don't adapt or need every API; stealth: measuring the cloaking/anti-bot behavior that detection itself would perturb).
 - Enables incremental, independently-valuable wins — e.g. `navigator.webdriver=false` (there is an existing PR) as a *shared-base* feature usable even by detectable legacy, decoupling the automation fingerprint from the instrumentation fingerprint.
 - The window.name capture investigation seeds the concrete XOR-frontier list.
+- **Confirmed coverage ceiling: `recursive`.** Empirically, `window.name` and native function arity turned out **not** to be ceilings (stealth captures both natively). `recursive` instrumentation **is** the concrete ceiling this ADR anticipated: it requires mutating the page's in-page object graph, which is incompatible with stealth's isolated compartment (Firefox Xray forbids accessor-defines on `Object`/`Array` instances; `wrappedJSObject` waiving gives a different object identity). It is rejected at config time and stays on legacy `js_instrument`. See `docs/developers/Stealth-Instrumentation.md` ("Limitations: `recursive` is unsupported").
 
 ## Precursors / follow-ups
 

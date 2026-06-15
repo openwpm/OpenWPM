@@ -179,10 +179,11 @@ Navigator, `document.cookie`, `document.referrer`, `window.name` (get/set),
 replacement legacy lacks); all `Screen` properties (legacy records only
 `colorDepth`/`pixelDepth`).
 
-There are no `logSettings`-level capture regressions versus legacy: every
-`logSettings` field is now honoured by the stealth instrument (see
-"`logSettings` semantics" below). The bundled default leaves the optional
-fields (`recursive`, `preventSets`, `logFunctionGets`,
+Every `logSettings` field **except `recursive`** is honoured by the stealth
+instrument (see "`logSettings` semantics" below). `recursive` is the one legacy
+capability stealth cannot support — a stealth surface requesting it is rejected
+at config-validation time (see "Limitations: `recursive` is unsupported"). The
+bundled default leaves the optional fields (`preventSets`, `logFunctionGets`,
 `nonExistingPropertiesToInstrument`) off, exactly like legacy's
 `collection_fingerprinting` preset; a study can enable any of them via a custom
 `stealth_js_instrument_settings` (see "Configuring the instrumented surface").
@@ -202,7 +203,7 @@ in `Extension/src/lib/js-instruments.ts`:
 | `logFunctionsAsStrings` | Function values serialised as their source instead of `"FUNCTION"`. |
 | `logFunctionGets` | When an instrumented getter returns a **function**, a `get(function)` row is emitted (and no plain `get`), matching legacy. |
 | `preventSets` | When the property currently holds a **function/object**, an assignment is logged as `set(prevented)` and the original setter is **not** called, blocking the write. Plain (string/number) values still pass through. |
-| `recursive` + `depth` | The object **returned by an instrumented getter** is instrumented one level down, decrementing `depth`, done lazily at access time so page-built nested objects are reachable. Captures e.g. `obj.nested.leaf` accesses. |
+| `recursive` + `depth` | **Unsupported under stealth.** A stealth surface with `recursive: true` (and `depth > 0`) is rejected at config-validation time with a `ConfigError`; see "Limitations: `recursive` is unsupported". Use legacy `js_instrument` for configs that need it. |
 | `nonExistingPropertiesToInstrument` | Names absent from the target get a synthesized, `[native code]`-reporting accessor (backed by a closure variable), so a study can capture access to decoy "honey" property names. |
 
 **Native-arity preservation.** Instrumented functions report the **same
@@ -239,11 +240,14 @@ configurability (C1) matrices and the per-requirement test names. In summary:
   trips the reliable subset (D2/D3/D4/D8b) as a control.
 - **`logSettings` fidelity** — `TestStealthLogSettings` proves the stealth
   instrument honours `preventSets` (logs `set(prevented)` and blocks the write),
-  `logFunctionGets` (emits `get(function)`), `recursive`/`depth` (captures
-  nested-object access), and `nonExistingPropertiesToInstrument` (synthesized
-  honey accessor), each with a native-looking / undetectability check where the
-  target is a native object (pages `stealth_prevent_sets.html`,
-  `stealth_honey_props.html`, `stealth_recursive.html`).
+  `logFunctionGets` (emits `get(function)`), and
+  `nonExistingPropertiesToInstrument` (synthesized honey accessor), each with a
+  native-looking / undetectability check where the target is a native object
+  (pages `stealth_prevent_sets.html`, `stealth_honey_props.html`).
+- **`recursive` rejection** — `TestStealthRecursiveRejected` proves a stealth
+  surface with `recursive: true` is rejected at config-validation time with a
+  `ConfigError` (it is unsupported; see "Limitations: `recursive` is
+  unsupported"). These tests run config-only (`pyonly`) — no browser.
 - **Disruptability** — `TestStealthDisruption` runs the X1 (suppression), X2
   (forgery) and X3 (dynamic iframe) attack pages both ways: legacy is shown to
   lose/accept records or miss the parent-context attribution, stealth to resist
@@ -255,6 +259,40 @@ configurability (C1) matrices and the per-requirement test names. In summary:
   undetectable.
 
 ## Known limitations / future work
+
+### Limitations: `recursive` is unsupported
+
+`recursive` instrumentation is the **one legacy `logSettings` capability the
+stealth instrument cannot support**. A stealth surface that sets
+`logSettings.recursive: true` (with `depth > 0`) is rejected at
+config-validation time with a `ConfigError` (`openwpm/config.py`,
+`validate_browser_params`) rather than silently crashing the page at runtime as
+it did before. The actionable message points the user at legacy `js_instrument`,
+which still supports `recursive` because it runs in the page's own compartment.
+
+**Why it is fundamentally incompatible.** Recursion requires instrumenting the
+`Object`/`Array` instances **returned by an instrumented getter** — i.e.
+mutating the page's in-page object graph by defining accessors on those
+instances. Stealth runs in an **isolated compartment** and reaches page objects
+through Firefox's Xray wrappers, and:
+
+- Firefox's `JSXrayTraits::defineProperty`
+  (`js/xpconnect/wrappers/XrayWrapper.cpp`, ~lines 807–847) **forbids defining
+  an accessor on an `[Object]`/`[Array]` Xray instance**. The define is rejected
+  outright, which is what crashed the page.
+- Waiving the Xray to `wrappedJSObject` was prototyped and disproved: the page
+  holds a **different object identity** than the waived wrapper, so accessors
+  installed via the waiver do **not** project onto the object the page reads —
+  the page sees `undefined`.
+
+This is not a bug to be fixed by a cleverer hook: the isolated-compartment design
+is precisely what gives stealth its undetectability, and in-page object-graph
+mutation is incompatible with that isolation. Legacy works **only** because it
+executes in the page compartment (where it is, by the same token, detectable).
+Everything else legacy can do — prototype hooks, native-instance accessors,
+honey (`nonExistingPropertiesToInstrument`), `preventSets`, `logFunctionGets`,
+`logCallStack` — stealth supports. Configs that need `recursive` must stay on
+`js_instrument`.
 
 - **X3 (dynamic iframes).** Stealth's frame protection (`stealth.ts`
   contentWindow/contentDocument hooks + `MutationObserver`) instruments
