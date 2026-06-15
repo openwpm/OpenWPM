@@ -7,8 +7,9 @@
   "priority": "medium",
   "created_by": "claude",
   "created_at": "2026-06-15T21:23:00.817060789Z",
-  "updated_at": "2026-06-15T21:23:02.941538651Z",
+  "updated_at": "2026-06-15T21:23:04.943747499Z",
   "labels": [
-    "feature"
+    "feature",
+    "ci"
   ]
 }
