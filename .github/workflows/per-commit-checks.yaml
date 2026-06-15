@@ -1,0 +1,55 @@
+name: Per-commit checks
+# Rebase-and-merge lands every PR commit on master individually, but CI only
+# tests the PR tip / merge-queue-candidate tip. This gate runs the FAST static
+# checks on each commit so a broken-in-isolation commit can't ship. It does NOT
+# run the browser suite — runtime regressions stay covered by the `tests` job on
+# the tip + the merge queue. Cheap 80/20 for intermediate commits.
+on:
+  pull_request:
+  merge_group:
+jobs:
+  per-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: ./.github/actions/setup
+      - name: Determine commit range
+        run: |
+          if [ "${{ github.event_name }}" = merge_group ]; then
+            echo "BASE=${{ github.event.merge_group.base_sha }}" >> "$GITHUB_ENV"
+            echo "HEAD=${{ github.event.merge_group.head_sha }}" >> "$GITHUB_ENV"
+          else
+            echo "BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
+            echo "HEAD=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_ENV"
+          fi
+      - name: Fast checks on each commit
+        # GitHub's default run shell is `bash -e`; we deliberately disable
+        # errexit (`set +e`) so the loop visits every commit and aggregates all
+        # failures into `fail` instead of aborting on the first one.
+        run: |
+          set +e -uo pipefail
+          fail=0
+          for c in $(git rev-list --reverse "$BASE..$HEAD"); do
+            echo "::group::$(git log -1 --format='%h %s' "$c")"
+            git checkout -q "$c"
+            # Static lint/type checks (black/isort/mypy/actionlint/...) on the
+            # files this commit changed. mypy catches undefined-name and type
+            # errors in the changed files — the load-bearing check.
+            pre-commit run --from-ref "${c}~1" --to-ref "$c" || { echo "::error::pre-commit failed at $c"; fail=1; }
+            # Only rebuild the extension when this commit touched it (TS compile
+            # is the only check that catches broken extension source).
+            if ! git diff --quiet "${c}~1" "$c" -- Extension/; then
+              (cd Extension && npm run build) || { echo "::error::extension build failed at $c"; fail=1; }
+            fi
+            # Import the package and collect the test suite: catches syntax
+            # errors / undefined names / bad imports that mypy's per-file,
+            # changed-files-only view can miss (e.g. a deleted symbol still
+            # referenced by an unchanged module).
+            python -c "import openwpm" || { echo "::error::import openwpm failed at $c"; fail=1; }
+            python -m pytest --collect-only -q >/dev/null || { echo "::error::pytest collection failed at $c"; fail=1; }
+            echo "::endgroup::"
+          done
+          git checkout -q "$HEAD"
+          exit "$fail"
