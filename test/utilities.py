@@ -28,9 +28,6 @@ class ServerUrls:
     def base_noscheme(self) -> str:
         return self.base.split("//")[1]
 
-    def url(self, path: str) -> str:
-        return self.base + path
-
 
 class MyTCPServer(socketserver.TCPServer):
     """Subclass TCPServer to be able to reuse the same port (Errno 98)."""
@@ -72,15 +69,6 @@ class MyHandler(SimpleHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
         SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
-
-    def send_response(self, code, message=None):
-        self._response_code = code
-        super().send_response(code, message)
-
-    def end_headers(self):
-        if getattr(self, "_response_code", None) == 200:
-            self.send_header("Cache-Control", "max-age=3600")
-        super().end_headers()
 
     def do_GET(self, *args, **kwargs):
         # 1. Redirect all requests to `/MAGIC_REDIRECT/`.
