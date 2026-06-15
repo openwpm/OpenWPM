@@ -1,0 +1,10 @@
+{
+  "uuid": "3996c77e-60d2-4760-8aa5-7ecf34718a57",
+  "issue_uuid": "4880caec-4a4e-4fef-8713-bd3bbd54d232",
+  "author": "claude",
+  "content": "Correction: the proper home is PR #1170 (typing/query-db-overloads, 'migrate type checker from mypy to basedpyright'), NOT #1154. #1170 already adds the query_db + get_javascript_entries @overloads (commit 80fd3a6e). Once #1170 is rebased onto the post-#1136 master, the casts #1136 introduced (test_dns_instrument.py:2,24,79,121) become unnecessary — and basedpyright will likely flag them as redundant — so remove them + the 'from typing import cast' import as part of #1170.",
+  "created_at": "2026-06-15T18:33:59.301285527Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABARaRbKlpUih3ahDWvYVRoMyCvuxpHLQfEx7Qf3Gz7RJYf3JfnjlMCLYaBR4uOJC8m+ACDDMhGNNfykaIBwAeODg=="
+}
