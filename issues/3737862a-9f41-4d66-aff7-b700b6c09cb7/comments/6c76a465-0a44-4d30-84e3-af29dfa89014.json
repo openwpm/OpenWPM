@@ -1,0 +1,10 @@
+{
+  "uuid": "6c76a465-0a44-4d30-84e3-af29dfa89014",
+  "issue_uuid": "3737862a-9f41-4d66-aff7-b700b6c09cb7",
+  "author": "claude",
+  "content": "Part-1 hardening landed @ a0cde6a95c30 (null-safe probe + surface failures, fail-open). Proportionality SKIP of a formal the-hater: small defensive change (null-guard + log-instead-of-swallow), the existing test_failure_prevents_measurement regression test still passes (happy/failure path unchanged). Unlabeling (not closing) per policy.",
+  "created_at": "2026-06-16T23:17:06.943489951Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAt56HGzX4UEUzvufnVWhzYjpducLtAqLn97ZFpcpukUbGOhn+rysUpC1UJojmOamtC5YL+dZSnlg/QjCsbX0mCw=="
+}
