@@ -1,0 +1,12 @@
+{
+  "uuid": "c463f49a-fec9-4c25-aadd-cc45b1005a9d",
+  "display_id": 38,
+  "title": "Reshape #1154 into 5 clean review commits (Option A, tests-with-impl)",
+  "description": "Rebuild feat/stealth-js-instrument-v2 as 5 self-contained commits for per-commit review: (1) docs ADR+design first; (2) core instrument + B' machinery + receiver column, hard-coded surface, + detection/shared-proto tests; (3) configurable surface + config/logSettings tests; (4) legacy->stealth sweep + sweep tests; (5) universal-members flag + tests. Option A = instrument.ts stays WHOLE (B' in commit 2) to avoid the thrash-prone split. Tests-with-impl (split test_stealth.py 16 classes + test pages + config.py + js_instrumentation.py + stealth_settings.py per feature). HARD GATE: final scratch tip tree byte-identical to current #1154 tip. Build on scratch branch 'stealth-reshaped'; do NOT force-push #1154 -- orchestrator verifies then force-pushes. After reshape: one the-hater per commit w/ knowledge page stealth-review-guide. See knowledge page for full plan.",
+  "status": "open",
+  "priority": "high",
+  "parent_uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
+  "created_by": "claude",
+  "created_at": "2026-06-16T23:19:01.034990400Z",
+  "updated_at": "2026-06-16T23:19:01.034990400Z"
+}
