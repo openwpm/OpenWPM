@@ -51,19 +51,6 @@ export type SendMessagesToLogger = (
   messages: InstrumentMessage[],
 ) => void;
 
-declare global {
-  interface Object {
-    getPropertyDescriptor(
-      subject: any,
-      name: any,
-    ): PropertyDescriptor | undefined;
-  }
-
-  interface Object {
-    getPropertyNames(subject: any): string[];
-  }
-}
-
 interface CallContext {
   scriptUrl: string;
   scriptLine: string;
@@ -105,9 +92,11 @@ export function getInstrumentJS(
     set_prevented: "set(prevented)",
   };
 
-  // Rough implementations of Object.getPropertyDescriptor and Object.getPropertyNames
+  // Rough implementations of getPropertyDescriptor and getPropertyNames.
   // See http://wiki.ecmascript.org/doku.php?id=harmony:extended_object_api
-  Object.getPropertyDescriptor = function (subject, name) {
+  // These are kept module-local (not assigned onto the page-world `Object`)
+  // so the instrument does not leak detectable globals into the page.
+  function getPropertyDescriptor(subject: any, name: any) {
     if (subject === undefined) {
       throw new Error("Can't get property descriptor for undefined");
     }
@@ -118,9 +107,9 @@ export function getInstrumentJS(
       proto = Object.getPrototypeOf(proto);
     }
     return pd;
-  };
+  }
 
-  Object.getPropertyNames = function (subject) {
+  function getPropertyNames(subject: any) {
     if (subject === undefined) {
       throw new Error("Can't get property names for undefined");
     }
@@ -132,7 +121,7 @@ export function getInstrumentJS(
     }
     // FIXME: remove duplicate property names from props
     return props;
-  };
+  }
 
   // debounce - from Underscore v1.6.0
   function debounce(
@@ -548,7 +537,7 @@ export function getInstrumentJS(
     }
 
     // Store original descriptor in closure
-    const propDesc = Object.getPropertyDescriptor(object, propertyName);
+    const propDesc = getPropertyDescriptor(object, propertyName);
 
     // Property descriptor must exist unless we are instrumenting a nonExisting property
     if (
@@ -741,7 +730,7 @@ export function getInstrumentJS(
     if (logSettings.propertiesToInstrument === null) {
       propertiesToInstrument = [];
     } else if (logSettings.propertiesToInstrument.length === 0) {
-      propertiesToInstrument = Object.getPropertyNames(object);
+      propertiesToInstrument = getPropertyNames(object);
     } else {
       propertiesToInstrument = logSettings.propertiesToInstrument;
     }
