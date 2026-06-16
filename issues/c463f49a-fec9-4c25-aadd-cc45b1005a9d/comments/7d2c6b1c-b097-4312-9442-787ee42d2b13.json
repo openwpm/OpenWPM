@@ -1,0 +1,10 @@
+{
+  "uuid": "7d2c6b1c-b097-4312-9442-787ee42d2b13",
+  "issue_uuid": "c463f49a-fec9-4c25-aadd-cc45b1005a9d",
+  "author": "claude",
+  "content": "Reshape complete. Pushed scratch bookmark stealth-reshaped (tip 3c9affd0) -> origin. HARD GATE PASSED: jj diff --from stealth-reshaped@origin --to feat/stealth-js-instrument-v2@origin is EMPTY (byte-identical tree). Original feat/stealth-js-instrument-v2 untouched at 0999ffcb. 5 commits master@origin..stealth-reshaped: (1) c1f8f79c docs ADR+design; (2) 456f27dc core instrument + receiver capture + detection/shared-proto tests; (3) 3c63f4be configurable surface + config tests; (4) 3ec08c0e legacy->stealth sweep + sweep tests; (5) 3c9affd0 universal-members flag + test. jj-precommit (isort/black/mypy/ESLint) all PASS on tip. Per-commit sanity: each commit's Python imports clean; commit2 extension builds (stealth.js emitted, xpi created); test_stealth.py collects the correct class subset at each commit (c2=39,c3=48,c4=65,c5=full); fast python-only tests pass per commit (c2 mutual-exclusion, c3 clean_stealth ConfigError, c4 TestStealthRecursiveRejected).",
+  "created_at": "2026-06-16T23:31:07.639849081Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAvX/JIwJ+qGrM6soVgBGdxzMmjp3QnsXfWcIALvPVRKvR/IB4Jko6vLlCkImrBmTVo3CoFv167i34XvgFPrgaAQ=="
+}
