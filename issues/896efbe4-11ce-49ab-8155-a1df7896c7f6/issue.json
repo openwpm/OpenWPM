@@ -3,10 +3,11 @@
   "display_id": 36,
   "title": "Sweep: opt-in flag to capture universal-prototype members",
   "description": "legacy recursive captures inherited Object/Function/Array.prototype members (toString, valueOf, hasOwnProperty...) via its full-chain walk. The legacy->stealth sweep (openwpm/utilities/stealth_settings.py) currently routes these to residue by default (deliberate: wrapping Object.prototype.toString fires the wrapper on every object page-wide for zero tracking signal). Add a researcher opt-in flag (legacy_settings_to_stealth(capture_universal_prototype_members=False) + CLI --capture-universal-members) that, when on, captures them via the same B-prime interface-filtered shared-prototype path (object=Object/Function/Array, receiverInterfaces=reached interfaces) for strict legacy parity. Default off = unchanged (residue). Non-method universal members stay residue regardless. Worker a4f394484edaf173b in flight; lands as a new commit on feat/stealth-js-instrument-v2 (#1154). User decision: this is a researcher knob (give them rope to wrap every toString). the-hater pass after.",
-  "status": "open",
+  "status": "closed",
   "priority": "medium",
   "parent_uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
   "created_by": "claude",
   "created_at": "2026-06-16T21:40:00.644271019Z",
-  "updated_at": "2026-06-16T22:09:08.183416422Z"
+  "updated_at": "2026-06-16T22:09:10.443880168Z",
+  "closed_at": "2026-06-16T22:09:10.443880168Z"
 }
