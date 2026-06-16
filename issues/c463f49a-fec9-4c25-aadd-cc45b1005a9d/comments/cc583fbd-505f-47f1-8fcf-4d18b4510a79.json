@@ -1,0 +1,10 @@
+{
+  "uuid": "cc583fbd-505f-47f1-8fcf-4d18b4510a79",
+  "issue_uuid": "c463f49a-fec9-4c25-aadd-cc45b1005a9d",
+  "author": "claude",
+  "content": "Deviations from the literal 5-commit spec (required for byte-identical tree; the spec enumerated only stealth files but the branch also changed infra/ingestion files): (1) Extension/src/background/javascript-instrument.ts (receiver-column ingestion + stealth content-script wiring) was NOT in any commit's file list -> placed in commit 2 alongside schema.sql/parquet_schema/test_values (the matching receiver-storage change). (2) Extension/src/types/js_instrument_settings.d.ts (generated type) was spec'd for commit 3, but commit2 stealth sources (instrument.ts, settings.ts) import it and the extension would not BUILD at commit 2 without it -> moved the generated d.ts to commit 2; its regenerator (package.json json2ts script + json-schema-to-typescript dep + schema JSON) stays in commit 3. (3) stealth.js ignore entries (.dockerignore, Extension/.gitignore, Extension/eslint.config.mjs) + .pre-commit-config.yaml extension-eslint hook -> commit 2. (4) Firefox-downgrade trio (scripts/install-firefox.sh 151->150, deploy_firefox.py -remote-allow-system-access removal, test/test_profile.py) is unrelated env infra with no feature home -> placed in commit 2. No test classes had to be relocated: verified shared-prototype capture classes (commit 2) use hardcoded stealth_js_instrument_settings, not the sweep import. test_stealth.py intermediate commits = final file minus later-commit class blocks; the stealth_settings import (commit4 module) stripped from commits 2-3 and clean_stealth import stripped from commit 2, restored where the module exists.",
+  "created_at": "2026-06-16T23:31:34.221542055Z",
+  "kind": "decision",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAi73B/ld8Y1vH/1kQLAAS6LUnvRWn/9ILvSKjZ2/baqyo3SIi9u5h7SKCFjRkUppvtgvPLcPFUyppmoZCXElCCw=="
+}
