@@ -150,13 +150,19 @@ class GetCommand(BaseCommand):
 def _check_js_instrumentation_status(webdriver: Firefox, command: BaseCommand) -> None:
     try:
         error = webdriver.execute_script(
-            "var e = document.documentElement.getAttribute("
-            "'data-openwpm-instrument-error');"
-            "document.documentElement.removeAttribute("
-            "'data-openwpm-instrument-error');"
+            "var el = document && document.documentElement;"
+            "if (!el) return null;"
+            "var e = el.getAttribute('data-openwpm-instrument-error');"
+            "el.removeAttribute('data-openwpm-instrument-error');"
             "return e;"
         )
-    except WebDriverException:
+    except WebDriverException as exc:
+        logger.warning(
+            "BROWSER %i: could not check JS instrumentation status; "
+            "the probe failed to run: %s",
+            command.browser_id,
+            exc,
+        )
         return
     if error:
         raise CommandExecutionError(f"JS instrumentation failed for {error}", command)

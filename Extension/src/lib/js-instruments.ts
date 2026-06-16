@@ -773,7 +773,11 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
             `${item.instrumentedName}: ${message}`,
           );
         } catch {
-          // documentElement unwritable; probe will see nothing.
+          // documentElement unwritable; the probe will see nothing.
+          console.warn(
+            "OpenWPM: could not record instrument failure on the DOM; " +
+              "the instrument-status probe will not observe this failure.",
+          );
         }
         return;
       }
