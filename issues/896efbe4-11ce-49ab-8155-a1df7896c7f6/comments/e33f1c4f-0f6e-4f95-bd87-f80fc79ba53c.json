@@ -1,0 +1,10 @@
+{
+  "uuid": "e33f1c4f-0f6e-4f95-bd87-f80fc79ba53c",
+  "issue_uuid": "896efbe4-11ce-49ab-8155-a1df7896c7f6",
+  "author": "claude",
+  "content": "All 3 findings addressed @ 0999ffcb57b9. Major: runtime crawl test proves navigator.toString captured (receiver=Navigator), div.toString dropped, crawl completes (inLog reentrancy guard holds). Minor: Function now gated consistently (FAIL-before/PASS-after). Minor: stale comments fixed. Re-verified via the runtime test + FAIL-before/PASS-after (no further hater needed — that IS the re-verification). Clearing needs-adversarial-review.",
+  "created_at": "2026-06-16T22:09:05.985818543Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABArLJO4i5/yFuPCvb6Nj4AhwD/waBxMg3c+L+q4wTa6G7ozfEHjLr3NkVBZBhcYiIYYNWMwMIReMNLzJswpP1IAg=="
+}
