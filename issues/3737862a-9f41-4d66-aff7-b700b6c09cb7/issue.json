@@ -7,8 +7,9 @@
   "priority": "high",
   "created_by": "claude",
   "created_at": "2026-06-16T21:51:50.314504910Z",
-  "updated_at": "2026-06-16T21:51:52.323086747Z",
+  "updated_at": "2026-06-16T21:51:54.374403854Z",
   "labels": [
-    "bug"
+    "bug",
+    "needs-adversarial-review"
   ]
 }
