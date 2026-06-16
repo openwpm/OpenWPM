@@ -1,0 +1,11 @@
+{
+  "uuid": "3737862a-9f41-4d66-aff7-b700b6c09cb7",
+  "display_id": 37,
+  "title": "Harden #1173 instrument-failure probe: null-safe + surface (don't swallow) probe failures [Copilot]",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nCopilot review on PR #1173 (fix/instrument-failure-propagation): _check_js_instrumentation_status in browser_commands.py does 'except WebDriverException: return', so if the probe execute_script throws (Selenium wraps JS errors incl. document.documentElement null), it silently returns and GetCommand is recorded ok -- a fail-OPEN path contradicting the PR's fatal-on-failure intent. Mirror gap on the extension side: js-instruments.ts swallows setAttribute failure ('documentElement unwritable; probe will see nothing'). PART 1 (this issue, no-downside, user-approved): (a) null-guard the probe JS (return null if no document.documentElement); (b) on WebDriverException, LOG a warning (don't silently return); (c) extension side: log the setAttribute-failure instead of silent swallow. STAY fail-open (log + continue) -- do NOT raise/fail-closed (deferred by user) and do NOT redesign the DOM-attribute channel (accepted limitation until full-duplex sockets). Keep existing fatal-on-failure behavior intact (test_failure_prevents_measurement must still pass). Lands on fix/instrument-failure-propagation.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-16T21:51:50.314504910Z",
+  "updated_at": "2026-06-16T21:51:50.314504910Z"
+}
