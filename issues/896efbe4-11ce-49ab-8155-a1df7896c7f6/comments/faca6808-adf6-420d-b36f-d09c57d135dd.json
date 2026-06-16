@@ -1,0 +1,10 @@
+{
+  "uuid": "faca6808-adf6-420d-b36f-d09c57d135dd",
+  "issue_uuid": "896efbe4-11ce-49ab-8155-a1df7896c7f6",
+  "author": "claude",
+  "content": "Implementation landed on feat/stealth-js-instrument-v2 @ 708eb53e (flag --capture-universal-members, default off; new commit on top). Tests flag-off/on pass, docs updated. needs-adversarial-review label STAYS until the-hater verdict is clean/addressed.",
+  "created_at": "2026-06-16T21:46:41.440511873Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABABppdg/Q5VavmYyaZIPyY5Tu/EXpRdZ1GaoATq0HxDcaW2R+3ekIvMfjrW8z4tXD1uRujEHEbJAHqNMokuR2CDw=="
+}
