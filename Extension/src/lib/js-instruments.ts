@@ -757,11 +757,28 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     // More details about how this function is invoked are in
     // content/javascript-instrument-content-scope.ts
     JSInstrumentRequests.forEach(function (item) {
-      instrumentObject(
-        eval(item.object),
-        item.instrumentedName,
-        item.logSettings,
-      );
+      // Resolve the target object. Some configured objects don't exist in
+      // every scope (e.g. Worker-only globals on a window), in which case
+      // eval throws. Catch per-request so one bad target doesn't abort
+      // instrumentation of all subsequent requests (issue #1171).
+      let targetObject;
+      try {
+        targetObject = eval(item.object);
+      } catch (error) {
+        console.warn(
+          `OpenWPM: Could not resolve instrument target '${item.object}', skipping:`,
+          error,
+        );
+        return;
+      }
+      try {
+        instrumentObject(targetObject, item.instrumentedName, item.logSettings);
+      } catch (error) {
+        logErrorToConsole(error, {
+          object: item.object,
+          instrumentedName: item.instrumentedName,
+        });
+      }
     });
   }
 

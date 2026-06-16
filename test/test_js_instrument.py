@@ -394,3 +394,32 @@ class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
             expected_method_calls=self.METHOD_CALLS,
             expected_gets_and_sets=self.GETS_AND_SETS,
         )
+
+
+class TestJSInstrumentRequestAfterFailingTarget(OpenWPMJSTest):
+    # Regression test for issue #1171: a request whose `object` string fails
+    # to evaluate (e.g. a Worker-only global configured for a window scope)
+    # must not abort instrumentation of subsequent requests. Here the valid
+    # `window.test` object follows a failing target and must still be
+    # instrumented.
+
+    GETS_AND_SETS = {
+        ("window.test.prop1", "get", "default1"),
+    }
+
+    METHOD_CALLS: Set[Tuple[str, str, str]] = set()
+
+    TEST_PAGE = "instrument_request_after_failing_target.html"
+
+    def test_instrument_object(self):
+        """A failing instrument target must not abort subsequent requests."""
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        top_url = f"{self.server.base}/js_instrument/{self.TEST_PAGE}"
+        self._check_calls(
+            db=db,
+            symbol_prefix="",
+            doc_url=top_url,
+            top_url=top_url,
+            expected_method_calls=self.METHOD_CALLS,
+            expected_gets_and_sets=self.GETS_AND_SETS,
+        )

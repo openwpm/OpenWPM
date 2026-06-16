@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for JS Instrument - request after a failing target (issue #1171)</title>
+  </head>
+  <body>
+    <h3>Test page for JS Instrument - request after a failing target</h3>
+    <p>
+      This page passes a list of instrumentation requests where the first
+      request's `object` string fails to evaluate (it references a global that
+      does not exist, mimicking Worker-only globals configured for a window
+      scope). The subsequent request targets a valid object. A correct
+      implementation must still instrument the valid object even though the
+      earlier request threw.
+      <br />
+      NOTE: The platform config option `manager_params.testing` must be set to
+      True otherwise the instrumentJS method won't be exposed to this test
+      script.
+    </p>
+    <script type="text/javascript" , src="./utils.js"></script>
+    <script type="text/javascript">
+      // A valid object to be instrumented *after* a failing target.
+      window.test = {};
+      window.test.prop1 = "default1";
+
+      function interactWithTestObjects() {
+        // Trigger a get on the property of the valid object.
+        console.log("window.test.prop1", window.test.prop1);
+      }
+
+      console.log("Instrumenting a failing target followed by a valid one!");
+      // `object` values are strings; the real instrumentJS path eval()s them.
+      window.instrumentJS([
+        {
+          // This global does not exist on window -> eval throws.
+          object: "window['DoesNotExistGlobal'].prototype",
+          instrumentedName: "DoesNotExistGlobal",
+          logSettings: getLogSettings({
+            propertiesToInstrument: ["someProp"],
+          }),
+        },
+        {
+          object: "window.test",
+          instrumentedName: "window.test",
+          logSettings: getLogSettings({
+            propertiesToInstrument: ["prop1"],
+          }),
+        },
+      ]);
+
+      interactWithTestObjects();
+    </script>
+  </body>
+</html>
