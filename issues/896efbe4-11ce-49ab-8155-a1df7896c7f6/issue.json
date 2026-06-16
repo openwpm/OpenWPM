@@ -8,5 +8,8 @@
   "parent_uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
   "created_by": "claude",
   "created_at": "2026-06-16T21:40:00.644271019Z",
-  "updated_at": "2026-06-16T21:40:00.644271019Z"
+  "updated_at": "2026-06-16T21:43:29.647283761Z",
+  "labels": [
+    "needs-adversarial-review"
+  ]
 }
