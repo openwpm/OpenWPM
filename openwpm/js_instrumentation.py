@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Any, Dict, List
 
@@ -6,9 +7,27 @@ import jsonschema
 
 from .errors import ConfigError
 
+logger = logging.getLogger("openwpm")
+
+# Members the stealth default leaves unwrapped, with why.
+STEALTH_UNWRAPPED_MEMBERS = {
+    ("Navigator", "sendBeacon"): (
+        "wrapping it drops beacons a page sends from pagehide while its process "
+        "shuts down (a closed tab or popup, a removed or cross-process-navigated "
+        "frame), which the site can notice. http_instrument records the beacon "
+        "request including its body, and callstack_instrument, once #1178 "
+        "restores it, its JavaScript origin"
+    ),
+}
+# The global holding an instance of an interface, one prototype below it.
+_STEALTH_INSTANCE_GLOBALS = {"Navigator": "navigator"}
+
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
     curdir, os.pardir, "schemas", "js_instrument_settings.schema.json"
+)
+stealth_schema_path = os.path.join(
+    curdir, os.pardir, "schemas", "stealth_js_instrument_settings.schema.json"
 )
 
 list_log_settings = [
@@ -27,18 +46,30 @@ def _validate(python_list_to_validate):
     with open(schema_path, "r") as f:
         schema = json.loads(f.read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
-    # Check properties to instrument and excluded properties don't collide
-    for setting in python_list_to_validate:
-        propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
-        if propertiesToInstrument is not None:
-            propertiesToInstrument = set(propertiesToInstrument)
-            excludedProperties = set(setting["logSettings"]["excludedProperties"])
-            if len(propertiesToInstrument.intersection(excludedProperties)) != 0:
-                raise ValueError(f"excludedProperties and \
-                    propertiesToInstrument collide. This \
-                    may have occurred after a merge. \
-                    Setting with collision: {setting}.")
+    _check_collisions(python_list_to_validate)
     return True
+
+
+def _check_collisions(settings: List[Dict[str, Any]]) -> None:
+    """Properties to instrument and excluded properties must not collide."""
+    for setting in settings:
+        propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
+        if propertiesToInstrument is None:
+            continue
+        # Stealth settings may also name members as {depth, propertyNames}; the
+        # schema, validated first, guarantees propertyNames.
+        instrumented = set()
+        for entry in propertiesToInstrument:
+            if isinstance(entry, str):
+                instrumented.add(entry)
+            else:
+                instrumented.update(entry["propertyNames"])
+        excludedProperties = set(setting["logSettings"]["excludedProperties"])
+        if instrumented & excludedProperties:
+            raise ValueError(f"excludedProperties and \
+                propertiesToInstrument collide. This \
+                may have occurred after a merge. \
+                Setting with collision: {setting}.")
 
 
 def _merge_settings(python_list):
@@ -260,3 +291,88 @@ def clean_js_instrumentation_settings(
     settings = _merge_settings(settings)
     _validate(settings)
     return settings
+
+
+def clean_stealth_js_instrumentation_settings(
+    user_requested_settings: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Validate a custom stealth instrumentation surface against
+    ``schemas/stealth_js_instrument_settings.schema.json``.
+
+    Unlike legacy settings, ``object`` is a bare global name (e.g.
+    ``"Navigator"``) and no shortcut is expanded, so the list is returned
+    unchanged.
+    """
+    if not isinstance(user_requested_settings, list):
+        raise TypeError(
+            "stealth_js_instrument_settings must be a list. "
+            f"Received {user_requested_settings}"
+        )
+    with open(stealth_schema_path, "r") as f:
+        schema = json.load(f)
+    errors = sorted(
+        jsonschema.Draft7Validator(schema).iter_errors(user_requested_settings),
+        key=lambda e: [(isinstance(p, str), p) for p in e.absolute_path],
+    )
+    if errors:
+        raise ConfigError("\n".join(map(_stealth_schema_error, errors)))
+    try:
+        _check_collisions(user_requested_settings)
+    except ValueError as err:
+        raise ConfigError(
+            f"stealth_js_instrument_settings failed validation: {err}"
+        ) from err
+    for (interface, member), reason in STEALTH_UNWRAPPED_MEMBERS.items():
+        if _stealth_settings_wrap(user_requested_settings, interface, member):
+            logger.warning(
+                "stealth_js_instrument_settings wraps %s.%s: %s.",
+                interface,
+                member,
+                reason,
+            )
+    return user_requested_settings
+
+
+def _stealth_schema_error(err: jsonschema.ValidationError) -> str:
+    where = "stealth_js_instrument_settings" + "".join(
+        f"[{p}]" if isinstance(p, int) else f".{p}" for p in err.absolute_path
+    )
+    if err.validator == "additionalProperties":
+        unknown = sorted(set(err.instance) - set(err.schema["properties"]))
+        noun = "field" if len(unknown) == 1 else "fields"
+        problem = f"unknown {noun} {', '.join(map(repr, unknown))}"
+    elif err.validator == "pattern" and where.endswith(".object"):
+        problem = f"{err.instance!r} is not a bare global name like 'Navigator'"
+    else:
+        problem = err.message
+    return f"{where}: {problem}"
+
+
+def _stealth_settings_wrap(
+    settings: List[Dict[str, Any]], interface: str, member: str
+) -> bool:
+    """Whether an entry instruments ``interface.prototype[member]``."""
+    for entry in settings:
+        # Prototypes between the entry's root and ``interface.prototype``.
+        if entry.get("object") == interface:
+            owner = 0
+        elif entry.get("object") == _STEALTH_INSTANCE_GLOBALS.get(interface):
+            owner = 1
+        else:
+            continue
+        log_settings = entry.get("logSettings", {})
+        requested = log_settings.get("propertiesToInstrument") or []
+        if not requested:
+            if entry.get("depth", 0) >= owner and member not in log_settings.get(
+                "excludedProperties", []
+            ):
+                return True
+            continue
+        for item in requested:
+            if isinstance(item, str):
+                depth, names = 0, [item]
+            else:
+                depth, names = item.get("depth", 0), item.get("propertyNames", [])
+            if depth == owner and member in names:
+                return True
+    return False
