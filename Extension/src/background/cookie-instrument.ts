@@ -16,7 +16,7 @@ export const transformCookieObjectToMatchOpenWPMSchema = (cookie: Cookie) => {
   const expiryTime = cookie.expirationDate; // returns seconds
   let expiryTimeString;
   const maxInt64 = 9223372036854776000;
-  if (expiryTime === undefined || expiryTime === maxInt64) {
+  if (!expiryTime || expiryTime === maxInt64) {
     expiryTimeString = "9999-12-31T21:59:59.000Z";
   } else {
     const expiryTimeDate = new Date(expiryTime * 1000); // requires milliseconds

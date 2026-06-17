@@ -2,17 +2,15 @@ export function encode_utf8(s: string) {
   return unescape(encodeURIComponent(s));
 }
 
-export const escapeString = function (str: any) {
+export const escapeString = function (str: unknown): string {
   // Convert to string if necessary
-  if (typeof str !== "string") {
-    str = String(str);
-  }
+  const asString = typeof str === "string" ? str : String(str);
 
-  return encode_utf8(str);
+  return encode_utf8(asString);
 };
 
 export const escapeUrl = function (
-  url: string,
+  url: string | undefined,
   stripDataUrlData: boolean = true,
 ) {
   url = escapeString(url);

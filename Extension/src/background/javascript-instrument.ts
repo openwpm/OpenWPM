@@ -1,9 +1,24 @@
 import MessageSender = browser.runtime.MessageSender;
+import { DataReceiver } from "../lib/data-receiver";
 import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { boolToInt, escapeString, escapeUrl } from "../lib/string-utils";
 import { JavascriptOperation } from "../schema";
-import { JSInstrumentRequest } from "../lib/js-instruments";
+import {
+  JSInstrumentRequest,
+  JSLogMessageContent,
+} from "../lib/js-instruments";
+
+/**
+ * Message forwarded from the content script to the background page for each
+ * instrumented call/value observation. The content script stamps `timeStamp`
+ * before forwarding, so it is always present here.
+ */
+interface JsInstrumentationMessage {
+  namespace?: string;
+  type?: string;
+  data: JSLogMessageContent & { timeStamp: string };
+}
 
 export class JavascriptInstrument {
   /**
@@ -13,13 +28,17 @@ export class JavascriptInstrument {
    * @param data
    * @param sender
    */
-  private static processCallsAndValues(data, sender: MessageSender) {
+  private static processCallsAndValues(
+    data: JSLogMessageContent & { timeStamp: string },
+    sender: MessageSender,
+  ) {
+    const tab = sender.tab;
     const update = {} as JavascriptOperation;
     update.extension_session_uuid = extensionSessionUuid;
     update.event_ordinal = incrementedEventOrdinal();
     update.page_scoped_event_ordinal = data.ordinal;
-    update.window_id = sender.tab.windowId;
-    update.tab_id = sender.tab.id;
+    update.window_id = tab?.windowId;
+    update.tab_id = tab?.id;
     update.frame_id = sender.frameId;
     update.script_url = escapeUrl(data.scriptUrl);
     update.script_line = escapeString(data.scriptLine);
@@ -31,26 +50,29 @@ export class JavascriptInstrument {
     update.operation = escapeString(data.operation);
     update.value = escapeString(data.value);
     update.time_stamp = data.timeStamp;
-    update.incognito = boolToInt(sender.tab.incognito);
+    update.incognito = boolToInt(tab?.incognito ?? false);
 
     // document_url is the current frame's document href
     // top_level_url is the top-level frame's document href
     update.document_url = escapeUrl(sender.url);
-    update.top_level_url = escapeUrl(sender.tab.url);
+    update.top_level_url = escapeUrl(tab?.url);
 
-    if (data.operation === "call" && data.args.length > 0) {
+    if (data.operation === "call" && data.args && data.args.length > 0) {
       update.arguments = escapeString(JSON.stringify(data.args));
     }
 
     return update;
   }
-  private readonly dataReceiver;
-  private onMessageListener;
+  private readonly dataReceiver: DataReceiver;
+  private onMessageListener?: (
+    message: JsInstrumentationMessage,
+    sender: MessageSender,
+  ) => void;
   private configured: boolean = false;
   private pendingRecords: JavascriptOperation[] = [];
-  private crawlID;
+  private crawlID?: number;
 
-  constructor(dataReceiver) {
+  constructor(dataReceiver: DataReceiver) {
     this.dataReceiver = dataReceiver;
   }
 
@@ -58,7 +80,10 @@ export class JavascriptInstrument {
    * Start listening for messages from page/content/background scripts injected to instrument JavaScript APIs
    */
   public listen() {
-    this.onMessageListener = (message, sender) => {
+    this.onMessageListener = (
+      message: JsInstrumentationMessage,
+      sender: MessageSender,
+    ) => {
       if (
         message.namespace &&
         message.namespace === "javascript-instrumentation"
@@ -76,7 +101,10 @@ export class JavascriptInstrument {
    * @param message
    * @param sender
    */
-  public handleJsInstrumentationMessage(message, sender: MessageSender) {
+  public handleJsInstrumentationMessage(
+    message: JsInstrumentationMessage,
+    sender: MessageSender,
+  ) {
     switch (message.type) {
       case "logCall":
       case "logValue": {
@@ -102,7 +130,7 @@ export class JavascriptInstrument {
    *
    * @param crawlID
    */
-  public run(crawlID) {
+  public run(crawlID: number) {
     if (!this.onMessageListener) {
       this.listen();
     }

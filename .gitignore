@@ -130,3 +130,13 @@ HATER.md
 #   .claude/settings.json         — Claude Code project settings
 #   .claude/settings.local.json is per-developer, ignore separately if needed
 # === End crosslink managed ===
+
+# Crosslink machine-local runtime state not covered by the managed block above.
+# Mirrors .crosslink/.gitignore so these are never committed from any branch
+# (the inner .gitignore isn't present on every branch in a stacked workflow).
+.crosslink/.active-issue
+.crosslink/.last-hydrated-ref
+.crosslink/.promoted-uuids
+.crosslink/promotion-log.json
+.crosslink/hub-v3-shadow-stats.json
+.crosslink/sentinel.log
