@@ -20,10 +20,11 @@ These tests:
 """
 
 import json
+import logging
 import sqlite3
 import typing
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 from selenium.webdriver import Firefox
@@ -31,12 +32,25 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from openwpm.command_sequence import CommandSequence
 from openwpm.commands.types import BaseCommand
-from openwpm.config import BrowserParams, ManagerParams, ManagerParamsInternal
+from openwpm.config import (
+    BrowserParams,
+    ManagerParams,
+    ManagerParamsInternal,
+    validate_browser_params,
+)
+from openwpm.errors import ConfigError
+from openwpm.js_instrumentation import clean_stealth_js_instrumentation_settings
 from openwpm.socket_interface import ClientSocket
 from openwpm.storage.sql_provider import SQLiteStorageProvider
 from openwpm.storage.storage_providers import TableName
 from openwpm.task_manager import TaskManager
-from openwpm.utilities import db_utils
+from openwpm.utilities import db_utils, js_settings_migrator
+from openwpm.utilities.js_settings_migrator import (
+    UntranslatedEntry,
+    _launch_browser,
+    legacy_settings_to_stealth,
+)
+from openwpm.utilities.platform_utils import get_firefox_binary_path
 
 from .utilities import ServerUrls
 
@@ -69,13 +83,19 @@ WINDOW_NAME_PAGE = "/stealth_window_name.html"
 # uninstrumented run for drift. See TestStealthErrorDrift.
 ERROR_DRIFT_PAGE = "/stealth_error_drift.html"
 PREVENT_SETS_PAGE = "/stealth_prevent_sets.html"
-HONEY_PROPS_PAGE = "/stealth_honey_props.html"
+NON_EXISTING_PROPS_PAGE = "/stealth_non_existing_props.html"
 # Calls an instrumented method (EventTarget.addEventListener) with a function as
 # an argument, so the recorded ``arguments`` can be checked for whether the
 # function was serialized as its source string or as the placeholder "FUNCTION".
 FUNCTION_ARG_PAGE = "/stealth_function_arg.html"
-
-
+# Exercises a broad slice of the instrumented surface (navigator, screen,
+# document, window, Storage, canvas, audio nodes/contexts, RTC) so the symbol
+# strings emitted by legacy and stealth can be diffed for drop-in parity.
+SYMBOL_PROBE_PAGE = "/stealth_symbol_probe.html"
+# Touches navigator AND a slice of its nested interface objects (permissions,
+# geolocation, mediaCapabilities, …) so a recursive legacy config and the flat
+# stealth config the sweep generates from it can be diffed for surface parity.
+RECURSIVE_NAV_PROBE_PAGE = "/stealth_recursive_navigator_probe.html"
 # Calls EventTarget.prototype.addEventListener on two different receiver
 # interfaces (HTMLDivElement and XMLHttpRequest), each tampering with its own
 # `constructor`, to exercise interface-attributed shared-prototype capture: the
@@ -1394,15 +1414,30 @@ PREVENT_SETS_SETTINGS: List[Dict] = [
     },
 ]
 
-# nonExisting + logFunctionGets on Navigator (a honey property).
-HONEY_SETTINGS: List[Dict] = [
+# nonExisting + logFunctionGets on Navigator (a non-existing property).
+NON_EXISTING_SETTINGS: List[Dict] = [
     {
         "object": "Navigator",
         "instrumentedName": "Navigator",
         "depth": 0,
         "logSettings": _log_settings(
-            nonExistingPropertiesToInstrument=["openwpmHoneyProp"],
+            nonExistingPropertiesToInstrument=["openwpmNonExistingProp"],
             logFunctionGets=True,
+        ),
+    },
+]
+
+# recursive/depth: a non-existing object on Navigator instrumented recursively. Lazy
+# recursion descends into the object the getter returns at access time.
+RECURSIVE_SETTINGS: List[Dict] = [
+    {
+        "object": "Navigator",
+        "instrumentedName": "Recursive",
+        "depth": 0,
+        "logSettings": _log_settings(
+            nonExistingPropertiesToInstrument=["openwpmRecObj"],
+            recursive=True,
+            depth=3,
         ),
     },
 ]
@@ -1481,34 +1516,34 @@ class TestStealthLogSettings:
     def test_non_existing_property_captured_and_native(
         self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
-        """A honey property is captured (get/set) and looks native.
+        """A non-existing property is captured (get/set) and looks native.
 
         nonExistingPropertiesToInstrument synthesizes a native-looking accessor
         for a name absent from Navigator.prototype, so get/set on it are
         recorded under the javascript table.
         """
-        data_dir = tmp_path_factory.mktemp("honey")
+        data_dir = tmp_path_factory.mktemp("non_existing")
         db_path = _run_page(
-            _params_with(data_dir, HONEY_SETTINGS),
-            _page_url(server, HONEY_PROPS_PAGE),
+            _params_with(data_dir, NON_EXISTING_SETTINGS),
+            _page_url(server, NON_EXISTING_PROPS_PAGE),
         )
         sets = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
-            ("Navigator.openwpmHoneyProp", "set"),
+            ("Navigator.openwpmNonExistingProp", "set"),
         )
         assert sets[0][0] > 0, (
             "nonExistingPropertiesToInstrument did not capture a set on the "
-            "synthesized honey property"
+            "synthesized non-existing property"
         )
         gets = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
-            ("Navigator.openwpmHoneyProp", "get"),
+            ("Navigator.openwpmNonExistingProp", "get"),
         )
         assert gets[0][0] > 0, (
             "nonExistingPropertiesToInstrument did not capture a get on the "
-            "synthesized honey property"
+            "synthesized non-existing property"
         )
 
     def test_log_function_gets_emits_get_function(
@@ -1516,44 +1551,139 @@ class TestStealthLogSettings:
     ) -> None:
         """logFunctionGets records get(function) when the value is a function.
 
-        After the page assigns a function to the honey property, reading it
-        WITHOUT calling must emit a get(function) row (and no plain get for the
+        After the page assigns a function to the non-existing property, reading
+        it WITHOUT calling must emit a get(function) row (and no plain get for the
         function value), matching legacy.
         """
         data_dir = tmp_path_factory.mktemp("fn_gets")
         db_path = _run_page(
-            _params_with(data_dir, HONEY_SETTINGS),
-            _page_url(server, HONEY_PROPS_PAGE),
+            _params_with(data_dir, NON_EXISTING_SETTINGS),
+            _page_url(server, NON_EXISTING_PROPS_PAGE),
         )
         fn_gets = db_utils.query_db(
             db_path,
             "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
-            ("Navigator.openwpmHoneyProp", "get(function)"),
+            ("Navigator.openwpmNonExistingProp", "get(function)"),
         )
         assert fn_gets[0][0] > 0, (
-            "logFunctionGets did not record a get(function) row when the honey "
-            "property held a function value"
+            "logFunctionGets did not record a get(function) row when the "
+            "non-existing property held a function value"
         )
 
-    def test_honey_property_stays_native(
+    def test_non_existing_property_stays_native(
         self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
-        """The synthesized honey accessor reports [native code]."""
-        data_dir = tmp_path_factory.mktemp("honey_detect")
+        """The synthesized non-existing accessor reports [native code]."""
+        data_dir = tmp_path_factory.mktemp("non_existing_detect")
         results = _probe_results(
-            _params_with(data_dir, HONEY_SETTINGS),
-            _page_url(server, HONEY_PROPS_PAGE),
+            _params_with(data_dir, NON_EXISTING_SETTINGS),
+            _page_url(server, NON_EXISTING_PROPS_PAGE),
         )
-        assert results, "no honey-property probe results collected"
+        assert results, "no non-existing-property probe results collected"
         assert results.get("value_roundtrips") is True
         assert results.get("function_roundtrips") is True
-        assert results.get("honey_getter_native") is True, (
-            "synthesized honey getter does not report [native code] "
+        assert results.get("non_existing_getter_native") is True, (
+            "synthesized non-existing getter does not report [native code] "
             f"(probe error: {results.get('descriptor_error')})"
         )
         assert (
-            results.get("honey_setter_native") is True
-        ), "synthesized honey setter does not report [native code]"
+            results.get("non_existing_setter_native") is True
+        ), "synthesized non-existing setter does not report [native code]"
+
+
+# --------------------------------------------------------------------------- #
+# Recursive is the ONE legacy logSetting the stealth instrument cannot support.
+# It requires defining accessors on the in-page Object/Array instances returned
+# by instrumented getters, which Firefox's Xray wrappers forbid for stealth's
+# isolated compartment (``js/xpconnect/wrappers/XrayWrapper.cpp``,
+# ``JSXrayTraits::defineProperty``); waiving to ``wrappedJSObject`` yields a
+# different object identity so page-side reads never see the instrumentation.
+# This is fundamental to the isolation that makes stealth undetectable, so a
+# stealth surface requesting recursive is rejected at config-validation time
+# rather than silently crashing the page at runtime. Legacy ``js_instrument``
+# still supports recursive because it runs in the page compartment. See
+# ``docs/developers/Stealth-Instrumentation.md`` (Limitations).
+# --------------------------------------------------------------------------- #
+class TestStealthRecursiveRejected:
+    """Recursive under stealth is rejected with an actionable ConfigError."""
+
+    @pytest.mark.pyonly
+    def test_recursive_rejected_at_config(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """A stealth surface requesting recursive is rejected at config time."""
+        data_dir = tmp_path_factory.mktemp("recursive")
+        _, browser_params = _params_with(data_dir, RECURSIVE_SETTINGS)
+        with pytest.raises(ConfigError, match="[Rr]ecursive"):
+            validate_browser_params(browser_params[0])
+
+    @pytest.mark.pyonly
+    def test_recursive_rejection_points_at_js_instrument(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """The recursive rejection points users at js_instrument as the remedy."""
+        data_dir = tmp_path_factory.mktemp("recursive_detect")
+        _, browser_params = _params_with(data_dir, RECURSIVE_SETTINGS)
+        with pytest.raises(ConfigError, match="js_instrument"):
+            validate_browser_params(browser_params[0])
+
+
+# --------------------------------------------------------------------------- #
+# Legacy-shaped settings pointed at stealth: a researcher who flips a custom
+# legacy ``js_instrument_settings`` config over to ``stealth_js_instrument_settings``
+# would otherwise hit a cryptic ``jsonschema.ValidationError`` with no guidance.
+# ``clean_stealth_js_instrumentation_settings`` wraps that failure in a
+# ``ConfigError`` that explains the stealth-shaped form and points at the
+# ``openwpm.utilities.js_settings_migrator`` sweep utility for translating a legacy
+# config — mirroring the recursive-rejection ConfigError in ``openwpm/config.py``.
+# --------------------------------------------------------------------------- #
+class TestStealthLegacyShapedSettingsHint:
+    """Legacy-shaped stealth settings fail with a sweep-utility pointer."""
+
+    @pytest.mark.pyonly
+    def test_legacy_collection_string_points_at_sweep(self) -> None:
+        """A legacy collection-name string is rejected with the sweep hint."""
+        legacy_collection: List[Any] = ["collection_fingerprinting"]
+        with pytest.raises(ConfigError, match="js_settings_migrator"):
+            clean_stealth_js_instrumentation_settings(legacy_collection)
+
+    @pytest.mark.pyonly
+    def test_legacy_shorthand_dict_points_at_sweep(self) -> None:
+        """A legacy dotted-path shorthand dict is rejected with the sweep hint."""
+        legacy_shorthand: List[Any] = [{"window.navigator": ["userAgent"]}]
+        with pytest.raises(ConfigError, match="js_settings_migrator"):
+            clean_stealth_js_instrumentation_settings(legacy_shorthand)
+
+    @pytest.mark.pyonly
+    def test_valid_stealth_settings_pass_unchanged(self) -> None:
+        """A valid stealth-shaped config still validates and passes through."""
+        result = clean_stealth_js_instrumentation_settings(CUSTOM_STEALTH_SETTINGS)
+        assert result == CUSTOM_STEALTH_SETTINGS
+
+
+# --------------------------------------------------------------------------- #
+# Symbol PARITY: stealth is a drop-in replacement for legacy js_instrument, so
+# the ``symbol`` column it emits must match legacy byte-for-byte. Published
+# OpenWPM fingerprinting analyses query exact symbols (e.g.
+# ``WHERE symbol='window.navigator.userAgent'``); if stealth emitted a
+# different label the query would silently return zero rows. This test runs the
+# SAME probe page through BOTH modes (legacy ``collection_fingerprinting``
+# default and the stealth bundled default) and asserts the DISTINCT symbol SETS
+# match, except for one documented, intentional difference: the audio
+# shared-prototype methods (see DOCUMENTED_SYMBOL_DELTA). Earlier disruption
+# tests used ``symbol LIKE '%toDataURL%'`` (prefix-blind), which is exactly why
+# the Navigator/Screen/document label regression shipped unnoticed — this test
+# pins FULL symbols to close that gap.
+# --------------------------------------------------------------------------- #
+
+
+def _distinct_symbols(db_path: Path) -> set:
+    rows = db_utils.query_db(
+        db_path,
+        "SELECT DISTINCT symbol FROM javascript",
+        as_tuple=True,
+    )
+    return {r[0] for r in rows}
 
 
 def _distinct_symbol_receiver_pairs(db_path: Path) -> set:
@@ -1569,6 +1699,125 @@ def _distinct_symbol_receiver_pairs(db_path: Path) -> set:
         as_tuple=True,
     )
     return {(r[0], r[1]) for r in rows}
+
+
+# The ONLY intentional divergence between legacy and stealth symbols. It is a
+# structural GRANULARITY difference, not a label mismatch, and is documented in
+# docs/developers/Stealth-Instrumentation.md (Limitations).
+#
+# Legacy instruments each AudioNode/BaseAudioContext CHILD prototype over its
+# FULL inherited chain, so a method defined on the shared parent prototype
+# (AudioNode.connect, BaseAudioContext.createGain, ...) is recorded once PER
+# CHILD under that child's name (AnalyserNode.connect, GainNode.connect, ...).
+# Stealth hooks the shared parent prototype exactly ONCE (a deliberate choice
+# that keeps the instrumentation undetectable — re-defining the same shared
+# accessor under several child names is observable), so those methods appear a
+# single time under the parent-prototype label. The captured CALLS are the same;
+# only the symbol LABEL and row multiplicity differ for these shared methods.
+#
+# Symbols legacy emits that stealth does not (shared methods, per-child labels):
+LEGACY_ONLY_AUDIO_SYMBOLS = {
+    "AnalyserNode.connect",
+    "GainNode.connect",
+    "OscillatorNode.connect",
+    "OscillatorNode.disconnect",
+    "AudioContext.createGain",
+    "AudioContext.createOscillator",
+    "AudioContext.sampleRate",
+    "OfflineAudioContext.createAnalyser",
+    "OfflineAudioContext.createGain",
+    "OfflineAudioContext.createOscillator",
+    "OfflineAudioContext.currentTime",
+    "OfflineAudioContext.destination",
+    "OfflineAudioContext.sampleRate",
+}
+# Symbols stealth emits that legacy does not (same shared methods, once, under
+# the shared-prototype label):
+STEALTH_ONLY_AUDIO_SYMBOLS = {
+    "AudioWorkletNode.connect",
+    "AudioWorkletNode.disconnect",
+    "[AudioContext|OfflineAudioContext].createAnalyser",
+    "[AudioContext|OfflineAudioContext].createGain",
+    "[AudioContext|OfflineAudioContext].createOscillator",
+    "[AudioContext|OfflineAudioContext].currentTime",
+    "[AudioContext|OfflineAudioContext].destination",
+    "[AudioContext|OfflineAudioContext].sampleRate",
+}
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthSymbolParity:
+    """Stealth emits the SAME ``symbol`` strings legacy does (drop-in parity)."""
+
+    def test_symbols_match_legacy(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Distinct symbol sets are identical, modulo the documented audio delta.
+
+        Runs the broad symbol probe through legacy (fingerprinting collection)
+        and stealth (bundled default). After removing the documented
+        shared-prototype audio remap, the two symbol sets must be EQUAL — every
+        symbol a published analysis queries (e.g.
+        ``window.navigator.userAgent``, ``window.screen.colorDepth``,
+        ``window.document.cookie``) is emitted identically by both.
+        """
+        url = _page_url(server, SYMBOL_PROBE_PAGE)
+        legacy_db = _run_page(
+            _legacy_params(tmp_path_factory.mktemp("parity_legacy")), url
+        )
+        stealth_db = _run_page(
+            _stealth_params(tmp_path_factory.mktemp("parity_stealth")), url
+        )
+        legacy_syms = _distinct_symbols(legacy_db)
+        stealth_syms = _distinct_symbols(stealth_db)
+        assert legacy_syms, "legacy probe recorded no symbols"
+        assert stealth_syms, "stealth probe recorded no symbols"
+
+        # Strip the one documented, intentional structural difference.
+        legacy_core = legacy_syms - LEGACY_ONLY_AUDIO_SYMBOLS
+        stealth_core = stealth_syms - STEALTH_ONLY_AUDIO_SYMBOLS
+
+        missing_under_stealth = legacy_core - stealth_core
+        extra_under_stealth = stealth_core - legacy_core
+        assert not missing_under_stealth, (
+            "stealth does NOT emit these legacy symbols (drop-in parity broken; "
+            "a query like WHERE symbol='<name>' would silently return zero rows "
+            f"under stealth): {sorted(missing_under_stealth)}"
+        )
+        assert not extra_under_stealth, (
+            "stealth emits symbols legacy does not (unexpected divergence not "
+            f"covered by the documented audio delta): {sorted(extra_under_stealth)}"
+        )
+
+    def test_key_fingerprint_symbols_present_under_stealth(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """The canonical analysis symbols are present verbatim under stealth.
+
+        Pins the exact strings real studies query so a future label regression
+        on any of them fails loudly rather than returning empty result sets.
+        """
+        url = _page_url(server, SYMBOL_PROBE_PAGE)
+        stealth_db = _run_page(
+            _stealth_params(tmp_path_factory.mktemp("parity_keys")), url
+        )
+        symbols = _distinct_symbols(stealth_db)
+        for expected in (
+            "window.navigator.userAgent",
+            "window.navigator.platform",
+            "window.screen.colorDepth",
+            "window.screen.pixelDepth",
+            "window.document.cookie",
+            "window.document.referrer",
+            "window.name",
+            "window.localStorage",
+            "HTMLCanvasElement.toDataURL",
+            "CanvasRenderingContext2D.fillText",
+        ):
+            assert expected in symbols, (
+                f"stealth did not emit the canonical legacy symbol '{expected}' "
+                "— a drop-in query for it would return zero rows"
+            )
 
 
 # --------------------------------------------------------------------------- #
@@ -1691,6 +1940,436 @@ class TestStealthLogFunctionsAsStrings:
         assert not any(FUNCTION_ARG_MARKER in args for args in all_args), (
             "logFunctionsAsStrings:false leaked the function source string "
             f"(found '{FUNCTION_ARG_MARKER}'): {all_args}"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Legacy -> stealth SWEEP parity (openwpm/utilities/js_settings_migrator.py)
+#
+# Recursive instrumentation is rejected under stealth, but the sweep utility
+# mechanically expands a legacy recursive config into an equivalent FLAT,
+# non-recursive stealth config by replaying the legacy descent over a live
+# object graph. This test is the correctness proof: it runs a recursive config
+# under LEGACY (set A of distinct symbols), runs the SAME config through the
+# sweep, runs the generated flat config under STEALTH (set B), and asserts B
+# covers A modulo the documented untranslated entries (plain Object/Array nodes the sweep
+# reports as untranslatable, plus their recursed subtrees, which have no global
+# interface prototype for stealth to hook — the same shared-prototype/plain-node
+# granularity class as the audio delta in TestStealthSymbolParity).
+# --------------------------------------------------------------------------- #
+
+# A legacy recursive surface over navigator reaching one level of nested
+# interface objects (navigator.permissions, .geolocation, …). depth 1 so the
+# descent is bounded and deterministic.
+RECURSIVE_NAV_LEGACY_SETTINGS: List = [
+    {"window.navigator": {"propertiesToInstrument": [], "recursive": True, "depth": 1}},
+]
+
+
+def _legacy_params_with(
+    data_dir: Path, settings: List
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _legacy_params(data_dir)
+    browser_params[0].js_instrument_settings = settings
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthRecursiveSweepParity:
+    """The sweep turns a legacy recursive config into a flat stealth config that
+    covers the same API surface (modulo untranslatable plain-object nodes)."""
+
+    def test_generated_stealth_covers_legacy_surface(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Set B (stealth, swept config) covers set A (legacy, recursive config).
+
+        A and B are the distinct ``symbol`` sets recorded by the SAME probe page
+        under the two modes. The only symbols allowed to be in A but not B are
+        those rooted at a node the sweep flagged untranslatable (a plain
+        Object/Array with no global interface prototype to hook) — the documented,
+        narrow set of untranslated entries.
+        """
+        url = _page_url(server, RECURSIVE_NAV_PROBE_PAGE)
+
+        # Set A: legacy with the recursive config.
+        legacy_db = _run_page(
+            _legacy_params_with(
+                tmp_path_factory.mktemp("sweep_legacy"),
+                RECURSIVE_NAV_LEGACY_SETTINGS,
+            ),
+            url,
+        )
+        legacy_syms = _distinct_symbols(legacy_db)
+        assert legacy_syms, "legacy recursive probe recorded no symbols"
+
+        # Run the sweep on the SAME config to generate the flat stealth config.
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            RECURSIVE_NAV_LEGACY_SETTINGS
+        )
+        assert stealth_settings, "sweep produced no stealth entries"
+        # The sweep must not emit a recursive entry (that would re-trip the
+        # ConfigError) and must validate against the stealth schema.
+        validate_browser_params(
+            _params_with(tmp_path_factory.mktemp("sweep_validate"), stealth_settings)[
+                1
+            ][0]
+        )
+
+        # Set B: stealth with the generated flat config.
+        stealth_db = _run_page(
+            _params_with(tmp_path_factory.mktemp("sweep_stealth"), stealth_settings),
+            url,
+        )
+        stealth_syms = _distinct_symbols(stealth_db)
+        assert stealth_syms, "stealth swept probe recorded no symbols"
+
+        # Drop every legacy symbol the sweep flagged as untranslated: untranslatable
+        # plain-Object/Array nodes (and their recursed subtree), AND inherited
+        # prototype-chain members the depth-0 stealth entry does not cover. These
+        # are the documented, HONESTLY-REPORTED gaps — they are precisely the
+        # symbols that may be in legacy set A but not stealth set B.
+        untranslated_paths = {r.path for r in untranslated}
+
+        def _is_untranslated(symbol: str) -> bool:
+            for path in untranslated_paths:
+                if symbol == path or symbol.startswith(path + "."):
+                    return True
+            return False
+
+        legacy_core = {s for s in legacy_syms if not _is_untranslated(s)}
+
+        # Every translated legacy symbol must be emitted under stealth too.
+        missing_under_stealth = legacy_core - stealth_syms
+        assert not missing_under_stealth, (
+            "the swept stealth config does NOT cover these legacy symbols "
+            "(surface parity broken outside the documented, reported untranslated entries "
+            f"{sorted(untranslated_paths)}): {sorted(missing_under_stealth)}"
+        )
+
+        # CRITICAL honesty guard (regression test for the silent-drop defect):
+        # every legacy symbol stealth does NOT cover MUST appear in the reported
+        # untranslated list. A symbol that is missing-AND-unreported is the exact defect
+        # this test guards against — legacy instruments an inherited member that
+        # the depth-0 stealth entry drops without surfacing it.
+        unreported_drops = (legacy_syms - stealth_syms) - {
+            s for s in legacy_syms if _is_untranslated(s)
+        }
+        assert not unreported_drops, (
+            "these legacy symbols are NOT covered by the swept stealth config AND "
+            "are NOT reported as untranslated (silent drop): "
+            f"{sorted(unreported_drops)}"
+        )
+
+        # Sanity: legacy actually descended into a NESTED interface object and
+        # recorded a property of it (so set A is non-trivial and the parity
+        # assertion above is not vacuous). Legacy suppresses the plain get of an
+        # object-valued property under recursion (it returns the recursed child
+        # without a get row — see instrumentObject in lib/js-instruments.ts), so
+        # the observable evidence of the descent is a SCALAR child property like
+        # ``window.navigator.mimeTypes.length``, which the probe reads.
+        nested_child_syms = {
+            s
+            for s in legacy_core
+            if s.startswith("window.navigator.")
+            and s.count(".") >= 3  # window.navigator.<obj>.<prop>
+        }
+        assert nested_child_syms, (
+            "legacy recorded no nested navigator child property — the recursive "
+            "descent the sweep is meant to flatten did not happen, so the parity "
+            f"check would be vacuous. legacy symbols: {sorted(legacy_core)}"
+        )
+        # Each such nested child symbol legacy recorded must be present under
+        # stealth too (this is the core drop-in guarantee, restated narrowly).
+        assert nested_child_syms <= stealth_syms, (
+            "stealth did not record these nested navigator child properties that "
+            f"legacy recorded: {sorted(nested_child_syms - stealth_syms)}"
+        )
+
+    def test_sweep_reports_plain_array_node_as_untranslatable(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """navigator.languages (an Array) is honestly reported as untranslatable.
+
+        This is the narrow true ceiling: a plain Array/Object node has no global
+        interface prototype for stealth to hook, so the sweep surfaces it rather
+        than silently under-covering.
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            RECURSIVE_NAV_LEGACY_SETTINGS
+        )
+        untranslated_paths = {r.path for r in untranslated}
+        assert "window.navigator.languages" in untranslated_paths, (
+            "the sweep failed to flag the plain-Array navigator.languages node as "
+            f"untranslatable; reported untranslated paths: {sorted(untranslated_paths)}"
+        )
+        # And the reason must name it as an untranslatable plain node, not an
+        # inherited-member untranslated entry.
+        languages_reason = next(
+            r.reason for r in untranslated if r.path == "window.navigator.languages"
+        )
+        assert "Array" in languages_reason, (
+            "navigator.languages untranslated reason should identify it as a plain "
+            f"Array node; got: {languages_reason!r}"
+        )
+        # And it must not have smuggled an Array/Object entry into the output.
+        objects = {e["object"] for e in stealth_settings}
+        assert not (
+            objects & {"Array", "Object"}
+        ), f"sweep emitted an untranslatable Array/Object entry: {objects}"
+
+    def test_sweep_reports_inherited_chain_members_as_untranslated(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Inherited prototype-chain members are reported, not silently dropped.
+
+        Regression test for the silent-drop defect: legacy's
+        ``getPropertyNames(navigator.permissions)`` covers the entire prototype
+        chain (own + inherited), but the flat stealth entry the sweep emits uses
+        ``depth: 0``, covering only ``Permissions.prototype``'s OWN names. The
+        inherited members (``Object.prototype.toString``, …) are therefore NOT
+        instrumented under stealth. The sweep must surface each as an untranslated
+        entry with a clear reason — never drop it silently.
+
+        These inherited members must not be absent from both the stealth config
+        AND the untranslated list: they must appear in the untranslated list with
+        an "inherited"-class reason.
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            RECURSIVE_NAV_LEGACY_SETTINGS
+        )
+        untranslated_by_path = {r.path: r for r in untranslated}
+
+        # navigator.permissions resolves to constructor Permissions, whose
+        # .prototype OWN names are {query, constructor}; everything else legacy
+        # reaches on the instance is inherited (toString, valueOf, hasOwnProperty,
+        # …). Pick toString as a representative inherited member that the probe
+        # page also calls, so the gap is real and observable.
+        inherited_path = "window.navigator.permissions.toString"
+        assert inherited_path in untranslated_by_path, (
+            "the sweep silently dropped the inherited member "
+            f"{inherited_path!r}: it is NOT instrumented under stealth (depth 0 "
+            "covers only Permissions.prototype OWN names) and NOT reported as "
+            f"untranslated. Reported untranslated paths: {sorted(untranslated_by_path)}"
+        )
+
+        # The reason must identify it as an inherited-chain member (distinct from
+        # the untranslatable-plain-node class), and the path must NOT have leaked
+        # into the emitted stealth config (stealth cannot attribute it).
+        reason = untranslated_by_path[inherited_path].reason
+        assert "inherited" in reason.lower(), (
+            f"untranslated reason for {inherited_path} should explain the inherited-"
+            f"chain gap; got: {reason!r}"
+        )
+        emitted_paths = {e["instrumentedName"] for e in stealth_settings}
+        assert inherited_path not in emitted_paths, (
+            "an inherited-chain member must not be emitted as its own stealth "
+            f"entry: {inherited_path}"
+        )
+
+    def test_untranslated_entry_str_pairs_path_and_reason(self) -> None:
+        """``UntranslatedEntry`` renders ``path — reason`` for honest CLI/log output."""
+        entry = UntranslatedEntry(path="window.foo.bar", reason="because reasons")
+        rendered = str(entry)
+        assert "window.foo.bar" in rendered and "because reasons" in rendered
+
+
+# A NARROW legacy request: only navigator.userAgent, nothing else.
+NARROW_NAV_LEGACY_SETTINGS: List = [{"window.navigator": ["userAgent"]}]
+
+
+class TestStealthNarrowSweepCapture:
+    """A NARROW legacy request must migrate to a NARROW stealth entry.
+
+    Under stealth an empty ``propertiesToInstrument`` means "instrument EVERY own
+    member of the resolved prototype". So if the sweep emitted ``[]`` for a leaf
+    entry, a narrow legacy request like ``{"window.navigator": ["userAgent"]}``
+    would silently widen to all ~35 ``Navigator.prototype`` members — a fidelity
+    divergence (over-capture) on a PR whose whole point is faithful drop-in
+    translation. The sweep must instead emit the EXPLICIT set of requested own
+    names.
+    """
+
+    def test_narrow_request_emits_only_requested_own_name(self) -> None:
+        """``{"window.navigator": ["userAgent"]}`` → leaf ``propertiesToInstrument``
+        is exactly ``["userAgent"]`` — NOT ``[]`` (everything) and NOT all 35
+        Navigator.prototype members.
+
+        The leaf entry must list the single requested own name; emitting
+        ``propertiesToInstrument: []`` (everything) would silently widen the
+        request.
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            NARROW_NAV_LEGACY_SETTINGS
+        )
+        nav_entries = [
+            e for e in stealth_settings if e["instrumentedName"] == "window.navigator"
+        ]
+        assert len(nav_entries) == 1, (
+            "expected exactly one leaf stealth entry for window.navigator; got "
+            f"{[e['instrumentedName'] for e in stealth_settings]}"
+        )
+        leaf = nav_entries[0]
+        assert leaf["object"] == "Navigator"
+        props = leaf["logSettings"]["propertiesToInstrument"]
+        assert props == ["userAgent"], (
+            "a narrow legacy request was silently widened: the leaf entry "
+            f"instruments {props!r} instead of exactly ['userAgent']. An empty "
+            "list means 'instrument every own member' under stealth, so [] here "
+            "would over-capture all Navigator.prototype members."
+        )
+
+    def test_everything_request_still_covers_all_own_names(self) -> None:
+        """A legacy "instrument everything" navigator entry covers EXACTLY the
+        complete ``Navigator.prototype`` own-name set — no member dropped.
+
+        The recursive/everything case must NOT change: when legacy reached the
+        node via the "instrument every name" path, ``node["propertyNames"]`` is
+        the full ``getPropertyNames`` chain, so its intersection with the leaf's
+        own names equals the ENTIRE own set. The leaf still instruments every own
+        member — just enumerated explicitly instead of via ``[]``.
+
+        This asserts FULL own-set EQUALITY, not a loose ``len > 5`` / subset
+        check: a regression that dropped some own members while keeping a handful
+        would slip past a size/subset assertion but is a real over-narrowing of
+        the instrument-everything surface. The expected set is computed the same
+        way the sweep does — ``Object.getOwnPropertyNames(Navigator.prototype)``
+        in a clean browser — via an INDEPENDENT walk, so it is a true regression
+        guard rather than a comparison of the sweep against itself.
+        """
+        narrow_settings, _ = legacy_settings_to_stealth(NARROW_NAV_LEGACY_SETTINGS)
+        everything_settings, _ = legacy_settings_to_stealth(
+            [{"window.navigator": {"propertiesToInstrument": []}}]
+        )
+
+        def _nav_props(settings: List[Dict]) -> List[str]:
+            nav = [e for e in settings if e["instrumentedName"] == "window.navigator"]
+            assert len(nav) == 1
+            return nav[0]["logSettings"]["propertiesToInstrument"]
+
+        # Independently compute the complete Navigator.prototype own-name set the
+        # SAME way the sweep resolves stealthOwnNames: Object.getOwnPropertyNames
+        # of the resolved prototype in a clean browser.
+        driver = _launch_browser(get_firefox_binary_path())
+        try:
+            driver.get("about:blank")
+            expected_own = set(
+                driver.execute_script(
+                    "return Object.getOwnPropertyNames(Navigator.prototype);"
+                )
+            )
+        finally:
+            driver.quit()
+        assert "userAgent" in expected_own, (
+            "the independent walk did not resolve Navigator.prototype own names; "
+            f"got: {sorted(expected_own)}"
+        )
+
+        everything_props = _nav_props(everything_settings)
+        # FULL own-set equality: the everything-case leaf must instrument EXACTLY
+        # the complete Navigator.prototype own set — no member dropped, none added.
+        assert set(everything_props) == expected_own, (
+            "the 'instrument everything' navigator entry does not cover EXACTLY "
+            "the complete Navigator.prototype own-name set. Missing: "
+            f"{sorted(expected_own - set(everything_props))}; unexpected extra: "
+            f"{sorted(set(everything_props) - expected_own)}."
+        )
+        # The narrow request's own name must of course be inside that full set.
+        assert set(_nav_props(narrow_settings)).issubset(expected_own), (
+            "the narrow request's own name is not in the complete own-name set; "
+            "the explicit enumeration is inconsistent between the two."
+        )
+        # And the everything-case must be explicit (never the over-broad []).
+        assert everything_props != [], (
+            "the everything-case must enumerate own names explicitly, not emit [] "
+            "(which stealth reads as 'instrument every own member')."
+        )
+
+    def test_absent_member_untranslated_reason_is_not_universal_prototype(self) -> None:
+        """A member GENUINELY ABSENT from the live prototype chain is reported as
+        not-present, NOT as "inherited from a universal/unknown prototype".
+
+        ``addEventListener`` REQUESTED on ``navigator`` has no EventTarget in its
+        live chain (navigator is not an EventTarget), so it is owned by NOTHING on
+        the chain — the walker reports ``owner=None``. (It is requested via
+        ``propertiesToInstrument``, NOT ``nonExistingPropertiesToInstrument``: a
+        non-existing property is intentionally instrumented and so must NOT be
+        reported as untranslated.)
+        The untranslated reason for that absent-member case must say the member is
+        absent from the live object, not conflate it with a universal-prototype
+        member. The reason must say the member is not present on the live prototype
+        chain, never "inherited from None (a universal/unknown prototype)".
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            [{"window.navigator": ["addEventListener"]}]
+        )
+        untranslated_by_path = {r.path: r for r in untranslated}
+        absent_path = "window.navigator.addEventListener"
+        assert absent_path in untranslated_by_path, (
+            "a member absent from the live navigator chain should be reported as "
+            f"untranslated; reported untranslated paths: {sorted(untranslated_by_path)}"
+        )
+        reason = untranslated_by_path[absent_path].reason
+        assert "universal" not in reason.lower(), (
+            "the untranslated reason for a genuinely-absent member must NOT claim it is "
+            f"inherited from a universal/unknown prototype; got: {reason!r}"
+        )
+        assert "None" not in reason, (
+            "the untranslated reason must not surface the bare 'None' owner; got: "
+            f"{reason!r}"
+        )
+        assert "not present" in reason.lower() or "absent" in reason.lower(), (
+            "the untranslated reason should state the member is not present on / absent "
+            f"from the live object's prototype chain; got: {reason!r}"
+        )
+
+    def test_non_existing_property_is_not_reported_as_untranslated(self) -> None:
+        """A non-existing property (``nonExistingPropertiesToInstrument``) is
+        CAPTURED, not reported as untranslated.
+
+        A non-existing property is absent from the live prototype chain BY DESIGN,
+        so the walk reports ``owner=None`` for it. But it is NOT a coverage gap:
+        the emitted leaf entry carries the same ``nonExistingPropertiesToInstrument``,
+        and the stealth instrument synthesizes a native-looking accessor for it
+        (proven by ``test_non_existing_property_captured_and_native``). Reporting
+        it as untranslated would double-classify a captured member as uncovered,
+        lying in the honesty report. It must therefore NOT appear in the
+        untranslated list even though its absent-member branch (``owner is None``)
+        could otherwise misclassify it.
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            [
+                {
+                    "window.navigator": {
+                        "propertiesToInstrument": ["userAgent"],
+                        "nonExistingPropertiesToInstrument": ["openwpmNonExistingProp"],
+                    }
+                }
+            ]
+        )
+        non_existing_path = "window.navigator.openwpmNonExistingProp"
+        untranslated_paths = {r.path for r in untranslated}
+        assert non_existing_path not in untranslated_paths, (
+            "a non-existing property is captured by the leaf entry's "
+            "nonExistingPropertiesToInstrument, so it must NOT be reported as "
+            f"uncovered/untranslated; reported untranslated paths: {sorted(untranslated_paths)}"
+        )
+        # And it must actually be carried on the emitted leaf entry so the stealth
+        # instrument synthesizes the accessor (i.e. it really is captured, which is
+        # WHY excluding it from the untranslated list is honest, not a silent drop).
+        nav = [
+            e for e in stealth_settings if e["instrumentedName"] == "window.navigator"
+        ]
+        assert len(nav) == 1, (
+            "expected exactly one leaf stealth entry for window.navigator; got "
+            f"{[e['instrumentedName'] for e in stealth_settings]}"
+        )
+        assert "openwpmNonExistingProp" in nav[0]["logSettings"].get(
+            "nonExistingPropertiesToInstrument", []
+        ), (
+            "the non-existing property was excluded from the untranslated list but is also NOT "
+            "carried on the leaf entry — that would be a genuine silent drop. Leaf "
+            f"logSettings: {nav[0]['logSettings']!r}"
         )
 
 
@@ -1942,3 +2621,731 @@ class TestStealthSharedPrototypeMultiMember:
             f"first. Missing (symbol, receiver) pairs: {sorted(missing)}. "
             f"Recorded pairs: {sorted(pairs)}"
         )
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthSweepSharedPrototype:
+    """The sweep emits interface-attributed shared-prototype entries for inherited
+    METHODS owned by a real interface, and leaves the rest untranslated."""
+
+    def test_sweep_emits_shared_prototype_entry_for_inherited_method(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """An inherited method on a real interface prototype becomes a
+        shared-prototype entry with receiverInterfaces — not an untranslated entry.
+
+        Sweeping a recursive config over ``window.document`` (an EventTarget /
+        Node / Document) reaches ``addEventListener``
+        (EventTarget.prototype.addEventListener), which is NOT an own name of
+        ``HTMLDocument.prototype``. The sweep must emit a single entry instrumenting
+        ``EventTarget.addEventListener`` with ``receiverInterfaces`` containing the
+        leaf interface (``HTMLDocument``), and must NOT report it as untranslated.
+        """
+        legacy = [
+            {
+                "window.document": {
+                    "propertiesToInstrument": [],
+                    "recursive": True,
+                    "depth": 0,
+                }
+            }
+        ]
+        stealth_settings, untranslated = legacy_settings_to_stealth(legacy)
+
+        # The generated config must validate against the stealth schema (proves
+        # the new receiverInterfaces field is accepted end-to-end).
+        validate_browser_params(
+            _params_with(
+                tmp_path_factory.mktemp("sweep_shared_validate"), stealth_settings
+            )[1][0]
+        )
+
+        shared = [
+            e
+            for e in stealth_settings
+            if e["object"] == "EventTarget"
+            and e["logSettings"].get("receiverInterfaces")
+            and "addEventListener" in e["logSettings"]["propertiesToInstrument"]
+        ]
+        assert shared, (
+            "the sweep did not emit an interface-attributed shared-prototype entry "
+            "for EventTarget.addEventListener reached via window.document; entries: "
+            f"{[(e['object'], e['logSettings']['propertiesToInstrument']) for e in stealth_settings]}"
+        )
+        recv = shared[0]["logSettings"]["receiverInterfaces"]
+        assert "HTMLDocument" in recv, (
+            "the shared-prototype entry's receiverInterfaces must contain the leaf "
+            f"interface HTMLDocument; got {recv}"
+        )
+
+        # Consolidation guard: ALL inherited methods of EventTarget must land in
+        # ONE entry. Emitting one entry per (owner, member) creates several entries
+        # resolving to the SAME EventTarget.prototype, and the stealth instrument's
+        # per-prototype needsWrapper gate then hooks only the first member and
+        # silently drops the rest. So there must be exactly ONE EventTarget entry,
+        # and it must carry the OTHER inherited EventTarget methods alongside
+        # addEventListener — not just one.
+        all_eventtarget = [e for e in stealth_settings if e["object"] == "EventTarget"]
+        assert len(all_eventtarget) == 1, (
+            "EventTarget inherited methods were split across multiple entries; the "
+            "per-prototype needsWrapper gate would drop all but the first. Entries "
+            f"for EventTarget: {[e['logSettings']['propertiesToInstrument'] for e in all_eventtarget]}"
+        )
+        et_members = set(all_eventtarget[0]["logSettings"]["propertiesToInstrument"])
+        assert {
+            "addEventListener",
+            "removeEventListener",
+            "dispatchEvent",
+        } <= et_members, (
+            "the consolidated EventTarget entry must list every inherited method "
+            "(addEventListener, removeEventListener, dispatchEvent), so a single "
+            f"needsWrapper hooks them all; got {sorted(et_members)}"
+        )
+
+        # addEventListener must NOT also appear as untranslated (it is now covered).
+        untranslated_paths = {r.path for r in untranslated}
+        assert "window.document.addEventListener" not in untranslated_paths, (
+            "addEventListener was reported as untranslated despite being covered by an "
+            "interface-attributed shared-prototype entry (double-counted)"
+        )
+
+    def test_sweep_leaves_inherited_universal_and_accessor_members_untranslated(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Universal-prototype members and inherited accessors stay untranslated.
+
+        ``toString`` (Object.prototype, universal) and an inherited ACCESSOR like
+        ``URL`` (Document.prototype, real interface but not a method) must NOT be
+        instrumented — only methods are interface-attributable. Both stay
+        untranslated with reasons that explain why.
+        """
+        legacy = [
+            {
+                "window.document": {
+                    "propertiesToInstrument": [],
+                    "recursive": True,
+                    "depth": 0,
+                }
+            }
+        ]
+        _, untranslated = legacy_settings_to_stealth(legacy)
+        untranslated_by_path = {r.path: r.reason for r in untranslated}
+
+        assert "window.document.toString" in untranslated_by_path, (
+            "the universal-prototype member toString must be untranslated; "
+            f"untranslated: {sorted(untranslated_by_path)}"
+        )
+        assert (
+            "universal" in untranslated_by_path["window.document.toString"].lower()
+        ), untranslated_by_path["window.document.toString"]
+
+        assert "window.document.URL" in untranslated_by_path, (
+            "the inherited accessor URL must be untranslated (only methods are "
+            f"interface-attributable); untranslated: {sorted(untranslated_by_path)}"
+        )
+        assert (
+            "non-method" in untranslated_by_path["window.document.URL"].lower()
+        ), untranslated_by_path["window.document.URL"]
+
+
+# --------------------------------------------------------------------------- #
+# Regression: a narrow legacy config requesting DIFFERENT members on two
+# receivers that share one prototype (e.g. addEventListener on document,
+# dispatchEvent on body — both inherit EventTarget) once tripped a bogus
+# "impossible under inheritance" RuntimeError in _shared_prototype_entries,
+# because the sweep records only the REQUESTED members (not the owner's full
+# inherited set), so the per-owner receiver-interface sets legitimately differ
+# per member. The consolidation now unions the per-member receiver sets; this
+# config must translate cleanly into one shared-prototype entry for the shared
+# owner that carries every requested member, with receiverInterfaces covering
+# each member's own reaching interface(s) — and never crash.
+# --------------------------------------------------------------------------- #
+NARROW_DISJOINT_SHARED_LEGACY_SETTINGS: List[Dict] = [
+    {"window.document": ["addEventListener"]},
+    {"window.document.body": ["dispatchEvent"]},
+]
+
+
+class TestStealthSweepNarrowSharedPrototype:
+    """The sweep must not crash on a narrow config whose two receivers share a
+    prototype but request disjoint members (the false "impossible" invariant).
+
+    This drives a headless Firefox via ``legacy_settings_to_stealth`` (no built
+    ``xpi`` or local ``server`` involved), so it deliberately carries no
+    ``usefixtures`` — adding them would needlessly serialize it behind the
+    session-scoped server.
+    """
+
+    def test_disjoint_narrow_members_consolidate_without_crash(self) -> None:
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            NARROW_DISJOINT_SHARED_LEGACY_SETTINGS,
+            get_firefox_binary_path(),
+        )
+        # One shared-prototype entry for the EventTarget owner, carrying BOTH
+        # requested members, with receiverInterfaces covering the leaf
+        # interfaces that reached each member.
+        event_target_entries = [
+            e
+            for e in stealth_settings
+            if e.get("object") == "EventTarget"
+            and e.get("logSettings", {}).get("receiverInterfaces")
+        ]
+        assert event_target_entries, (
+            "sweep produced no EventTarget shared-prototype entry for the narrow "
+            "disjoint config (it must not crash and must consolidate the owner)"
+        )
+        members: set = set()
+        receivers: set = set()
+        for e in event_target_entries:
+            members.update(e["logSettings"]["propertiesToInstrument"])
+            receivers.update(e["logSettings"]["receiverInterfaces"])
+        assert {"addEventListener", "dispatchEvent"} <= members, (
+            "the consolidated EventTarget entry must union BOTH narrowly "
+            f"requested members; got {sorted(members)}"
+        )
+        # HTMLDocument reached addEventListener, an HTMLBodyElement reached
+        # dispatchEvent — both must appear as receiver interfaces.
+        assert {"HTMLDocument", "HTMLBodyElement"} <= receivers, (
+            "receiverInterfaces must cover each requested member's reaching "
+            f"interface; got {sorted(receivers)}"
+        )
+
+        # union-and-NOTE, not just union-and-no-crash: the interface-level
+        # over-capture (addEventListener now also fires on HTMLBodyElement, and
+        # dispatchEvent on HTMLDocument) MUST be honestly recorded as an
+        # untranslated note keyed ``<owner>.<shared-prototype>``, not silently
+        # swallowed. A future refactor that drops the note would otherwise keep this
+        # test green; assert against the real untranslated shape emitted by
+        # ``_shared_prototype_entries`` (path + per-member reaching-set reason).
+        note = next(
+            (r for r in untranslated if r.path == "EventTarget.<shared-prototype>"),
+            None,
+        )
+        assert note is not None, (
+            "the disjoint-narrow union must emit an "
+            "'EventTarget.<shared-prototype>' over-capture untranslated note; got "
+            f"untranslated paths {sorted(r.path for r in untranslated)}"
+        )
+        assert "over-capture" in note.reason.lower(), note.reason
+        # The reason must name each member's own reaching receiver set, so a
+        # researcher can see exactly which (symbol, receiver) pairs were widened.
+        assert "addEventListener->" in note.reason, note.reason
+        assert "dispatchEvent->" in note.reason, note.reason
+        assert "HTMLDocument" in note.reason, note.reason
+        assert "HTMLBodyElement" in note.reason, note.reason
+
+
+# A synthetic walk result: ONE reached node on a real, non-universal interface
+# (EventTarget) that inherits the three base Function.prototype methods
+# (call/apply/bind) from a prototype whose constructor.name is "Function". The
+# node's OWN names do NOT include them, so they are classified as inherited
+# members. With "Function" in UNIVERSAL_PROTOTYPE_CONSTRUCTORS they must be left
+# UNTRANSLATED (instrumenting them would fire on virtually every callable page-wide);
+# this fake exercises that classification gate with no browser.
+_FUNCTION_UNIVERSAL_WALK = {
+    "errors": [],
+    "reached": [
+        {
+            "instrumentedName": "window.eventTarget",
+            "constructorName": "EventTarget",
+            # own names of the leaf prototype (none of call/apply/bind)
+            "stealthOwnNames": ["addEventListener"],
+            # legacy requested the own method plus the three inherited Function
+            # base-prototype methods
+            "propertyNames": ["addEventListener", "call", "apply", "bind"],
+            "inheritedOwners": [
+                {
+                    "member": "call",
+                    "owner": "Function",
+                    "realInterface": True,
+                    "isFunction": True,
+                },
+                {
+                    "member": "apply",
+                    "owner": "Function",
+                    "realInterface": True,
+                    "isFunction": True,
+                },
+                {
+                    "member": "bind",
+                    "owner": "Function",
+                    "realInterface": True,
+                    "isFunction": True,
+                },
+            ],
+        }
+    ],
+}
+
+
+class _FakeWalkDriver:
+    """Stand-in Selenium driver: ``execute_script`` returns a canned walk JSON,
+    so the sweep's classification runs with no real Firefox."""
+
+    def __init__(self, walk: Dict) -> None:
+        self._walk = walk
+
+    def get(self, _url: str) -> None:
+        pass
+
+    def execute_script(self, _script: str, _arg: object) -> str:
+        return json.dumps(self._walk)
+
+    def quit(self) -> None:
+        pass
+
+
+class TestStealthSweepFunctionUniversalDefault:
+    """Pin the DEFAULT-OFF classification of universal Function.prototype members.
+
+    With the default config (no opt-in universal-capture flag), inherited
+    ``Function.prototype`` members (call/apply/bind) MUST be left untranslated, not
+    captured page-wide. This guards ``UNIVERSAL_PROTOTYPE_CONSTRUCTORS``: a future
+    edit dropping ``"Function"`` from that set would silently re-classify these as
+    interface-attributed shared-prototype entries (page-wide capture) — this test
+    goes red instead. Driven by a synthetic walk so it needs no browser.
+    """
+
+    @pytest.mark.pyonly
+    def test_function_prototype_members_untranslated_by_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            js_settings_migrator,
+            "_launch_browser",
+            lambda _binary: _FakeWalkDriver(_FUNCTION_UNIVERSAL_WALK),
+        )
+        legacy = [
+            {
+                "window.eventTarget": {
+                    "propertiesToInstrument": [
+                        "addEventListener",
+                        "call",
+                        "apply",
+                        "bind",
+                    ],
+                    "recursive": False,
+                    "depth": 0,
+                }
+            }
+        ]
+        stealth_settings_out, untranslated = legacy_settings_to_stealth(
+            legacy, firefox_binary="unused"
+        )
+
+        untranslated_by_path = {r.path: r.reason for r in untranslated}
+        for member in ("call", "apply", "bind"):
+            path = f"window.eventTarget.{member}"
+            assert path in untranslated_by_path, (
+                f"inherited Function.prototype member {member!r} must be untranslated "
+                f"by default (got untranslated paths {sorted(untranslated_by_path)})"
+            )
+            assert (
+                "universal" in untranslated_by_path[path].lower()
+            ), untranslated_by_path[path]
+
+        # And they must NOT have leaked into a page-wide capture entry: no emitted
+        # stealth entry may instrument call/apply/bind. (Dropping "Function" from
+        # UNIVERSAL_PROTOTYPE_CONSTRUCTORS makes exactly this assertion fail.)
+        captured = {
+            prop
+            for entry in stealth_settings_out
+            for prop in entry["logSettings"].get("propertiesToInstrument", [])
+        }
+        assert not ({"call", "apply", "bind"} & captured), (
+            "Function.prototype base methods were captured page-wide instead of "
+            f"left untranslated; captured properties: {sorted(captured)}"
+        )
+
+
+_PREVENT_SETS_WALK = {
+    "errors": [],
+    "reached": [
+        {
+            "instrumentedName": "window.navigator",
+            "constructorName": "Navigator",
+            "stealthOwnNames": ["userAgent"],
+            "propertyNames": ["userAgent"],
+            "inheritedOwners": [],
+        }
+    ],
+}
+
+
+class TestStealthSweepDropsPreventSets:
+    """The sweep drops ``preventSets`` (no longer supported) and warns about it.
+
+    Unlike ``recursive`` (rejected at config time because stealth cannot honour
+    it), stealth could technically block page writes — but doing so distorts the
+    measured behaviour, so the migrator drops it and observes the page's real
+    writes instead. Driven by a synthetic walk so it needs no browser.
+    """
+
+    @pytest.mark.pyonly
+    def test_prevent_sets_is_dropped_and_warned(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        monkeypatch.setattr(
+            js_settings_migrator,
+            "_launch_browser",
+            lambda _binary: _FakeWalkDriver(_PREVENT_SETS_WALK),
+        )
+        legacy = [
+            {
+                "window.navigator": {
+                    "propertiesToInstrument": ["userAgent"],
+                    "preventSets": True,
+                    "recursive": False,
+                    "depth": 0,
+                }
+            }
+        ]
+        with caplog.at_level(logging.WARNING, logger="openwpm"):
+            stealth_settings_out, _ = legacy_settings_to_stealth(
+                legacy, firefox_binary="unused"
+            )
+
+        # No emitted stealth entry may carry preventSets — it is forced off.
+        for entry in stealth_settings_out:
+            assert entry["logSettings"]["preventSets"] is False, (
+                "preventSets must be dropped (forced off) on translation; got "
+                f"{entry['logSettings']}"
+            )
+
+        # The drop is surfaced, naming the requesting legacy path.
+        assert any(
+            "preventSets" in rec.message and "window.navigator" in rec.message
+            for rec in caplog.records
+        ), (
+            "the sweep must warn that preventSets was dropped, naming the path; "
+            f"got warnings: {[rec.message for rec in caplog.records]}"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# GOLDEN migration tests: pin the EXACT legacy -> stealth migration output
+# for a small representative table of configs, so a future migrator change cannot
+# silently drift the emitted stealth config or the UntranslatedEntry list.
+#
+# All cases are driven by a SYNTHETIC walk through ``_FakeWalkDriver`` (the same
+# mocked-sweep pattern the other ``TestStealthSweep*`` classes use), so they run
+# under ``-m pyonly`` with no real Firefox: the only browser-dependent step
+# (``_launch_browser`` + the live object-graph walk) is replaced by a canned walk
+# result, and the deterministic Python classification/emit logic under test runs
+# unchanged. Each case fixes BOTH halves of the migrator's return tuple — the
+# emitted ``stealth_settings`` list AND the ``UntranslatedEntry`` list.
+# --------------------------------------------------------------------------- #
+
+
+def _run_sweep_with_walk(
+    monkeypatch: pytest.MonkeyPatch,
+    walk: Dict,
+    legacy: List[Any],
+    **kwargs: Any,
+) -> Tuple[List[Dict[str, Any]], List[UntranslatedEntry]]:
+    """Drive ``legacy_settings_to_stealth`` against a canned ``walk`` (no browser).
+
+    Patches ``_launch_browser`` to return a ``_FakeWalkDriver`` whose
+    ``execute_script`` yields ``walk``; everything downstream (classification,
+    shared-prototype consolidation, untranslated reporting) is the real code.
+    """
+    monkeypatch.setattr(
+        js_settings_migrator,
+        "_launch_browser",
+        lambda _binary: _FakeWalkDriver(walk),
+    )
+    return legacy_settings_to_stealth(legacy, firefox_binary="unused", **kwargs)
+
+
+# A clean, fully translatable narrow request: a single interface-typed leaf node
+# whose requested member is its OWN prototype member (no inheritance, no
+# untranslatable nodes). The narrow request must stay narrow (explicit
+# propertiesToInstrument, NOT [] which stealth reads as "instrument everything").
+_GOLDEN_CLEAN_WALK = {
+    "errors": [],
+    "reached": [
+        {
+            "instrumentedName": "window.navigator",
+            "constructorName": "Navigator",
+            # Navigator.prototype has these own members; legacy only asked for one.
+            "stealthOwnNames": ["userAgent", "platform"],
+            "propertyNames": ["userAgent"],
+            "inheritedOwners": [],
+        }
+    ],
+}
+_GOLDEN_CLEAN_LEGACY: List[Any] = [{"window.navigator": ["userAgent"]}]
+_GOLDEN_CLEAN_EXPECTED_SETTINGS: List[Dict[str, Any]] = [
+    {
+        "object": "Navigator",
+        "instrumentedName": "window.navigator",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": ["userAgent"],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+            "overwrittenProperties": [],
+        },
+    }
+]
+
+
+# An untranslatable plain-object node: the resolved node's ``constructor.name`` is
+# ``Array`` (a plain container, not a global interface with a hookable prototype),
+# so the WHOLE node is surfaced as an UntranslatedEntry and emits NO stealth entry.
+_GOLDEN_UNTRANSLATABLE_WALK = {
+    "errors": [],
+    "reached": [
+        {
+            "instrumentedName": "window.navigator.languages",
+            "constructorName": "Array",
+            "stealthOwnNames": None,
+            "propertyNames": ["length"],
+            "inheritedOwners": [],
+        }
+    ],
+}
+_GOLDEN_UNTRANSLATABLE_LEGACY: List[Any] = [{"window.navigator.languages": []}]
+_GOLDEN_UNTRANSLATABLE_EXPECTED_SETTINGS: List[Dict[str, Any]] = []
+_GOLDEN_UNTRANSLATABLE_EXPECTED_UNTRANSLATED = [
+    UntranslatedEntry(
+        path="window.navigator.languages",
+        reason=(
+            "constructor is 'Array' (Object/Array/unknown); no global interface "
+            "prototype for stealth to hook, so the node cannot be expressed as a "
+            "stealth entry"
+        ),
+    )
+]
+
+
+# The disjoint-members-on-shared-prototype UNION / over-capture case: two leaves
+# (HTMLDocument, HTMLBodyElement) that each request a DIFFERENT inherited method of
+# the SAME shared owner prototype (EventTarget). The sweep must consolidate them
+# into ONE EventTarget shared-prototype entry whose receiverInterfaces UNIONS both
+# leaves, AND emit an honest over-capture UntranslatedEntry note. The two leaf
+# entries carry empty propertiesToInstrument (the requested members are inherited,
+# not the leaf's own names).
+_GOLDEN_UNION_WALK = {
+    "errors": [],
+    "reached": [
+        {
+            "instrumentedName": "window.document",
+            "constructorName": "HTMLDocument",
+            "stealthOwnNames": ["createElement"],
+            "propertyNames": ["addEventListener"],
+            "inheritedOwners": [
+                {
+                    "member": "addEventListener",
+                    "owner": "EventTarget",
+                    "realInterface": True,
+                    "isFunction": True,
+                }
+            ],
+        },
+        {
+            "instrumentedName": "window.document.body",
+            "constructorName": "HTMLBodyElement",
+            "stealthOwnNames": ["text"],
+            "propertyNames": ["dispatchEvent"],
+            "inheritedOwners": [
+                {
+                    "member": "dispatchEvent",
+                    "owner": "EventTarget",
+                    "realInterface": True,
+                    "isFunction": True,
+                }
+            ],
+        },
+    ],
+}
+_GOLDEN_UNION_LEGACY: List[Any] = [
+    {"window.document": ["addEventListener"]},
+    {"window.document.body": ["dispatchEvent"]},
+]
+
+
+def _leaf_entry(name: str, ctor: str) -> Dict[str, Any]:
+    """A migrated leaf entry whose requested members were all INHERITED (so the
+    leaf's own propertiesToInstrument is empty)."""
+    return {
+        "object": ctor,
+        "instrumentedName": name,
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+            "overwrittenProperties": [],
+        },
+    }
+
+
+_GOLDEN_UNION_EXPECTED_SETTINGS: List[Dict[str, Any]] = [
+    _leaf_entry("window.document", "HTMLDocument"),
+    _leaf_entry("window.document.body", "HTMLBodyElement"),
+    {
+        "object": "EventTarget",
+        "instrumentedName": "EventTarget",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": ["addEventListener", "dispatchEvent"],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+            "receiverInterfaces": ["HTMLBodyElement", "HTMLDocument"],
+        },
+    },
+]
+_GOLDEN_UNION_EXPECTED_UNTRANSLATED = [
+    UntranslatedEntry(
+        path="EventTarget.<shared-prototype>",
+        reason=(
+            "Your legacy config asked to instrument different members on objects "
+            "that share the EventTarget prototype (addEventListener->"
+            "['HTMLDocument'], dispatchEvent->['HTMLBodyElement']). The stealth "
+            "instrument can't instrument them separately, so it instruments all of "
+            "them together (['HTMLBodyElement', 'HTMLDocument']). Every member you "
+            "asked for is still captured — but some calls may also be recorded "
+            "under an interface that only another member needed (over-capture). To "
+            "recover exactly the members you requested, filter the results by "
+            "(symbol, receiver) in post-processing."
+        ),
+    )
+]
+
+
+class TestStealthSweepDisjointSharedPrototypeUnion:
+    """The disjoint-members-on-shared-prototype UNION / over-capture path.
+
+    A narrow legacy config asks two receivers that share ONE prototype
+    (``HTMLDocument`` and ``HTMLBodyElement``, both inheriting ``EventTarget``) to
+    instrument DIFFERENT inherited members. The per-prototype ``needsWrapper`` gate
+    forbids two entries on the same prototype, so the sweep must UNION the members'
+    receiver sets into one ``EventTarget`` entry — capturing everything requested —
+    and emit the over-capture warning. Driven by a synthetic walk (no browser).
+    """
+
+    @pytest.mark.pyonly
+    def test_union_consolidates_and_warns(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING, logger="openwpm"):
+            settings, untranslated = _run_sweep_with_walk(
+                monkeypatch, _GOLDEN_UNION_WALK, _GOLDEN_UNION_LEGACY
+            )
+
+        # UNION behaviour: exactly one EventTarget shared-prototype entry carrying
+        # BOTH requested members and BOTH reaching interfaces (the union).
+        event_target = [e for e in settings if e["object"] == "EventTarget"]
+        assert len(event_target) == 1, (
+            "the two disjoint requests on a shared prototype must consolidate into "
+            f"exactly ONE EventTarget entry; got {event_target}"
+        )
+        ls = event_target[0]["logSettings"]
+        assert ls["propertiesToInstrument"] == ["addEventListener", "dispatchEvent"]
+        assert ls["receiverInterfaces"] == ["HTMLBodyElement", "HTMLDocument"], (
+            "receiverInterfaces must UNION both leaves' interfaces; got "
+            f"{ls['receiverInterfaces']}"
+        )
+
+        # The over-capture warning fires as an UntranslatedEntry note.
+        note = next(
+            (r for r in untranslated if r.path == "EventTarget.<shared-prototype>"),
+            None,
+        )
+        assert note is not None, (
+            "the union must emit an 'EventTarget.<shared-prototype>' over-capture "
+            f"note; got {sorted(r.path for r in untranslated)}"
+        )
+        # Plain-language wording (not the old needsWrapper/receiverInterfaces
+        # jargon): researcher-readable, names the over-capture and the post-process
+        # recovery, and interpolates the per-member reaching sets ({detail}) and the
+        # unioned leaf set ({leaves}).
+        reason = note.reason
+        assert "over-capture" in reason.lower(), reason
+        assert "share the EventTarget prototype" in reason, reason
+        assert "filter the results by (symbol, receiver)" in reason, reason
+        assert "addEventListener->['HTMLDocument']" in reason, reason
+        assert "dispatchEvent->['HTMLBodyElement']" in reason, reason
+        # The dropped insider terms must NOT reappear in the reworded warning.
+        assert "needsWrapper" not in reason, reason
+        assert "receiverInterfaces" not in reason, reason
+
+        # And the library-side one-line warning fires (untranslated is non-empty).
+        assert any("NOT representable" in rec.message for rec in caplog.records), [
+            rec.message for rec in caplog.records
+        ]
+
+    @pytest.mark.pyonly
+    def test_union_golden_output(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Pin the EXACT emitted settings + untranslated list for the union case."""
+        settings, untranslated = _run_sweep_with_walk(
+            monkeypatch, _GOLDEN_UNION_WALK, _GOLDEN_UNION_LEGACY
+        )
+        assert settings == _GOLDEN_UNION_EXPECTED_SETTINGS
+        assert untranslated == _GOLDEN_UNION_EXPECTED_UNTRANSLATED
+
+
+@pytest.mark.parametrize(
+    "walk, legacy, expected_settings, expected_untranslated",
+    [
+        pytest.param(
+            _GOLDEN_CLEAN_WALK,
+            _GOLDEN_CLEAN_LEGACY,
+            _GOLDEN_CLEAN_EXPECTED_SETTINGS,
+            [],
+            id="clean-translatable-narrow",
+        ),
+        pytest.param(
+            _GOLDEN_UNTRANSLATABLE_WALK,
+            _GOLDEN_UNTRANSLATABLE_LEGACY,
+            _GOLDEN_UNTRANSLATABLE_EXPECTED_SETTINGS,
+            _GOLDEN_UNTRANSLATABLE_EXPECTED_UNTRANSLATED,
+            id="untranslatable-plain-object",
+        ),
+        pytest.param(
+            _GOLDEN_UNION_WALK,
+            _GOLDEN_UNION_LEGACY,
+            _GOLDEN_UNION_EXPECTED_SETTINGS,
+            _GOLDEN_UNION_EXPECTED_UNTRANSLATED,
+            id="disjoint-shared-prototype-union",
+        ),
+    ],
+)
+@pytest.mark.pyonly
+def test_migration_golden_table(
+    monkeypatch: pytest.MonkeyPatch,
+    walk: Dict,
+    legacy: List[Any],
+    expected_settings: List[Dict[str, Any]],
+    expected_untranslated: List[UntranslatedEntry],
+) -> None:
+    """Pin legacy -> stealth migration input->output exactly.
+
+    For each (legacy ``js_instrument_settings`` input, canned walk) pair, assert
+    the EXACT migrated stealth config AND the EXACT ``UntranslatedEntry`` list. A
+    migrator change that drifts either half goes red here. Driven by a synthetic
+    walk so it runs under ``-m pyonly`` with no real Firefox.
+    """
+    settings, untranslated = _run_sweep_with_walk(monkeypatch, walk, legacy)
+    assert settings == expected_settings
+    assert untranslated == expected_untranslated

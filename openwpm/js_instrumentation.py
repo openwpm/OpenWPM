@@ -90,7 +90,19 @@ def _merge_settings(python_list):
                 continue
             else:
                 if None in list_setting_value:
-                    raise RuntimeError(f"Mismatching logSettings for object {obj}")
+                    raise RuntimeError(
+                        "Mismatching logSettings for object " f"{setting['object']}"
+                    )
+                elif not all(isinstance(p, str) for p in list_setting_value):
+                    # Stealth-shaped settings express list entries as
+                    # {depth, propertyNames} dicts, which are unhashable and
+                    # therefore cannot be deduped via set(). The legacy merge
+                    # path is not expected to receive these.
+                    raise RuntimeError(
+                        f"Cannot merge non-string {logSetting} entries for "
+                        f"object {setting['object']}. Stealth-shaped settings "
+                        f"must not be passed through the legacy merge path."
+                    )
                 else:
                     # Dedupe
                     setting["logSettings"][logSetting] = list(
