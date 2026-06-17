@@ -239,6 +239,17 @@
         return true;
     }
 
+    // D11: Function.prototype.toString must be the untouched native. An
+    // instrument that masks hooks by swapping it for a spoof is caught by turning
+    // the spoof on itself. (returns true = undetectable)
+    function testRecursiveToStringNative() {
+        const fpts = Function.prototype.toString;
+        if (fpts.toString() !== nativeSource(fpts)) return false;
+        if (fpts.toString.toString() !== nativeSource(fpts)) return false;
+        if (fpts.toString.toString.call(fpts) !== nativeSource(fpts)) return false;
+        return true;
+    }
+
     // D10: the members a page-scope layer would hook to learn of new frames
     // (appendChild, document.write, window.open, the iframe contentWindow
     // getter) stay native. A page can probe each four ways:
@@ -329,6 +340,7 @@
     safeRun("function_arity_native", testFunctionArityNative);
     safeRun("accessor_name_native", testAccessorNameNative);
     safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
+    safeRun("tostring_recursive_native", testRecursiveToStringNative);
 
     // D10: the frame-creation probes write their own per-key results
     // (see runFrameProtectionProbes); wrapped so a setup failure cannot abort
