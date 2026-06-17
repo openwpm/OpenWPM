@@ -233,13 +233,25 @@ def npm_bump_and_resolve(cwd: Path) -> None:
     # (TS7006/TS7008/TS2564/TS18046) that surface ~200 latent type issues
     # in Extension/src. Migration tracked in #1168; until that lands the
     # bumper stays inside 5.x.
+    #
+    # @babel/* is held at 7.x: Babel 8 is a major with its own migration
+    # (config/preset changes). Hold the trio together — bumping preset-env to
+    # 8 while core/cli stay on 7 leaves an uninstallable peer state. Bump them
+    # together once a babel-8 migration is done.
+    #
+    # eslint is held at 9.x: @microsoft/eslint-plugin-sdl (latest 1.1.0) peers
+    # eslint ^9, so bumping to eslint 10 leaves an uninstallable peer state.
+    # eslint 10 needs its own migration (flat-config / API changes); bump once
+    # eslint-plugin-sdl ships an eslint-10-compatible release. eslint-plugin-
+    # unicorn is held alongside it: unicorn 67 peers eslint >=10.4, so it must
+    # stay on its eslint-9-compatible line (64.x) until eslint moves to 10.
     conda_run(
         "npx",
         "--yes",
         "npm-check-updates",
         "--upgrade",
         "--reject",
-        "typescript",
+        "typescript,@babel/core,@babel/cli,@babel/preset-env,eslint,eslint-plugin-unicorn",
         cwd=cwd,
     )
 
