@@ -425,8 +425,14 @@ class TestJSInstrumentFailurePropagates(OpenWPMJSTest):
         # ``window.NonExistent.deeplyMissing`` throws while setting up the
         # instrumentation. This stands in for a real-world misconfiguration
         # such as instrumenting a Worker-only global on the window scope.
+        #
+        # Two distinct failing targets are configured so the test also
+        # verifies that *every* failure is reported, not just the first or
+        # last one: ``instrumentJS`` runs all requests to completion and
+        # aggregates their messages into a single error.
         browser_params[0].js_instrument_settings = [
             {"window.NonExistent.deeplyMissing": ["foo"]},
+            {"window.AlsoMissing.deeplyMissing": ["bar"]},
         ]
         return manager_params, browser_params
 
@@ -448,6 +454,14 @@ class TestJSInstrumentFailurePropagates(OpenWPMJSTest):
         assert any(
             "window.NonExistent.deeplyMissing" in e for e in errors
         ), f"expected failing item name in error, got errors={errors}"
+        # Both failing targets must appear in the same aggregated error: the
+        # instrument loop runs to completion and reports every failure, so a
+        # regression to first- or last-only reporting would drop one of these.
+        assert any(
+            "window.NonExistent.deeplyMissing" in e
+            and "window.AlsoMissing.deeplyMissing" in e
+            for e in errors
+        ), f"expected both failing item names in a single error, got errors={errors}"
 
         # The browser must never become healthy: no GetCommand may succeed.
         # If it ever returned "ok" the browser would have started measuring
