@@ -84,6 +84,17 @@ class BrowserParams(DataClassJsonMixin):
     )
     http_instrument: bool = False
     stealth_js_instrument: bool = False
+    stealth_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    """Custom instrumentation surface for ``stealth_js_instrument``.
+
+    When ``None`` (the default) the stealth instrument uses its bundled
+    fingerprinting set (``Extension/src/stealth/settings.ts``), so behaviour is
+    unchanged out of the box. To customise the surface, supply a list of
+    stealth-shaped settings objects validated against
+    ``schemas/js_instrument_settings.schema.json``. Unlike the legacy
+    ``js_instrument_settings`` (which uses a dotted ``window['X'].prototype``
+    path), stealth resolves ``object`` as a BARE global name, e.g.
+    ``"CanvasRenderingContext2D"``, ``"Navigator"``, or ``"document"``."""
     navigation_instrument: bool = False
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
@@ -205,6 +216,7 @@ class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
     cleaned_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    cleaned_stealth_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass

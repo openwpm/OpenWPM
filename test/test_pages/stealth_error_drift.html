@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>stealth error-drift probe</title></head>
+<body>
+<h1>error drift</h1>
+<canvas id="canvas" width="10" height="10"></canvas>
+<script>
+/*
+ * Error-drift probe.
+ *
+ * When an instrumented method's NATIVE implementation throws, the stealth
+ * wrapper (Extension/src/stealth/instrument.ts functionGenerator -> the catch at
+ * :1006) does NOT re-raise the original error verbatim: it rebuilds a
+ * page-compartment replacement via generateErrorObject
+ * (Extension/src/stealth/error.ts) to strip moz-extension:// frames from the
+ * stack. That reconstruction is a detection surface: if the rebuilt error's
+ * constructor / .name / .message / instanceof relationship differs from what an
+ * UNINSTRUMENTED page would observe, a page that wraps an instrumented call in
+ * try/catch and inspects the error can tell the instrument is present.
+ *
+ * This page provokes errors THROUGH instrumented calls and self-reports the
+ * observed error shape on #results. The test (TestStealthErrorDrift) runs the
+ * SAME page UNINSTRUMENTED and under STEALTH and asserts the shapes match (no
+ * drift), and pins the one KNOWN structural collapse: a page custom Error
+ * subclass thrown across an instrumented call (error.ts:35-37 falls back to a
+ * plain Error because the page constructor is unreachable as wrappedJS[name]).
+ *
+ * The probe instruments via stealth_js_instrument_settings supplied by the test:
+ *   - CanvasRenderingContext2D.getImageData : native throws a DOMException
+ *     (IndexSizeError) for a zero-sized rect -> exercises error.ts:22-27.
+ *   - Array.prototype.forEach : synchronously invokes a page callback and
+ *     propagates whatever it throws -> lets the page route a custom or built-in
+ *     error THROUGH an instrumented native call (error.ts:28-37).
+ */
+const results = {};
+
+// A page custom Error subclass. Its constructor lives only in the page realm,
+// so generateErrorObject cannot resolve it via wrappedJS[err.name] and (per
+// error.ts:35-37) collapses it to a plain Error. Recorded so the test can pin
+// the collapse rather than have it slip through silently.
+class PageCustomError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "PageCustomError";
+    }
+}
+
+function describeThrow(label, fn) {
+    try {
+        fn();
+        results[label + "_threw"] = false;
+    } catch (e) {
+        results[label + "_threw"] = true;
+        results[label + "_name"] = e && e.name;
+        results[label + "_message"] = e && e.message;
+        results[label + "_ctor"] = e && e.constructor && e.constructor.name;
+        results[label + "_is_error"] = e instanceof Error;
+        results[label + "_is_domexception"] = e instanceof DOMException;
+        results[label + "_is_typeerror"] = e instanceof TypeError;
+        results[label + "_is_pagecustom"] = e instanceof PageCustomError;
+        // The rebuilt error's stack must NOT carry the extension's own
+        // moz-extension:// frames. generateErrorObject (error.ts) constructs a
+        // fresh page-compartment error whose stack would otherwise begin inside
+        // stealth.js; it must overwrite that with the cleaned, page-only stack.
+        // We record whether any extension frame leaked so the test can assert
+        // the negative on an instrumented-throw (which an uninstrumented page
+        // can never produce).
+        results[label + "_stack_has_extension"] =
+            typeof (e && e.stack) === "string" &&
+            e.stack.indexOf("moz-extension://") !== -1;
+    }
+}
+
+const ctx = document.getElementById("canvas").getContext("2d");
+
+// (1) Native DOMException through an instrumented method. getImageData on a
+// zero-sized rectangle throws IndexSizeError (a DOMException) in Firefox.
+describeThrow("domexception", function () {
+    ctx.getImageData(0, 0, 0, 0);
+});
+
+// (2) Built-in TypeError routed through an instrumented method. forEach calls
+// the callback synchronously and re-raises its throw; TypeError IS reachable as
+// wrappedJS.TypeError, so generateErrorObject should preserve the subclass.
+describeThrow("typeerror", function () {
+    [1].forEach(function () {
+        throw new TypeError("typeerror-marker");
+    });
+});
+
+// (3) Page CUSTOM Error subclass routed through an instrumented method. This is
+// the documented collapse: error.ts:35-37 cannot resolve PageCustomError and
+// falls back to a plain page-realm Error, so under stealth `name`/`constructor`
+// differ from the uninstrumented page. The test pins this drift explicitly.
+describeThrow("custom", function () {
+    [1].forEach(function () {
+        throw new PageCustomError("custom-marker");
+    });
+});
+
+// (4) Async / unhandled-rejection drift. An instrumented method whose callback
+// rejects must surface the rejection to the page identically. forEach is sync,
+// so to probe the async path the callback schedules a microtask rejection and
+// we capture it via an unhandledrejection handler. The reported reason must keep
+// its name/message/constructor whether or not the surrounding call was
+// instrumented.
+let rejectionReason = null;
+window.addEventListener("unhandledrejection", function (ev) {
+    rejectionReason = ev.reason;
+    ev.preventDefault();
+});
+
+function publish() {
+    if (rejectionReason !== null) {
+        results["rejection_observed"] = true;
+        results["rejection_name"] = rejectionReason && rejectionReason.name;
+        results["rejection_message"] = rejectionReason && rejectionReason.message;
+        results["rejection_ctor"] =
+            rejectionReason &&
+            rejectionReason.constructor &&
+            rejectionReason.constructor.name;
+        results["rejection_is_typeerror"] = rejectionReason instanceof TypeError;
+    } else {
+        results["rejection_observed"] = false;
+    }
+    results["done"] = true;
+    const div = document.createElement("div");
+    div.id = "results";
+    div.setAttribute("data-results", JSON.stringify(results));
+    div.textContent = JSON.stringify(results, null, 2);
+    document.body.appendChild(div);
+}
+
+// Reject inside an instrumented forEach callback, then publish after the
+// microtask/unhandledrejection has had a chance to fire.
+[1].forEach(function () {
+    Promise.reject(new TypeError("rejection-marker"));
+});
+setTimeout(publish, 300);
+</script>
+</body>
+</html>
