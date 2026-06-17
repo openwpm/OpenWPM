@@ -36,6 +36,7 @@ export interface JSLogMessageContent {
   callStack: string;
   ordinal: number;
   args?: string[];
+  receiver?: string;
   timeStamp?: string;
 }
 
