@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>universal-prototype toString probe</title></head>
+<body>
+<h1>universal toString</h1>
+<script>
+// Exercises the opt-in capture_universal_prototype_members sweep flag at RUNTIME.
+//
+// The flag-ON sweep of a recursive `window.navigator` config emits a single
+// {object: "Object"} shared-prototype entry that hooks Object.prototype.toString
+// (and the other universal Object.prototype methods) ONCE, recording a call only
+// when the receiver interface is one of the leaf interfaces the navigator surface
+// reached (Navigator, Permissions, ...). The recorded symbol stays the static
+// "Object.toString" with the concrete receiver interface in the `receiver` column.
+//
+// This page calls toString() on TWO receivers:
+//   - `navigator` (interface Navigator, IN receiverInterfaces) -> must be RECORDED
+//     as symbol="Object.toString", receiver="Navigator".
+//   - a `<div>` (interface HTMLDivElement, NOT in receiverInterfaces) -> must be
+//     DROPPED by the content-script-side receiver filter (no row).
+//
+// It ALSO exercises the reentrancy guard: hooking Object.prototype.toString means
+// the instrument's own serializeObject / JSON.stringify (which call toString /
+// valueOf while building the log record) re-enter the wrapped method. The `inLog`
+// guard must short-circuit those re-entrant calls; if it did not, the crawl would
+// hang or blow the stack. Reaching the `data-results` sentinel proves the page
+// (and therefore the instrumented toString path) completed without reentrancy.
+function safe(fn) { try { fn(); } catch (e) { /* ignore */ } }
+
+// Receiver IN receiverInterfaces (Navigator) -> recorded.
+safe(() => { void navigator.toString(); });
+
+// Receiver NOT in receiverInterfaces (HTMLDivElement) -> dropped by the filter.
+const div = document.createElement("div");
+safe(() => { void div.toString(); });
+
+const done = document.createElement("div");
+done.id = "results";
+done.setAttribute("data-results", JSON.stringify({ done: true }));
+document.body.appendChild(done);
+</script>
+</body>
+</html>
