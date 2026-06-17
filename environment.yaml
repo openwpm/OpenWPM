@@ -8,6 +8,7 @@ dependencies:
 - easyprocess=1.1
 - gcsfs=2026.7.0
 - geckodriver=0.37.1
+- graphviz=14.1.2
 - ipython=9.16.1
 - isort=8.0.1
 - leveldb=1.23
