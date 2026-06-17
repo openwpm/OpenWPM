@@ -35,3 +35,9 @@ repos:
         files: (^environment\.yaml$|^scripts/environment-unpinned|^scripts/manage-environment\.py$)
         additional_dependencies: [pyyaml]
         pass_filenames: false
+      - id: extension-eslint
+        name: Lint extension sources with ESLint
+        entry: bash -c 'cd Extension && npm run --silent lint:eslint'
+        language: system
+        files: ^Extension/src/.*\.(ts|tsx|js|mjs)$
+        pass_filenames: false

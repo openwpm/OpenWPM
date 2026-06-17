@@ -100,3 +100,11 @@ def test_num_browser_crawl_config():
 
     browser_params.append(BrowserParams())
     validate_crawl_configs(manager_params, browser_params)
+
+
+def test_stealth_and_legacy_instrument_mutual_exclusion():
+    browser_params = BrowserParams()
+    browser_params.stealth_js_instrument = True
+    browser_params.js_instrument = True
+    with pytest.raises(ConfigError):
+        validate_browser_params(browser_params)

@@ -21,6 +21,13 @@ async function main() {
       navigation_instrument: true,
       cookie_instrument: true,
       js_instrument: true,
+      // Stealth is intentionally OFF in this manual-test fallback (used only
+      // when browser_params.json is absent). Because it is off,
+      // cleaned_stealth_js_instrument_settings is deliberately omitted —
+      // resolveInstrumentationSettings() never runs. To manually test stealth,
+      // set stealth_js_instrument:true AND js_instrument:false here and add a
+      // cleaned_stealth_js_instrument_settings array in the stealth shape.
+      stealth_js_instrument: false,
       cleaned_js_instrument_settings: [
         {
           object: `window.CanvasRenderingContext2D.prototype`,
@@ -73,9 +80,19 @@ async function main() {
     cookieInstrument.run(config.browser_id);
   }
 
+  if (config.stealth_js_instrument) {
+    loggingDB.logDebug("Stealth JavaScript Instrumentation enabled");
+    const stealthJSInstrument = new JavascriptInstrument(loggingDB, false);
+    stealthJSInstrument.run(config.browser_id);
+    await stealthJSInstrument.registerContentScript(
+      config.testing,
+      config.cleaned_stealth_js_instrument_settings,
+    );
+  }
+
   if (config.js_instrument) {
     loggingDB.logDebug("Javascript instrumentation enabled");
-    const jsInstrument = new JavascriptInstrument(loggingDB);
+    const jsInstrument = new JavascriptInstrument(loggingDB, true);
     jsInstrument.run(config.browser_id);
     await jsInstrument.registerContentScript(
       config.testing,

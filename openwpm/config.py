@@ -83,6 +83,7 @@ class BrowserParams(DataClassJsonMixin):
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
+    stealth_js_instrument: bool = False
     navigation_instrument: bool = False
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
@@ -263,6 +264,13 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 "https://github.com/openwpm/OpenWPM/issues/557"
             )
 
+        if browser_params.stealth_js_instrument and browser_params.js_instrument:
+            raise ConfigError(
+                "stealth_js_instrument and js_instrument cannot both be enabled. "
+                "Use stealth_js_instrument for undetectable instrumentation or "
+                "js_instrument for legacy instrumentation, but not both."
+            )
+
         if not isinstance(browser_params.save_content, bool) and not isinstance(
             browser_params.save_content, str
         ):
@@ -284,7 +292,10 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        # Re-raise our explicit validation errors
+        raise
+    except Exception:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"

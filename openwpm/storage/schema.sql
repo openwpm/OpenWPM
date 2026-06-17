@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS javascript(
   top_level_url TEXT,
   call_stack TEXT,
   symbol TEXT,
+  receiver TEXT,
   operation TEXT,
   value TEXT,
   arguments TEXT,
