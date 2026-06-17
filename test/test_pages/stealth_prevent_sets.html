@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — preventSets probe</title>
+</head>
+<body>
+    <div id="results"></div>
+    <script>
+    /*
+     * Exercises the preventSets logSetting. The test config instruments
+     * document.body (an accessor property whose current value is an object —
+     * the <body> element) with preventSets:true. Assigning a new element to
+     * document.body must be LOGGED (operation set(prevented)) and BLOCKED: the
+     * original setter must NOT run, so document.body keeps its original node.
+     *
+     * Self-check published on #results so the test can assert both the capture
+     * (set(prevented) row, checked DB-side) and that the write was blocked.
+     */
+    var results = {};
+
+    var originalBody = document.body;
+    var replacement = document.createElement("body");
+    replacement.id = "openwpm_prevent_sets_replacement";
+    try {
+        document.body = replacement;  // must be blocked by preventSets
+    } catch (e) {
+        results.set_threw = e.message;
+    }
+    // If preventSets blocked the write, document.body is unchanged.
+    results.body_unchanged = document.body === originalBody;
+    results.body_not_replaced =
+        document.body.id !== "openwpm_prevent_sets_replacement";
+
+    // Undetectability: the instrumented accessor must still report native.
+    function isNative(fn) {
+        try {
+            return Function.prototype.toString
+                .call(fn).indexOf("[native code]") !== -1;
+        } catch (e) { return false; }
+    }
+    try {
+        var desc = Object.getOwnPropertyDescriptor(
+            Document.prototype, "body");
+        results.body_setter_native = !!(desc && desc.set && isNative(desc.set));
+        results.body_getter_native = !!(desc && desc.get && isNative(desc.get));
+    } catch (e) {
+        results.descriptor_error = e.message;
+    }
+
+    var resultsDiv = document.getElementById("results");
+    resultsDiv.setAttribute("data-results", JSON.stringify(results));
+    resultsDiv.textContent = JSON.stringify(results, null, 2);
+    </script>
+</body>
+</html>

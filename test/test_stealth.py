@@ -58,8 +58,7 @@ DETECTION_RESULTS_TABLE = TableName("stealth_detection_results")
 DETECTION_PAGE = "/stealth_detection.html"
 SUPPRESS_PAGE = "/stealth_disruption_suppress.html"
 FORGE_PAGE = "/stealth_disruption_forge.html"
-
-
+ATTRIBUTION_PAGE = "/stealth_attribution.html"
 COOKIE_PAGE = "/stealth_cookie.html"
 IFRAME_PAGE = "/stealth_disruption_iframe.html"
 # Differential probe compared verbatim against an uninstrumented run.
@@ -71,11 +70,39 @@ FRAME_OWNERSHIP_PAGE = "/stealth_frame_ownership.html"
 FIRST_LOAD_PAGE = "/stealth_first_load.html"
 DEAD_REALM_PAGE = "/stealth_dead_realm.html"
 WINDOW_NAME_PAGE = "/stealth_window_name.html"
+# Provokes errors THROUGH instrumented methods (a native DOMException, a built-in
+# TypeError, a page custom Error subclass, and an async rejection) and
+# self-reports each observed error's identity and shape, so a stealth run can be
+# diffed against an uninstrumented run for drift. See TestStealthErrorDrift.
+ERROR_DRIFT_PAGE = "/stealth_error_drift.html"
+# Reads screen.width and screen.height.
+SCREEN_PAGE = "/stealth_screen.html"
+PREVENT_SETS_PAGE = "/stealth_prevent_sets.html"
+HONEY_PROPS_PAGE = "/stealth_honey_props.html"
+# Calls an instrumented method (EventTarget.addEventListener) with a function as
+# an argument, so the recorded ``arguments`` can be checked for whether the
+# function was serialized as its source string or as the placeholder "FUNCTION".
+FUNCTION_ARG_PAGE = "/stealth_function_arg.html"
+
+
+# Calls EventTarget.prototype.addEventListener on two different receiver
+# interfaces (HTMLDivElement and XMLHttpRequest), each tampering with its own
+# `constructor`, to exercise interface-attributed shared-prototype capture: the
+# targeted interface must be recorded under the static symbol
+# "EventTarget.addEventListener" with the receiver interface in the dedicated
+# `receiver` column, while the non-targeted interface is filtered out
+# instrument-side.
+SHARED_PROTOTYPE_PAGE = "/stealth_shared_prototype.html"
+# Calls THREE inherited methods of EventTarget.prototype (addEventListener,
+# removeEventListener, dispatchEvent) on one targeted receiver (HTMLDivElement).
+# All three share ONE prototype object; a config instrumenting all three must
+# capture every one, not only the first.
+SHARED_PROTOTYPE_MULTI_PAGE = "/stealth_shared_prototype_multi.html"
 
 
 # Recursive instrumentation is unsupported under stealth (rejected at config
-# time, see TestStealthRecursiveRejected), so there is no stealth recursive
-# probe page — the rejection is verified purely at the config layer.
+# time with a ConfigError), so there is no stealth recursive probe page — the
+# rejection is verified purely at the config layer.
 
 
 def _page_url(server: ServerUrls, page: str) -> str:
@@ -125,6 +152,57 @@ def _uninstrumented_params(
     browser_params[0].display_mode = "headless"
     browser_params[0].stealth_js_instrument = False
     browser_params[0].js_instrument = False
+    return manager_params, browser_params
+
+
+# A stealth surface that instruments HTMLCanvasElement with logCallStack=True so
+# the attribution test can assert a NON-EMPTY call_stack. The bundled default
+# leaves logCallStack False for canvas, so capturing a stack here doubles as
+# proof the per-object logCallStack flag is honoured. Navigator keeps the
+# webdriver->false override so the instrument stays undetectable.
+ATTRIBUTION_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "HTMLCanvasElement",
+        "instrumentedName": "HTMLCanvasElement",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": True,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+    {
+        "object": "Navigator",
+        "instrumentedName": "Navigator",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [{"key": "webdriver", "value": False, "level": 0}],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+]
+
+
+def _attribution_stealth_params(
+    data_dir: Path,
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = ATTRIBUTION_STEALTH_SETTINGS
     return manager_params, browser_params
 
 
@@ -1211,6 +1289,66 @@ class TestStealthDisruption:
             "into the dataset exists"
         )
 
+    def test_attribution_stealth_records_page_script_and_clean_stack(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Stealth must attribute records to the page script with a clean stack.
+
+        Guards the ``instrument.ts`` call_stack fix: the recorded toDataURL row
+        must be attributed to this page's script (``script_url``) and its
+        ``call_stack`` must contain only page frames, never ``moz-extension://``.
+
+        Uses a custom ``stealth_js_instrument_settings`` that sets
+        ``logCallStack: True`` for the canvas object. The bundled default leaves
+        ``logCallStack`` False for ``HTMLCanvasElement``, so capturing a
+        non-empty stack here ALSO proves the instrument honours the per-object
+        ``logCallStack`` flag from settings (configurability) rather than
+        hardcoding stack collection.
+        """
+        data_dir = tmp_path_factory.mktemp("attr_stealth")
+        db_path = _run_page(
+            _attribution_stealth_params(data_dir),
+            _page_url(server, ATTRIBUTION_PAGE),
+        )
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT script_url, call_stack FROM javascript WHERE symbol LIKE ?",
+            ("%toDataURL%",),
+            as_tuple=True,
+        )
+        assert rows, "stealth recorded no toDataURL row for the attribution page"
+        assert any(
+            "stealth_attribution.html" in (script_url or "") for script_url, _ in rows
+        ), "stealth did not attribute the toDataURL call to the page script"
+        assert any((call_stack or "").strip() for _, call_stack in rows), (
+            "stealth recorded an EMPTY call_stack despite logCallStack=True in "
+            "the custom settings — the per-object logCallStack flag is ignored"
+        )
+        for _, call_stack in rows:
+            assert "moz-extension://" not in (call_stack or ""), (
+                "stealth leaked a moz-extension:// frame into call_stack — "
+                "the recorded stack is polluted with extension frames"
+            )
+
+    def test_attribution_legacy_records_page_script(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Reference: legacy also attributes the toDataURL call to the page."""
+        data_dir = tmp_path_factory.mktemp("attr_legacy")
+        db_path = _run_page(
+            _legacy_params(data_dir), _page_url(server, ATTRIBUTION_PAGE)
+        )
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT script_url FROM javascript WHERE symbol LIKE ?",
+            ("%toDataURL%",),
+            as_tuple=True,
+        )
+        assert rows, "legacy recorded no toDataURL row for the attribution page"
+        assert any(
+            "stealth_attribution.html" in (script_url or "") for (script_url,) in rows
+        ), "legacy did not attribute the toDataURL call to the page script"
+
     def test_x3_stealth_instruments_dynamic_iframe(
         self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
     ) -> None:
@@ -1252,6 +1390,463 @@ class TestStealthDisruption:
             f"X3 control: legacy recorded the dynamic-iframe toDataURL ({rows}) "
             "— the stealth/legacy differential this test relies on no longer holds"
         )
+
+
+# --------------------------------------------------------------------------- #
+# Configurability (the stealth surface is runtime-configurable)
+# --------------------------------------------------------------------------- #
+# A custom stealth surface that instruments HTMLCanvasElement under a distinctive
+# instrumentedName so the recorded symbol (``CustomCanvasMarker.toDataURL``) can
+# ONLY appear if this config replaced the bundled default (which uses
+# instrumentedName "HTMLCanvasElement"). The Navigator entry keeps the
+# webdriver->false override so the instrument stays undetectable.
+CUSTOM_INSTRUMENTED_NAME = "CustomCanvasMarker"
+CUSTOM_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "HTMLCanvasElement",
+        "instrumentedName": CUSTOM_INSTRUMENTED_NAME,
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+    {
+        "object": "Navigator",
+        "instrumentedName": "Navigator",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [{"key": "webdriver", "value": False, "level": 0}],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+]
+
+
+def _custom_stealth_params(
+    data_dir: Path,
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = CUSTOM_STEALTH_SETTINGS
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthConfigurability:
+    """The stealth instrumentation surface is configurable at runtime.
+
+    Spec: requirement C1, the "Configurability requirement" section of
+    ``docs/developers/Stealth-Requirements.rst`` (which ``literalinclude``s
+    ``test_custom_settings_take_effect`` and ``test_custom_settings_stay_undetectable``).
+    How the surface is configured is described under "Configuring the instrumented
+    surface" in ``docs/developers/Stealth-Instrumentation.rst``.
+    """
+
+    def test_custom_settings_take_effect(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """A custom surface replaces the bundled default.
+
+        The distinctive instrumentedName proves the configured set was used:
+        ``CustomCanvasMarker.toDataURL`` cannot appear under the default config.
+        """
+        data_dir = tmp_path_factory.mktemp("config_custom")
+        db_path = _run_page(
+            _custom_stealth_params(data_dir), _page_url(server, ATTRIBUTION_PAGE)
+        )
+        custom_rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+            (f"{CUSTOM_INSTRUMENTED_NAME}.toDataURL",),
+        )
+        assert custom_rows[0][0] > 0, (
+            "custom stealth_js_instrument_settings did not take effect: no "
+            f"'{CUSTOM_INSTRUMENTED_NAME}.toDataURL' records were captured"
+        )
+        default_rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ?",
+            ("HTMLCanvasElement.toDataURL",),
+        )
+        assert default_rows[0][0] == 0, (
+            "the bundled default surface was still active alongside the custom "
+            "one ('HTMLCanvasElement.toDataURL' present)"
+        )
+
+    def test_empty_settings_instrument_nothing(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """``[]`` is an empty surface, not a request for the bundled default."""
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("config_empty")
+        )
+        browser_params[0].stealth_js_instrument_settings = []
+        db_path = _run_page(
+            (manager_params, browser_params), _page_url(server, ATTRIBUTION_PAGE)
+        )
+        assert db_utils.get_javascript_entries(db_path) == []
+
+    def test_entries_sharing_a_prototype_all_take_effect(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Two entries resolving to Screen.prototype each instrument their own
+        member under their own label."""
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("config_same_prototype")
+        )
+        browser_params[0].stealth_js_instrument_settings = [
+            {
+                "object": "Screen",
+                "instrumentedName": label,
+                "depth": 0,
+                "logSettings": _log_settings(propertiesToInstrument=[member]),
+            }
+            for label, member in (("window.screen", "width"), ("Screen", "height"))
+        ]
+        db_path = _run_page(
+            (manager_params, browser_params), _page_url(server, SCREEN_PAGE)
+        )
+        rows = db_utils.query_db(
+            db_path, "SELECT DISTINCT symbol FROM javascript", as_tuple=True
+        )
+        assert {r[0] for r in rows} == {"window.screen.width", "Screen.height"}
+
+    def test_instance_rooted_entry_counts_depth_from_the_instance(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """For a global instance such as ``document``, ``depth`` counts from the
+        instance on both the named-list and the instrument-everything path:
+        ``Document.prototype.cookie`` is depth 2 either way."""
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("config_instance_depth")
+        )
+        browser_params[0].stealth_js_instrument_settings = [
+            {
+                "object": "document",
+                "instrumentedName": "D",
+                "depth": 2,
+                "logSettings": _log_settings(),
+            }
+        ]
+        db_path = _run_page(
+            (manager_params, browser_params), _page_url(server, COOKIE_PAGE)
+        )
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT DISTINCT operation FROM javascript WHERE symbol = 'D.cookie'",
+            as_tuple=True,
+        )
+        assert sorted(r[0] for r in rows) == ["get", "set"], rows
+
+    def test_overwritten_method_is_refused(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """``overwrittenProperties`` replaces an accessor's value; on a method it
+        would be ignored, so the member is refused rather than wrapped."""
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("config_overwritten_method")
+        )
+        browser_params[0].stealth_js_instrument_settings = [
+            {
+                "object": "Storage",
+                "instrumentedName": "Storage",
+                "depth": 0,
+                "logSettings": _log_settings(
+                    propertiesToInstrument=["setItem"],
+                    overwrittenProperties=[
+                        {"key": "getItem", "value": "x", "level": 0}
+                    ],
+                ),
+            }
+        ]
+        db_path = _run_page(
+            (manager_params, browser_params),
+            _page_url(server, RECORD_INTEGRITY_PAGE),
+        )
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT DISTINCT symbol FROM javascript",
+            as_tuple=True,
+        )
+        assert {r[0] for r in rows} == {"Storage.setItem"}, rows
+
+    def test_constructor_members_are_left_native(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """A forwarder cannot be constructed, so a configured interface object
+        is refused rather than broken."""
+        url = _page_url(server, "/stealth_constructor.html")
+        clean = _collect_results(
+            _uninstrumented_params(tmp_path_factory.mktemp("ctor_clean")), url
+        )
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("ctor_stealth")
+        )
+        browser_params[0].stealth_js_instrument_settings = [
+            {
+                "object": "window",
+                "instrumentedName": "window",
+                "depth": 0,
+                "logSettings": _log_settings(
+                    propertiesToInstrument=["Image", "OfflineAudioContext", "name"]
+                ),
+            }
+        ]
+        stealth = _collect_results((manager_params, browser_params), url)
+        assert clean and stealth == clean
+
+    def test_custom_settings_stay_undetectable(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """A custom surface must remain undetectable on every vector."""
+        data_dir = tmp_path_factory.mktemp("config_undetect")
+        results = _collect_detection(
+            _custom_stealth_params(data_dir), _page_url(server, DETECTION_PAGE)
+        )
+        assert results, "no detection results collected for custom stealth config"
+        for req in DETECTABILITY_REQUIREMENTS:
+            assert results.get(req.result_key) is True, (
+                f"{req.req_id}: custom stealth config is detectable via "
+                f"'{req.result_key}' "
+                f"(page error: {results.get(req.result_key + '_error')})"
+            )
+
+
+# --------------------------------------------------------------------------- #
+# Error-drift coverage.
+#
+# An exception raised while an instrumented method runs must reach the page as
+# the identical object a pristine Firefox would deliver: same identity, class,
+# own properties, ``lineNumber`` and ``stack``. The stealth wrapper does not
+# catch it; the native runs in the page realm, so the error is a page object
+# and exportFunction hands it back unchanged.
+#
+# These tests run the SAME probe page (``stealth_error_drift.html``)
+# UNINSTRUMENTED and under STEALTH and compare the observations. The
+# instrumented surface targets methods whose NATIVE call throws:
+#   - ``CanvasRenderingContext2D.getImageData`` -> ``DOMException``
+#     (IndexSizeError) for a zero-sized rect.
+#   - ``Array.forEach`` -> synchronously invokes a page callback and re-raises
+#     its throw, so the page can route a built-in ``TypeError`` or a custom Error
+#     subclass THROUGH an instrumented native call.
+#
+# BROWSER-ONLY: every test here launches a real Firefox (no ``pyonly`` marker).
+# --------------------------------------------------------------------------- #
+# Methods whose NATIVE implementation throws. getImageData(0,0,0,0) raises a
+# DOMException; Array.forEach re-raises whatever its callback throws.
+ERROR_DRIFT_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "CanvasRenderingContext2D",
+        "instrumentedName": "CanvasRenderingContext2D",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": ["getImageData"],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+    {
+        "object": "Array",
+        "instrumentedName": "Array",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": ["forEach"],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+        },
+    },
+]
+
+
+def _error_drift_stealth_params(
+    data_dir: Path,
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = ERROR_DRIFT_STEALTH_SETTINGS
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthErrorDrift:
+    """An error thrown through an instrumented method must look native."""
+
+    @pytest.fixture(scope="class")
+    def uninstrumented(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> Dict:
+        """Ground truth: the error shapes a pristine Firefox observes."""
+        data_dir = tmp_path_factory.mktemp("error_drift_native")
+        results = _collect_results(
+            _uninstrumented_params(data_dir), _page_url(server, ERROR_DRIFT_PAGE)
+        )
+        assert results, "no uninstrumented error-drift results collected"
+        return results
+
+    @pytest.fixture(scope="class")
+    def stealth(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> Dict:
+        """The error shapes observed with the stealth instrument active."""
+        data_dir = tmp_path_factory.mktemp("error_drift_stealth")
+        results = _collect_results(
+            _error_drift_stealth_params(data_dir),
+            _page_url(server, ERROR_DRIFT_PAGE),
+        )
+        assert results, "no stealth error-drift results collected"
+        return results
+
+    def test_every_observation_matches_uninstrumented(
+        self, uninstrumented: Dict, stealth: Dict
+    ) -> None:
+        """Identity, class, own keys, lineNumber and stack all match native."""
+        diffs = {
+            k: (uninstrumented.get(k), stealth.get(k))
+            for k in uninstrumented.keys() | stealth.keys()
+            if uninstrumented.get(k) != stealth.get(k)
+        }
+        assert not diffs, diffs
+        for label in ("typeerror", "custom"):
+            assert stealth.get(f"{label}_identity") is True
+
+    def test_native_domexception_parity(
+        self, uninstrumented: Dict, stealth: Dict
+    ) -> None:
+        """A native DOMException raised through an instrumented method is identical.
+
+        ``getImageData(0,0,0,0)`` throws an ``IndexSizeError`` (a ``DOMException``).
+        Its ``name`` / ``message`` / ``instanceof DOMException`` must match the
+        uninstrumented page exactly, or a page could tell the call was wrapped.
+        """
+        assert uninstrumented.get("domexception_threw") is True, (
+            "the probe's getImageData call did not throw uninstrumented — the "
+            "DOMException control is ineffective"
+        )
+        assert stealth.get("domexception_threw") is True, (
+            "getImageData did not throw under stealth — the instrumented wrapper "
+            "swallowed the native DOMException"
+        )
+        for field in ("domexception_name", "domexception_message"):
+            assert stealth.get(field) == uninstrumented.get(field), (
+                f"stealth altered the DOMException's {field}: native="
+                f"{uninstrumented.get(field)!r} stealth={stealth.get(field)!r}"
+            )
+        assert stealth.get("domexception_is_domexception") is True, (
+            "the error is no longer an instanceof DOMException under stealth — a "
+            "page can detect the instrument by the changed error type"
+        )
+        assert stealth.get("domexception_is_domexception") == uninstrumented.get(
+            "domexception_is_domexception"
+        )
+
+    def test_builtin_typeerror_subclass_preserved(
+        self, uninstrumented: Dict, stealth: Dict
+    ) -> None:
+        """A built-in TypeError routed through an instrumented method keeps its type.
+
+        ``instanceof TypeError``, name and message must hold under stealth exactly
+        as they do uninstrumented.
+        """
+        assert uninstrumented.get("typeerror_threw") is True
+        assert stealth.get("typeerror_threw") is True
+        assert stealth.get("typeerror_name") == uninstrumented.get("typeerror_name")
+        assert stealth.get("typeerror_message") == uninstrumented.get(
+            "typeerror_message"
+        )
+        assert stealth.get("typeerror_is_typeerror") is True, (
+            "a built-in TypeError thrown through an instrumented method lost its "
+            "subclass under stealth (no longer instanceof TypeError) — detectable "
+            "drift from the uninstrumented page"
+        )
+        assert stealth.get("typeerror_is_typeerror") == uninstrumented.get(
+            "typeerror_is_typeerror"
+        )
+
+    def test_custom_error_subclass_preserved(
+        self, uninstrumented: Dict, stealth: Dict
+    ) -> None:
+        """A page's own Error subclass reaches the page as the same object."""
+        assert uninstrumented.get("custom_is_pagecustom") is True, (
+            "uninstrumented page did not preserve its own PageCustomError — the "
+            "control is ineffective"
+        )
+        for field in ("identity", "is_pagecustom", "ctor", "name", "message"):
+            assert stealth.get(f"custom_{field}") == uninstrumented.get(
+                f"custom_{field}"
+            ), field
+
+    def test_async_rejection_reason_does_not_drift(
+        self, uninstrumented: Dict, stealth: Dict
+    ) -> None:
+        """An async rejection surfaced from an instrumented call is unchanged.
+
+        A ``Promise.reject(new TypeError(...))`` scheduled inside an instrumented
+        ``forEach`` callback surfaces via ``unhandledrejection``. Its name /
+        message / ``instanceof TypeError`` must match the uninstrumented page.
+        """
+        assert uninstrumented.get("rejection_observed") is True, (
+            "the uninstrumented page observed no unhandled rejection — the async "
+            "control is ineffective"
+        )
+        assert stealth.get("rejection_observed") is True, (
+            "no unhandled rejection observed under stealth — the instrumented call "
+            "swallowed or altered the async rejection"
+        )
+        assert stealth.get("rejection_name") == uninstrumented.get("rejection_name")
+        assert stealth.get("rejection_message") == uninstrumented.get(
+            "rejection_message"
+        )
+        assert stealth.get("rejection_is_typeerror") == uninstrumented.get(
+            "rejection_is_typeerror"
+        ), "the async rejection reason's type drifted under stealth"
+
+    def test_instrumented_throw_stack_has_no_extension_frames(
+        self, uninstrumented: Dict, stealth: Dict
+    ) -> None:
+        """A throw THROUGH an instrumented method leaks no extension frame.
+
+        The exception is created while extension frames are on the stack; the
+        page's view of ``e.stack`` must still contain only page frames.
+        """
+        for label in ("domexception", "typeerror", "custom"):
+            assert uninstrumented.get(f"{label}_stack_has_extension") is False, (
+                f"uninstrumented {label} throw reported an extension frame — the "
+                "probe is miscalibrated"
+            )
+            assert stealth.get(f"{label}_threw") is True
+            assert stealth.get(f"{label}_stack_has_extension") is False, (
+                f"the {label} error's stack contains a moz-extension:// frame "
+                "under stealth, leaking the instrument to the page"
+            )
 
 
 # --------------------------------------------------------------------------- #
@@ -1456,4 +2051,597 @@ class TestStealthWindowName:
             "legacy left window.name looking pristine (native accessors with "
             "spec-prefixed names) — the detection vector is ineffective, so a "
             "stealth pass on the same vector would be meaningless"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# logSettings fidelity: preventSets, logFunctionGets, recursive/depth,
+# nonExistingPropertiesToInstrument: each is honoured with legacy semantics and
+# stays native-looking where the property is on a native object.
+# --------------------------------------------------------------------------- #
+def _probe_results(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Dict:
+    """Visit a probe page that publishes a self-check JSON on #results."""
+    return _collect_results(params, url)
+
+
+def _log_settings(**overrides: object) -> Dict:
+    """A fully-defaulted stealth logSettings object with optional overrides."""
+    base = {
+        "propertiesToInstrument": [],
+        "nonExistingPropertiesToInstrument": [],
+        "excludedProperties": [],
+        "overwrittenProperties": [],
+        "logCallStack": False,
+        "logFunctionsAsStrings": False,
+        "logFunctionGets": False,
+        "preventSets": False,
+        "recursive": False,
+        "depth": 5,
+    }
+    base.update(overrides)
+    return base
+
+
+# preventSets: instrument document.body (an accessor whose value is the <body>
+# element, an object) with preventSets:true. Assignments must be logged as
+# set(prevented) and blocked.
+PREVENT_SETS_SETTINGS: List[Dict] = [
+    {
+        "object": "document",
+        "instrumentedName": "document",
+        "depth": 0,
+        "logSettings": _log_settings(
+            propertiesToInstrument=[{"depth": 2, "propertyNames": ["body"]}],
+            preventSets=True,
+        ),
+    },
+]
+
+# nonExisting + logFunctionGets on Navigator (a honey property).
+HONEY_SETTINGS: List[Dict] = [
+    {
+        "object": "Navigator",
+        "instrumentedName": "Navigator",
+        "depth": 0,
+        "logSettings": _log_settings(
+            nonExistingPropertiesToInstrument=["openwpmHoneyProp"],
+            logFunctionGets=True,
+        ),
+    },
+]
+
+
+def _params_with(
+    data_dir: Path, settings: List[Dict]
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = settings
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthLogSettings:
+    """preventSets, logFunctionGets and nonExistingPropertiesToInstrument are
+    honoured by the stealth instrument.
+
+    Spec: the "logSettings semantics" section (the per-field table) of
+    ``docs/developers/Stealth-Instrumentation.rst``, which documents which legacy
+    ``logSettings`` fields stealth honours (every field except ``recursive``).
+    """
+
+    def test_prevent_sets_blocks_and_logs(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """preventSets logs set(prevented) and does NOT call the original setter.
+
+        document.body holds an object value, so under preventSets an assignment
+        is recorded as set(prevented) and blocked — document.body is unchanged.
+        """
+        data_dir = tmp_path_factory.mktemp("prevent_sets")
+        db_path = _run_page(
+            _params_with(data_dir, PREVENT_SETS_SETTINGS),
+            _page_url(server, PREVENT_SETS_PAGE),
+        )
+        prevented = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("document.body", "set(prevented)"),
+        )
+        assert (
+            prevented[0][0] > 0
+        ), "preventSets did not record a set(prevented) row for document.body"
+        # And the original setter must NOT have run.
+        plain_set = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("document.body", "set"),
+        )
+        assert plain_set[0][0] == 0, (
+            "preventSets still emitted a plain 'set' for document.body — the "
+            "write was not actually prevented"
+        )
+
+    def test_prevent_sets_stays_undetectable_and_blocks(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """The page sees the write blocked AND the accessor still native."""
+        data_dir = tmp_path_factory.mktemp("prevent_sets_detect")
+        results = _probe_results(
+            _params_with(data_dir, PREVENT_SETS_SETTINGS),
+            _page_url(server, PREVENT_SETS_PAGE),
+        )
+        assert results, "no preventSets probe results collected"
+        assert results.get("body_unchanged") is True, (
+            "preventSets did not block the document.body assignment "
+            f"(probe error: {results.get('descriptor_error')})"
+        )
+        assert results.get("body_not_replaced") is True
+        # The instrumented accessor must still report [native code].
+        assert (
+            results.get("body_setter_native") is True
+        ), "document.body setter no longer reports [native code] under preventSets"
+        assert results.get("body_getter_native") is True
+
+    def test_non_existing_property_captured_and_native(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """A honey property is captured (get/set) and looks native.
+
+        nonExistingPropertiesToInstrument synthesizes a native-looking accessor
+        for a name absent from Navigator.prototype, so get/set on it are
+        recorded under the javascript table.
+        """
+        data_dir = tmp_path_factory.mktemp("honey")
+        db_path = _run_page(
+            _params_with(data_dir, HONEY_SETTINGS),
+            _page_url(server, HONEY_PROPS_PAGE),
+        )
+        sets = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("Navigator.openwpmHoneyProp", "set"),
+        )
+        assert sets[0][0] > 0, (
+            "nonExistingPropertiesToInstrument did not capture a set on the "
+            "synthesized honey property"
+        )
+        gets = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("Navigator.openwpmHoneyProp", "get"),
+        )
+        assert gets[0][0] > 0, (
+            "nonExistingPropertiesToInstrument did not capture a get on the "
+            "synthesized honey property"
+        )
+
+    def test_log_function_gets_emits_get_function(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """logFunctionGets records get(function) when the value is a function.
+
+        After the page assigns a function to the honey property, reading it
+        WITHOUT calling must emit a get(function) row (and no plain get for the
+        function value), matching legacy.
+        """
+        data_dir = tmp_path_factory.mktemp("fn_gets")
+        db_path = _run_page(
+            _params_with(data_dir, HONEY_SETTINGS),
+            _page_url(server, HONEY_PROPS_PAGE),
+        )
+        fn_gets = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript " "WHERE symbol = ? AND operation = ?",
+            ("Navigator.openwpmHoneyProp", "get(function)"),
+        )
+        assert fn_gets[0][0] > 0, (
+            "logFunctionGets did not record a get(function) row when the honey "
+            "property held a function value"
+        )
+
+    def test_honey_property_stays_native(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """The synthesized honey accessor reports [native code]."""
+        data_dir = tmp_path_factory.mktemp("honey_detect")
+        results = _probe_results(
+            _params_with(data_dir, HONEY_SETTINGS),
+            _page_url(server, HONEY_PROPS_PAGE),
+        )
+        assert results, "no honey-property probe results collected"
+        assert results.get("value_roundtrips") is True
+        assert results.get("function_roundtrips") is True
+        assert results.get("honey_getter_native") is True, (
+            "synthesized honey getter does not report [native code] "
+            f"(probe error: {results.get('descriptor_error')})"
+        )
+        assert (
+            results.get("honey_setter_native") is True
+        ), "synthesized honey setter does not report [native code]"
+
+
+def _distinct_symbol_receiver_pairs(db_path: Path) -> set:
+    """Distinct (symbol, receiver) pairs recorded in the javascript table.
+
+    ``receiver`` is the interface-attribution column populated by
+    interface-attributed shared-prototype capture (B′); it is NULL for ordinary
+    instrumentation. Returned as ``(symbol, receiver_or_None)`` tuples.
+    """
+    rows = db_utils.query_db(
+        db_path,
+        "SELECT DISTINCT symbol, receiver FROM javascript",
+        as_tuple=True,
+    )
+    return {(r[0], r[1]) for r in rows}
+
+
+# --------------------------------------------------------------------------- #
+# logFunctionsAsStrings parity for call arguments
+# --------------------------------------------------------------------------- #
+# Distinctive token embedded in the listener function's source on the probe page
+# (test/test_pages/stealth_function_arg.html). It can only appear in a recorded
+# call's ``arguments`` if the function argument was serialized as its SOURCE
+# STRING (logFunctionsAsStrings:true), never if it was serialized as the
+# placeholder "FUNCTION" (logFunctionsAsStrings:false).
+FUNCTION_ARG_MARKER = "STEALTH_FN_MARKER"
+
+
+def _function_arg_settings(log_functions_as_strings: bool) -> List[Dict]:
+    """Stealth surface instrumenting ``EventTarget.addEventListener``.
+
+    The probe page calls ``document.addEventListener(type, listener)`` with a
+    named function, which dispatches through ``EventTarget.prototype`` — so this
+    captures the function-valued second argument. ``logFunctionsAsStrings`` is
+    set per the parameter to exercise both serialization directions.
+    """
+    return [
+        {
+            "object": "EventTarget",
+            "instrumentedName": "EventTarget",
+            "depth": 0,
+            "logSettings": {
+                "propertiesToInstrument": ["addEventListener"],
+                "nonExistingPropertiesToInstrument": [],
+                "excludedProperties": [],
+                "overwrittenProperties": [],
+                "logCallStack": False,
+                "logFunctionsAsStrings": log_functions_as_strings,
+                "logFunctionGets": False,
+                "preventSets": False,
+                "recursive": False,
+                "depth": 5,
+            },
+        },
+    ]
+
+
+def _function_arg_params(
+    data_dir: Path, log_functions_as_strings: bool
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = _function_arg_settings(
+        log_functions_as_strings
+    )
+    return manager_params, browser_params
+
+
+def _addeventlistener_arguments(db_path: Path) -> List[str]:
+    """Return the recorded ``arguments`` JSON for every addEventListener call."""
+    rows = db_utils.query_db(
+        db_path,
+        "SELECT arguments FROM javascript " "WHERE symbol = ? AND operation = 'call'",
+        ("EventTarget.addEventListener",),
+    )
+    return [row[0] for row in rows if row[0] is not None]
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthLogFunctionsAsStrings:
+    """Call ARGUMENTS honour ``logFunctionsAsStrings`` (drop-in parity).
+
+    Legacy serializes each call argument with
+    ``serializeObject(arg, logSettings.logFunctionsAsStrings)``
+    (Extension/src/lib/js-instruments.ts), and the stealth instrument does the
+    same for property VALUES. These tests pin that the stealth ARGUMENTS path is
+    consistent with both: a function passed to an instrumented method is recorded
+    as its source string when the setting is true, and as "FUNCTION" when false.
+
+    Spec: the ``logFunctionsAsStrings`` row of the "logSettings semantics" table
+    in ``docs/developers/Stealth-Instrumentation.rst``.
+    """
+
+    def test_function_arg_recorded_as_source_when_true(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """logFunctionsAsStrings:true -> argument recorded as its source string."""
+        data_dir = tmp_path_factory.mktemp("logfnstr_true")
+        db_path = _run_page(
+            _function_arg_params(data_dir, True),
+            _page_url(server, FUNCTION_ARG_PAGE),
+        )
+        all_args = _addeventlistener_arguments(db_path)
+        assert all_args, (
+            "no EventTarget.addEventListener call was recorded — the probe page "
+            "did not exercise the instrumented surface"
+        )
+        assert any(FUNCTION_ARG_MARKER in args for args in all_args), (
+            "logFunctionsAsStrings:true did not serialize the function argument "
+            f"to its source string (no '{FUNCTION_ARG_MARKER}' in recorded "
+            f"arguments): {all_args}"
+        )
+        assert not any('"FUNCTION"' in args for args in all_args), (
+            "logFunctionsAsStrings:true still recorded the placeholder "
+            f'"FUNCTION" for a function argument: {all_args}'
+        )
+
+    def test_function_arg_recorded_as_placeholder_when_false(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """logFunctionsAsStrings:false -> argument recorded as "FUNCTION"."""
+        data_dir = tmp_path_factory.mktemp("logfnstr_false")
+        db_path = _run_page(
+            _function_arg_params(data_dir, False),
+            _page_url(server, FUNCTION_ARG_PAGE),
+        )
+        all_args = _addeventlistener_arguments(db_path)
+        assert all_args, (
+            "no EventTarget.addEventListener call was recorded — the probe page "
+            "did not exercise the instrumented surface"
+        )
+        assert any('"FUNCTION"' in args for args in all_args), (
+            'logFunctionsAsStrings:false did not record the "FUNCTION" '
+            f"placeholder for a function argument: {all_args}"
+        )
+        assert not any(FUNCTION_ARG_MARKER in args for args in all_args), (
+            "logFunctionsAsStrings:false leaked the function source string "
+            f"(found '{FUNCTION_ARG_MARKER}'): {all_args}"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Interface-attributed shared-prototype capture (B′)
+#
+# A method on a SHARED prototype (e.g. EventTarget.prototype.addEventListener) is
+# hooked ONCE, but at call time the receiver's INTERFACE is read (through the
+# Xray, immune to page tampering) and:
+#   (a) the record is EMITTED only if that interface is in a configured
+#       receiverInterfaces set (a instrument-side filter), and
+#   (b) the concrete receiver interface is recorded in a DEDICATED ``receiver``
+#       column while ``symbol`` stays the STATIC shared-prototype method
+#       (e.g. symbol="EventTarget.addEventListener", receiver="HTMLDivElement").
+# Interface-level attribution is the goal; distinguishing two instances of the
+# same interface is explicitly NOT needed. See
+# docs/developers/Stealth-Instrumentation.md and
+# Extension/src/stealth/instrument.ts (logCall / getReceiverInterfaceName).
+# --------------------------------------------------------------------------- #
+# The probe page (stealth_shared_prototype.html) calls addEventListener on an
+# HTMLDivElement (TARGETED) and an XMLHttpRequest (NON-targeted). The config below
+# lists ONLY HTMLDivElement, so the filter must keep the div call and drop the xhr
+# call.
+TARGETED_INTERFACE = "HTMLDivElement"
+NON_TARGETED_INTERFACE = "XMLHttpRequest"
+SHARED_PROTOTYPE_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "EventTarget",
+        "instrumentedName": "EventTarget",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": ["addEventListener"],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+            "receiverInterfaces": [TARGETED_INTERFACE],
+        },
+    },
+]
+
+
+def _shared_prototype_params(
+    data_dir: Path,
+) -> Tuple[ManagerParams, List[BrowserParams]]:
+    manager_params, browser_params = _stealth_params(data_dir)
+    browser_params[0].stealth_js_instrument_settings = SHARED_PROTOTYPE_STEALTH_SETTINGS
+    return manager_params, browser_params
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthSharedPrototypeCapture:
+    """B′: interface-attributed, instrument-filtered shared-prototype capture.
+
+    Spec: the "Interface-attributed shared-prototype capture" section of
+    ``docs/developers/Stealth-Instrumentation.rst``, which describes hooking a
+    shared prototype once, reading the receiver interface through the Xray, and
+    filtering/attributing via the dedicated ``receiver`` column.
+    """
+
+    @pytest.fixture(scope="class")
+    def shared_prototype_pairs(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> set:
+        """Distinct (symbol, receiver) pairs for the shared-prototype probe.
+
+        One crawl; ``receiver`` is the dedicated interface-attribution column
+        (NULL for ordinary rows).
+        """
+        data_dir = tmp_path_factory.mktemp("shared_proto")
+        db_path = _run_page(
+            _shared_prototype_params(data_dir),
+            _page_url(server, SHARED_PROTOTYPE_PAGE),
+        )
+        return _distinct_symbol_receiver_pairs(db_path)
+
+    def test_targeted_interface_is_captured_in_receiver_column(
+        self, shared_prototype_pairs: set
+    ) -> None:
+        """addEventListener on the TARGETED interface is recorded with the STATIC
+        ``symbol`` and the receiver interface in the dedicated ``receiver`` column.
+
+        Proves (a) the shared-prototype method is captured under the static
+        symbol ``EventTarget.addEventListener``, and (b) the concrete RECEIVER
+        interface (HTMLDivElement) lands in the ``receiver`` column — not in
+        ``symbol`` — even though the page redefined the receiver's ``constructor``
+        (the Xray read sees through it).
+        """
+        expected = ("EventTarget.addEventListener", TARGETED_INTERFACE)
+        assert expected in shared_prototype_pairs, (
+            "shared-prototype capture did not record symbol="
+            f"'EventTarget.addEventListener' with receiver='{TARGETED_INTERFACE}'; "
+            "the targeted interface call was not captured / not attributed to the "
+            f"receiver column. Recorded (symbol, receiver) pairs: "
+            f"{sorted(shared_prototype_pairs)}"
+        )
+
+    def test_non_targeted_interface_is_filtered_out(
+        self, shared_prototype_pairs: set
+    ) -> None:
+        """addEventListener on a NON-targeted interface is NOT recorded.
+
+        The discriminating filter test: the probe calls addEventListener on BOTH
+        an HTMLDivElement (in receiverInterfaces) and an XMLHttpRequest (NOT in
+        it). The instrument-side filter must drop the xhr call entirely — no
+        row whose ``receiver`` is the non-targeted interface, and (since the call
+        is dropped) no ``EventTarget.addEventListener`` row attributed to it.
+        """
+        receivers = {recv for (_sym, recv) in shared_prototype_pairs}
+        assert NON_TARGETED_INTERFACE not in receivers, (
+            "the instrument-side receiver-interface filter did not drop "
+            "non-targeted calls: a row was recorded with receiver="
+            f"'{NON_TARGETED_INTERFACE}', which is NOT in receiverInterfaces. "
+            f"Recorded (symbol, receiver) pairs: {sorted(shared_prototype_pairs)}"
+        )
+
+    def test_absent_receiver_interfaces_is_unchanged(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Regression: an entry WITHOUT receiverInterfaces behaves as before.
+
+        The same probe page, instrumented with a plain (no-receiverInterfaces)
+        EventTarget.addEventListener entry, must record the call under the STATIC
+        symbol ``EventTarget.addEventListener`` for BOTH receivers, with the
+        ``receiver`` column NULL — no interface attribution, no filtering. This
+        pins that the new column is purely additive: when receiverInterfaces is
+        absent, the static-symbol/always-emit path is unchanged and ``receiver``
+        is NULL.
+        """
+        plain_settings = [
+            {
+                "object": "EventTarget",
+                "instrumentedName": "EventTarget",
+                "depth": 0,
+                "logSettings": {
+                    "propertiesToInstrument": ["addEventListener"],
+                    "nonExistingPropertiesToInstrument": [],
+                    "excludedProperties": [],
+                    "overwrittenProperties": [],
+                    "logCallStack": False,
+                    "logFunctionsAsStrings": False,
+                    "logFunctionGets": False,
+                    "preventSets": False,
+                    "recursive": False,
+                    "depth": 5,
+                },
+            },
+        ]
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("shared_proto_plain")
+        )
+        browser_params[0].stealth_js_instrument_settings = plain_settings
+        db_path = _run_page(
+            (manager_params, browser_params),
+            _page_url(server, SHARED_PROTOTYPE_PAGE),
+        )
+        pairs = _distinct_symbol_receiver_pairs(db_path)
+        symbols = {sym for (sym, _recv) in pairs}
+        assert "EventTarget.addEventListener" in symbols, (
+            "without receiverInterfaces the shared-prototype method must record "
+            "under the STATIC symbol 'EventTarget.addEventListener' (unchanged "
+            f"behaviour); recorded symbols: {sorted(symbols)}"
+        )
+        # No entry in this crawl uses receiverInterfaces, so EVERY row — the
+        # shared-prototype method AND any ordinary (non-shared) instrumentation
+        # row — must have a NULL receiver. This pins the regression: ordinary
+        # instrumentation never populates the new column.
+        non_null = {(sym, recv) for (sym, recv) in pairs if recv is not None}
+        assert not non_null, (
+            "without any receiverInterfaces config the receiver column must be "
+            f"NULL for every row; these rows populated it: {sorted(non_null)}"
+        )
+
+
+# Multiple inherited methods of ONE shared prototype, instrumented together. All
+# three resolve to the SAME EventTarget.prototype object, and the stealth
+# instrument must hook every one of them.
+SHARED_PROTOTYPE_MULTI_STEALTH_SETTINGS: List[Dict] = [
+    {
+        "object": "EventTarget",
+        "instrumentedName": "EventTarget",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": [
+                "addEventListener",
+                "removeEventListener",
+                "dispatchEvent",
+            ],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "overwrittenProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+            "receiverInterfaces": [TARGETED_INTERFACE],
+        },
+    },
+]
+
+
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthSharedPrototypeMultiMember:
+    """B′: ALL methods of one shared prototype are captured, not just the first.
+
+    Guards against a per-prototype gate: a config instrumenting
+    several members of one shared prototype (EventTarget.addEventListener,
+    .removeEventListener, .dispatchEvent) resolves every member to the SAME
+    ``EventTarget.prototype`` object; every one must be hooked, not only the
+    first. The probe page calls all three on a
+    targeted-interface receiver; all three must be recorded with the right
+    ``receiver``.
+
+    Spec: the "Interface-attributed shared-prototype capture" section of
+    ``docs/developers/Stealth-Instrumentation.rst``.
+    """
+
+    def test_all_shared_prototype_methods_are_captured(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        manager_params, browser_params = _stealth_params(
+            tmp_path_factory.mktemp("shared_proto_multi")
+        )
+        browser_params[0].stealth_js_instrument_settings = (
+            SHARED_PROTOTYPE_MULTI_STEALTH_SETTINGS
+        )
+        db_path = _run_page(
+            (manager_params, browser_params),
+            _page_url(server, SHARED_PROTOTYPE_MULTI_PAGE),
+        )
+        pairs = _distinct_symbol_receiver_pairs(db_path)
+        expected = {
+            ("EventTarget.addEventListener", TARGETED_INTERFACE),
+            ("EventTarget.removeEventListener", TARGETED_INTERFACE),
+            ("EventTarget.dispatchEvent", TARGETED_INTERFACE),
+        }
+        missing = expected - pairs
+        assert not missing, (
+            "not every instrumented member of the shared EventTarget.prototype was "
+            "captured — a per-prototype gate dropped all but the "
+            f"first. Missing (symbol, receiver) pairs: {sorted(missing)}. "
+            f"Recorded pairs: {sorted(pairs)}"
         )
