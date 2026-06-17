@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.35.0 - 2026-06-17
+
+Bump to Firefox 152
+
+### Fixes & improvements
+
+- Aggregate all top-level JS instrumentation failures into a single error surfaced to the crawl pipeline, so a misconfigured `js_instrument_settings` reports every bad target in one pass instead of failing on the first (#1173)
+- Null-safe instrument-status probe that logs rather than swallows failures (#1173)
+- Sync the Extension manifest `strict_min_version` to the bundled Firefox major
+
+### Tooling / tests
+
+- Dynamic ports and fixture injection for test parallelization (#1186)
+- DNS 2-hop redirect chain stress test
+- Full conda + npm dependency churn (babel held at 7 pending a babel-8 migration; eslint held at 9, and eslint-plugin-unicorn at 64, because @microsoft/eslint-plugin-sdl peers eslint ^9 — eslint 10 needs its own migration)
+
 ## v0.34.0 - 2026-05-07
 
 Bump to Firefox 150
