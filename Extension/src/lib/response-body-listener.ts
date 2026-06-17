@@ -3,8 +3,9 @@ import { digestMessage } from "./sha256";
 export class ResponseBodyListener {
   private readonly responseBody: Promise<Uint8Array>;
   private readonly contentHash: Promise<string>;
-  private resolveResponseBody: (responseBody: Uint8Array) => void;
-  private resolveContentHash: (contentHash: string) => void;
+  // Assigned synchronously inside the Promise executors in the constructor.
+  private resolveResponseBody!: (responseBody: Uint8Array) => void;
+  private resolveContentHash!: (contentHash: string) => void;
 
   constructor(details: browser.webRequest._OnBeforeRequestDetails) {
     this.responseBody = new Promise((resolve) => {
@@ -20,9 +21,9 @@ export class ResponseBodyListener {
     ) as any;
 
     let responseBody = new Uint8Array();
-    filter.ondata = (event) => {
-      void digestMessage(event.data).then(this.resolveContentHash);
+    filter.ondata = (event: { data: ArrayBuffer }) => {
       const incoming = new Uint8Array(event.data);
+      void digestMessage(incoming).then(this.resolveContentHash);
       const tmp = new Uint8Array(responseBody.length + incoming.length);
       tmp.set(responseBody);
       tmp.set(incoming, responseBody.length);
@@ -30,7 +31,7 @@ export class ResponseBodyListener {
       filter.write(event.data);
     };
 
-    filter.onstop = (_event) => {
+    filter.onstop = (_event: unknown) => {
       this.resolveResponseBody(responseBody);
       filter.disconnect();
     };

@@ -16,9 +16,9 @@ const DataReceiver = {
 browser.sockets.onDataReceived.addListener(DataReceiver.onDataReceived);
 
 export class ListeningSocket {
-  callback: any;
-  port: number;
-  constructor(callback) {
+  callback: (data: unknown) => void;
+  port!: number; // assigned in startListening()
+  constructor(callback: (data: unknown) => void) {
     this.callback = callback;
   }
 
@@ -31,7 +31,7 @@ export class ListeningSocket {
 }
 
 export class SendingSocket {
-  id: number;
+  id!: number; // assigned in connect()
 
   async connect(host: string, port: number) {
     this.id = await browser.sockets.createSendingSocket();
@@ -44,7 +44,7 @@ export class SendingSocket {
       browser.sockets.sendData(this.id, aData, !!aJSON);
       return true;
     } catch (err) {
-      console.error(err, err.message);
+      console.error(err, err instanceof Error ? err.message : String(err));
       return false;
     }
   }

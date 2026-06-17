@@ -6,8 +6,9 @@ import { Navigation } from "../schema";
 export class PendingNavigation {
   public readonly onBeforeNavigateEventNavigation: Promise<Navigation>;
   public readonly onCommittedEventNavigation: Promise<Navigation>;
-  public resolveOnBeforeNavigateEventNavigation: (details: Navigation) => void;
-  public resolveOnCommittedEventNavigation: (details: Navigation) => void;
+  // Assigned synchronously inside the Promise executors in the constructor.
+  public resolveOnBeforeNavigateEventNavigation!: (details: Navigation) => void;
+  public resolveOnCommittedEventNavigation!: (details: Navigation) => void;
   constructor() {
     this.onBeforeNavigateEventNavigation = new Promise((resolve) => {
       this.resolveOnBeforeNavigateEventNavigation = resolve;
@@ -29,7 +30,7 @@ export class PendingNavigation {
    *
    * @param ms
    */
-  public async resolvedWithinTimeout(ms) {
+  public async resolvedWithinTimeout(ms: number) {
     const resolved = await Promise.race([
       this.resolved(),
       new Promise((resolve) => setTimeout(resolve, ms)),

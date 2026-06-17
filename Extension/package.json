@@ -9,17 +9,17 @@
     "start": "Start is required for the manual_test.py to run"
   },
   "devDependencies": {
-    "@babel/cli": "^7.28.6",
-    "@babel/core": "^7.29.0",
-    "@babel/preset-env": "^7.29.5",
-    "@eslint/js": "^9.0.0",
+    "@babel/cli": "^8.0.1",
+    "@babel/core": "^8.0.1",
+    "@babel/preset-env": "^8.0.1",
+    "@eslint/js": "^10.0.1",
     "@microsoft/eslint-plugin-sdl": "^1.1.0",
     "@types/download": "^8.0.5",
     "@types/firefox-webext-browser": "^143.0.0",
     "ajv": "^8.20.0",
     "body-parser": "^2.3.0",
     "download": "^8.0.0",
-    "eslint": "^9",
+    "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-html": "^8.1.4",
     "eslint-plugin-import": "^2.32.0",
@@ -27,14 +27,14 @@
     "eslint-plugin-mozilla": "^4.4.0",
     "eslint-plugin-prettier": "^5.5.6",
     "eslint-plugin-promise": "^7.3.0",
-    "eslint-plugin-unicorn": "^64.0.0",
+    "eslint-plugin-unicorn": "^67.0.0",
     "express": "^5.2.1",
     "globals": "^17.6.0",
     "prettier": "^3.8.4",
     "safe-compare": "^1.1.4",
     "ts-loader": "^9.6.1",
     "typedoc": "^0.28.19",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
     "web-ext": "^10.4.0",
     "webpack": "^5.107.2",
@@ -77,6 +77,14 @@
   },
   "resolutions": {
     "lodash": "^4.17.21"
+  },
+  "overrides": {
+    "@microsoft/eslint-plugin-sdl": {
+      "eslint": "$eslint"
+    },
+    "eslint-plugin-import": {
+      "eslint": "$eslint"
+    }
   },
   "prettier": {
     "singleQuote": false,

@@ -6,6 +6,7 @@ export interface openWpmContentScriptConfig {
 }
 declare global {
   interface Window {
-    openWpmContentScriptConfig: openWpmContentScriptConfig;
+    // Optional: the content script deletes it after reading it.
+    openWpmContentScriptConfig?: openWpmContentScriptConfig;
   }
 }
