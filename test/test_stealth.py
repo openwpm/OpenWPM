@@ -110,8 +110,14 @@ SHARED_PROTOTYPE_PAGE = "/stealth_shared_prototype.html"
 # hook every one via a single needsWrapper(EventTarget.prototype) — de-masking the
 # per-prototype gate bug where only the first member is captured.
 SHARED_PROTOTYPE_MULTI_PAGE = "/stealth_shared_prototype_multi.html"
-
-
+# Calls toString() on navigator (interface Navigator, IN receiverInterfaces) AND
+# on a <div> (HTMLDivElement, NOT in receiverInterfaces), exercising the opt-in
+# capture_universal_prototype_members sweep at RUNTIME: the Navigator call must be
+# recorded as "Object.toString" with receiver "Navigator", the div call dropped by
+# the content-script filter, and the crawl must complete (the inLog reentrancy
+# guard must hold despite wrapping Object.prototype.toString, which the
+# instrument's own serializeObject/JSON.stringify re-enter).
+UNIVERSAL_TOSTRING_PAGE = "/stealth_universal_toString_probe.html"
 # Recursive instrumentation is unsupported under stealth (rejected at config
 # time with a ConfigError), so there is no stealth recursive probe page — the
 # rejection is verified purely at the config layer.
@@ -2699,6 +2705,357 @@ class TestStealthSweepSharedPrototype:
         assert (
             "non-method" in untranslated_by_path["window.document.URL"].lower()
         ), untranslated_by_path["window.document.URL"]
+
+
+# A recursive navigator surface that reaches several interfaces (Navigator,
+# Permissions, Geolocation, …), every one of which inherits the universal
+# Object.prototype methods (toString, valueOf, …). Used by both the flag-OFF and
+# flag-ON universal-capture tests below.
+UNIVERSAL_SWEEP_LEGACY_SETTINGS: List = [
+    {"window.navigator": {"propertiesToInstrument": [], "recursive": True, "depth": 1}},
+]
+
+
+class TestStealthSweepUniversalPrototypeCapture:
+    """Opt-in ``capture_universal_prototype_members`` flag on the sweep.
+
+    By DEFAULT (flag OFF) inherited methods owned by a universal prototype
+    (``Object.prototype.toString``/``valueOf``/…) are left untranslated — hooking
+    them would fire on every object page-wide for zero tracking signal. A
+    researcher who wants strict legacy-``recursive`` parity can opt in: the flag
+    routes those universal METHODS into the same interface-attributed
+    shared-prototype path used for real interfaces (a single
+    ``{object: "Object", …}`` entry with ``receiverInterfaces``), and they are no
+    longer untranslated. Non-method universal members (accessors) stay untranslated
+    regardless.
+    """
+
+    def test_flag_off_universal_methods_are_untranslated(self) -> None:
+        """DEFAULT (flag OFF): universal-prototype methods stay untranslated, NOT
+        captured.
+
+        Pins the unchanged default: ``toString``/``valueOf`` reached via the
+        recursive navigator surface appear in the untranslated list with a
+        ``universal``-class reason, and NO ``{object: "Object"/"Array"}`` entry is
+        emitted. This is the control companion to the flag-ON capture test.
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            UNIVERSAL_SWEEP_LEGACY_SETTINGS
+        )
+        untranslated_by_path = {r.path: r.reason for r in untranslated}
+
+        for member in ("toString", "valueOf"):
+            path = f"window.navigator.{member}"
+            assert path in untranslated_by_path, (
+                f"with the flag OFF the universal method {member!r} must be "
+                f"untranslated; reported untranslated paths: {sorted(untranslated_by_path)}"
+            )
+            assert "universal" in untranslated_by_path[path].lower(), (
+                f"untranslated reason for {path} should name the universal-prototype "
+                f"class; got: {untranslated_by_path[path]!r}"
+            )
+
+        emitted_universal = {
+            e["object"] for e in stealth_settings if e["object"] in {"Object", "Array"}
+        }
+        assert not emitted_universal, (
+            "with the flag OFF the sweep must NOT emit an Object/Array universal-"
+            f"prototype entry; emitted: {emitted_universal}"
+        )
+
+    def test_flag_on_universal_methods_become_shared_prototype_entry(self) -> None:
+        """FLAG ON: universal-prototype methods become an ``{object: "Object"}``
+        shared-prototype entry and leave the untranslated list.
+
+        The SAME recursive navigator config, swept with
+        ``capture_universal_prototype_members=True``, must:
+          * emit exactly one ``{object: "Object"}`` shared-prototype entry whose
+            ``propertiesToInstrument`` includes ``toString`` (and the other
+            universal Object.prototype methods),
+          * carry ``receiverInterfaces`` covering the leaf interfaces the recursive
+            surface reached (Navigator, Permissions, …),
+          * NOT report those universal methods as untranslated any more, and
+          * still leave the universal ACCESSOR ``__proto__`` untranslated (only
+            methods are interface-attributable).
+
+        With the flag OFF (the companion test above) these members are
+        untranslated and there is no Object entry; with the flag ON they are
+        captured here.
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            UNIVERSAL_SWEEP_LEGACY_SETTINGS,
+            capture_universal_prototype_members=True,
+        )
+        untranslated_paths = {r.path for r in untranslated}
+
+        object_entries = [e for e in stealth_settings if e["object"] == "Object"]
+        assert len(object_entries) == 1, (
+            "the flag must emit exactly ONE consolidated Object shared-prototype "
+            "entry (a single needsWrapper(Object.prototype) hooking every member); "
+            f"got {len(object_entries)} Object entries"
+        )
+        entry = object_entries[0]
+        assert entry["instrumentedName"] == "Object" and entry["depth"] == 0
+
+        members = set(entry["logSettings"]["propertiesToInstrument"])
+        assert {"toString", "valueOf"} <= members, (
+            "the Object shared-prototype entry must carry the universal methods "
+            f"(toString, valueOf, …); got {sorted(members)}"
+        )
+
+        receiver_interfaces = set(entry["logSettings"].get("receiverInterfaces", []))
+        assert {"Navigator", "Permissions"} <= receiver_interfaces, (
+            "receiverInterfaces must cover the leaf interfaces the recursive "
+            f"surface reached (Navigator, Permissions, …); got "
+            f"{sorted(receiver_interfaces)}"
+        )
+
+        # No universal METHOD reached this way may remain untranslated (they are now
+        # captured); the companion flag-OFF test asserts the opposite default.
+        for member in ("toString", "valueOf"):
+            path = f"window.navigator.{member}"
+            assert path not in untranslated_paths, (
+                f"with the flag ON the universal method {member!r} must NOT be "
+                f"untranslated (it is now captured); untranslated paths: {sorted(untranslated_paths)}"
+            )
+
+        # Non-method universal members (accessors) stay untranslated regardless of the
+        # flag — the receiver-interface filter only applies to methods at call time.
+        assert "window.navigator.__proto__" in untranslated_paths, (
+            "the universal ACCESSOR __proto__ must stay untranslated even with the flag "
+            f"ON (only methods are interface-attributable); untranslated paths: "
+            f"{sorted(untranslated_paths)}"
+        )
+
+    def test_flag_on_generated_config_validates(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """The flag-ON output, including the Object entry, passes schema validation.
+
+        This is a CONFIG-SHAPE check only (``validate_browser_params``); it proves
+        the generated entry is well-formed, NOT that it captures correctly at
+        runtime. The end-to-end runtime behaviour — navigator.toString() recorded,
+        a <div>'s toString() dropped, and no reentrancy hang — is asserted
+        separately by ``test_flag_on_universal_capture_runs_and_filters``.
+        """
+        stealth_settings, _ = legacy_settings_to_stealth(
+            UNIVERSAL_SWEEP_LEGACY_SETTINGS,
+            capture_universal_prototype_members=True,
+        )
+        validate_browser_params(
+            _params_with(
+                tmp_path_factory.mktemp("sweep_universal_validate"), stealth_settings
+            )[1][0]
+        )
+
+    @pytest.mark.usefixtures("xpi")
+    def test_flag_on_universal_capture_runs_and_filters(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """RUNTIME proof of the flag: capture, filter, and no reentrancy.
+
+        Sweeps the recursive navigator config with the flag ON, runs a STEALTH
+        crawl with the generated config over a probe page that calls
+        ``navigator.toString()`` (interface Navigator, IN ``receiverInterfaces``)
+        and ``someDiv.toString()`` (HTMLDivElement, NOT in it), and asserts:
+
+        (a) the navigator call IS recorded under the static symbol
+            ``Object.toString`` with the receiver interface ``Navigator`` in the
+            dedicated ``receiver`` column (the universal method was actually
+            hooked and attributed by receiver);
+        (b) the div call is NOT recorded — no ``Object.toString`` row whose
+            ``receiver`` is ``HTMLDivElement`` (the content-script receiver filter
+            works on the UNIVERSAL method, not just real interfaces);
+        (c) the crawl COMPLETES — the probe reaches its ``data-results`` sentinel
+            (read back via ``ReadDetectionResults``). Wrapping
+            ``Object.prototype.toString`` means the instrument's own
+            ``serializeObject``/``JSON.stringify`` re-enter the wrapped method while
+            building each log record; the ``inLog`` guard must short-circuit those
+            re-entrant calls. A reentrancy hang or stack blow-up would surface here
+            as the crawl never finishing / no sentinel.
+
+        This is the runtime counterpart to the config-shape tests above and the
+        evidence for the flag's actual effect.
+        """
+        stealth_settings, _ = legacy_settings_to_stealth(
+            UNIVERSAL_SWEEP_LEGACY_SETTINGS,
+            capture_universal_prototype_members=True,
+        )
+
+        # The Object shared-prototype entry must carry Navigator (so the navigator
+        # call is recorded) and must NOT carry HTMLDivElement (so the div call is
+        # dropped). Pin both preconditions so a config regression can't make the
+        # runtime assertions below vacuously pass.
+        object_entries = [e for e in stealth_settings if e["object"] == "Object"]
+        assert len(object_entries) == 1, (
+            "expected exactly one Object shared-prototype entry from the flag-ON "
+            f"sweep; got {len(object_entries)}"
+        )
+        recv_interfaces = set(
+            object_entries[0]["logSettings"].get("receiverInterfaces", [])
+        )
+        assert "Navigator" in recv_interfaces, (
+            "Navigator must be in the Object entry's receiverInterfaces for the "
+            f"navigator.toString() call to be recorded; got {sorted(recv_interfaces)}"
+        )
+        assert "HTMLDivElement" not in recv_interfaces, (
+            "HTMLDivElement must NOT be in receiverInterfaces (the navigator surface "
+            "never reaches it) or the div-drop assertion would be vacuous; got "
+            f"{sorted(recv_interfaces)}"
+        )
+
+        params = _params_with(
+            tmp_path_factory.mktemp("universal_runtime"), stealth_settings
+        )
+        # ReadDetectionResults reads the page's #results sentinel and ships it into
+        # the crawl DB; its presence proves the page (and the instrumented toString
+        # path) ran to completion with no reentrancy hang/blow-up.
+        results = _collect_results(params, _page_url(server, UNIVERSAL_TOSTRING_PAGE))
+        assert results.get("done") is True, (
+            "the probe page did not reach its sentinel — the crawl did not complete "
+            "(possible reentrancy hang/blow-up from wrapping Object.prototype."
+            f"toString); self-report: {results!r}"
+        )
+
+        pairs = _distinct_symbol_receiver_pairs(
+            params[0].data_directory / "crawl-data.sqlite"
+        )
+        # (a) navigator.toString() captured under the static universal symbol with
+        # the Navigator receiver attributed.
+        assert ("Object.toString", "Navigator") in pairs, (
+            "the flag-ON universal capture did not record navigator.toString() as "
+            "symbol='Object.toString' with receiver='Navigator'; recorded "
+            f"(symbol, receiver) pairs: {sorted(pairs)}"
+        )
+        # (b) someDiv.toString() dropped by the content-script receiver filter — no
+        # Object.toString row attributed to HTMLDivElement.
+        assert ("Object.toString", "HTMLDivElement") not in pairs, (
+            "the content-script receiver filter did not drop the non-targeted "
+            "HTMLDivElement toString() call; an Object.toString row was attributed "
+            f"to HTMLDivElement. Recorded pairs: {sorted(pairs)}"
+        )
+        divs = {recv for (sym, recv) in pairs if sym == "Object.toString"}
+        assert divs == {"Navigator"}, (
+            "Object.toString must be recorded for the Navigator receiver only; the "
+            f"receiver filter let other interfaces through: {sorted(divs)}"
+        )
+
+    def test_function_universal_methods_are_gated_like_object_and_array(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """All THREE universal constructors (Object/Function/Array) are gated by the
+        flag consistently — Function is not special-cased into always-capture.
+
+        Function-owned inherited members are vanishingly rare in real configs (a
+        function node's leaf own-set already IS Function.prototype's own names, so
+        ``call``/``apply``/``bind`` are covered by its leaf entry, not as inherited
+        members). To exercise the classification deterministically without depending
+        on that, this test feeds the sweep a SYNTHETIC walk result via a fake driver:
+        one leaf node that inherits a METHOD owned by ``Function`` (``bind``) and a
+        METHOD owned by ``Object`` (``toString``), both reported by the walk as
+        ``realInterface=True`` (as they are when reached via a real page object,
+        where the page-realm prototype identity differs from the content script's —
+        see the module docstring).
+
+        Gating contract: the inherited-member branch must NOT admit a
+        ``realInterface`` method merely because its owner is not Object/Array, so a
+        ``Function``-owned ``bind`` must not be captured in both flag states.
+        ``Function`` is treated as a universal owner like ``Object``/``Array``:
+          * flag OFF  -> ``bind`` (Function) AND ``toString`` (Object) are
+                         untranslated; no ``{object: "Function"|"Object"}``
+                         shared-prototype entry.
+          * flag ON   -> both become consolidated shared-prototype entries.
+        """
+        # One leaf node (a fictional "Widget" interface) whose chain inherits a
+        # Function-owned method (bind) and an Object-owned method (toString).
+        synthetic = {
+            "reached": [
+                {
+                    "instrumentedName": "window.widget",
+                    "constructorName": "Widget",
+                    "propertyNames": ["doThing", "bind", "toString"],
+                    # Leaf own-set: only the interface's own method.
+                    "stealthOwnNames": ["doThing"],
+                    "inheritedOwners": [
+                        {
+                            "member": "bind",
+                            "owner": "Function",
+                            "realInterface": True,
+                            "isFunction": True,
+                        },
+                        {
+                            "member": "toString",
+                            "owner": "Object",
+                            "realInterface": True,
+                            "isFunction": True,
+                        },
+                    ],
+                }
+            ],
+            "errors": [],
+        }
+
+        class _FakeDriver:
+            def get(self, _url: str) -> None:
+                pass
+
+            def execute_script(self, _js: str, _arg: Any) -> str:
+                return json.dumps(synthetic)
+
+            def quit(self) -> None:
+                pass
+
+        monkeypatch.setattr(
+            "openwpm.utilities.js_settings_migrator._launch_browser",
+            lambda _binary: _FakeDriver(),
+        )
+
+        legacy = [{"window.widget": {"propertiesToInstrument": [], "recursive": False}}]
+
+        # Flag OFF: both universal methods are untranslated; no Function/Object entry.
+        off_settings, off_untranslated = legacy_settings_to_stealth(
+            legacy, firefox_binary="unused"
+        )
+        off_untranslated_paths = {r.path for r in off_untranslated}
+        assert "window.widget.bind" in off_untranslated_paths, (
+            "with the flag OFF a Function-owned inherited method must be untranslated "
+            "(gated like Object/Array), not captured; untranslated: "
+            f"{sorted(off_untranslated_paths)}"
+        )
+        assert "window.widget.toString" in off_untranslated_paths
+        off_universal_objects = {
+            e["object"] for e in off_settings if e["object"] in {"Object", "Function"}
+        }
+        assert not off_universal_objects, (
+            "with the flag OFF the sweep must NOT emit a Function/Object universal "
+            f"shared-prototype entry; emitted: {off_universal_objects}"
+        )
+
+        # Flag ON: both become consolidated shared-prototype entries; Function is
+        # captured exactly like Object — consistent gating.
+        on_settings, on_untranslated = legacy_settings_to_stealth(
+            legacy,
+            firefox_binary="unused",
+            capture_universal_prototype_members=True,
+        )
+        on_untranslated_paths = {r.path for r in on_untranslated}
+        function_entries = [e for e in on_settings if e["object"] == "Function"]
+        assert len(function_entries) == 1, (
+            "with the flag ON a Function-owned method must be captured as a single "
+            "consolidated {object: 'Function'} shared-prototype entry (gated like "
+            f"Object/Array); Function entries: {function_entries}"
+        )
+        assert "bind" in function_entries[0]["logSettings"]["propertiesToInstrument"]
+        assert "window.widget.bind" not in on_untranslated_paths, (
+            "with the flag ON the Function-owned method must NOT remain untranslated "
+            f"(it is now captured); untranslated: {sorted(on_untranslated_paths)}"
+        )
+        # The Object-owned method is captured the same way — confirming all three
+        # universal constructors share one gating path.
+        object_entries = [e for e in on_settings if e["object"] == "Object"]
+        assert len(object_entries) == 1 and (
+            "toString" in object_entries[0]["logSettings"]["propertiesToInstrument"]
+        )
 
 
 # --------------------------------------------------------------------------- #

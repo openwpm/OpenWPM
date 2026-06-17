@@ -134,12 +134,12 @@ UNTRANSLATABLE_CONSTRUCTORS = {"Object", "Array"}
 
 # ``constructor.name`` values of the UNIVERSAL prototypes every object inherits
 # from (``Object``/``Function``/``Array``.prototype). Members owned by these
-# (``toString``, ``valueOf``, ``hasOwnProperty``, ``call``, ``bind``, …) are
-# surfaced as :class:`UntranslatedEntry` rather than instrumented: hooking such a
-# member fires on virtually every receiver page-wide for zero tracking signal.
-# ``Function`` is included alongside ``Object``/``Array`` so its base-prototype
-# methods (``call``/``apply``/``bind``) are surfaced as untranslated by default
-# rather than captured page-wide. These owners are matched by
+# (``toString``, ``valueOf``, ``hasOwnProperty``, ``call``, ``bind``, …) are, by
+# default, surfaced as :class:`UntranslatedEntry` rather than instrumented:
+# hooking such a member fires on virtually every receiver page-wide for zero
+# tracking signal. The opt-in ``capture_universal_prototype_members`` flag routes
+# the METHOD members here into the interface-attributed shared-prototype path
+# instead. These owners are matched by
 # NAME, not object identity: the sweep walk straddles the content-script/page
 # Xray boundary, where the two realms' ``Object.prototype`` objects are distinct,
 # so an identity check is unreliable (whereas ``window[owner].prototype`` — the
@@ -309,6 +309,7 @@ def _stealth_entry_from_node(
 def legacy_settings_to_stealth(
     legacy_settings: List[Any],
     firefox_binary: Optional[Union[str, Path]] = None,
+    capture_universal_prototype_members: bool = False,
 ) -> Tuple[List[Dict[str, Any]], List[UntranslatedEntry]]:
     """Expand a legacy ``js_instrument_settings`` list into a flat stealth list.
 
@@ -322,6 +323,30 @@ def legacy_settings_to_stealth(
         Path to the Firefox binary to drive the walk. Defaults to
         ``get_firefox_binary_path()`` (``FIREFOX_BINARY`` env var or the bundled
         ``firefox-bin``).
+    capture_universal_prototype_members:
+        Opt-in flag, **OFF by default**. When ``False`` (the default), inherited
+        METHODS owned by a universal prototype (``Object.prototype``,
+        ``Function.prototype``, ``Array.prototype`` — ``toString``, ``valueOf``,
+        ``hasOwnProperty``, …) are surfaced as :class:`UntranslatedEntry` and NOT
+        instrumented. When ``True``, those universal methods are instead captured
+        via the same interface-attributed shared-prototype mechanism used for real
+        interfaces: a single ``{object: "Object"/"Function"/"Array", …}`` entry is
+        emitted carrying ``receiverInterfaces`` covering every leaf interface that
+        reached the member.
+
+        .. warning::
+           This instruments BASE-PROTOTYPE methods such as
+           ``Object.prototype.toString``. Because virtually every object on a page
+           inherits from these prototypes, the wrapper fires on EVERY object's
+           ``toString()`` / ``valueOf()`` / … call across the whole page — you are
+           wrapping every ``toString``. That is a very high-overhead, very-high-
+           volume capture for essentially zero tracking signal, and it is rarely
+           what you want. Enable it ONLY when you specifically need strict parity
+           with legacy ``recursive`` instrumentation (which walked the full
+           prototype chain and so did hook these). Non-method universal members
+           (accessors) stay :class:`UntranslatedEntry` regardless of this flag,
+           because the receiver-interface filter only applies to methods at call
+           time.
 
     Returns
     -------
@@ -341,8 +366,11 @@ def legacy_settings_to_stealth(
           falsy, so the whole node has no global interface prototype to hook;
         * **universal-prototype inherited member** — an inherited member owned by
           ``Object``/``Function``/``Array`` ``.prototype`` (``toString``,
-          ``valueOf``, …); deliberately left uninstrumented because hooking it
-          would fire on virtually every receiver page-wide;
+          ``valueOf``, …); by default left uninstrumented because hooking it would
+          fire on virtually every receiver. Pass
+          ``capture_universal_prototype_members=True`` to instead capture the
+          METHOD members here via a shared-prototype entry (accessors stay
+          untranslated) — see that parameter's warning;
         * **resolution failure** — the legacy ``object`` string did not ``eval``
           to a live node.
     """
@@ -492,14 +520,46 @@ def legacy_settings_to_stealth(
                 continue
             if is_function and real_interface and owner and not is_universal:
                 # Real global-interface method (e.g. EventTarget.addEventListener)
-                # → interface-attributed shared-prototype capture. A method owned
-                # by a UNIVERSAL prototype (Object/Function/Array.prototype) is
-                # excluded here by ``not is_universal`` — all three universal
-                # constructors (including Function, whose ``call``/``apply``/
-                # ``bind`` are base-prototype methods firing on virtually every
-                # callable) are surfaced as untranslated rather than captured by
-                # default. (Capturing them on demand is the job of the opt-in
-                # added in a later change.)
+                # → interface-attributed shared-prototype capture, in BOTH flag
+                # states. A method owned by a UNIVERSAL prototype
+                # (Object/Function/Array.prototype) is excluded here by ``not
+                # is_universal`` — all three universal constructors fall through to
+                # the flag-gated branch below, so Function.prototype methods
+                # (``call``/``apply``/``bind``) are governed by
+                # capture_universal_prototype_members exactly like Object/Array
+                # rather than being silently captured regardless of the flag.
+                key = (owner, member)
+                if key not in shared:
+                    shared[key] = set()
+                    shared_order.append(key)
+                shared[key].add(ctor)
+            elif (
+                capture_universal_prototype_members
+                and is_universal
+                and is_function
+                and real_interface
+                and owner
+            ):
+                # Opt-in (OFF by default): route a METHOD owned by a universal
+                # prototype (Object/Function/Array.prototype — toString, valueOf,
+                # hasOwnProperty, …) into the SAME interface-attributed
+                # shared-prototype capture path used for real interfaces. The
+                # member is hooked ONCE on the universal prototype (object=owner,
+                # which the stealth instrument resolves via
+                # ``wrappedJSObject["Object"|"Function"|"Array"].prototype``) and,
+                # at call time, the receiver-interface filter records only the leaf
+                # interfaces that reached it. This restores strict legacy-recursive
+                # parity for universal methods at the cost of wrapping a base
+                # prototype method that fires on virtually every receiver page-wide
+                # (see the warning on ``capture_universal_prototype_members``).
+                # ``real_interface`` is required so we only attempt this for a
+                # universal owner whose prototype the stealth instrument can
+                # actually resolve (``window[owner].prototype`` matched in the
+                # walk); for a universal owner the bare global name IS the hookable
+                # prototype, so all three (Object/Function/Array) route here.
+                # Non-method universal members (accessors) cannot be filtered by
+                # receiver at call time and stay untranslated regardless of the
+                # flag.
                 key = (owner, member)
                 if key not in shared:
                     shared[key] = set()
@@ -848,6 +908,21 @@ def _main(argv: Optional[List[str]] = None) -> int:
             "env var or the bundled firefox-bin."
         ),
     )
+    parser.add_argument(
+        "--capture-universal-members",
+        action="store_true",
+        help=(
+            "OFF by default. Also capture inherited METHODS owned by a universal "
+            "base prototype (Object/Function/Array.prototype — toString, valueOf, "
+            "hasOwnProperty, ...) as interface-attributed shared-prototype entries, "
+            "instead of surfacing them as untranslated. WARNING: this wraps base-"
+            "prototype methods that fire on EVERY object on the page (you are "
+            "wrapping every toString) — very high overhead and volume for "
+            "essentially zero tracking signal. Enable ONLY for strict parity with "
+            "legacy 'recursive' instrumentation. Universal accessors stay "
+            "untranslated regardless."
+        ),
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -856,6 +931,7 @@ def _main(argv: Optional[List[str]] = None) -> int:
     stealth_settings, untranslated = legacy_settings_to_stealth(
         legacy_settings,
         args.firefox_binary,
+        capture_universal_prototype_members=args.capture_universal_members,
     )
 
     output = json.dumps(stealth_settings, indent=2)
@@ -868,13 +944,13 @@ def _main(argv: Optional[List[str]] = None) -> int:
         print(output)
 
     if untranslated:
-        # Symmetric honesty: any legacy symbol path the swept config does not
-        # cover — untranslatable nodes, inherited-chain members, AND resolution
+        # Symmetric honesty: any legacy symbol path NOT representable in the swept
+        # config — untranslatable nodes, inherited-chain members, AND resolution
         # failures — is reported, and the CLI exits non-zero so an automated
         # pipeline cannot mistake an incomplete translation for a clean one.
         logger.warning(
-            "%d legacy symbol path(s) are NOT covered by the generated stealth "
-            "config:\n%s",
+            "%d legacy symbol path(s) are NOT representable in the generated "
+            "stealth config:\n%s",
             len(untranslated),
             "\n".join("  - " + str(r) for r in sorted(untranslated, key=str)),
         )
