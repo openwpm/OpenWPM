@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth Disruption — X1 (channel suppression)</title>
+    <script>
+    /*
+     * X1: attempt to SUPPRESS instrumentation by neutering the DOM event channel.
+     *
+     * Legacy OpenWPM ships every record from page scope to the content script via
+     *   document.dispatchEvent(new CustomEvent(eventId, { detail: messages }))
+     * A hostile page can override document.dispatchEvent to silently swallow those
+     * events, dropping all subsequent records without the crawler noticing.
+     *
+     * The stealth instrument delivers records through the privileged
+     * browser.runtime.sendMessage API, which page script cannot reach, so this
+     * override has no effect.
+     *
+     * This runs in <head>, after the instrument is installed at document_start but
+     * before the marker calls below.
+     */
+    document.dispatchEvent = function () { return true; };
+    </script>
+</head>
+<body>
+    <h1>X1: channel suppression</h1>
+    <canvas id="canvas" width="50" height="50"></canvas>
+    <script>
+    // Marker calls made AFTER the channel was neutered. toDataURL is instrumented
+    // by both legacy (collection_fingerprinting) and stealth. Under legacy these
+    // should NOT reach the database; under stealth they should.
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    for (let i = 0; i < 5; i++) {
+        ctx.fillRect(0, 0, 10, 10);
+        canvas.toDataURL();
+    }
+    document.title = "x1-suppress-done";
+    </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+import { JSInstrumentSettings } from "../types/js_instrument_settings";
+
+export const jsInstrumentationSettings: JSInstrumentSettings = [
+  {
+    object: "ScriptProcessorNode", // Deprecated. Replaced by AudioWorkletNode
+    instrumentedName: "ScriptProcessorNode",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "AudioWorkletNode",
+    instrumentedName: "AudioWorkletNode",
+    depth: 1,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "GainNode",
+    instrumentedName: "GainNode",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "AnalyserNode",
+    instrumentedName: "AnalyserNode",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "OscillatorNode",
+    instrumentedName: "OscillatorNode",
+    depth: 1,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  // Add shared prototype by AnalyserNode, OscillatorNode, ScriptProcessorNode, GainNode, ScriptProcessorNode
+  {
+    object: "AnalyserNode",
+    instrumentedName: "Node",
+    depth: 1,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "OfflineAudioContext",
+    instrumentedName: "OfflineAudioContext",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "AudioContext",
+    instrumentedName: "AudioContext",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  // Add shared prototype by AudioContext/OfflineAudioContext
+  {
+    object: "AudioContext",
+    instrumentedName: "[AudioContext|OfflineAudioContext]",
+    depth: 1,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "RTCPeerConnection",
+    instrumentedName: "RTCPeerConnection",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "HTMLCanvasElement",
+    instrumentedName: "HTMLCanvasElement",
+    depth: 1,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: ["style", "offsetWidth", "offsetHeight"],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "Storage",
+    instrumentedName: "Storage",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "Navigator",
+    instrumentedName: "window.navigator",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [{ key: "webdriver", value: false, level: 0 }],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "CanvasRenderingContext2D",
+    instrumentedName: "CanvasRenderingContext2D",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [
+        "transform",
+        "globalAlpha",
+        "clearRect",
+        "closePath",
+        "canvas",
+        "quadraticCurveTo",
+        "lineTo",
+        "moveTo",
+        "setTransform",
+        "drawImage",
+        "beginPath",
+        "translate",
+      ],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "Screen",
+    instrumentedName: "window.screen",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [],
+      // in OpenWPM is only this one used:
+      // {"depth":0, "propertyNames":["colorDepth","pixelDepth"
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  {
+    object: "document",
+    instrumentedName: "window.document",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [
+        { depth: 2, propertyNames: ["cookie", "referrer"] },
+      ],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: true,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+
+  // Window instance properties. Legacy OpenWPM instruments the window INSTANCE
+  // via {"window": ["name", "localStorage", "sessionStorage"]}. In Firefox these
+  // three members are NATIVE accessor properties that live as OWN properties on
+  // the window INSTANCE (depth 0), NOT on ``Window.prototype`` — verified against
+  // a clean Firefox: ``Object.getOwnPropertyDescriptor(Window.prototype, "name")``
+  // is ``undefined`` while ``Object.getOwnPropertyDescriptor(window, "name")`` is
+  // a native accessor. (window.name is a ``[Replaceable]`` WebIDL attribute.)
+  // Targeting them at depth 1 (the prototype) finds no descriptor, so the entry
+  // was silently a no-op and captured nothing. We therefore target depth 0 and
+  // redefine the native accessor on the instance in place. Because the property
+  // is natively own-on-instance and the exported get/set still report
+  // ``[native code]``, the redefined descriptor matches the native shape exactly,
+  // preserving the native-function masquerade.
+  //
+  // The list is DELIBERATELY restricted to exactly these three names. Do NOT
+  // add dimension/layout properties (innerWidth, innerHeight, screenX, etc.):
+  // they fire constantly and would explode capture volume without adding
+  // tracking signal.
+  {
+    object: "window",
+    instrumentedName: "window",
+    depth: 0,
+    logSettings: {
+      propertiesToInstrument: [
+        { depth: 0, propertyNames: ["name", "localStorage", "sessionStorage"] },
+      ],
+      nonExistingPropertiesToInstrument: [],
+      excludedProperties: [],
+      overwrittenProperties: [],
+      logCallStack: false,
+      logFunctionsAsStrings: false,
+      logFunctionGets: false,
+      preventSets: false,
+      recursive: false,
+      depth: 5,
+    },
+  },
+];

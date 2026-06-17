@@ -139,6 +139,7 @@ export interface JavascriptOperation {
   top_level_url?: string;
   call_stack?: string;
   symbol?: string;
+  receiver?: string;
   operation?: string;
   value?: string;
   arguments?: string;
