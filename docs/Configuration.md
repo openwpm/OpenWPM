@@ -24,6 +24,7 @@ of configurations of `class<BrowserParams>`.
   - [Instruments](#instruments)
     - [`http_instrument`](#http_instrument)
     - [`js_instrument`](#js_instrument)
+    - [`stealth_js_instrument`](#stealth_js_instrument)
     - [`navigation_instrument`](#navigation_instrument)
     - [`callstack_instrument`](#callstack_instrument)
     - [`dns_instrument`](#dns_instrument)
@@ -246,6 +247,13 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
       function). As another example, to instrument window.document.cookie, you must use `{"window.document": ["cookie"]}`.
       In instances, such as `fetch`, where you do not need to specify `window.fetch`, but can use the alias `fetch`,
       in JavaScript code. The instrumentation `{"window": ["fetch",]}` will pick up calls to both `fetch()` and `window.fetch()`.
+
+### `stealth_js_instrument`
+
+- Records the same per-call data as `js_instrument` into the `javascript` table, from outside the page, so a page observes the same values as in an uninstrumented Firefox, and over a channel the page cannot reach.
+- Mutually exclusive with `js_instrument`; enabling both raises a `ConfigError`.
+- `browser_params.stealth_js_instrument_settings` replaces the bundled default surface; leave it `None` for the default. Entries name `object` by bare global name (e.g. `"Navigator"`), not the legacy `window` path; `openwpm/utilities/js_settings_migrator.py` translates a legacy config.
+- See [Stealth-Instrument](Stealth-Instrument) for usage, and `docs/developers/Stealth-and-Legacy-JS-Instruments.rst` for how it differs from `js_instrument`.
 
 ### `navigation_instrument`
 
