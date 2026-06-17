@@ -23,6 +23,8 @@ We're hoping to improve this setup in the future.
 
    Configuration
 
+   Stealth-Instrument
+
    Papers
 
 .. toctree::
@@ -37,6 +39,8 @@ We're hoping to improve this setup in the future.
    Release-Checklist
 
    developers/JS-Instrument
+
+   developers/Stealth
 
 
 Indices and tables
