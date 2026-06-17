@@ -21,7 +21,10 @@ from openwpm.config import (
 from .browser_manager import BrowserManagerHandle
 from .command_sequence import CommandSequence
 from .errors import CommandExecutionError
-from .js_instrumentation import clean_js_instrumentation_settings
+from .js_instrumentation import (
+    clean_js_instrumentation_settings,
+    clean_stealth_js_instrumentation_settings,
+)
 from .mp_logger import MPLogger
 from .storage.storage_controller import DataSocket, StorageControllerHandle
 from .storage.storage_providers import (
@@ -98,6 +101,16 @@ class TaskManager:
             js_settings = a_browsers_params.js_instrument_settings
             cleaned_js_settings = clean_js_instrumentation_settings(js_settings)
             a_browsers_params.cleaned_js_instrument_settings = cleaned_js_settings
+            # A custom stealth surface is optional; when None the extension uses
+            # its bundled default (Extension/src/stealth/settings.ts). Only
+            # validate it when stealth is actually enabled — a custom surface
+            # left on a browser with stealth off is inert and must not be
+            # processed.
+            stealth_settings = a_browsers_params.stealth_js_instrument_settings
+            if a_browsers_params.stealth_js_instrument and stealth_settings is not None:
+                a_browsers_params.cleaned_stealth_js_instrument_settings = (
+                    clean_stealth_js_instrumentation_settings(stealth_settings)
+                )
 
         # Flow control
         self.closing = False
