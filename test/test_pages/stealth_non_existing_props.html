@@ -10,9 +10,9 @@
      * Exercises two logSettings together against a custom surface:
      *
      *  - nonExistingPropertiesToInstrument: the test config lists a property
-     *    name ("openwpmHoneyProp") that does NOT exist on
+     *    name ("openwpmNonExistingProp") that does NOT exist on
      *    Navigator.prototype. Stealth synthesizes a native-looking accessor for
-     *    it, so the page's get/set of navigator.openwpmHoneyProp is
+     *    it, so the page's get/set of navigator.openwpmNonExistingProp is
      *    captured.
      *
      *  - logFunctionGets: when the non-existing property holds a FUNCTION value,
@@ -25,12 +25,12 @@
     var results = {};
 
     // set a plain value, then read it back (plain get path)
-    navigator.openwpmHoneyProp = "probe-value";
-    results.value_roundtrips = navigator.openwpmHoneyProp === "probe-value";
+    navigator.openwpmNonExistingProp = "probe-value";
+    results.value_roundtrips = navigator.openwpmNonExistingProp === "probe-value";
 
     // set a FUNCTION value, then read it WITHOUT calling (get(function) path)
-    navigator.openwpmHoneyProp = function honeyFn() { return 42; };
-    var fnRead = navigator.openwpmHoneyProp;
+    navigator.openwpmNonExistingProp = function nonExistingFn() { return 42; };
+    var fnRead = navigator.openwpmNonExistingProp;
     results.function_roundtrips = typeof fnRead === "function";
 
     // Undetectability: the synthesized accessor must look native.
@@ -42,9 +42,9 @@
     }
     try {
         var desc = Object.getOwnPropertyDescriptor(
-            Navigator.prototype, "openwpmHoneyProp");
-        results.honey_getter_native = !!(desc && desc.get && isNative(desc.get));
-        results.honey_setter_native = !!(desc && desc.set && isNative(desc.set));
+            Navigator.prototype, "openwpmNonExistingProp");
+        results.non_existing_getter_native = !!(desc && desc.get && isNative(desc.get));
+        results.non_existing_setter_native = !!(desc && desc.set && isNative(desc.set));
     } catch (e) {
         results.descriptor_error = e.message;
     }
