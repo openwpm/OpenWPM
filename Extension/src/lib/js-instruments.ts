@@ -20,9 +20,43 @@ export interface JSInstrumentRequest {
   logSettings: LogSettings;
 }
 
+/**
+ * The payload of a single instrumented call/value observation, as produced by
+ * `logCall` / `logValue` before it is forwarded to the background page.
+ */
+export interface JSLogMessageContent {
+  operation: string;
+  symbol: string;
+  value: string;
+  scriptUrl: string;
+  scriptLine: string;
+  scriptCol: string;
+  funcName: string;
+  scriptLocEval: string;
+  callStack: string;
+  ordinal: number;
+  args?: string[];
+  timeStamp?: string;
+}
+
+/** An envelope queued for delivery to the background page. */
+export interface InstrumentMessage {
+  type: string;
+  content: JSLogMessageContent;
+}
+
+/** Forwards a batch of queued messages out of the page scope. */
+export type SendMessagesToLogger = (
+  eventId: string,
+  messages: InstrumentMessage[],
+) => void;
+
 declare global {
   interface Object {
-    getPropertyDescriptor(subject: any, name: any): PropertyDescriptor;
+    getPropertyDescriptor(
+      subject: any,
+      name: any,
+    ): PropertyDescriptor | undefined;
   }
 
   interface Object {
@@ -30,7 +64,22 @@ declare global {
   }
 }
 
-export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
+interface CallContext {
+  scriptUrl: string;
+  scriptLine: string;
+  scriptCol: string;
+  funcName: string;
+  scriptLocEval: string;
+  callStack: string;
+}
+
+/** Type of {@link getInstrumentJS}, used by the stringified page script. */
+export type GetInstrumentJS = typeof getInstrumentJS;
+
+export function getInstrumentJS(
+  eventId: string,
+  sendMessagesToLogger: SendMessagesToLogger,
+) {
   /*
    * Instrumentation helpers
    * (Inlined in order for jsInstruments to be easily exportable as a string)
@@ -39,7 +88,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   // Counter to cap # of calls logged for each script/api combination
   const maxLogCount = 500;
   // logCounter
-  const logCounter = new Object();
+  const logCounter: Record<string, number> = {};
   // Prevent logging of gets arising from logging
   let inLog = false;
   // To keep track of the original order of events
@@ -86,12 +135,16 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   };
 
   // debounce - from Underscore v1.6.0
-  function debounce(func, wait, immediate: boolean = false) {
-    let timeout;
-    let args;
-    let context;
-    let timestamp;
-    let result;
+  function debounce(
+    func: (...funcArgs: unknown[]) => unknown,
+    wait: number,
+    immediate: boolean = false,
+  ) {
+    let timeout: ReturnType<typeof setTimeout> | null;
+    let args: IArguments | null;
+    let context: unknown;
+    let timestamp: number;
+    let result: unknown;
 
     const later = function () {
       const last = Date.now() - timestamp;
@@ -100,13 +153,13 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
       } else {
         timeout = null;
         if (!immediate) {
-          result = func.apply(context, args);
+          result = func.apply(context, args ? Array.from(args) : []);
           context = args = null;
         }
       }
     };
 
-    return function () {
+    return function (this: unknown) {
       context = this; // eslint-disable-line @typescript-eslint/no-this-alias
       args = arguments; // eslint-disable-line prefer-rest-params
       timestamp = Date.now();
@@ -115,7 +168,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         timeout = setTimeout(later, wait);
       }
       if (callNow) {
-        result = func.apply(context, args);
+        result = func.apply(context, args ? Array.from(args) : []);
         context = args = null;
       }
 
@@ -124,7 +177,10 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   }
 
   // Recursively generates a path for an element
-  function getPathToDomElement(element: any, visibilityAttr: boolean = false) {
+  function getPathToDomElement(
+    element: any,
+    visibilityAttr: boolean = false,
+  ): string | undefined {
     if (element === document.body) {
       return element.tagName;
     }
@@ -155,11 +211,12 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         siblingIndex++;
       }
     }
+    return undefined;
   }
 
   // Helper for JSONifying objects
   function serializeObject(
-    object,
+    object: unknown,
     stringifyFunctions: boolean = false,
   ): string {
     // Handle permissions errors
@@ -171,9 +228,9 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         return stringifyFunctions ? object.toString() : "FUNCTION";
       }
       if (typeof object !== "object") {
-        return object;
+        return String(object);
       }
-      const seenObjects = [];
+      const seenObjects: unknown[] = [];
       return JSON.stringify(object, function (key, value) {
         if (value === null) {
           return "null";
@@ -208,7 +265,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     }
   }
 
-  function updateCounterAndCheckIfOver(scriptUrl, symbol) {
+  function updateCounterAndCheckIfOver(scriptUrl: string, symbol: string) {
     const key = scriptUrl + "|" + symbol;
     if (key in logCounter && logCounter[key] >= maxLogCount) {
       return true;
@@ -223,9 +280,9 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   // For gets, sets, etc. on a single value
   function logValue(
     instrumentedVariableName: string,
-    value: any,
+    value: unknown,
     operation: string, // from JSOperation object please
-    callContext: any,
+    callContext: CallContext,
     logSettings: LogSettings,
   ) {
     if (inLog) {
@@ -269,7 +326,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
   function logCall(
     instrumentedFunctionName: string,
     args: IArguments,
-    callContext: any,
+    callContext: CallContext,
     logSettings: LogSettings,
   ) {
     if (inLog) {
@@ -317,32 +374,40 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     inLog = false;
   }
 
-  function logErrorToConsole(error, context: any = false) {
-    console.error("OpenWPM: Error name: " + error.name);
-    console.error("OpenWPM: Error message: " + error.message);
-    console.error("OpenWPM: Error filename: " + error.fileName);
-    console.error("OpenWPM: Error line number: " + error.lineNumber);
-    console.error("OpenWPM: Error stack: " + error.stack);
+  function logErrorToConsole(error: unknown, context: unknown = false) {
+    // Firefox errors expose non-standard fileName/lineNumber fields.
+    const err = error as {
+      name?: string;
+      message?: string;
+      fileName?: string;
+      lineNumber?: number;
+      stack?: string;
+    };
+    console.error("OpenWPM: Error name: " + err.name);
+    console.error("OpenWPM: Error message: " + err.message);
+    console.error("OpenWPM: Error filename: " + err.fileName);
+    console.error("OpenWPM: Error line number: " + err.lineNumber);
+    console.error("OpenWPM: Error stack: " + err.stack);
     if (context) {
       console.error("OpenWPM: Error context: " + JSON.stringify(context));
     }
   }
 
   // Helper to get originating script urls
-  function getStackTrace() {
-    let stack;
+  function getStackTrace(): string {
+    let stack: string;
 
     try {
       throw new Error();
     } catch (err) {
-      stack = err.stack;
+      stack = err instanceof Error ? (err.stack ?? "") : "";
     }
 
     return stack;
   }
 
   // from http://stackoverflow.com/a/5202185
-  const rsplit = function (source: string, sep, maxsplit) {
+  const rsplit = function (source: string, sep: string, maxsplit: number) {
     const split = source.split(sep);
     return maxsplit
       ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit))
@@ -408,14 +473,17 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     } catch (e) {
       console.log(
         "OpenWPM: Error parsing the script context",
-        e.toString(),
+        String(e),
         callSite,
       );
       return empty_context;
     }
   }
 
-  function isObject(object, propertyName) {
+  function isObject(
+    object: Record<PropertyKey, unknown>,
+    propertyName: string,
+  ) {
     let property;
     try {
       property = object[propertyName];
@@ -439,7 +507,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     func: any,
     logSettings: LogSettings,
   ) {
-    return function () {
+    return function (this: unknown) {
       const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
@@ -454,7 +522,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
   // Log properties of prototypes and objects
   function instrumentObjectProperty(
-    object,
+    object: any,
     objectName: string,
     propertyName: string,
     logSettings: LogSettings,
@@ -492,12 +560,12 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     }
 
     // Property descriptor for undefined properties
-    let undefinedPropValue;
+    let undefinedPropValue: unknown;
     const undefinedPropDesc = {
       get: () => {
         return undefinedPropValue;
       },
-      set: (value) => {
+      set: (value: unknown) => {
         undefinedPropValue = value;
       },
       enumerable: false,
@@ -513,7 +581,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     Object.defineProperty(object, propertyName, {
       configurable: true,
       get: (function () {
-        return function () {
+        return function (this: any) {
           let origProperty;
           const callContext = getOriginatingScriptContext(
             logSettings.logCallStack,
@@ -593,7 +661,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         };
       })(),
       set: (function () {
-        return function (value) {
+        return function (this: any, value: unknown) {
           const callContext = getOriginatingScriptContext(
             logSettings.logCallStack,
           );
@@ -620,7 +688,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
           if (originalSetter) {
             // if accessor property
             returnValue = originalSetter.call(this, value);
-          } else if ("value" in propDesc) {
+          } else if (propDesc && "value" in propDesc) {
             inLog = true;
             if (Object.prototype.isPrototypeOf.call(object, this)) {
               Object.defineProperty(this, propertyName, {
@@ -731,8 +799,11 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     }
   }
 
-  const sendFactory = function (eventId, $sendMessagesToLogger) {
-    let messages = [];
+  const sendFactory = function (
+    eventId: string,
+    $sendMessagesToLogger: SendMessagesToLogger,
+  ) {
+    let messages: InstrumentMessage[] = [];
     // debounce sending queued messages
     const send = debounce(function () {
       $sendMessagesToLogger(eventId, messages);
@@ -741,7 +812,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
       messages = [];
     }, 100);
 
-    return function (msgType, msg) {
+    return function (msgType: string, msg: JSLogMessageContent) {
       // queue the message
       messages.push({ type: msgType, content: msg });
       send();
