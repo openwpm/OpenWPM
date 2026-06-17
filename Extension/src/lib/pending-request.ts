@@ -6,10 +6,11 @@ import { WebRequestOnBeforeSendHeadersEventDetails } from "../types/browser-web-
 export class PendingRequest {
   public readonly onBeforeRequestEventDetails: Promise<browser.webRequest._OnBeforeRequestDetails>;
   public readonly onBeforeSendHeadersEventDetails: Promise<WebRequestOnBeforeSendHeadersEventDetails>;
-  public resolveOnBeforeRequestEventDetails: (
+  // Assigned synchronously inside the Promise executors in the constructor.
+  public resolveOnBeforeRequestEventDetails!: (
     details: browser.webRequest._OnBeforeRequestDetails,
   ) => void;
-  public resolveOnBeforeSendHeadersEventDetails: (
+  public resolveOnBeforeSendHeadersEventDetails!: (
     details: WebRequestOnBeforeSendHeadersEventDetails,
   ) => void;
   constructor() {
@@ -33,7 +34,7 @@ export class PendingRequest {
    *
    * @param ms
    */
-  public async resolvedWithinTimeout(ms) {
+  public async resolvedWithinTimeout(ms: number) {
     const resolved = await Promise.race([
       this.resolved(),
       new Promise((resolve) => setTimeout(resolve, ms)),

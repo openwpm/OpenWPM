@@ -38,7 +38,7 @@ function insertScript(
   parent.removeChild(script);
 }
 
-function emitMsg(type, msg) {
+function emitMsg(type: string, msg: { timeStamp?: string }) {
   msg.timeStamp = new Date().toISOString();
   browser.runtime.sendMessage({
     namespace: "javascript-instrumentation",
@@ -50,9 +50,15 @@ function emitMsg(type, msg) {
 const eventId = Math.random().toString();
 
 // listen for messages from the script we are about to insert
-document.addEventListener(eventId, (e: CustomEvent) => {
+interface InstrumentMessage {
+  type: string;
+  content: { timeStamp?: string };
+}
+
+document.addEventListener(eventId, (e: Event) => {
   // pass these on to the background page
-  const msgs = e.detail;
+  const msgs = (e as CustomEvent<InstrumentMessage | InstrumentMessage[]>)
+    .detail;
   if (Array.isArray(msgs)) {
     msgs.forEach((msg) => {
       emitMsg(msg.type, msg.content);

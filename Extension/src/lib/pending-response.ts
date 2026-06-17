@@ -6,11 +6,13 @@ import { ResponseBodyListener } from "./response-body-listener";
 export class PendingResponse {
   public readonly onBeforeRequestEventDetails: Promise<browser.webRequest._OnBeforeRequestDetails>;
   public readonly onCompletedEventDetails: Promise<browser.webRequest._OnCompletedDetails>;
-  public responseBodyListener: ResponseBodyListener;
-  public resolveOnBeforeRequestEventDetails: (
+  // resolveOn* are assigned synchronously inside the Promise executors in the
+  // constructor; responseBodyListener is set by addResponseResponseBodyListener.
+  public responseBodyListener!: ResponseBodyListener;
+  public resolveOnBeforeRequestEventDetails!: (
     details: browser.webRequest._OnBeforeRequestDetails,
   ) => void;
-  public resolveOnCompletedEventDetails: (
+  public resolveOnCompletedEventDetails!: (
     details: browser.webRequest._OnCompletedDetails,
   ) => void;
   constructor() {
@@ -39,7 +41,7 @@ export class PendingResponse {
    *
    * @param ms
    */
-  public async resolvedWithinTimeout(ms) {
+  public async resolvedWithinTimeout(ms: number) {
     const resolved = await Promise.race([
       this.resolved(),
       new Promise((resolve) => setTimeout(resolve, ms)),

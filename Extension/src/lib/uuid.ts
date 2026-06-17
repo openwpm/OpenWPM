@@ -1,7 +1,7 @@
 /* eslint-disable no-bitwise */
 
 // from https://gist.github.com/jed/982883#gistcomment-2403369
-const hex = [];
+const hex: string[] = [];
 
 for (let i = 0; i < 256; i++) {
   hex[i] = (i < 16 ? "0" : "") + i.toString(16);

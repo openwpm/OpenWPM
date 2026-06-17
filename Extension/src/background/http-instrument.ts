@@ -440,25 +440,20 @@ export class HttpInstrument {
   private getDocumentUrlForRequest(
     details: WebRequestOnBeforeSendHeadersEventDetails,
   ) {
-    let url = "";
-
     if (details.type === "main_frame") {
       // Url of the top-level document itself.
-      url = details.url;
-    } else if (
-      Object.prototype.hasOwnProperty.call(details, "frameAncestors")
-    ) {
+      return details.url;
+    }
+    if (Object.prototype.hasOwnProperty.call(details, "frameAncestors")) {
       // In case of nested frames, retrieve url from top-most ancestor.
       // If frameAncestors == [], request comes from the top-level-document.
-      url = details.frameAncestors.length
+      return details.frameAncestors.length
         ? details.frameAncestors[details.frameAncestors.length - 1].url
         : details.documentUrl;
-    } else {
-      // type != 'main_frame' and frameAncestors == undefined
-      // For example service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
-      url = details.documentUrl;
     }
-    return url;
+    // type != 'main_frame' and frameAncestors == undefined
+    // For example service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
+    return details.documentUrl;
   }
 
   private async onBeforeRedirectHandler(

@@ -1,4 +1,4 @@
-export function encode_utf8(s) {
+export function encode_utf8(s: string) {
   return unescape(encodeURIComponent(s));
 }
 
@@ -37,7 +37,7 @@ export const Uint8ToBase64 = function (u8Arr: Uint8Array) {
   let slice: Uint8Array;
   while (index < length) {
     slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
-    result += String.fromCharCode.apply(null, slice);
+    result += String.fromCharCode(...slice);
     index += CHUNK_SIZE;
   }
   return btoa(result);
