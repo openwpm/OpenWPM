@@ -52,6 +52,14 @@
         "script": "./privileged/stackDump/api.js",
         "paths": [["stackDump"]]
       }
+    },
+    "stealthInstrument": {
+      "schema": "./privileged/stealthInstrument/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "./privileged/stealthInstrument/api.js",
+        "paths": [["stealthInstrument"]]
+      }
     }
   }
 }
