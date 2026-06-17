@@ -144,6 +144,7 @@ update the description of the field here.
 | top_level_url             | string |          |             |
 | call_stack                | string |          |             |
 | symbol                    | string |          |             |
+| receiver                  | string |          | Stealth only: interface of the object the member was called, read or set on (`GainNode` for `AudioNode.connect`). `openwpm.utilities.db_utils.legacy_symbol` maps `symbol` and `receiver` to legacy's `symbol`. |
 | operation                 | string |          |             |
 | value                     | string |          |             |
 | arguments                 | string |          |             |

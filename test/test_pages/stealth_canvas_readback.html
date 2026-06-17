@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth canvas readback probe</title>
+</head>
+<body>
+<canvas id="c" width="16" height="16"></canvas>
+<div id="results"></div>
+<script>
+/*
+ * Reads a fixed image back twice through the instrumented toDataURL
+ * (TestStealthCanvasReadback).
+ */
+const c = document.getElementById("c");
+const ctx = c.getContext("2d");
+ctx.fillStyle = "#c03";
+ctx.fillRect(0, 0, 16, 16);
+ctx.fillStyle = "#06f";
+ctx.fillRect(4, 4, 8, 8);
+
+function canvas_readback() { return c.toDataURL(); }
+document.getElementById("results").setAttribute("data-results", JSON.stringify({
+    first: canvas_readback(),
+    second: canvas_readback(),
+}));
+</script>
+</body>
+</html>

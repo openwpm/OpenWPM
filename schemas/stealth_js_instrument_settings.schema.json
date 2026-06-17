@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/stealth-js-instrument-settings.schema",
+  "title": "Stealth JS Instrument Settings",
+  "description": "Schema describing the JSON to be passed to Stealth JS Instrument Settings.",
+  "type": "array",
+  "items": {
+    "title": "Settings objects",
+    "type": "object",
+    "properties": {
+      "object": {
+        "title": "JS object",
+        "description": "The bare global name to instrument, e.g. `Navigator` or `document`. A constructor resolves to its prototype, any other global to the object itself.",
+        "type": "string",
+        "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+      },
+      "instrumentedName": {
+        "title": "Instrumented name",
+        "description": "The name recorded by the instrumentation for this object.",
+        "type": "string"
+      },
+      "depth": {
+        "title": "Prototype depth",
+        "description": "Prototype-chain offset from the resolved `object`. With an empty `propertiesToInstrument`, the own members of every prototype from offset 0 to this one are instrumented; `nonExistingPropertiesToInstrument` names are added at this offset.",
+        "type": "integer",
+        "minimum": 0,
+        "default": 0
+      },
+      "logSettings": {
+        "title": "Log settings",
+        "description": "The log settings object.",
+        "type": "object",
+        "properties": {
+          "propertiesToInstrument": {
+            "title": "Properties to instrument",
+            "description": "Members to instrument. A name is an own member of the resolved `object`; `{depth, propertyNames}` lists own members of the prototype `depth` steps up its chain. If empty, every own member up to the entry's `depth` is instrumented.",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "depth": {
+                      "description": "Prototype-chain offset from the resolved `object` of the prototype owning `propertyNames`.",
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "propertyNames": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["depth", "propertyNames"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "default": []
+          },
+          "nonExistingPropertiesToInstrument": {
+            "title": "Non-existing properties to instrument",
+            "description": "An array of non-existing properties to instrument on this object.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "excludedProperties": {
+            "title": "Excluded properties",
+            "description": "Properties excluded from instrumentation.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "overwrittenProperties": {
+            "title": "Overwritten Property",
+            "description": "A property whose value will be overwritten during instrumentation",
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "The property that will be overwritten"
+                },
+                "value": {
+                  "description": "The value that should be returned",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array"
+                    },
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ]
+                }
+              },
+              "required": ["key", "value"],
+              "additionalProperties": false
+            },
+            "default": []
+          },
+          "logCallStack": {
+            "title": "Log call stack?",
+            "description": "Set to true save the call stack info with each property call.",
+            "type": "boolean",
+            "default": false
+          },
+          "logFunctionsAsStrings": {
+            "title": "Log functions as strings?",
+            "description": "Set to true to save args that are functions as strings during argument serialization. If false `FUNCTION` is recorded.",
+            "type": "boolean",
+            "default": false
+          },
+          "logFunctionGets": {
+            "title": "Log function gets?",
+            "description": "Set true to log get requests to properties that are functions. If true when a call is made, the log will contain both the call and a get log.",
+            "type": "boolean",
+            "default": false
+          },
+          "receiverInterfaces": {
+            "title": "Receiver interfaces of interest",
+            "description": "For a method hooked once on a shared prototype (e.g. `addEventListener` on `EventTarget`): the receiver interfaces whose calls are recorded; when absent, every call is. `symbol` stays `<owner>.<method>`. The `receiver` column holds the receiver's interface for every record either way, read from its `constructor.name` through the Xray, so the page cannot spoof it.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "propertiesToInstrument",
+          "nonExistingPropertiesToInstrument",
+          "excludedProperties",
+          "logCallStack",
+          "logFunctionsAsStrings",
+          "logFunctionGets"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": ["object", "instrumentedName", "logSettings"],
+    "additionalProperties": false
+  }
+}

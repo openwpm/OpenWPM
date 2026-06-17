@@ -1,3 +1,4 @@
+import re
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
@@ -57,3 +58,36 @@ def any_command_failed(db: Path) -> bool:
         if row["command_status"] != "ok":
             return True
     return False
+
+
+# A capitalised interface name (``AudioNode``) or a bracketed label of several
+# (``[AudioContext|OfflineAudioContext]``).
+_INTERFACE_LABEL = re.compile(r"[A-Z]\w*|\[[A-Z]\w*(?:\|[A-Z]\w*)*\]")
+
+
+def legacy_symbol(symbol: str, receiver: Optional[str]) -> str:
+    """The ``symbol`` legacy ``js_instrument`` would have recorded for a row.
+
+    Stealth hooks a member shared by several interfaces once, on its owner
+    (``AudioNode.connect``), where legacy recorded it under the receiver's
+    interface (``GainNode.connect``). When ``symbol``'s owner part is an
+    interface label other than ``receiver``, it is replaced by ``receiver``.
+    Anything else, legacy rows (``receiver`` NULL) and instance paths
+    (``window.document.cookie``) included, is returned unchanged, so mixed
+    datasets can be mapped.
+
+    Limits:
+
+    - Stealth also records shared members on interfaces legacy never listed
+      (``DynamicsCompressorNode.connect``), so the mapped symbols are a
+      superset of legacy's.
+    - In a config translated by ``js_settings_migrator``, a member legacy
+      reached through an instance path (``window.document.addEventListener``)
+      maps to the receiver's interface (``HTMLDocument.addEventListener``):
+      the shared entry is named after its owner, and one interface can be
+      reached through several paths, so the row does not determine the path.
+    """
+    owner, dot, member = symbol.rpartition(".")
+    if receiver and dot and owner != receiver and _INTERFACE_LABEL.fullmatch(owner):
+        return f"{receiver}.{member}"
+    return symbol
