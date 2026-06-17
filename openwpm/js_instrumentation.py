@@ -116,7 +116,19 @@ def _merge_settings(python_list):
                 continue
             else:
                 if None in list_setting_value:
-                    raise RuntimeError(f"Mismatching logSettings for object {obj}")
+                    raise RuntimeError(
+                        "Mismatching logSettings for object " f"{setting['object']}"
+                    )
+                elif not all(isinstance(p, str) for p in list_setting_value):
+                    # Stealth-shaped settings express list entries as
+                    # {depth, propertyNames} dicts, which are unhashable and
+                    # therefore cannot be deduped via set(). The legacy merge
+                    # path is not expected to receive these.
+                    raise RuntimeError(
+                        f"Cannot merge non-string {logSetting} entries for "
+                        f"object {setting['object']}. Stealth-shaped settings "
+                        f"must not be passed through the legacy merge path."
+                    )
                 else:
                     # Dedupe
                     setting["logSettings"][logSetting] = list(
@@ -315,7 +327,15 @@ def clean_stealth_js_instrumentation_settings(
         key=lambda e: [(isinstance(p, str), p) for p in e.absolute_path],
     )
     if errors:
-        raise ConfigError("\n".join(map(_stealth_schema_error, errors)))
+        raise ConfigError(
+            "\n".join(
+                [
+                    *map(_stealth_schema_error, errors),
+                    "To translate a legacy js_instrument_settings config, run",
+                    "    python -m openwpm.utilities.js_settings_migrator CONFIG.json",
+                ]
+            )
+        )
     try:
         _check_collisions(user_requested_settings)
     except ValueError as err:
@@ -333,19 +353,39 @@ def clean_stealth_js_instrumentation_settings(
     return user_requested_settings
 
 
+# Legacy logSettings fields stealth has no counterpart for, with why.
+_LEGACY_ONLY_FIELD_HINTS = {
+    "recursive": "stealth never recurses; the migrator flattens a recursive config",
+    "depth": (
+        "legacy's recursion limit; stealth never recurses. The entry's own "
+        "depth is a prototype-chain offset, not a recursion limit"
+    ),
+    "preventSets": (
+        "it protects no stealth wrapper and only drops native setter calls "
+        "(e.g. document.body = el), which a page can observe"
+    ),
+}
+
+
 def _stealth_schema_error(err: jsonschema.ValidationError) -> str:
     where = "stealth_js_instrument_settings" + "".join(
         f"[{p}]" if isinstance(p, int) else f".{p}" for p in err.absolute_path
     )
+    hints = []
     if err.validator == "additionalProperties":
         unknown = sorted(set(err.instance) - set(err.schema["properties"]))
         noun = "field" if len(unknown) == 1 else "fields"
         problem = f"unknown {noun} {', '.join(map(repr, unknown))}"
+        hints = [
+            f"- {k}: {_LEGACY_ONLY_FIELD_HINTS[k]}"
+            for k in unknown
+            if k in _LEGACY_ONLY_FIELD_HINTS
+        ]
     elif err.validator == "pattern" and where.endswith(".object"):
         problem = f"{err.instance!r} is not a bare global name like 'Navigator'"
     else:
         problem = err.message
-    return f"{where}: {problem}"
+    return "\n".join([f"{where}: {problem}", *hints])
 
 
 def _stealth_settings_wrap(

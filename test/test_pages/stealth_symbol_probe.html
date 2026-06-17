@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>symbol probe</title></head>
+<body>
+<canvas id="c" width="40" height="40"></canvas>
+<script>
+// Exercise a broad set of instrumented APIs so both legacy and stealth
+// record symbols we can diff. Wrapped in try/catch so one failure does not
+// abort the rest.
+function safe(fn) { try { fn(); } catch (e) { /* ignore */ } }
+
+// Navigator
+safe(() => { void navigator.userAgent; });
+safe(() => { void navigator.platform; });
+safe(() => { void navigator.languages; });
+safe(() => { void navigator.webdriver; });
+
+// Screen
+safe(() => { void screen.colorDepth; });
+safe(() => { void screen.pixelDepth; });
+
+// document
+safe(() => { void document.cookie; });
+safe(() => { void document.referrer; });
+
+// window-instance members
+safe(() => { void window.name; });
+safe(() => { window.name = "probe"; });
+safe(() => { void window.localStorage; });
+safe(() => { void window.sessionStorage; });
+
+// Storage prototype
+safe(() => { window.localStorage.setItem("k", "v"); });
+safe(() => { void window.localStorage.getItem("k"); });
+
+// Canvas
+safe(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#f00";
+  ctx.fillText("probe", 2, 10);
+  void canvas.toDataURL();
+  void ctx.getImageData(0, 0, 10, 10);
+});
+
+// AudioContext + nodes (offline to avoid needing a sink)
+safe(() => {
+  const ac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 44100, 44100);
+  const osc = ac.createOscillator();
+  const analyser = ac.createAnalyser();
+  const gain = ac.createGain();
+  osc.connect(analyser);
+  analyser.connect(gain);
+  gain.connect(ac.destination);
+  const data = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(data);
+  void ac.sampleRate;
+  void ac.currentTime;
+  osc.disconnect();
+});
+
+safe(() => {
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain);
+  void ac.sampleRate;
+  ac.close();
+});
+
+// RTCPeerConnection
+safe(() => {
+  const pc = new RTCPeerConnection();
+  pc.createDataChannel("probe");
+  void pc.createOffer();
+  pc.close();
+});
+
+const done = document.createElement("div");
+done.id = "results";
+done.setAttribute("data-results", JSON.stringify({ done: true }));
+document.body.appendChild(done);
+</script>
+</body>
+</html>
