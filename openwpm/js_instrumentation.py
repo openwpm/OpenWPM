@@ -4,6 +4,8 @@ from typing import Any, Dict, List
 
 import jsonschema
 
+from .errors import ConfigError
+
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
     curdir, os.pardir, "schemas", "js_instrument_settings.schema.json"
@@ -28,14 +30,25 @@ def _validate(python_list_to_validate):
     # Check properties to instrument and excluded properties don't collide
     for setting in python_list_to_validate:
         propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
-        if propertiesToInstrument is not None:
-            propertiesToInstrument = set(propertiesToInstrument)
-            excludedProperties = set(setting["logSettings"]["excludedProperties"])
-            if len(propertiesToInstrument.intersection(excludedProperties)) != 0:
-                raise ValueError(f"excludedProperties and \
-                    propertiesToInstrument collide. This \
-                    may have occurred after a merge. \
-                    Setting with collision: {setting}.")
+        if propertiesToInstrument is None:
+            continue
+        # Legacy settings list flat property-name strings; stealth-shaped ones
+        # express the same thing as {depth, propertyNames} objects. Flatten
+        # both into the set of names actually instrumented, so a collision is
+        # caught regardless of which form the study used. The schema has
+        # already been validated above, so propertyNames is present.
+        instrumented = set()
+        for entry in propertiesToInstrument:
+            if isinstance(entry, str):
+                instrumented.add(entry)
+            else:
+                instrumented.update(entry["propertyNames"])
+        excludedProperties = set(setting["logSettings"]["excludedProperties"])
+        if instrumented & excludedProperties:
+            raise ValueError(f"excludedProperties and \
+                propertiesToInstrument collide. This \
+                may have occurred after a merge. \
+                Setting with collision: {setting}.")
     return True
 
 
@@ -234,3 +247,68 @@ def clean_js_instrumentation_settings(
     settings = _merge_settings(settings)
     _validate(settings)
     return settings
+
+
+def clean_stealth_js_instrumentation_settings(
+    user_requested_settings: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Validate a custom stealth instrumentation surface.
+
+    The stealth instrument (``Extension/src/stealth``) consumes settings in the
+    full, stealth-shaped form already described by
+    ``schemas/js_instrument_settings.schema.json`` — including the top-level
+    ``depth`` field, ``logSettings.overwrittenProperties``, and the nested
+    ``propertiesToInstrument`` ``{depth, propertyNames}`` form. Unlike the legacy
+    path, ``object`` is a BARE global name (e.g. ``"CanvasRenderingContext2D"``,
+    ``"Navigator"``, ``"document"``) because the stealth instrument resolves it
+    against the page's global scope rather than a dotted ``window`` path.
+
+    This function therefore does not rewrite ``object`` or apply the legacy
+    shortcut expansion; it only validates the caller-supplied list against the
+    shared schema and returns it unchanged. When the caller passes ``None`` the
+    extension falls back to its bundled default, so this is only invoked for an
+    explicitly customised surface.
+
+    If validation fails — most commonly because a researcher pointed a legacy
+    ``js_instrument_settings`` config at ``stealth_js_instrument_settings`` — the
+    raw schema error is wrapped in a ``ConfigError`` that explains the
+    stealth-shaped form and points at the ``openwpm.utilities.js_settings_migrator``
+    sweep utility for translating a legacy config. The original validation error
+    is preserved as the exception cause.
+
+    Parameters
+    ----------
+    user_requested_settings: list
+        Stealth-shaped settings objects.
+
+    Returns
+    -------
+    list
+        The validated settings, unchanged.
+    """
+    if not isinstance(user_requested_settings, list):
+        raise TypeError(
+            "stealth_js_instrument_settings must be a list. "
+            f"Received {user_requested_settings}"
+        )
+    try:
+        _validate(user_requested_settings)
+    except (jsonschema.ValidationError, TypeError, ValueError) as err:
+        raise ConfigError(
+            "stealth_js_instrument_settings failed validation. The stealth "
+            "instrument expects settings in the full, stealth-shaped form "
+            "— a list of "
+            "{object: <bare global name>, instrumentedName, depth, logSettings} "
+            'objects (e.g. {"object": "Navigator", ...}) — NOT the legacy '
+            "js_instrument_settings form, which uses collection-name strings "
+            '(e.g. "collection_fingerprinting") or dotted-path shorthand '
+            '(e.g. {"window.navigator": ["userAgent"]}).\n'
+            "If you are porting a legacy js_instrument_settings config, "
+            "translate it into an equivalent stealth surface by running:\n"
+            "    python -m openwpm.utilities.js_settings_migrator YOUR_LEGACY_CONFIG.json\n"
+            "where YOUR_LEGACY_CONFIG.json holds your settings list in the "
+            "legacy js_instrument_settings form. It launches a browser, replays "
+            "the descent over the live object graph, and prints a flat "
+            "stealth_js_instrument_settings list you can drop into your config."
+        ) from err
+    return user_requested_settings

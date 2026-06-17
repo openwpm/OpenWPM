@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — script attribution probe</title>
+</head>
+<body>
+    <h1>script attribution</h1>
+    <canvas id="canvas" width="50" height="50"></canvas>
+    <script>
+    /*
+     * Known nested call chain. The instrumented call (canvas.toDataURL) is made
+     * from innerCall(), which is called from middleCall(), from outerCall().
+     *
+     * This lets the tests verify that the recorded record is attributed to THIS
+     * page's script (script_url, func_name) and that the recorded call_stack
+     * contains page frames only — never moz-extension:// frames. Under the
+     * stealth instrument the wrapper executes across an exportFunction /
+     * content-script boundary, so the captured stack composition differs from
+     * the legacy in-page instrument; these probes guard against attribution loss
+     * or extension-frame pollution in the recorded data.
+     */
+    function innerCall() {
+        return document.getElementById("canvas").toDataURL();
+    }
+    function middleCall() {
+        return innerCall();
+    }
+    function outerCall() {
+        return middleCall();
+    }
+    outerCall();
+    document.title = "attribution-done";
+    </script>
+</body>
+</html>
