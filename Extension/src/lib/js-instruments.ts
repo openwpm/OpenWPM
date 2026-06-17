@@ -756,6 +756,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
 
     // More details about how this function is invoked are in
     // content/javascript-instrument-content-scope.ts
+    const failures: string[] = [];
     for (const item of JSInstrumentRequests) {
       try {
         instrumentObject(
@@ -764,22 +765,24 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
           item.logSettings,
         );
       } catch (e) {
-        // Signal failure via the DOM; GetCommand reads + clears this.
-        try {
-          const message =
-            e && (e as Error).message ? (e as Error).message : String(e);
-          document.documentElement.setAttribute(
-            "data-openwpm-instrument-error",
-            `${item.instrumentedName}: ${message}`,
-          );
-        } catch {
-          // documentElement unwritable; the probe will see nothing.
-          console.warn(
-            "OpenWPM: could not record instrument failure on the DOM; " +
-              "the instrument-status probe will not observe this failure.",
-          );
-        }
-        return;
+        const message =
+          e && (e as Error).message ? (e as Error).message : String(e);
+        failures.push(`${item.instrumentedName}: ${message}`);
+      }
+    }
+    if (failures.length) {
+      // Signal failure via the DOM; GetCommand reads + clears this.
+      try {
+        document.documentElement.setAttribute(
+          "data-openwpm-instrument-error",
+          failures.join("; "),
+        );
+      } catch {
+        // documentElement unwritable; the probe will see nothing.
+        console.warn(
+          "OpenWPM: could not record instrument failure on the DOM; " +
+            "the instrument-status probe will not observe this failure.",
+        );
       }
     }
   }
