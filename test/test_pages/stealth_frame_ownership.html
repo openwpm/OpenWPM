@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth frame ownership probe</title>
+</head>
+<body>
+<div id="results"></div>
+<script>
+/*
+ * Frames and popups created after DOMContentLoaded, including blob:, data: and
+ * sandboxed documents (TestStealthFrameOwnership). Each probe reports strings;
+ * only the webdriver.* keys may differ from an uninstrumented Firefox.
+ */
+const R = {};
+const D = Object.getOwnPropertyDescriptor;
+const results = document.getElementById("results");
+const t = (k, f) => {
+    try { R[k] = String(f()); } catch (e) { R[k] = "THROW " + e.name + ": " + e.message; }
+};
+const pending = new Set(["sibling", "reuse", "blob_after", "data_frame", "sandboxed_srcdoc", "blob_popup"]);
+function done(key) {
+    pending.delete(key);
+    if (!pending.size) {
+        results.setAttribute("data-results", JSON.stringify(R));
+    }
+}
+window.addEventListener("message", (e) => {
+    R["webdriver." + e.data.tag] = e.data.webdriver;
+    done(e.data.tag);
+});
+const child = (tag, target) => `<script>document.createElement("canvas").toDataURL("image/png", "ownership_${tag}");
+${target}.postMessage({ tag: "${tag}", webdriver: String(navigator.webdriver) }, "*");<\/script>`;
+const blobUrl = (tag, target) =>
+    URL.createObjectURL(new Blob([child(tag, target)], { type: "text/html" }));
+
+window.addEventListener("load", () => {
+    // A frame stuck on its initial about:blank, reached through the frame
+    // getter of a sibling frame that is then removed.
+    const sibling = document.createElement("iframe");
+    document.body.appendChild(sibling);
+    const getter = D(sibling.contentWindow.HTMLIFrameElement.prototype, "contentWindow").get;
+    const stuck = document.createElement("iframe");
+    stuck.src = "stealth_frame_ownership_child.html?stuck";
+    results.after(stuck);
+    const w = getter.call(stuck);
+    w.stop();
+    sibling.remove();
+    setTimeout(() => {
+        t("sibling.user_agent", () => typeof w.navigator.userAgent);
+        t("sibling.webdriver", () => w.navigator.webdriver === navigator.webdriver);
+        t("sibling.get_item", () => w.localStorage.getItem("ownership"));
+        t("sibling.cookie", () => typeof w.document.cookie);
+        t("sibling.to_data_url", () => w.document.createElement("canvas").toDataURL().length);
+        t("sibling.append_child", () => {
+            const f = w.document.createElement("iframe");
+            w.document.body.appendChild(f);
+            return typeof f.contentWindow.navigator.userAgent;
+        });
+        done("sibling");
+    }, 300);
+
+    // A same-origin document reuses the window of the initial about:blank.
+    const reused = document.createElement("iframe");
+    reused.src = "stealth_frame_ownership_child.html?reuse";
+    document.body.appendChild(reused);
+    const rw = reused.contentWindow;
+    const N = rw.Navigator;
+    const userAgent = D(rw.Navigator.prototype, "userAgent").get;
+    const getItem = D(rw.Storage.prototype, "getItem").value;
+    reused.addEventListener("load", () => {
+        t("reuse.window", () => rw.Navigator === N);
+        t("reuse.user_agent_getter", () => D(rw.Navigator.prototype, "userAgent").get === userAgent);
+        t("reuse.get_item", () => D(rw.Storage.prototype, "getItem").value === getItem);
+        done("reuse");
+    });
+
+    // Documents legacy's matchAboutBlank content script does not run in.
+    const blob = document.createElement("iframe");
+    blob.src = blobUrl("blob_after", "parent");
+    results.after(blob);
+    const data = document.createElement("iframe");
+    data.src = "data:text/html," + encodeURIComponent(child("data_frame", "parent"));
+    results.after(data);
+    const sandboxed = document.createElement("iframe");
+    sandboxed.sandbox = "allow-scripts";
+    sandboxed.srcdoc = child("sandboxed_srcdoc", "parent");
+    results.after(sandboxed);
+    window.open(blobUrl("blob_popup", "opener"), "ownership", "width=100,height=100");
+});
+</script>
+</body>
+</html>

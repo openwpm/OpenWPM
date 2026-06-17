@@ -152,6 +152,7 @@ fields = [
     pa.field("top_level_url", pa.string()),
     pa.field("call_stack", pa.string()),
     pa.field("symbol", pa.string()),
+    pa.field("receiver", pa.string()),
     pa.field("operation", pa.string()),
     pa.field("value", pa.string()),
     pa.field("arguments", pa.string()),

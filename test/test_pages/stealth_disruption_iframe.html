@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — dynamic iframe disruption probe (X3)</title>
+</head>
+<body>
+    <h1>dynamic iframe</h1>
+    <script>
+    /*
+     * X3: a page that JS-creates an iframe navigating to a same-origin page
+     * and, before that page loads, runs an instrumented API call
+     * (canvas.toDataURL) in the frame's initial about:blank document. No
+     * content script is injected into that document.
+     */
+    function runInFrame() {
+        var iframe = document.createElement("iframe");
+        iframe.src = "stealth_disruption_iframe.html?child";
+        document.body.appendChild(iframe);
+        var idoc = iframe.contentDocument;
+        var canvas = idoc.createElement("canvas");
+        canvas.width = 40;
+        canvas.height = 40;
+        idoc.body.appendChild(canvas);
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#abcdef";
+        ctx.fillRect(0, 0, 40, 40);
+        // The instrumented call we look for in the DB.
+        var data = canvas.toDataURL();
+        document.title = "iframe-done:" + data.length;
+    }
+    if (location.search !== "?child") {
+        runInFrame();
+    }
+    </script>
+</body>
+</html>

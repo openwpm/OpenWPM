@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<script src="stealth_cap_shared.js"></script>
+<script>
+// The child document reuses the window of the frame's initial about:blank,
+// which this page reads first (TestStealthRecordIntegrity).
+cap_read(window, 520);
+const frame = document.createElement("iframe");
+frame.src = "stealth_cap_child.html";
+document.body.appendChild(frame);
+cap_read(frame.contentWindow, 300);
+</script>
+</body>
+</html>

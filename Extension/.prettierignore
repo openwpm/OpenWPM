@@ -17,3 +17,5 @@ openwpm.xpi
 bundled/content.js
 bundled/feature.js
 bundled/privileged/sockets/bufferpack.js
+# webpack output: the stealth instrument bundled for the privileged actor
+bundled/privileged/stealthInstrument/realm.js

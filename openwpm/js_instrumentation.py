@@ -4,6 +4,8 @@ from typing import Any, Dict, List
 
 import jsonschema
 
+from .errors import ConfigError
+
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
     curdir, os.pardir, "schemas", "js_instrument_settings.schema.json"
@@ -180,6 +182,29 @@ def get_default_log_settings():
     }
 
 
+def _reject_stealth_only_settings(settings: List[Dict[str, Any]]) -> None:
+    """The legacy instrument implements none of these, so accepting them would
+    silently drop what the study asked for."""
+    for setting in settings:
+        log_settings = setting["logSettings"]
+        stealth_only = [
+            k
+            for k in ("overwrittenProperties", "receiverInterfaces")
+            if k in log_settings
+        ]
+        if any(
+            not isinstance(p, str)
+            for p in log_settings.get("propertiesToInstrument") or []
+        ):
+            stealth_only.append("propertiesToInstrument as {depth, propertyNames}")
+        if stealth_only:
+            raise ConfigError(
+                f"js_instrument_settings for {setting['instrumentedName']} uses "
+                f"{', '.join(stealth_only)}, which only the stealth instrument "
+                "supports. Use stealth_js_instrument_settings instead."
+            )
+
+
 def clean_js_instrumentation_settings(
     user_requested_settings: List[Any],
 ) -> List[Dict[str, Any]]:
@@ -231,6 +256,7 @@ def clean_js_instrumentation_settings(
                 settings.append(_build_full_settings_object(sub_setting))
         else:
             settings.append(_build_full_settings_object(setting))
+    _reject_stealth_only_settings(settings)
     settings = _merge_settings(settings)
     _validate(settings)
     return settings

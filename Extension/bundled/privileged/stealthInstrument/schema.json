@@ -1,0 +1,31 @@
+[
+  {
+    "namespace": "stealthInstrument",
+    "functions": [
+      {
+        "name": "enable",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          {
+            "name": "settings",
+            "type": "any",
+            "optional": true
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "onRecord",
+        "type": "function",
+        "parameters": [
+          {
+            "name": "record",
+            "type": "any"
+          }
+        ]
+      }
+    ]
+  }
+]

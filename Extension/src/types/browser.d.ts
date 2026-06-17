@@ -35,3 +35,19 @@ declare namespace browser.sockets {
   ): boolean;
   export function close(id: SendingSocketId | ServerSocketId): void;
 }
+
+/**
+ * Privileged actor that runs the stealth JS instrument in every content realm.
+ *
+ * See ``bundled/privileged/stealthInstrument/``. ``enable`` registers the window
+ * actor (and the ``resource://openwpm/`` substitution it needs) and rejects if
+ * it cannot; ``onRecord`` delivers each instrumentation record, with the
+ * tab/frame identity resolved in the parent process.
+ */
+declare namespace browser.stealthInstrument {
+  export function enable(settings?: unknown): Promise<void>;
+  export const onRecord: {
+    addListener(receiver: (record: any) => void): void;
+    removeListener(receiver: (record: any) => void): void;
+  };
+}
