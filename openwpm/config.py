@@ -231,6 +231,26 @@ class ManagerParamsInternal(ManagerParams):
     )
 
 
+def _stealth_settings_request_recursive(
+    stealth_settings: List[Dict[str, Any]],
+) -> bool:
+    """Return True if any stealth settings entry requests recursive instrumentation.
+
+    The stealth surface expresses recursion as a per-entry
+    ``logSettings.recursive`` boolean (paired with a ``depth``), mirroring the
+    bundled ``Extension/src/stealth/settings.ts`` shape. The stealth instrument
+    cannot honour recursion (see ``validate_browser_params``), so this lets the
+    config layer reject such a surface up front.
+    """
+    for entry in stealth_settings:
+        if not isinstance(entry, dict):
+            continue
+        log_settings = entry.get("logSettings")
+        if isinstance(log_settings, dict) and log_settings.get("recursive"):
+            return True
+    return False
+
+
 def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
@@ -281,6 +301,34 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 "stealth_js_instrument and js_instrument cannot both be enabled. "
                 "Use stealth_js_instrument for undetectable instrumentation or "
                 "js_instrument for legacy instrumentation, but not both."
+            )
+
+        if (
+            browser_params.stealth_js_instrument
+            and browser_params.stealth_js_instrument_settings is not None
+            and _stealth_settings_request_recursive(
+                browser_params.stealth_js_instrument_settings
+            )
+        ):
+            raise ConfigError(
+                "Recursive instrumentation (logSettings.recursive=true) is not "
+                "supported under stealth_js_instrument. Recursion descends into the "
+                "plain Object/Array instances returned by instrumented getters, "
+                "which have no global interface prototype to hook; capturing them "
+                "would require defining accessors directly on those page instances "
+                "— a page-observable own-property mutation that any script can "
+                "detect. Stealth deliberately refuses to do this rather than give "
+                "itself away. "
+                "To keep stealth, expand your recursive config into an equivalent "
+                "flat, non-recursive stealth config by running:\n"
+                "    python -m openwpm.utilities.js_settings_migrator YOUR_LEGACY_CONFIG.json\n"
+                "where YOUR_LEGACY_CONFIG.json holds the same settings list in the "
+                "legacy js_instrument_settings form. It launches a browser, replays "
+                "the recursive descent over the live object graph, and prints a flat "
+                "stealth_js_instrument_settings list (reporting any plain "
+                "Object/Array nodes it cannot translate). Alternatively, use "
+                "js_instrument for configurations that need recursive, or remove "
+                "recursive from your stealth_js_instrument_settings."
             )
 
         if not isinstance(browser_params.save_content, bool) and not isinstance(
