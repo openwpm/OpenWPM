@@ -1,0 +1,11 @@
+{
+  "uuid": "8c495722-ebd4-415e-914c-674373428fdc",
+  "display_id": 39,
+  "title": "Rework ADR-0001: capture the decision/conflict, not development-era assumptions (or drop it)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nFeedback from Stefan (2026-06-18) on docs/developers/adr/0001-stealth-legacy-coexistence.md (in PR #1154).\n\nPRINCIPLE (general, all ADRs): an ADR documents the DECISION and the genuine conflict / philosophy / tradeoff behind it -- NOT the assumptions held while the ADR itself was being developed. If a section carries no real conflict or philosophy worth capturing, do not write it at all.\n\nAPPLICATION to ADR-0001: the opening paragraph spends itself on what we believed while refining the setup -- intermediate, now-obsolete assumptions. #1154 demonstrated that stealth FULLY SUBSUMES legacy: legacy is reachable only when a researcher deliberately sets hostile env vars to opt into a superseded technology. So:\n- Cut the opening that narrates prior beliefs.\n- Reframe to the actual conclusion: stealth supersedes legacy; legacy is retained only behind a deliberate opt-in to superseded tech.\n- Reconsider the framing/existence: the title 'coexistence' implies a live tension. If stealth subsumes legacy and there is no genuine conflict/philosophy to capture, question whether that framing -- or the ADR -- should exist at all. Quote: 'If there is no conflict/philosophy worth capturing there, then why write it at all.'\n\nPUMPABLE: iterate on the ADR text on branch feat/stealth-js-instrument-v2 (#1154) -- cut, reframe, or remove; keep the rest of the stealth docs/tests consistent with the result.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-19T23:00:26.400550842Z",
+  "updated_at": "2026-06-19T23:00:26.400550842Z"
+}
