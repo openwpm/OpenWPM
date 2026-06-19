@@ -1,0 +1,11 @@
+{
+  "uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "display_id": 40,
+  "title": "Rebase 15 active-PR branches onto master (v0.35.0) + finish jj-log de-noise",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nOvernight autonomous work. Stefan granted: resolve conflicts while PRESERVING INTENT (use mergiraf for syntax files, restore-base + npm install for lockfiles, real semantic merges where needed). openwpm conda env now matches environment.yaml (v0.35.0) -- use it directly via conda run, NEVER recreate it.\n\nREBASE these active-PR branches onto master@origin one-by-one; verify (npm ci/build + jj-precommit + relevant tests); push the clean/resolved ones; record conflicts that need a human on this issue:\n- 5 behind: ci/per-commit-checks #1190, fix/socket-hardening #1180, fix/cache-hits-deterministic-ranges #1184, fix/profile-coverage-deterministic-dns #1183, test/profile-baseline-regen #1189\n- 10-12 behind: docs/design-principles #1175, feat/extension-finalize-ack #1174, typing/query-db-overloads #1170, docs/browser-extension-comms #1142, fix/obsolete-firefox-prefs #1140, refactor/deprivilege #1101, feat/sqlalchemy-postgresql-v2 #1161\n- deeper: dynamic-test-durations #1151 / feat/dynamic-ci-test-durations-v2 #1155, delete_tmpdir #1104/#1093\n\nDO NOT rebase (already current): #1154 #1178 #1191 #1192 #1195 #1125 #1126 #1144. NEVER touch crosslink/hub, crosslink/knowledge.\n\nALSO finish Phase-3 de-noise: abandon the orphan scratch commits (scratch:/wip/verify/tmp leftovers) cluttering jj log. Leave chore/bump-firefox-150 (default workspace sits on it).\n\nFor #1037 stealth_extension (dead, superseded by #1154): do NOT rebase; flag for Stefan to close.\n\nIf a genuine product/design fork arises, record it here and move on -- do not block.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-19T23:01:09.368495895Z",
+  "updated_at": "2026-06-19T23:01:09.368495895Z"
+}
