@@ -1,0 +1,10 @@
+{
+  "uuid": "fa6b3a44-30a5-4aff-b99b-21ce717db911",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "docs/design-principles #1175: clean (no conflicts); rebased -b 2 commits onto master 315e6672. Docs-only (.md/.rst/AGENTS.md) — jj-precommit GREEN (isort/black/mypy correctly skipped, no py/Extension/test changes). No Extension build needed. new tip df544353; MERGEABLE.",
+  "created_at": "2026-06-19T23:23:02.660408390Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA3iWpOiq9PoeSMhK6uCa3F/5TU7b0ooVpz07DDT5y9W49VLqRM6oiBT4D8DcMhBFXs1IVmYvBcMwMauS88XjkBA=="
+}
