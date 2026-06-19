@@ -1,0 +1,10 @@
+{
+  "uuid": "e70802f3-fbaa-4b05-a35f-247495cb1e16",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "feat/dynamic-ci-test-durations-v2 #1155: RESOLVED (1 conflict) — rebased -b 3 commits onto master 315e6672. Conflict in .gitignore: master added a 'HATER.md' code-review-scratch ignore at the same spot the branch adds the pytest-split generated-file ignores (.test_durations_cached / .test_durations_group_*). mergiraf couldn't resolve (.gitignore is line-based, not in its AST set); resolved manually keeping BOTH blocks (intent unambiguous, additive). VERIFY: no markers remain; jj-precommit GREEN (isort/black/mypy/actionlint); pytest --collect-only clean (142 tests). new tip 29de670c; MERGEABLE. NOTE: tracking the remote bookmark surfaced the pre-rebase origin head as a divergence; set the bookmark to the clean rebased tip and pushed (sideways move). AMBIGUITY (a) CONFIRMED: #1155 is the 'v2' of #1151 — same feature (CI dynamic test durations for pytest-split), same touched files (run-tests.yaml, scripts/ci.sh, test/conftest.py) PLUS this branch adds the .gitignore entries and the CI-env-var gating that #1151 lacks. v2 is strictly the more complete superset. needs-human: #1151 is very likely superseded by #1155 — close #1151 (keep #1155)?",
+  "created_at": "2026-06-19T23:48:09.465986758Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1ubCBAr7k58schTqCxOAHiFaN8mBOOIFZayVWKKO6h8tT+bi4Q/LhqyOGCmIoIwH1xugDKEqYgYiDb0+QyNlDA=="
+}
