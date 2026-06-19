@@ -1,0 +1,10 @@
+{
+  "uuid": "d2930346-574e-4a6e-9da6-f2862ea2393c",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "fix/obsolete-firefox-prefs #1140: clean (no conflicts despite expected FF152 pref churn — master's configure_firefox.py at v0.35.0 didn't touch the obsolete pref lines this branch removes); rebased -b 2 commits onto master 315e6672. Single file (configure_firefox.py, -39/+9). jj-precommit GREEN (mypy/black/isort). No test file. new tip 1986eb2c; MERGEABLE.",
+  "created_at": "2026-06-19T23:25:39.254191155Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAng5McioGhQCNwv/XXtchIAS23gWOvh6NhDR41Adit6PjDktVwvLSHV2HxdvMqTXkbcaYosRcNOiv179ClcsyDg=="
+}
