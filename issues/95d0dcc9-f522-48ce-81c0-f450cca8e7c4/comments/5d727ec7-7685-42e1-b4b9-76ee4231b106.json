@@ -1,0 +1,10 @@
+{
+  "uuid": "5d727ec7-7685-42e1-b4b9-76ee4231b106",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "fix/cache-hits-deterministic-ranges #1184: clean (no conflicts); rebased -b 2 commits onto master 315e6672. Test-only (test_http_instrumentation.py). jj-precommit green; pytest collection clean (17 tests incl test_cache_hits_recorded). Ran the browser test: RED but env-blocked -- 'Could not install Add-on ... minVersion 152.0' (local FF 150.0.2 vs master extension 152), test never reaches cache assertions. Same master-wide FF-version block. new tip c868e869; MERGEABLE.",
+  "created_at": "2026-06-19T23:17:26.744646309Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAhui2PMFOCGNpntQ64nnld+qOKaetYVC+B0uvpUEij/oBE1obxXKYUEPYeN4kUJERJPifiRFtJxVUDXI2No9cCQ=="
+}
