@@ -1,0 +1,10 @@
+{
+  "uuid": "99d86c0d-1be8-4e2c-b9fe-aa912bfe1624",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "feat/extension-finalize-ack #1174: clean (no conflicts); rebased -b 3 commits onto master 315e6672. Extension (TS+bundled) + socket_interface.py + browser_commands.py. jj-precommit GREEN (black/isort/mypy). Extension npm ci+build GREEN & reproducible (no bundled drift). test_socket_interface.py: 6 passed (pure-python, not browser-blocked). new tip 0729d582; MERGEABLE.",
+  "created_at": "2026-06-19T23:25:00.607342812Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAaGtCCr78iYkmRSmm6KfZ/m1/Z1wClxDd0tlq5HtiHUbXkuGMwcK+708A9Kf0xaeFiNrZV6KbEqVR3xAUpk4GCQ=="
+}
