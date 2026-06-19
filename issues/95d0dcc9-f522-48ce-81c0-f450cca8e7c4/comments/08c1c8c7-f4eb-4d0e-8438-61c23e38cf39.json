@@ -1,0 +1,10 @@
+{
+  "uuid": "08c1c8c7-f4eb-4d0e-8438-61c23e38cf39",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "test/profile-baseline-regen #1189: clean (no conflicts); rebased -b onto master 315e6672. Touches the 14.8MB test/profile.tar.gz fixture -- verified the binary survived rebase+push intact (remote blob 17424614 bytes, matches local). jj-precommit green; pytest collection clean (21 tests in test_profile.py). Browser tests env-blocked at runtime by FF150-vs-extension152 (same as siblings); non-browser checks all green. new tip bb2ab11f; MERGEABLE.",
+  "created_at": "2026-06-19T23:19:48.019774068Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAOpVOmRCfBYRqVT8vQfxgYtwreZlQKrm9z8EsbZK+lDdkQbw9yXhSAVA2f8PjWkxT2SPicLFbSQT1Tmfavg3BCg=="
+}
