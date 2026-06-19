@@ -1,0 +1,10 @@
+{
+  "uuid": "f4b4b233-48b2-45d0-853c-427e32b4237c",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "OVERNIGHT SUMMARY -- 5 active-PR branches (5-behind set) rebased onto master@origin 315e6672 (v0.35.0). ALL 5 rebased CLEAN (zero conflicts), pushed, all MERGEABLE. Tips: #1190 ci/per-commit-checks=24076a07; #1180 fix/socket-hardening=4f2f109e; #1184 fix/cache-hits-deterministic-ranges=c868e869; #1183 fix/profile-coverage-deterministic-dns=b47faa4a; #1189 test/profile-baseline-regen=bb2ab11f. Verification: jj-precommit GREEN on all 5; #1180 npm ci+build GREEN+reproducible & pure-python socket/config tests 5 passed; #1189 14.8MB profile.tar.gz fixture verified intact through rebase+push (remote blob 17424614). pytest collection clean everywhere. ENV CAVEAT (all branches equally, NOT a regression): local FF 150.0.2 vs master extension strict_min_version 152.0 => every browser test fails at addon install; confirmed on #1180/#1184 by running them. Needs an FF152 install for runtime validation. #1183 note: stale DIVERGENT orphan 26d97393 left untouched per no-abandon rule (worth local cleanup). NEEDS-HUMAN: none. Conda env intact (never modified); all 5 ob-* workspaces forgotten+removed; touched nothing outside the 5-branch set.",
+  "created_at": "2026-06-19T23:20:30.294062852Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA79X9SClLpEWNyIQ7wjOqNv31gtk+zWhgmn1esT06StdEAI/+Bd3ybrV+ttumCscDxBuo7VNJ9sCJTCxLcfoOAg=="
+}
