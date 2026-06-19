@@ -1,0 +1,10 @@
+{
+  "uuid": "0f7bdebc-3a5a-4730-90e8-cf14f8404a39",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "typing/query-db-overloads #1170: RESOLVED (3 conflicts) — rebased -b 3 commits onto master 315e6672. Conflicts in environment.yaml (5 hunks), .pre-commit-config.yaml, test/test_dns_instrument.py. INTENT: branch migrates type-checker mypy->basedpyright. Resolved by (a) test_dns_instrument.py via mergiraf — kept master's new v0.35.0 DNS test cases (aborted-connection, example.invalid, redirect-chain) AND branch's removal of sqlite3.Row isinstance asserts (since query_db is now overload-typed); black-formatted the residual blank line; (b) .pre-commit-config.yaml: dropped the mirrors-mypy repo block (master's v2.1.0 bump moot — branch removes mypy) keeping the local basedpyright hook; (c) environment.yaml: took master's v0.35.0 pins, removed mypy=2.1.0, kept basedpyright==1.39.4 in pip — validated by manage-environment.py check (exit 0). VERIFY: black/isort clean on 21 py files; env-pin check GREEN; pytest --collect-only clean (54 tests across 5 changed test files); package imports OK (no dangling refs to deleted build_cookie_table.py/cookie.py). basedpyright type-check itself ENV-BLOCKED locally (openwpm env matches v0.35.0 manifest = mypy, basedpyright not installed; do-not-modify-env) — same class as browser-test block; lean on CI. All 3 commits conflict-free. new tip 581aead2; MERGEABLE.",
+  "created_at": "2026-06-19T23:31:45.425634081Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKMaC3049QU5EkMcVyNaftCZ0F0fKkTg7XVRJZpH2VeYUSMLV4QydEr4lJaLYNYDphCs8mt7EmTMZMgggI2ZBCQ=="
+}
