@@ -1,0 +1,10 @@
+{
+  "uuid": "ae1f7d8e-6116-4f3f-81fa-8c9778310041",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "BATCH B SUMMARY (7 active-PR branches, ~10-12 behind, rebased onto master@origin 315e6672 / v0.35.0): ALL 7 pushed and MERGEABLE. 4 CLEAN (#1175 df544353, #1142 bf573ba5, #1174 0729d582, #1140 1986eb2c); 3 RESOLVED preserving intent (#1170 581aead2 — mypy→basedpyright + master pins/DNS tests; #1101 92f5d82e — kept FF152 strict_min_version, merged manual_test, removed dead FirefoxBinary import; #1161 cf876d17 — pg dep story psycopg2→psycopg3→pip resolved commit-by-commit across 7 conflicted commits). VERIFY: jj-precommit GREEN on all 7 (incl env-pins on #1170/#1161); Extension npm ci+build green & reproducible on #1174/#1101; py compile/collection green where runnable. NEEDS-HUMAN: none. ENV-BLOCKED at runtime (NOT regressions — the v0.35.0 conda env, which must not be modified, lacks these): browser tests (local FF150 vs manifest 152), basedpyright (#1170), sqlalchemy (#1161, whose root conftest imports it so it blocks the whole suite locally). CI installs each branch's environment.yaml fresh and will exercise these. Conda env confirmed intact (mypy 2.1.0, selenium 4.45.0); all obB-* workspaces forgotten+removed; touched nothing outside the 7-branch set.",
+  "created_at": "2026-06-19T23:44:01.625956186Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAoDwQ9B39LAbfgIxx0L11oQ0340wm68oTgQ4PuASorb++f2QrVkXtSMuMOEiGT/24En7rt61dm9YMSQckk0xJBw=="
+}
