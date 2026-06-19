@@ -1,0 +1,10 @@
+{
+  "uuid": "45f48550-b1c1-4811-8d9b-0f948db89dcf",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "refactor/deprivilege #1101: RESOLVED (2 conflicts) — rebased -b 2 commits onto master 315e6672. Conflicts: (a) Extension/bundled/manifest.json — master bumped strict_min_version 60.0->152.0, branch had dropped the line; KEPT master's 152.0 (mandatory-latest-FF pin wins; branch's drop was incidental to its settings-page refactor). (b) test/manual_test.py (2 hunks) — merged branch's removal of dead FirefoxBinary usage with master's start_server() 3-tuple (now 'server, thread, urls = start_server()') and master's url symbol (branch commented the navigation line -> kept as '# driver.get(urls.base)'). EXTRA FIXES (standing keep-strict-checks rule, all branch-introduced not master): (1) black-reformatted deploy_firefox.py; (2) npm run fix on feature.ts — branch's new setup(config) had 2 prettier errors (missing spaces/semicolon); (3) removed now-dead 'from selenium...firefox_binary import FirefoxBinary' import (broken on selenium 4.45; was the sole collection-blocker — note master's manual_test.py is ALSO broken here as it still USES FirefoxBinary, so branch improves on master). VERIFY: jj-precommit GREEN (isort/black/mypy); Extension npm ci+build GREEN & reproducible (no bundled drift, feature.js is gitignored output); eslint exit 0; manual_test.py now compiles+collects clean (0 tests = expected, it's a __main__ debug script). new tip 92f5d82e; MERGEABLE.",
+  "created_at": "2026-06-19T23:37:28.701865872Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAwLIEz/TRaSo5y8MWiO9XQ1VMNhUuqpTgNv6XGFfeMHuvxseElPrMwviEYlJRMmi2noXwhDuN1Jxi0STPR2fvCQ=="
+}
