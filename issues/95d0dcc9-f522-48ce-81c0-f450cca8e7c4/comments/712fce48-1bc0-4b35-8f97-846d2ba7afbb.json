@@ -1,0 +1,10 @@
+{
+  "uuid": "712fce48-1bc0-4b35-8f97-846d2ba7afbb",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "delete_tmpdir #1104 (vringar's local branch, head c0fe18e5 — NOT the ndanner-wesleyancs fork #1093/d87db54b, left untouched): clean (no conflicts); rebased -b 1 commit onto master 315e6672. Touches browser_manager.py / config.py / deploy_firefox.py: adds a per-spawn geckodriver TMPDIR (browser_params.tmpdir) and deletes it on browser close to clean up geckodriver's leftover XPI copy. VERIFY: all 3 files py_compile clean; imports intact (os/shutil/tempfile/Path/Optional all present post-rebase); jj-precommit GREEN incl mypy (new Optional[Path] field + Service(env=...) arg typecheck clean); pytest --collect-only clean (142 tests). new tip 9b704960; MERGEABLE. AMBIGUITY (b) — NO OVERLAP with merged tmpdir work on master: master's only tmpdir code is profile-archiving (tempfile.mkdtemp 'openwpm_profile_archive_' + shutil.rmtree of profile paths in browser_manager.py); master has NO browser_params.tmpdir field, NO TMPDIR env passed to geckodriver, nothing in deploy_firefox.py. This branch's geckodriver-XPI-cleanup is orthogonal and rebased cleanly. Not superseded.",
+  "created_at": "2026-06-19T23:49:17.426481111Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAL3QSDmp98O2rDWmW4ApOCIdyJeNacEP0kemTNEwu0DyHEA/uZLJlZWEWjkxU2u7ty1HtOsvb8PXQv/JQdMCUBQ=="
+}
