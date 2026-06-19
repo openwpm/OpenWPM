@@ -1,0 +1,10 @@
+{
+  "uuid": "fcbb11c4-0eef-43c6-a0b7-9c8612d48f8a",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "dynamic-test-durations #1151: clean (no conflicts); rebased -b 3 commits onto master 315e6672. CI/workflow + scripts/ci.sh + test/conftest.py. jj-precommit GREEN (isort/black/mypy/actionlint); pytest --collect-only clean (142 tests; conftest change doesn't break collection). new tip 795baa25; MERGEABLE. AMBIGUITY (a): #1151 and #1155 are the SAME feature (pytest-split dynamic test durations); #1155 is the v2 and supersedes — needs-human: #1151 likely superseded by #1155, close one?",
+  "created_at": "2026-06-19T23:46:38.921373876Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA4xNgBl8/FovvyKO41KC/YC60qO2e4Z9nJ1Wb+adJQW7zRorjOu2NTW2m9xytjcouED/fMjbRPcNXdsRfeUslAA=="
+}
