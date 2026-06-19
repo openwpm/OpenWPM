@@ -1,0 +1,10 @@
+{
+  "uuid": "fdc668a3-24d7-4191-936d-31b96749a50b",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "fix/socket-hardening #1180: clean (no conflicts); rebased -b 4 commits onto master 315e6672. Extension npm ci+build green & reproducible (no drift); jj-precommit green (black/isort/mypy). Pure-python socket+config tests 5 passed. ENV CAVEAT: test_socket_echo_roundtrips_through_real_extension is RED but only due to local Firefox 150.0.2 vs master extension strict_min_version 152.0 -- a master-wide env block affecting every browser test equally, NOT a branch regression. new tip 4f2f109e; MERGEABLE.",
+  "created_at": "2026-06-19T23:07:52.154369698Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABACLTdERqBEdYh5QPOaVx6NOwufdY3xeHgMBEXmha1nCzVtuC4VJRXaAtZdMVx/3r+xqdCI+mh/3QXJ7WC0xjkDg=="
+}
