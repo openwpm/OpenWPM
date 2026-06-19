@@ -6,21 +6,49 @@
 import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 // ChannelWrapper.get(someChannel).id in the parent process corresponds to
-// WebRequest requestId values - which is what we want to propagate. This lets
-// us associate instrumented requests with the corresponding call stacks.
-// We need channels to look up the ChannelWrapper, ids are not sufficient.
-// Channels are stored in this map by channel ID, at *-on-opening-request.
-// They're cleared at on-examine-*-response when we won't need them anymore.
-const gChannelMap = new Map();
+// WebRequest requestId values - which is what we want to propagate to api.js so
+// the captured call stack can be joined against http_requests. The child only
+// knows the cross-process channelId, so the parent observer resolves
+// channelId -> requestId here, at http-on-opening-request, while the channel is
+// still alive, and the actor's receiveMessage looks the requestId up by the
+// channelId the child sent.
+//
+// We deliberately resolve and store the *requestId* (a plain number) rather than
+// the channel object, and we do NOT delete the entry when the response is
+// examined. An earlier design stored the channel and deleted it at
+// on-examine-*-response, but receiveMessage runs asynchronously (it awaits a
+// timer while waiting for the channel to be recorded), and on a fast connection
+// http-on-examine-response fires and deletes the entry within a single poll gap
+// -- before the async loop ever observes it. The consumer then spins to its
+// deadline and drops every stack, capturing zero rows. Retaining a small,
+// bounded history of resolved requestIds removes that record-then-delete race
+// entirely; the map is capped FIFO so it stays bounded over a long crawl.
+const gRequestIdMap = new Map();
+// Upper bound on retained channelId -> requestId entries. The window between
+// http-on-opening-request and a stack being consumed is short, so a few thousand
+// in-flight entries is far more than enough; the cap only guards against
+// unbounded growth if some stacks are never consumed.
+const MAX_TRACKED_REQUESTS = 4096;
+function recordRequestId(channelId, requestId) {
+  // Refresh insertion order so the most recently seen requests are evicted last.
+  gRequestIdMap.delete(channelId);
+  gRequestIdMap.set(channelId, requestId);
+  if (gRequestIdMap.size > MAX_TRACKED_REQUESTS) {
+    // Map preserves insertion order, so the first key is the oldest.
+    const oldest = gRequestIdMap.keys().next().value;
+    gRequestIdMap.delete(oldest);
+  }
+}
 
 // Upper bound on how long receiveMessage waits for the *-on-opening-request
-// observer to record a channel before giving up and dropping the stack. The
-// child frequently sends its formatted stack before the parent observer fires,
-// so we poll briefly; the deadline only guards the pathological case where the
-// channel never arrives, preventing an unbounded spin that leaks the task.
+// observer to resolve a channel's requestId before giving up and dropping the
+// stack. The child frequently sends its formatted stack before the parent
+// observer fires, so we poll briefly; the deadline only guards the pathological
+// case where the requestId never arrives, preventing an unbounded spin that
+// leaks the task.
 const CHANNEL_WAIT_TIMEOUT_MS = 5000;
-// Poll interval while waiting. 0 yields to the event loop each turn (fast path);
-// a small non-zero value caps busy-spinning if the channel is slow to appear.
+// Poll interval while waiting. A small non-zero value caps busy-spinning if the
+// requestId is slow to appear.
 const CHANNEL_WAIT_POLL_MS = 10;
 
 // Serializes a request's initiator call stack into the same one-frame-per-line
@@ -72,18 +100,17 @@ function deserializeAlternateStack(data) {
   return stacktrace.length ? stacktrace.join("\n") : null;
 }
 
-// Topics the channel-tracking observer listens to. A request channel is
-// recorded at *-on-opening-request and dropped at on-examine-*-response.
-// `network-monitor-alternate-stack` carries the initiator stack for requests
-// whose channel is opened off the JS stack (fetch/XHR/WebSocket/worker), for
-// which Components.stack in the content process is empty; see #1177.
-// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#41-43 (DevTools registers the same dual observer set: http-on-opening-request / document-on-opening-request / network-monitor-alternate-stack)
+// Topics the channel-tracking observer listens to. A request's requestId is
+// resolved and recorded at *-on-opening-request; we do not observe the examine
+// responses (see gRequestIdMap comment -- deleting there raced the async
+// consumer and dropped every stack). `network-monitor-alternate-stack` carries
+// the initiator stack for requests whose channel is opened off the JS stack
+// (fetch/XHR/WebSocket/worker), for which Components.stack in the content
+// process is empty; see #1177.
+// ref: https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#41-43 (DevTools registers http-on-opening-request / document-on-opening-request / network-monitor-alternate-stack)
 const OBSERVED_TOPICS = [
   "http-on-opening-request",
   "document-on-opening-request",
-  "http-on-examine-response",
-  "http-on-examine-cached-response",
-  "http-on-examine-merged-response",
   "network-monitor-alternate-stack",
 ];
 
@@ -94,33 +121,32 @@ const observer = {
   ]),
   observe(subject, topic, data) {
     let channel;
-    let channelId;
     switch (topic) {
       case "http-on-opening-request":
-      case "document-on-opening-request":
+      case "document-on-opening-request": {
+        let channelId;
         try {
           channel = subject.QueryInterface(Ci.nsIHttpChannel);
           channelId = channel.channelId;
         } catch {
           return;
         }
-        gChannelMap.set(channelId, channel);
-        break;
-      case "http-on-examine-response":
-      case "http-on-examine-cached-response":
-      case "http-on-examine-merged-response":
+        // Resolve the WebRequest requestId now, while the channel is alive.
+        // ChannelWrapper.get(someChannel).id in the parent process corresponds
+        // to WebRequest requestId values, the key the callstacks table joins on.
+        let requestId;
         try {
-          channel = subject.QueryInterface(Ci.nsIHttpChannel);
-          channelId = channel.channelId;
+          requestId = ChannelWrapper.get(channel).id;
         } catch {
           return;
         }
-        gChannelMap.delete(channelId);
+        recordRequestId(channelId, requestId);
         break;
+      }
       case "network-monitor-alternate-stack": {
         // The notification subject IS the channel (HTTP for fetch/XHR/WebSocket),
         // so we resolve the requestId straight from it instead of going through
-        // gChannelMap. ChannelWrapper.get(channel).id matches WebRequest's
+        // gRequestIdMap. ChannelWrapper.get(channel).id matches WebRequest's
         // requestId, the same key the sync path uses to join the callstacks
         // table to http_requests.
         try {
@@ -152,7 +178,7 @@ const observer = {
 // top-level content window, so registering in the constructor would append the
 // same singleton observer to every topic's list once per page, accumulating
 // unboundedly over a crawl and dispatching each request O(pages) times. The
-// observer and gChannelMap are module-global singletons that live for the
+// observer and gRequestIdMap are module-global singletons that live for the
 // content-parent process lifetime, so we register the observer exactly once
 // when this module is first loaded, guarded against duplicate registration.
 let gObserverRegistered = false;
@@ -212,24 +238,22 @@ export class OpenWPMStackDumpParent extends JSWindowActorParent {
 
   // receiving messages from the child
   async receiveMessage({ data: { channelId, stacktrace } }) {
-    // Check if we've already got the channel, and if not, wait for the
-    // *-on-opening-request observer to record it. The child can format and send
-    // its stack before the parent-process observer fires, so a brief wait is
-    // expected. Bound it with a deadline: if the channel never arrives (e.g. the
-    // request was canceled before opening, or the observer dropped it), bail
-    // rather than spinning forever and leaking this pending task.
+    // Check if the *-on-opening-request observer has already resolved this
+    // channel's requestId, and if not, wait briefly for it. The child can format
+    // and send its stack before the parent-process observer fires, so a short
+    // wait is expected. Bound it with a deadline: if the requestId never arrives
+    // (e.g. the request was canceled before opening, or the observer dropped it),
+    // bail rather than spinning forever and leaking this pending task.
     const deadline = Date.now() + CHANNEL_WAIT_TIMEOUT_MS;
-    while (!gChannelMap.has(channelId)) {
+    while (!gRequestIdMap.has(channelId)) {
       if (Date.now() >= deadline) {
-        // Channel never showed up; drop this stack instead of hanging.
+        // requestId never showed up; drop this stack instead of hanging.
         return;
       }
-      // Spin the event loop - this lets us observe new channels while waiting here.
+      // Spin the event loop - this lets us observe new requests while waiting.
       await new Promise((resolve) => setTimeout(resolve, CHANNEL_WAIT_POLL_MS));
     }
-    // ChannelWrapper.get(someChannel).id in the parent process corresponds to
-    // WebRequest requestId values.
-    const requestId = ChannelWrapper.get(gChannelMap.get(channelId)).id;
+    const requestId = gRequestIdMap.get(channelId);
     // Sends message to api.js
     Services.obs.notifyObservers(
       { wrappedJSObject: { requestId, stacktrace } },
