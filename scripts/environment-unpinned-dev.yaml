@@ -14,6 +14,7 @@ dependencies:
     - recommonmark
     - sphinx-markdown-tables
     - pip:
+        - pytest-postgresql
         - pytest-split
         - types-pyyaml
         - types-redis
