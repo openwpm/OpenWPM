@@ -24,20 +24,38 @@ metadata = MetaData()
 # maps to an 8-byte integer (BIGINT) on PostgreSQL. On SQLite, both INTEGER and
 # BIGINT have INTEGER affinity and support 8-byte values natively.
 
+# Note: Every table carries an instance_id column. This mirrors the Arrow/parquet
+# provider (parquet_schema.py), which stamps each record with a per-provider-instance
+# shard key (random.getrandbits(32)) "for partitioning". When many volunteer nodes
+# write to ONE shared database, their visit_id/browser_id values are per-node
+# sequential and would collide. Stamping a per-instance instance_id and making it
+# part of the effective primary key disambiguates clients and removes cross-client
+# lock contention. instance_id is uint32 in parquet; we use BigInteger here because
+# SQLAlchemy Integer maps to a signed 4-byte INT on PostgreSQL (max 2^31-1), which
+# overflows for values in [2^31, 2^32). instance_id is NOT present in schema.sql
+# (the single-node SQLite path); test_schema_equivalence excludes it accordingly.
+
 task = Table(
     "task",
     metadata,
-    Column("task_id", Integer, primary_key=True, autoincrement=True),
+    # task_id is client-supplied (random 32-bit, see storage_controller.py), never
+    # DB-autoincremented in practice. Making the key composite with instance_id
+    # disambiguates clients on a shared DB. autoincrement=False because a composite
+    # PK cannot be autoincremented and the value is always supplied explicitly.
+    Column("instance_id", BigInteger, primary_key=True, nullable=False),
+    Column("task_id", Integer, primary_key=True, autoincrement=False),
     Column("start_time", Text, server_default=text("CURRENT_TIMESTAMP")),
     Column("manager_params", Text, nullable=False),
     Column("openwpm_version", Text, nullable=False),
     Column("browser_version", Text, nullable=False),
-    sqlite_autoincrement=True,
 )
 
 crawl = Table(
     "crawl",
     metadata,
+    # browser_id is per-node sequential -> collides across clients. Composite PK
+    # with instance_id disambiguates.
+    Column("instance_id", BigInteger, primary_key=True, nullable=False),
     Column("browser_id", Integer, primary_key=True, autoincrement=False),
     Column("task_id", Integer, nullable=False),
     Column("browser_params", Text, nullable=False),
@@ -47,6 +65,9 @@ crawl = Table(
 site_visits = Table(
     "site_visits",
     metadata,
+    # visit_id is per-node sequential -> collides across clients. Composite PK
+    # with instance_id disambiguates.
+    Column("instance_id", BigInteger, primary_key=True, nullable=False),
     Column("visit_id", BigInteger, primary_key=True, autoincrement=False),
     Column("browser_id", Integer, nullable=False),
     Column("site_url", String(500), nullable=False),
@@ -56,6 +77,7 @@ site_visits = Table(
 crawl_history = Table(
     "crawl_history",
     metadata,
+    Column("instance_id", BigInteger, nullable=False),
     Column("browser_id", Integer),
     Column("visit_id", BigInteger),
     Column("command", Text),
@@ -72,6 +94,7 @@ http_requests = Table(
     "http_requests",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("instance_id", BigInteger, nullable=False),
     Column("incognito", Integer),
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),
@@ -106,6 +129,7 @@ http_responses = Table(
     "http_responses",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("instance_id", BigInteger, nullable=False),
     Column("incognito", Integer),
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),
@@ -131,6 +155,7 @@ http_redirects = Table(
     "http_redirects",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("instance_id", BigInteger, nullable=False),
     Column("incognito", Integer),
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),
@@ -155,6 +180,10 @@ http_redirects = Table(
 javascript = Table(
     "javascript",
     metadata,
+    # id is client-supplied (extension-provided, autoincrement=False) and
+    # per-node sequential -> collides across clients. Composite PK with
+    # instance_id disambiguates.
+    Column("instance_id", BigInteger, primary_key=True, nullable=False),
     Column("id", Integer, primary_key=True, autoincrement=False),
     Column("incognito", Integer),
     Column("browser_id", Integer, nullable=False),
@@ -186,6 +215,9 @@ javascript = Table(
 javascript_cookies = Table(
     "javascript_cookies",
     metadata,
+    # id is client-supplied (autoincrement=False) -> collides across clients.
+    # Composite PK with instance_id disambiguates.
+    Column("instance_id", BigInteger, primary_key=True, nullable=False),
     Column("id", Integer, primary_key=True, autoincrement=False),
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),
@@ -215,6 +247,7 @@ javascript_cookies = Table(
 navigations = Table(
     "navigations",
     metadata,
+    Column("instance_id", BigInteger, nullable=False),
     Column("id", Integer),  # NOT a primary key
     Column("incognito", Integer),
     Column("browser_id", Integer, nullable=False),
@@ -246,6 +279,7 @@ callstacks = Table(
     "callstacks",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("instance_id", BigInteger, nullable=False),
     Column("request_id", BigInteger, nullable=False),
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),
@@ -257,6 +291,7 @@ incomplete_visits = Table(
     "incomplete_visits",
     metadata,
     Column("visit_id", BigInteger, nullable=False),
+    Column("instance_id", BigInteger, nullable=False),
 )
 
 # dns_responses: Note the used_address column which IS in schema.sql
@@ -265,6 +300,7 @@ dns_responses = Table(
     "dns_responses",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("instance_id", BigInteger, nullable=False),
     Column("request_id", BigInteger, nullable=False),
     Column("browser_id", Integer, nullable=False),
     Column("visit_id", BigInteger, nullable=False),

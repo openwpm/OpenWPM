@@ -92,13 +92,26 @@ async def test_schema_equivalence(tmp_path):
                 return type_map[upper]
             return upper
 
+        # instance_id is a sharding column added by the SQLAlchemy provider (and
+        # the Arrow/parquet provider) but deliberately absent from schema.sql, the
+        # single-node SQLite path. Exclude it from the per-column comparison so the
+        # equivalence check stays meaningful for the columns the two schemas share.
+        # Because instance_id participates in composite primary keys on several
+        # tables (to disambiguate per-node-sequential ids across clients), adding it
+        # shifts the `pk` ordinal of the legacy PK columns. We therefore compare PK
+        # membership (is-this-column-part-of-the-PK) rather than the exact ordinal.
+        def strip_instance_id(cols):
+            return [c for c in cols if c[1] != "instance_id"]
+
         for table_name in sorted(legacy_tables):
             legacy_cols = legacy_conn.execute(
                 f"PRAGMA table_info({table_name})"
             ).fetchall()
-            sa_cols = sa_conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+            sa_cols = strip_instance_id(
+                sa_conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+            )
 
-            # Verify same number of columns
+            # Verify same number of columns (after excluding instance_id from sa)
             assert len(legacy_cols) == len(sa_cols), (
                 f"Column count mismatch for {table_name}: "
                 f"legacy={len(legacy_cols)}, sa={len(sa_cols)}"
@@ -122,9 +135,12 @@ async def test_schema_equivalence(tmp_path):
                         f"NOT NULL mismatch for {table_name}.{l_name}: "
                         f"{l_notnull} vs {s_notnull}"
                     )
-                assert (
-                    l_pk == s_pk
-                ), f"PK mismatch for {table_name}.{l_name}: {l_pk} vs {s_pk}"
+                # Compare PK membership, not ordinal: composite PKs that include
+                # instance_id shift the ordinal of the original PK column.
+                assert bool(l_pk) == bool(s_pk), (
+                    f"PK membership mismatch for {table_name}.{l_name}: "
+                    f"{l_pk} vs {s_pk}"
+                )
 
             # Check AUTOINCREMENT via sqlite_master DDL
             def _has_autoincrement(conn, tbl):
@@ -136,6 +152,13 @@ async def test_schema_equivalence(tmp_path):
 
             legacy_ai = _has_autoincrement(legacy_conn, table_name)
             sa_ai = _has_autoincrement(sa_conn, table_name)
+            # task is exempt: its primary key is now composite (instance_id,
+            # task_id) to disambiguate clients on a shared database, and SQLite
+            # does not allow AUTOINCREMENT on a composite key. task_id is always
+            # client-supplied (random 32-bit, see storage_controller.py), so the
+            # legacy AUTOINCREMENT was never functionally used.
+            if table_name == "task":
+                continue
             assert legacy_ai == sa_ai, (
                 f"AUTOINCREMENT mismatch for {table_name}: "
                 f"legacy={legacy_ai}, sa={sa_ai}"
