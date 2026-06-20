@@ -1,0 +1,11 @@
+{
+  "uuid": "0e4e2876-2826-4123-88b1-78fa2cbf6737",
+  "display_id": 44,
+  "title": "Frictionless single-docker volunteer fleet entrypoint (no local binds)",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nThe deliverable that ties the fleet vision together: ~15-25 friends each run ONE docker command with NO local binds, all data to remote sinks. Needs: structured -> Postgres (PR #1161, sharded per instance_id), unstructured -> self-hosted Garage, work queue -> Postgres WQ. crawler.py selects all three via env vars; no -v mounts. Validate a real no-binds run. Part of #41.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:11.389367585Z",
+  "updated_at": "2026-06-20T00:48:11.389367585Z"
+}
