@@ -7,9 +7,12 @@
   "priority": "low",
   "created_by": "claude",
   "created_at": "2026-06-20T13:28:45.282205837Z",
-  "updated_at": "2026-06-20T13:28:49.162531612Z",
+  "updated_at": "2026-06-20T13:29:02.583519486Z",
   "labels": [
     "refactor",
     "pumpable"
+  ],
+  "blockers": [
+    "2ef2d0a1-5d49-475d-84e6-ecace723e17b"
   ]
 }
