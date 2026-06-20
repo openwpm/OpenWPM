@@ -1,0 +1,11 @@
+{
+  "uuid": "76577e94-68b1-4678-be46-94ea47f749db",
+  "display_id": 47,
+  "title": "Run the 4-vantage measurement study (datacenter vs swarm vs domestic vs university)",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nExecute the study designed in datadir/study-design-crawl-deployment.md once the deployment is runnable. Headline RQ: quantify domestic-swarm vs GCP/AWS. Includes the stealth x vantage 2x2 detectability replication. Blocked by the fleet entrypoint being runnable.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:30.833745137Z",
+  "updated_at": "2026-06-20T00:48:30.833745137Z"
+}
