@@ -1,0 +1,10 @@
+{
+  "uuid": "be991530-cbac-420f-a6f8-598aec3f1ce2",
+  "issue_uuid": "4025dc0a-d135-4207-8cc7-0d83eddae4cf",
+  "author": "claude",
+  "content": "Phase-3 R5 landed as draft PR #1199: replaced the time.sleep(3) logger-socket drain in mp_logger.py with ServerSocket.shutdown() — a deterministic close-and-await-drain that wakes the accept loop, forces blocked recv() handlers to EOF, and joins all handler threads so the queue holds every fully-received record before draining. No lost tail records, no fixed wait. 7 logging unit tests pass (incl. a new test/test_socket_interface.py), pre-commit green. Self-contained, independent of the bidi back-channel; R1-R4 untouched.",
+  "created_at": "2026-06-20T02:12:15.492344573Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAMnKxFY2Aj/gJuvNBOwITSuyZcs87up6+mvyNBVwtsJ/Qv7CnvIm9188WhytZUZ4g700tA7xK6CResjgSIW1KDA=="
+}
