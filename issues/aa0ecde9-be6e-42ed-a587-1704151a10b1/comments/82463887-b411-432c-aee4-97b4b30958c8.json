@@ -1,0 +1,10 @@
+{
+  "uuid": "82463887-b411-432c-aee4-97b4b30958c8",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "Network-reliability assessment (Stefan + analysis, 2026-06-20): LOW risk of actually suffering. Volume trivial — 24GB/100k sites = ~240KB/site; ~1.2GB/volunteer over a multi-hour/day crawl = one ~240KB commit per ~10-30s per client. The only real failure mode is transient home-network disconnects, which degrade to RETRIES (not data loss) given (a) the StorageController commit-or-requeue forward-progress guarantee (worker in progress) + (b) a reconnect-with-backoff wrapper on the DB connection. No edge buffering needed -> reinforces the direct-to-Postgres decision.\n\nPER-CLIENT SHARDING (Stefan): generalize the parquet provider's per-instance sharding (arrow_storage.py:42,59 — self._instance_id = random.getrandbits(32), stamped on every record for partitioning) to the SQLAlchemy provider: add an instance_id column to every table, set per provider instance. Buys per-client isolation (no cross-client lock contention) AND fixes the per-node-sequential visit_id/browser_id collision across volunteers in one move. QUEUED to run on #1161 after the current deps+DSN-wiring worker lands (avoid same-branch push race).",
+  "created_at": "2026-06-20T00:24:46.146457924Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAnvemVC4pGIq1U9FXYAD882V8rLC+SJwHf2oupvMnWUxS6hvv4yFhivUMOKweC2Zu+ycXnFLTx6I6r3GYz6tFCw=="
+}
