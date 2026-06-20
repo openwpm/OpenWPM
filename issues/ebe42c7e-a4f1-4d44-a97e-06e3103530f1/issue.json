@@ -1,0 +1,11 @@
+{
+  "uuid": "ebe42c7e-a4f1-4d44-a97e-06e3103530f1",
+  "display_id": 56,
+  "title": "De-pollute legacy instrument prototype footprint (ADR-0001 follow-up #3)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review item R29 (datadir/review-1154.md:267-277) + investigation\n`datadir/investigation-legacy-prototype-pollution.md`. ADR-0001 follow-up #3.\n\n## Finding (investigation verdict)\nLegacy ALREADY wraps on PROTOTYPES (not instances), same as stealth. Its detectable artifacts\nare almost all AVOIDABLE accidental footprint at ZERO capture cost:\n- native `toString` passthrough,\n- arity preservation,\n- in-place descriptor redefine that adds no own-property,\n- module-local helpers (NOT attached to the page's `Object`),\n- no proto-chain flattening (the canonical pollution): `js-instruments.ts:74-86,670-703`,\n- no constructor re-attach.\n\nThe ONLY structural artifact is the per-instance data-property SET\n(`defineProperty(this, ...)`) at `js-instruments.ts:624-633` — narrow.\n\n## Goal\nDe-pollute legacy's prototype footprint by applying stealth-style techniques to the cheap,\navoidable layer above. This reduces legacy's detectability at no capture cost.\n\n## Why it matters\nThis is the PRECONDITION for relaxing the legacy/stealth mutual-exclusion constraint (GH #1187):\nonce legacy's avoidable footprint is removed, the two instruments are closer to coexistable.\n\n## NOTE / dependency\nA separate PoC is testing whether per-instance receiver attribution survives a clean rewrite —\nthat result gates a correction to the ADR's gap-#2 / \"lose the receiver\" wording (review item\nR30). Link that context; do not pre-empt the ADR wording change here.\n\n## Relationships\n- ADR-0001 (`docs/developers/adr/0001-retain-legacy-js-instrument.md`) follow-up #3.\n- Strengthens / references GH #1187 (relax mutual exclusion) and the legacy-hardening umbrella\n  (GH #1204).",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:51.028747305Z",
+  "updated_at": "2026-06-20T13:28:51.028747305Z"
+}
