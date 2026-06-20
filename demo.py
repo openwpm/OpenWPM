@@ -69,6 +69,17 @@ manager_params.log_path = Path("./datadir/openwpm.log")
 
 
 # Commands time out by default after 60 seconds
+#
+# To write structured data to PostgreSQL (or any SQLAlchemy-supported database)
+# instead of SQLite, swap the structured provider for SQLAlchemyStorageProvider:
+#
+#   from openwpm.storage.sqlalchemy_provider import SQLAlchemyStorageProvider
+#   structured = SQLAlchemyStorageProvider(
+#       db_url="postgresql+psycopg://user:pass@host:port/db"
+#   )
+#
+# The Docker crawler (crawler.py) selects this automatically when the
+# OPENWPM_POSTGRES_URL env var is set to such a DSN.
 with TaskManager(
     manager_params,
     browser_params,
