@@ -1,0 +1,11 @@
+{
+  "uuid": "2ae4638a-df42-4a7a-88ba-6b65d3f57083",
+  "display_id": 43,
+  "title": "Self-hosted Garage (S3-compatible) as the single unstructured-content sink",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nPer the object-storage research (datadir/research-self-hosted-object-storage.md): MinIO's OSS line is DEAD (repo archived 2026-02-12). Use **Garage** (Deuxfleurs) — 30MB static binary, ~1GB RAM, AGPLv3; its missing S3 features are exactly the ones OpenWPM does not use (write-once, md5-keyed flat namespace). INTEGRATION = ZERO provider code change: S3UnstructuredProvider forwards **kwargs to s3fs.S3FileSystem which accepts endpoint_url. Pumpable: wire crawler.py to select the S3 unstructured provider via an endpoint+bucket env var (mirror the OPENWPM_POSTGRES_URL structured wiring), add a Garage deploy doc, validate end-to-end. Part of #41.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:05.585012461Z",
+  "updated_at": "2026-06-20T00:48:05.585012461Z"
+}
