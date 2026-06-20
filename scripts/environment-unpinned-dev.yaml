@@ -3,6 +3,7 @@ channels:
 dependencies:
     - black
     - pytest-cov
+    - hypothesis
     - ipython
     - isort
     - pip
