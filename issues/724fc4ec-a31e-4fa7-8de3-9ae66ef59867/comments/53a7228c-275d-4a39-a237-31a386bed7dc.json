@@ -1,0 +1,10 @@
+{
+  "uuid": "53a7228c-275d-4a39-a237-31a386bed7dc",
+  "issue_uuid": "724fc4ec-a31e-4fa7-8de3-9ae66ef59867",
+  "author": "claude",
+  "content": "Tests landed in draft PR #1198 (branch test/adversarial-robustness): https://github.com/openwpm/OpenWPM/pull/1198 — 7 socket tests PASS, controller control+transient-recovery+malformed(SQLite) PASS, G1/G1b/G2 captured as xfail(strict), 3 browser-required tests skip on env-block (run in CI).",
+  "created_at": "2026-06-20T01:52:47.467092121Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAyKEaBzjI2PJWNPbA5awaxamyXQg6fBmJgaITbF6sY8+jYuBpPJAIrDmQ10P4rOvUIQAuIXqLRpLPbSTL8V8aBA=="
+}
