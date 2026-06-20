@@ -1,0 +1,10 @@
+{
+  "uuid": "f6509caf-9785-46af-a0f4-5b3e8d2a5d1f",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "Socket-reliability Phase 1 done: bidi finalize-ack work stacked on hardened sockets (#1180) as feat/bidi-on-hardening -> draft PR #1196. #1174's framing-safe ClientSocket.receive() is the canonical read path; #1129's data-socket back-channel (StorageController finalize_ack reply + DataSocket.finalize_visit_id_with_ack) landed as wired-but-uncalled infra for Phase 3 R1 to consume. #1129's TaskManager wiring was DROPPED + flagged needs-human: it assumed the abandoned refactor/event-driven-completion finalize path; on master finalize is FinalizeCommand->extension, not TaskManager. Phase 3 R1 must pick the call site.",
+  "created_at": "2026-06-20T00:58:28.370233183Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA49C6HYPupoZDOuKDdTdKPadxk6u7VI+WdDgh9dpSDrEfPExxQMKFTbdDP6HIlXxbZcuLC6YTDNxZjaE3/LPEDw=="
+}
