@@ -369,6 +369,48 @@ function logValue(
  * can be resolved (e.g. a null-prototype object), in which case the caller does
  * not attribute/emit.
  */
+/**
+ * PROOF-OF-CONCEPT (ADR-0001 gap #2 — "lose the receiver"):
+ *
+ * Per-instance receiver attribution held ENTIRELY in the isolated content-script
+ * world. The ADR implies that distinguishing two instances of the same interface
+ * forces touching/mutating the page object (incompatible with clean
+ * prototype-level instrumentation). This WeakMap refutes that by construction:
+ *
+ *   - The key is the Xray-wrapped page object (`this` at call time), exactly the
+ *     value the wrapper already receives for free (functionGenerator's `temp`).
+ *   - The map lives in the privileged content-script compartment — NOT on the
+ *     page. No own-property is added to the instance, no global is leaked, the
+ *     prototype wrapper is byte-for-byte the clean stealth wrapper. So every
+ *     detection vector that passes for plain stealth still passes.
+ *   - WeakMap holds keys weakly, so instances are not retained against GC.
+ *
+ * The crux this PoC tests EMPIRICALLY (see test_poc_receiver_attribution): is the
+ * Xray wrapper for a given underlying page object STABLE across calls, so the
+ * same instance maps to the same id and two distinct instances map to distinct
+ * ids? If Xray re-created a fresh wrapper per crossing, the WeakMap key would be
+ * unstable and this would not work — that is the obstacle that would VINDICATE
+ * the ADR.
+ */
+const receiverInstanceIds = new WeakMap<object, number>();
+let nextReceiverInstanceId = 0;
+function getReceiverInstanceId(receiver: any): number | null {
+  if (receiver === null || receiver === undefined) {
+    return null;
+  }
+  try {
+    let id = receiverInstanceIds.get(receiver as object);
+    if (id === undefined) {
+      id = nextReceiverInstanceId++;
+      receiverInstanceIds.set(receiver as object, id);
+    }
+    return id;
+  } catch {
+    // Non-object receiver (primitive) — cannot be a WeakMap key.
+    return null;
+  }
+}
+
 function getReceiverInterfaceName(receiver: any): string | null {
   if (receiver === null || receiver === undefined) {
     return null;
@@ -427,7 +469,14 @@ function logCall(
       inLog = false;
       return;
     }
-    receiverInterface = interfaceName;
+    // PROOF-OF-CONCEPT: append a per-instance id to the interface name so the
+    // `receiver` column distinguishes two instances of the SAME interface
+    // (e.g. "XMLHttpRequest#3" vs "XMLHttpRequest#7"). The id is assigned from a
+    // content-script-side WeakMap keyed on the Xray-wrapped page object — no
+    // page mutation, no detection surface. Stable iff the Xray key is stable.
+    const instanceId = getReceiverInstanceId(receiver);
+    receiverInterface =
+      instanceId === null ? interfaceName : interfaceName + "#" + instanceId;
   }
   const overLimit = updateCounterAndCheckIfOver(
     callContext.scriptUrl,
