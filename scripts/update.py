@@ -14,6 +14,7 @@ Run from the project root:
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -21,6 +22,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
+
+# Where install-firefox.sh drops the unbranded Firefox build (non-macOS).
+_FIREFOX_BINARY = ROOT / "firefox-bin" / "firefox-bin"
 
 _MAX_RESOLVE_ATTEMPTS = 10
 
@@ -354,6 +358,81 @@ def bump_version_if_behind() -> None:
     version_file.write_text(target + "\n")
 
 
+def check_obsolete_firefox_prefs() -> None:
+    """Probe the installed Firefox for prefs OpenWPM sets that it no longer
+    recognizes, and print a non-fatal WARNING block for any that probe obsolete.
+
+    This reads the freshly-installed Firefox (``firefox-bin/firefox-bin``, or
+    ``$FIREFOX_BINARY`` if set) via ``scripts/verify_obsolete_prefs.py``, which
+    imports the very pref dicts ``configure_firefox.py`` applies — so the check
+    covers exactly the prefs we set, with no separate list to maintain.
+
+    Never fatal: a missing binary, a launch failure, or obsolete prefs only emit
+    a warning. The point is to surface drift after a Firefox bump, not to block
+    the update.
+    """
+    print("\n=== Checking installed Firefox for obsolete OpenWPM prefs ===")
+
+    binary = os.environ.get("FIREFOX_BINARY") or str(_FIREFOX_BINARY)
+    if not Path(binary).is_file():
+        print(
+            f"  Firefox binary not found at {binary}; skipping pref check.\n"
+            "  Run ./scripts/install-firefox.sh, then re-run this check with\n"
+            "  `python scripts/verify_obsolete_prefs.py`."
+        )
+        return
+
+    env = {**os.environ, "FIREFOX_BINARY": binary}
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "verify_obsolete_prefs.py"), "--json"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(
+            "  WARNING: could not probe Firefox prefs (non-fatal).\n"
+            f"  {result.stderr.strip()}",
+            file=sys.stderr,
+        )
+        return
+
+    try:
+        results: dict[str, int] = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        print(
+            "  WARNING: could not parse pref-probe output (non-fatal).",
+            file=sys.stderr,
+        )
+        return
+
+    # pref_type 0 == PREF_INVALID: Firefox ships no default for this pref.
+    obsolete = [pref for pref, ptype in results.items() if ptype == 0]
+    if not obsolete:
+        print(f"  All {len(results)} prefs OpenWPM sets are still recognized.")
+        return
+
+    print(
+        "\n"
+        "  ============================ WARNING ============================\n"
+        f"  {len(obsolete)} pref(s) OpenWPM sets are no longer recognized by the\n"
+        "  installed Firefox (no default-branch entry). Consider pruning them\n"
+        "  from openwpm/deploy_browsers/configure_firefox.py:\n",
+        file=sys.stderr,
+    )
+    for pref in obsolete:
+        print(f"    - {pref}", file=sys.stderr)
+    print(
+        "\n"
+        "  Note: a default-branch absence is a strong but not absolute signal\n"
+        "  (a few prefs are read with an inline fallback). Confirm against\n"
+        "  searchfox/mozilla-central before removing.\n"
+        "  ================================================================\n",
+        file=sys.stderr,
+    )
+
+
 def main() -> None:
     # Repin the conda environment from unpinned sources
     run("./repin.sh", cwd=SCRIPTS)
@@ -379,6 +458,10 @@ def main() -> None:
     import firefox_version
 
     firefox_version.update_if_needed()
+
+    # Verify the prefs OpenWPM sets are still recognized by the installed
+    # Firefox (non-fatal warning if any have gone obsolete).
+    check_obsolete_firefox_prefs()
 
 
 if __name__ == "__main__":
