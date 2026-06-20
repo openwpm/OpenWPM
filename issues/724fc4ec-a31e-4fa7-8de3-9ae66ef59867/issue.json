@@ -1,0 +1,11 @@
+{
+  "uuid": "724fc4ec-a31e-4fa7-8de3-9ae66ef59867",
+  "display_id": 46,
+  "title": "Adversarial robustness: crawl pipeline survives crashing commands / extension mods / hostile failures",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nGenerate adversarial circumstances and assert the pipeline degrades gracefully (forward progress, no data loss, no hang, proper incomplete-visit recording): user-provided custom commands that raise/hang/OOM; extension modifications that crash/throw; socket disconnects mid-message + malformed frames; provider write failures; mid-visit browser crashes; malformed/hostile records. Extends the forward-progress property tests into adversarial/chaos territory. Relates to #28/#30 (silently-drops) and the socket-reliability thread.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:23.188306765Z",
+  "updated_at": "2026-06-20T00:48:23.188306765Z"
+}
