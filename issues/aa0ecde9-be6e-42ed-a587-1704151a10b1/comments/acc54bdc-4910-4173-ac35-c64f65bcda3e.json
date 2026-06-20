@@ -1,0 +1,10 @@
+{
+  "uuid": "acc54bdc-4910-4173-ac35-c64f65bcda3e",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "Research (datadir/research-self-hosted-object-storage.md) resolves the unstructured-data-no-binds sub-choice: route response bodies to a self-hosted S3-compatible store (option b). Recommendation: Garage (single 30MB binary, ~1GB RAM, AGPLv3) co-hosted with the public Postgres; SeaweedFS if scale grows. Integration is a near-drop-in CONFIG change (no provider code): OpenWPM's S3UnstructuredProvider forwards **kwargs to s3fs.S3FileSystem, which accepts endpoint_url. MinIO itself is dead upstream (repo archived Feb 2026) -- avoid. save_content resource-type whitelist + md5 dedup bound the footprint.",
+  "created_at": "2026-06-20T00:45:23.781283389Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAx+NgtEhA4yG5JA2Uqw5YvNiR9rzxytj4lmPn7pH7dI5M0BPhqVC35kAbNGNhTIFQd3neXCJ6j+Rp3HblCXefAQ=="
+}
