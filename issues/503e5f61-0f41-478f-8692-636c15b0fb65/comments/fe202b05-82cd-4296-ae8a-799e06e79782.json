@@ -1,0 +1,10 @@
+{
+  "uuid": "fe202b05-82cd-4296-ae8a-799e06e79782",
+  "issue_uuid": "503e5f61-0f41-478f-8692-636c15b0fb65",
+  "author": "claude",
+  "content": "Draft PR #1207 opened (branch harden/legacy-error-stacks, base master). Back-ported stealth cleanErrorStack to the legacy page-world instrument as inline helpers in getInstrumentJS; wrapped the three page-observable rethrow sites (func.apply + getter/setter calls) in try/catch that strips moz-extension:// frames from error.stack before re-throwing the same page-world error object. Added regression test test_js_instrument_error_stack.py (instruments window.atob, forces a throw, asserts page-observable stack has no moz-extension:// frame). Build/lint/python-precommit green. BLOCKER: browser test could not run locally -- spawn fails for ALL browser tests incl. unmodified ones (fork-based multiprocess under Python 3.14.6; direct FF152 launch works). Left DRAFT for CI to validate.",
+  "created_at": "2026-06-20T23:08:12.940561162Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAxnnK1FixQY9gsukU0uUkMfXu7wIt12Rsq0nR5qXvDvELLs/1V3sF8PHqMEXT+zLavepHrPTd6xaNba7BTzXHCw=="
+}
