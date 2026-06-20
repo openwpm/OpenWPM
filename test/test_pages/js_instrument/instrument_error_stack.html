@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>pending</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h3>Test page: instrumented API error stack</h3>
+    <p>
+      Calls an instrumented API (<code>window.atob</code>) with input that makes
+      it throw, then catches the error in page code and records its
+      <code>.stack</code>. The instrument must not leave any
+      <code>moz-extension://</code> frame on the page-observable stack.
+    </p>
+    <script type="text/javascript">
+      var stack = "NO_THROW";
+      try {
+        window.atob("not valid base64 !@#$%");
+      } catch (e) {
+        stack = "STACK:" + (e && e.stack ? String(e.stack) : "<empty>");
+      }
+      document.title = stack;
+    </script>
+  </body>
+</html>
