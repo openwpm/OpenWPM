@@ -7,11 +7,12 @@
   "priority": "high",
   "created_by": "claude",
   "created_at": "2026-06-20T01:13:17.893686305Z",
-  "updated_at": "2026-06-20T01:30:00.902054304Z",
+  "updated_at": "2026-06-20T01:30:03.962935169Z",
   "labels": [
     "pumpable"
   ],
   "related": [
-    "ab506265-7418-4bd7-bee8-6c761485052c"
+    "ab506265-7418-4bd7-bee8-6c761485052c",
+    "5509dee6-1327-4bd4-a31b-6788b8b85575"
   ]
 }
