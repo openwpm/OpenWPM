@@ -7,8 +7,9 @@
   "priority": "low",
   "created_by": "claude",
   "created_at": "2026-06-20T13:28:45.282205837Z",
-  "updated_at": "2026-06-20T13:28:47.267725251Z",
+  "updated_at": "2026-06-20T13:28:49.162531612Z",
   "labels": [
-    "refactor"
+    "refactor",
+    "pumpable"
   ]
 }
