@@ -1,0 +1,10 @@
+{
+  "uuid": "19ebe50d-9af6-47a4-ab7a-c2e55add4595",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "Functional verdict: RUNS-WITH-CAVEATS. Built throwaway env (py3.14, sqlalchemy 2.0.51, psycopg3, pytest-postgresql + conda postgresql 18.4). Ran test/storage/test_sqlalchemy_provider.py: 6 passed / 1 failed. The PostgreSQL scenario (test_all_tables_access_postgresql) PASSED end-to-end against an ephemeral PG, and an independent write+read-back smoke confirmed data round-trips. SQLAlchemy SQLite path also passes. Sole failure = test_schema_equivalence: real schema drift — branch's sqlalchemy_schema.py dns_responses is missing the 'error TEXT' column that v0.35.0's schema.sql gained (DNS error-handling work). Code-broken (one-line fix), not env-blocked. Needs: add error column to SA schema; for distributed crawl, an external/managed Postgres DSN (pytest-postgresql is test-only ephemeral).",
+  "created_at": "2026-06-20T00:13:02.100293804Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA0Vm6F0KTqPxN7v51isOQrYsRENneqlebeSjN6OFhBH7/KwKPDpeC3UxOQeHW9rkxAfScT0XixXNI3zY6Mhy0Cw=="
+}
