@@ -1,0 +1,10 @@
+{
+  "uuid": "340acae1-cb57-478b-8044-509b538952fa",
+  "issue_uuid": "aa835c8d-85ff-4de7-a2f4-c9200982c9cf",
+  "author": "claude",
+  "content": "Draft PR: https://github.com/openwpm/OpenWPM/pull/1197 (branch fix/storage-forward-progress). Files: openwpm/storage/arrow_storage.py (atomic flush_cache), openwpm/storage/storage_controller.py (timeout-flush survives errors + bounded shutdown retries), test/storage/test_storage_controller_liveness.py (4 Hypothesis property tests). All green; jj-precommit clean.",
+  "created_at": "2026-06-20T01:13:30.353799966Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAqUw29waJ/i7VSI4SZdljQD0fq8oqEjTUbDCLNrn/rysRyO6kz1+xx5lFipx4sxNRNexrfvDMEadJvlZpSpTGAQ=="
+}
