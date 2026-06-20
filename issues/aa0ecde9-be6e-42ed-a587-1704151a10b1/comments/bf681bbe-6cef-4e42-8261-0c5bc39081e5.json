@@ -1,0 +1,10 @@
+{
+  "uuid": "bf681bbe-6cef-4e42-8261-0c5bc39081e5",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "STORAGE DECISION (Stefan 2026-06-20): go DIRECT-to-public-Postgres (NOT edge-buffered split-sink). Trust model — volunteers are close friends, so the abuse/quota/credential-isolation hardening concern is WAIVED. Remaining technical (NOT solved by trust): (1) write-reliability of a direct DB connection over flaky home networks, (2) the unstructured-data-no-binds problem (response bodies must go to Postgres bytea / S3 / or be disabled). Relatedly, Stefan flagged a real forward-progress bug in the OLD parquet->S3 caching path (sites perpetually marked in-progress by the WQ but never committed/pushed) — investigating the StorageController's liveness guarantees separately.",
+  "created_at": "2026-06-20T00:17:46.499035425Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAL3Po+qMj+9Zu5e8k5A0kTY4ZUpokYQ1CMXXF2dLsOemdQuUt1nhS+Gay9GZsS+YtTU9nUir+ClHB6fQfMN3RDA=="
+}
