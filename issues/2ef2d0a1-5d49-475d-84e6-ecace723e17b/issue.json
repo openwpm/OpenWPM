@@ -1,0 +1,11 @@
+{
+  "uuid": "2ef2d0a1-5d49-475d-84e6-ecace723e17b",
+  "display_id": 52,
+  "title": "Move stealth instrument default settings to Python side (token-based, mirror legacy)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review items R5 / R5++ (datadir/review-1154.md:107-110, 332-337, 390-399).\n\n## Problem (asymmetry, confirmed)\nLegacy keeps its default fingerprinting settings on the Python side: a\n`\"collection_fingerprinting\"` token expanded from a JSON collection\n(`js_instrumentation_collections/fingerprinting.json`), wired via\n`js_instrumentation.py::get_default_log_settings()` and surfaced through\n`BrowserParams.js_instrument_settings`. Stealth instead bundles its default in\n`Extension/src/stealth/settings.ts` (JS-side). The default-location asymmetry is confirmed.\n\n## Goal\nMirror legacy's token-based pattern on the Python side for stealth:\n- Add a Python-side `stealth_fingerprinting.json` collection.\n- Register a token (analogous to legacy's `collection_fingerprinting`) that expands it.\n- Make that the default for `stealth_js_instrument_settings`, falling back to the bundled\n  default only as a last resort.\n- Make `Extension/src/stealth/settings.ts`'s default derived / removable, so the Python\n  side is the single source of truth.\n\n## Rationale (reinforced twice by Stefan)\nPython-side defaults let researchers REFERENCE the baseline and build on top of it\n(reference-and-extend), producing a better baseline — exactly the pattern legacy already\nsupports. The runtime override field `stealth_js_instrument_settings` is stable regardless\nof where the default ultimately lives.\n\n## Notes\n- This is the natural home for R26 (add `AudioWorkletNode` to the default set) — the mirrored\n  stealth default produced here must include `AudioWorkletNode` too.\n- Its own focused PR after the investigation; NOT part of the #1154 stack.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:27.578531492Z",
+  "updated_at": "2026-06-20T13:28:27.578531492Z"
+}
