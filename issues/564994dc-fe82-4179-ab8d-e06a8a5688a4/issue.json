@@ -1,0 +1,11 @@
+{
+  "uuid": "564994dc-fe82-4179-ab8d-e06a8a5688a4",
+  "display_id": 50,
+  "title": "Standardize docs on reStructuredText: convert the .md files under docs/ to .rst",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nStefan 2026-06-20, re #1154: docs/ is a Sphinx tree but is a MIXED md/rst mess. RST: index.rst, Papers.rst, developers/JS-Instrument.rst. Markdown (pre-existing + #1154 added more): Configuration.md, Using_OpenWPM.md, Architecture-Internals.md, Platform-Architecture.md, Schema-Documentation.md, Release-Checklist.md, developers/Stealth-Instrumentation.md, developers/Stealth-Requirements.md. Unless myst-parser is enabled in conf.py the .md files do not render in the Sphinx build at all. Stefan prefers rst. Task: convert the .md docs to .rst, wire them into the index toctree, verify the docs build. #1154 just added to the sprawl; fixing the whole set is the real cleanup.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T09:50:57.425036267Z",
+  "updated_at": "2026-06-20T09:50:57.425036267Z"
+}
