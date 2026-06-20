@@ -1,0 +1,11 @@
+{
+  "uuid": "5cbb8a7b-93c8-4a00-a394-41de2b294b3c",
+  "display_id": 51,
+  "title": "Stop committing JSON-Schema-generated TS types; generate at build time",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review item R28 (datadir/review-1154.md:227-236).\n\n## Problem\nThe JSON-Schema-generated TypeScript type(s) for the stealth settings (produced by\n`json-schema-to-typescript` / `json2ts` from the stealth settings schema) are committed\nto the repo. The schema is the single source of truth; the type is derived and should be\ngenerated at build time, not committed.\n\n## Goal\n- Add `json-schema-to-typescript` as a real `devDependency` (so `npm ci` installs it).\n- Add a `prebuild`/`prepare` npm script that regenerates the type BEFORE anything that\n  consumes it: `tsc`, webpack, lint, web-ext.\n- Ensure CI runs codegen first.\n- Verify NO flow (tsc / lint / web-ext) needs the file present without codegen having run.\n- `.gitignore` the generated file and remove the committed copy.\n\n## IMPORTANT context (why this was deferred OUT of #1154)\nA naive wiring of the codegen step exposed a `build:main` (plain-`tsc`) failure:\n`exportFunction` not found. Root cause: the plain-tsc build steps lack the Firefox\nWebExtension type definitions — only the webpack/ts-loader build is exercised with those\ntypes. So this is NOT just a prebuild script: the tsconfig / build-graph needs to be\nuntangled so every consuming build has both the generated type and the Firefox WebExtension\ntypes available. Budget for build-graph work, not a one-line npm script.\n\n## Scope / files\n- The schema commit that introduced the committed type\n- `Extension/package.json` (devDep + scripts)\n- `.gitignore`\n- tsconfig / `webpack.config.js` build graph",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:15.410390359Z",
+  "updated_at": "2026-06-20T13:28:15.410390359Z"
+}
