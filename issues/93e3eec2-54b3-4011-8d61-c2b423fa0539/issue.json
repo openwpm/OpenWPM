@@ -1,0 +1,11 @@
+{
+  "uuid": "93e3eec2-54b3-4011-8d61-c2b423fa0539",
+  "display_id": 58,
+  "title": "Fix geckodriver SIGABRT on teardown (FIFO->regular file) [GH #1208]",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nGitHub #1208: geckodriver killed with SIGABRT (broken-pipe panic, exit 134 + coredump) on every browser teardown/recycle (bursts of N = parallel browsers). Root cause: OpenWPM routes geckodriver stdout through a FIFO (FirefoxLogInterceptor) whose daemon-thread reader can close the read end before geckodriver stops writing -> EPIPE -> Rust double-panic-in-destructor -> abort(). Harmless to crawl data but spams coredumps + muddies exit bookkeeping. FIX (per the issue): back the interceptor with a REGULAR FILE instead of a FIFO (writes never EPIPE); interceptor tails the file + stops on request. Files: openwpm/deploy_browsers/selenium_firefox.py (FirefoxLogInterceptor) + deploy_firefox.py (log_output). VERIFY via a DIRECT-selenium repro (multi-browser crawl + recycle -> confirm no exit-134/coredumps); the TaskManager multiprocess path is broken under Python 3.14 separately. Full analysis + suggested diff in GH #1208.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-20T23:50:49.225886206Z",
+  "updated_at": "2026-06-20T23:50:49.225886206Z"
+}
