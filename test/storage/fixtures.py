@@ -1,3 +1,4 @@
+import shutil
 from typing import Any, List
 
 import pytest
@@ -20,9 +21,13 @@ from openwpm.storage.storage_providers import (
 from test.storage.test_values import dt_test_values, generate_test_values
 
 try:
-    from pytest_postgresql import factories
+    from pytest_postgresql import factories  # noqa: F401
 
-    HAS_PYTEST_POSTGRESQL = True
+    # pytest-postgresql spins up a real PostgreSQL instance, which requires the
+    # server binaries on PATH (it locates them via ``pg_config``). When the
+    # package is installed but no PostgreSQL binary is available (e.g. CI images
+    # without a postgres server), the scenario must be skipped rather than error.
+    HAS_PYTEST_POSTGRESQL = shutil.which("pg_config") is not None
 except ImportError:
     HAS_PYTEST_POSTGRESQL = False
 
