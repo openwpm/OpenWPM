@@ -1,0 +1,11 @@
+{
+  "uuid": "4025dc0a-d135-4207-8cc7-0d83eddae4cf",
+  "display_id": 45,
+  "title": "Socket-reliability thread: bidi-on-hardening + echo-mode wire tests + timeout->signal removals",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\n3 phases. P1: rebase bidi #1129 onto hardened #1180, reconcile finalize-ack w/ #1174 -> branch feat/bidi-on-hardening (gives the completion back-channel). P2: audit ~116 timeout/sleep sites (datadir/timeout-audit.md) -> KEEP-deadline vs REPLACE-with-signal. P3 (blocked by P1+P2): fan out one branch+worker per REPLACE spot, swapping wait-and-hope timeouts for completion signals through the chain. Also: leverage echo_mode to exhaustively property-test/fuzz the wire protocol.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:17.252543171Z",
+  "updated_at": "2026-06-20T00:48:17.252543171Z"
+}
