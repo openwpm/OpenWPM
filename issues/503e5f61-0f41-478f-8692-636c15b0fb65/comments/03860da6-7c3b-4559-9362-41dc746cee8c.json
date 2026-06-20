@@ -1,0 +1,10 @@
+{
+  "uuid": "03860da6-7c3b-4559-9362-41dc746cee8c",
+  "issue_uuid": "503e5f61-0f41-478f-8692-636c15b0fb65",
+  "author": "claude",
+  "content": "the-hater verdict (datadir/hater-1207.md): #1207 is a NO-OP. Legacy is injected as an inline <script>, so its frames are attributed to the page URL, not moz-extension://. Repro (real bundle, with+without fix) is byte-identical; the new test is tautological. Recommend closing #1207 + #53 as not-reproducible-via-this-vector.",
+  "created_at": "2026-06-20T23:49:18.396502872Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAoXlQmUcxYAicwTGeNZw9lXE1lxtMrLR8Mff3lFUc11HSyawJ2sXGolu7roftDVQ+B2KJGEeK4754WM+HgksqBQ=="
+}

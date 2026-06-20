@@ -1,0 +1,10 @@
+{
+  "uuid": "7f3b4fdf-4544-42c4-8f01-55abc06771bb",
+  "issue_uuid": "503e5f61-0f41-478f-8692-636c15b0fb65",
+  "author": "claude",
+  "content": "HATER VERDICT on PR #1207 (harden/legacy-error-stacks): SLOPPY — fix is benign but UNPROVEN, regression test is VACUOUS. Full writeup + repro scripts at /home/vringar/projects/OpenWPM/datadir/hater-1207.md",
+  "created_at": "2026-06-20T23:27:15.465088210Z",
+  "kind": "observation",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA4BFSmQOFmgluixoj5TTf4tmW6Uqszm1xQJ/KPpwG4bNFT2/XSGXOl5wwN2nyQKVvSy1lL0mTxBVmA5xE714IDg=="
+}
