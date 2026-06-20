@@ -1,0 +1,10 @@
+{
+  "uuid": "ff1a9419-dab1-4952-a5ea-cb9dd623b922",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "Fleet-enabling: SQLAlchemy provider now stamps a per-instance instance_id (mirrors parquet) and makes it part of composite PKs on client-keyed tables, so many volunteers can write to one Postgres without visit_id/browser_id collisions. Pushed on PR #1161 (feat/sqlalchemy-postgresql-v2, b97e0b96), MERGEABLE.",
+  "created_at": "2026-06-20T00:40:23.809943357Z",
+  "kind": "result",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA+etWsx7sq0ZYJNjB4+8cj1alGSyFMklw2Bt2QdXGNgrINIBrFNabKS6KDbivu9H7CLOirmKBXY6UiNuD0VXIBQ=="
+}
