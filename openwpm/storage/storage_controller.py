@@ -15,7 +15,7 @@ from multiprocess import Queue
 from openwpm.utilities.multiprocess_utils import Process
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket, get_message_from_reader
+from ..socket_interface import ClientSocket, get_message_from_reader, send_to_writer
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
@@ -101,7 +101,7 @@ class StorageController:
         await writer.wait_closed()
 
     async def handler(
-        self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
@@ -109,7 +109,7 @@ class StorageController:
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
-            except IncompleteReadError:
+            except (IncompleteReadError, OSError):
                 self.logger.info(
                     f"Terminating handler for {client_name}, because the underlying socket closed"
                 )
@@ -149,7 +149,7 @@ class StorageController:
             visit_id = VisitId(data["visit_id"])
 
             if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
+                await self._handle_meta(visit_id, data, writer)
                 continue
 
             table_name = TableName(record_type)
@@ -170,7 +170,12 @@ class StorageController:
             )
         )
 
-    async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
+    async def _handle_meta(
+        self,
+        visit_id: VisitId,
+        data: Dict[str, Any],
+        writer: asyncio.StreamWriter,
+    ) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are meta information
         communicated to the storage controller
@@ -188,6 +193,19 @@ class StorageController:
             success: bool = data["success"]
             completion_token = await self.finalize_visit_id(visit_id, success)
             self.finalize_tasks.append((visit_id, completion_token, success))
+            # Send ack back only if the client requested it.
+            # Writing to a closed connection poisons the asyncio transport,
+            # preventing any further reads on the same connection.
+            if data.get("want_ack"):
+                try:
+                    await send_to_writer(
+                        writer,
+                        {"action": "finalize_ack", "visit_id": visit_id},
+                    )
+                except Exception:
+                    self.logger.debug(
+                        "Failed to send finalize ack for visit_id %d", visit_id
+                    )
         else:
             raise ValueError("Unexpected action: %s", action)
 
@@ -408,6 +426,56 @@ class DataSocket:
                 },
             )
         )
+
+    def finalize_visit_id_with_ack(
+        self, visit_id: VisitId, success: bool, timeout: float = 10.0
+    ) -> bool:
+        """Send finalize and wait for acknowledgment from StorageController.
+
+        Returns True if ack was received, False on timeout.
+        Falls back gracefully - the finalize is still sent even if
+        the ack is not received.
+
+        This is the data-socket back-channel substrate: it lets a caller block
+        until the StorageController has accepted a visit's finalize, replacing a
+        fixed sleep with a real completion signal. The server side
+        (``_handle_meta``, which answers ``want_ack`` with ``finalize_ack``) is
+        wired; the TaskManager-side caller is intentionally left for a
+        follow-up, because on the current architecture the ``Finalize`` message
+        is emitted by ``FinalizeCommand`` -> extension, not by TaskManager
+        directly. See the bidi-on-hardening PR for the reconciliation note.
+        """
+        self.socket.send(
+            (
+                RECORD_TYPE_META,
+                {
+                    "action": ACTION_TYPE_FINALIZE,
+                    "visit_id": visit_id,
+                    "success": success,
+                    "want_ack": True,
+                },
+            )
+        )
+        # ClientSocket.receive() bounds the wait itself and raises on timeout
+        # or a dropped connection; treat both as "no ack" and fall back rather
+        # than letting the finalize path fail.
+        try:
+            ack = self.socket.receive(timeout=timeout)
+        except (socket.timeout, RuntimeError) as exc:
+            self.logger.debug(
+                "Did not receive finalize ack for visit_id %d (%s)",
+                visit_id,
+                exc,
+            )
+            return False
+        if isinstance(ack, dict) and ack.get("action") == "finalize_ack":
+            return True
+        self.logger.debug(
+            "Did not receive finalize ack for visit_id %d (got: %r)",
+            visit_id,
+            ack,
+        )
+        return False
 
     def close(self) -> None:
         self.socket.close()

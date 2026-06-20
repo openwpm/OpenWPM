@@ -4,6 +4,7 @@ import json
 import socket
 import struct
 import threading
+import time
 import traceback
 from queue import Queue
 from typing import Any
@@ -138,6 +139,12 @@ class ClientSocket:
             raise ValueError("Unsupported serialization type: %s" % serialization)
         self.serialization = serialization
         self.verbose = verbose
+        # Bytes read from the socket but not yet consumed by receive(). Holding
+        # them on the instance keeps the framing synchronized: a timeout part
+        # way through a frame leaves the already-read bytes here for the next
+        # call, and a read that overshoots into the following frame keeps the
+        # surplus rather than discarding it.
+        self._recv_buffer = b""
 
     def connect(self, host, port):
         if self.verbose:
@@ -188,6 +195,50 @@ class ClientSocket:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
 
+    def _fill(self, nbytes: int, deadline: float) -> None:
+        """Read until ``self._recv_buffer`` holds at least ``nbytes``.
+
+        Reads stop at ``deadline`` (a ``time.monotonic()`` value). Bytes that
+        have already been read are kept in ``self._recv_buffer`` even when the
+        deadline is hit, so the caller can resume framing on the next call.
+
+        :raises socket.timeout: if the deadline passes before enough bytes
+            have arrived.
+        :raises RuntimeError: if the peer closes the connection.
+        """
+        while len(self._recv_buffer) < nbytes:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise socket.timeout("timed out while reading response")
+            self.sock.settimeout(remaining)
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                raise RuntimeError("socket connection broken")
+            self._recv_buffer += chunk
+
+    def receive(self, timeout: float = 5.0) -> Any:
+        """Read a single response message from the socket.
+
+        Uses the same wire format as :meth:`send`: 4-byte big-endian length +
+        1-byte serialization type + payload. ``timeout`` bounds the whole
+        read; any socket timeout configured before the call is restored
+        afterwards.
+
+        :raises socket.timeout: if no complete message arrives within
+            ``timeout`` seconds.
+        """
+        prev_timeout = self.sock.gettimeout()
+        deadline = time.monotonic() + timeout
+        try:
+            self._fill(5, deadline)
+            msglen, serialization = struct.unpack(">Lc", self._recv_buffer[:5])
+            self._fill(5 + msglen, deadline)
+            frame = self._recv_buffer[: 5 + msglen]
+            self._recv_buffer = self._recv_buffer[5 + msglen :]
+            return _parse(serialization, frame[5:])
+        finally:
+            self.sock.settimeout(prev_timeout)
+
     def close(self):
         self.sock.close()
 
@@ -211,6 +262,18 @@ async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
     msglen, serialization = struct.unpack(">Lc", msg)
     msg = await reader.readexactly(msglen)
     return _parse(serialization, msg)
+
+
+async def send_to_writer(writer: asyncio.StreamWriter, msg: Any) -> None:
+    """Send a JSON-serialized message to an asyncio StreamWriter.
+
+    Uses the same wire format as ClientSocket.send() so that
+    ClientSocket can receive responses using the same protocol.
+    """
+    encoded = json.dumps(msg).encode("utf-8")
+    header = struct.pack(">Lc", len(encoded), b"j")
+    writer.write(header + encoded)
+    await writer.drain()
 
 
 def _parse(serialization: bytes, msg: bytes) -> Any:
