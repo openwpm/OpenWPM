@@ -274,6 +274,7 @@ dns_responses = Table(
     Column("used_address", Text),
     Column("canonical_name", Text),
     Column("is_TRR", Integer),
+    Column("error", Text),
     Column("time_stamp", Text, nullable=False),
     sqlite_autoincrement=True,
 )
