@@ -1,0 +1,10 @@
+{
+  "uuid": "ab688307-516d-4b17-8482-7d8739795671",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "Socket-reliability Phase 2 (relevant to the StorageController liveness/forward-progress investigation flagged 00:17): audited all 41 distinct wait/sleep/timeout/join sites in openwpm/ -> 28 KEEP (genuine hung-resource deadlines), 5 REPLACE wait-and-hope sites wireable to a real completion signal over the bidi socket chain, 4 MAYBE. Phase-3 fan-out = 5 workers (R1 Finalize-ack drain is the flagship; R2 deletes the #135 time.sleep(2) stopgap once R1 lands; R4 is the instrument-status signal-back). Full worklist in datadir/timeout-audit.md.",
+  "created_at": "2026-06-20T00:48:26.962911035Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA41ToaTNYS9LYM99d236vioXEvN2EeLu56dviyYI7CA5HNIR3lN7s1bj0yXREPCGhwb8Re5OarAMSu1fNxXnGAQ=="
+}
