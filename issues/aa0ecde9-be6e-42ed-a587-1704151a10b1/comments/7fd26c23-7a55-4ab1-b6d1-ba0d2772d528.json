@@ -1,0 +1,10 @@
+{
+  "uuid": "7fd26c23-7a55-4ab1-b6d1-ba0d2772d528",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "Study-design doc (datadir/study-design-crawl-deployment.md) updated: added 4th vantage (university server, H6), the Krumnow-2022 per-vantage tool-detectability replication + instrument×vantage 2×2 (§5.4), sharpened headline RQ to datacenter-vs-residential-swarm, and reframed §7.3 storage as an explicit Stefan decision — Option 1 direct-to-public-Postgres (this vision) vs Option 2 edge-buffered split-sink — incl. the no-binds unstructured-data sub-choice (bytea/S3/disable). Open Qs 6/11/12 now gate this issue.",
+  "created_at": "2026-06-20T00:21:22.050158037Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAPnq5FBWLSCL0ZIHcV2aY3he+a2S6b/eIW7yp+u8HVvupDcf68ESMKH84/hwXiEHQO9lvmLfRwnJ7ClbbOBjgAg=="
+}
