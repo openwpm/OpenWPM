@@ -41,6 +41,13 @@ jobs:
             # Only rebuild the extension when this commit touched it (TS compile
             # is the only check that catches broken extension source).
             if ! git diff --quiet "${c}~1" "$c" -- Extension/; then
+              # node_modules came from ./.github/actions/setup on the tip; if
+              # this commit changed the lockfile/manifest, refresh deps first so
+              # the build runs against the right dependency set. `npm ci` is
+              # lockfile-driven and fast, so it keeps the gate cheap.
+              if ! git diff --quiet "${c}~1" "$c" -- Extension/package.json Extension/package-lock.json; then
+                (cd Extension && npm ci) || { echo "::error::npm ci failed at $c"; fail=1; }
+              fi
               (cd Extension && npm run build) || { echo "::error::extension build failed at $c"; fail=1; }
             fi
             # Import the package and collect the test suite: catches syntax
