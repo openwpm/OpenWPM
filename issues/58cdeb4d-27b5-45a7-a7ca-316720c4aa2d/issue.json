@@ -1,0 +1,11 @@
+{
+  "uuid": "58cdeb4d-27b5-45a7-a7ca-316720c4aa2d",
+  "display_id": 49,
+  "title": "Pick up/rewrite #910: async-boundary callstack capture (javascript.options.asyncstack)",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nStefan (2026-06-20): revive #910 (Ayushsunny, 2021) so researchers can analyze callstacks ACROSS ASYNC BOUNDARIES (setTimeout / promises / fetch chains), not just the synchronous stack.\n\n#910's actual content is minimal: set Firefox pref enabling async-stack capture + a setTimeout test page. REWRITE NEEDS:\n1. FIX the typo: #910 sets 'javascript.option.asyncstack' (singular) — the real pref is 'javascript.options.asyncstack' (plural). As written it's a DEAD pref (the new scripts/verify_obsolete_prefs.py harness would flag it INVALID). Verify the corrected pref is LIVE in FF152.\n2. Integrate with the RESTORED callstack instrument (#1178, FF152-fixed stackDump) — confirm that with the pref ON, the captured callstacks actually include async-parent frames (the JS engine maintains the async stack chain; verify the privileged stackDump path sees it). This is the real validation, not just flipping the pref.\n3. Add it to the prefs dict (interlocks with feat/firefox-prefs-dict), modernize the test page (Set_Timeout.html) into a proper test asserting async frames are captured in the callstacks table.\n3. Gate it appropriately (a browser_param flag, since async stacks add overhead). RELATES-TO #1178 (callstack instrument).",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T09:18:54.350296376Z",
+  "updated_at": "2026-06-20T09:18:54.350296376Z"
+}
