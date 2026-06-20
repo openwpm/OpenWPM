@@ -1,0 +1,10 @@
+{
+  "uuid": "811c57ba-b30a-40c6-844b-e19280b3117f",
+  "issue_uuid": "aa835c8d-85ff-4de7-a2f4-c9200982c9cf",
+  "author": "claude",
+  "content": "[independent re-validation] Picked this up fresh from master (unaware the fix already existed) and reproduced + re-validated. Pre-fix the 4 Hypothesis liveness tests reproduce the bug; minimal counterexample for the transient case: plan=[(1,1,\"success\")], fail_writes=1 -- one visit, one record, finalize(success), first write_table raises -> visit never reaches the completion queue, batch left in _batches, per-finalize flush_events never fire so the token never resolves, and the RuntimeError escapes shutdown before the completion-queue puts run. Post-fix (branch fix/storage-forward-progress): all 4 invariants green (4 passed in 4.55s, hypothesis 6.155.6). Confirmed the atomic flush_cache + bounded shutdown retry + survive-transient-error in save_batch_if_past_timeout correctly upholds I1-I4 -- fix is correct and complete. Independently rediscovered the documented contract boundary (zero-record never-finalized visit is invisible to the controller -> WQ client responsibility) and the multiprocess.Queue feeder-thread lag (item not visible to empty()/get() immediately after put(); production unaffected via repeated get_new_completed_visits polling). Linked #28/#30: SAME bug class -- a structured-storage write error that should be loud instead causes silent data loss. Here it escaped and aborted the drain (stranded visit); in #28/#30 the SQLite provider catches and silently drops the record. Same fix family: surface the error, guarantee a terminal state, never swallow or strand. #28/#30 remain to be addressed in the SQLite/SQLAlchemy provider.",
+  "created_at": "2026-06-20T01:30:45.353223689Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAb7H+qEUbWN0qA7GhESVf1gy2qLT1nFxQtMtAP4oWk/Xojhh33KHbtzoh3vmuKR498Zwzb5cPkqqCTXMoNIHCAQ=="
+}
