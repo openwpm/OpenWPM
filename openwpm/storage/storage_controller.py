@@ -32,9 +32,12 @@ RECORD_TYPE_CREATE = "create_table"
 STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = "SHUTDOWN"
 BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
+SHUTDOWN_FLUSH_RETRIES = 3  # retries for the final drain flush on shutdown
+SHUTDOWN_FLUSH_RETRY_DELAY = 1  # seconds between shutdown flush retries
 
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
+COMPLETION_QUEUE_INTERVAL = 5  # seconds between completion-queue drains
 INVALID_VISIT_ID = VisitId(-1)
 
 
@@ -254,6 +257,42 @@ class StorageController:
                 visit_id_count,
             )
 
+    async def _flush_with_retries(self, storage: StructuredStorageProvider) -> bool:
+        """Flush the structured storage, retrying transient errors.
+
+        On shutdown this is the last chance to commit pending records and to
+        resolve the finalize tokens that drive the completion queue. A single
+        transient backend error (e.g. an S3 write failure) must not abort the
+        drain and leave finalized visits perpetually pending: flush_cache keeps
+        its cached batches intact on failure, so retrying is safe and commits
+        them once the backend recovers.
+
+        Returns ``True`` if the flush eventually succeeded, ``False`` if it gave
+        up after ``SHUTDOWN_FLUSH_RETRIES`` attempts. The caller must not await
+        the finalize tokens when this returns ``False``: those tokens only
+        resolve on a successful flush, so awaiting them would hang shutdown
+        forever.
+        """
+        for attempt in range(SHUTDOWN_FLUSH_RETRIES):
+            try:
+                await storage.flush_cache()
+                return True
+            except Exception:
+                self.logger.error(
+                    "Error flushing cache during shutdown (attempt %d/%d)",
+                    attempt + 1,
+                    SHUTDOWN_FLUSH_RETRIES,
+                    exc_info=True,
+                )
+                if attempt + 1 < SHUTDOWN_FLUSH_RETRIES:
+                    await asyncio.sleep(SHUTDOWN_FLUSH_RETRY_DELAY)
+        self.logger.error(
+            "Giving up flushing cache during shutdown after %d attempts; "
+            "some records may remain uncommitted",
+            SHUTDOWN_FLUSH_RETRIES,
+        )
+        return False
+
     async def shutdown(self, completion_queue_task: Task[None]) -> None:
         self.logger.info("Entering self.shutdown")
         completion_tokens = {}
@@ -265,12 +304,43 @@ class StorageController:
                 visit_id, success=False
             )
 
-        await self.structured_storage.flush_cache()
-        await completion_queue_task
-        for visit_id, token in completion_tokens.items():
-            if token:
-                await token
-            self.completion_queue.put((visit_id, False))
+        flushed = await self._flush_with_retries(self.structured_storage)
+        if flushed:
+            # Normal drain: every flush event fired, so the completion-queue
+            # feeder drains the live-run finalize tokens and exits, and each
+            # shutdown-finalize token is already resolved.
+            await completion_queue_task
+            for visit_id, token in completion_tokens.items():
+                if token:
+                    await token
+                self.completion_queue.put((visit_id, False))
+        else:
+            # The final drain flush permanently failed, so the finalize tokens
+            # -- which only resolve on a successful flush -- will never fire.
+            # Awaiting them (or the completion-queue feeder that waits on the
+            # live-run tokens) would hang shutdown forever. Instead we stop the
+            # feeder and enqueue every pending visit as terminal so the crawl
+            # still finishes and the work queue stops treating these visits as
+            # in-progress. Their records are lost (already logged above), but the
+            # process makes forward progress instead of wedging.
+            completion_queue_task.cancel()
+            try:
+                await completion_queue_task
+            except asyncio.CancelledError:
+                pass
+            # Nothing was persisted, so every still-pending visit is reported as
+            # unsuccessful (incomplete) regardless of the browser's finalize
+            # result: marking a data-lost visit successful would silently drop it
+            # from the work queue and lose its data forever.
+            for visit_id, token, _success in self.finalize_tasks:
+                if token:
+                    token.cancel()
+                self.completion_queue.put((visit_id, False))
+            self.finalize_tasks = []
+            for visit_id, token in completion_tokens.items():
+                if token:
+                    token.cancel()
+                self.completion_queue.put((visit_id, False))
 
         await self.structured_storage.shutdown()
         self.logger.info("structured_storage is shut down")
@@ -313,9 +383,23 @@ class StorageController:
                 "Saving current records since no new data has "
                 "been written for %d seconds." % diff
             )
-            await self.structured_storage.flush_cache()
-            if self.unstructured_storage:
-                await self.unstructured_storage.flush_cache()
+            try:
+                await self.structured_storage.flush_cache()
+                if self.unstructured_storage:
+                    await self.unstructured_storage.flush_cache()
+            except Exception:
+                # A transient storage-backend error (e.g. an S3 write failure)
+                # must NOT kill this coroutine. It is the only periodic flush
+                # driver while the crawl is live; if it dies, finalized visits
+                # never get flushed and stay perpetually in-progress. Log and
+                # retry on the next tick (the cached batches are preserved by
+                # flush_cache's atomicity, so a later flush commits them).
+                self.logger.error(
+                    "Error while flushing cache on timeout; will retry",
+                    exc_info=True,
+                )
+                await asyncio.sleep(BATCH_COMMIT_TIMEOUT)
+                continue
             self._last_record_received = None
 
     async def update_completion_queue(self) -> None:
@@ -332,7 +416,7 @@ class StorageController:
                 else:
                     new_finalize_tasks.append((visit_id, token, success))
             self.finalize_tasks = new_finalize_tasks
-            await asyncio.sleep(5)
+            await asyncio.sleep(COMPLETION_QUEUE_INTERVAL)
 
     async def _run(self) -> None:
         await self.structured_storage.init()
