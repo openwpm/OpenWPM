@@ -1,0 +1,11 @@
+{
+  "uuid": "7a08777f-0a60-4c7d-ba39-f31b4d8efb4c",
+  "display_id": 54,
+  "title": "Port stealth dynamic extension-frame filtering to legacy call attribution",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review item R24 (datadir/review-1154.md:154-169).\n\n## Problem (data hygiene, NOT detection)\nLegacy's call attribution (`getOriginatingScriptContext`) uses a brittle fixed `trace[3]`\noffset (`Extension/src/lib/js-instruments.ts:352`) and records `trace.slice(3)`. This assumes\nextension frames appear only as a LEADING prefix. They don't: when a page calls back into an\ninstrumented API, MID-STACK extension frames slip through the fixed offset and pollute the\ncaptured `call_stack`.\n\nNOTE on observability: the captured `call_stack` goes to OpenWPM's DB, NOT to the page — this\nis attribution QUALITY, not a detection vector. (The page-observable error `.stack` leak is a\nseparate item, R16.) The instrument's own wrapper frames are noise that degrades attribution\nfor every downstream analysis.\n\n## Goal\nReplace the fixed `trace[3]` offset with stealth's dynamic approach:\n- Find the call site dynamically (first non-`getURL(\"\")` frame), as stealth does.\n- Use stealth's `filterExtensionFrames` to drop EVERY `moz-extension://` frame, including\n  mid-stack ones, from the recorded `call_stack`.\n- Result: robust attribution with no magic offset; the instrument's own frames never appear in\n  the captured stack.\n\n## Relationships\n- Sibling to R16 and to GH #1204 (channel hardening); part of the legacy-footprint /\n  attribution-quality hardening umbrella.\n- `getOriginatingScriptContext` is where legacy and stealth genuinely diverge (stealth already\n  strips moz-extension frames) — see datadir/stealth-helper-parity.md.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:39.312803028Z",
+  "updated_at": "2026-06-20T13:28:39.312803028Z"
+}
