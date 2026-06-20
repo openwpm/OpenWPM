@@ -341,6 +341,44 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     return stack;
   }
 
+  // Drops every extension frame from a stack-trace STRING, leaving only page
+  // frames, and returns the rejoined string. Filters on the literal
+  // "moz-extension://" scheme so that the extension's UUID and its own
+  // instrument wrapper frames never leak to page code that inspects an error's
+  // `.stack`. Back-ported from the stealth instrument's `cleanErrorStack`
+  // (Extension/src/stealth/error.ts) so both instruments share the same
+  // "hide extension frames" predicate.
+  function cleanErrorStack(stack) {
+    if (typeof stack !== "string") {
+      return stack;
+    }
+    return stack
+      .split("\n")
+      .filter((line) => !line.includes("moz-extension://"))
+      .join("\n");
+  }
+
+  // Re-throws an error raised by an instrumented page API after stripping the
+  // extension's own frames from its `.stack`. Unlike the stealth instrument,
+  // legacy already runs in the page world, so the caught error is a page-world
+  // object built by the page's own constructors — there is no Xray boundary to
+  // cross and no need to reconstruct the error via `wrappedJSObject`. We simply
+  // overwrite the error's own `.stack` (shadowing the prototype accessor) with
+  // the cleaned value, preserving the error's original type and identity, then
+  // re-throw it. If the value isn't an Error-like object (e.g. a thrown
+  // primitive, which carries no stack) it is re-thrown unchanged.
+  function rethrowWithCleanStack(err): never {
+    try {
+      if (err && typeof err.stack === "string") {
+        err.stack = cleanErrorStack(err.stack);
+      }
+    } catch {
+      // Some exotic objects forbid reassigning `.stack`; in that case we leave
+      // the error untouched rather than mask the original failure.
+    }
+    throw err;
+  }
+
   // from http://stackoverflow.com/a/5202185
   const rsplit = function (source: string, sep, maxsplit) {
     const split = source.split(sep);
@@ -447,8 +485,15 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
         callContext,
         logSettings,
       );
-      // eslint-disable-next-line prefer-rest-params
-      return func.apply(this, arguments);
+      try {
+        // eslint-disable-next-line prefer-rest-params
+        return func.apply(this, arguments);
+      } catch (err) {
+        // Strip the extension's own frames before the error becomes
+        // page-observable, otherwise the page could read moz-extension://<uuid>
+        // wrapper frames off `err.stack` and detect the instrument.
+        rethrowWithCleanStack(err);
+      }
     };
   }
 
@@ -526,7 +571,11 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
             origProperty = undefinedPropValue;
           } else if (originalGetter) {
             // if accessor property
-            origProperty = originalGetter.call(this);
+            try {
+              origProperty = originalGetter.call(this);
+            } catch (err) {
+              rethrowWithCleanStack(err);
+            }
           } else if ("value" in propDesc) {
             // if data property
             origProperty = originalValue;
@@ -619,7 +668,11 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
           // set new value to original setter/location
           if (originalSetter) {
             // if accessor property
-            returnValue = originalSetter.call(this, value);
+            try {
+              returnValue = originalSetter.call(this, value);
+            } catch (err) {
+              rethrowWithCleanStack(err);
+            }
           } else if ("value" in propDesc) {
             inLog = true;
             if (Object.prototype.isPrototypeOf.call(object, this)) {
