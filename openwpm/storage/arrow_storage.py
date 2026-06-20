@@ -10,6 +10,7 @@ import pandas as pd
 import pyarrow as pa
 from pyarrow import Table
 
+from openwpm.errors import ConstraintViolation
 from openwpm.types import VisitId
 
 from .parquet_schema import PQ_SCHEMAS
@@ -79,12 +80,21 @@ class ArrowProvider(StructuredStorageProvider):
                     "Successfully created batch for table %s and "
                     "visit_id %s" % (table_name, visit_id)
                 )
-            except pa.lib.ArrowInvalid:
-                self.logger.error(
-                    "Error while creating record batch for table %s\n" % table_name,
-                    exc_info=True,
-                )
-                pass
+            except pa.lib.ArrowInvalid as e:
+                # The record(s) for this table do not conform to the parquet
+                # schema (wrong type, overflow, etc.). This is a CONSTRAINT
+                # VIOLATION: a data fault, not a transient write blip. Per the
+                # data-failure policy we must NOT silently drop it; we drop the
+                # remaining records for this visit (so the lock-protected flush
+                # state stays consistent) and raise so the controller fails the
+                # owning visit with an investigable error.
+                del self._records[visit_id]
+                raise ConstraintViolation(
+                    "record does not match the parquet schema",
+                    table=table_name,
+                    visit_id=int(visit_id),
+                    reason=f"ArrowInvalid: {e}",
+                ) from e
 
         del self._records[visit_id]
 

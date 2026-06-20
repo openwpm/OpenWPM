@@ -13,9 +13,22 @@ from sqlite3 import (
 )
 from typing import Any, Dict, List, Tuple
 
+from openwpm.errors import ConstraintViolation
 from openwpm.types import VisitId
 
 from .storage_providers import StructuredStorageProvider, TableName
+
+# Substrings in a sqlite3.OperationalError message that indicate a *schema*
+# (data) fault rather than a *transient* infrastructure blip. "no such table"
+# and "no such column" mean the record does not match the schema; "has no
+# column named" is raised for an unknown column in an INSERT. Anything else
+# (e.g. "database is locked", "disk I/O error") is treated as transient and
+# re-raised so the controller's retry path handles it.
+_SCHEMA_OPERATIONAL_ERROR_MARKERS = (
+    "no such table",
+    "no such column",
+    "has no column named",
+)
 
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
 
@@ -63,16 +76,30 @@ class SQLiteStorageProvider(StructuredStorageProvider):
         try:
             self.cur.execute(statement, args)
             self._sql_counter += 1
-        except (
-            OperationalError,
-            ProgrammingError,
-            IntegrityError,
-            InterfaceError,
-        ) as e:
-            self.logger.error(
-                "Unsupported record:\n%s\n%s\n%s\n%s\n"
-                % (type(e), e, statement, repr(args))
-            )
+        except OperationalError as e:
+            # OperationalError is ambiguous: a schema mismatch (no such
+            # table/column) is a data fault, but "database is locked" / "disk
+            # I/O error" are transient. Only the former is a constraint
+            # violation; re-raise the latter so the controller retries.
+            if any(
+                marker in str(e).lower() for marker in _SCHEMA_OPERATIONAL_ERROR_MARKERS
+            ):
+                raise ConstraintViolation(
+                    "record does not match the storage schema",
+                    table=table,
+                    visit_id=int(visit_id),
+                    reason=str(e),
+                ) from e
+            raise
+        except (ProgrammingError, IntegrityError, InterfaceError) as e:
+            # NOT-NULL / PRIMARY KEY / UNIQUE / type / binding-arity failures:
+            # the record tripped the schema. A data fault, never transient.
+            raise ConstraintViolation(
+                "record does not match the storage schema",
+                table=table,
+                visit_id=int(visit_id),
+                reason=f"{type(e).__name__}: {e}",
+            ) from e
 
     @staticmethod
     def _generate_insert(
