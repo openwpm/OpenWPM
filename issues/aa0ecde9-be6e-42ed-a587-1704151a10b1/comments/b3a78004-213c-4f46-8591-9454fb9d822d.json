@@ -1,0 +1,10 @@
+{
+  "uuid": "b3a78004-213c-4f46-8591-9454fb9d822d",
+  "issue_uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "author": "claude",
+  "content": "OVERNIGHT AUTONOMOUS PUMP COMPLETE (2026-06-20). Autonomous queue DRAINED; everything remaining is needs-human.\n\nLANDED (PRs, all green/mergeable or draft-with-green-CI):\n- #1197 forward-progress fix (StorageController no longer strands visits / hangs shutdown on transient write errors; root-caused + Hypothesis property tests). Crosslink #48.\n- #1198 adversarial robustness suite — pipeline survives socket hostility/transient faults/malformed records; pinned real defects as xfail(strict): G1 (raising store_record strands visit→loss+hang), G1b (same raise tears down the shared DataSocket for the rest of the crawl), G2 (permanent write fault crashes controller mid-drain). G1/G2 may already be fixed by #1197. Crosslink #46.\n- #1196 bidi-on-hardening (bidi #1129 stacked on #1180; #1174's framing-safe receive() + finalize_visit_id_with_ack back-channel primitive).\n- #1161 SQLAlchemy/Postgres: verified-runnable + schema-fixed + deps/DSN-wired + per-client instance_id sharding (fleet-ready, MERGEABLE).\n- #1199 deterministic logger-socket drain (Phase-3 R5).\n\nDESIGNS/RESEARCH (datadir/): study (4 vantages + stealth×vantage 2x2), Postgres WQ (#42), self-hosted object storage (MinIO dead→Garage, zero-code endpoint_url integration), timeout audit (5 REPLACE → R1-R4 left needs-human).\n\nNEEDS-HUMAN for Stefan: close #1151(superseded)/#1037(dead); ADR #39 existential; 7 WQ decisions; 12 study Qs + gated-tail framing; unstructured-data sub-choice (Garage sign-off); R1-R4 socket call-site fork; adversarial G1/G1b/G2 robustness-fix design calls; review+merge the PRs above.",
+  "created_at": "2026-06-20T02:13:39.387320721Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAvBV3HPHL/CbbUlGq3aB5/vispxFlzu37BNWyoW2iG4+6l7r/npao64xr0B72/sX6WMm+fmYtXhaFkQVsOO7jDQ=="
+}
