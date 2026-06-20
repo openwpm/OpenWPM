@@ -1,0 +1,10 @@
+{
+  "uuid": "d83b61b2-d019-455e-b7e0-f27fb7fa4991",
+  "issue_uuid": "724fc4ec-a31e-4fa7-8de3-9ae66ef59867",
+  "author": "claude",
+  "content": "DATA-FAILURE POLICY DECIDED (Stefan 2026-06-20): a record that trips the schema (CONSTRAINT VIOLATION) -> write a CLEAR, investigable error to the log (visit_id, table, the constraint, enough context to investigate) AND mark the VISIT as FAILED (incomplete). Do NOT drop-and-continue: a constraint violation means a page found a way to trip our schema = needs MANUAL INVESTIGATION, and the best way to raise it is repeated site failure + a good error message. Distinct from TRANSIENT storage errors (infra blip -> retry per the #1197 forward-progress fix). NON-NEGOTIABLES regardless: never strand (visit reaches terminal=failed), never hang (callback CommandSequence must not block forever), never let one bad record break the SHARED DataSocket (G1b isolation), never SILENTLY drop. This policy resolves adversarial G1/G1b/G2 and aligns #1161 (SQLAlchemy store_record rollback -> roll back + fail-visit-loud, not silent) and #1174 (surface the real finalize error, don't mask as timeout).",
+  "created_at": "2026-06-20T09:56:48.652657677Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAR9/w7Y3nKRvRVjxjYCMw8gHE2m70in8aw2LpDcTQGe39jOmi0doWoCqex70bm/TGz/OJzvt4Xt0d1NFu21QWBw=="
+}
