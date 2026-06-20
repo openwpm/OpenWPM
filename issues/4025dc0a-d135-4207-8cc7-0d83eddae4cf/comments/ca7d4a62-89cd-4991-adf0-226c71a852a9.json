@@ -1,0 +1,10 @@
+{
+  "uuid": "ca7d4a62-89cd-4991-adf0-226c71a852a9",
+  "issue_uuid": "4025dc0a-d135-4207-8cc7-0d83eddae4cf",
+  "author": "claude",
+  "content": "Phase-1 DONE: feat/bidi-on-hardening → draft PR #1196 (stacks on #1180). #1174 & #1129 = two finalize-ack channels at different layers (control-socket extension→BM ack vs data-socket SC→client ack); kept #1174's framing-safe receive(), adapted #1129's finalize_visit_id_with_ack onto it. Back-channel primitive for Phase-3: DataSocket.finalize_visit_id_with_ack(visit_id, success, timeout) blocks on ClientSocket.receive(). NEEDS-HUMAN: the data-socket back-channel is wired-but-UNCALLED — #1129's TaskManager call-site was dropped (depended on an abandoned branch; on master FinalizeCommand→extension sends finalize). R1 (finalize-ack drain) likely OVERLAPS #1174's already-landed FinalizeCommand-blocks-on-ack — needs a human to (a) confirm R1 isn't already done by #1174 and (b) pick the data-socket call-site. R2/R3/R4 entangle with this. Only R5 (logger-socket drain, mp_logger.py:229) is a clean independent autonomous unit.",
+  "created_at": "2026-06-20T01:00:51.972615953Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAabsBmoFk2GPEkZS3hH2bnp5LApGCSn+NSafVYt4HlanF8Ab2S+F8gdiQoBRPTkUbfNgXnYU1iYUzQz88gZ40Bg=="
+}
