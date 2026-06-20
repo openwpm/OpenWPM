@@ -152,17 +152,26 @@ class ArrowProvider(StructuredStorageProvider):
 
         assert lock == self.storing_lock and lock.locked()
 
-        for table_name, batches in self._batches.items():
-            table = pa.Table.from_batches(batches)
-            await self.write_table(table_name, table)
-        self._batches.clear()
+        try:
+            # Write every table before mutating any state. If a write fails
+            # (e.g. a transient S3/parquet error) we must NOT clear the batches
+            # or signal the flush_events: doing so would strand the still-cached
+            # records and leave finalize tokens that can never resolve, marking
+            # their visits perpetually in-progress. By keeping the batches and
+            # events intact and re-raising, the flush stays atomic and a later
+            # flush (periodic timeout or shutdown) retries it cleanly.
+            for table_name, batches in self._batches.items():
+                table = pa.Table.from_batches(batches)
+                await self.write_table(table_name, table)
 
-        for event in self.flush_events:
-            event.set()
-        self.flush_events.clear()
+            self._batches.clear()
 
-        if not has_lock_arg:
-            lock.release()
+            for event in self.flush_events:
+                event.set()
+            self.flush_events.clear()
+        finally:
+            if not has_lock_arg:
+                lock.release()
 
     async def shutdown(self) -> None:
         for table_name, batches in self._batches.items():
