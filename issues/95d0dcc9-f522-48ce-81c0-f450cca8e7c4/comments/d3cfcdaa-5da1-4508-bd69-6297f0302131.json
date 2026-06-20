@@ -1,0 +1,10 @@
+{
+  "uuid": "d3cfcdaa-5da1-4508-bd69-6297f0302131",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "Fixed: added Column(\"error\", Text) to dns_responses in sqlalchemy_schema.py (12=12 col parity w/ schema.sql); test_schema_equivalence passes; pushed 54d852ba to feat/sqlalchemy-postgresql-v2; PR #1161 MERGEABLE.",
+  "created_at": "2026-06-20T00:18:47.432440321Z",
+  "kind": "resolution",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFYWDp2ejvdrK+pyYzwR8v+lBeRjTCG1k3cRpUFx9JBvDcBX2Mp9eZigXsPFa5MvsXTRckwnl7Qo+upAS1WNQAA=="
+}
