@@ -7,8 +7,9 @@
   "priority": "medium",
   "created_by": "claude",
   "created_at": "2026-06-20T00:11:23.725523528Z",
-  "updated_at": "2026-06-20T00:11:25.677983583Z",
+  "updated_at": "2026-06-20T00:11:27.538218129Z",
   "labels": [
-    "feature"
+    "feature",
+    "pumpable"
   ]
 }
