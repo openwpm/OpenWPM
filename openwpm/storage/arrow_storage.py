@@ -10,6 +10,7 @@ import pandas as pd
 import pyarrow as pa
 from pyarrow import Table
 
+from openwpm.errors import ConstraintViolation
 from openwpm.types import VisitId
 
 from .parquet_schema import PQ_SCHEMAS
@@ -68,23 +69,40 @@ class ArrowProvider(StructuredStorageProvider):
                 visit_id,
             )
             return
+        # Build every table's batch first and only publish them into
+        # self._batches once the whole visit validated. Publishing incrementally
+        # would leave a partial, dict-iteration-order-dependent subset of a
+        # failed visit's tables persisted when a later table trips the schema.
+        pending_batches: list[tuple[TableName, pa.RecordBatch]] = []
         for table_name, data in self._records[visit_id].items():
             try:
                 df = pd.DataFrame(data)
                 batch = pa.RecordBatch.from_pandas(
                     df, schema=PQ_SCHEMAS[table_name], preserve_index=False
                 )
-                self._batches[table_name].append(batch)
+                pending_batches.append((table_name, batch))
                 self.logger.debug(
                     "Successfully created batch for table %s and "
                     "visit_id %s" % (table_name, visit_id)
                 )
-            except pa.lib.ArrowInvalid:
-                self.logger.error(
-                    "Error while creating record batch for table %s\n" % table_name,
-                    exc_info=True,
-                )
-                pass
+            except pa.lib.ArrowInvalid as e:
+                # The record(s) for this table do not conform to the parquet
+                # schema (wrong type, overflow, etc.). This is a CONSTRAINT
+                # VIOLATION: a data fault, not a transient write blip. Per the
+                # data-failure policy we must NOT silently drop it; we discard
+                # ALL of this visit's not-yet-published batches (so no partial
+                # subset survives) and raise so the controller fails the owning
+                # visit with an investigable error.
+                del self._records[visit_id]
+                raise ConstraintViolation(
+                    "record does not match the parquet schema",
+                    table=table_name,
+                    visit_id=int(visit_id),
+                    reason=f"ArrowInvalid: {e}",
+                ) from e
+
+        for table_name, batch in pending_batches:
+            self._batches[table_name].append(batch)
 
         del self._records[visit_id]
 

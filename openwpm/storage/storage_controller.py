@@ -15,6 +15,7 @@ from multiprocess import Queue
 from openwpm.utilities.multiprocess_utils import Process
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
+from ..errors import ConstraintViolation
 from ..socket_interface import ClientSocket, get_message_from_reader
 from ..types import BrowserId, VisitId
 from .storage_providers import (
@@ -83,6 +84,13 @@ class StorageController:
         """Contains all information required for update_completion_queue to work
             Tuple structure is: VisitId, optional completion token, success
         """
+        self.failed_visits: Dict[VisitId, str] = {}
+        """Visits whose records tripped the storage schema (a constraint
+        violation, per crosslink #46). Maps visit_id -> a short reason string.
+        Such a visit is forced to a FAILED terminal state regardless of the
+        success flag the browser sent: a record that trips the schema needs
+        manual investigation, surfaced by the visit repeatedly failing with a
+        clear error rather than being silently dropped."""
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
@@ -166,12 +174,62 @@ class StorageController:
             del data["visit_id"]
         # Turning these into task to be able to have them complete without blocking the socket
         self.store_record_tasks[visit_id].append(
-            asyncio.create_task(
-                self.structured_storage.store_record(
-                    table=table_name, visit_id=visit_id, record=data
-                )
-            )
+            asyncio.create_task(self._guarded_store_record(table_name, visit_id, data))
         )
+
+    async def _guarded_store_record(
+        self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
+    ) -> None:
+        """Run a single ``store_record`` in isolation.
+
+        Records are stored as un-awaited tasks so the socket never blocks
+        (the exception, if any, would otherwise only surface much later when
+        ``finalize_visit_id`` awaits the task). This guard enforces the
+        data-failure policy (crosslink #46) at the per-record boundary:
+
+        * A :class:`ConstraintViolation` is a DATA fault -- the record tripped
+          the storage schema. We log a clear, investigable error and mark the
+          owning visit FAILED. We do NOT re-raise: the failure must stay
+          isolated to this record so (a) the shared ``DataSocket`` connection
+          carrying records for many visits is not torn down [adversarial G1b],
+          and (b) ``finalize_visit_id`` does not abort and strand the visit
+          [adversarial G1]. The visit reaching a FAILED terminal state with a
+          good error message is how the site gets surfaced for investigation.
+
+        * Any other exception is unexpected (the persistence itself is deferred
+          to ``flush_cache``, whose transient errors are retried separately).
+          We cannot retry a lost fire-and-forget record, so we treat it the
+          same way -- fail the visit loudly -- rather than silently dropping it
+          or letting it tear down the connection.
+
+        This coroutine therefore never raises.
+        """
+        try:
+            await self.structured_storage.store_record(
+                table=table_name, visit_id=visit_id, record=data
+            )
+        except ConstraintViolation as e:
+            self.logger.error(
+                "CONSTRAINT VIOLATION storing a record: failing visit_id=%d. "
+                "table=%s constraint=%s. The visit will be recorded as failed "
+                "(incomplete_visits) for investigation. record_keys=%s",
+                visit_id,
+                e.table,
+                e.reason,
+                sorted(data.keys()),
+            )
+            self.failed_visits[visit_id] = e.reason
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error storing a record: failing visit_id=%d "
+                "table=%s. Treating as a data fault (cannot retry a lost "
+                "record); the visit will be recorded as failed. record_keys=%s",
+                visit_id,
+                table_name,
+                sorted(data.keys()),
+                exc_info=e,
+            )
+            self.failed_visits[visit_id] = f"{type(e).__name__}: {e}"
 
     async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
         """
@@ -189,20 +247,29 @@ class StorageController:
             return
         elif action == ACTION_TYPE_FINALIZE:
             success: bool = data["success"]
-            completion_token = await self.finalize_visit_id(visit_id, success)
-            self.finalize_tasks.append((visit_id, completion_token, success))
+            completion_token, effective_success = await self.finalize_visit_id(
+                visit_id, success
+            )
+            self.finalize_tasks.append((visit_id, completion_token, effective_success))
         else:
             raise ValueError("Unexpected action: %s", action)
 
     async def finalize_visit_id(
         self, visit_id: VisitId, success: bool
-    ) -> Optional[Task[None]]:
+    ) -> Tuple[Optional[Task[None]], bool]:
         """Makes sure all records for a given visit_id
         have been processed before we invoke finalize_visit_id
         on the structured_storage
 
         See StructuredStorageProvider::finalize_visit_id for additional
         documentation
+
+        Returns the completion token (if any) and the *effective* success flag.
+        Per the data-failure policy (crosslink #46) the effective success is
+        forced to ``False`` if any of the visit's records tripped the storage
+        schema (a constraint violation), so the visit reaches a FAILED terminal
+        state and is recorded in ``incomplete_visits`` regardless of the
+        success flag the browser sent.
         """
 
         # If the following critical section contains any await statement
@@ -215,12 +282,15 @@ class StorageController:
                 "There are no records to be stored for visit_id %d, skipping...",
                 visit_id,
             )
-            return None
+            return None, success
 
         store_record_tasks = self.store_record_tasks.pop(visit_id)
         # END OF CRITICAL SECTION
 
         self.logger.info("Awaiting all tasks for visit_id %d", visit_id)
+        # The guard in _guarded_store_record ensures these never raise; a record
+        # that tripped the schema has already been logged and recorded in
+        # self.failed_visits, so awaiting here cannot strand the visit.
         for task in store_record_tasks:
             await task
 
@@ -228,10 +298,64 @@ class StorageController:
             "Awaited all tasks for visit_id %d while finalizing", visit_id
         )
 
-        completion_token = await self.structured_storage.finalize_visit_id(
-            visit_id, interrupted=not success
-        )
-        return completion_token
+        # A record that tripped the schema fails the whole visit.
+        effective_success = success and visit_id not in self.failed_visits
+        if not effective_success and success:
+            self.logger.error(
+                "Failing visit_id %d that the browser reported as successful: "
+                "one or more of its records tripped the storage schema "
+                "(constraint=%s). Recording it as incomplete for investigation.",
+                visit_id,
+                self.failed_visits.get(visit_id),
+            )
+
+        try:
+            completion_token = await self.structured_storage.finalize_visit_id(
+                visit_id, interrupted=not effective_success
+            )
+        except ConstraintViolation as e:
+            # The provider surfaced a schema fault while turning this visit's
+            # cached records into a batch (the ArrowProvider validates lazily
+            # at finalize time). Treat it exactly like a per-record constraint
+            # violation: mark the visit failed and re-finalize as interrupted so
+            # it still reaches a FAILED terminal state with a clear error -- do
+            # NOT propagate (that would abort _handle_meta / shutdown and strand
+            # the visit) and do NOT silently drop it.
+            self.logger.error(
+                "CONSTRAINT VIOLATION finalizing visit_id=%d: table=%s "
+                "constraint=%s. Recording the visit as failed "
+                "(incomplete_visits) for investigation.",
+                visit_id,
+                e.table,
+                e.reason,
+            )
+            self.failed_visits[visit_id] = e.reason
+            try:
+                completion_token = await self.structured_storage.finalize_visit_id(
+                    visit_id, interrupted=True
+                )
+            except Exception:
+                # The recovery finalize itself failed (e.g. a raw storage error
+                # while inserting into incomplete_visits). It must NOT propagate:
+                # that would abort _handle_meta and tear down the shared
+                # DataSocket for every other visit -- exactly the invariant this
+                # policy exists to protect. Drop the token instead; a None token
+                # makes update_completion_queue / shutdown enqueue this visit as
+                # failed, so it still reaches a terminal state.
+                self.logger.error(
+                    "Recovery finalize for visit_id=%d failed; recording it as "
+                    "failed with no completion token so it still terminates.",
+                    visit_id,
+                    exc_info=True,
+                )
+                completion_token = None
+            effective_success = False
+
+        # The failure reason has now been consumed (effective_success computed
+        # and logged), so drop it: otherwise failed_visits accumulates one entry
+        # per failed visit for the whole controller lifetime.
+        self.failed_visits.pop(visit_id, None)
+        return completion_token, effective_success
 
     async def update_status_queue(self) -> NoReturn:
         """Send manager process a status update.
@@ -288,7 +412,10 @@ class StorageController:
                     await asyncio.sleep(SHUTDOWN_FLUSH_RETRY_DELAY)
         self.logger.error(
             "Giving up flushing cache during shutdown after %d attempts; "
-            "some records may remain uncommitted",
+            "some records could NOT be persisted. The affected visits are "
+            "still being marked as failed so they reach a terminal state and "
+            "no callback hangs, but their data was lost -- investigate the "
+            "underlying storage backend.",
             SHUTDOWN_FLUSH_RETRIES,
         )
         return False
@@ -300,9 +427,8 @@ class StorageController:
         for visit_id in visit_ids:
             # Even if the token is None, we still want to put the visit_id
             # in the completion queue
-            completion_tokens[visit_id] = await self.finalize_visit_id(
-                visit_id, success=False
-            )
+            token, _ = await self.finalize_visit_id(visit_id, success=False)
+            completion_tokens[visit_id] = token
 
         flushed = await self._flush_with_retries(self.structured_storage)
         if flushed:
@@ -409,9 +535,8 @@ class StorageController:
             # is forbidden
             new_finalize_tasks: List[Tuple[VisitId, Optional[Task[None]], bool]] = []
             for visit_id, token, success in self.finalize_tasks:
-                if (
-                    not token or token.done()
-                ):  # Either way all data for the visit_id was saved out
+                if not token or token.done():
+                    # Either way all data for the visit_id was saved out
                     self.completion_queue.put((visit_id, success))
                 else:
                     new_finalize_tasks.append((visit_id, token, success))
