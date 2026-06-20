@@ -1,0 +1,11 @@
+{
+  "uuid": "503e5f61-0f41-478f-8692-636c15b0fb65",
+  "display_id": 53,
+  "title": "Sanitize legacy instrument error stacks (back-port cleanErrorStack)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review item R16 (datadir/review-1154.md:101-106, 327-330).\n\n## Problem (real, page-observable leak)\nThe LEGACY js-instrument rethrows errors bare at\n`Extension/src/lib/js-instruments.ts:442-452`. Because legacy runs in the page world, any\npage-observable `.stack` on those errors leaks the extension UUID (moz-extension://<uuid>/...)\nplus the instrument's own wrapper frames — a trivial detection vector.\n\n## Goal (confirmed direction, Stefan)\nCatch and remove the extension's own code from error stacks WHERE POSSIBLE before the error\nbecomes page-observable:\n- Back-port stealth's `cleanErrorStack` (strips frames containing `getURL(\"\")`) and hook it at\n  the legacy rethrow site (~`js-instruments.ts:451`).\n- \"Where possible\": legacy runs in the page world, so error RECONSTRUCTION is harder than\n  stealth's isolated-world path. The stack-CLEANING transfers directly; adapt the error\n  reconstruction for the page world as far as feasible.\n\n## Relationships\n- Part of the legacy-footprint hardening umbrella.\n- Sibling to GH #1204 (channel hardening) and to R24 (stack-frame filtering for attribution).\n- Relates to ADR-0001 (`docs/developers/adr/0001-retain-legacy-js-instrument.md`) follow-ups\n  and to GH #1187 (relax legacy/stealth mutual exclusion via footprint reduction).",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:33.545895720Z",
+  "updated_at": "2026-06-20T13:28:33.545895720Z"
+}
