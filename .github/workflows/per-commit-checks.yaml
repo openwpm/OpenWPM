@@ -31,9 +31,22 @@ jobs:
         run: |
           set +e -uo pipefail
           fail=0
+          # The conda `openwpm` env was built by ./.github/actions/setup from the
+          # checked-out tip's environment.yaml. Remember the hash of that file so
+          # we only rebuild the env when a commit actually changes the deps.
+          LAST_ENV_HASH=$(sha256sum environment.yaml | cut -d' ' -f1)
           for c in $(git rev-list --reverse "$BASE..$HEAD"); do
             echo "::group::$(git log -1 --format='%h %s' "$c")"
             git checkout -q "$c"
+            # Conda is the slow setup, so only re-run it when THIS commit's
+            # environment.yaml differs from the last one the env was built with.
+            # On change, recreate the env (same path the initial setup used) and
+            # update the baseline so later unchanged commits stay cheap.
+            commit_env_hash=$(sha256sum environment.yaml | cut -d' ' -f1)
+            if [ "$commit_env_hash" != "$LAST_ENV_HASH" ]; then
+              ./install.sh || { echo "::error::conda env rebuild failed at $c"; fail=1; }
+              LAST_ENV_HASH=$commit_env_hash
+            fi
             # Static lint/type checks (black/isort/mypy/actionlint/...) on the
             # files this commit changed. mypy catches undefined-name and type
             # errors in the changed files — the load-bearing check.
