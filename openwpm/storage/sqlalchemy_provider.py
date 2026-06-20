@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from asyncio import Task
 from typing import Any, Dict, Optional
 
@@ -23,6 +24,10 @@ class SQLAlchemyStorageProvider(StructuredStorageProvider):
         self._engine: Optional[Engine] = None
         self._connection: Optional[Connection] = None
         self._sql_counter = 0
+        # Per-provider-instance shard key, mirroring ArrowProvider (arrow_storage.py).
+        # Stamped onto every record so that many volunteer nodes writing to ONE
+        # shared database do not collide on per-node-sequential visit_id/browser_id.
+        self._instance_id = random.getrandbits(32)
         # Cache for dynamically reflected tables (custom tables not in TABLE_MAP)
         self._reflected_tables: Dict[str, Table] = {}
 
@@ -62,6 +67,12 @@ class SQLAlchemyStorageProvider(StructuredStorageProvider):
         assert self._connection is not None
         record = self._coerce_record(record)
         sa_table = self._get_table(table)
+        # Stamp the per-instance shard key (mirrors ArrowProvider.store_record).
+        # Only known schema tables carry instance_id; custom tables reflected from
+        # the database (e.g. page_links from a custom command) do not, so guard on
+        # the column's presence to avoid breaking those inserts.
+        if "instance_id" in sa_table.c:
+            record["instance_id"] = self._instance_id
         try:
             self._connection.execute(sa_table.insert(), record)
             self._sql_counter += 1
@@ -86,7 +97,10 @@ class SQLAlchemyStorageProvider(StructuredStorageProvider):
         if interrupted:
             self.logger.warning("Visit with visit_id %d got interrupted", visit_id)
             incomplete = TABLE_MAP["incomplete_visits"]
-            self._connection.execute(incomplete.insert(), {"visit_id": visit_id})
+            self._connection.execute(
+                incomplete.insert(),
+                {"visit_id": visit_id, "instance_id": self._instance_id},
+            )
         self._connection.commit()
         return None
 
