@@ -7,12 +7,9 @@
   "priority": "high",
   "created_by": "claude",
   "created_at": "2026-06-20T00:48:23.188306765Z",
-  "updated_at": "2026-06-20T01:20:45.221384840Z",
+  "updated_at": "2026-06-20T01:20:52.694952315Z",
   "labels": [
     "feature",
     "pumpable"
-  ],
-  "blockers": [
-    "5509dee6-1327-4bd4-a31b-6788b8b85575"
   ]
 }
