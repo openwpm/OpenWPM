@@ -1,0 +1,10 @@
+{
+  "uuid": "2cc22a68-0112-41cf-a4bd-b660cbd4c61f",
+  "issue_uuid": "e7a9237b-0777-41f9-91d4-3b872ea58a14",
+  "author": "claude",
+  "content": "Design complete: analysed the Redis reliable-WQ (BRPOPLPUSH main->:processing + SETEX lease + :retries hash + lazy WATCH/MULTI requeue in rediswq.py/crawler.py) and designed a PG replacement (single workqueue.tasks table, atomic claim via SELECT...FOR UPDATE SKIP LOCKED, lease_expires visibility-timeout for auto-requeue, UNIQUE dedupe, drop-in API + prototype pgwq.py). ~2.5-3d effort; main risk is flaky-network reconnect, not queue logic. Doc + prototype: datadir/openwpm-crawler-postgres-wq-design.md. Not pushed; awaiting Stefan review.",
+  "created_at": "2026-06-20T00:20:19.944256042Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAgk5SUAn8CKsttjrkAUD7C6DY+AzMMSvRyIEAqz4NY5uFBqvLqonDr++7Nx5Gj3qIXCVkavWZWj8Qldy7mBD/BA=="
+}
