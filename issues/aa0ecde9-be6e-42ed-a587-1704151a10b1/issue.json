@@ -1,0 +1,11 @@
+{
+  "uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "display_id": 41,
+  "title": "Frictionless volunteer crawl fleet: one docker command -> remote public Postgres; study domestic-swarm vs GCP/AWS",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nStefan's deployment vision (2026-06-20), gated on #1161 (SQLAlchemy/Postgres provider) landing + verified for REMOTE use.\n\nTHE VISION: ~15-25 friends each run OpenWPM on their HOME machine by copy-pasting a SINGLE docker run command with NO local binds (no -v mounts). All crawl output streams to ONE publicly-reachable PostgreSQL instance. Zero local footprint / zero config for the volunteer.\n\nHEADLINE RESEARCH QUESTION: quantify how much running from a swarm of domestic/residential IPs changes measured results vs running on GCP/AWS (datacenter IPs) — tracker presence, cloaking, bot-walls/CAPTCHA, block rates, ad/content served, cookie+fingerprinting behavior.\n\nHARD REQUIREMENT + open architectural question: 'no local binds' means EVERY artifact must go to the remote DB, not just structured rows. OpenWPM unstructured data (response bodies, currently LevelDB on local disk) would still hit the local filesystem under #1161 alone (it is a STRUCTURED provider). To honor no-binds we must either (a) route unstructured content to the remote Postgres too (bytea / large objects), (b) route it to S3/GCS, or (c) disable unstructured capture. DECIDE this — it is the crux of the frictionless goal.\n\nOPS/SECURITY for a public Postgres: per-volunteer credentials/schema isolation, network exposure hardening, abuse/quota limits, TLS, and schema-version coordination across heterogeneous volunteer runs.\n\nARTIFACT: study design in datadir/study-design-crawl-deployment.md (worker in progress). Depends-on: #1161 lands + confirmed to accept a remote DSN and run with all-remote storage.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:11:23.725523528Z",
+  "updated_at": "2026-06-20T00:11:23.725523528Z"
+}
