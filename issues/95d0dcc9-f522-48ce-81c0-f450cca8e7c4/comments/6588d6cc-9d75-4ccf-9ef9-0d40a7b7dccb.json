@@ -1,0 +1,10 @@
+{
+  "uuid": "6588d6cc-9d75-4ccf-9ef9-0d40a7b7dccb",
+  "issue_uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "author": "claude",
+  "content": "feat/sqlalchemy-postgresql-v2 (#1161): landed production wiring on top of current tip — pinned sqlalchemy 2.0.51 + psycopg 3.3.4 (runtime) and pytest-postgresql 8.1.0 (dev) in environment.yaml (fresh-env import smoke green, env-pins hook green); crawler.py now selects SQLAlchemyStorageProvider via OPENWPM_POSTGRES_URL/DB_URL DSN; gated the PG test scenario on pg_config so CI (no PG server) skips instead of erroring. jj-precommit green, pushed, PR MERGEABLE.",
+  "created_at": "2026-06-20T00:30:46.180050069Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFolvQuZ+8bPprYOnTQFARFCfmEAPCBUaHzj6lNFcwyAnCRnPHRaOj4eFzipj3Yxn/j+XFSZYZNn2pMt/GAi+BQ=="
+}
