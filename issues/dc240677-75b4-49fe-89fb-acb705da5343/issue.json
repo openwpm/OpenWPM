@@ -1,0 +1,11 @@
+{
+  "uuid": "dc240677-75b4-49fe-89fb-acb705da5343",
+  "display_id": 66,
+  "title": "Address Copilot review on PR #1155",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: feat(ci): dynamic test duration tracking for pytest-split\nhttps://github.com/openwpm/OpenWPM/pull/1155\n\n## Unresolved Copilot review threads\n\n- `test/conftest.py:32`\n\n  `GROUP` is used directly to construct an output filename. Even though this is intended for CI, it’s still an environment-provided string and can contain path separators (e.g., `../`) or other unexpected characters that redirect writes outside the repo. Consider sanitizing `group` to an allowed set (e.g., digits only or a conservative regex like `^[A-Za-z0-9_-]+$`) before using it in the filename; otherwise skip writing and/or log a brief warning.\n\n- `.github/workflows/run-tests.yaml:44`\n\n  The restore key hard-codes `refs/heads/master`, but the repo appears to use `main` (diff base shows `index main..branch`). This will prevent cache reuse on the default branch if it’s actually `main`. Prefer using the default branch dynamically (e.g., `github.event.repository.default_branch`) or update the fallback to `refs/heads/main-`.\n  ```suggestion\n              test-durations-refs/heads/${{ github.event.repository.default_branch }}-\n  ```\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:28:40.898128655Z",
+  "updated_at": "2026-06-21T00:28:40.898128655Z"
+}
