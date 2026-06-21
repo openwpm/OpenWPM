@@ -1,0 +1,11 @@
+{
+  "uuid": "33924ad9-9b3f-44e1-a168-524656f1c8e4",
+  "display_id": 60,
+  "title": "Address Copilot review on PR #1189",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: test(profile): regenerate seed profile (FF150-primed, uBlock) + assert extension startup\nhttps://github.com/openwpm/OpenWPM/pull/1189\n\n## Unresolved Copilot review threads\n\n- `openwpm/deploy_browsers/deploy_firefox.py:59` [outdated]\n\n  `deploy_firefox` now always launches Firefox with `-remote-allow-system-access`, which enables privileged “system access” for the WebDriver session. Since OpenWPM is typically used to crawl untrusted content, this should be gated to test mode (or an explicit opt-in) unless it’s required for normal crawling.\n\n- `test/test_profile.py:181` [outdated]\n\n  This logs a normal test assertion value at ERROR level, which can pollute logs and trip fixtures that fail on ERROR log lines. Use DEBUG/INFO (or remove the log) since this isn’t an error condition.\n\n- `scripts/regenerate-test-profile.py:98`\n\n  `urlretrieve()` does not take a timeout here, so the XPI download can hang indefinitely on a slow/stalled connection. Since this script is intended to be reproducible, prefer an explicit `urlopen(..., timeout=...)` and stream the response to disk with a bounded timeout.\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:28:05.856103185Z",
+  "updated_at": "2026-06-21T00:28:05.856103185Z"
+}
