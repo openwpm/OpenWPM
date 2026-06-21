@@ -1,0 +1,10 @@
+{
+  "uuid": "2bfc3d69-47d8-4560-975a-f6ad7f42dbf3",
+  "issue_uuid": "dc240677-75b4-49fe-89fb-acb705da5343",
+  "author": "claude",
+  "content": "Both unresolved Copilot threads on PR #1155 addressed (commit 652f5135, pushed fast-forward — no rewrite of Stefan's commits).\n\n- test/conftest.py:32 (GROUP filename) — REAL. GROUP is env-provided; added re.fullmatch(r'^[A-Za-z0-9_-]+$') guard + skip-with-warning before interpolating into the .test_durations_group_{group} filename to prevent path traversal. Thread replied + resolved.\n- .github/workflows/run-tests.yaml:44 (master vs main restore-key) — WRONG. Repo default_branch IS master (gh api confirms; workflow triggers on push: master). Copilot misread git diff's 'main..branch' plumbing label as a branch name. No code change; rebuttal posted + thread resolved.\n\nAll Copilot review threads now resolved — #66 ready to close (left open for Stefan).",
+  "created_at": "2026-06-21T08:16:40.074752418Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAyMK3Q2YrhlMF4+GHBMN6dSgq9oY46/pfJNsZqLAQkBweiqhBPWuCFnYq2t73ZXRp+dlWxDZpGf+dHNp0hsyvDA=="
+}
