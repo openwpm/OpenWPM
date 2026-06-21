@@ -1,0 +1,10 @@
+{
+  "uuid": "4188ec83-4b85-4da6-884d-4e097f7213e7",
+  "issue_uuid": "93e3eec2-54b3-4011-8d61-c2b423fa0539",
+  "author": "claude",
+  "content": "HATER REVIEW (read-only, draft #1209) — VERDICT: Acceptable. Crash fix is SOUND: regular file removes the EPIPE mechanism (not just the window); verified at OS level; both teardown paths (graceful os._exit + forced SIGKILL) covered; no surviving FIFO/stderr EPIPE path. BUT two real defects gate merge: (1 MAJOR) temp-file LEAK on every teardown — unlink now lives only in run()'s finally, which never runs under os._exit() (daemon thread, no join) or SIGKILL. Original unlinked on first log line, eagerly+unconditionally. Long crawls leak thousands of owpm_driver_*.log in /tmp. Fix: unlink-on-open (after writer opens line 155); anonymous inode carried by open fds, leak-proof on all paths, deletes the drain dance. (2 MAJOR) stop()+drain is unjoined dead code — nothing waits for the drain before process exit. Plus (MINOR) regular-file readline() fragments lines split across flushes/polls into 2 log lines (debug-fidelity regression); (MINOR) zero test coverage for FirefoxLogInterceptor. Recommend: adopt unlink-on-open, delete stop()/drain, add 1 pyonly test. Full writeup: /home/vringar/projects/OpenWPM/datadir/hater-1209.md",
+  "created_at": "2026-06-21T00:55:04.278545364Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFaNHMJjq6JyvoVxhNbE5Wmz+esjLKj1Z2ACFFqtRpXOb9yhw5LfKshsveahPojFQesNWXU6Tg7XuFayF5EcBDw=="
+}
