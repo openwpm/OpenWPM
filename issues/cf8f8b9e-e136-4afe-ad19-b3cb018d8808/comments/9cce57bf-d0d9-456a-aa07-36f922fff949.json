@@ -1,0 +1,10 @@
+{
+  "uuid": "9cce57bf-d0d9-456a-aa07-36f922fff949",
+  "issue_uuid": "cf8f8b9e-e136-4afe-ad19-b3cb018d8808",
+  "author": "claude",
+  "content": "VERIFIED — Copilot is WRONG here; do NOT apply the 27->26 change (it would introduce an error). Rigorous net-count of PR #1140's diff: 33 distinct set_preference names removed, 7 re-added (typo-fix browser.safebrowsing.phising->phishing + reorders), = 27 NET removed prefs. The body prose ('Remove 27 Firefox preferences') is CORRECT. The real discrepancy Copilot noticed is internal to the body: the prose says 27 but the category breakdown sums to 26 -> one removed pref is missing from a category. FIX = add the missing pref to its category so the breakdown sums to 27 (NOT change the prose to 26). Recommend: rebut the Copilot thread with the net-count evidence + fix the category breakdown. (Lesson: the naive grep of removed set_preference lines gives 33; net-of-readded gives 27; trusting Copilot's 26 was wrong.) Leaving the actual rebuttal/edit for Stefan — it's his ready PR + reverses earlier guidance.",
+  "created_at": "2026-06-21T02:51:06.913096180Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1jvcUYCijqJDhtIyUOGP/qQ2zBKVNF/RW0IFG8EUH+R/ptODM5gtrbp9uBnHUTl4Y6lPukWj3TMF/RpfY9K7BQ=="
+}
