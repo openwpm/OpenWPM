@@ -1,0 +1,11 @@
+{
+  "uuid": "c2ad3ecb-4f10-4dec-b46c-d6e35a98a487",
+  "display_id": 59,
+  "title": "Address Copilot review on PR #1202",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: fix(example): use availWidth/availHeight for SetResolution clamping (follow-up to #1200)\nhttps://github.com/openwpm/OpenWPM/pull/1202\n\n## Unresolved Copilot review threads\n\n- `custom_command.py:57`\n\n  `execute_script` returns JSON-serialized JS numbers, which may come back as `float` (and could also be `Any`), but the helper is annotated as returning `tuple[int, int]`. Casting to `int` here keeps the runtime behavior consistent with the type hint and with the rest of the example (which treats these as pixel integers).\n\n- `custom_command.py:50`\n\n  Docstring references ``screen.availWidth``/``availHeight``; adding `screen.` to `availHeight` avoids ambiguity and matches the actual JS being executed.\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:27:59.872873878Z",
+  "updated_at": "2026-06-21T00:27:59.872873878Z"
+}
