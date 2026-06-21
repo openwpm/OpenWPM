@@ -1,0 +1,10 @@
+{
+  "uuid": "1133c34d-906e-42ab-a901-dc0a5038c455",
+  "issue_uuid": "7a08777f-0a60-4c7d-ba39-f31b4d8efb4c",
+  "author": "claude",
+  "content": "PREMISE VERDICT: NO-OP (like #53). Recommend closing as not-reproducible-via-this-vector.\n\nEmpirically verified via direct-selenium repro (FF151 headless + geckodriver, the real getStackTrace/getOriginatingScriptContext/instrumentFunction logic from js-instruments.ts injected as inline <script> text exactly like content-scope.ts::insertScript does, instrumenting window.atob, called from page code incl. the mid-stack deepA->deepB->atob case #54 worries about).\n\nThe recorded call_stack contains ZERO moz-extension:// frames in every case. Because the legacy instrument runs as an inline DOM-inserted <script> in the PAGE world, ALL its frames -- including the instrument's own getStackTrace/getOriginatingScriptContext/wrapper frames -- are attributed to the PAGE document URL, not moz-extension://. Example captured call_stack (http page): 'deepB@http://127.0.0.1:8731/page.html:8:35 / deepA@...:7:28 / window.__run@...:9:3'. trace.slice(3) already drops exactly the 3 instrument frames, and even pre-slice the raw stack has no extension origin. Stealth's filterExtensionFrames would have nothing to strip -- same no-op as #53. Mid-stack re-entry tested explicitly; still page-only.\n\nFull analysis + quoted stacks: datadir/verify-54-premise.md",
+  "created_at": "2026-06-21T01:57:07.411066878Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA7RYzGIvuJ7hXfH3ubSxdRGMoLDag2sbBH60ooJoUXJe1yFyyzOpMQUA8DMrcbieZEHiREcqBgk2D61qZ06bAAQ=="
+}
