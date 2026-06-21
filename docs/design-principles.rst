@@ -63,12 +63,21 @@ is measuring something the page chose to show it.
 
 **Worked example.** When JS instrumentation fails to wrap a configured API,
 the failure must reach ``BrowserManager`` so the visit can be marked failed.
-Writing a marker attribute onto the page DOM works, and is simple, but the
-marker is briefly visible to the crawled site and could in principle be
-forged by it. Routing the same failure over the extension's privileged
-socket keeps the signal entirely out of reach of web content. The
-privileged-socket approach is therefore preferred, even though it is more
-code.
+Today this is done by writing a marker attribute
+(``data-openwpm-instrument-error``) onto ``documentElement``, which
+``GetCommand`` reads back and clears via ``execute_script``. It is simple and
+it works, but it violates the principle above: the marker lives in page
+context, so it is briefly visible to the crawled site and could in principle
+be forged by it.
+
+The principled alternative would route the failure over a privileged channel,
+out of reach of web content. No such channel exists yet: the extension's only
+outbound socket is fire-and-forget to ``StorageController`` (see
+:doc:`Architecture-Internals`), and the extension-to-``BrowserManager``
+direction is one-way file-based startup discovery. A privileged failure path
+would therefore need new protocol — an extension-to-``BrowserManager`` message
+type that does not exist today. That work is deferred; the DOM marker is the
+current, acknowledged-as-imperfect, mechanism.
 
 
 Resist detection by crawled sites
