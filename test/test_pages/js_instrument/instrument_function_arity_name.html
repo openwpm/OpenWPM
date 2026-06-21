@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <title>
+      Test page for JS Instrument - wrapped function arity (.length) and .name
+      match the native function (crosslink #56)
+    </title>
+  </head>
+  <body>
+    <h3>
+      Test that an instrumented function wrapper reports the same
+      <code>.length</code> (arity) and <code>.name</code> as the native
+      function it wraps, so the wrapper is not trivially fingerprintable.
+    </h3>
+    <p>
+      The browser instruments <code>window.fetch</code> (the subject under
+      test) and <code>window.name</code> (a writable side channel), both
+      configured python side. Native <code>fetch</code> has
+      <code>length === 1</code> and <code>name === "fetch"</code>. We read the
+      wrapper's observable <code>.length</code> and <code>.name</code> WITHOUT
+      calling fetch, and exfiltrate them as a JSON object through
+      <code>window.name</code> so the instrument records the structured values
+      for the test to assert on.
+    </p>
+    <script type="text/javascript">
+      // Accessing window.fetch returns the instrumented wrapper (the property
+      // was redefined as an accessor by the instrument). We only READ its
+      // observable arity/name; we never call fetch.
+      const wrapped = window.fetch;
+      // Exfiltrate the observed native values as JSON through the writable
+      // window.name property. The instrument records this set with the JSON
+      // string verbatim (serializeObject passes strings through), so the test
+      // recovers the dict with a single json.loads.
+      window.name = JSON.stringify({
+        arity: wrapped.length,
+        name: wrapped.name,
+      });
+    </script>
+  </body>
+</html>
