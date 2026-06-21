@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Callable, Generator, List, Literal, Protocol, Tuple, TypeAlias
@@ -14,6 +15,31 @@ from openwpm.task_manager import TaskManager
 from . import utilities
 from .openwpmtest import NUM_BROWSERS
 from .utilities import ServerUrls
+
+_test_durations: dict[str, float] = {}
+
+
+def pytest_runtest_logreport(report):
+    if report.when == "call":
+        _test_durations[report.nodeid] = round(report.duration, 2)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    import json
+
+    group = os.environ.get("GROUP")
+    if os.environ.get("CI") and group and _test_durations:
+        # GROUP is environment-provided; guard against path traversal or other
+        # unexpected characters redirecting the write outside the repo.
+        if re.fullmatch(r"[A-Za-z0-9_-]+", group) is None:
+            logging.getLogger(__name__).warning(
+                "Refusing to write test durations: GROUP=%r is not a simple token",
+                group,
+            )
+            return
+        with open(f".test_durations_group_{group}", "w") as f:
+            json.dump(_test_durations, f, indent=2, sort_keys=True)
+
 
 EXTENSION_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
