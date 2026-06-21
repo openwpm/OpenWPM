@@ -1,0 +1,10 @@
+{
+  "uuid": "5faac630-a6f2-4d9e-9288-c6a21fb7cd72",
+  "issue_uuid": "c2ad3ecb-4f10-4dec-b46c-d6e35a98a487",
+  "author": "claude",
+  "content": "Worked both unresolved Copilot threads on PR #1202 (custom_command.py, fix/set-resolution-availwidth). Both verified REAL + low-risk; fixed in one edit, pushed (PR commit f24a79b3), threads resolved.\n\nThread 1 (line 57, 'cast to int'): VERDICT real → FIXED+RESOLVED. The helper is annotated -> tuple[int, int], but webdriver.execute_script returns Any, so width/height were unchecked Any flowing into a typed return. Copilot's literal 'may be float' claim is weak (screen.availWidth/availHeight are CSSOM 'long' integers, serialized without decimals → Selenium gives int at runtime), but the underlying point holds: nothing enforced the annotation. Changed 'return width, height' → 'return int(width), int(height)' — idiomatic defensive cast for execute_script results, makes runtime contract match the type hint. Zero behavior change for the real integer case.\n\nThread 2 (line 50, docstring screen. prefix): VERDICT real (trivial) → FIXED+RESOLVED. Docstring read 'screen.availWidth/availHeight'; qualified the second member → 'screen.availWidth/screen.availHeight' to match the executed JS. Pure doc clarity.\n\nVerification: pre-commit (black/isort/mypy) green on custom_command.py; no pyonly tests cover this example file (not imported by suite). Browser tests rely on CI per project policy.\n\nIsolation: edited only via .workspace/cp-1202; squashed into the PR commit within that workspace. Confirmed default @ (Stefan's fix/storage-forward-progress) still shows ONLY its 5 storage files — nothing leaked. Workspace will be cleaned up.",
+  "created_at": "2026-06-21T03:21:33.738718366Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAArU3/Ua1FP5S4ygWXG/G6amWkHBPbQASBpASypLzTl4wO2wkbTPigOsHANNvM098sEaIHR2LFIk5m7c+YdjkDg=="
+}
