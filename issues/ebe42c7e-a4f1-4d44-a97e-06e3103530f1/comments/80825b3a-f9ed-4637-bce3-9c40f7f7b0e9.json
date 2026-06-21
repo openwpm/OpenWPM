@@ -1,0 +1,10 @@
+{
+  "uuid": "80825b3a-f9ed-4637-bce3-9c40f7f7b0e9",
+  "issue_uuid": "ebe42c7e-a4f1-4d44-a97e-06e3103530f1",
+  "author": "claude",
+  "content": "Arity/name artifacts (#56 sub-items ii): BOTH reproduced empirically (direct-selenium, FF152, real compiled getInstrumentJS injected as inline script, no extension).\n\nBefore fix: native getImageData .length=4 -> wrapper 0; .name=\"getImageData\" -> \"\"; toDataURL .name=\"toDataURL\" -> \"\". After fix: all match native; calls still logged (no capture regression).\n\nFixed in instrumentFunction (Extension/src/lib/js-instruments.ts:436): copy native length/name own-descriptors onto the wrapper (native non-writable/non-enumerable/configurable shape). Added browser regression test TestJSInstrumentFunctionArityAndName (verified it FAILS without the fix). Full test_js_instrument.py suite green (8).\n\nDraft PR: https://github.com/openwpm/OpenWPM/pull/1210\n\nStill tradeoff-blocked (out of scope, unchanged): proto-chain flattening (sub-item iii) -- de-polluting it drops inherited-member capture collection_fingerprinting relies on. See datadir/r56-protochain-flattening-verdict.md.",
+  "created_at": "2026-06-21T04:02:09.841898026Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKJ9WhCl2ecFPZzyPd7oCulcqrryV6QnpfLBd5Cb0rhnPb1gdYhj0iZhMtE6YprYpuOpmUxK/vx9hvIGpv5OnBg=="
+}
