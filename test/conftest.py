@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Callable, Generator, List, Literal, Protocol, Tuple, TypeAlias
@@ -28,6 +29,14 @@ def pytest_sessionfinish(session, exitstatus):
 
     group = os.environ.get("GROUP")
     if os.environ.get("CI") and group and _test_durations:
+        # GROUP is environment-provided; guard against path traversal or other
+        # unexpected characters redirecting the write outside the repo.
+        if re.fullmatch(r"[A-Za-z0-9_-]+", group) is None:
+            logging.getLogger(__name__).warning(
+                "Refusing to write test durations: GROUP=%r is not a simple token",
+                group,
+            )
+            return
         with open(f".test_durations_group_{group}", "w") as f:
             json.dump(_test_durations, f, indent=2, sort_keys=True)
 
