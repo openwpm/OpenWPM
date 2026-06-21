@@ -28,7 +28,7 @@ def deploy_firefox(
     browser_params: BrowserParamsInternal,
     manager_params: ManagerParamsInternal,
     crash_recovery: bool,
-) -> Tuple[webdriver.Firefox, Path, Optional[Display]]:
+) -> Tuple[webdriver.Firefox, Path, Optional[Display], FirefoxLogInterceptor]:
     """
     launches a firefox instance with parameters set by the input dictionary
     """
@@ -148,11 +148,17 @@ def deploy_firefox(
     geckodriver_path = subprocess.check_output(
         "which geckodriver", encoding="utf-8", shell=True
     ).strip()
+    # Open the geckodriver log sink, then unlink its path immediately. The
+    # interceptor already holds the read end (opened in start()), so both fds
+    # keep the now-anonymous inode alive until the process exits -- the temp
+    # file can never leak into $TMPDIR, even under os._exit() or SIGKILL.
+    driver_log_fh = open(webdriver_interceptor.logfile, "w")
+    os.unlink(webdriver_interceptor.logfile)
     driver = webdriver.Firefox(
         options=fo,
         service=Service(
             executable_path=geckodriver_path,
-            log_output=open(webdriver_interceptor.fifo, "w"),
+            log_output=driver_log_fh,
         ),
     )
 
@@ -175,4 +181,4 @@ def deploy_firefox(
 
     status_queue.put(("STATUS", "Browser Launched", int(pid)))
 
-    return driver, browser_profile_path, display
+    return driver, browser_profile_path, display, webdriver_interceptor
