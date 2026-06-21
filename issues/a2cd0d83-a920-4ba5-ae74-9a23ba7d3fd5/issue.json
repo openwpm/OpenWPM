@@ -7,8 +7,9 @@
   "priority": "high",
   "created_by": "claude",
   "created_at": "2026-06-21T00:28:29.175675155Z",
-  "updated_at": "2026-06-21T00:28:31.107395532Z",
+  "updated_at": "2026-06-21T00:28:33.027475194Z",
   "labels": [
-    "bug"
+    "bug",
+    "pumpable"
   ]
 }
