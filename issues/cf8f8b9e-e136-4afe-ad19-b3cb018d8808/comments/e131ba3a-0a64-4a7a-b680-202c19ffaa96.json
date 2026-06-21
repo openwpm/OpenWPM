@@ -1,0 +1,10 @@
+{
+  "uuid": "e131ba3a-0a64-4a7a-b680-202c19ffaa96",
+  "issue_uuid": "cf8f8b9e-e136-4afe-ad19-b3cb018d8808",
+  "author": "claude",
+  "content": "Recount done reproducibly from `gh pr diff 1140` (set difference on distinct set_preference NAMES):\n- 33 distinct names removed (- lines); 7 distinct names added (+ lines)\n- 6 of the added are removed-then-re-added unchanged (comment-only churn): app.update.url, browser.search.update, extensions.blocklist.enabled, browser.safebrowsing.provider.{mozilla,google,google4}.lists\n- 1 added is the corrected typo name browser.safebrowsing.phishing.enabled\n- NET removed = 33 - 6 = 27. Prose count \"27\" is CORRECT; Copilot's \"26\" is WRONG. Confirms the recorded #67 verdict.\n\nBody breakdown inconsistency confirmed and fixed: the category list enumerated only 26 of the 27 net-removed prefs. The exact missing pref was browser.safebrowsing.phising.enabled (the typo'd name, genuinely net-removed). Fixed by adding a new \"Safebrowsing\" category for it; breakdown now sums to 27. Prose \"27\" left unchanged.\n\nActions taken (PR metadata + thread only, no code/commit/push):\n- PR #1140 body edited (added Safebrowsing breakdown line; sum now 27)\n- Copilot thread PRRT_kwDOATvC786K-l1S: rebuttal reply posted (https://github.com/openwpm/OpenWPM/pull/1140#discussion_r3448130309) + resolved (isResolved=true)\n\nReady to close. Leaving open for Stefan.",
+  "created_at": "2026-06-21T08:29:24.610256724Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAbKpn4aTTB907CJqztp+aNgrg1vsdn99Xbi2dXsdn6fAoR0MP1JXuYmX27uOSfZUpKaj69jqNiuycqkYsM2SaCw=="
+}
