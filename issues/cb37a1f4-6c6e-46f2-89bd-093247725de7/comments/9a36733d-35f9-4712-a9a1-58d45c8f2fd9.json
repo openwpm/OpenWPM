@@ -1,0 +1,10 @@
+{
+  "uuid": "9a36733d-35f9-4712-a9a1-58d45c8f2fd9",
+  "issue_uuid": "cb37a1f4-6c6e-46f2-89bd-093247725de7",
+  "author": "claude",
+  "content": "REAL + fixed. Copilot's claim at design-principles.rst:71 is correct: the worked example presented a privileged extension->BrowserManager failure socket as the preferred/shipped route, but no such channel exists (BrowserManager ClientSocket is send-only; extension's only outbound SendingSocket is fire-and-forget to StorageController; ext->BM startup is one-way file-based). The shipped path is actually the DOM marker (data-openwpm-instrument-error) read by GetCommand. Rewrote the example to describe the real mechanism + name it acknowledged-imperfect + note a privileged path needs new protocol. Commit 313f54cbb28f, fast-forward pushed to docs/design-principles. Thread replied + resolved. 0 unresolved Copilot threads remain on PR #1175 -- ready to close, leaving for Stefan.",
+  "created_at": "2026-06-21T08:56:20.042119398Z",
+  "kind": "note",
+  "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+  "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAcRkVUzCbuLambAWV8kXXwZa/GQxjwn0Gx3pWDPEmLxKe8sMXb3MFbhMhfQ34BhP5e+DPkISLd6mhBfPP9zWTAw=="
+}
