@@ -1,0 +1,11 @@
+{
+  "uuid": "cb37a1f4-6c6e-46f2-89bd-093247725de7",
+  "display_id": 62,
+  "title": "Address Copilot review on PR #1175",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: docs: capture architectural knowledge (design-principles + Architecture-Internals)\nhttps://github.com/openwpm/OpenWPM/pull/1175\n\n## Unresolved Copilot review threads\n\n- `docs/design-principles.rst:71`\n\n  The worked example describes routing a JS instrumentation failure back to `BrowserManager` over the extension's privileged socket, but the current socket path is not an extension-to-`BrowserManager` failure channel: `BrowserManager` creates a `ClientSocket` that only sends messages, and the extension's `ListeningSocket` callback only receives Initialize/Finalize/visit-id messages. As written, this example can mislead contributors into relying on a channel that does not currently deliver failures back to `BrowserManager`; either describe the additional protocol that would be needed or use an existing failure-reporting path.\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:28:17.423165275Z",
+  "updated_at": "2026-06-21T00:28:17.423165275Z"
+}
