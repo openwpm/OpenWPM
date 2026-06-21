@@ -141,6 +141,50 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         )
 
 
+class TestJSInstrumentFunctionArityAndName(OpenWPMJSTest):
+    """A wrapped function must report the same ``.length`` (arity) and ``.name``
+    as the native function it wraps (crosslink #56).
+
+    Without copying these across, the wrapper closure reports ``length === 0``
+    and ``name === ""``, which differs from every native method and is trivially
+    page-observable for fingerprinting. Native ``fetch`` has arity 1 and name
+    ``"fetch"``; under the un-fixed wrapper they read ``0`` / ``""``.
+
+    The subject under test (``window.fetch``) is only *read* — its observable
+    ``.length`` and ``.name`` — never called. The page exfiltrates those native
+    values through a separate writable property (``window.name``, the classic
+    side channel), writing them as a JSON object. We assert on the decoded
+    structured object rather than on a positional argument string.
+    """
+
+    TEST_PAGE = "instrument_function_arity_name.html"
+
+    EXPECTED_EXFIL = {"arity": 1, "name": "fetch"}
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].js_instrument_settings = [
+            {
+                "window": [
+                    "name",
+                    "fetch",
+                ]
+            },
+        ]
+        return manager_params, browser_params
+
+    def test_instrument_object(self):
+        """The wrapped fetch reports native arity (1) and name ("fetch")."""
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        self._assert_exfil_json(
+            db=db,
+            symbol="window.name",
+            expected=self.EXPECTED_EXFIL,
+        )
+
+
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
