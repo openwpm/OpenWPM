@@ -1,0 +1,11 @@
+{
+  "uuid": "cf8f8b9e-e136-4afe-ad19-b3cb018d8808",
+  "display_id": 67,
+  "title": "Address Copilot review on PR #1140",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: fix(prefs): remove obsolete Firefox preferences\nhttps://github.com/openwpm/OpenWPM/pull/1140\n\n## Unresolved Copilot review threads\n\n- `openwpm/deploy_browsers/configure_firefox.py:50`\n\n  PR description says 27 obsolete Firefox preferences were removed, but this diff appears to remove 26 distinct `set_preference` entries (the listed categories also add up to 26). Please update the PR description/count to match the actual change, or add the missing removed pref if one was intended.\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:28:46.811451620Z",
+  "updated_at": "2026-06-21T00:28:46.811451620Z"
+}
