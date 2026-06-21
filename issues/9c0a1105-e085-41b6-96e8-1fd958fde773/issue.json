@@ -1,0 +1,11 @@
+{
+  "uuid": "9c0a1105-e085-41b6-96e8-1fd958fde773",
+  "display_id": 61,
+  "title": "Address Copilot review on PR #1184",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: fix(test): make test_cache_hits_recorded deterministic with explicit tolerated ranges\nhttps://github.com/openwpm/OpenWPM/pull/1184\n\n## Unresolved Copilot review threads\n\n- `test/test_http_instrumentation.py:None` [outdated]\n\n  `allowed_request_urls` is built with the `|` operator against `CACHE_DEPENDENT_REQUEST_URL_RANGES.keys()`. This relies on `dict_keys` set-op behavior (and can also trip static type checkers like mypy/pyright with “unsupported operand types” for `set[str] | dict_keys[str]`). Using `set.union()` (or wrapping the keys in `set(...)`) is clearer and avoids potential CI type-check failures.\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:28:11.476039581Z",
+  "updated_at": "2026-06-21T00:28:11.476039581Z"
+}
