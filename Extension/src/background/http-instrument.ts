@@ -53,16 +53,17 @@ export class HttpInstrument {
   private pendingResponses: {
     [requestId: string]: PendingResponse;
   } = {};
-  private onBeforeRequestListener: (
+  // Assigned in run(); guarded before use in cleanup().
+  private onBeforeRequestListener?: (
     details: browser.webRequest._OnBeforeRequestDetails,
   ) => BlockingResponse;
-  private onBeforeSendHeadersListener: (
-    details: WebRequestOnBeforeSendHeadersEventDetails,
+  private onBeforeSendHeadersListener?: (
+    details: browser.webRequest._OnBeforeSendHeadersDetails,
   ) => void;
-  private onBeforeRedirectListener: (
+  private onBeforeRedirectListener?: (
     details: browser.webRequest._OnBeforeRedirectDetails,
   ) => void;
-  private onCompletedListener: (
+  private onCompletedListener?: (
     details: browser.webRequest._OnCompletedDetails,
   ) => void;
 
@@ -73,9 +74,12 @@ export class HttpInstrument {
   public run(crawlID: number, saveContentOption: SaveContentOption) {
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
 
-    const requestStemsFromExtension = (details) => {
+    const requestStemsFromExtension = (details: {
+      originUrl?: string;
+    }): boolean => {
       return (
-        details.originUrl && details.originUrl.indexOf("moz-extension://") > -1
+        !!details.originUrl &&
+        details.originUrl.indexOf("moz-extension://") > -1
       );
     };
 
@@ -108,7 +112,12 @@ export class HttpInstrument {
         : ["requestBody"],
     );
 
-    this.onBeforeSendHeadersListener = (details) => {
+    this.onBeforeSendHeadersListener = (
+      baseDetails: browser.webRequest._OnBeforeSendHeadersDetails,
+    ) => {
+      // Firefox augments the event details with frameAncestors, which is not
+      // part of the upstream @types definition.
+      const details = baseDetails as WebRequestOnBeforeSendHeadersEventDetails;
       // Ignore requests made by extensions
       if (requestStemsFromExtension(details)) {
         return;
@@ -244,7 +253,7 @@ export class HttpInstrument {
     const tab =
       details.tabId > -1
         ? await browser.tabs.get(details.tabId)
-        : { windowId: undefined, incognito: undefined, url: undefined };
+        : { windowId: undefined, incognito: false, url: undefined };
 
     const update = {} as HttpRequest;
 
@@ -280,13 +289,13 @@ export class HttpInstrument {
         header_pair.push(escapeString(value));
         headers.push(header_pair);
         if (name === "Content-Type") {
-          encodingType = value;
+          encodingType = value ?? "";
           if (encodingType.includes("application/ocsp-request")) {
             isOcsp = true;
           }
         }
         if (name === "Referer") {
-          referrer = value;
+          referrer = value ?? "";
         }
       });
     }
@@ -440,30 +449,25 @@ export class HttpInstrument {
   private getDocumentUrlForRequest(
     details: WebRequestOnBeforeSendHeadersEventDetails,
   ) {
-    let url = "";
-
     if (details.type === "main_frame") {
       // Url of the top-level document itself.
-      url = details.url;
-    } else if (
-      Object.prototype.hasOwnProperty.call(details, "frameAncestors")
-    ) {
+      return details.url;
+    }
+    if (Object.prototype.hasOwnProperty.call(details, "frameAncestors")) {
       // In case of nested frames, retrieve url from top-most ancestor.
       // If frameAncestors == [], request comes from the top-level-document.
-      url = details.frameAncestors.length
+      return details.frameAncestors.length
         ? details.frameAncestors[details.frameAncestors.length - 1].url
         : details.documentUrl;
-    } else {
-      // type != 'main_frame' and frameAncestors == undefined
-      // For example service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
-      url = details.documentUrl;
     }
-    return url;
+    // type != 'main_frame' and frameAncestors == undefined
+    // For example service workers: https://bugzilla.mozilla.org/show_bug.cgi?id=1470537#c13
+    return details.documentUrl;
   }
 
   private async onBeforeRedirectHandler(
     details: browser.webRequest._OnBeforeRedirectDetails,
-    crawlID,
+    crawlID: number,
     eventOrdinal: number,
   ) {
     /*
@@ -544,7 +548,7 @@ export class HttpInstrument {
     const tab =
       details.tabId > -1
         ? await browser.tabs.get(details.tabId)
-        : { windowId: undefined, incognito: undefined };
+        : { windowId: undefined, incognito: false };
     const httpRedirect: HttpRedirect = {
       incognito: boolToInt(tab.incognito),
       browser_id: crawlID,
@@ -591,13 +595,14 @@ export class HttpInstrument {
       update.content_hash = "<error>";
       dataReceiver.saveRecord("http_responses", update);
       */
+      const error = err instanceof Error ? err : new Error(String(err));
       this.dataReceiver.logError(
         "Unable to retrieve response body." +
           "Likely caused by a programming error. Error Message:" +
-          err.name +
-          err.message +
+          error.name +
+          error.message +
           "\n" +
-          err.stack,
+          error.stack,
       );
       update.content_hash = "<error>";
       this.dataReceiver.saveRecord("http_responses", update);
@@ -607,9 +612,9 @@ export class HttpInstrument {
   // Instrument HTTP responses
   private async onCompletedHandler(
     details: browser.webRequest._OnCompletedDetails,
-    crawlID,
-    eventOrdinal,
-    saveContent,
+    crawlID: number,
+    eventOrdinal: number,
+    saveContent: SaveContentOption,
   ) {
     /*
     console.log(
@@ -623,7 +628,7 @@ export class HttpInstrument {
     const tab =
       details.tabId > -1
         ? await browser.tabs.get(details.tabId)
-        : { windowId: undefined, incognito: undefined };
+        : { windowId: undefined, incognito: false };
 
     const update = {} as HttpResponse;
 
@@ -677,18 +682,16 @@ export class HttpInstrument {
     }
   }
 
-  private jsonifyHeaders(headers: HttpHeaders) {
-    const resultHeaders = [];
+  private jsonifyHeaders(headers: HttpHeaders | undefined) {
+    const resultHeaders: string[][] = [];
     let location = "";
     if (headers) {
       headers.map((responseHeader) => {
         const { name, value } = responseHeader;
-        const header_pair = [];
-        header_pair.push(escapeString(name));
-        header_pair.push(escapeString(value));
+        const header_pair = [escapeString(name), escapeString(value)];
         resultHeaders.push(header_pair);
         if (name.toLowerCase() === "location") {
-          location = value;
+          location = value ?? "";
         }
       });
     }

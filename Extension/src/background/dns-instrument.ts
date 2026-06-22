@@ -1,3 +1,4 @@
+import { DataReceiver } from "../lib/data-receiver";
 import { DnsResolved } from "../schema";
 import { allTypes } from "./http-instrument";
 import {
@@ -14,18 +15,26 @@ import RequestFilter = browser.webRequest.RequestFilter;
 const DNS_ERROR_STRINGS = ["NS_ERROR_UNKNOWN_HOST"];
 
 export class DnsInstrument {
-  private readonly dataReceiver;
-  private onHeadersReceivedListener;
-  private onErrorOccurredListener;
+  private readonly dataReceiver: DataReceiver;
+  private onHeadersReceivedListener:
+    | ((details: WebRequestOnHeadersReceivedDetails) => void)
+    | undefined;
+  private onErrorOccurredListener:
+    | ((details: WebRequestOnErrorOccurredDetails) => void)
+    | undefined;
 
-  constructor(dataReceiver) {
+  constructor(dataReceiver: DataReceiver) {
     this.dataReceiver = dataReceiver;
   }
 
-  public run(crawlID) {
+  public run(crawlID: number) {
     const filter: RequestFilter = { urls: ["<all_urls>"], types: allTypes };
 
-    const requestStemsFromExtension = (details) => {
+    const requestStemsFromExtension = (
+      details:
+        | WebRequestOnHeadersReceivedDetails
+        | WebRequestOnErrorOccurredDetails,
+    ) => {
       return (
         details.originUrl &&
         details.originUrl.includes("moz-extension://") &&
@@ -92,7 +101,7 @@ export class DnsInstrument {
 
   private async onHeadersReceivedDnsHandler(
     details: WebRequestOnHeadersReceivedDetails,
-    crawlID,
+    crawlID: number,
   ) {
     // Create and populate DnsResolve object
     const dnsRecord = {} as DnsResolved;
@@ -118,7 +127,7 @@ export class DnsInstrument {
 
   private onErrorOccurredDnsHandler(
     details: WebRequestOnErrorOccurredDetails,
-    crawlID,
+    crawlID: number,
   ) {
     const dnsRecord = {} as DnsResolved;
     dnsRecord.browser_id = crawlID;

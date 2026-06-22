@@ -1,3 +1,4 @@
+import { DataReceiver } from "./data-receiver";
 import { escapeString, Uint8ToBase64 } from "./string-utils";
 
 export interface ParsedPostRequest {
@@ -8,11 +9,11 @@ export interface ParsedPostRequest {
 
 export class HttpPostParser {
   private readonly onBeforeRequestEventDetails: browser.webRequest._OnBeforeRequestDetails;
-  private readonly dataReceiver;
+  private readonly dataReceiver: DataReceiver;
 
   constructor(
     onBeforeRequestEventDetails: browser.webRequest._OnBeforeRequestDetails,
-    dataReceiver,
+    dataReceiver: DataReceiver,
   ) {
     this.onBeforeRequestEventDetails = onBeforeRequestEventDetails;
     this.dataReceiver = dataReceiver;
@@ -20,6 +21,9 @@ export class HttpPostParser {
 
   public parsePostRequest() {
     const requestBody = this.onBeforeRequestEventDetails.requestBody;
+    if (!requestBody) {
+      return {};
+    }
     if (requestBody.error) {
       this.dataReceiver.logError(
         "Exception: Upstream failed to parse POST: " + requestBody.error,

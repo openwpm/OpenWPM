@@ -10,7 +10,7 @@ export class CallstackInstrument {
   }
   run(browser_id: number) {
     (browser as any).stackDump.onStackAvailable.addListener(
-      (request_id, call_stack) => {
+      (request_id: string, call_stack: string) => {
         const record = {
           browser_id,
           request_id,

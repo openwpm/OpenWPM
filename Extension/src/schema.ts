@@ -107,7 +107,9 @@ export interface HttpRedirect {
   old_request_url?: string;
   old_request_id?: string;
   new_request_url?: string;
-  new_request_id?: string;
+  // redirectRequestId is not exposed by the WebExtension API, so this is
+  // always null; null is persisted as SQL NULL.
+  new_request_id?: string | null;
   extension_session_uuid?: string;
   event_ordinal?: number;
   window_id?: number;

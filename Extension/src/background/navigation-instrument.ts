@@ -1,3 +1,4 @@
+import { DataReceiver } from "../lib/data-receiver";
 import { incrementedEventOrdinal } from "../lib/extension-session-event-ordinal";
 import { extensionSessionUuid } from "../lib/extension-session-uuid";
 import { PendingNavigation } from "../lib/pending-navigation";
@@ -11,7 +12,7 @@ import {
 } from "../types/browser-web-navigation-event-details";
 
 export const transformWebNavigationBaseEventDetailsToOpenWPMSchema = async (
-  crawlID,
+  crawlID: number,
   details: WebNavigationBaseEventDetails,
 ): Promise<Navigation> => {
   const tab =
@@ -19,7 +20,7 @@ export const transformWebNavigationBaseEventDetailsToOpenWPMSchema = async (
       ? await browser.tabs.get(details.tabId)
       : {
           windowId: undefined,
-          incognito: undefined,
+          incognito: false,
           cookieStoreId: undefined,
           openerTabId: undefined,
           width: undefined,
@@ -50,21 +51,29 @@ export const transformWebNavigationBaseEventDetailsToOpenWPMSchema = async (
 };
 
 export class NavigationInstrument {
-  public static navigationId(processId, tabId, frameId): string {
+  public static navigationId(
+    processId: number | undefined,
+    tabId: number,
+    frameId: number,
+  ): string {
     return `${processId}-${tabId}-${frameId}`;
   }
-  private readonly dataReceiver;
-  private onBeforeNavigateListener;
-  private onCommittedListener;
+  private readonly dataReceiver: DataReceiver;
+  private onBeforeNavigateListener?: (
+    details: WebNavigationOnBeforeNavigateEventDetails,
+  ) => Promise<void>;
+  private onCommittedListener?: (
+    details: WebNavigationOnCommittedEventDetails,
+  ) => Promise<void>;
   private pendingNavigations: {
     [navigationId: string]: PendingNavigation;
   } = {};
 
-  constructor(dataReceiver) {
+  constructor(dataReceiver: DataReceiver) {
     this.dataReceiver = dataReceiver;
   }
 
-  public run(crawlID) {
+  public run(crawlID: number) {
     this.onBeforeNavigateListener = async (
       details: WebNavigationOnBeforeNavigateEventDetails,
     ) => {

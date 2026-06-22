@@ -1,24 +1,37 @@
 import * as socket from "./socket";
 
-let crawlID = null;
-let visitID = null;
-let debugging = false;
-let storageController = null;
-let logAggregator = null;
-let listeningSocket = null;
+/**
+ * Control message exchanged over the listening socket. In the legacy path the
+ * peer may instead send a bare visit id (number or numeric string), which is
+ * why the callback also handles non-object payloads.
+ */
+interface VisitControlMessage {
+  action?: "Initialize" | "Finalize";
+  visit_id?: number;
+  browser_id?: number;
+  success?: boolean;
+}
 
-const listeningSocketCallback = async (data) => {
+let crawlID: number | null = null;
+let visitID: number | null = null;
+let debugging = false;
+let storageController: socket.SendingSocket | null = null;
+let logAggregator: socket.SendingSocket | null = null;
+let listeningSocket: socket.ListeningSocket | null = null;
+
+const listeningSocketCallback = async (data: unknown) => {
   // This works even if data is an int
-  const action = data.action;
-  let newVisitID = data.visit_id;
+  const message = data as VisitControlMessage;
+  const action = message.action;
+  let newVisitID = message.visit_id ?? null;
   switch (action) {
     case "Initialize":
       if (visitID) {
         logWarn("Set visit_id while another visit_id was set");
       }
       visitID = newVisitID;
-      data.browser_id = crawlID;
-      storageController.send(JSON.stringify(["meta_information", data]));
+      message.browser_id = crawlID ?? undefined;
+      storageController?.send(JSON.stringify(["meta_information", message]));
       break;
     case "Finalize":
       if (!visitID) {
@@ -30,21 +43,24 @@ const listeningSocketCallback = async (data) => {
             `Current visit_id ${newVisitID}, received visit_id ${visitID}.`,
         );
       }
-      data.browser_id = crawlID;
-      data.success = true;
-      storageController.send(JSON.stringify(["meta_information", data]));
+      message.browser_id = crawlID ?? undefined;
+      message.success = true;
+      storageController?.send(JSON.stringify(["meta_information", message]));
       visitID = null;
       break;
     default:
       // Just making sure that it's a valid number before logging
-      newVisitID = parseInt(data, 10);
+      newVisitID = parseInt(String(data), 10);
       logDebug("Setting visit_id the legacy way");
       visitID = newVisitID;
   }
 };
+/** A network endpoint as a `[host, port]` tuple. */
+type SocketAddress = [host: string, port: number];
+
 export const open = async function (
-  storageControllerAddress: any[],
-  logAddress: any[],
+  storageControllerAddress: SocketAddress | null,
+  logAddress: SocketAddress | null,
   curr_crawlID: number,
 ) {
   if (
@@ -76,7 +92,7 @@ export const open = async function (
     );
     console.log("StorageController started?", rv);
   }
-  storageController.send(JSON.stringify(`Browser-${crawlID}`));
+  storageController?.send(JSON.stringify(`Browser-${crawlID}`));
   // Listen for incoming urls as visit ids
   listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
   console.log("Starting socket listening for incoming connections.");
@@ -96,7 +112,7 @@ export const close = function () {
   }
 };
 
-const makeLogJSON = function (lvl, msg) {
+const makeLogJSON = function (lvl: number, msg: string) {
   const log_json = {
     name: "Extension-Logger",
     level: lvl,
@@ -110,7 +126,7 @@ const makeLogJSON = function (lvl, msg) {
   return log_json;
 };
 
-export const logInfo = function (msg) {
+export const logInfo = function (msg: string) {
   // Always log to browser console
   console.log(msg);
 
@@ -120,10 +136,10 @@ export const logInfo = function (msg) {
 
   // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
   const log_json = makeLogJSON(20, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logDebug = function (msg) {
+export const logDebug = function (msg: string) {
   // Always log to browser console
   console.log(msg);
 
@@ -133,10 +149,10 @@ export const logDebug = function (msg) {
 
   // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
   const log_json = makeLogJSON(10, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logWarn = function (msg) {
+export const logWarn = function (msg: string) {
   // Always log to browser console
   console.warn(msg);
 
@@ -146,10 +162,10 @@ export const logWarn = function (msg) {
 
   // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
   const log_json = makeLogJSON(30, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logError = function (msg) {
+export const logError = function (msg: string) {
   // Always log to browser console
   console.error(msg);
 
@@ -159,10 +175,10 @@ export const logError = function (msg) {
 
   // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
   const log_json = makeLogJSON(40, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
-export const logCritical = function (msg) {
+export const logCritical = function (msg: string) {
   // Always log to browser console
   console.error(msg);
 
@@ -172,21 +188,32 @@ export const logCritical = function (msg) {
 
   // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
   const log_json = makeLogJSON(50, msg);
-  logAggregator.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
 };
 
+/**
+ * The bookkeeping fields this module reads or stamps onto every record before
+ * persisting it. Instruments build concrete, fully typed records (e.g.
+ * `JavascriptCookieRecord`); we view them through this narrow shape.
+ */
+interface InstrumentRecordFields {
+  visit_id?: number | null;
+  url?: string;
+}
+
 export const dataReceiver = {
-  saveRecord(a, b) {
-    console.log(a, b);
+  saveRecord(instrument: string, record: object) {
+    console.log(instrument, record);
   },
 };
 
-export const saveRecord = function (instrument, record) {
-  record.visit_id = visitID;
+export const saveRecord = function (instrument: string, record: object) {
+  const fields = record as InstrumentRecordFields;
+  fields.visit_id = visitID;
 
   if (!visitID && !debugging) {
     // Navigations to about:blank can be triggered by OpenWPM. We drop those.
-    if (instrument === "navigations" && record.url === "about:blank") {
+    if (instrument === "navigations" && fields.url === "about:blank") {
       logDebug(
         "Extension-" +
           crawlID +
@@ -198,7 +225,7 @@ export const saveRecord = function (instrument, record) {
       `Extension-${crawlID} : visitID is null while attempting to insert into table ${instrument}\n` +
         JSON.stringify(record),
     );
-    record.visit_id = -1;
+    fields.visit_id = -1;
   }
 
   // send to console if debugging
@@ -206,11 +233,14 @@ export const saveRecord = function (instrument, record) {
     console.log("EXTENSION", instrument, record);
     return;
   }
-  storageController.send(JSON.stringify([instrument, record]));
+  storageController?.send(JSON.stringify([instrument, record]));
 };
 
 // Stub for now
-export const saveContent = async function (content, contentHash) {
+export const saveContent = async function (
+  content: string | Uint8Array,
+  contentHash: string,
+) {
   // Send page content to the data aggregator
   // deduplicated by contentHash in a levelDB database
   if (debugging) {
@@ -219,37 +249,39 @@ export const saveContent = async function (content, contentHash) {
   }
   // Since the content might not be a valid utf8 string and it needs to be
   // json encoded later, it is encoded using base64 first.
-  const b64 = Uint8ToBase64(content);
-  storageController.send(JSON.stringify(["page_content", [b64, contentHash]]));
+  const bytes =
+    typeof content === "string" ? new TextEncoder().encode(content) : content;
+  const b64 = Uint8ToBase64(bytes);
+  storageController?.send(JSON.stringify(["page_content", [b64, contentHash]]));
 };
 
-function encode_utf8(s) {
+function encode_utf8(s: string): string {
   return unescape(encodeURIComponent(s));
 }
 
 // Base64 encoding, found on:
 // https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
-function Uint8ToBase64(u8Arr) {
+function Uint8ToBase64(u8Arr: Uint8Array): string {
   const CHUNK_SIZE = 0x8000; // arbitrary number
   let index = 0;
   const length = u8Arr.length;
   let result = "";
-  let slice;
+  let slice: Uint8Array;
   while (index < length) {
     slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
-    result += String.fromCharCode.apply(null, slice);
+    result += String.fromCharCode.apply(null, Array.from(slice));
     index += CHUNK_SIZE;
   }
   return btoa(result);
 }
 
-export const escapeString = function (string) {
+export const escapeString = function (string: unknown): string {
   // Convert to string if necessary
-  if (typeof string !== "string") string = "" + string;
+  const asString = typeof string === "string" ? string : "" + string;
 
-  return encode_utf8(string);
+  return encode_utf8(asString);
 };
 
-export const boolToInt = function (bool) {
+export const boolToInt = function (bool: boolean): number {
   return bool ? 1 : 0;
 };
