@@ -40,7 +40,28 @@ The **TaskManager** is the user-facing entry point. It spawns:
 | StorageController → TaskManager | `status_queue` (`mp.Queue`) | Periodic push (every 5s) |
 | StorageController → TaskManager | `completion_queue` (`mp.Queue`) | Polled by callback thread (every 1s/5s) |
 | TaskManager → StorageController | `shutdown_queue` (`mp.Queue`) | One-shot signal |
+| BrowserManager → Extension (startup) | File-based (`browser_params.json` in profile dir) | Write-once at launch |
+| BrowserManager → Extension (per-visit) | TCP socket (`ClientSocket`) | Request per navigation |
 | Extension startup → BrowserManager | File-based (`extension_port.txt`) | Polling every 0.1s for 5s |
+
+### BrowserManager → Extension Details
+
+**Config file** (`browser_params.json`): Written by `deploy_firefox.py` before
+browser launch. Contains `browser_id`, instrumentation flags
+(`cookie_instrument`, `js_instrument`, etc.), `storage_controller_address`,
+`logger_address`, and `custom_params`. The extension reads it once at startup
+via `browser.profileDirIO.readFile()` in `feature.ts` and uses it to
+selectively enable/disable instruments.
+
+**Socket**: After the extension starts a listening TCP socket and writes its
+port to `extension_port.txt`, BrowserManager connects via `ClientSocket`.
+Commands then send JSON messages over this socket:
+- `GetCommand` → sends raw `visit_id` (integer, legacy path)
+- `InitializeCommand` → `{"action": "Initialize", "visit_id": <int>}`
+- `FinalizeCommand` → `{"action": "Finalize", "visit_id": <int>}`
+
+The extension receives these in `loggingdb.ts` and uses the `visit_id` to tag
+all recorded data for that navigation.
 
 **Key observation**: No channel supports bidirectional communication. The
 `status_queue` between BrowserManager and TaskManager is the closest, but it's
