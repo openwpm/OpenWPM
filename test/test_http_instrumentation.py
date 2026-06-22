@@ -6,12 +6,12 @@ import json
 import os
 from hashlib import sha256
 from pathlib import Path
-from sqlite3 import Row
 from time import sleep
 from typing import List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import pytest
+from selenium.webdriver.common.by import By
 
 from openwpm import command_sequence, task_manager
 from openwpm.command_sequence import CommandSequence
@@ -898,7 +898,6 @@ def test_page_visit(
     rows = db_utils.query_db(db, "SELECT * FROM http_requests")
     observed_requests = set()
     for row in rows:
-        assert isinstance(row, Row)
         observed_requests.add(
             (
                 row["url"].split("?")[0],
@@ -920,7 +919,6 @@ def test_page_visit(
     rows = db_utils.query_db(db, "SELECT * FROM http_responses")
     observed_responses: Set[Tuple[str, str]] = set()
     for row in rows:
-        assert isinstance(row, Row)
         observed_responses.add(
             (
                 row["url"].split("?")[0],
@@ -937,7 +935,6 @@ def test_page_visit(
     rows = db_utils.query_db(db, "SELECT * FROM http_redirects")
     observed_redirects: set[tuple[str, str, str | None]] = set()
     for row in rows:
-        assert isinstance(row, Row)
         # TODO: webext instrumentation doesn't support new_request_id yet
         # src = request_id_to_url[row['old_request_id']].split('?')[0]
         # dst = request_id_to_url[row['new_request_id']].split('?')[0]
@@ -1187,8 +1184,8 @@ class FilenamesIntoFormCommand(BaseCommand):
         manager_params,
         extension_socket,
     ):
-        img_file_upload_element = webdriver.find_element_by_id("upload-img")
-        css_file_upload_element = webdriver.find_element_by_id("upload-css")
+        img_file_upload_element = webdriver.find_element(By.ID, "upload-img")
+        css_file_upload_element = webdriver.find_element(By.ID, "upload-css")
         img_file_upload_element.send_keys(self.img_file_path)
         css_file_upload_element.send_keys(self.css_file_path)
         sleep(5)  # wait for the form submission (3 sec after onload)

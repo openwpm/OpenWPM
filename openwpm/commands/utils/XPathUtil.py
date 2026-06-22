@@ -42,6 +42,7 @@ def is_clickable(xpath):
 
 class ExtractXPathError(Exception):
     def __init__(self, value):
+        super().__init__(value)
         self.value = value
 
     def __str__(self):
@@ -76,8 +77,9 @@ def ExtractXPath(element, use_id=True):
 
     # Starting node
     # Check id first
-    if use_id and element.get("id") is not None:
-        return "//*/" + element.name + '[@id="' + element.get("id") + '"]'
+    element_id = element.get("id")
+    if use_id and isinstance(element_id, str):
+        return "//*/" + element.name + '[@id="' + element_id + '"]'
 
     xpath = check_previous_tags(element)
 
@@ -88,10 +90,9 @@ def ExtractXPath(element, use_id=True):
             break
 
         # Check id first
-        if use_id and parent.get("id") is not None:
-            return (
-                "//*/" + parent.name + '[@id="' + parent.get("id") + '"]/' + xpath
-            )  # noqa
+        parent_id = parent.get("id")
+        if use_id and isinstance(parent_id, str):
+            return "//*/" + parent.name + '[@id="' + parent_id + '"]/' + xpath  # noqa
 
         xpath = check_previous_tags(parent) + "/" + xpath
 
@@ -171,7 +172,7 @@ def main():
     rsp = urlopen("http://www.reddit.com/")
     if rsp.getcode() == 200:
         soup = bs(rsp.read(), "lxml")
-        elements = soup.findAll(text=re.compile("[A-Za-z0-9]{10,}"))
+        elements = soup.find_all(string=re.compile("[A-Za-z0-9]{10,}"))
         for i in range(0, 5):
             element = choice(elements).parent
             print("HTML")

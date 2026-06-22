@@ -37,7 +37,7 @@ class Process(mp.Process):
     """Wrapper Process class that includes exception logging"""
 
     def __init__(self, *args, **kwargs):
-        mp.Process.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.logger = logging.getLogger("openwpm")
 
     def run(self):

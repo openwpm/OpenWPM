@@ -44,7 +44,7 @@ class StorageProvider(ABC):
         pass
 
 
-class StructuredStorageProvider(StorageProvider):
+class StructuredStorageProvider(StorageProvider, ABC):
     """Structured Storage Providers are responsible for handling all structured data
     that OpenWPM emits.
     This includes:
@@ -83,7 +83,7 @@ class StructuredStorageProvider(StorageProvider):
         pass
 
 
-class UnstructuredStorageProvider(StorageProvider):
+class UnstructuredStorageProvider(StorageProvider, ABC):
     """Unstructured Storage Providers are responsible for handling the unstructured data
     that OpenWPM emits.
     This is primarily content loaded by websites.

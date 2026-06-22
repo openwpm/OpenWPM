@@ -429,6 +429,7 @@ class TaskManager:
                 agg_queue_size = self.storage_controller_handle.get_status()
 
         # Distribute command
+        thread = None
         if index is None:
             # send to first browser available
             command_executed = False
@@ -457,6 +458,7 @@ class TaskManager:
             return
 
         if command_sequence.blocking:
+            assert thread is not None
             thread.join()
             self._check_failure_status()
 

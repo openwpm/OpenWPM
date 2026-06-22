@@ -12,7 +12,6 @@ dependencies:
 - isort=8.0.1
 - leveldb=1.23
 - multiprocess=0.70.19
-- mypy=2.1.0
 - nodejs=26.3.0
 - pandas=3.0.3
 - pillow=12.2.0
@@ -37,6 +36,7 @@ dependencies:
 - tblib=3.2.2
 - wget=1.25.0
 - pip:
+  - basedpyright==1.39.4
   - dataclasses-json==0.6.7
   - domain-utils==0.7.1
   - jsonschema==4.26.0

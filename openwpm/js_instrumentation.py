@@ -83,7 +83,7 @@ def _merge_settings(python_list):
                 continue
             else:
                 if None in list_setting_value:
-                    raise RuntimeError(f"Mismatching logSettings for object {obj}")
+                    raise RuntimeError(f"Mismatching logSettings for object {setting}")
                 else:
                     # Dedupe
                     setting["logSettings"][logSetting] = list(

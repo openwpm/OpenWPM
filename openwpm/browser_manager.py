@@ -91,9 +91,9 @@ class BrowserManagerHandle:
 
         self.command_thread: Optional[threading.Thread] = None
         """thread to run commands issued from TaskManager"""
-        self.command_queue: Optional[Queue] = None
+        self.command_queue: Optional["Queue[Union[ShutdownSignal, BaseCommand]]"] = None
         """queue for passing command objects to BrowserManager"""
-        self.status_queue: Optional[Queue] = None
+        self.status_queue: Optional["Queue[Any]"] = None
         """queue for receiving command execution status from BrowserManager"""
         self.geckodriver_pid: Optional[int] = None
         """pid for browser instance controlled by BrowserManager"""
@@ -153,6 +153,7 @@ class BrowserManagerHandle:
         # Try to spawn the browser within the timelimit
         unsuccessful_spawns = 0
         success = False
+        browser_profile_path = None
 
         def check_queue(launch_status: Dict[str, bool]) -> Any:
             assert self.status_queue is not None
@@ -230,6 +231,7 @@ class BrowserManagerHandle:
                 )
                 self.close_browser_manager()
                 if "Profile Created" in launch_status:
+                    assert browser_profile_path is not None
                     shutil.rmtree(browser_profile_path, ignore_errors=True)
 
         # If the browser spawned successfully, we should update the
@@ -672,8 +674,8 @@ class BrowserManager(Process):
 
     def __init__(
         self,
-        command_queue: Queue,
-        status_queue: Queue,
+        command_queue: "Queue[Union[ShutdownSignal, BaseCommand]]",
+        status_queue: "Queue[Any]",
         browser_params: BrowserParamsInternal,
         manager_params: ManagerParamsInternal,
         crash_recovery: bool,

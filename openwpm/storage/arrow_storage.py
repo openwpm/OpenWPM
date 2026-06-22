@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import random
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from asyncio import Task
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional
@@ -18,7 +18,7 @@ from .storage_providers import INCOMPLETE_VISITS, StructuredStorageProvider, Tab
 CACHE_SIZE = 500
 
 
-class ArrowProvider(StructuredStorageProvider):
+class ArrowProvider(StructuredStorageProvider, ABC):
     """This class implements a StructuredStorage provider that
     serializes records into the arrow format
     """

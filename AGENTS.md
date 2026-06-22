@@ -36,7 +36,7 @@ pytest -m slow    # Slow tests
 pre-commit run --all-files  # Run all hooks
 black .                      # Format Python
 isort .                      # Sort imports
-mypy openwpm                 # Type checking
+basedpyright                 # Type checking
 ```
 
 **Extension (from Extension/ directory):**

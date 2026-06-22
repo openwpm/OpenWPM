@@ -78,10 +78,10 @@ class ServerSocket:
                 msg = self.receive_msg(client, msglen)
                 try:
                     msg = _parse(serialization, msg)
-                except (UnicodeDecodeError, ValueError) as e:
+                except (UnicodeDecodeError, ValueError):
                     print(
                         "Error de-serializing message: %s \n %s"
-                        % (msg, traceback.format_exc(e))
+                        % (msg, traceback.format_exc())
                     )
                     continue
                 self._put_into_queue(msg)
