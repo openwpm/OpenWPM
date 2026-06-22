@@ -25,6 +25,26 @@ def test_display_mode():
     validate_browser_params(browser_params)
 
 
+def test_specific_config_error_surfaces():
+    browser_params = BrowserParams()
+    browser_params.display_mode = "not_a_mode"
+    with pytest.raises(ConfigError) as exc_info:
+        validate_browser_params(browser_params)
+    message = str(exc_info.value)
+    assert "display_mode" in message
+    assert "Something went wrong" not in message
+
+
+def test_unexpected_type_is_wrapped():
+    browser_params = BrowserParams()
+    # An int has no .lower(), triggering an unexpected AttributeError that
+    # should be wrapped in the generic ConfigError.
+    browser_params.display_mode = 123
+    with pytest.raises(ConfigError) as exc_info:
+        validate_browser_params(browser_params)
+    assert "Something went wrong" in str(exc_info.value)
+
+
 def test_browser_type():
     browser_params = BrowserParams()
 
@@ -62,6 +82,57 @@ def test_save_content_type():
     validate_browser_params(browser_params)
 
     browser_params.save_content = "script"
+    validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        # startupScanScopes omits the SCOPE_PROFILE bit (value 1)
+        {"extensions.startupScanScopes": 0},
+        {"extensions.startupScanScopes": 4},  # SCOPE_SYSTEM only
+        {"extensions.startupScanScopes": "0"},
+        {"extensions.startupScanScopes": "not an int"},
+        # autoDisableScopes includes the SCOPE_PROFILE bit (value 1)
+        {"extensions.autoDisableScopes": 1},
+        {"extensions.autoDisableScopes": 15},  # all scopes
+        {"extensions.autoDisableScopes": "1"},
+        {"extensions.autoDisableScopes": "not an int"},
+        # signatures required is truthy
+        {"xpinstall.signatures.required": True},
+        {"xpinstall.signatures.required": 1},
+        {"xpinstall.signatures.required": "true"},
+    ],
+)
+def test_extension_incompatible_prefs_raise(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    with pytest.raises(ConfigError):
+        validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        {},  # no extension-critical prefs
+        {"some.unrelated.pref": True},
+        # startupScanScopes includes the SCOPE_PROFILE bit (value 1)
+        {"extensions.startupScanScopes": 1},
+        {"extensions.startupScanScopes": 5},  # SCOPE_PROFILE | SCOPE_SYSTEM
+        {"extensions.startupScanScopes": "1"},
+        # autoDisableScopes omits the SCOPE_PROFILE bit (value 1)
+        {"extensions.autoDisableScopes": 0},
+        {"extensions.autoDisableScopes": 4},  # SCOPE_SYSTEM only
+        {"extensions.autoDisableScopes": "0"},
+        # signatures required is falsy
+        {"xpinstall.signatures.required": False},
+        {"xpinstall.signatures.required": 0},
+        {"xpinstall.signatures.required": "false"},
+    ],
+)
+def test_extension_compatible_prefs_pass(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
     validate_browser_params(browser_params)
 
 
