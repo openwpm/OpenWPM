@@ -647,15 +647,10 @@ export class HttpInstrument {
     const requestMethod = details.method;
     update.method = escapeString(requestMethod);
 
-    // TODO: Refactor to corresponding webext logic or discard
-    // (request headers are not available in http response event listener object,
-    // but the referrer property of the corresponding request could be queried)
-    //
-    // let referrer = "";
-    // if (details.referrer) {
-    //   referrer = details.referrer.spec;
-    // }
-    // update.referrer = escapeString(referrer);
+    // Note: referrer is captured request-side on http_requests (see
+    // onBeforeSendHeadersHandler). It is reachable from an http_responses row
+    // by joining to http_requests on (visit_id, request_id), so it is
+    // intentionally not duplicated onto the response record.
 
     const responseStatus = details.statusCode;
     update.response_status = responseStatus;
