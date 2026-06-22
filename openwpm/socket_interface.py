@@ -9,9 +9,6 @@ from typing import Any
 
 import dill
 
-# TODO - Implement a cleaner shutdown for server socket
-# see: https://stackoverflow.com/a/1148237
-
 
 class ServerSocket:
     """
@@ -26,6 +23,18 @@ class ServerSocket:
         self.verbose = verbose
         self.name = name
         self.queue = Queue()
+        # Track the accept thread and per-connection handler threads so that
+        # shutdown() can deterministically wait for all in-flight messages to be
+        # drained into `queue` instead of relying on a fixed-duration sleep.
+        self._accept_thread = None
+        self._conn_threads = []
+        self._conn_lock = threading.Lock()
+        # Live client sockets, so shutdown() can force blocked recv() calls to
+        # return and let the handler threads exit promptly.
+        self._clients = set()
+        # Set by shutdown() so the accept loop stops instead of treating the
+        # wakeup connection as a real client.
+        self._shutting_down = False
         if self.verbose:
             print("Server bound to: " + str(self.sock.getsockname()))
 
@@ -35,6 +44,7 @@ class ServerSocket:
         thread.daemon = True  # stops from blocking shutdown
         if self.name is not None:
             thread.name = thread.name + "-" + self.name
+        self._accept_thread = thread
         thread.start()
 
     def _accept(self):
@@ -42,15 +52,27 @@ class ServerSocket:
         while True:
             try:
                 client, address = self.sock.accept()
-                thread = threading.Thread(
-                    target=self._handle_conn, args=(client, address)
-                )
-                thread.daemon = True
-                thread.start()
-            except ConnectionAbortedError:
-                # Workaround for #278
-                print("A connection establish request was performed on a closed socket")
+            except (ConnectionAbortedError, OSError):
+                # The listening socket was closed (shutdown) or a connection
+                # request hit an already-closed socket (#278). Stop accepting.
+                if self.verbose:
+                    print("Listening socket closed; accept loop exiting")
                 return
+            if self._shutting_down:
+                # This is the wakeup connection made by shutdown() to unblock
+                # accept(); it carries no log records. Close it and stop.
+                try:
+                    client.close()
+                except OSError:
+                    pass
+                return
+            with self._conn_lock:
+                self._clients.add(client)
+            thread = threading.Thread(target=self._handle_conn, args=(client, address))
+            thread.daemon = True
+            with self._conn_lock:
+                self._conn_threads.append(thread)
+            thread.start()
 
     def _handle_conn(self, client, address):
         """
@@ -85,9 +107,16 @@ class ServerSocket:
                     )
                     continue
                 self._put_into_queue(msg)
-        except RuntimeError:
+        except (RuntimeError, OSError):
             if self.verbose:
                 print("Client socket: " + str(address) + " closed")
+        finally:
+            with self._conn_lock:
+                self._clients.discard(client)
+            try:
+                client.close()
+            except OSError:
+                pass
 
     def _put_into_queue(self, msg):
         """Put the parsed message into a queue from where it can be read by consumers"""
@@ -104,6 +133,54 @@ class ServerSocket:
 
     def close(self):
         self.sock.close()
+
+    def shutdown(self, timeout=None):
+        """Deterministically stop the server and drain in-flight messages.
+
+        Closes the listening socket so no new connections are accepted, then
+        shuts down every live client socket so that any handler thread blocked
+        in ``recv()`` returns and exits. Finally joins all handler threads.
+
+        Once this returns, every message a client fully sent has been parsed
+        into ``self.queue``; callers can drain the queue with no risk of losing
+        a tail record and without waiting a fixed duration.
+        """
+        # Tell the accept loop to stop, then unblock it. Closing the listening
+        # socket alone does not reliably wake a thread blocked in accept(), so
+        # make a throwaway connection to it: accept() returns, sees the flag,
+        # and exits. This must happen while the socket is still listening.
+        self._shutting_down = True
+        if self._accept_thread is not None:
+            try:
+                wakeup = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                wakeup.connect(self.sock.getsockname())
+                wakeup.close()
+            except OSError:
+                # Listener already gone; nothing left to wake.
+                pass
+            self._accept_thread.join(timeout)
+
+        # Now no new connections can be accepted; close the listening socket.
+        self.close()
+
+        # Force any handler thread blocked in recv() to wake up and exit by
+        # shutting down the read side of each live client socket.
+        with self._conn_lock:
+            clients = list(self._clients)
+        for client in clients:
+            try:
+                client.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                # Already closed / disconnected by the peer.
+                pass
+
+        # Wait for all handler threads to finish. Each handler appends every
+        # fully-received message to self.queue before it exits, so after these
+        # joins the queue holds every such message.
+        with self._conn_lock:
+            threads = list(self._conn_threads)
+        for thread in threads:
+            thread.join(timeout)
 
 
 class ClientSocket:

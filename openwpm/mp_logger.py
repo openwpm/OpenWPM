@@ -7,7 +7,6 @@ import re
 import struct
 import sys
 import threading
-import time
 from pathlib import Path
 from queue import Empty as EmptyQueue
 from typing import Optional
@@ -225,8 +224,12 @@ class MPLogger(object):
             # Check for shutdown
             if not self._status_queue.empty():
                 self._status_queue.get()
-                socket.close()
-                time.sleep(3)  # TODO: the socket needs a better way of closing
+                # Deterministically stop the socket and wait for all client
+                # handler threads to finish draining their in-flight messages
+                # into socket.queue. This replaces a fixed time.sleep(3) that
+                # only *hoped* the queue had filled, which could drop tail log
+                # records (too short) or stall shutdown (too long).
+                socket.shutdown()
                 while not socket.queue.empty():
                     obj = socket.queue.get()
                     self._process_record(obj)
