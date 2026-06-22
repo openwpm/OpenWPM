@@ -7,6 +7,7 @@ import { NavigationInstrument } from "./background/navigation-instrument";
 
 import * as loggingDB from "./loggingdb";
 import { CallstackInstrument } from "./callstack-instrument";
+import { runEchoMode } from "./echo";
 
 async function main() {
   // Read the browser configuration from file
@@ -57,6 +58,18 @@ async function main() {
     config.logger_address,
     config.browser_id,
   );
+
+  // Test-only echo mode: emit synthetic protocol-test payloads instead of
+  // running any instrument, then fall through to the startup-success write.
+  if (config.echo_mode) {
+    try {
+      runEchoMode();
+    } catch (err) {
+      console.error("echo_mode emit failed", err);
+    }
+    await browser.profileDirIO.writeFile("OPENWPM_STARTUP_SUCCESS.txt", "");
+    return;
+  }
 
   if (config.custom_params.pre_instrumentation_code) {
     eval(config.custom_params.pre_instrumentation_code);

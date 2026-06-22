@@ -87,6 +87,14 @@ export const open = async function (
   );
 };
 
+// Accessor for echo mode (see Extension/src/echo.ts). The connected
+// storageController SendingSocket is module-private; expose it rather than
+// reaching into internals so the echo routine can reuse the live connection
+// instead of opening a second one.
+export const getStorageController = function (): socket.SendingSocket | null {
+  return storageController;
+};
+
 export const close = function () {
   if (storageController != null) {
     storageController.close();

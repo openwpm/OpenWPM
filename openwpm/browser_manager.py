@@ -26,7 +26,11 @@ from .commands.types import BaseCommand, ShutdownSignal
 from .commands.utils.webdriver_utils import parse_neterror
 from .config import BrowserParamsInternal, ManagerParamsInternal
 from .deploy_browsers import deploy_firefox
-from .errors import BrowserConfigError, BrowserCrashError, ProfileLoadError
+from .errors import (
+    BrowserConfigError,
+    BrowserCrashError,
+    ProfileLoadError,
+)
 from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
@@ -749,6 +753,14 @@ class BrowserManager(Process):
     def run_impl(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
+
+        if self.browser_params.echo_mode:
+            raise BrowserConfigError(
+                "echo_mode is a single-process, test-only socket mode and "
+                "cannot be run through BrowserManager. Use the in-process "
+                "harness in test/test_socket_echo.py, which calls "
+                "deploy_firefox directly."
+            )
 
         try:
             # Start Xvfb (if necessary), webdriver, and browser

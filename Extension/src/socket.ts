@@ -2,14 +2,18 @@
 
 const DataReceiver = {
   callbacks: new Map(),
-  onDataReceived: (aSocketId: number, aData: string, aJSON: boolean): void => {
+  onDataReceived: (
+    aSocketId: number,
+    aData: string | Uint8Array,
+    aJSON: boolean,
+  ): void => {
     if (!DataReceiver.callbacks.has(aSocketId)) {
       return;
     }
-    if (aJSON) {
-      aData = JSON.parse(aData);
-    }
-    DataReceiver.callbacks.get(aSocketId)(aData);
+    // aJSON is only ever true for the "j" tag, whose payload is a UTF-8
+    // string; "n" arrives as a raw Uint8Array and is handed through untouched.
+    const data = aJSON ? JSON.parse(aData as string) : aData;
+    DataReceiver.callbacks.get(aSocketId)(data);
   },
 };
 
@@ -41,7 +45,20 @@ export class SendingSocket {
 
   send(aData: string, aJSON = true): boolean {
     try {
-      browser.sockets.sendData(this.id, aData, !!aJSON);
+      // sendData resolves to false (rather than throwing) when the framed
+      // write fails, e.g. the StorageController connection dropped. Surface
+      // that instead of swallowing it: there is no reconnect, so a silent
+      // false here is permanent per-browser data loss for the rest of the
+      // visit. We log rather than throw to avoid breaking fire-and-forget
+      // callers; the browser console error is the observability hook.
+      const ok = browser.sockets.sendData(this.id, aData, !!aJSON);
+      if (ok === false) {
+        console.error(
+          `SendingSocket.send: framed write failed on socket ${this.id}; ` +
+            `record dropped (no reconnect).`,
+        );
+        return false;
+      }
       return true;
     } catch (err) {
       console.error(err, err.message);
