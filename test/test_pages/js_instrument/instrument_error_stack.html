@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <title>pending</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h3>Test page: instrumented API error-stack sanitization</h3>
+    <p>
+      Calls an instrumented API (<code>window.atob</code>) with input that makes
+      it throw, then catches the error in page code and records its
+      <code>.stack</code>. A leak-free instrument must NOT leave any
+      <code>moz-extension://</code> frame on the page-observable stack.
+    </p>
+    <script type="text/javascript">
+      // `atob` is instrumented (configured python-side in the test). Passing a
+      // string with characters outside the base64 alphabet makes the browser's
+      // own implementation throw an InvalidCharacterError (a DOMException),
+      // and that error propagates back out through the instrument wrapper.
+      var stack = "NO_THROW";
+      try {
+        window.atob("not valid base64 !@#$%");
+      } catch (e) {
+        // Stringify the stack so a custom command can read it off the title.
+        stack = "STACK:" + (e && e.stack ? String(e.stack) : "<empty>");
+      }
+      document.title = stack;
+    </script>
+  </body>
+</html>
