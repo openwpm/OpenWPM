@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+  <head>
+    <title>pending</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h3>Test page: can "popping the top frame" hide an instrument wrapper?</h3>
+    <p>
+      Models the legacy instrument's page-world wrapper frame
+      (<code>getInstrumentJS/instrumentFunction/&lt;</code>), installs an
+      <code>Error.prototype.stack</code> getter patch that drops frames, and
+      measures whether the wrapper is hidden and at what cost. Results are written
+      to <code>document.title</code> (prefixed <code>POP:</code>) as JSON so a
+      custom command can read them across the process boundary.
+    </p>
+    <iframe id="xrealm" src="about:blank" style="display: none"></iframe>
+    <script type="text/javascript">
+      (function () {
+        var out = { schema: "stack-pop-demo/v1" };
+
+        // --- Model the legacy instrument's wrapper, reproducing its frame name.
+        // The real wrapper shows up on stacks as "getInstrumentJS/instrumentFunction/<".
+        // We reproduce that exact attribution by nesting identically-named functions
+        // around a closure that apply()s the original native. This is a faithful
+        // model of the hiding problem: the four properties measured below are
+        // properties of Firefox's Error/DOMException stack machinery and are
+        // independent of the wrapper's body (the sibling test
+        // test_js_instrument_error_stack.py captures the REAL instrument's stack).
+        function getInstrumentJS() {
+          function instrumentFunction(orig) {
+            return function () {
+              return orig.apply(this, arguments);
+            };
+          }
+          return instrumentFunction;
+        }
+        var wrap = getInstrumentJS();
+        var C2D = CanvasRenderingContext2D.prototype;
+        C2D.getImageData = wrap(C2D.getImageData); // DOMException thrower
+        JSON.parse = wrap(JSON.parse); // real-Error (SyntaxError) thrower
+
+        function pageThrowsDOM() {
+          // getImageData(0,0,0,0) -> IndexSizeError, a DOMException (the
+          // #1207/#1212 family: atob() also throws a DOMException).
+          var ctx = document.createElement("canvas").getContext("2d");
+          ctx.getImageData(0, 0, 0, 0);
+        }
+        function pageThrowsReal() {
+          JSON.parse("{bad"); // SyntaxError -- a real Error subclass.
+        }
+        function legitPlainErrorTop() {
+          return new Error("legit"); // NO wrapper on its stack.
+        }
+        function grab(fn) {
+          try {
+            fn();
+          } catch (e) {
+            return e;
+          }
+          return null;
+        }
+        function shapes(stack) {
+          if (typeof stack !== "string") return ["<non-string:" + typeof stack + ">"];
+          return stack
+            .split("\n")
+            .map(function (ln) {
+              if (!ln) return "";
+              var at = ln.indexOf("@");
+              var fn = at >= 0 ? ln.slice(0, at) : ln;
+              var loc = ln.match(/(:\d+:\d+)\s*$/);
+              return (fn || "<anon>") + " " + (loc ? loc[1] : "<noloc>");
+            })
+            .filter(function (x) {
+              return x !== "";
+            });
+        }
+        function isWrapper(line) {
+          return /(^|[@\/])(getInstrumentJS|instrumentFunction)\b/.test(line);
+        }
+
+        // --- A: how Firefox exposes the stack (dictates the patch).
+        var ed = Object.getOwnPropertyDescriptor(Error.prototype, "stack");
+        out.errProtoIsNativeAccessor =
+          !!(ed && ed.get) &&
+          /\[native code\]/.test(Function.prototype.toString.call(ed.get));
+        var dd = Object.getOwnPropertyDescriptor(DOMException.prototype, "stack");
+        out.domExceptionHasSeparateStack = !!(dd && dd.get && dd.get !== (ed && ed.get));
+
+        // --- BEFORE patch: confirm the throw types and that the wrapper leaks.
+        var domB = grab(pageThrowsDOM),
+          realB = grab(pageThrowsReal);
+        out.before = {
+          dom_type: domB && domB.constructor && domB.constructor.name,
+          dom_stack: shapes(domB && domB.stack),
+          real_type: realB && realB.constructor && realB.constructor.name,
+          real_stack: shapes(realB && realB.stack),
+        };
+
+        // Save the pristine native descriptor so we can run both variants cleanly.
+        var NATIVE_DESC = Object.getOwnPropertyDescriptor(Error.prototype, "stack");
+        function installPatch(mode) {
+          var origGet = NATIVE_DESC.get,
+            origSet = NATIVE_DESC.set;
+          function filter(frames) {
+            return mode === "crude"
+              ? frames.slice(1) // drop the top frame unconditionally
+              : frames.filter(function (l) {
+                  return !isWrapper(l); // drop ONLY instrument-attributed frames
+                });
+          }
+          Object.defineProperty(Error.prototype, "stack", {
+            configurable: true,
+            get: function () {
+              var raw = origGet.call(this);
+              if (typeof raw !== "string") return raw;
+              return filter(raw.split("\n")).join("\n");
+            },
+            set: origSet,
+          });
+        }
+        function restoreNative() {
+          Object.defineProperty(Error.prototype, "stack", NATIVE_DESC);
+        }
+
+        function measure(mode) {
+          installPatch(mode);
+          var dom = grab(pageThrowsDOM),
+            real = grab(pageThrowsReal),
+            legit = legitPlainErrorTop();
+          var domStack = shapes(dom && dom.stack);
+          var realStack = shapes(real && real.stack);
+          var legitStack = shapes(legit && legit.stack);
+
+          // patch detectability
+          var pd = Object.getOwnPropertyDescriptor(Error.prototype, "stack");
+          var getterIsNative =
+            !!(pd && pd.get) &&
+            /\[native code\]/.test(Function.prototype.toString.call(pd.get));
+
+          // cross-realm bypass on the real Error
+          var xRevealsWrapper = null,
+            xStack = null;
+          try {
+            var xpd = Object.getOwnPropertyDescriptor(
+              document.getElementById("xrealm").contentWindow.Error.prototype,
+              "stack"
+            );
+            if (xpd && xpd.get && real) {
+              var xs = xpd.get.call(real);
+              xStack = shapes(xs);
+              xRevealsWrapper =
+                typeof xs === "string" && shapes(xs).some(isWrapper);
+            }
+          } catch (e) {
+            xStack = ["XERR:" + e];
+          }
+
+          restoreNative();
+          return {
+            dom_hidesWrapper: !domStack.some(isWrapper),
+            real_hidesWrapper: !realStack.some(isWrapper),
+            legit_overPops: !legitStack.some(function (l) {
+              return /legitPlainErrorTop/.test(l);
+            }),
+            legit_topFrame: legitStack[0] || null,
+            patchDetectable_getterNonNative: !getterIsNative,
+            crossRealm_revealsWrapper: xRevealsWrapper,
+            real_stack_mainPatched: realStack,
+            real_stack_crossRealm: xStack,
+            dom_stack: domStack,
+          };
+        }
+
+        out.crude = measure("crude");
+        out.targeted = measure("targeted");
+
+        document.title = "POP:" + JSON.stringify(out);
+      })();
+    </script>
+  </body>
+</html>
