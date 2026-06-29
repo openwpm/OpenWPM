@@ -6,6 +6,18 @@ from typing import Any, Callable, Generator, List, Literal, Protocol, Tuple, Typ
 
 import pytest
 
+# Enable pytest's assertion rewriting (the rich observed-vs-expected diff) for
+# shared test helper/base modules. pytest only rewrites collected test modules
+# and conftest.py automatically; helper modules that hold runtime asserts (e.g.
+# OpenWPMJSTest._check_calls' `assert observed == expected`) are otherwise run
+# un-rewritten and fail with a bare `AssertionError`. This call must run before
+# those modules are first imported, so it stays above every other import here.
+pytest.register_assert_rewrite(
+    "test.openwpm_jstest",
+    "test.openwpmtest",
+    "openwpm.utilities.db_utils",
+)
+
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.mp_logger import MPLogger
 from openwpm.storage.sql_provider import SQLiteStorageProvider
