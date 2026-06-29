@@ -141,6 +141,66 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         )
 
 
+class TestJSInstrumentNoObjectGlobalLeak(OpenWPMJSTest):
+    """The legacy instrument must not assign its getPropertyDescriptor /
+    getPropertyNames helpers as own properties of the page-world ``Object``
+    global (#1187).
+
+    The instrument is injected as a page-world ``<script>``, so anything it
+    assigns onto ``Object`` stays visible to page scripts after the instrument
+    runs. A one-liner like ``typeof Object.getPropertyDescriptor === "function"``
+    then detects OpenWPM even with empty settings -- a config-independent
+    fingerprinting tell named in Krumnow, Jonker & Karsch (arXiv:2205.08890).
+    The fix keeps both helpers as closure-locals inside the injected instrument.
+
+    The test page reads whether either name is an own property of the page-world
+    ``Object`` and encodes the booleans into the arguments of an instrumented
+    ``fetch`` call. Native ``Object`` carries neither helper, so a clean
+    instrument logs ``gpd-false`` / ``gpn-false``; the leaking instrument would
+    log ``gpd-true`` / ``gpn-true``.
+    """
+
+    TEST_PAGE = "instrument_no_object_global_leak.html"
+
+    METHOD_CALLS = {
+        (
+            "window.fetch",
+            "call",
+            '["https://gpd-false.example.com/gpn-false"]',
+        ),
+    }
+    GETS_AND_SETS: Set[Tuple[str, str, str]] = set()
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].prefs = {
+            "network.dns.localDomains": ("gpd-false.example.com,gpd-true.example.com")
+        }
+        browser_params[0].js_instrument_settings = [
+            {
+                "window": [
+                    "fetch",
+                ]
+            },
+        ]
+        return manager_params, browser_params
+
+    def test_instrument_object(self):
+        """The page-world Object exposes neither helper as an own property."""
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        top_url = f"{self.server.base}/js_instrument/{self.TEST_PAGE}"
+        self._check_calls(
+            db=db,
+            symbol_prefix="",
+            doc_url=top_url,
+            top_url=top_url,
+            expected_method_calls=self.METHOD_CALLS,
+            expected_gets_and_sets=self.GETS_AND_SETS,
+        )
+
+
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
