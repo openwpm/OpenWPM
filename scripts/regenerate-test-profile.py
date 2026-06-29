@@ -39,10 +39,16 @@ What the script does
    profile. A ``temporary=True`` install would be dropped on shutdown and would
    NOT survive into the tar.
 
-   The live AMO download happens ONLY here, out-of-band. CI never touches AMO —
-   it loads the baked-in tar and asserts the extension starts up.
+   The AMO download is the only live *addons.mozilla.org* call and it happens
+   ONLY here, out-of-band; CI never touches AMO. Note that regeneration also
+   hits the network in two other ways: the warmup visit below loads
+   ``example.com``, and once installed uBlock Origin fetches its filter lists
+   from third-party CDNs. Those fetched filter lists are regenerable cache and
+   are pruned before archiving (see ``PRUNE_GLOBS``), so they are NOT baked into
+   the fixture and it stays deterministic.
 4. Warms up the profile by visiting a page (populates places.sqlite history).
-5. Dumps the profile to ``test/profile.tar.gz``.
+5. Prunes regenerable caches (Firefox startup caches + uBlock's downloaded
+   filter-list IndexedDB) and dumps the profile to ``test/profile.tar.gz``.
 
 This file IS over the version-control large-file snapshot limit (1 MB). Do NOT
 raise that limit. Because the tar already exists in history, its modification is
@@ -52,6 +58,7 @@ binary modification (not a deletion). See docs/Release-Checklist.md for details.
 
 import json
 import os
+import shutil
 import sys
 import tarfile
 import tempfile
@@ -94,7 +101,13 @@ def fetch_ublock_xpi(dest_dir: Path) -> Path:
     print(f"Downloading signed XPI from {xpi_url}")
 
     xpi_path = dest_dir / f"ublock_origin-{version}.xpi"
-    urllib.request.urlretrieve(xpi_url, xpi_path)
+    # urlretrieve() takes no timeout, so a stalled connection would hang the
+    # regeneration indefinitely. Stream via urlopen with a bounded timeout,
+    # mirroring the metadata fetch above.
+    with urllib.request.urlopen(xpi_url, timeout=60) as resp, open(
+        xpi_path, "wb"
+    ) as out:
+        shutil.copyfileobj(resp, out)
     print(f"Saved XPI to {xpi_path} ({xpi_path.stat().st_size} bytes)")
     return xpi_path
 
@@ -171,10 +184,20 @@ def assert_ublock_active(driver: webdriver.Firefox) -> None:
 PRUNE_DIRS = ("startupCache", "cache2", "safebrowsing")
 PRUNE_FILES = ("favicons.sqlite", "favicons.sqlite-wal", "favicons.sqlite-shm")
 
+# Regenerable IndexedDB, matched relative to the profile root: uBlock's own
+# moz-extension origin, and the chrome origin, which holds its
+# browser.storage.local backend plus Firefox's own chrome-origin databases.
+# uBlock's downloaded filter lists here are >11MB of dated, network-sourced data
+# the tests never read. Addon install/active state comes from the XPI,
+# extensions.json and addonStartup.json.lz4, not from this storage, and Firefox
+# and uBlock rebuild it on next startup.
+PRUNE_GLOBS = (
+    "storage/default/moz-extension+++*",
+    "storage/permanent/chrome/idb/*",
+)
+
 
 def prune_transient_caches(profile_dir: Path) -> None:
-    import shutil
-
     for name in PRUNE_DIRS:
         target = profile_dir / name
         if target.is_dir():
@@ -185,6 +208,13 @@ def prune_transient_caches(profile_dir: Path) -> None:
         if target.exists():
             target.unlink()
             print(f"Pruned cache file: {name}")
+    for pattern in PRUNE_GLOBS:
+        for target in sorted(profile_dir.glob(pattern)):
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+            print(f"Pruned extension storage: {target.relative_to(profile_dir)}")
 
 
 def dump_profile(profile_dir: Path, tar_path: Path) -> None:

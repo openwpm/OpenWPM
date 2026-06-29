@@ -178,7 +178,7 @@ class AssertConfigSetCommand(BaseCommand):
                         return false;
                     }}
                 """)
-        self.logger.error(f"Got result: {result}")
+        self.logger.info(f"Got result: {result}")
         assert result == self.expected_value
 
 
