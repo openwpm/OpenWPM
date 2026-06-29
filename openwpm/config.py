@@ -83,6 +83,18 @@ class BrowserParams(DataClassJsonMixin):
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
+    stealth_js_instrument: bool = False
+    stealth_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    """Custom instrumentation surface for ``stealth_js_instrument``.
+
+    When ``None`` (the default) the stealth instrument uses its bundled
+    fingerprinting set (``Extension/src/stealth/settings.ts``), so behaviour is
+    unchanged out of the box. To customise the surface, supply a list of
+    stealth-shaped settings objects validated against
+    ``schemas/js_instrument_settings.schema.json``. Unlike the legacy
+    ``js_instrument_settings`` (which uses a dotted ``window['X'].prototype``
+    path), stealth resolves ``object`` as a BARE global name, e.g.
+    ``"CanvasRenderingContext2D"``, ``"Navigator"``, or ``"document"``."""
     navigation_instrument: bool = False
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
@@ -204,6 +216,7 @@ class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
     cleaned_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    cleaned_stealth_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass
@@ -216,6 +229,26 @@ class ManagerParamsInternal(ManagerParams):
     source_dump_path: Optional[Path] = field(
         default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
     )
+
+
+def _stealth_settings_request_recursive(
+    stealth_settings: List[Dict[str, Any]],
+) -> bool:
+    """Return True if any stealth settings entry requests recursive instrumentation.
+
+    The stealth surface expresses recursion as a per-entry
+    ``logSettings.recursive`` boolean (paired with a ``depth``), mirroring the
+    bundled ``Extension/src/stealth/settings.ts`` shape. The stealth instrument
+    cannot honour recursion (see ``validate_browser_params``), so this lets the
+    config layer reject such a surface up front.
+    """
+    for entry in stealth_settings:
+        if not isinstance(entry, dict):
+            continue
+        log_settings = entry.get("logSettings")
+        if isinstance(log_settings, dict) and log_settings.get("recursive"):
+            return True
+    return False
 
 
 def validate_browser_params(browser_params: BrowserParams) -> None:
@@ -263,6 +296,41 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 "https://github.com/openwpm/OpenWPM/issues/557"
             )
 
+        if browser_params.stealth_js_instrument and browser_params.js_instrument:
+            raise ConfigError(
+                "stealth_js_instrument and js_instrument cannot both be enabled. "
+                "Use stealth_js_instrument for undetectable instrumentation or "
+                "js_instrument for legacy instrumentation, but not both."
+            )
+
+        if (
+            browser_params.stealth_js_instrument
+            and browser_params.stealth_js_instrument_settings is not None
+            and _stealth_settings_request_recursive(
+                browser_params.stealth_js_instrument_settings
+            )
+        ):
+            raise ConfigError(
+                "Recursive instrumentation (logSettings.recursive=true) is not "
+                "supported under stealth_js_instrument. Recursion descends into the "
+                "plain Object/Array instances returned by instrumented getters, "
+                "which have no global interface prototype to hook; capturing them "
+                "would require defining accessors directly on those page instances "
+                "— a page-observable own-property mutation that any script can "
+                "detect. Stealth deliberately refuses to do this rather than give "
+                "itself away. "
+                "To keep stealth, expand your recursive config into an equivalent "
+                "flat, non-recursive stealth config by running:\n"
+                "    python -m openwpm.utilities.js_settings_migrator YOUR_LEGACY_CONFIG.json\n"
+                "where YOUR_LEGACY_CONFIG.json holds the same settings list in the "
+                "legacy js_instrument_settings form. It launches a browser, replays "
+                "the recursive descent over the live object graph, and prints a flat "
+                "stealth_js_instrument_settings list (reporting any plain "
+                "Object/Array nodes it cannot translate). Alternatively, use "
+                "js_instrument for configurations that need recursive, or remove "
+                "recursive from your stealth_js_instrument_settings."
+            )
+
         if not isinstance(browser_params.save_content, bool) and not isinstance(
             browser_params.save_content, str
         ):
@@ -284,7 +352,10 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        # Re-raise our explicit validation errors
+        raise
+    except Exception:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"

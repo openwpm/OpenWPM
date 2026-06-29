@@ -9,6 +9,7 @@ dependencies:
     # - firefox-unbranded - when it's available
     - gcsfs
     - geckodriver
+    - graphviz
     - leveldb
     - multiprocess
     - nodejs

@@ -28,6 +28,12 @@ export class JavascriptInstrument {
     update.script_loc_eval = escapeString(data.scriptLocEval);
     update.call_stack = escapeString(data.callStack);
     update.symbol = escapeString(data.symbol);
+    // Concrete receiver interface for interface-attributed shared-prototype
+    // capture (stealth). Null/absent for ordinary instrumentation and for value
+    // gets/sets, in which case the ``receiver`` column stays NULL.
+    if (data.receiver !== undefined && data.receiver !== null) {
+      update.receiver = escapeString(data.receiver);
+    }
     update.operation = escapeString(data.operation);
     update.value = escapeString(data.value);
     update.time_stamp = data.timeStamp;
@@ -47,11 +53,13 @@ export class JavascriptInstrument {
   private readonly dataReceiver;
   private onMessageListener;
   private configured: boolean = false;
+  private legacy: boolean = true;
   private pendingRecords: JavascriptOperation[] = [];
   private crawlID;
 
-  constructor(dataReceiver) {
+  constructor(dataReceiver, legacy: boolean = true) {
     this.dataReceiver = dataReceiver;
+    this.legacy = legacy;
   }
 
   /**
@@ -115,14 +123,14 @@ export class JavascriptInstrument {
   }
 
   public async registerContentScript(
-    testing: boolean,
-    jsInstrumentationSettings: JSInstrumentRequest[],
+    testing?: boolean,
+    jsInstrumentationSettings?: JSInstrumentRequest[],
   ) {
-    const contentScriptConfig = {
-      testing,
-      jsInstrumentationSettings,
-    };
-    if (contentScriptConfig) {
+    if (this.legacy) {
+      const contentScriptConfig = {
+        testing,
+        jsInstrumentationSettings,
+      };
       // TODO: Avoid using window to pass the content script config
       await browser.contentScripts.register({
         js: [
@@ -137,9 +145,28 @@ export class JavascriptInstrument {
         runAt: "document_start",
         matchAboutBlank: true,
       });
+    } else if (jsInstrumentationSettings) {
+      // Stealth mode: only inject a settings global when the study configured a
+      // custom instrumentation set. When undefined, the stealth content script
+      // falls back to its bundled default (settings.ts). A stealth-specific
+      // global avoids colliding with the legacy page-script global above.
+      await browser.contentScripts.register({
+        js: [
+          {
+            code: `window.openWpmStealthInstrumentSettings = ${JSON.stringify(
+              jsInstrumentationSettings,
+            )};`,
+          },
+        ],
+        matches: ["<all_urls>"],
+        allFrames: true,
+        runAt: "document_start",
+        matchAboutBlank: true,
+      });
     }
+    const entryScript = this.legacy ? "/content.js" : "/stealth.js";
     return browser.contentScripts.register({
-      js: [{ file: "/content.js" }],
+      js: [{ file: entryScript }],
       matches: ["<all_urls>"],
       allFrames: true,
       runAt: "document_start",
