@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <title>
+      Test page for JS Instrument - legacy instrument must not leak
+      getPropertyDescriptor / getPropertyNames onto the page-world Object (#1187)
+    </title>
+  </head>
+  <body>
+    <h3>
+      Test that the legacy JavaScript instrument does not assign its
+      <code>getPropertyDescriptor</code> / <code>getPropertyNames</code> helpers
+      as own properties of the page-world <code>Object</code> global. Such
+      assignments are a config-independent fingerprinting tell (Krumnow, Jonker
+      &amp; Karsch, arXiv:2205.08890).
+    </h3>
+    <p>
+      The browser instruments <code>window.fetch</code> (configured python side)
+      so the instrument runs on this page. Native <code>Object</code> carries
+      neither helper, so a clean instrument leaves
+      <code>Object.getOwnPropertyNames(Object)</code> free of both names. We read
+      whether either name is an own property of <code>Object</code> and encode
+      the booleans into the arguments of an instrumented <code>fetch</code> call
+      so they land in the javascript table for the test to assert on.
+    </p>
+    <script type="text/javascript">
+      // Own-property checks on the page-world Object global. Post-fix both are
+      // false (helpers are closure-locals inside the injected instrument);
+      // pre-fix both are true (helpers were assigned onto Object).
+      const own = Object.getOwnPropertyNames(Object);
+      const gpd = own.indexOf("getPropertyDescriptor") !== -1;
+      const gpn = own.indexOf("getPropertyNames") !== -1;
+      // Encode the observed leak state into the fetch URL so it is logged as the
+      // call's argument. localDomains maps these hosts so the request does not
+      // hit the network.
+      const probe = "https://gpd-" + gpd + ".example.com/gpn-" + gpn;
+      try {
+        window.fetch(probe);
+      } catch (e) {
+        console.log("fetch probe threw (ignored): ", e);
+      }
+    </script>
+  </body>
+</html>
