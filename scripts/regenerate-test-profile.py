@@ -51,6 +51,7 @@ raise that limit globally; instead track the regenerated tar explicitly
 
 import json
 import os
+import shutil
 import sys
 import tarfile
 import tempfile
@@ -93,7 +94,13 @@ def fetch_ublock_xpi(dest_dir: Path) -> Path:
     print(f"Downloading signed XPI from {xpi_url}")
 
     xpi_path = dest_dir / f"ublock_origin-{version}.xpi"
-    urllib.request.urlretrieve(xpi_url, xpi_path)
+    # urlretrieve() takes no timeout, so a stalled connection would hang the
+    # regeneration indefinitely. Stream via urlopen with a bounded timeout,
+    # mirroring the metadata fetch above.
+    with urllib.request.urlopen(xpi_url, timeout=60) as resp, open(
+        xpi_path, "wb"
+    ) as out:
+        shutil.copyfileobj(resp, out)
     print(f"Saved XPI to {xpi_path} ({xpi_path.stat().st_size} bytes)")
     return xpi_path
 
@@ -172,8 +179,6 @@ PRUNE_FILES = ("favicons.sqlite", "favicons.sqlite-wal", "favicons.sqlite-shm")
 
 
 def prune_transient_caches(profile_dir: Path) -> None:
-    import shutil
-
     for name in PRUNE_DIRS:
         target = profile_dir / name
         if target.is_dir():
