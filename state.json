@@ -1,6 +1,6 @@
 {
   "next_display_id": 70,
-  "next_comment_id": 272,
+  "next_comment_id": 273,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1519,11 +1519,22 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:52.678173839Z",
-      "updated_at": "2026-06-21T00:28:56.437631843Z",
+      "updated_at": "2026-06-30T06:57:30.607283337Z",
       "labels": [
         "bug",
         "pumpable"
-      ]
+      ],
+      "comments": {
+        "7e7a4ff7-54fd-4d72-b21a-0eaf22b34715": {
+          "display_id": 272,
+          "author": "claude",
+          "content": "Overnight: 6/8 Copilot threads on PR #1126 resolved — ff commit 9405a845 restored the explicit typed save_configuration signature on InProcessStorageControllerHandle (matches prod StorageControllerHandle); 5 by-design parity rebuttals (the in-process handle verbatim-mirrors prod storage_controller.py:420-571, so those concerns belong in the shared prod path). LEFT OPEN (real, test-risky, for Stefan): in_process_storage.py:68 (asyncio debug=True/global logger side-effect) + :96 (no is_alive after join timeout). Worked against real head 877c4ad1; local bookmark bf646944 was a corrupted leftover, untouched.",
+          "created_at": "2026-06-30T06:57:30.602081862Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAt2FsHwa2QRbQaIHv7GTfIo23G7Qk8DxQC5QHJ3iPKh1nZEphWumNyaJCIvwg50i66HftwRMV4Xgzg8TOB8FSDQ=="
+        }
+      }
     },
     "9f0ca6f6-e101-4bd6-bb87-2e475c36e033": {
       "uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
@@ -3072,8 +3083,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-30T06:57:24.772473132Z",
+    "timestamp": "2026-06-30T06:57:30.607283337Z",
     "agent_id": "claude",
-    "agent_seq": 56
+    "agent_seq": 57
   }
 }
