@@ -1,6 +1,6 @@
 {
   "next_display_id": 70,
-  "next_comment_id": 271,
+  "next_comment_id": 272,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -92,11 +92,22 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:35.015862447Z",
-      "updated_at": "2026-06-21T00:28:38.880050253Z",
+      "updated_at": "2026-06-30T06:57:24.772473132Z",
       "labels": [
         "bug",
         "pumpable"
-      ]
+      ],
+      "comments": {
+        "38026611-0c9d-47c3-920a-b4a7a0a90985": {
+          "display_id": 271,
+          "author": "claude",
+          "content": "Overnight: 9/9 Copilot threads on PR #1157 resolved via ff commit fffa6794 — real fix: shutdown() was tearing down the globally-registered tracer provider (would kill an embedding app's provider); configure_otel_for_process now returns the provider it owns so callers shut down only that instance. Other 7 already-addressed-by-later-commits or design-deliberate (__otel_ctx sentinel popped before write). Ready to close.",
+          "created_at": "2026-06-30T06:57:24.767320119Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKKw3QBrrC1MAqng/gUcunl0gBeehXH8YXq3bDjRtFH52k1iJHmo/fFr8vgYrKXuscyqGXdDP/fBHB0VPpLnxCg=="
+        }
+      }
     },
     "03499c50-2d5f-4bf0-a686-ff614d17a088": {
       "uuid": "03499c50-2d5f-4bf0-a686-ff614d17a088",
@@ -3061,8 +3072,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-30T06:57:18.573329225Z",
+    "timestamp": "2026-06-30T06:57:24.772473132Z",
     "agent_id": "claude",
-    "agent_seq": 55
+    "agent_seq": 56
   }
 }
