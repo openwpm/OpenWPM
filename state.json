@@ -1,6 +1,6 @@
 {
   "next_display_id": 70,
-  "next_comment_id": 270,
+  "next_comment_id": 271,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -2098,11 +2098,22 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:23.310725020Z",
-      "updated_at": "2026-06-21T00:28:27.213890262Z",
+      "updated_at": "2026-06-30T06:57:18.573329225Z",
       "labels": [
         "bug",
         "pumpable"
-      ]
+      ],
+      "comments": {
+        "d69208eb-3686-41a6-9f46-046e9c9b5234": {
+          "display_id": 270,
+          "author": "claude",
+          "content": "Overnight: all 7 Copilot threads on PR #1174 resolved (replied) — verified against the REAL head 0729d582 (local bookmark was stale at 76e30e00); every thread already addressed in the stripped-down revision (timeout restore, partial-frame buffering, timeout-vs-error split, ack/visit_id validation, flush-before-ack, stream-close-before-delete) or author-documented-deferred (UTF-8 byte-length). No code change needed. Ready to close.",
+          "created_at": "2026-06-30T06:57:18.568243770Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA0SSsVvukHh9mmWXrheVo+ffUKd0hRPffL1maFxsIt4cAfjkKwI215Q1W0qxQIXAkwnf1yTz//851PH6psDFnAg=="
+        }
+      }
     },
     "cb37a1f4-6c6e-46f2-89bd-093247725de7": {
       "uuid": "cb37a1f4-6c6e-46f2-89bd-093247725de7",
@@ -3050,8 +3061,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-30T06:57:12.351570025Z",
+    "timestamp": "2026-06-30T06:57:18.573329225Z",
     "agent_id": "claude",
-    "agent_seq": 54
+    "agent_seq": 55
   }
 }
