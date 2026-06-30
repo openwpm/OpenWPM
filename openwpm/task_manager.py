@@ -351,27 +351,27 @@ class TaskManager:
         appropriate steps are taken to gracefully close the infrastructure
         """
         self.logger.debug("Checking command failure status indicator...")
-        if not self.failure_tracker.has_critical_failure:
+        failure_status = self.failure_tracker.get_critical_failure()
+        if failure_status is None:
             return
 
-        failure_status = self.failure_tracker.critical_failure
-        assert failure_status is not None
         self.logger.debug("TaskManager failure status set, halting command execution.")
         self._shutdown_manager()
-        if failure_status["ErrorType"] == "ExceedCommandFailureLimit":
+        if failure_status.error_type == "ExceedCommandFailureLimit":
             raise CommandExecutionError(
                 "TaskManager exceeded maximum consecutive command "
                 "execution failures.",
-                failure_status["CommandSequence"],
+                failure_status.command_sequence,
             )
-        elif failure_status["ErrorType"] == "ExceedLaunchFailureLimit":
+        elif failure_status.error_type == "ExceedLaunchFailureLimit":
             raise CommandExecutionError(
                 "TaskManager failed to launch browser within allowable "
                 "failure limit.",
-                failure_status["CommandSequence"],
+                failure_status.command_sequence,
             )
-        if failure_status["ErrorType"] == "CriticalChildException":
-            _, exc, tb = pickle.loads(failure_status["Exception"])
+        if failure_status.error_type == "CriticalChildException":
+            assert failure_status.exception is not None
+            _, exc, tb = pickle.loads(failure_status.exception)
             raise exc.with_traceback(tb)
 
     # CRAWLER COMMAND CODE
