@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>
+      Test page for JS Instrument - wrapped function arity (.length) and .name
+      match the native function (crosslink #56)
+    </title>
+  </head>
+  <body>
+    <h3>
+      Test that an instrumented function wrapper reports the same
+      <code>.length</code> (arity) and <code>.name</code> as the native
+      function it wraps, so the wrapper is not trivially fingerprintable.
+    </h3>
+    <p>
+      The browser instruments <code>window.fetch</code> (configured python
+      side). Native <code>fetch</code> has <code>length === 1</code> and
+      <code>name === "fetch"</code>. We read the wrapper's observable
+      <code>.length</code> and <code>.name</code> and encode them into the
+      arguments of an instrumented <code>fetch</code> call so the values land in
+      the javascript table for the test to assert on.
+    </p>
+    <script type="text/javascript">
+      // Accessing window.fetch returns the instrumented wrapper (the property
+      // was redefined as an accessor by the instrument).
+      const wrapped = window.fetch;
+      const arity = wrapped.length;
+      const name = wrapped.name;
+      // Encode the observed arity/name into the fetch URL so they are logged as
+      // the call's arguments. localDomains maps these hosts so the request
+      // does not hit the network.
+      const probe =
+        "https://arity-" + arity + ".example.com/name-" + name;
+      try {
+        window.fetch(probe);
+      } catch (e) {
+        console.log("fetch probe threw (ignored): ", e);
+      }
+    </script>
+  </body>
+</html>

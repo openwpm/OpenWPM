@@ -141,6 +141,61 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         )
 
 
+class TestJSInstrumentFunctionArityAndName(OpenWPMJSTest):
+    """A wrapped function must report the same ``.length`` (arity) and ``.name``
+    as the native function it wraps (crosslink #56).
+
+    Without copying these across, the wrapper closure reports ``length === 0``
+    and ``name === ""``, which differs from every native method and is trivially
+    page-observable for fingerprinting. The test page reads the wrapped
+    ``window.fetch``'s observable ``.length``/``.name`` and encodes them into the
+    arguments of an instrumented ``fetch`` call. Native ``fetch`` has arity 1 and
+    name ``"fetch"``; we assert the logged call argument reflects those native
+    values (i.e. ``arity-1`` and ``name-fetch``), which would read ``arity-0`` /
+    ``name-`` under the un-fixed wrapper.
+    """
+
+    TEST_PAGE = "instrument_function_arity_name.html"
+
+    METHOD_CALLS = {
+        (
+            "window.fetch",
+            "call",
+            '["https://arity-1.example.com/name-fetch"]',
+        ),
+    }
+    GETS_AND_SETS: Set[Tuple[str, str, str]] = set()
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].prefs = {
+            "network.dns.localDomains": "arity-1.example.com,arity-0.example.com"
+        }
+        browser_params[0].js_instrument_settings = [
+            {
+                "window": [
+                    "fetch",
+                ]
+            },
+        ]
+        return manager_params, browser_params
+
+    def test_instrument_object(self):
+        """The wrapped fetch reports native arity (1) and name ("fetch")."""
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        top_url = f"{self.server.base}/js_instrument/{self.TEST_PAGE}"
+        self._check_calls(
+            db=db,
+            symbol_prefix="",
+            doc_url=top_url,
+            top_url=top_url,
+            expected_method_calls=self.METHOD_CALLS,
+            expected_gets_and_sets=self.GETS_AND_SETS,
+        )
+
+
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
