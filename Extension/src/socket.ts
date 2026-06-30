@@ -1,15 +1,25 @@
 /* eslint-disable max-classes-per-file */
 
+export type RespondFn = (msg: any) => void;
+
 const DataReceiver = {
   callbacks: new Map(),
-  onDataReceived: (aSocketId: number, aData: string, aJSON: boolean): void => {
+  onDataReceived: (
+    aSocketId: number,
+    aData: string,
+    aJSON: boolean,
+    aConnectionId: number,
+  ): void => {
     if (!DataReceiver.callbacks.has(aSocketId)) {
       return;
     }
     if (aJSON) {
       aData = JSON.parse(aData);
     }
-    DataReceiver.callbacks.get(aSocketId)(aData);
+    const respond: RespondFn = (msg: any) => {
+      browser.sockets.sendResponse(aConnectionId, JSON.stringify(msg), true);
+    };
+    DataReceiver.callbacks.get(aSocketId)(aData, respond);
   },
 };
 

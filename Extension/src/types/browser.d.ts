@@ -4,9 +4,15 @@ declare namespace browser.profileDirIO {
 }
 
 declare namespace browser.sockets {
+  export type ConnectionId = number;
   export const onDataReceived: {
     addListener(
-      receiver: (socketId: number, data: string, isJson: boolean) => void,
+      receiver: (
+        socketId: number,
+        data: string,
+        isJson: boolean,
+        connectionId: ConnectionId,
+      ) => void,
     ): void;
   };
   export type ServerSocketId = number;
@@ -24,5 +30,10 @@ declare namespace browser.sockets {
     data: string,
     json: boolean,
   ): void;
+  export function sendResponse(
+    connectionId: ConnectionId,
+    data: string,
+    json: boolean,
+  ): boolean;
   export function close(id: SendingSocketId | ServerSocketId): void;
 }
