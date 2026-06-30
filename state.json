@@ -1,6 +1,6 @@
 {
   "next_display_id": 70,
-  "next_comment_id": 269,
+  "next_comment_id": 270,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -294,11 +294,22 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:05.868881006Z",
-      "updated_at": "2026-06-21T00:28:09.525653058Z",
+      "updated_at": "2026-06-30T06:57:12.351570025Z",
       "labels": [
         "bug",
         "pumpable"
-      ]
+      ],
+      "comments": {
+        "62820d4a-06d8-411a-86ee-e52b9e26a64d": {
+          "display_id": 269,
+          "author": "claude",
+          "content": "Overnight: 3/3 Copilot threads on PR #1189 resolved via ff commit a9eee2b1 — test_profile.py:181 (ERROR-level pref log -> info), regenerate-test-profile.py:96 (urlretrieve -> urlopen(timeout=60) streamed copy); deploy_firefox.py:59 (-remote-allow-system-access) rebutted as out-of-scope/pre-existing (Marionette automation channel, not crawled-content privileges). Ready to close.",
+          "created_at": "2026-06-30T06:57:12.346130558Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABApbJ6Jxy+CLZxIGhyNfluXrFBKdwP5FCQtvTHAmTXeGecGkd10ISL7X3dqxA9eRv35l/eA1AUjFs5Dk6EAGUVDA=="
+        }
+      }
     },
     "34f85d26-9554-440e-b6a2-1fc1e5feaa57": {
       "uuid": "34f85d26-9554-440e-b6a2-1fc1e5feaa57",
@@ -3039,8 +3050,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-30T06:56:04.573145584Z",
+    "timestamp": "2026-06-30T06:57:12.351570025Z",
     "agent_id": "claude",
-    "agent_seq": 53
+    "agent_seq": 54
   }
 }
