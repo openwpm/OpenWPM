@@ -134,7 +134,7 @@ class TaskManager:
         # The SDK exporter runs on a background thread that doesn't
         # survive fork, so we must set up the TracerProvider in each
         # process after all forks are complete.
-        configure_otel_for_process("openwpm-task-manager")
+        self._otel_provider = configure_otel_for_process("openwpm-task-manager")
 
         # Start the manager watchdog
         thread = threading.Thread(target=self._manager_watchdog, args=())
@@ -515,8 +515,9 @@ class TaskManager:
             return
         start_time = time.time()
         self._shutdown_manager(relaxed=relaxed)
-        provider = trace.get_tracer_provider()
-        if hasattr(provider, "shutdown"):
-            provider.shutdown()
+        # Shut down only the tracer provider OpenWPM configured, so a provider
+        # set up by an embedding application is never torn down here.
+        if self._otel_provider is not None:
+            self._otel_provider.shutdown()
         # We don't have a logging thread at this time anymore
         print("Shutdown took %s seconds" % str(time.time() - start_time))
