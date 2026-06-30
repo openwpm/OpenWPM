@@ -1,6 +1,6 @@
 {
   "next_display_id": 70,
-  "next_comment_id": 268,
+  "next_comment_id": 269,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1537,11 +1537,22 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:29.184778040Z",
-      "updated_at": "2026-06-21T00:28:33.029740398Z",
+      "updated_at": "2026-06-30T06:56:04.573145584Z",
       "labels": [
         "bug",
         "pumpable"
-      ]
+      ],
+      "comments": {
+        "9ca35376-8a7c-4ca5-8aab-f31259f7518b": {
+          "display_id": 268,
+          "author": "claude",
+          "content": "Overnight: 3 of 4 Copilot threads on PR #1161 resolved via fast-forward commit c1052c16 — test:186 (mirror StorageController INVALID_VISIT_ID del; was silently skipping task/crawl inserts), test:39 (docstring claimed a defaults comparison it never does), provider:38 (async-interface/sync-impl is the shared StructuredStorageProvider contract — by-design). LEFT OPEN: provider:91 (rollback discards the whole uncommitted batch on one bad record) — real, needs a tested begin_nested/SAVEPOINT-per-insert change; untestable locally (no sqlalchemy/postgres in env). Ready-to-close minus the 1 deferred thread.",
+          "created_at": "2026-06-30T06:56:04.567929211Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAI+64XObQndmJ66eV5hr8l01hFKZTVQTHgUvfQn3EMWZBRStdAFM2S/JfTeKgpHLS+Qh2tiKO2IkSAyzScRmpBg=="
+        }
+      }
     },
     "a53bd16b-4f97-4663-aeb1-867626f8a0da": {
       "uuid": "a53bd16b-4f97-4663-aeb1-867626f8a0da",
@@ -3028,8 +3039,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-21T09:27:06.137628648Z",
+    "timestamp": "2026-06-30T06:56:04.573145584Z",
     "agent_id": "claude",
-    "agent_seq": 52
+    "agent_seq": 53
   }
 }
