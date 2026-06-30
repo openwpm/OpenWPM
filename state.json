@@ -1,6 +1,6 @@
 {
   "next_display_id": 70,
-  "next_comment_id": 273,
+  "next_comment_id": 274,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -275,11 +275,22 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:58.515150217Z",
-      "updated_at": "2026-06-21T00:29:02.668309791Z",
+      "updated_at": "2026-06-30T06:57:36.463465714Z",
       "labels": [
         "bug",
         "pumpable"
-      ]
+      ],
+      "comments": {
+        "91eacd34-2c1c-4497-b177-b360c265389e": {
+          "display_id": 273,
+          "author": "claude",
+          "content": "Overnight: 3/3 Copilot threads on PR #1125 resolved via ff commit 22516b0b — all REAL, FailureTracker thread-safety: critical_failure was written/read outside the lock despite the thread-safe contract, plus a check-then-read race in _check_failure_status; fixed with a locked get_critical_failure() accessor returning a frozen typed CriticalFailure dataclass. Ready to close.",
+          "created_at": "2026-06-30T06:57:36.458353038Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAEX67bE3/eNOgfZyxOMJSWdIiu3xwOyISXxCr171dwDPSp4Vj8GZOSuOSG2LRTYc2cbjFBLeUSktvXUkkhp7qCQ=="
+        }
+      }
     },
     "2ef2d0a1-5d49-475d-84e6-ecace723e17b": {
       "uuid": "2ef2d0a1-5d49-475d-84e6-ecace723e17b",
@@ -3083,8 +3094,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-30T06:57:30.607283337Z",
+    "timestamp": "2026-06-30T06:57:36.463465714Z",
     "agent_id": "claude",
-    "agent_seq": 57
+    "agent_seq": 58
   }
 }
