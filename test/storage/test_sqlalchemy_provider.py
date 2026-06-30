@@ -14,6 +14,7 @@ import sqlite3
 import pytest
 
 from openwpm.storage.sqlalchemy_provider import SQLAlchemyStorageProvider
+from openwpm.storage.storage_controller import INVALID_VISIT_ID
 from openwpm.storage.storage_providers import StructuredStorageProvider, TableName
 from openwpm.types import VisitId
 
@@ -35,8 +36,8 @@ SCHEMA_FILE = os.path.join(
 async def test_schema_equivalence(tmp_path):
     """Verify that SQLAlchemy DDL produces the same schema as schema.sql.
 
-    Compares column names, types, NOT NULL constraints, default values,
-    and AUTOINCREMENT status for every table.
+    Compares column names, types, NOT NULL constraints, and AUTOINCREMENT
+    status for every table.
     """
     # Create database via schema.sql directly (bypassing SQLiteStorageProvider
     # which now delegates to SQLAlchemy — we need independent comparison).
@@ -180,8 +181,15 @@ async def test_all_tables_access(
     await structured_provider.init()
 
     for table_name, test_data in test_table.items():
+        visit_id = test_data["visit_id"]
+        if visit_id == INVALID_VISIT_ID:
+            # task and crawl have no visit_id column. Mirror StorageController,
+            # which strips the sentinel visit_id before handing the record to
+            # the provider; otherwise the unknown column makes the insert fail
+            # (silently, since store_record swallows exceptions).
+            del test_data["visit_id"]
         await structured_provider.store_record(
-            TableName(table_name), test_data["visit_id"], test_data
+            TableName(table_name), visit_id, test_data
         )
 
     for visit_id in visit_ids:
@@ -239,8 +247,15 @@ async def test_all_tables_access_postgresql(
     await structured_provider.init()
 
     for table_name, test_data in test_table.items():
+        visit_id = test_data["visit_id"]
+        if visit_id == INVALID_VISIT_ID:
+            # task and crawl have no visit_id column. Mirror StorageController,
+            # which strips the sentinel visit_id before handing the record to
+            # the provider; otherwise the unknown column makes the insert fail
+            # (silently, since store_record swallows exceptions).
+            del test_data["visit_id"]
         await structured_provider.store_record(
-            TableName(table_name), test_data["visit_id"], test_data
+            TableName(table_name), visit_id, test_data
         )
 
     for visit_id in visit_ids:
