@@ -14,9 +14,14 @@ from typing import List, Optional, Tuple
 
 from multiprocess import Queue
 
+from ..config import BrowserParamsInternal, ManagerParamsInternal
 from ..types import BrowserId, VisitId
-from .storage_controller import StorageController
-from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
+from .storage_controller import INVALID_VISIT_ID, DataSocket, StorageController
+from .storage_providers import (
+    StructuredStorageProvider,
+    TableName,
+    UnstructuredStorageProvider,
+)
 
 
 class InProcessStorageControllerHandle:
@@ -99,9 +104,10 @@ class InProcessStorageControllerHandle:
             self._last_status = self.status_queue.get()
             self._last_status_received = time.time()
 
-        if self._last_status_received is not None and (
-            time.time() - self._last_status_received
-        ) > 120:
+        if (
+            self._last_status_received is not None
+            and (time.time() - self._last_status_received) > 120
+        ):
             raise RuntimeError(
                 "No status update from the storage controller "
                 "for %d seconds." % (time.time() - self._last_status_received)
@@ -125,18 +131,15 @@ class InProcessStorageControllerHandle:
         assert isinstance(self._last_status, int)
         return self._last_status
 
-    def save_configuration(self, *args, **kwargs) -> None:
+    def save_configuration(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: List[BrowserParamsInternal],
+        openwpm_version: str,
+        browser_version: str,
+    ) -> None:
         """Save configuration - delegates to a DataSocket like StorageControllerHandle."""
-        from .storage_controller import DataSocket, INVALID_VISIT_ID
-        from ..config import BrowserParamsInternal, ManagerParamsInternal
-        from .storage_providers import TableName
-
         assert self.listener_address is not None
-        manager_params: ManagerParamsInternal = args[0]
-        browser_params: List[BrowserParamsInternal] = args[1]
-        openwpm_version: str = args[2]
-        browser_version: str = args[3]
-
         sock = DataSocket(self.listener_address, "StorageControllerHandle")
         task_id = random.getrandbits(32)
         sock.store_record(
