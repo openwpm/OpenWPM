@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import traceback
-from typing import Any
+from typing import Any, Optional
 
 import multiprocess as mp
 import psutil
@@ -35,13 +35,17 @@ def parse_traceback_for_sentry(tb):
     return out
 
 
-def configure_otel_for_process(service_name: str) -> None:
+def configure_otel_for_process(service_name: str) -> Optional[trace.TracerProvider]:
     """Configure OpenTelemetry for a child process.
 
     No-op when OTEL_EXPORTER_OTLP_ENDPOINT is not set.
+
+    Returns the TracerProvider configured by OpenWPM so the caller can shut
+    down only the provider it owns, or None when OTel was not configured (so
+    a tracer provider set up by an embedding application is never touched).
     """
     if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
-        return
+        return None
 
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.resources import Resource
@@ -52,6 +56,7 @@ def configure_otel_for_process(service_name: str) -> None:
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
     trace.set_tracer_provider(provider)
+    return provider
 
 
 class Process(mp.Process):
@@ -68,7 +73,7 @@ class Process(mp.Process):
 
             coverage.process_startup()
 
-        configure_otel_for_process(self.name)
+        provider = configure_otel_for_process(self.name)
         try:
             self.run_impl()
         except Exception as e:
@@ -78,8 +83,7 @@ class Process(mp.Process):
             self.logger.error("Exception in child process.", exc_info=True, extra=extra)
             raise e
         finally:
-            provider = trace.get_tracer_provider()
-            if hasattr(provider, "shutdown"):
+            if provider is not None:
                 provider.shutdown()
             # Save coverage data before the process exits, since
             # multiprocess.Process uses os._exit() which skips atexit handlers.
