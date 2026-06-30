@@ -16,7 +16,7 @@ There are two failure mechanisms:
 
 import threading
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from .command_sequence import CommandSequence
 from .types import BrowserId
@@ -48,6 +48,26 @@ class CommandFailure:
     traceback: Optional[str] = None
 
 
+@dataclass(frozen=True)
+class CriticalFailure:
+    """A failure that should halt the entire crawl immediately.
+
+    Attributes
+    ----------
+    error_type
+        One of ``"CriticalChildException"``,
+        ``"ExceedCommandFailureLimit"``, or ``"ExceedLaunchFailureLimit"``.
+    command_sequence
+        The command sequence that triggered the failure.
+    exception
+        Pickled exception info, only set for ``"CriticalChildException"``.
+    """
+
+    error_type: str
+    command_sequence: CommandSequence
+    exception: Optional[bytes] = None
+
+
 class FailureTracker:
     """Thread-safe tracker for command execution failures.
 
@@ -63,7 +83,7 @@ class FailureTracker:
     def __init__(self, failure_limit: int) -> None:
         self.failure_limit = failure_limit
         self.failures: List[CommandFailure] = []
-        self.critical_failure: Optional[Dict[str, Any]] = None
+        self.critical_failure: Optional[CriticalFailure] = None
         self.lock = threading.Lock()
 
     def record_failure(self, failure: CommandFailure) -> bool:
@@ -100,15 +120,18 @@ class FailureTracker:
         exception
             Pickled exception info for ``CriticalChildException``.
         """
-        status: Dict[str, Any] = {
-            "ErrorType": error_type,
-            "CommandSequence": command_sequence,
-        }
-        if exception is not None:
-            status["Exception"] = exception
-        self.critical_failure = status
+        with self.lock:
+            self.critical_failure = CriticalFailure(
+                error_type=error_type,
+                command_sequence=command_sequence,
+                exception=exception,
+            )
 
-    @property
-    def has_critical_failure(self) -> bool:
-        """Check if a critical failure has been recorded."""
-        return self.critical_failure is not None
+    def get_critical_failure(self) -> Optional[CriticalFailure]:
+        """Return the recorded critical failure, if any.
+
+        Reads the critical failure under the lock so callers observe a
+        consistent snapshot in a single atomic step.
+        """
+        with self.lock:
+            return self.critical_failure
