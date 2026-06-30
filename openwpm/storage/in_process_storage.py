@@ -14,9 +14,20 @@ from typing import List, Optional, Tuple
 
 from multiprocess import Queue
 
+from ..config import BrowserParamsInternal, ManagerParamsInternal
 from ..types import BrowserId, VisitId
-from .storage_controller import StorageController
-from .storage_providers import StructuredStorageProvider, UnstructuredStorageProvider
+from .storage_controller import (
+    INVALID_VISIT_ID,
+    SHUTDOWN_SIGNAL,
+    STATUS_TIMEOUT,
+    DataSocket,
+    StorageController,
+)
+from .storage_providers import (
+    StructuredStorageProvider,
+    TableName,
+    UnstructuredStorageProvider,
+)
 
 
 class InProcessStorageControllerHandle:
@@ -82,9 +93,14 @@ class InProcessStorageControllerHandle:
         """Signal the storage controller to shut down and wait for the thread."""
         assert self._thread is not None
         self.logger.debug("Sending shutdown signal to in-process StorageController...")
-        self.shutdown_queue.put(("SHUTDOWN", relaxed))
+        self.shutdown_queue.put((SHUTDOWN_SIGNAL, relaxed))
         start_time = time.time()
         self._thread.join(timeout=60)
+        if self._thread.is_alive():
+            self.logger.warning(
+                "%s did not shut down within 60 seconds; the controller thread "
+                "is still running." % type(self).__name__
+            )
         self.logger.debug(
             "%s took %s seconds to close."
             % (type(self).__name__, str(time.time() - start_time))
@@ -99,9 +115,10 @@ class InProcessStorageControllerHandle:
             self._last_status = self.status_queue.get()
             self._last_status_received = time.time()
 
-        if self._last_status_received is not None and (
-            time.time() - self._last_status_received
-        ) > 120:
+        if (
+            self._last_status_received is not None
+            and (time.time() - self._last_status_received) > STATUS_TIMEOUT
+        ):
             raise RuntimeError(
                 "No status update from the storage controller "
                 "for %d seconds." % (time.time() - self._last_status_received)
@@ -114,7 +131,9 @@ class InProcessStorageControllerHandle:
         import queue
 
         try:
-            self._last_status = self.status_queue.get(block=True, timeout=120)
+            self._last_status = self.status_queue.get(
+                block=True, timeout=STATUS_TIMEOUT
+            )
             self._last_status_received = time.time()
         except queue.Empty:
             assert self._last_status_received is not None
@@ -125,18 +144,15 @@ class InProcessStorageControllerHandle:
         assert isinstance(self._last_status, int)
         return self._last_status
 
-    def save_configuration(self, *args, **kwargs) -> None:
+    def save_configuration(
+        self,
+        manager_params: ManagerParamsInternal,
+        browser_params: List[BrowserParamsInternal],
+        openwpm_version: str,
+        browser_version: str,
+    ) -> None:
         """Save configuration - delegates to a DataSocket like StorageControllerHandle."""
-        from .storage_controller import DataSocket, INVALID_VISIT_ID
-        from ..config import BrowserParamsInternal, ManagerParamsInternal
-        from .storage_providers import TableName
-
         assert self.listener_address is not None
-        manager_params: ManagerParamsInternal = args[0]
-        browser_params: List[BrowserParamsInternal] = args[1]
-        openwpm_version: str = args[2]
-        browser_version: str = args[3]
-
         sock = DataSocket(self.listener_address, "StorageControllerHandle")
         task_id = random.getrandbits(32)
         sock.store_record(
