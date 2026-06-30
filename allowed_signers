@@ -1,0 +1,4 @@
+# Crosslink trusted signers
+# Format: <principal> <key-type> <base64-key> [comment]
+# approved by vringar at 2026-03-28 19:52:52 UTC
+claude@crosslink ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWKGNvspBKiHSSE4hfkFk8UswEK81y8h2gKXfubIBiQ crosslink-agent:claude@sz1
