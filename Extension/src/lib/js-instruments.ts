@@ -439,7 +439,7 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
     func: any,
     logSettings: LogSettings,
   ) {
-    return function () {
+    const wrapper = function () {
       const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
@@ -450,6 +450,29 @@ export function getInstrumentJS(eventId: string, sendMessagesToLogger) {
       // eslint-disable-next-line prefer-rest-params
       return func.apply(this, arguments);
     };
+    // Match the native function's page-observable `length` (arity) and `name`.
+    // Without this the closure reports `length === 0` and `name === ""`, which
+    // differs from the native method and is trivially fingerprintable. Native
+    // function `length`/`name` are non-writable, non-enumerable, configurable;
+    // mirror that descriptor shape via copyMatchingDescriptor.
+    copyMatchingDescriptor(wrapper, func, "length");
+    copyMatchingDescriptor(wrapper, func, "name");
+    return wrapper;
+  }
+
+  // Copy a single own property descriptor (`length`/`name`) from `from` onto
+  // `to`, preserving the source's writable/enumerable/configurable attributes.
+  // Best-effort: skips silently if the source descriptor is absent or the
+  // target property is non-configurable.
+  function copyMatchingDescriptor(to, from, propertyName: string) {
+    try {
+      const desc = Object.getOwnPropertyDescriptor(from, propertyName);
+      if (desc) {
+        Object.defineProperty(to, propertyName, desc);
+      }
+    } catch {
+      // Non-configurable target or exotic function; leave the wrapper as-is.
+    }
   }
 
   // Log properties of prototypes and objects
