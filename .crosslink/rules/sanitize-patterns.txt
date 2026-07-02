@@ -1,0 +1,22 @@
+# Crosslink Content Sanitization Patterns
+# ========================================
+#
+# These patterns are applied to web content fetched via the safe-fetch MCP server.
+# Add your own patterns to filter out malicious or unwanted strings.
+#
+# Format: regex|||replacement
+# - Lines starting with # are comments
+# - Empty lines are ignored
+# - The ||| separator divides the regex pattern from the replacement text
+#
+# Example:
+#   BADSTRING_[0-9]+|||[FILTERED]
+#
+# Security Note:
+# The patterns here protect against prompt injection attacks that could
+# manipulate Claude's behavior through malicious web content.
+
+# Core protection: Anthropic internal trigger strings
+ANTHROPIC_MAGIC_STRING_TRIGGER_REFUSAL_[0-9A-Z]+|||[REDACTED_TRIGGER]
+
+# Add additional patterns below as needed:

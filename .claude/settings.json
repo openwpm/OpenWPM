@@ -1,0 +1,74 @@
+{
+  "allowedTools": [
+    "Bash(tmux *)",
+    "Bash(git worktree *)"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "HOOK=\"$(jj root 2>/dev/null)/.claude/hooks/post-edit-check.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "timeout": 5,
+            "type": "command"
+          }
+        ],
+        "matcher": "Write|Edit"
+      },
+      {
+        "hooks": [
+          {
+            "command": "HOOK=\"$(jj root 2>/dev/null)/.claude/hooks/heartbeat.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "HOOK=\"$(jj root 2>/dev/null)/.claude/hooks/pre-web-check.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "timeout": 5,
+            "type": "command"
+          }
+        ],
+        "matcher": "WebFetch|WebSearch"
+      },
+      {
+        "hooks": [
+          {
+            "command": "HOOK=\"$(jj root 2>/dev/null)/.claude/hooks/work-check.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "timeout": 3,
+            "type": "command"
+          }
+        ],
+        "matcher": "Write|Edit|Bash"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "HOOK=\"$(jj root 2>/dev/null)/.claude/hooks/session-start.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "startup|resume"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "HOOK=\"$(jj root 2>/dev/null)/.claude/hooks/prompt-guard.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
