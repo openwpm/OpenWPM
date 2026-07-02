@@ -1,6 +1,6 @@
 {
   "next_display_id": 71,
-  "next_comment_id": 274,
+  "next_comment_id": 275,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -320,10 +320,21 @@
       "priority": "medium",
       "created_by": "claude",
       "created_at": "2026-07-02T22:30:41.762603645Z",
-      "updated_at": "2026-07-02T22:30:47.395058829Z",
+      "updated_at": "2026-07-02T22:35:19.619091019Z",
       "labels": [
         "chore"
-      ]
+      ],
+      "comments": {
+        "dee27543-6d3a-4657-83b0-4ede7d106959": {
+          "display_id": 274,
+          "author": "claude",
+          "content": "Done. (1) Removed 17 absent-language/framework rule guides (c/cpp/csharp/elixir/elixir-phoenix/go/java/javascript-react/kotlin/odin/php/ruby/rust/scala/swift/typescript-react/zig); kept python/javascript/typescript/shell + non-language guides (global/project/quality/rigor/knowledge/web/tracking-*/sanitize-patterns). Kept web.md (hostile-content security — core to a crawler). (2) python.md rewritten for the conda reality: env 'openwpm' via 'conda run -n openwpm', never mutate the env, don't hand-edit environment.yaml (use scripts/repin.sh), black+isort+mypy via pre-commit, pytest markers (pyonly/slow), subprocess/DB boundary, schema-sync note, the OpenWPMJSTest value-capture idiom. (3) javascript.md + typescript.md gained an 'execution contexts' section: extension world (moz-extension, browser.*) vs page-world injected legacy instrument (stringified getInstrumentJS, no browser.*, everything page-observable) vs stealth content-script (exportFunction/Xray); rules for self-contained stringified code, webpack name-mangling, cross-realm cloneInto/exportFunction/Xray, page-as-adversarial footprint minimization. Trimmed the web-app-server assumptions that don't fit an extension (zod API boundaries, CSP headers, DOMPurify) and pointed the toolchain at Extension/ npm run build/lint/fix.",
+          "created_at": "2026-07-02T22:35:19.613986920Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADi07ozCwMWiy26w6VVPdu46xcfIn0xHvWZQ6/rqsTcv+NDExPz+fhK8YL6zHBtSr6oqcHeFrMs/ckQZLY9uAAQ=="
+        }
+      }
     },
     "33924ad9-9b3f-44e1-a168-524656f1c8e4": {
       "uuid": "33924ad9-9b3f-44e1-a168-524656f1c8e4",
@@ -3112,8 +3123,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-02T22:30:55.896257025Z",
+    "timestamp": "2026-07-02T22:35:19.619091019Z",
     "agent_id": "claude",
-    "agent_seq": 61
+    "agent_seq": 62
   }
 }
