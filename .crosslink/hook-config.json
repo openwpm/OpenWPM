@@ -1,0 +1,107 @@
+{
+  "agent_overrides": {
+    "agent_lint_commands": [
+      "pre-commit run --all-files"
+    ],
+    "agent_test_commands": [
+      "pytest"
+    ],
+    "blocked_git_commands": [
+      "git push --force",
+      "git push -f",
+      "git reset --hard",
+      "git clean -f",
+      "git clean -fd",
+      "git clean -fdx",
+      "git checkout .",
+      "git restore ."
+    ],
+    "gated_git_commands": [],
+    "tracking_mode": "relaxed"
+  },
+  "allowed_bash_prefixes": [
+    "crosslink ",
+    "git status",
+    "git diff",
+    "git log",
+    "git branch",
+    "git show",
+    "jj log",
+    "jj diff",
+    "jj status",
+    "jj show",
+    "jj bookmark list",
+    "cargo test",
+    "cargo build",
+    "cargo check",
+    "cargo clippy",
+    "cargo fmt",
+    "npm test",
+    "npm run",
+    "tsc",
+    "ls",
+    "dir",
+    "pwd",
+    "echo"
+  ],
+  "auto_steal_stale_locks": false,
+  "blocked_git_commands": [
+    "git push",
+    "git merge",
+    "git rebase",
+    "git cherry-pick",
+    "git reset",
+    "git checkout .",
+    "git restore .",
+    "git clean",
+    "git stash",
+    "git tag",
+    "git am",
+    "git apply",
+    "git branch -d",
+    "git branch -D",
+    "git branch -m"
+  ],
+  "comment_discipline": "encouraged",
+  "cpitd_auto_install": true,
+  "gated_git_commands": [
+    "git commit"
+  ],
+  "intervention_tracking": true,
+  "kickoff_verification": "local",
+  "reminder_drift_threshold": "0",
+  "sentinel": {
+    "default_agent": {
+      "model": "claude-sonnet-4-6",
+      "timeout_minutes": 30,
+      "verify": "local"
+    },
+    "enabled": false,
+    "escalation": {
+      "cooldown_minutes": 30,
+      "enabled": true,
+      "max_attempts": 2,
+      "model": "claude-opus-4-6",
+      "timeout_multiplier_pct": 150
+    },
+    "interval_minutes": 10,
+    "max_concurrent_agents": 3,
+    "sources": {
+      "github_labels": {
+        "enabled": true,
+        "labels": [
+          "agent-todo: replicate",
+          "agent-todo: fix"
+        ]
+      }
+    }
+  },
+  "sentinel.default_agent.verify": "local",
+  "sentinel.enabled": false,
+  "sentinel.escalation.enabled": false,
+  "sentinel.sources.cpitd.enabled": false,
+  "sentinel.sources.github_labels.enabled": false,
+  "signing_enforcement": "disabled",
+  "tracker_remote": "origin",
+  "tracking_mode": "relaxed"
+}
