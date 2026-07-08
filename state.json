@@ -1,5 +1,5 @@
 {
-  "next_display_id": 71,
+  "next_display_id": 72,
   "next_comment_id": 278,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -29,6 +29,7 @@
     "5cbb8a7b-93c8-4a00-a394-41de2b294b3c": 51,
     "5f186bf4-1fce-469c-ac41-a518e8883213": 11,
     "5f3c564a-6559-4301-aac7-0102bd4077c4": 8,
+    "67ff1a0c-ca29-46ec-9a1b-011909bff640": 71,
     "689a8fd1-7828-4390-b8a8-046eac84a19f": 2,
     "724fc4ec-a31e-4fa7-8de3-9ae66ef59867": 46,
     "76577e94-68b1-4678-be46-94ea47f749db": 47,
@@ -859,6 +860,16 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFwxr9MSNH54ytenHJ7jaboMhAepdfC5hKU+0ojrzRXew9QZ4h8VDdvabIhNIavKMcrp7GXyxXMoEisY1GFqOAg=="
         }
       }
+    },
+    "67ff1a0c-ca29-46ec-9a1b-011909bff640": {
+      "uuid": "67ff1a0c-ca29-46ec-9a1b-011909bff640",
+      "display_id": 71,
+      "title": "Verify PR #1154 stealth review artifacts vs implementation",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-07-08T15:57:08.038768334Z",
+      "updated_at": "2026-07-08T15:57:08.038768334Z"
     },
     "689a8fd1-7828-4390-b8a8-046eac84a19f": {
       "uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
@@ -3152,8 +3163,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-08T15:45:23.982478551Z",
+    "timestamp": "2026-07-08T15:57:08.038768334Z",
     "agent_id": "claude",
-    "agent_seq": 65
+    "agent_seq": 66
   }
 }
