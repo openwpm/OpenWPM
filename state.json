@@ -1,6 +1,6 @@
 {
   "next_display_id": 73,
-  "next_comment_id": 278,
+  "next_comment_id": 279,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1636,10 +1636,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-07-08T21:58:55.772921830Z",
-      "updated_at": "2026-07-08T21:59:01.295646297Z",
+      "updated_at": "2026-07-08T22:23:00.168237805Z",
       "labels": [
         "bug"
-      ]
+      ],
+      "comments": {
+        "bbae3d18-44dd-40e0-b338-d8d32f6a956f": {
+          "display_id": 278,
+          "author": "claude",
+          "content": "Delivered: fixed all 165 TypeScript strict-mode errors in the stealth instrument (instrument.ts 98, index.ts 62, error.ts 5) under the real TS6 toolchain. All fixes are pure type annotations/assertions/casts — zero runtime change (the-hater independently confirmed emitted-JS is behavior-identical, zero forbidden ?? coercions). Verified green: tsc --noEmit 0 errors, eslint 0 errors, npm run build produces openwpm.xpi. Folded into the bottom stealth commit so it's self-contained/strict-clean. Pushed feat/stealth-js-instrument-v2 + chore/crosslink-config; retargeted PR bases to make the stack a structural invariant (#1195→#1214→#1154). CI running (browser suite is the remaining behavior gate).",
+          "created_at": "2026-07-08T22:23:00.163211181Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAXgp8E9T22Gnd63K2YHbwx2n0BPtp70Hxn++c2fITuvt2z+PlsJ9iGEM4YNmSs/2ttWtueQOlMoRWbxeDwXwEAA=="
+        }
+      }
     },
     "9f0ca6f6-e101-4bd6-bb87-2e475c36e033": {
       "uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
@@ -3188,8 +3199,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-08T21:59:09.653354074Z",
+    "timestamp": "2026-07-08T22:23:00.168237805Z",
     "agent_id": "claude",
-    "agent_seq": 71
+    "agent_seq": 72
   }
 }
