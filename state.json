@@ -1,5 +1,5 @@
 {
-  "next_display_id": 72,
+  "next_display_id": 73,
   "next_comment_id": 278,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -46,6 +46,7 @@
     "95d0dcc9-f522-48ce-81c0-f450cca8e7c4": 40,
     "9c0a1105-e085-41b6-96e8-1fd958fde773": 61,
     "9d6b30aa-69dc-4389-ae03-d9be46ae5bb2": 68,
+    "9e5cedf6-f39b-48e6-83ee-c963e0708d7f": 72,
     "9f0ca6f6-e101-4bd6-bb87-2e475c36e033": 32,
     "a2cd0d83-a920-4ba5-ae74-9a23ba7d3fd5": 64,
     "a53bd16b-4f97-4663-aeb1-867626f8a0da": 31,
@@ -1623,6 +1624,16 @@
         }
       }
     },
+    "9e5cedf6-f39b-48e6-83ee-c963e0708d7f": {
+      "uuid": "9e5cedf6-f39b-48e6-83ee-c963e0708d7f",
+      "display_id": 72,
+      "title": "Fix TypeScript strict-mode errors in stealth instrument",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-07-08T21:58:55.772921830Z",
+      "updated_at": "2026-07-08T21:58:55.772921830Z"
+    },
     "9f0ca6f6-e101-4bd6-bb87-2e475c36e033": {
       "uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
       "display_id": 32,
@@ -3170,8 +3181,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-08T15:57:22.854462446Z",
+    "timestamp": "2026-07-08T21:58:55.772921830Z",
     "agent_id": "claude",
-    "agent_seq": 68
+    "agent_seq": 69
   }
 }
