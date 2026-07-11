@@ -1,4 +1,5 @@
 import * as socket from "./socket";
+import { escapeString, Uint8ToBase64 } from "./lib/string-utils";
 
 /**
  * Control message exchanged over the listening socket. In the legacy path the
@@ -253,36 +254,4 @@ export const saveContent = async function (
     typeof content === "string" ? new TextEncoder().encode(content) : content;
   const b64 = Uint8ToBase64(bytes);
   storageController?.send(JSON.stringify(["page_content", [b64, contentHash]]));
-};
-
-function encode_utf8(s: string): string {
-  return unescape(encodeURIComponent(s));
-}
-
-// Base64 encoding, found on:
-// https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/25644409#25644409
-function Uint8ToBase64(u8Arr: Uint8Array): string {
-  const CHUNK_SIZE = 0x8000; // arbitrary number
-  let index = 0;
-  const length = u8Arr.length;
-  let result = "";
-  let slice: Uint8Array;
-  while (index < length) {
-    slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
-    // Uint8Array is array-like; cast avoids a per-chunk Array.from allocation.
-    result += String.fromCharCode.apply(null, slice as unknown as number[]);
-    index += CHUNK_SIZE;
-  }
-  return btoa(result);
-}
-
-export const escapeString = function (string: unknown): string {
-  // Convert to string if necessary
-  const asString = typeof string === "string" ? string : "" + string;
-
-  return encode_utf8(asString);
-};
-
-export const boolToInt = function (bool: boolean): number {
-  return bool ? 1 : 0;
 };
