@@ -1250,11 +1250,12 @@
       "uuid": "89a5902f-c760-4d79-aace-b21f94b0ceba",
       "display_id": 73,
       "title": "Fix numeric JS-call arguments captured as strings in serializeObject",
-      "status": "open",
+      "status": "closed",
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-07-11T13:26:11.520238251Z",
-      "updated_at": "2026-07-11T13:33:56.595092365Z",
+      "updated_at": "2026-07-11T13:34:02.086533936Z",
+      "closed_at": "2026-07-11T13:34:02.086532102Z",
       "labels": [
         "bug"
       ],
@@ -3229,8 +3230,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-11T13:33:56.595092365Z",
+    "timestamp": "2026-07-11T13:34:02.086533936Z",
     "agent_id": "claude",
-    "agent_seq": 77
+    "agent_seq": 78
   }
 }
