@@ -2,3 +2,5 @@
 # Format: <principal> <key-type> <base64-key> [comment]
 # approved by vringar at 2026-03-28 19:52:52 UTC
 claude@crosslink ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWKGNvspBKiHSSE4hfkFk8UswEK81y8h2gKXfubIBiQ crosslink-agent:claude@sz1
+# self-registered as workspace signing key at 2026-07-11 16:02:18 UTC
+claude-sz1@crosslink ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDMG+1qcjD0kMCtUTIVM+/lTz7xnKUjkS578PhOX6NbX crosslink-agent:claude-sz1@sz1
