@@ -1,6 +1,6 @@
 {
   "next_display_id": 74,
-  "next_comment_id": 279,
+  "next_comment_id": 280,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1254,10 +1254,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-07-11T13:26:11.520238251Z",
-      "updated_at": "2026-07-11T13:26:16.644751029Z",
+      "updated_at": "2026-07-11T13:33:56.595092365Z",
       "labels": [
         "bug"
-      ]
+      ],
+      "comments": {
+        "759db41c-a097-4b2c-a7be-f842a348a984": {
+          "display_id": 279,
+          "author": "claude",
+          "content": "Delivered: reverted the strict-mode String(object) coercion in serializeObject (Extension/src/lib/js-instruments.ts) that was capturing numeric JS-call arguments as strings ([125,1,62,20] -> [\"125\",...]), failing test_canvas_fingerprinting deterministically. Fix is 'return object as string' — compile-time-only cast that restores master's exact runtime (raw primitive flows to transport JSON.stringify) while staying TS6-strict-clean; added a comment so a future strict pass doesn't re-introduce it. Verified: tsc 0 at #1195 and at the stealth tip, eslint 0. Also removed build-artifact pollution (bundled/stealth.js) + crosslink state (.active-issue) that an auto-snapshot had absorbed into #1195. Re-pushed all 3 stacked branches; CI re-running.",
+          "created_at": "2026-07-11T13:33:56.588854514Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABATQ0Zavo4RUMyDfr9NkkGoD3yNss6CRWKxJEnhQSUVfa9iclPPuOlvpRmM/LCke6gGsWXsLTFGnldztktLJFUDg=="
+        }
+      }
     },
     "8c495722-ebd4-415e-914c-674373428fdc": {
       "uuid": "8c495722-ebd4-415e-914c-674373428fdc",
@@ -3218,8 +3229,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-11T13:26:24.745040873Z",
+    "timestamp": "2026-07-11T13:33:56.595092365Z",
     "agent_id": "claude",
-    "agent_seq": 76
+    "agent_seq": 77
   }
 }
