@@ -1,0 +1,36 @@
+{
+  "uuid": "896efbe4-11ce-49ab-8155-a1df7896c7f6",
+  "display_id": 36,
+  "title": "Sweep: opt-in flag to capture universal-prototype members",
+  "description": "legacy recursive captures inherited Object/Function/Array.prototype members (toString, valueOf, hasOwnProperty...) via its full-chain walk. The legacy->stealth sweep (openwpm/utilities/stealth_settings.py) currently routes these to residue by default (deliberate: wrapping Object.prototype.toString fires the wrapper on every object page-wide for zero tracking signal). Add a researcher opt-in flag (legacy_settings_to_stealth(capture_universal_prototype_members=False) + CLI --capture-universal-members) that, when on, captures them via the same B-prime interface-filtered shared-prototype path (object=Object/Function/Array, receiverInterfaces=reached interfaces) for strict legacy parity. Default off = unchanged (residue). Non-method universal members stay residue regardless. Worker a4f394484edaf173b in flight; lands as a new commit on feat/stealth-js-instrument-v2 (#1154). User decision: this is a researcher knob (give them rope to wrap every toString). the-hater pass after.",
+  "status": "closed",
+  "priority": "medium",
+  "parent_uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
+  "created_by": "claude",
+  "created_at": "2026-06-16T21:40:00.644271019Z",
+  "updated_at": "2026-06-16T22:09:10.443880168Z",
+  "closed_at": "2026-06-16T22:09:10.443880168Z",
+  "comments": [
+    {
+      "uuid": "faca6808-adf6-420d-b36f-d09c57d135dd",
+      "author": "claude",
+      "content": "Implementation landed on feat/stealth-js-instrument-v2 @ 708eb53e (flag --capture-universal-members, default off; new commit on top). Tests flag-off/on pass, docs updated. needs-adversarial-review label STAYS until the-hater verdict is clean/addressed.",
+      "created_at": "2026-06-16T21:46:41.440511873Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "4b68a32f-7935-40d2-9547-fb7cc82adfd7",
+      "author": "claude",
+      "content": "the-hater verdict: Begrudgingly Adequate. Design sound, realm/name-classification verified correct, flag-OFF unchanged, tests non-vacuous. BUT: (Major) no RUNTIME test — the 3 tests check config shape/schema only, zero proof flag-ON records navigator.toString filtered to Navigator + drops div.toString, and no coverage of inLog reentrancy with wrapped toString/valueOf. (Minor) Function not actually flag-gated — window.Function is a real global so real_interface matches first; Function.prototype methods captured in BOTH states, contradicting docs. (Minor) stale walker comments. needs-adversarial-review STAYS. Fix worker dispatched.",
+      "created_at": "2026-06-16T21:54:22.298141443Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "e33f1c4f-0f6e-4f95-bd87-f80fc79ba53c",
+      "author": "claude",
+      "content": "All 3 findings addressed @ 0999ffcb57b9. Major: runtime crawl test proves navigator.toString captured (receiver=Navigator), div.toString dropped, crawl completes (inLog reentrancy guard holds). Minor: Function now gated consistently (FAIL-before/PASS-after). Minor: stale comments fixed. Re-verified via the runtime test + FAIL-before/PASS-after (no further hater needed — that IS the re-verification). Clearing needs-adversarial-review.",
+      "created_at": "2026-06-16T22:09:05.985818543Z",
+      "kind": "note"
+    }
+  ]
+}

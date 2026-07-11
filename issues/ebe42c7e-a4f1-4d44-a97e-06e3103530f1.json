@@ -1,0 +1,42 @@
+{
+  "uuid": "ebe42c7e-a4f1-4d44-a97e-06e3103530f1",
+  "display_id": 56,
+  "title": "De-pollute legacy instrument prototype footprint (ADR-0001 follow-up #3)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review item R29 (datadir/review-1154.md:267-277) + investigation\n`datadir/investigation-legacy-prototype-pollution.md`. ADR-0001 follow-up #3.\n\n## Finding (investigation verdict)\nLegacy ALREADY wraps on PROTOTYPES (not instances), same as stealth. Its detectable artifacts\nare almost all AVOIDABLE accidental footprint at ZERO capture cost:\n- native `toString` passthrough,\n- arity preservation,\n- in-place descriptor redefine that adds no own-property,\n- module-local helpers (NOT attached to the page's `Object`),\n- no proto-chain flattening (the canonical pollution): `js-instruments.ts:74-86,670-703`,\n- no constructor re-attach.\n\nThe ONLY structural artifact is the per-instance data-property SET\n(`defineProperty(this, ...)`) at `js-instruments.ts:624-633` — narrow.\n\n## Goal\nDe-pollute legacy's prototype footprint by applying stealth-style techniques to the cheap,\navoidable layer above. This reduces legacy's detectability at no capture cost.\n\n## Why it matters\nThis is the PRECONDITION for relaxing the legacy/stealth mutual-exclusion constraint (GH #1187):\nonce legacy's avoidable footprint is removed, the two instruments are closer to coexistable.\n\n## NOTE / dependency\nA separate PoC is testing whether per-instance receiver attribution survives a clean rewrite —\nthat result gates a correction to the ADR's gap-#2 / \"lose the receiver\" wording (review item\nR30). Link that context; do not pre-empt the ADR wording change here.\n\n## Relationships\n- ADR-0001 (`docs/developers/adr/0001-retain-legacy-js-instrument.md`) follow-up #3.\n- Strengthens / references GH #1187 (relax mutual exclusion) and the legacy-hardening umbrella\n  (GH #1204).",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:51.028747305Z",
+  "updated_at": "2026-06-20T13:29:15.958794587Z",
+  "labels": [
+    "pumpable",
+    "refactor"
+  ],
+  "related": [
+    "503e5f61-0f41-478f-8692-636c15b0fb65",
+    "7a08777f-0a60-4c7d-ba39-f31b4d8efb4c"
+  ],
+  "comments": [
+    {
+      "uuid": "fd6a50cc-b6f0-4a9b-b3e8-2ac1d8de8664",
+      "author": "claude",
+      "content": "## R29 proto-chain-flattening (sub-item iii): REPRODUCES, but de-pollution is TRADEOFF-BLOCKED — no PR\n\nDirect-selenium repro (managed firefox-bin + geckodriver, headless, no extension; injects the **real compiled** `getInstrumentJS` via `.toString()` exactly as `${getInstrumentJS}` does). Harness + full writeup: `datadir/r56-repro/`, `datadir/r56-protochain-flattening-verdict.md`.\n\n### Step 1 — artifact REPRODUCES\nInstrumenting `CanvasRenderingContext2D.prototype` with empty `propertiesToInstrument` (the default for a bare-string interface request, used by `collection_fingerprinting`) triggers the whole-chain flatten (`js-instruments.ts:74-86` + `:670-703` → leaf `defineProperty` at `:513`):\n- own-prop count **73 → 84** (+11)\n- **11 `Object.prototype` members became OWN props of the leaf**: `__defineGetter__`, `__defineSetter__`, `__lookupGetter__`, `__lookupSetter__`, `__proto__`, `hasOwnProperty`, `isPrototypeOf`, `propertyIsEnumerable`, `toLocaleString`, `toString`, `valueOf`\n- direct probe `Object.prototype.hasOwnProperty.call(proto,\"hasOwnProperty\")`: **false → true**. Non-enumerable (so invisible to `for-in`) but visible to `getOwnPropertyNames`/`hasOwnProperty`/`Reflect.ownKeys` — which the detector uses.\n\n### Step 2 — the flatten is LOAD-BEARING; surgical de-pollution breaks capture\nThe flatten exists to capture **inherited** members. Proven: instrument `AnalyserNode` (chain `AnalyserNode→AudioNode→EventTarget→Object`); `connect` is native on `AudioNode.prototype` (inherited, not own on the leaf). After instrumenting, `hasOwn(AnalyserNode.prototype,\"connect\")` flips **false→true**, AND calling `analyser.connect(gain)` **logs** `{operation:\"call\", symbol:\"AnalyserNode.connect\"}` — captured *because* it was copied down to the leaf. `collection_fingerprinting` depends on this path for 11/14 entries.\n\nThe investigation's proposed fix (\"redefine inherited members on the owning prototype, not the leaf\") de-pollutes mechanically but **regresses attribution**. Empirically: instrument BOTH `AnalyserNode` and `GainNode` (sibling `AudioNode` subclasses), call `gain.connect(dest)` → currently logs **exactly once**, correctly `symbol:\"GainNode.connect\"` (each leaf has its OWN copy → independent per-interface attribution). Folding the wrapper onto `AudioNode.prototype` would instead (a) double-wrap across every subclass in the collection, or (b) attribute every subclass's `connect` to whichever interface registered first. Per-interface granularity is lost.\n\nThere is **no plain-JS wrapper placement** that is both reachable on the leaf's chain ahead of the owning prototype AND not an own-prop of the leaf — that own-prop *is* the pollution. Only the stealth architecture (privileged-side Xray/`exportFunction`, reading the receiver's interface name at call time) delivers leaf-attribution without copying down. That's exactly the legacy/stealth mutual-exclusion (#1187) / ADR-0001 territory.\n\n### Verdict\n- Sub-item **iii (flatten) is real and reproduces**, but for the legacy plain-JS-wrapper architecture **de-polluting it fundamentally trades off against per-interface inherited-member capture** — can't have both without stealth. Per the conservative guard, **no fix shipped** (a naive de-pollution would silently break capture `collection_fingerprinting` relies on).\n- The other R29 sub-items DON'T have this tradeoff and remain safe additive wins (native `toString` i, native arity ii, module-local helpers iv, constructor re-attach vi) — the genuine \"shared base layer.\" The flatten (iii) specifically is the one structurally tied to legacy's capture model.\n- Note the investigation's §3/§4 understate this for the *whole-interface (empty-props) case*: legacy's per-leaf copy-down is precisely what buys correct per-subclass attribution of inherited members. Worth a correction.",
+      "created_at": "2026-06-21T02:26:23.324879063Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "80825b3a-f9ed-4637-bce3-9c40f7f7b0e9",
+      "author": "claude",
+      "content": "Arity/name artifacts (#56 sub-items ii): BOTH reproduced empirically (direct-selenium, FF152, real compiled getInstrumentJS injected as inline script, no extension).\n\nBefore fix: native getImageData .length=4 -> wrapper 0; .name=\"getImageData\" -> \"\"; toDataURL .name=\"toDataURL\" -> \"\". After fix: all match native; calls still logged (no capture regression).\n\nFixed in instrumentFunction (Extension/src/lib/js-instruments.ts:436): copy native length/name own-descriptors onto the wrapper (native non-writable/non-enumerable/configurable shape). Added browser regression test TestJSInstrumentFunctionArityAndName (verified it FAILS without the fix). Full test_js_instrument.py suite green (8).\n\nDraft PR: https://github.com/openwpm/OpenWPM/pull/1210\n\nStill tradeoff-blocked (out of scope, unchanged): proto-chain flattening (sub-item iii) -- de-polluting it drops inherited-member capture collection_fingerprinting relies on. See datadir/r56-protochain-flattening-verdict.md.",
+      "created_at": "2026-06-21T04:02:09.841898026Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "f6eaaa0b-f253-4646-95d4-cc49aed9f99f",
+      "author": "claude",
+      "content": "the-hater adversarial pass (empirical, direct-selenium FF152) on PR #1210: CONVERGED. Verified: (1) .length/.name descriptor shape is an EXACT match to native {writable:false,enumerable:false,configurable:true} — no new artifact; (2) guard test genuinely fails on a faithful revert (not tautological); (3) no capture regression, all instrumented calls still log; (4) edge cases (bound/async/named) copied verbatim, no throw. Residual data-property->accessor shape artifact on getter/setter sites is #54 (out of scope). Builder->Hater converged; awaiting Stefan's review/merge.",
+      "created_at": "2026-06-21T04:24:59.769085863Z",
+      "kind": "note"
+    }
+  ]
+}

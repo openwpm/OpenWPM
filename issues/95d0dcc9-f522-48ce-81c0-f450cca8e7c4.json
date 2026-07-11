@@ -1,0 +1,164 @@
+{
+  "uuid": "95d0dcc9-f522-48ce-81c0-f450cca8e7c4",
+  "display_id": 40,
+  "title": "Rebase 15 active-PR branches onto master (v0.35.0) + finish jj-log de-noise",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nOvernight autonomous work. Stefan granted: resolve conflicts while PRESERVING INTENT (use mergiraf for syntax files, restore-base + npm install for lockfiles, real semantic merges where needed). openwpm conda env now matches environment.yaml (v0.35.0) -- use it directly via conda run, NEVER recreate it.\n\nREBASE these active-PR branches onto master@origin one-by-one; verify (npm ci/build + jj-precommit + relevant tests); push the clean/resolved ones; record conflicts that need a human on this issue:\n- 5 behind: ci/per-commit-checks #1190, fix/socket-hardening #1180, fix/cache-hits-deterministic-ranges #1184, fix/profile-coverage-deterministic-dns #1183, test/profile-baseline-regen #1189\n- 10-12 behind: docs/design-principles #1175, feat/extension-finalize-ack #1174, typing/query-db-overloads #1170, docs/browser-extension-comms #1142, fix/obsolete-firefox-prefs #1140, refactor/deprivilege #1101, feat/sqlalchemy-postgresql-v2 #1161\n- deeper: dynamic-test-durations #1151 / feat/dynamic-ci-test-durations-v2 #1155, delete_tmpdir #1104/#1093\n\nDO NOT rebase (already current): #1154 #1178 #1191 #1192 #1195 #1125 #1126 #1144. NEVER touch crosslink/hub, crosslink/knowledge.\n\nALSO finish Phase-3 de-noise: abandon the orphan scratch commits (scratch:/wip/verify/tmp leftovers) cluttering jj log. Leave chore/bump-firefox-150 (default workspace sits on it).\n\nFor #1037 stealth_extension (dead, superseded by #1154): do NOT rebase; flag for Stefan to close.\n\nIf a genuine product/design fork arises, record it here and move on -- do not block.",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-19T23:01:09.368495895Z",
+  "updated_at": "2026-06-19T23:01:13.241863711Z",
+  "labels": [
+    "pumpable",
+    "refactor"
+  ],
+  "comments": [
+    {
+      "uuid": "dfc94a01-b63f-4a0f-b222-6226a6c403a5",
+      "author": "claude",
+      "content": "ci/per-commit-checks #1190: clean (no conflicts); rebased -b onto master 315e6672. CI-workflow-only change; .github/actions/setup confirmed present on master; jj-precommit green (actionlint passed); no test file. new tip 24076a07; MERGEABLE.",
+      "created_at": "2026-06-19T23:04:42.588977788Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "fdc668a3-24d7-4191-936d-31b96749a50b",
+      "author": "claude",
+      "content": "fix/socket-hardening #1180: clean (no conflicts); rebased -b 4 commits onto master 315e6672. Extension npm ci+build green & reproducible (no drift); jj-precommit green (black/isort/mypy). Pure-python socket+config tests 5 passed. ENV CAVEAT: test_socket_echo_roundtrips_through_real_extension is RED but only due to local Firefox 150.0.2 vs master extension strict_min_version 152.0 -- a master-wide env block affecting every browser test equally, NOT a branch regression. new tip 4f2f109e; MERGEABLE.",
+      "created_at": "2026-06-19T23:07:52.154369698Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "5d727ec7-7685-42e1-b4b9-76ee4231b106",
+      "author": "claude",
+      "content": "fix/cache-hits-deterministic-ranges #1184: clean (no conflicts); rebased -b 2 commits onto master 315e6672. Test-only (test_http_instrumentation.py). jj-precommit green; pytest collection clean (17 tests incl test_cache_hits_recorded). Ran the browser test: RED but env-blocked -- 'Could not install Add-on ... minVersion 152.0' (local FF 150.0.2 vs master extension 152), test never reaches cache assertions. Same master-wide FF-version block. new tip c868e869; MERGEABLE.",
+      "created_at": "2026-06-19T23:17:26.744646309Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "92172dc2-a1ad-4071-8601-c126caa46b4e",
+      "author": "claude",
+      "content": "fix/profile-coverage-deterministic-dns #1183: clean (no conflicts); rebased -b 2 commits onto master 315e6672. Test-only (test_crawl.py). jj-precommit green; pytest collection clean (test_browser_profile_coverage). Did NOT run the browser test at runtime: it is a full-crawl browser test, env-blocked by the same FF150-vs-extension152 addon-install rejection seen on #1180/#1184; non-browser verification fully green. new tip b47faa4a; MERGEABLE. NOTE for Stefan: the bookmark had a stale DIVERGENT orphan commit (26d97393, no bookmark, older base) alongside the canonical origin head; I left it untouched per no-abandon rule -- harmless but you may want to clean it up locally.",
+      "created_at": "2026-06-19T23:18:40.406868130Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "08c1c8c7-f4eb-4d0e-8438-61c23e38cf39",
+      "author": "claude",
+      "content": "test/profile-baseline-regen #1189: clean (no conflicts); rebased -b onto master 315e6672. Touches the 14.8MB test/profile.tar.gz fixture -- verified the binary survived rebase+push intact (remote blob 17424614 bytes, matches local). jj-precommit green; pytest collection clean (21 tests in test_profile.py). Browser tests env-blocked at runtime by FF150-vs-extension152 (same as siblings); non-browser checks all green. new tip bb2ab11f; MERGEABLE.",
+      "created_at": "2026-06-19T23:19:48.019774068Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "f4b4b233-48b2-45d0-853c-427e32b4237c",
+      "author": "claude",
+      "content": "OVERNIGHT SUMMARY -- 5 active-PR branches (5-behind set) rebased onto master@origin 315e6672 (v0.35.0). ALL 5 rebased CLEAN (zero conflicts), pushed, all MERGEABLE. Tips: #1190 ci/per-commit-checks=24076a07; #1180 fix/socket-hardening=4f2f109e; #1184 fix/cache-hits-deterministic-ranges=c868e869; #1183 fix/profile-coverage-deterministic-dns=b47faa4a; #1189 test/profile-baseline-regen=bb2ab11f. Verification: jj-precommit GREEN on all 5; #1180 npm ci+build GREEN+reproducible & pure-python socket/config tests 5 passed; #1189 14.8MB profile.tar.gz fixture verified intact through rebase+push (remote blob 17424614). pytest collection clean everywhere. ENV CAVEAT (all branches equally, NOT a regression): local FF 150.0.2 vs master extension strict_min_version 152.0 => every browser test fails at addon install; confirmed on #1180/#1184 by running them. Needs an FF152 install for runtime validation. #1183 note: stale DIVERGENT orphan 26d97393 left untouched per no-abandon rule (worth local cleanup). NEEDS-HUMAN: none. Conda env intact (never modified); all 5 ob-* workspaces forgotten+removed; touched nothing outside the 5-branch set.",
+      "created_at": "2026-06-19T23:20:30.294062852Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "fa6b3a44-30a5-4aff-b99b-21ce717db911",
+      "author": "claude",
+      "content": "docs/design-principles #1175: clean (no conflicts); rebased -b 2 commits onto master 315e6672. Docs-only (.md/.rst/AGENTS.md) — jj-precommit GREEN (isort/black/mypy correctly skipped, no py/Extension/test changes). No Extension build needed. new tip df544353; MERGEABLE.",
+      "created_at": "2026-06-19T23:23:02.660408390Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "a9a327f5-be25-4c1c-90ef-d5c30f80a488",
+      "author": "claude",
+      "content": "docs/browser-extension-comms #1142: clean (no conflicts); rebased -b 2 commits onto master 315e6672. Docs-only (Architecture-Internals.md, +21 lines) — note master still has the .md (the .rst conversion lives only on unmerged #1175). jj-precommit GREEN. new tip bf573ba5; MERGEABLE.",
+      "created_at": "2026-06-19T23:23:40.172141867Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "99d86c0d-1be8-4e2c-b9fe-aa912bfe1624",
+      "author": "claude",
+      "content": "feat/extension-finalize-ack #1174: clean (no conflicts); rebased -b 3 commits onto master 315e6672. Extension (TS+bundled) + socket_interface.py + browser_commands.py. jj-precommit GREEN (black/isort/mypy). Extension npm ci+build GREEN & reproducible (no bundled drift). test_socket_interface.py: 6 passed (pure-python, not browser-blocked). new tip 0729d582; MERGEABLE.",
+      "created_at": "2026-06-19T23:25:00.607342812Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "d2930346-574e-4a6e-9da6-f2862ea2393c",
+      "author": "claude",
+      "content": "fix/obsolete-firefox-prefs #1140: clean (no conflicts despite expected FF152 pref churn — master's configure_firefox.py at v0.35.0 didn't touch the obsolete pref lines this branch removes); rebased -b 2 commits onto master 315e6672. Single file (configure_firefox.py, -39/+9). jj-precommit GREEN (mypy/black/isort). No test file. new tip 1986eb2c; MERGEABLE.",
+      "created_at": "2026-06-19T23:25:39.254191155Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "0f7bdebc-3a5a-4730-90e8-cf14f8404a39",
+      "author": "claude",
+      "content": "typing/query-db-overloads #1170: RESOLVED (3 conflicts) — rebased -b 3 commits onto master 315e6672. Conflicts in environment.yaml (5 hunks), .pre-commit-config.yaml, test/test_dns_instrument.py. INTENT: branch migrates type-checker mypy->basedpyright. Resolved by (a) test_dns_instrument.py via mergiraf — kept master's new v0.35.0 DNS test cases (aborted-connection, example.invalid, redirect-chain) AND branch's removal of sqlite3.Row isinstance asserts (since query_db is now overload-typed); black-formatted the residual blank line; (b) .pre-commit-config.yaml: dropped the mirrors-mypy repo block (master's v2.1.0 bump moot — branch removes mypy) keeping the local basedpyright hook; (c) environment.yaml: took master's v0.35.0 pins, removed mypy=2.1.0, kept basedpyright==1.39.4 in pip — validated by manage-environment.py check (exit 0). VERIFY: black/isort clean on 21 py files; env-pin check GREEN; pytest --collect-only clean (54 tests across 5 changed test files); package imports OK (no dangling refs to deleted build_cookie_table.py/cookie.py). basedpyright type-check itself ENV-BLOCKED locally (openwpm env matches v0.35.0 manifest = mypy, basedpyright not installed; do-not-modify-env) — same class as browser-test block; lean on CI. All 3 commits conflict-free. new tip 581aead2; MERGEABLE.",
+      "created_at": "2026-06-19T23:31:45.425634081Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "45f48550-b1c1-4811-8d9b-0f948db89dcf",
+      "author": "claude",
+      "content": "refactor/deprivilege #1101: RESOLVED (2 conflicts) — rebased -b 2 commits onto master 315e6672. Conflicts: (a) Extension/bundled/manifest.json — master bumped strict_min_version 60.0->152.0, branch had dropped the line; KEPT master's 152.0 (mandatory-latest-FF pin wins; branch's drop was incidental to its settings-page refactor). (b) test/manual_test.py (2 hunks) — merged branch's removal of dead FirefoxBinary usage with master's start_server() 3-tuple (now 'server, thread, urls = start_server()') and master's url symbol (branch commented the navigation line -> kept as '# driver.get(urls.base)'). EXTRA FIXES (standing keep-strict-checks rule, all branch-introduced not master): (1) black-reformatted deploy_firefox.py; (2) npm run fix on feature.ts — branch's new setup(config) had 2 prettier errors (missing spaces/semicolon); (3) removed now-dead 'from selenium...firefox_binary import FirefoxBinary' import (broken on selenium 4.45; was the sole collection-blocker — note master's manual_test.py is ALSO broken here as it still USES FirefoxBinary, so branch improves on master). VERIFY: jj-precommit GREEN (isort/black/mypy); Extension npm ci+build GREEN & reproducible (no bundled drift, feature.js is gitignored output); eslint exit 0; manual_test.py now compiles+collects clean (0 tests = expected, it's a __main__ debug script). new tip 92f5d82e; MERGEABLE.",
+      "created_at": "2026-06-19T23:37:28.701865872Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "94630cbd-a4cf-4e7b-93f5-0273a6689f46",
+      "author": "claude",
+      "content": "feat/sqlalchemy-postgresql-v2 #1161: RESOLVED (deep stack, 7 of 9 commits conflicted) — rebased -b 9 commits onto master 315e6672. ALL conflicts were environment.yaml (v0.35.0 pin churn vs the branch's evolving DB dependency story), resolved commit-by-commit (jj edit each conflicted commit, propagating downward) to preserve the stack's intent at each step:\n- 79fb43da (SQLAlchemy rewrite): master pins + add conda sqlalchemy=2.0.36\n- e8ff294e (pg test scenario): master pins + add postgresql=17.9, psycopg2=2.9.10, pytest-postgresql=7.0.1\n- 6fc72da3 (HAS_PYTEST_POSTGRESQL): master pins, remove psycopg2 (per commit diff)\n- 5f6cce0c (psycopg2 vs binary): master pins + psycopg2=2.9.11\n- c473bfe3 (psycopg3): master pins, drop postgresql+psycopg2, add psycopg=3.3.3\n- 2561fb3c (pip-install, 3-sided): master pins, move psycopg[binary]/pytest-postgresql/sqlalchemy OUT of conda INTO pip section (py3.14 compat)\n- cf876d17 (task_id Integer): auto-resolved (no env change)\nFINAL env.yaml verified: zero pg/sqlalchemy in conda deps; pip section has psycopg[binary]==3.3.3, pytest-postgresql==7.0.1, sqlalchemy==2.0.36. YAML valid.\nVERIFY: jj-precommit FULLY GREEN — isort/black/mypy(ignore_missing_imports) + the check-environment-pins hook PASSED (confirms env.yaml matches the branch's unpinned sources). All 9 commits conflict-free; no markers anywhere; all 7 changed .py files py_compile clean.\nENV-BLOCKED at test runtime (NOT a regression): the openwpm conda env matches v0.35.0 manifest = NO sqlalchemy; the branch's root test/conftest.py imports SQLiteStorageProvider -> sqlalchemy_provider -> sqlalchemy, so pytest collection fails locally with ModuleNotFoundError. This is the branch's deliberately-added dependency, present in its environment.yaml/pip; CI installs env fresh and will have it. Same env-block class as FF152 browser tests / basedpyright (#1170). Cannot install sqlalchemy locally (do-not-modify-env). Lean on CI for runtime.\nnew tip cf876d17; MERGEABLE.",
+      "created_at": "2026-06-19T23:43:15.346543307Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "ae1f7d8e-6116-4f3f-81fa-8c9778310041",
+      "author": "claude",
+      "content": "BATCH B SUMMARY (7 active-PR branches, ~10-12 behind, rebased onto master@origin 315e6672 / v0.35.0): ALL 7 pushed and MERGEABLE. 4 CLEAN (#1175 df544353, #1142 bf573ba5, #1174 0729d582, #1140 1986eb2c); 3 RESOLVED preserving intent (#1170 581aead2 — mypy→basedpyright + master pins/DNS tests; #1101 92f5d82e — kept FF152 strict_min_version, merged manual_test, removed dead FirefoxBinary import; #1161 cf876d17 — pg dep story psycopg2→psycopg3→pip resolved commit-by-commit across 7 conflicted commits). VERIFY: jj-precommit GREEN on all 7 (incl env-pins on #1170/#1161); Extension npm ci+build green & reproducible on #1174/#1101; py compile/collection green where runnable. NEEDS-HUMAN: none. ENV-BLOCKED at runtime (NOT regressions — the v0.35.0 conda env, which must not be modified, lacks these): browser tests (local FF150 vs manifest 152), basedpyright (#1170), sqlalchemy (#1161, whose root conftest imports it so it blocks the whole suite locally). CI installs each branch's environment.yaml fresh and will exercise these. Conda env confirmed intact (mypy 2.1.0, selenium 4.45.0); all obB-* workspaces forgotten+removed; touched nothing outside the 7-branch set.",
+      "created_at": "2026-06-19T23:44:01.625956186Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "fcbb11c4-0eef-43c6-a0b7-9c8612d48f8a",
+      "author": "claude",
+      "content": "dynamic-test-durations #1151: clean (no conflicts); rebased -b 3 commits onto master 315e6672. CI/workflow + scripts/ci.sh + test/conftest.py. jj-precommit GREEN (isort/black/mypy/actionlint); pytest --collect-only clean (142 tests; conftest change doesn't break collection). new tip 795baa25; MERGEABLE. AMBIGUITY (a): #1151 and #1155 are the SAME feature (pytest-split dynamic test durations); #1155 is the v2 and supersedes — needs-human: #1151 likely superseded by #1155, close one?",
+      "created_at": "2026-06-19T23:46:38.921373876Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "e70802f3-fbaa-4b05-a35f-247495cb1e16",
+      "author": "claude",
+      "content": "feat/dynamic-ci-test-durations-v2 #1155: RESOLVED (1 conflict) — rebased -b 3 commits onto master 315e6672. Conflict in .gitignore: master added a 'HATER.md' code-review-scratch ignore at the same spot the branch adds the pytest-split generated-file ignores (.test_durations_cached / .test_durations_group_*). mergiraf couldn't resolve (.gitignore is line-based, not in its AST set); resolved manually keeping BOTH blocks (intent unambiguous, additive). VERIFY: no markers remain; jj-precommit GREEN (isort/black/mypy/actionlint); pytest --collect-only clean (142 tests). new tip 29de670c; MERGEABLE. NOTE: tracking the remote bookmark surfaced the pre-rebase origin head as a divergence; set the bookmark to the clean rebased tip and pushed (sideways move). AMBIGUITY (a) CONFIRMED: #1155 is the 'v2' of #1151 — same feature (CI dynamic test durations for pytest-split), same touched files (run-tests.yaml, scripts/ci.sh, test/conftest.py) PLUS this branch adds the .gitignore entries and the CI-env-var gating that #1151 lacks. v2 is strictly the more complete superset. needs-human: #1151 is very likely superseded by #1155 — close #1151 (keep #1155)?",
+      "created_at": "2026-06-19T23:48:09.465986758Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "712fce48-1bc0-4b35-8f97-846d2ba7afbb",
+      "author": "claude",
+      "content": "delete_tmpdir #1104 (vringar's local branch, head c0fe18e5 — NOT the ndanner-wesleyancs fork #1093/d87db54b, left untouched): clean (no conflicts); rebased -b 1 commit onto master 315e6672. Touches browser_manager.py / config.py / deploy_firefox.py: adds a per-spawn geckodriver TMPDIR (browser_params.tmpdir) and deletes it on browser close to clean up geckodriver's leftover XPI copy. VERIFY: all 3 files py_compile clean; imports intact (os/shutil/tempfile/Path/Optional all present post-rebase); jj-precommit GREEN incl mypy (new Optional[Path] field + Service(env=...) arg typecheck clean); pytest --collect-only clean (142 tests). new tip 9b704960; MERGEABLE. AMBIGUITY (b) — NO OVERLAP with merged tmpdir work on master: master's only tmpdir code is profile-archiving (tempfile.mkdtemp 'openwpm_profile_archive_' + shutil.rmtree of profile paths in browser_manager.py); master has NO browser_params.tmpdir field, NO TMPDIR env passed to geckodriver, nothing in deploy_firefox.py. This branch's geckodriver-XPI-cleanup is orthogonal and rebased cleanly. Not superseded.",
+      "created_at": "2026-06-19T23:49:17.426481111Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "d75f0bf1-6c89-4f5c-a365-aed8d2ac5c92",
+      "author": "claude",
+      "content": "BATCH C + PHASE-3b SUMMARY (2026-06-19). Batch C (3 deeper branches) rebased onto master@origin 315e6672 / v0.35.0, all pushed, all MERGEABLE: #1151 dynamic-test-durations=795baa25 (clean); #1155 feat/dynamic-ci-test-durations-v2=29de670c (RESOLVED 1 .gitignore conflict, both-sides-keep); #1104 delete_tmpdir=9b704960 (clean; vringar's local branch, fork #1093 untouched). jj-precommit GREEN + pytest --collect-only clean (142 tests) on all 3.\n\nAMBIGUITY VERDICTS:\n(a) needs-human: #1151 is SUPERSEDED by #1155. Both are 'feat(ci): dynamic test duration tracking for pytest-split' by vringar, same 3 touched files (run-tests.yaml, scripts/ci.sh, test/conftest.py); #1155 ('v2') is the strict superset — additionally adds the .gitignore entries for the generated .test_durations* files and CI-env-var gating of the duration tracking. Recommendation: CLOSE #1151, keep #1155. (Both left open + rebased per instructions; this is the human call.)\n(b) RESOLVED, NO OVERLAP: delete_tmpdir #1104 does NOT overlap merged tmpdir work on master. Master's only tmpdir code is profile-archiving (tempfile.mkdtemp 'openwpm_profile_archive_' + shutil.rmtree of profile paths). #1104 adds an orthogonal concern: a per-spawn browser_params.tmpdir handed to geckodriver via TMPDIR env so geckodriver's leftover XPI copy can be cleaned on browser close. No field/import collision; rebased clean. Not superseded.\n\nPHASE-3b DE-NOISE: abandoned 30 orphan scratch heads (descriptions: scratch*/wip/WIP/verify c*/tmp*/anchor/orchestration-working-copy/build-verification-scratch/stealth-verify-workspace/hater-review-artifact). All verified NOT reachable from any bookmark, remote bookmark, or workspace @, and no merge commits. CONSERVATIVELY LEFT UNTOUCHED: every orphan with a real conventional-commit description (fix/feat/test/prototype/docs/chore/refactor) and every empty-description orphan — these may be unpushed work, older PR-branch bases, or divergent commits (incl #1183's known divergent 26d97393 and the pre-rebase #1155 head e3514f0b). If any of THOSE should also be swept, that's a human call.\n\nENV-BLOCKED (not regressions, lean on CI): browser tests (local FF150 vs manifest 152) — unchanged from prior batches. Conda env confirmed intact (Python 3.14.6, mypy 2.1.0, selenium 4.45.0; never modified). All obC-* workspaces forgotten+removed. Touched nothing outside this 3-branch batch + the Phase-3b scratch sweep.",
+      "created_at": "2026-06-19T23:51:14.106217357Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "19ebe50d-9af6-47a4-ab7a-c2e55add4595",
+      "author": "claude",
+      "content": "Functional verdict: RUNS-WITH-CAVEATS. Built throwaway env (py3.14, sqlalchemy 2.0.51, psycopg3, pytest-postgresql + conda postgresql 18.4). Ran test/storage/test_sqlalchemy_provider.py: 6 passed / 1 failed. The PostgreSQL scenario (test_all_tables_access_postgresql) PASSED end-to-end against an ephemeral PG, and an independent write+read-back smoke confirmed data round-trips. SQLAlchemy SQLite path also passes. Sole failure = test_schema_equivalence: real schema drift — branch's sqlalchemy_schema.py dns_responses is missing the 'error TEXT' column that v0.35.0's schema.sql gained (DNS error-handling work). Code-broken (one-line fix), not env-blocked. Needs: add error column to SA schema; for distributed crawl, an external/managed Postgres DSN (pytest-postgresql is test-only ephemeral).",
+      "created_at": "2026-06-20T00:13:02.100293804Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "d3cfcdaa-5da1-4508-bd69-6297f0302131",
+      "author": "claude",
+      "content": "Fixed: added Column(\"error\", Text) to dns_responses in sqlalchemy_schema.py (12=12 col parity w/ schema.sql); test_schema_equivalence passes; pushed 54d852ba to feat/sqlalchemy-postgresql-v2; PR #1161 MERGEABLE.",
+      "created_at": "2026-06-20T00:18:47.432440321Z",
+      "kind": "resolution"
+    },
+    {
+      "uuid": "6588d6cc-9d75-4ccf-9ef9-0d40a7b7dccb",
+      "author": "claude",
+      "content": "feat/sqlalchemy-postgresql-v2 (#1161): landed production wiring on top of current tip — pinned sqlalchemy 2.0.51 + psycopg 3.3.4 (runtime) and pytest-postgresql 8.1.0 (dev) in environment.yaml (fresh-env import smoke green, env-pins hook green); crawler.py now selects SQLAlchemyStorageProvider via OPENWPM_POSTGRES_URL/DB_URL DSN; gated the PG test scenario on pg_config so CI (no PG server) skips instead of erroring. jj-precommit green, pushed, PR MERGEABLE.",
+      "created_at": "2026-06-20T00:30:46.180050069Z",
+      "kind": "note"
+    }
+  ]
+}

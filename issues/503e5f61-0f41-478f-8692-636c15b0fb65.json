@@ -1,0 +1,62 @@
+{
+  "uuid": "503e5f61-0f41-478f-8692-636c15b0fb65",
+  "display_id": 53,
+  "title": "Sanitize legacy instrument error stacks (back-port cleanErrorStack)",
+  "description": "Current state: \n\nDesired state: \n\nReason: \n\nSource: #1154 review item R16 (datadir/review-1154.md:101-106, 327-330).\n\n## Problem (real, page-observable leak)\nThe LEGACY js-instrument rethrows errors bare at\n`Extension/src/lib/js-instruments.ts:442-452`. Because legacy runs in the page world, any\npage-observable `.stack` on those errors leaks the extension UUID (moz-extension://<uuid>/...)\nplus the instrument's own wrapper frames — a trivial detection vector.\n\n## Goal (confirmed direction, Stefan)\nCatch and remove the extension's own code from error stacks WHERE POSSIBLE before the error\nbecomes page-observable:\n- Back-port stealth's `cleanErrorStack` (strips frames containing `getURL(\"\")`) and hook it at\n  the legacy rethrow site (~`js-instruments.ts:451`).\n- \"Where possible\": legacy runs in the page world, so error RECONSTRUCTION is harder than\n  stealth's isolated-world path. The stack-CLEANING transfers directly; adapt the error\n  reconstruction for the page world as far as feasible.\n\n## Relationships\n- Part of the legacy-footprint hardening umbrella.\n- Sibling to GH #1204 (channel hardening) and to R24 (stack-frame filtering for attribution).\n- Relates to ADR-0001 (`docs/developers/adr/0001-retain-legacy-js-instrument.md`) follow-ups\n  and to GH #1187 (relax legacy/stealth mutual exclusion via footprint reduction).",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-06-20T13:28:33.545895720Z",
+  "updated_at": "2026-06-20T13:29:10.193107754Z",
+  "labels": [
+    "pumpable",
+    "refactor"
+  ],
+  "related": [
+    "7a08777f-0a60-4c7d-ba39-f31b4d8efb4c"
+  ],
+  "comments": [
+    {
+      "uuid": "649110c1-73ab-4320-b62d-f99772a73054",
+      "author": "claude",
+      "content": "Draft PR opened: https://github.com/openwpm/OpenWPM/pull/1207 (branch harden/legacy-error-stacks, based on master).\n\nWhat landed:\n- Back-ported stealth's stack-cleaning predicate to the legacy page-world instrument. Added two INLINE helpers inside getInstrumentJS in Extension/src/lib/js-instruments.ts: cleanErrorStack(stack) (drops every stack line containing moz-extension://) and rethrowWithCleanStack(err) (overwrites the caught error's own .stack with the cleaned value and re-throws the SAME object, preserving error type/identity).\n- Wrapped the three page-observable call sites in try/catch -> rethrowWithCleanStack: instrumentFunction's func.apply(this, arguments), and the instrumented getter's/setter's original{Getter,Setter}.call(this).\n- Page-world adaptation: legacy already runs in the page world (no Xray boundary), so no wrappedJSObject reconstruction is needed -- we just overwrite the error's own .stack. Thrown primitives (no .stack) re-throw unchanged.\n- Helpers are inline so they survive being stringified into the page <script> via ${getInstrumentJS} (no es6 imports). Confirmed the helpers are present in the compiled content.js bundle.\n- Regression test: test/test_js_instrument_error_stack.py + test/test_pages/js_instrument/instrument_error_stack.html. Instruments window.atob, forces it to throw (invalid base64 -> InvalidCharacterError), catches in page code, asserts the page-observable e.stack contains NO moz-extension:// frame.\n\nVerification: extension build green, npm run lint green, python pre-commit (isort/black/mypy) green. BLOCKER: the browser regression test could not be run to completion locally -- the OpenWPM browser-spawn path fails for ALL browser tests in this env, including unmodified pre-existing ones (spawn failure before profile creation; root cause is fork-based multiprocess spawn under Python 3.14.6, not this change -- a direct headless FF152+geckodriver launch works). Left as DRAFT so CI validates the browser test.",
+      "created_at": "2026-06-20T23:07:44.835635767Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "945e3333-f561-45cc-9820-661f78a9a0ba",
+      "author": "claude",
+      "content": "Draft PR #1207 opened (branch harden/legacy-error-stacks, base master). Back-ported stealth cleanErrorStack to the legacy page-world instrument as inline helpers in getInstrumentJS; wrapped the three page-observable rethrow sites (func.apply + getter/setter calls) in try/catch that strips moz-extension:// frames from error.stack before re-throwing the same page-world error object. Added regression test test_js_instrument_error_stack.py (instruments window.atob, forces a throw, asserts page-observable stack has no moz-extension:// frame). Build/lint/python-precommit green. BLOCKER: browser test could not run locally -- spawn fails for ALL browser tests incl. unmodified ones (fork-based multiprocess under Python 3.14.6; direct FF152 launch works). Left DRAFT for CI to validate.",
+      "created_at": "2026-06-20T23:07:51.685402946Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "fe202b05-82cd-4296-ae8a-799e06e79782",
+      "author": "claude",
+      "content": "Draft PR #1207 opened (branch harden/legacy-error-stacks, base master). Back-ported stealth cleanErrorStack to the legacy page-world instrument as inline helpers in getInstrumentJS; wrapped the three page-observable rethrow sites (func.apply + getter/setter calls) in try/catch that strips moz-extension:// frames from error.stack before re-throwing the same page-world error object. Added regression test test_js_instrument_error_stack.py (instruments window.atob, forces a throw, asserts page-observable stack has no moz-extension:// frame). Build/lint/python-precommit green. BLOCKER: browser test could not run locally -- spawn fails for ALL browser tests incl. unmodified ones (fork-based multiprocess under Python 3.14.6; direct FF152 launch works). Left DRAFT for CI to validate.",
+      "created_at": "2026-06-20T23:08:12.940561162Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "a293dd7f-70fc-41b6-a525-1abdf4a15308",
+      "author": "claude",
+      "content": "HATER VERDICT on PR #1207 (harden/legacy-error-stacks): SLOPPY — fix is benign but UNPROVEN, and its regression test is VACUOUS. I empirically could not reproduce the moz-extension:// leak on the targeted path. Legacy injects via an inline <script> (script.text), so wrapper frames are attributed to the PAGE URL, not moz-extension://. Ran the REAL bundled content.js built from THIS branch + real js-instrument settings (window.atob) + the real new test page: page-observable e.stack = '@http://.../page.html:22:16', no moz-extension://. Then rebuilt the bundle from the PARENT commit (fix reverted, 0 rethrowWithCleanStack): IDENTICAL output. The test asserts 'moz-extension:// not in stack' — true with AND without the fix, so it cannot fail and catches no regression. The author's own note said the browser test never ran locally; it ran for me, green both ways. Other findings: dead comment ref to Extension/src/stealth/error.ts (doesn't exist on this branch); test uses append_command(GetCommand(..)) instead of cs.get() (bypasses contains_get_or_browse/total_timeout, URL passed twice). GOOD: helpers survive ${getInstrumentJS} stringification (dev-mode webpack, no mangling, confirmed in bundle); rethrow preserves error identity, guards .stack reassignment, passes primitives through; all 3 page-observable rethrow sites covered; commit msg is solid. REQUIRED: either capture a real pre-fix moz-extension:// frame and point the test at THAT path (assert present-before/absent-after), or close #53 as not-reproducible-via-this-vector. Don't ship a no-op behind a tautology. Full writeup + repro scripts: /home/vringar/projects/OpenWPM/datadir/hater-1207.md (datadir/repro_real.py, repro_prefix.py).",
+      "created_at": "2026-06-20T23:27:12.304796913Z",
+      "kind": "observation"
+    },
+    {
+      "uuid": "7f3b4fdf-4544-42c4-8f01-55abc06771bb",
+      "author": "claude",
+      "content": "HATER VERDICT on PR #1207 (harden/legacy-error-stacks): SLOPPY — fix is benign but UNPROVEN, regression test is VACUOUS. Full writeup + repro scripts at /home/vringar/projects/OpenWPM/datadir/hater-1207.md",
+      "created_at": "2026-06-20T23:27:15.465088210Z",
+      "kind": "observation"
+    },
+    {
+      "uuid": "03860da6-7c3b-4559-9362-41dc746cee8c",
+      "author": "claude",
+      "content": "the-hater verdict (datadir/hater-1207.md): #1207 is a NO-OP. Legacy is injected as an inline <script>, so its frames are attributed to the page URL, not moz-extension://. Repro (real bundle, with+without fix) is byte-identical; the new test is tautological. Recommend closing #1207 + #53 as not-reproducible-via-this-vector.",
+      "created_at": "2026-06-20T23:49:18.396502872Z",
+      "kind": "note"
+    }
+  ]
+}

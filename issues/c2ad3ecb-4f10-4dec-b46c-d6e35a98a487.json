@@ -1,0 +1,24 @@
+{
+  "uuid": "c2ad3ecb-4f10-4dec-b46c-d6e35a98a487",
+  "display_id": 59,
+  "title": "Address Copilot review on PR #1202",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nPR: fix(example): use availWidth/availHeight for SetResolution clamping (follow-up to #1200)\nhttps://github.com/openwpm/OpenWPM/pull/1202\n\n## Unresolved Copilot review threads\n\n- `custom_command.py:57`\n\n  `execute_script` returns JSON-serialized JS numbers, which may come back as `float` (and could also be `Any`), but the helper is annotated as returning `tuple[int, int]`. Casting to `int` here keeps the runtime behavior consistent with the type hint and with the rest of the example (which treats these as pixel integers).\n\n- `custom_command.py:50`\n\n  Docstring references ``screen.availWidth``/``availHeight``; adding `screen.` to `availHeight` avoids ambiguity and matches the actual JS being executed.\n\n---\n\nVERIFY each claim before acting — Copilot is fallible (it once flagged a valid os.getenv(key, default=...) as a bug). If real -> fix + resolve the thread. If wrong -> post a reasoned rebuttal + resolve. Builder -> the-hater -> done; never blindly apply.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-21T00:27:59.879616218Z",
+  "updated_at": "2026-06-21T03:21:33.741692685Z",
+  "labels": [
+    "bug",
+    "pumpable"
+  ],
+  "comments": [
+    {
+      "uuid": "5faac630-a6f2-4d9e-9288-c6a21fb7cd72",
+      "author": "claude",
+      "content": "Worked both unresolved Copilot threads on PR #1202 (custom_command.py, fix/set-resolution-availwidth). Both verified REAL + low-risk; fixed in one edit, pushed (PR commit f24a79b3), threads resolved.\n\nThread 1 (line 57, 'cast to int'): VERDICT real → FIXED+RESOLVED. The helper is annotated -> tuple[int, int], but webdriver.execute_script returns Any, so width/height were unchecked Any flowing into a typed return. Copilot's literal 'may be float' claim is weak (screen.availWidth/availHeight are CSSOM 'long' integers, serialized without decimals → Selenium gives int at runtime), but the underlying point holds: nothing enforced the annotation. Changed 'return width, height' → 'return int(width), int(height)' — idiomatic defensive cast for execute_script results, makes runtime contract match the type hint. Zero behavior change for the real integer case.\n\nThread 2 (line 50, docstring screen. prefix): VERDICT real (trivial) → FIXED+RESOLVED. Docstring read 'screen.availWidth/availHeight'; qualified the second member → 'screen.availWidth/screen.availHeight' to match the executed JS. Pure doc clarity.\n\nVerification: pre-commit (black/isort/mypy) green on custom_command.py; no pyonly tests cover this example file (not imported by suite). Browser tests rely on CI per project policy.\n\nIsolation: edited only via .workspace/cp-1202; squashed into the PR commit within that workspace. Confirmed default @ (Stefan's fix/storage-forward-progress) still shows ONLY its 5 storage files — nothing leaked. Workspace will be cleaned up.",
+      "created_at": "2026-06-21T03:21:33.738718366Z",
+      "kind": "note"
+    }
+  ]
+}

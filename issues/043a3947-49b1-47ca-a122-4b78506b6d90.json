@@ -1,0 +1,33 @@
+{
+  "uuid": "043a3947-49b1-47ca-a122-4b78506b6d90",
+  "display_id": 23,
+  "title": "Add linter version drift detection to update.py and Release-Checklist.md",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-04-20T08:07:19.183480781Z",
+  "updated_at": "2026-04-20T08:07:19.183480781Z",
+  "comments": [
+    {
+      "uuid": "74ace6b5-6fd9-4f4b-81b0-1093705ccd5c",
+      "author": "4dpN",
+      "content": "Plan: Add sync_precommit_linter_versions() to scripts/update.py. Parses environment.yaml for black/isort/mypy versions, compares with .pre-commit-config.yaml revs, updates pre-commit to match conda. Regex-based to preserve formatting. Called after repin.sh, before npm bumps. Also update Release-Checklist.md.",
+      "created_at": "2026-04-20T08:09:59.291971547Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "2e92388f-6930-4e27-8818-fc7ea6a2301f",
+      "author": "4dpN",
+      "content": "[action] Implementing sync_precommit_linter_versions in update.py",
+      "created_at": "2026-04-20T08:10:18.068139296Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "f71b0f2d-be1e-43ca-a2be-c1ea75b76171",
+      "author": "4dpN",
+      "content": "Completed: Fixed Release-Checklist.md numbering, ran pre-commit (black reformatted update.py), committed, pushed, created PR #1165",
+      "created_at": "2026-04-20T08:54:26.579759360Z",
+      "kind": "handoff"
+    }
+  ]
+}

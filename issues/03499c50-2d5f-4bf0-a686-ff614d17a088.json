@@ -1,0 +1,26 @@
+{
+  "uuid": "03499c50-2d5f-4bf0-a686-ff614d17a088",
+  "display_id": 20,
+  "title": "Strip CL-9 from PR #1157 commit messages",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-04-19T21:36:00.712406002Z",
+  "updated_at": "2026-04-19T21:36:00.712406002Z",
+  "comments": [
+    {
+      "uuid": "9535978d-557a-418c-b47b-407bf60d639c",
+      "author": "um2t",
+      "content": "[action] Starting rebase to strip [CL-9] from commit messages",
+      "created_at": "2026-04-19T21:37:23.149581760Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "6d4b53cf-3094-453f-b035-b9056536a849",
+      "author": "um2t",
+      "content": "Completed: Stripped [CL-9] from 3 commit messages on feat/otel-tracing-v2 branch using git filter-branch. Force-pushed with --force-with-lease.",
+      "created_at": "2026-04-19T21:38:18.618087027Z",
+      "kind": "handoff"
+    }
+  ]
+}

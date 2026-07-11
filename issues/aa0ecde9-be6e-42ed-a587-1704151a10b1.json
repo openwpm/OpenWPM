@@ -1,0 +1,80 @@
+{
+  "uuid": "aa0ecde9-be6e-42ed-a587-1704151a10b1",
+  "display_id": 41,
+  "title": "Frictionless volunteer crawl fleet: one docker command -> remote public Postgres; study domestic-swarm vs GCP/AWS",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nStefan's deployment vision (2026-06-20), gated on #1161 (SQLAlchemy/Postgres provider) landing + verified for REMOTE use.\n\nTHE VISION: ~15-25 friends each run OpenWPM on their HOME machine by copy-pasting a SINGLE docker run command with NO local binds (no -v mounts). All crawl output streams to ONE publicly-reachable PostgreSQL instance. Zero local footprint / zero config for the volunteer.\n\nHEADLINE RESEARCH QUESTION: quantify how much running from a swarm of domestic/residential IPs changes measured results vs running on GCP/AWS (datacenter IPs) — tracker presence, cloaking, bot-walls/CAPTCHA, block rates, ad/content served, cookie+fingerprinting behavior.\n\nHARD REQUIREMENT + open architectural question: 'no local binds' means EVERY artifact must go to the remote DB, not just structured rows. OpenWPM unstructured data (response bodies, currently LevelDB on local disk) would still hit the local filesystem under #1161 alone (it is a STRUCTURED provider). To honor no-binds we must either (a) route unstructured content to the remote Postgres too (bytea / large objects), (b) route it to S3/GCS, or (c) disable unstructured capture. DECIDE this — it is the crux of the frictionless goal.\n\nOPS/SECURITY for a public Postgres: per-volunteer credentials/schema isolation, network exposure hardening, abuse/quota limits, TLS, and schema-version coordination across heterogeneous volunteer runs.\n\nARTIFACT: study design in datadir/study-design-crawl-deployment.md (worker in progress). Depends-on: #1161 lands + confirmed to accept a remote DSN and run with all-remote storage.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:11:23.725523528Z",
+  "updated_at": "2026-06-20T00:11:27.538218129Z",
+  "labels": [
+    "feature",
+    "pumpable"
+  ],
+  "comments": [
+    {
+      "uuid": "97e9db09-ded3-45b3-a692-188b380214fc",
+      "author": "claude",
+      "content": "Study additions (Stefan 2026-06-20):\n- 4TH DEPLOYMENT VANTAGE: a single chunky server hosted on a UNIVERSITY network. Distinct from datacenter (GCP/AWS), single-domestic, and the volunteer residential swarm — university IPs have their own reputation/egress profile (often institutionally trusted, static, but not residential). So the vantage axis is now: datacenter (GCP/AWS) vs single-domestic vs residential-volunteer-swarm vs university-server.\n- ANALYSIS METHODOLOGY: replicate the analysis from the stealth paper (Krumnow, Jonker, Karsch 2022, arXiv:2205.08890 — detectability / reliability / differential treatment of the measurement tool) ACROSS the vantages, to observe how much each vantage is detected/cloaked/served-differently. 'but maybe also more' = extend beyond their detection analysis to the broader tracking/differential measures. Note the leverage: the stealth instrument (#1154) removes the TOOL-detectability confound, so this study can isolate the VANTAGE-POINT effect cleanly — and a 2x2 of instrument(stealth/legacy) x vantage quantifies how much each axis contributes to measured differences.",
+      "created_at": "2026-06-20T00:13:53.603362979Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "bf681bbe-6cef-4e42-8261-0c5bc39081e5",
+      "author": "claude",
+      "content": "STORAGE DECISION (Stefan 2026-06-20): go DIRECT-to-public-Postgres (NOT edge-buffered split-sink). Trust model — volunteers are close friends, so the abuse/quota/credential-isolation hardening concern is WAIVED. Remaining technical (NOT solved by trust): (1) write-reliability of a direct DB connection over flaky home networks, (2) the unstructured-data-no-binds problem (response bodies must go to Postgres bytea / S3 / or be disabled). Relatedly, Stefan flagged a real forward-progress bug in the OLD parquet->S3 caching path (sites perpetually marked in-progress by the WQ but never committed/pushed) — investigating the StorageController's liveness guarantees separately.",
+      "created_at": "2026-06-20T00:17:46.499035425Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "7fd26c23-7a55-4ab1-b6d1-ba0d2772d528",
+      "author": "claude",
+      "content": "Study-design doc (datadir/study-design-crawl-deployment.md) updated: added 4th vantage (university server, H6), the Krumnow-2022 per-vantage tool-detectability replication + instrument×vantage 2×2 (§5.4), sharpened headline RQ to datacenter-vs-residential-swarm, and reframed §7.3 storage as an explicit Stefan decision — Option 1 direct-to-public-Postgres (this vision) vs Option 2 edge-buffered split-sink — incl. the no-binds unstructured-data sub-choice (bytea/S3/disable). Open Qs 6/11/12 now gate this issue.",
+      "created_at": "2026-06-20T00:21:22.050158037Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "82463887-b411-432c-aee4-97b4b30958c8",
+      "author": "claude",
+      "content": "Network-reliability assessment (Stefan + analysis, 2026-06-20): LOW risk of actually suffering. Volume trivial — 24GB/100k sites = ~240KB/site; ~1.2GB/volunteer over a multi-hour/day crawl = one ~240KB commit per ~10-30s per client. The only real failure mode is transient home-network disconnects, which degrade to RETRIES (not data loss) given (a) the StorageController commit-or-requeue forward-progress guarantee (worker in progress) + (b) a reconnect-with-backoff wrapper on the DB connection. No edge buffering needed -> reinforces the direct-to-Postgres decision.\n\nPER-CLIENT SHARDING (Stefan): generalize the parquet provider's per-instance sharding (arrow_storage.py:42,59 — self._instance_id = random.getrandbits(32), stamped on every record for partitioning) to the SQLAlchemy provider: add an instance_id column to every table, set per provider instance. Buys per-client isolation (no cross-client lock contention) AND fixes the per-node-sequential visit_id/browser_id collision across volunteers in one move. QUEUED to run on #1161 after the current deps+DSN-wiring worker lands (avoid same-branch push race).",
+      "created_at": "2026-06-20T00:24:46.146457924Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "ff1a9419-dab1-4952-a5ea-cb9dd623b922",
+      "author": "claude",
+      "content": "Fleet-enabling: SQLAlchemy provider now stamps a per-instance instance_id (mirrors parquet) and makes it part of composite PKs on client-keyed tables, so many volunteers can write to one Postgres without visit_id/browser_id collisions. Pushed on PR #1161 (feat/sqlalchemy-postgresql-v2, b97e0b96), MERGEABLE.",
+      "created_at": "2026-06-20T00:40:23.809943357Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "acc54bdc-4910-4173-ac35-c64f65bcda3e",
+      "author": "claude",
+      "content": "Research (datadir/research-self-hosted-object-storage.md) resolves the unstructured-data-no-binds sub-choice: route response bodies to a self-hosted S3-compatible store (option b). Recommendation: Garage (single 30MB binary, ~1GB RAM, AGPLv3) co-hosted with the public Postgres; SeaweedFS if scale grows. Integration is a near-drop-in CONFIG change (no provider code): OpenWPM's S3UnstructuredProvider forwards **kwargs to s3fs.S3FileSystem, which accepts endpoint_url. MinIO itself is dead upstream (repo archived Feb 2026) -- avoid. save_content resource-type whitelist + md5 dedup bound the footprint.",
+      "created_at": "2026-06-20T00:45:23.781283389Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "ab688307-516d-4b17-8482-7d8739795671",
+      "author": "claude",
+      "content": "Socket-reliability Phase 2 (relevant to the StorageController liveness/forward-progress investigation flagged 00:17): audited all 41 distinct wait/sleep/timeout/join sites in openwpm/ -> 28 KEEP (genuine hung-resource deadlines), 5 REPLACE wait-and-hope sites wireable to a real completion signal over the bidi socket chain, 4 MAYBE. Phase-3 fan-out = 5 workers (R1 Finalize-ack drain is the flagship; R2 deletes the #135 time.sleep(2) stopgap once R1 lands; R4 is the instrument-status signal-back). Full worklist in datadir/timeout-audit.md.",
+      "created_at": "2026-06-20T00:48:26.962911035Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "f6509caf-9785-46af-a0f4-5b3e8d2a5d1f",
+      "author": "claude",
+      "content": "Socket-reliability Phase 1 done: bidi finalize-ack work stacked on hardened sockets (#1180) as feat/bidi-on-hardening -> draft PR #1196. #1174's framing-safe ClientSocket.receive() is the canonical read path; #1129's data-socket back-channel (StorageController finalize_ack reply + DataSocket.finalize_visit_id_with_ack) landed as wired-but-uncalled infra for Phase 3 R1 to consume. #1129's TaskManager wiring was DROPPED + flagged needs-human: it assumed the abandoned refactor/event-driven-completion finalize path; on master finalize is FinalizeCommand->extension, not TaskManager. Phase 3 R1 must pick the call site.",
+      "created_at": "2026-06-20T00:58:28.370233183Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "b3a78004-213c-4f46-8591-9454fb9d822d",
+      "author": "claude",
+      "content": "OVERNIGHT AUTONOMOUS PUMP COMPLETE (2026-06-20). Autonomous queue DRAINED; everything remaining is needs-human.\n\nLANDED (PRs, all green/mergeable or draft-with-green-CI):\n- #1197 forward-progress fix (StorageController no longer strands visits / hangs shutdown on transient write errors; root-caused + Hypothesis property tests). Crosslink #48.\n- #1198 adversarial robustness suite — pipeline survives socket hostility/transient faults/malformed records; pinned real defects as xfail(strict): G1 (raising store_record strands visit→loss+hang), G1b (same raise tears down the shared DataSocket for the rest of the crawl), G2 (permanent write fault crashes controller mid-drain). G1/G2 may already be fixed by #1197. Crosslink #46.\n- #1196 bidi-on-hardening (bidi #1129 stacked on #1180; #1174's framing-safe receive() + finalize_visit_id_with_ack back-channel primitive).\n- #1161 SQLAlchemy/Postgres: verified-runnable + schema-fixed + deps/DSN-wired + per-client instance_id sharding (fleet-ready, MERGEABLE).\n- #1199 deterministic logger-socket drain (Phase-3 R5).\n\nDESIGNS/RESEARCH (datadir/): study (4 vantages + stealth×vantage 2x2), Postgres WQ (#42), self-hosted object storage (MinIO dead→Garage, zero-code endpoint_url integration), timeout audit (5 REPLACE → R1-R4 left needs-human).\n\nNEEDS-HUMAN for Stefan: close #1151(superseded)/#1037(dead); ADR #39 existential; 7 WQ decisions; 12 study Qs + gated-tail framing; unstructured-data sub-choice (Garage sign-off); R1-R4 socket call-site fork; adversarial G1/G1b/G2 robustness-fix design calls; review+merge the PRs above.",
+      "created_at": "2026-06-20T02:13:39.387320721Z",
+      "kind": "note"
+    }
+  ]
+}

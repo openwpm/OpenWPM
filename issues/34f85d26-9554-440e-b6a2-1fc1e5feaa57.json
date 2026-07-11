@@ -1,0 +1,61 @@
+{
+  "uuid": "34f85d26-9554-440e-b6a2-1fc1e5feaa57",
+  "display_id": 22,
+  "title": "Set up crosslink knowledge pages and design doc templates for recurring agent tasks",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-04-20T07:45:35.054763428Z",
+  "updated_at": "2026-04-20T07:45:35.054763428Z",
+  "comments": [
+    {
+      "uuid": "7269dcd7-9e0b-4e40-8075-0f732f238a0a",
+      "author": "8LcK",
+      "content": "Plan: 1) Create two knowledge pages (strip-references, pre-push-checklist) via crosslink knowledge add. 2) Create .design/templates/ directory with three template files (strip-references.md, fix-flaky-test.md, code-review-fix.md).",
+      "created_at": "2026-04-20T07:47:21.148022863Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "57357181-32a9-4bed-a9ea-cd8ce47f55bf",
+      "author": "8LcK",
+      "content": "[action] Creating strip-references knowledge page",
+      "created_at": "2026-04-20T07:47:52.259479167Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "489a3741-17af-4ed7-9c1a-29fc72ab6313",
+      "author": "8LcK",
+      "content": "[action] Creating pre-push-checklist knowledge page",
+      "created_at": "2026-04-20T07:48:19.210007134Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "ede27459-fcc3-4193-80f0-7a79872e3f07",
+      "author": "8LcK",
+      "content": "[action] Creating design doc templates in .design/templates/",
+      "created_at": "2026-04-20T07:48:44.434833297Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "4a9071b7-61ce-4463-9816-9bd5cdd11f03",
+      "author": "8LcK",
+      "content": "Result: Created 2 knowledge pages (strip-references, pre-push-checklist) and 3 design doc templates in .design/templates/ (strip-references.md, fix-flaky-test.md, code-review-fix.md).",
+      "created_at": "2026-04-20T07:49:37.729120568Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "f4050233-1ab8-43c7-9b1f-bd5f0b96df14",
+      "author": "8LcK",
+      "content": "Committed: docs: add design doc templates for recurring agent tasks | Files: 4 files changed, 125 insertions(+)",
+      "created_at": "2026-04-20T07:50:15.683377175Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "a20a102e-c45e-445d-921e-42770beddaf6",
+      "author": "8LcK",
+      "content": "Completed: Created 2 knowledge pages (strip-references, pre-push-checklist) and 3 design doc templates (.design/templates/strip-references.md, fix-flaky-test.md, code-review-fix.md). Committed as c969aad.",
+      "created_at": "2026-04-20T07:51:02.977633876Z",
+      "kind": "handoff"
+    }
+  ]
+}

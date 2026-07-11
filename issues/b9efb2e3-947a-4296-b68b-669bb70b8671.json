@@ -1,0 +1,36 @@
+{
+  "uuid": "b9efb2e3-947a-4296-b68b-669bb70b8671",
+  "display_id": 10,
+  "title": "Fix critical and major bugs in PR #1136 dynamic test ports refactor",
+  "status": "open",
+  "priority": "high",
+  "created_by": "refactor-ports",
+  "created_at": "2026-03-30T07:52:27.705739311Z",
+  "updated_at": "2026-03-30T07:52:29.404522944Z",
+  "labels": [
+    "bug"
+  ],
+  "comments": [
+    {
+      "uuid": "54912039-96f0-46c3-95ee-fde97f59f2a2",
+      "author": "refactor-ports",
+      "content": "Plan: (1) Add ServerUrls frozen dataclass to utilities.py without dead url()/base_noscheme methods, fix os.chdir to directory= param, use port 0. (2) Update conftest.py server fixture to yield ServerUrls. (3) Convert test_simple_commands.py to use dynamic URLs via server fixture, including the missed test_get_with_popup_blocking. Keep old constants in utilities.py for backward compat with other test files.",
+      "created_at": "2026-03-30T07:54:24.015038956Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "44525928-3187-477b-a0bf-34d0c1e4c0b0",
+      "author": "fix-ports-agent",
+      "content": "Plan: Fix 3 bugs from PR #1136 review: (1) CRITICAL: test_get_with_popup_blocking — add server: ServerUrls fixture param, replace url_a/url_b with dynamic construction using _url(server.base, ...). (2) MAJOR: start_server() — replace os.chdir() with SimpleHTTPRequestHandler directory= parameter to avoid global state mutation. (3) Remove dead code: ServerUrls.url() method and ServerUrls.base_noscheme property (never used anywhere).",
+      "created_at": "2026-03-30T08:05:17.207257666Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "39478ae9-c5e3-4ec0-b22d-b395bcf1409d",
+      "author": "fix-ports-agent",
+      "content": "Committed: fix(test): fix bugs in dynamic-port refactor from PR #1136 | Files: 2 files changed, 10 insertions(+), 14 deletions(-)",
+      "created_at": "2026-03-30T08:40:52.414376574Z",
+      "kind": "result"
+    }
+  ]
+}

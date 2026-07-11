@@ -1,0 +1,120 @@
+{
+  "uuid": "d950389a-9ae6-4caa-9b46-2981ff88eabd",
+  "display_id": 9,
+  "title": "PR #1087: Scoped OpenTelemetry integration",
+  "status": "open",
+  "priority": "low",
+  "created_by": "claude",
+  "created_at": "2026-03-29T22:33:47.584428689Z",
+  "updated_at": "2026-03-29T22:33:49.085359093Z",
+  "labels": [
+    "feature"
+  ],
+  "comments": [
+    {
+      "uuid": "eda1d1db-6fb6-4acb-ba3c-c8c52c7ac49e",
+      "author": "claude",
+      "content": "Design doc drafted: .design/otel-tracing.md — 0 open questions, ready for kickoff.",
+      "created_at": "2026-03-29T22:56:33.612212556Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "f12712c3-17b7-4fb9-b528-ac65837909ea",
+      "author": "claude",
+      "content": "Completed design passes for all 8 PRs (issues #1-9). 5 design docs written. 3 hater reviews done. Kickoff agents ready to launch for issues 4,5,6,7,9.",
+      "created_at": "2026-03-29T22:56:36.742037815Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "6ecadf92-0726-40f6-8a51-6b7898b7cd7c",
+      "author": "claude",
+      "content": "Design doc updated: full CommandSequence lifetime test via Jaeger testcontainer added as REQ-9/AC-8. testcontainers-python added to deps.",
+      "created_at": "2026-03-29T22:57:07.036454579Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "4e0fa0a0-f3f0-44cf-a785-d7a771c8d308",
+      "author": "otel-impl",
+      "content": "Committed: feat: add OpenTelemetry tracing support [CL-9] | Files: 9 files changed, 551 insertions(+), 178 deletions(-), 1 new file (test/test_otel.py)",
+      "created_at": "2026-03-30T08:42:55.424043580Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "2484a196-1438-4072-beb2-1b3671936b96",
+      "author": "otel-impl",
+      "content": "Committed: feat: add OpenTelemetry tracing support [CL-9] | Files: 9 files changed, 551 insertions(+), 178 deletions(-), 1 new file (test/test_otel.py)",
+      "created_at": "2026-03-30T08:42:58.480071440Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "9219aa39-d7ce-4258-8732-807a1b897fb1",
+      "author": "claude",
+      "content": "**Hater review of commit 6b7b0aa — Verdict: Broken**\n\n**CRITICAL (1):**\n- **No trace context propagation across process boundaries**: Each of the 3 processes (TaskManager, BrowserManager, StorageController) creates an independent TracerProvider with no inject()/extract() calls between them. Jaeger shows 3 disconnected trace trees. The entire value proposition — seeing the causal chain from command dispatch through browser execution to storage — is absent.\n\n**MAJOR (2):**\n- **request_handler span wraps entire socket connection lifetime** (storage_controller.py:106-162): Single span lives for the entire crawl (hours), useless for diagnostics and creating thousands of flat child spans.\n- **Test soft-fails silently**: if task_manager_service: and if storage_service: guards mean the test passes even when those services don't appear in Jaeger. The 5s sleep may not be enough to flush BatchSpanProcessor (default 5000ms interval).\n\n**MINOR (5):**\n- cast(dict[str, AttributeValue], table_entry) lies to the type checker\n- Span noise: post_cs_chores measures a sleep(2), shutdown sub-spans measure instant cancel() calls\n- os.environ mutation in test is not thread-safe and relies on fork semantics\n- No instrumentation of individual store_record database writes\n- Unrelated .gitignore/.pre-commit-config.yaml bundled in (repeat offense)\n\n**NITPICK (2):**\n- types-requests pinned without requests being a declared dependency\n- Module-scoped server fixture shadows session-scoped one from conftest",
+      "created_at": "2026-04-03T00:01:06.576441115Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "00d172c3-adc5-4800-9753-8057582af174",
+      "author": "fix-otel-propagation",
+      "content": "Plan: Fix cross-process OTel context propagation across TaskManager → BrowserManager (via command queue) and TaskManager → StorageController (via DataSocket). 4 changes: (1) inject/extract span context through command_queue tuples, (2) inject/extract context through DataSocket data dicts, (3) move request_handler span from connection-level to per-record level, (4) remove soft-fail guards in test. Key files: browser_manager.py, storage_controller.py, test_otel.py",
+      "created_at": "2026-04-03T00:14:15.148903991Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "6b2ed2f6-5245-441a-a995-6e099b2212b5",
+      "author": "fix-otel-propagation",
+      "content": "Decision: Used __otel_ctx key in data dicts for StorageController propagation rather than changing the socket tuple format — avoids breaking the (record_type, data) contract while keeping context extraction simple with data.pop()",
+      "created_at": "2026-04-03T00:17:45.503241345Z",
+      "kind": "decision"
+    },
+    {
+      "uuid": "e65dc5d4-712f-4a25-800c-01da519742e3",
+      "author": "fix-otel-propagation",
+      "content": "Result: Implemented cross-process OTel context propagation across all 3 processes. (1) TaskManager injects span context into command queue tuples, BrowserManager extracts and creates child spans around command.execute(). (2) DataSocket injects context into data dicts, StorageController extracts before per-record span. (3) Moved request_handler from connection-level to per-record process_record spans. (4) Test now asserts all 3 services present + verifies shared trace IDs for cross-process linking. Pre-commit passes.",
+      "created_at": "2026-04-03T00:17:52.250203997Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "4bb385db-45d0-4814-8d70-578c67a02cbc",
+      "author": "fix-otel-propagation",
+      "content": "Completed: Merged prior OTel implementation branch, then fixed cross-process span context propagation. Injected/extracted OTel context via command queue (TaskManager→BrowserManager) and DataSocket data dicts (TaskManager→StorageController). Moved request_handler span to per-record granularity. Hardened test to assert all 3 services and verify shared trace IDs. Pre-commit passes. Committed as f81766d.",
+      "created_at": "2026-04-03T00:18:23.458410851Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "de21251b-64ea-4b76-98c5-045b1e21f527",
+      "author": "fix-pendingresponse",
+      "content": "CONVERGED (VDD R2): All 3 R1 critical findings fixed — inject()/extract() across both process boundaries, per-record spans instead of per-connection, test hard-asserts all three services with shared trace IDs. Remaining: dead backward-compat else branch (cleanup, not functional), duplicate span names, __otel_ctx naming convention, sleep(5) race in test. Verdict: Begrudgingly Adequate. Ready for PR.",
+      "created_at": "2026-04-04T20:46:37.303825225Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "6f83ec37-5bdd-42d3-a397-07236afeab2c",
+      "author": "TqzF",
+      "content": "Completed: Fixed 4 Copilot findings — (1) UnboundLocalError for reset var in browser_manager.py, (2) TaskManager leak via context manager, (3) removed unused service_name, (4) replaced sleep(5) with 30s polling loop. Pre-commit all green.",
+      "created_at": "2026-04-05T12:47:05.251650527Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "5a22266b-2884-4f8a-8870-9f46cd75f40c",
+      "author": "claude",
+      "content": "VDD Copilot fix hater: Begrudgingly Adequate. reset=False fix correct, context manager correct, dead var removed, polling loop replaces sleep. BUT Major: polling loop break condition only checks BrowserManager-*, not openwpm-task-manager or StorageController. Race: loop exits early, subsequent assertions fail. Fix: break when ALL THREE services present. Needs one more round.",
+      "created_at": "2026-04-05T17:30:18.071819923Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "cfcfe6cf-e6db-4e63-a218-b0a53f5b301c",
+      "author": "7oYD",
+      "content": "Completed: Fixed polling loop race condition in test/test_otel.py. The break condition now requires all three OTel services (BrowserManager-*, openwpm-task-manager, StorageController) to be present in Jaeger before exiting the loop, preventing assertions from failing when BrowserManager appears before the others.",
+      "created_at": "2026-04-05T17:32:37.401531085Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "fb2fd95c-ed3a-4a66-8060-e3b7c213cc63",
+      "author": "claude",
+      "content": "CONVERGED (VDD final): Polling race fixed — break condition now requires all 3 services. Hater verdict: '...Fine.' No issues found. Ready for PR update.",
+      "created_at": "2026-04-05T18:47:23.721775440Z",
+      "kind": "note"
+    }
+  ]
+}

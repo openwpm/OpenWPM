@@ -1,0 +1,41 @@
+{
+  "uuid": "aa835c8d-85ff-4de7-a2f4-c9200982c9cf",
+  "display_id": 48,
+  "title": "StorageController forward-progress / liveness",
+  "description": "## Summary\n\nInvestigated and fixed a forward-progress / liveness bug in the\n`StorageController`: visits could be stranded **perpetually in-progress** --\nrecords cached but never committed and never marked incomplete -- so the visit\nreached no terminal state and the work-queue client never saw completion. Seen\nin production parquet->S3 crawls.\n\n## Root cause (confirmed by reproduction)\n\nA single **transient** structured-storage write error (e.g. an S3 PutObject\nfailure) was fatal to forward progress:\n\n- `openwpm/storage/arrow_storage.py` `flush_cache`: wrote batches table-by-table\n  and only afterwards cleared `_batches` / set the per-finalize `flush_events`.\n  A `write_table` exception partway through stranded the cached records and left\n  the finalize tokens unresolved -> visits perpetually in-progress.\n- `openwpm/storage/storage_controller.py` `save_batch_if_past_timeout`: the only\n  periodic flush driver during a live crawl, with no try/except around\n  `flush_cache`. One transient error killed the coroutine permanently -> no more\n  flushes -> finalized visits never flushed.\n- `storage_controller.py` `shutdown`: unguarded final drain flush; a transient\n  error aborted the drain and could deadlock on the never-resolving token.\n\nConfirmed via direct in-process reproduction: a `write_table` that fails once\nleaves `token.done() == False` forever and kills the timeout-flush task.\n\n## Fix (PR #1197, branch `fix/storage-forward-progress`)\n\n- `ArrowProvider.flush_cache` made atomic: write all tables, then (only on full\n  success) clear batches and set events; on failure keep both and re-raise so a\n  later flush retries cleanly.\n- `save_batch_if_past_timeout` survives transient flush errors (log + retry next\n  tick).\n- Shutdown drain flush retried a bounded number of times (`SHUTDOWN_FLUSH_RETRIES`).\n\n## Property tests (deliverable)\n\n`test/storage/test_storage_controller_liveness.py` -- Hypothesis tests over\narbitrary interleavings (start / finalize success/failure / never-finalize /\nconcurrent visits / transient write failures), asserting invariants I1-I4\n(committed-on-success, terminal-state-or-not-stranded, shutdown-drains,\nbounded-cache). `test_forward_progress_survives_transient_write_failures`\nreproduces the original bug (red pre-fix, green post-fix). All 4 green; existing\nstorage tests unaffected; `jj-precommit` (isort/black/mypy) green.\n\n## Documented contract boundary (needs-human-awareness, not a defect)\n\nA visit that emits **zero** records **and** is never finalized is invisible to\nthe `StorageController` -- it has nothing to key on. Driving such a\nclaimed-but-silent visit to a terminal state is the **work-queue client's**\nresponsibility (e.g. a visit-claim timeout). The tests encode this boundary.\n\n## Status\n\nFixed and landed as draft PR #1197. Property tests are the executable spec of\nthe forward-progress guarantee.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-20T01:13:17.893686305Z",
+  "updated_at": "2026-06-20T01:30:03.962935169Z",
+  "labels": [
+    "pumpable"
+  ],
+  "related": [
+    "5509dee6-1327-4bd4-a31b-6788b8b85575",
+    "ab506265-7418-4bd7-bee8-6c761485052c"
+  ],
+  "comments": [
+    {
+      "uuid": "340acae1-cb57-478b-8044-509b538952fa",
+      "author": "claude",
+      "content": "Draft PR: https://github.com/openwpm/OpenWPM/pull/1197 (branch fix/storage-forward-progress). Files: openwpm/storage/arrow_storage.py (atomic flush_cache), openwpm/storage/storage_controller.py (timeout-flush survives errors + bounded shutdown retries), test/storage/test_storage_controller_liveness.py (4 Hypothesis property tests). All green; jj-precommit clean.",
+      "created_at": "2026-06-20T01:13:30.353799966Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "83127fb0-c1a4-40db-8c3c-cb2c7219d5fe",
+      "author": "claude",
+      "content": "",
+      "created_at": "2026-06-20T01:30:25.576837403Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "811c57ba-b30a-40c6-844b-e19280b3117f",
+      "author": "claude",
+      "content": "[independent re-validation] Picked this up fresh from master (unaware the fix already existed) and reproduced + re-validated. Pre-fix the 4 Hypothesis liveness tests reproduce the bug; minimal counterexample for the transient case: plan=[(1,1,\"success\")], fail_writes=1 -- one visit, one record, finalize(success), first write_table raises -> visit never reaches the completion queue, batch left in _batches, per-finalize flush_events never fire so the token never resolves, and the RuntimeError escapes shutdown before the completion-queue puts run. Post-fix (branch fix/storage-forward-progress): all 4 invariants green (4 passed in 4.55s, hypothesis 6.155.6). Confirmed the atomic flush_cache + bounded shutdown retry + survive-transient-error in save_batch_if_past_timeout correctly upholds I1-I4 -- fix is correct and complete. Independently rediscovered the documented contract boundary (zero-record never-finalized visit is invisible to the controller -> WQ client responsibility) and the multiprocess.Queue feeder-thread lag (item not visible to empty()/get() immediately after put(); production unaffected via repeated get_new_completed_visits polling). Linked #28/#30: SAME bug class -- a structured-storage write error that should be loud instead causes silent data loss. Here it escaped and aborted the drain (stranded visit); in #28/#30 the SQLite provider catches and silently drops the record. Same fix family: surface the error, guarantee a terminal state, never swallow or strand. #28/#30 remain to be addressed in the SQLite/SQLAlchemy provider.",
+      "created_at": "2026-06-20T01:30:45.353223689Z",
+      "kind": "note"
+    }
+  ]
+}

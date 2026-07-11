@@ -1,0 +1,64 @@
+{
+  "uuid": "c2f18a88-4151-4289-8087-5f73d8317a93",
+  "display_id": 15,
+  "title": "Flaky test: test_cache_hits_recorded wrong cache counts",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-04-08T12:37:08.645397437Z",
+  "updated_at": "2026-04-08T12:37:10.431009022Z",
+  "labels": [
+    "bug"
+  ],
+  "comments": [
+    {
+      "uuid": "0e200d21-7e25-4928-a9f3-2b358dc14a79",
+      "author": "claude",
+      "content": "GitHub issue: openwpm/OpenWPM#1162. Intermittent cache count mismatch — resources report 1 cache hit when 0 expected. Fails on master and all PRs.",
+      "created_at": "2026-04-08T12:37:12.170838167Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "5f8dc890-c61f-4463-aadf-e7e6d7e4d336",
+      "author": "bNj3",
+      "content": "[action] Reading test code, test server, and Firefox config",
+      "created_at": "2026-04-08T12:38:18.602008458Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "18b4fbc5-6e4c-47e5-8069-5bc4694ea20c",
+      "author": "bNj3",
+      "content": "[action] Writing root cause analysis",
+      "created_at": "2026-04-08T13:01:06.921538602Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "a4b5bba8-8992-43a4-b2ae-6e841e4f6313",
+      "author": "bNj3",
+      "content": "Root Cause Analysis: test_cache_hits_recorded flakiness\n\nThe test is flaky due to non-deterministic cache behavior caused by two interacting issues:\n\n1. NON-DETERMINISTIC IMAGE/MEMORY CACHE ISOLATION BETWEEN TABS\n\nThe tab_restart_browser() uses webdriver.switch_to.new_window(\"tab\") to create a new tab. The expected test data (HTTP_CACHED_REQUESTS, lines 412-447) includes entries for test_style.css, test_image.png, test_image_2.png that should fire webRequest events because the new tab's image cache is isolated from the old tab. However, Firefox's image cache isolation between new_window tabs is not guaranteed. When images ARE shared across tabs, resources get served from memory cache WITHOUT webRequest events, causing MISSING entries in the observed set.\n\n2. NO EXPLICIT CACHE-CONTROL HEADERS\n\nThe test server (SimpleHTTPRequestHandler) sends Last-Modified but NO Cache-Control headers. Firefox uses heuristic caching: freshness_lifetime = (date - last_modified) * 10%. In CI with freshly checked out files (recent mtime), near-zero freshness lifetime causes Firefox to revalidate. Whether fromCache is true/false for 304-revalidated responses is implementation-dependent.\n\n3. CONTRIBUTING: ASYNC HANDLER RACE CONDITION\n\nExtension HTTP handlers (onCompletedHandler at http-instrument.ts:608) are async functions that await browser.tabs.get(tabId) BEFORE calling saveRecord(). saveRecord stamps records with CURRENT visitID global, not the visitID at event time. If browser.tabs.get() for a closing tab resolves late, the handler may stamp visit-1 data (is_cached=0) with visit-2's visit_id, creating spurious entries.\n\nKey: No Firefox cache prefs are set (browser.cache.disk.enable etc all defaults), and no try-catch around browser.tabs.get() in handlers.\n\nSuggested fixes: (1) Add Cache-Control: max-age=3600 to test server responses (2) Set Firefox cache prefs to make behavior deterministic (3) Capture visitID at event time in extension handlers.",
+      "created_at": "2026-04-08T13:01:49.652941685Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "8bca83b9-48e8-41bd-b87b-699122f54f03",
+      "author": "bNj3",
+      "content": "Completed: Root cause analysis of test_cache_hits_recorded flakiness. Three interacting causes identified: (1) non-deterministic image cache isolation between new_window tabs, (2) no Cache-Control headers from test server causing heuristic caching, (3) async handler race condition in extension with visitID stamping. Research only, no code changes.",
+      "created_at": "2026-04-08T13:02:05.677658049Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "baff0f3d-ef4f-4aa2-928a-b6790b3bc799",
+      "author": "claude",
+      "content": "PUMP-CLAIMED: user notes the FF caching behavior is not guaranteed + a prior Moz-central investigation was inconclusive. Dispatching an INVESTIGATION agent to post a detailed report on GH #1162 so we can DECIDE whether retry is the correct approach. Key angles: (1) can FF cache prefs make cause-1 (tab image/memory cache sharing) deterministic; (2) can the test be RESTRUCTURED to tolerate cache-nondeterminism (assert only deterministic parts, like #1163's DNS approach); (3) the cause-3 visitID data-corruption race is a SEPARATE real bug to fix regardless of the retry decision.",
+      "created_at": "2026-06-14T22:09:58.328819919Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "6a39fac4-c930-455d-966b-f3b80b0dbcfc",
+      "author": "claude",
+      "content": "Posted detailed investigation report to GH #1162: https://github.com/openwpm/OpenWPM/issues/1162#issuecomment-4703240780\n\nKey findings: (1) Cause-2 Cache-Control is NOT a fix — already tried+reverted (commit 709c4ca1), made flakiness WORSE (3/8 vs 7/8). (2) Cause-1 image/memory-cache-across-tabs is genuinely uncontrollable via FF prefs (no pref forces a webRequest for memory-cache-served images; HTTP-cache prefs don't touch imgLoader). (3) Cause-3 visitID race CONFIRMED in code — saveRecord stamps a mutable global after an unguarded 'await browser.tabs.get', a real PRODUCTION data-corruption bug. Recommendation: fix Cause-3 (event-time visit_id capture) + restructure assertions to deterministic invariants/ranges (like DNS); a bare retry would mask Cause-3. Empirical run skipped (port 8000 busy).",
+      "created_at": "2026-06-14T22:13:30.859748402Z",
+      "kind": "note"
+    }
+  ]
+}

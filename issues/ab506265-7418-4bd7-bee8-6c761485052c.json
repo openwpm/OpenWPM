@@ -1,0 +1,11 @@
+{
+  "uuid": "ab506265-7418-4bd7-bee8-6c761485052c",
+  "display_id": 28,
+  "title": "SQLiteStorageProvider silently drops records for tables/columns not in schema.sql",
+  "description": "Steps to reproduce:\n1. \n\nExpected: \nActual: \n\nstore_record -> _generate_insert builds 'INSERT INTO <table>' dynamically, but tables are only created from schema.sql at init (_create_tables). A record for an undefined table or column raises OperationalError, which store_record CATCHES and logs as 'Unsupported record' -- the record is silently DROPPED, no table created. For a measurement framework this masks data loss as a log line. Contrast: MemoryStructuredProvider.store_record appends to a defaultdict keyed by table, accepting any table dynamically. Decide: (a) make the drop loud/counted/surfaced at crawl end, (b) raise a clear error specifically for 'no such table' (a programmer error) while still tolerating transient per-record issues, or (c) restore dynamic table creation. Surfaced while evaluating routing stealth detection results (PR #1154) to a new table via the storage provider.",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-06-14T20:51:47.734646696Z",
+  "updated_at": "2026-06-14T20:51:47.734646696Z"
+}

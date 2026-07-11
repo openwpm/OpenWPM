@@ -1,0 +1,31 @@
+{
+  "uuid": "4025dc0a-d135-4207-8cc7-0d83eddae4cf",
+  "display_id": 45,
+  "title": "Socket-reliability thread: bidi-on-hardening + echo-mode wire tests + timeout->signal removals",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\n3 phases. P1: rebase bidi #1129 onto hardened #1180, reconcile finalize-ack w/ #1174 -> branch feat/bidi-on-hardening (gives the completion back-channel). P2: audit ~116 timeout/sleep sites (datadir/timeout-audit.md) -> KEEP-deadline vs REPLACE-with-signal. P3 (blocked by P1+P2): fan out one branch+worker per REPLACE spot, swapping wait-and-hope timeouts for completion signals through the chain. Also: leverage echo_mode to exhaustively property-test/fuzz the wire protocol.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:17.252543171Z",
+  "updated_at": "2026-06-20T00:48:21.195217940Z",
+  "labels": [
+    "feature",
+    "pumpable"
+  ],
+  "comments": [
+    {
+      "uuid": "ca7d4a62-89cd-4991-adf0-226c71a852a9",
+      "author": "claude",
+      "content": "Phase-1 DONE: feat/bidi-on-hardening → draft PR #1196 (stacks on #1180). #1174 & #1129 = two finalize-ack channels at different layers (control-socket extension→BM ack vs data-socket SC→client ack); kept #1174's framing-safe receive(), adapted #1129's finalize_visit_id_with_ack onto it. Back-channel primitive for Phase-3: DataSocket.finalize_visit_id_with_ack(visit_id, success, timeout) blocks on ClientSocket.receive(). NEEDS-HUMAN: the data-socket back-channel is wired-but-UNCALLED — #1129's TaskManager call-site was dropped (depended on an abandoned branch; on master FinalizeCommand→extension sends finalize). R1 (finalize-ack drain) likely OVERLAPS #1174's already-landed FinalizeCommand-blocks-on-ack — needs a human to (a) confirm R1 isn't already done by #1174 and (b) pick the data-socket call-site. R2/R3/R4 entangle with this. Only R5 (logger-socket drain, mp_logger.py:229) is a clean independent autonomous unit.",
+      "created_at": "2026-06-20T01:00:51.972615953Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "be991530-cbac-420f-a6f8-598aec3f1ce2",
+      "author": "claude",
+      "content": "Phase-3 R5 landed as draft PR #1199: replaced the time.sleep(3) logger-socket drain in mp_logger.py with ServerSocket.shutdown() — a deterministic close-and-await-drain that wakes the accept loop, forces blocked recv() handlers to EOF, and joins all handler threads so the queue holds every fully-received record before draining. No lost tail records, no fixed wait. 7 logging unit tests pass (incl. a new test/test_socket_interface.py), pre-commit green. Self-contained, independent of the bidi back-channel; R1-R4 untouched.",
+      "created_at": "2026-06-20T02:12:15.492344573Z",
+      "kind": "result"
+    }
+  ]
+}

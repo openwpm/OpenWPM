@@ -1,0 +1,24 @@
+{
+  "uuid": "89a5902f-c760-4d79-aace-b21f94b0ceba",
+  "display_id": 73,
+  "title": "Fix numeric JS-call arguments captured as strings in serializeObject",
+  "status": "closed",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-07-11T13:26:11.520238251Z",
+  "updated_at": "2026-07-11T13:34:02.086533936Z",
+  "closed_at": "2026-07-11T13:34:02.086532102Z",
+  "labels": [
+    "bug"
+  ],
+  "comments": [
+    {
+      "uuid": "759db41c-a097-4b2c-a7be-f842a348a984",
+      "display_id": 279,
+      "author": "claude",
+      "content": "Delivered: reverted the strict-mode String(object) coercion in serializeObject (Extension/src/lib/js-instruments.ts) that was capturing numeric JS-call arguments as strings ([125,1,62,20] -> [\"125\",...]), failing test_canvas_fingerprinting deterministically. Fix is 'return object as string' — compile-time-only cast that restores master's exact runtime (raw primitive flows to transport JSON.stringify) while staying TS6-strict-clean; added a comment so a future strict pass doesn't re-introduce it. Verified: tsc 0 at #1195 and at the stealth tip, eslint 0. Also removed build-artifact pollution (bundled/stealth.js) + crosslink state (.active-issue) that an auto-snapshot had absorbed into #1195. Re-pushed all 3 stacked branches; CI re-running.",
+      "created_at": "2026-07-11T13:33:56.588854514Z",
+      "kind": "result"
+    }
+  ]
+}

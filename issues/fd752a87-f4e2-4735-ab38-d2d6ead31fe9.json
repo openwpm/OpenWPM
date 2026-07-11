@@ -1,0 +1,71 @@
+{
+  "uuid": "fd752a87-f4e2-4735-ab38-d2d6ead31fe9",
+  "display_id": 3,
+  "title": "PR #1151: Dynamic CI test duration tracking",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-03-29T20:48:59.561711496Z",
+  "updated_at": "2026-03-29T20:49:01.194560956Z",
+  "labels": [
+    "feature"
+  ],
+  "comments": [
+    {
+      "uuid": "17d4f419-67cc-407e-82b8-15ea62c83cfa",
+      "author": "claude",
+      "content": "**Hater review of PR #1151 (dynamic CI test durations):**\n\nVerdict: Mediocre. Data flow and consolidation design are correct, but two real issues:\n\n1. `.test_durations_group_*` and `.test_durations_cached` are NOT in `.gitignore` — local devs running `GROUP=1 SPLITS=7 ./scripts/ci.sh` will get untracked dotfiles, one `git add .` away from being committed.\n\n2. The `GROUP` env var gate is insufficient — hook writes files whenever `GROUP` is set, no check for `CI` or `GITHUB_ACTIONS`. Since `GROUP` is the local split-testing knob, this silently pollutes working directories for local developers.\n\nAlso: orphaned entries grow forever (minor), debug commit in branch history (sloppy), `$TESTS` unquoted (inherited debt).",
+      "created_at": "2026-03-29T20:53:15.688048529Z",
+      "kind": "review"
+    },
+    {
+      "uuid": "c9dedcb6-ad07-44b9-87e9-f717ee3b8a7b",
+      "author": "claude-worktree",
+      "content": "Decision: Used CI env var (set by GitHub Actions) rather than GITHUB_ACTIONS specifically — CI is the standard convention and works across CI providers",
+      "created_at": "2026-03-30T07:52:31.134711141Z",
+      "kind": "decision"
+    },
+    {
+      "uuid": "2a691c77-4cc6-4510-8df5-98ab02a06fc2",
+      "author": "claude-worktree",
+      "content": "Committed: feat(ci): dynamic test duration tracking with CI-only guard (33add8b) | Files: 4 files changed, 124 insertions(+), 2 deletions(-)",
+      "created_at": "2026-03-30T07:53:00.176608518Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "da386e17-e88c-4104-8396-dd9d7f3f477c",
+      "author": "fix-pr1151",
+      "content": "Plan: (1) Need user to run 'git merge origin/dynamic-test-durations' since merge is blocked by hooks. (2) Add .test_durations_group_* and .test_durations_cached to .gitignore. (3) Gate conftest.py pytest_sessionfinish on GITHUB_ACTIONS env var so duration files aren't written locally. (4) Run pre-commit.",
+      "created_at": "2026-03-30T08:05:12.374409098Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "6124e757-8a2a-4ba6-80f1-6ae59c0d056b",
+      "author": "fix-pr1151-bugs",
+      "content": "Plan: Two fixes needed. (1) Add .test_durations_cached and .test_durations_group_* to .gitignore — these are generated files from CI duration tracking. (2) Change conftest.py pytest_sessionfinish to gate on CI env var instead of GROUP, since GROUP is also set when running ci.sh locally.",
+      "created_at": "2026-04-02T23:58:28.793313556Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "4a74a030-43fe-4734-8bad-cd0204e80d10",
+      "author": "fix-pr1151-bugs",
+      "content": "Result: Fixed both bugs — (1) added .test_durations_cached and .test_durations_group_* to .gitignore, (2) gated conftest.py duration file writing on CI env var so it only triggers in GitHub Actions, not local ci.sh runs. Pre-commit passes clean.",
+      "created_at": "2026-04-03T00:00:04.315284165Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "81a20e3c-f50c-45e7-82cf-c3b9fcd69351",
+      "author": "fix-pr1151-bugs",
+      "content": "Completed: Fixed two bugs in PR #1151 dynamic CI test duration tracking. (1) Added .test_durations_cached and .test_durations_group_* to .gitignore. (2) Changed conftest.py pytest_sessionfinish to gate on CI env var instead of GROUP. Pre-commit passes clean. Committed as e3c986c.",
+      "created_at": "2026-04-03T00:00:19.054045321Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "fec9138c-6c5d-4965-99c2-2c17cc05f34c",
+      "author": "claude",
+      "content": "**Hater review of fix commit e3c986c — Verdict: Begrudgingly Adequate**\n\nBoth reported bugs correctly fixed:\n- CI env var gate (conftest.py:29): os.environ.get('CI') is correct — GitHub Actions sets it unconditionally, prevents local pollution when GROUP is set manually\n- .gitignore patterns: .test_durations_cached and .test_durations_group_* match exactly the generated filenames without accidentally matching .test_durations (the committed baseline)\n\nRemaining issues from original PR NOT addressed by this fix:\n- Debug commit d227d03 ('debug: add logging to duration recording hooks') still in branch history — must be squashed before merge\n- Unquoted $TESTS on line 21 of scripts/ci.sh — pre-existing word-splitting hazard\n- .gitignore Crosslink entries bundled in again (5th consecutive PR with this pattern)\n\nFix is minimal, correct, and addresses both hater findings. Ship after squashing the debug commit.",
+      "created_at": "2026-04-03T00:13:31.549823875Z",
+      "kind": "note"
+    }
+  ]
+}

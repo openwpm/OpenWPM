@@ -1,0 +1,99 @@
+{
+  "uuid": "e90205fa-fd30-4437-aa27-ffe3fc662c41",
+  "display_id": 13,
+  "title": "DNS instrument: capture failed resolutions via onErrorOccurred",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-04-05T17:43:49.138496014Z",
+  "updated_at": "2026-04-05T17:43:50.754056149Z",
+  "labels": [
+    "feature"
+  ],
+  "comments": [
+    {
+      "uuid": "f58d9bea-d54c-444d-bf0a-7a4765587095",
+      "author": "claude",
+      "content": "## Scope\n\nAdd an onErrorOccurred listener to dns-instrument.ts that writes a dns_responses row for failed DNS resolutions. Failed lookups (NXDOMAIN, timeouts, SERVFAIL) are invisible to the DNS instrument because onHeadersReceived never fires when DNS fails. For large-scale crawls, failed resolutions are a meaningful signal (dead domains, censorship, misconfiguration).\n\n## Acceptance Criteria\n\n- Register browser.webRequest.onErrorOccurred listener in dns-instrument.ts\n- On DNS-related errors (dnsNotFound, netTimeout where DNS is the cause), write a dns_responses row with addresses=NULL, used_address=NULL, and the error code\n- example.invalid must be captured as a failed resolution in the dns_responses table (reserved domain, guaranteed NXDOMAIN per RFC 2606)\n- Add a test that navigates to http://example.invalid/ and asserts a dns_responses row exists with NULL addresses and an error indicator\n- Schema update: add an error column (TEXT, nullable) to dns_responses in schema.sql, parquet_schema.py, and schema.ts\n- Existing successful DNS resolution behavior must not change\n\n## Context\n\nPR #1158 moved DNS capture to onHeadersReceived for redirect chain support. This extends coverage to the failure case. Can be a follow-up PR or folded into #1158.",
+      "created_at": "2026-04-05T17:44:03.018360178Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "93aaaf30-abd0-4806-8479-19563b5832cd",
+      "author": "claude",
+      "content": "GitHub issue: openwpm/OpenWPM#1159",
+      "created_at": "2026-04-05T17:44:42.331453772Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "462563da-a79c-4b52-a7ad-3eaac1958861",
+      "author": "CP9M",
+      "content": "Plan: Add DNS failure capture via onErrorOccurred. Key files: dns-instrument.ts, schema.ts, schema.sql, parquet_schema.py, test_values.py, test_dns_instrument.py. Strategy: filter for NS_ERROR_UNKNOWN_HOST in onErrorOccurred, write dns_responses row with null addresses and error string.",
+      "created_at": "2026-04-08T19:57:01.084728212Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "d672b2ed-2622-495b-943b-a3b35f068b55",
+      "author": "CP9M",
+      "content": "[action] Implementing schema changes and dns-instrument.ts onErrorOccurred listener",
+      "created_at": "2026-04-08T19:57:11.435399308Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "84684c74-9674-4ba1-8fc0-901661b4071f",
+      "author": "CP9M",
+      "content": "Result: All 3 DNS instrument tests pass (test_name_resolution, test_dns_captured_on_connection_abort, test_dns_failure_captured). All 10 storage tests pass. Extension builds successfully. Pre-commit checks all pass.",
+      "created_at": "2026-04-08T20:09:26.883961659Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "57eae30b-75b5-4d21-b984-efada3036f98",
+      "author": "CP9M",
+      "content": "Completed: DNS failure capture via onErrorOccurred. Added onErrorOccurred listener to dns-instrument.ts filtering for NS_ERROR_UNKNOWN_HOST, new 'error' column in all schema files (SQLite, Parquet, TypeScript), test_values.py updated, new test_dns_failure_captured test using example.invalid. All 3 DNS tests and 10 storage tests pass. Pre-commit clean.",
+      "created_at": "2026-04-08T20:10:18.131840665Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "f89a7d98-6c1f-4844-96dc-8cad4dbb3fb6",
+      "author": "claude",
+      "content": "CONVERGED (VDD R1): Hater verdict Begrudgingly Adequate. Implementation correct — listener registration, cleanup, error filtering, schema sync across all three files, test with example.invalid all sound. Minors: new URL() can throw on malformed URLs (no handler), test doesn't assert error string content, redirect_url naming perpetuated. No blocking issues.",
+      "created_at": "2026-04-15T09:00:39.446961189Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "5a9337fd-95ce-4851-90f0-9cbebad2c368",
+      "author": "hrpZ",
+      "content": "[action] Implementing wrapper type and expanding DNS error filter",
+      "created_at": "2026-04-15T09:48:23.628811645Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "e817eb24-715c-4fa8-af31-6dee1e6b6d41",
+      "author": "hrpZ",
+      "content": "Completed: Added WebRequestOnErrorOccurredDetails type alias wrapper, replaced direct underscore-prefixed type usage in dns-instrument.ts, added NS_ERROR_NET_TIMEOUT to DNS error filter for timeout capture.",
+      "created_at": "2026-04-15T09:50:09.511008536Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "e5b0dd97-dfab-49f8-bee6-5849f174cad5",
+      "author": "claude",
+      "content": "VDD Copilot fix hater: Major finding — NS_ERROR_NET_TIMEOUT is a generic network timeout (TCP/TLS/HTTP), not DNS-specific. Adding it to DNS_ERROR_STRINGS pollutes dns_responses with non-DNS failures. Either find a Firefox-specific DNS timeout error string, or remove it and keep only the NXDOMAIN errors. Needs fix.",
+      "created_at": "2026-04-15T10:47:48.278025354Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "a0dc451d-1226-4a57-8585-84f66f4e03c2",
+      "author": "Mp1e",
+      "content": "[action] Fixing DNS_ERROR_STRINGS: removing NS_ERROR_NET_TIMEOUT (generic timeout, not DNS-specific)",
+      "created_at": "2026-04-15T10:49:30.495692167Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "acb6efe3-0b35-4f0e-8ddc-d3967ab1af4b",
+      "author": "Mp1e",
+      "content": "Completed: Removed NS_ERROR_NET_TIMEOUT and NS_ERROR_DNS_RESOLVE_UNKNOWN_HOST from DNS_ERROR_STRINGS. NS_ERROR_NET_TIMEOUT is a generic network timeout (false positive for DNS). NS_ERROR_DNS_RESOLVE_UNKNOWN_HOST doesn't exist in Firefox. Only NS_ERROR_UNKNOWN_HOST remains. Added explanatory comment. Research saved to knowledge page firefox-dns-errors.",
+      "created_at": "2026-04-15T10:51:08.142958318Z",
+      "kind": "handoff"
+    }
+  ]
+}

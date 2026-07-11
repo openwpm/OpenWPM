@@ -1,0 +1,28 @@
+{
+  "uuid": "76577e94-68b1-4678-be46-94ea47f749db",
+  "display_id": 47,
+  "title": "Run the 4-vantage measurement study (datacenter vs swarm vs domestic vs university)",
+  "description": "Goal: \n\nAcceptance criteria:\n- \n\nExecute the study designed in datadir/study-design-crawl-deployment.md once the deployment is runnable. Headline RQ: quantify domestic-swarm vs GCP/AWS. Includes the stealth x vantage 2x2 detectability replication. Blocked by the fleet entrypoint being runnable.",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-06-20T00:48:30.833745137Z",
+  "updated_at": "2026-07-02T23:52:47.573371640Z",
+  "labels": [
+    "feature",
+    "pumpable"
+  ],
+  "blockers": [
+    "0e4e2876-2826-4123-88b1-78fa2cbf6737"
+  ],
+  "comments": [
+    {
+      "uuid": "d77ae179-d7e0-461c-917e-2aec6b2e335f",
+      "display_id": 276,
+      "author": "claude",
+      "content": "REFINEMENT (Stefan) — display-mode as a factor + ablation-from-most-realistic (full text: datadir/study-design-crawl-deployment.md §12).\n\nOnce stealth (#1154) lands: (step 0) reuse Krumnow et al. 2022 (arXiv:2205.08890) reliability/detectability method to measure stealth effectiveness vs the legacy positive control. Then reframe the study as an ABLATION from the single most-realistic config, elevating render/display mode to a first-class factor.\n\nThree factors (deviations from realism):\n1. Render/display mode: native (real GUI) / xvfb (SW-rendered) / headless. CANDIDATE 4TH = headless-Wayland (MOZ_ENABLE_WAYLAND on a headless compositor like cage/Weston-headless) — gives real GPU/compositor rendering without a display, closer to native than xvfb (which exposes SwiftShader/WebGL-renderer tells). [OPEN] confirm path + fingerprint vs native.\n2. Vantage: residential multi-machine (fleet) / residential single-machine / university single-machine / cloud.\n3. Instrument: stealth vs legacy — BOTH with navigator.webdriver=false (webdriver-hiding is a shared baseline knob, not the instrument choice; legacy arm = 'legacy but webdriver false', not raw automation).\n\nMOST-REALISTIC BASELINE = native x residential-multi x stealth (x webdriver=false).\n\nAblation, not full factorial (full = 4x4x2 = 32 cells, infeasible): run baseline, then flip ONE deviation at a time -> ~8 cells (baseline + 3 display + 3 vantage + 1 instrument), on the Replicated-Core subset, time-paired. Measures the MARGINAL distortion each unrealism (datacenter IP / headless-xvfb rendering / detectable instrument) introduces vs the realistic ground truth. Optional 2nd-order cell: cloud+headless+legacy = 'typical published-study config' to test super-additive interaction. Metrics unchanged (block_label, tracker/cookie/fingerprint Δ, §5.4 detectability), read as Δ-from-baseline per deviation. Still blocked by #44 (fleet entrypoint) for the multi-machine arm.",
+      "created_at": "2026-07-02T23:52:47.568455110Z",
+      "kind": "note"
+    }
+  ]
+}

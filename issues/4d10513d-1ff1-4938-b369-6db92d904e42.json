@@ -1,0 +1,92 @@
+{
+  "uuid": "4d10513d-1ff1-4938-b369-6db92d904e42",
+  "display_id": 1,
+  "title": "PR #1136: Dynamic test ports and fixture injection",
+  "status": "open",
+  "priority": "high",
+  "created_by": "claude",
+  "created_at": "2026-03-29T20:48:44.182366775Z",
+  "updated_at": "2026-03-29T20:48:45.757862664Z",
+  "labels": [
+    "feature"
+  ],
+  "comments": [
+    {
+      "uuid": "19b4f5f1-652f-4a74-b9d7-926022c4b58b",
+      "author": "claude",
+      "content": "**Hater review of PR #1136 (dynamic test ports) — critical bug found:**\n\n**Critical:**\n- `test/test_simple_commands.py::test_get_with_popup_blocking` (lines 107-136) references `url_a` and `url_b` which no longer exist at module scope after the refactor. Missing `server: ServerUrls` fixture parameter. Will `NameError` on every run.\n\n**Major:**\n- `os.chdir()` in `test/utilities.py:start_server()` — undermines the parallelization claim; should use `SimpleHTTPRequestHandler(directory=...)` instead\n- Dead code: `ServerUrls.url()` and `ServerUrls.base_noscheme` defined but never called\n\n**Minor:**\n- 12 stale `localhost:8000` references survive in comments in `test/test_http_instrumentation.py`\n- Cache-Control header addition undocumented (no comment explaining why)\n- Inconsistent naming, bare `set` type annotations, pointless `_url()` wrapper\n\n**Status: NOT ready to merge. NameError in test_get_with_popup_blocking is a blocking bug.**",
+      "created_at": "2026-03-29T20:57:18.227636880Z",
+      "kind": "review"
+    },
+    {
+      "uuid": "f7e0bc0b-5763-45db-b3f6-730786d0ab95",
+      "author": "claude",
+      "content": "**Hater review of fix commit cd3999c — Verdict: Mediocre**\n\nFix corrects the NameError in test_get_with_popup_blocking and removes dead code. But introduces a new critical FileNotFoundError:\n\n**CRITICAL**: Removing os.chdir() breaks two tests that depended on CWD being test/:\n- test_dump_page_source_valid (line 482): open('./test_pages/expected_source.html', 'rb') — FileNotFoundError\n- test_recursive_dump_page_source_valid (line 521): open('.' + path, 'r') — same\n\nThe original review explicitly called out test_dump_page_source_valid by name as the os.chdir() dependency. The fix addressed the HTTP server side and ignored the test code side.\n\nFix: use os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_pages', 'expected_source.html') or equivalent absolute paths.\n\nOther findings:\n- MyHandler.__init__ explicit directory= param is a no-op (**kwargs already forwarded it) (nitpick)\n- lambda handler is functional but functools.partial is idiomatic (nitpick)",
+      "created_at": "2026-04-02T23:57:40.573080676Z",
+      "kind": "review"
+    },
+    {
+      "uuid": "252d0f72-3119-4095-8e8c-11785a47a453",
+      "author": "fix-paths-agent",
+      "content": "Plan: Merge prior branch (feature/fix-critical-and-major-bugs-in-pr-1136-dynamic-test-ports-849d) then fix two relative path references in test/test_simple_commands.py that broke when os.chdir() was removed. Replace relative paths with os.path.dirname(os.path.realpath(__file__)) based absolute paths in test_dump_page_source_valid (~line 482) and test_recursive_dump_page_source_valid (~line 521).",
+      "created_at": "2026-04-03T00:10:19.040361743Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "d609cc3f-50f2-4c28-87bc-4bcc5aa90e14",
+      "author": "fix-paths-agent",
+      "content": "Result: Fixed two relative file path references in test/test_simple_commands.py that broke after os.chdir() removal. test_dump_page_source_valid line 468 and test_recursive_dump_page_source_valid line 502 now use os.path.dirname(os.path.realpath(__file__)) for absolute paths. Pre-commit passes clean.",
+      "created_at": "2026-04-03T00:11:03.786996456Z",
+      "kind": "result"
+    },
+    {
+      "uuid": "99434ae8-dfcb-495a-ac3e-0f72e2e60a23",
+      "author": "fix-paths-agent",
+      "content": "Completed: Fixed two relative path references in test_dump_page_source_valid and test_recursive_dump_page_source_valid that broke after os.chdir() removal. Both now use os.path.dirname(os.path.realpath(__file__)) for absolute paths. Pre-commit passes clean. Note: git merge of prior branch (feature/fix-critical-and-major-bugs-in-pr-1136-dynamic-test-ports-849d) was not done — blocked by policy hooks, needs manual merge by driver.",
+      "created_at": "2026-04-03T00:11:21.887900635Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "4b11f18e-2d34-4090-b089-ad4d62344814",
+      "author": "fix-pendingresponse",
+      "content": "CONVERGED (VDD R2): Both dump_page_source tests now use absolute paths via os.path.realpath(__file__). Hater manually traced every path — all resolve correctly. Zero bugs found. Only nitpicks: recomputed test_dir in recursive call, lstrip vs removeprefix, no commit body. Verdict: Begrudgingly Adequate. Ready for PR.",
+      "created_at": "2026-04-04T20:44:56.627663503Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "b09310e8-1ef2-48d0-a2da-14ebecc0c40f",
+      "author": "s4Bg",
+      "content": "[action] Running black and isort formatting",
+      "created_at": "2026-04-05T12:37:26.469134512Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "55ea5377-58ee-4be5-a7f8-e2f27e70da88",
+      "author": "s4Bg",
+      "content": "Completed: Fixed black/isort formatting and mypy type annotation issue. 10 files reformatted, added missing type annotations to test_get_with_popup_blocking in test_simple_commands.py. All pre-commit hooks pass.",
+      "created_at": "2026-04-05T12:40:13.060212714Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "6971160e-f3d2-40bd-9574-2b71eb8519b9",
+      "author": "claude",
+      "content": "VDD CI fix hater: Mediocre. Formatting correct, but type annotations smuggled into style: commit (minor) and 6 files outside PR scope reformatted (nitpick). No blocking issues — hater converged.",
+      "created_at": "2026-04-05T17:29:40.131766248Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "ffa0cefd-474c-40cf-ae1a-7d1a791603a7",
+      "author": "jQHu",
+      "content": "Fixed mypy call-overload error on test/test_dns_instrument.py:33. Added type: ignore comment for list comprehension iterating query_db results (Union[Row, Tuple] not narrowed). All pre-commit checks pass.",
+      "created_at": "2026-04-08T00:49:26.912798352Z",
+      "kind": "handoff"
+    },
+    {
+      "uuid": "eee40fa4-8f74-42d1-ba5f-722f8df256a5",
+      "author": "hP5U",
+      "content": "Completed: Fixed two test failures from PR #1153 dynamic port changes. (1) test_dns_instrument - replaced hardcoded :8000 with server.port in assertion and connection_abort test. (2) test_profile - replaced relative profile.tar.gz paths with Path(__file__).parent / 'profile.tar.gz' in 3 locations. Pre-commit passes.",
+      "created_at": "2026-04-08T02:47:34.823266064Z",
+      "kind": "handoff"
+    }
+  ]
+}

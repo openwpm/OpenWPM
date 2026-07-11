@@ -1,0 +1,43 @@
+{
+  "uuid": "d78ece19-2833-4a5f-a1b8-05f6574eb45a",
+  "display_id": 14,
+  "title": "DNS instrument: regression test for connection-abort after headers",
+  "status": "open",
+  "priority": "medium",
+  "created_by": "claude",
+  "created_at": "2026-04-05T17:47:00.991794217Z",
+  "updated_at": "2026-04-05T17:47:02.537136620Z",
+  "labels": [
+    "test"
+  ],
+  "comments": [
+    {
+      "uuid": "b7a29a33-da9c-489f-a7f9-f074bb315a3a",
+      "author": "claude",
+      "content": "GitHub issue: openwpm/OpenWPM#1160. Proves strict improvement of onHeadersReceived over onCompleted: server aborts after headers → DNS data still captured.",
+      "created_at": "2026-04-05T17:47:04.253575622Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "d29e2f2c-cbb6-47f8-8647-1f5a2f5a78da",
+      "author": "claude",
+      "content": "## Implementation Plan\n\nThe test server (test/utilities.py) uses http.server.SimpleHTTPRequestHandler with a custom MyHandler that already supports special paths (e.g. /MAGIC_REDIRECT/). No secondary server needed.\n\n### Approach\nAdd a /CONNECTION_ABORT/ path in MyHandler.do_GET that:\n1. Sends response headers (200 OK, Content-Length: 99999)\n2. Writes a few bytes of body\n3. Forcibly closes the socket (self.wfile.close() or self.connection.close())\n\nThis simulates a server abort after headers are sent. onHeadersReceived fires (headers arrived), but onCompleted does NOT fire (body never completes).\n\n### Test\nIn test/test_dns_instrument.py, add a test that:\n1. Navigates to http://localhost:<port>/CONNECTION_ABORT/\n2. Asserts a dns_responses row exists with populated ip/addresses\n3. This test would FAIL on master (onCompleted never fires for aborted connections)\n\n### Files to modify\n- test/utilities.py — add /CONNECTION_ABORT/ handler in MyHandler.do_GET\n- test/test_dns_instrument.py — add test_dns_captured_on_connection_abort\n\nGH issue #1160 deleted (crosslink-only per user request).",
+      "created_at": "2026-04-05T17:49:11.568755916Z",
+      "kind": "plan"
+    },
+    {
+      "uuid": "9de04945-2093-4bc1-bc6c-4f77ac7a8a1f",
+      "author": "cChE",
+      "content": "[action] Implementing CONNECTION_ABORT handler and DNS regression test",
+      "created_at": "2026-04-05T17:50:51.768492889Z",
+      "kind": "note"
+    },
+    {
+      "uuid": "bd4b090c-7334-4e42-a03c-89771f88dbc0",
+      "author": "cChE",
+      "content": "Completed: Added /CONNECTION_ABORT/ handler in test/utilities.py and test_dns_captured_on_connection_abort in test/test_dns_instrument.py. Pre-commit passes. Committed as 577f1f5.",
+      "created_at": "2026-04-05T17:51:43.528728651Z",
+      "kind": "handoff"
+    }
+  ]
+}
