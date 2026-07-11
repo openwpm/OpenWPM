@@ -1,6 +1,6 @@
 {
-  "next_display_id": 75,
-  "next_comment_id": 281,
+  "next_display_id": 70,
+  "next_comment_id": 268,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -12,7 +12,6 @@
     "2ae4638a-df42-4a7a-88ba-6b65d3f57083": 43,
     "2d7eb9a1-42a8-492c-b047-5e586acd204e": 69,
     "2ef2d0a1-5d49-475d-84e6-ecace723e17b": 52,
-    "2fd7eb6a-cd7c-4561-8f64-d658d135eb93": 70,
     "33924ad9-9b3f-44e1-a168-524656f1c8e4": 60,
     "34f85d26-9554-440e-b6a2-1fc1e5feaa57": 22,
     "362ea397-eb84-4a49-94b5-d4d23019d758": 35,
@@ -29,7 +28,6 @@
     "5cbb8a7b-93c8-4a00-a394-41de2b294b3c": 51,
     "5f186bf4-1fce-469c-ac41-a518e8883213": 11,
     "5f3c564a-6559-4301-aac7-0102bd4077c4": 8,
-    "67ff1a0c-ca29-46ec-9a1b-011909bff640": 71,
     "689a8fd1-7828-4390-b8a8-046eac84a19f": 2,
     "724fc4ec-a31e-4fa7-8de3-9ae66ef59867": 46,
     "76577e94-68b1-4678-be46-94ea47f749db": 47,
@@ -39,16 +37,13 @@
     "811612a2-88c4-474e-bf7a-76a526493d04": 55,
     "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2": 19,
     "896efbe4-11ce-49ab-8155-a1df7896c7f6": 36,
-    "89a5902f-c760-4d79-aace-b21f94b0ceba": 73,
     "8c495722-ebd4-415e-914c-674373428fdc": 39,
     "9168613c-5115-4dd8-831c-1f8f20aaf926": 16,
     "9329f564-d673-4cee-affa-9cb999c05f1a": 57,
     "93e3eec2-54b3-4011-8d61-c2b423fa0539": 58,
     "95d0dcc9-f522-48ce-81c0-f450cca8e7c4": 40,
-    "9611e72f-66ad-4a97-9e2e-f45cbac27a0f": 74,
     "9c0a1105-e085-41b6-96e8-1fd958fde773": 61,
     "9d6b30aa-69dc-4389-ae03-d9be46ae5bb2": 68,
-    "9e5cedf6-f39b-48e6-83ee-c963e0708d7f": 72,
     "9f0ca6f6-e101-4bd6-bb87-2e475c36e033": 32,
     "a2cd0d83-a920-4ba5-ae74-9a23ba7d3fd5": 64,
     "a53bd16b-4f97-4663-aeb1-867626f8a0da": 31,
@@ -85,26 +80,6 @@
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
-    },
-    "70": {
-      "agent_id": "claude",
-      "claimed_at": "2026-07-02T22:30:55.896257025Z"
-    },
-    "71": {
-      "agent_id": "claude",
-      "claimed_at": "2026-07-08T15:57:22.854462446Z"
-    },
-    "72": {
-      "agent_id": "claude",
-      "claimed_at": "2026-07-08T21:59:09.653354074Z"
-    },
-    "73": {
-      "agent_id": "claude",
-      "claimed_at": "2026-07-11T13:26:24.745040873Z"
-    },
-    "74": {
-      "agent_id": "claude",
-      "claimed_at": "2026-07-11T14:36:18.804053596Z"
     }
   },
   "issues": {
@@ -117,22 +92,11 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:35.015862447Z",
-      "updated_at": "2026-06-30T06:57:24.772473132Z",
+      "updated_at": "2026-06-21T00:28:38.880050253Z",
       "labels": [
         "bug",
         "pumpable"
-      ],
-      "comments": {
-        "38026611-0c9d-47c3-920a-b4a7a0a90985": {
-          "display_id": 271,
-          "author": "claude",
-          "content": "Overnight: 9/9 Copilot threads on PR #1157 resolved via ff commit fffa6794 — real fix: shutdown() was tearing down the globally-registered tracer provider (would kill an embedding app's provider); configure_otel_for_process now returns the provider it owns so callers shut down only that instance. Other 7 already-addressed-by-later-commits or design-deliberate (__otel_ctx sentinel popped before write). Ready to close.",
-          "created_at": "2026-06-30T06:57:24.767320119Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKKw3QBrrC1MAqng/gUcunl0gBeehXH8YXq3bDjRtFH52k1iJHmo/fFr8vgYrKXuscyqGXdDP/fBHB0VPpLnxCg=="
-        }
-      }
+      ]
     },
     "03499c50-2d5f-4bf0-a686-ff614d17a088": {
       "uuid": "03499c50-2d5f-4bf0-a686-ff614d17a088",
@@ -300,22 +264,11 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:58.515150217Z",
-      "updated_at": "2026-06-30T06:57:36.463465714Z",
+      "updated_at": "2026-06-21T00:29:02.668309791Z",
       "labels": [
         "bug",
         "pumpable"
-      ],
-      "comments": {
-        "91eacd34-2c1c-4497-b177-b360c265389e": {
-          "display_id": 273,
-          "author": "claude",
-          "content": "Overnight: 3/3 Copilot threads on PR #1125 resolved via ff commit 22516b0b — all REAL, FailureTracker thread-safety: critical_failure was written/read outside the lock despite the thread-safe contract, plus a check-then-read race in _check_failure_status; fixed with a locked get_critical_failure() accessor returning a frozen typed CriticalFailure dataclass. Ready to close.",
-          "created_at": "2026-06-30T06:57:36.458353038Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAEX67bE3/eNOgfZyxOMJSWdIiu3xwOyISXxCr171dwDPSp4Vj8GZOSuOSG2LRTYc2cbjFBLeUSktvXUkkhp7qCQ=="
-        }
-      }
+      ]
     },
     "2ef2d0a1-5d49-475d-84e6-ecace723e17b": {
       "uuid": "2ef2d0a1-5d49-475d-84e6-ecace723e17b",
@@ -332,48 +285,6 @@
         "refactor"
       ]
     },
-    "2fd7eb6a-cd7c-4561-8f64-d658d135eb93": {
-      "uuid": "2fd7eb6a-cd7c-4561-8f64-d658d135eb93",
-      "display_id": 70,
-      "title": "Prune crosslink rules to repo stack + refresh Python(conda)/JS+TS(eval-contexts) guidance",
-      "status": "open",
-      "priority": "medium",
-      "created_by": "claude",
-      "created_at": "2026-07-02T22:30:41.762603645Z",
-      "updated_at": "2026-07-08T15:45:23.982478551Z",
-      "labels": [
-        "chore"
-      ],
-      "comments": {
-        "15ff3b3f-a6d7-49fc-997e-933786d8a823": {
-          "display_id": 277,
-          "author": "claude",
-          "content": "Session auto-ended (stale after 8271 minutes). No handoff notes provided.",
-          "created_at": "2026-07-08T15:45:23.953568748Z",
-          "kind": "handoff",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA48JTWFXQ2G2RRr1/+Mh2vbJdhXcP5hZO0wp81n6753YC2IY1CHdhXD0zEZDNZsO4ldG+tctIrf78657n5ir9Cw=="
-        },
-        "4afb017d-d248-4a9c-968f-1014b535fd55": {
-          "display_id": 275,
-          "author": "claude",
-          "content": "Config PR #1214 amended to e3068ea8: (a) confirmed the prune is real — committed .crosslink/rules/ tree contains only the 14 kept files (python/js/ts/shell + non-language); the 17 removed guides are simply absent (they were never committed, so the PR adds the repo-appropriate set rather than showing deletions). (b) Switched all 6 .claude/settings.json hook path resolutions from 'git rev-parse --show-toplevel' to 'jj root' so they resolve from any jj workspace (kept 2>/dev/null graceful fallback). Note: the abandoned bulk-rebase left 8 branches rebased onto the OLD config SHA c6070996 (superseded) — harmless re-sync churn, not restoring per user. Ready to close once #1214 merges (merge-commit/rebase, not squash).",
-          "created_at": "2026-07-02T23:03:41.154257508Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAjUfkO2jSiTKEfUr0NP7coJtCrtxSEevTRcp5xKZJ6Vfj0CDAfBe8ebVfAd7MGXprqY7zTIR+gLbIRCkW6KsQAQ=="
-        },
-        "dee27543-6d3a-4657-83b0-4ede7d106959": {
-          "display_id": 274,
-          "author": "claude",
-          "content": "Done. (1) Removed 17 absent-language/framework rule guides (c/cpp/csharp/elixir/elixir-phoenix/go/java/javascript-react/kotlin/odin/php/ruby/rust/scala/swift/typescript-react/zig); kept python/javascript/typescript/shell + non-language guides (global/project/quality/rigor/knowledge/web/tracking-*/sanitize-patterns). Kept web.md (hostile-content security — core to a crawler). (2) python.md rewritten for the conda reality: env 'openwpm' via 'conda run -n openwpm', never mutate the env, don't hand-edit environment.yaml (use scripts/repin.sh), black+isort+mypy via pre-commit, pytest markers (pyonly/slow), subprocess/DB boundary, schema-sync note, the OpenWPMJSTest value-capture idiom. (3) javascript.md + typescript.md gained an 'execution contexts' section: extension world (moz-extension, browser.*) vs page-world injected legacy instrument (stringified getInstrumentJS, no browser.*, everything page-observable) vs stealth content-script (exportFunction/Xray); rules for self-contained stringified code, webpack name-mangling, cross-realm cloneInto/exportFunction/Xray, page-as-adversarial footprint minimization. Trimmed the web-app-server assumptions that don't fit an extension (zod API boundaries, CSP headers, DOMPurify) and pointed the toolchain at Extension/ npm run build/lint/fix.",
-          "created_at": "2026-07-02T22:35:19.613986920Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADi07ozCwMWiy26w6VVPdu46xcfIn0xHvWZQ6/rqsTcv+NDExPz+fhK8YL6zHBtSr6oqcHeFrMs/ckQZLY9uAAQ=="
-        }
-      }
-    },
     "33924ad9-9b3f-44e1-a168-524656f1c8e4": {
       "uuid": "33924ad9-9b3f-44e1-a168-524656f1c8e4",
       "display_id": 60,
@@ -383,22 +294,11 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:05.868881006Z",
-      "updated_at": "2026-06-30T06:57:12.351570025Z",
+      "updated_at": "2026-06-21T00:28:09.525653058Z",
       "labels": [
         "bug",
         "pumpable"
-      ],
-      "comments": {
-        "62820d4a-06d8-411a-86ee-e52b9e26a64d": {
-          "display_id": 269,
-          "author": "claude",
-          "content": "Overnight: 3/3 Copilot threads on PR #1189 resolved via ff commit a9eee2b1 — test_profile.py:181 (ERROR-level pref log -> info), regenerate-test-profile.py:96 (urlretrieve -> urlopen(timeout=60) streamed copy); deploy_firefox.py:59 (-remote-allow-system-access) rebutted as out-of-scope/pre-existing (Marionette automation channel, not crawled-content privileges). Ready to close.",
-          "created_at": "2026-06-30T06:57:12.346130558Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABApbJ6Jxy+CLZxIGhyNfluXrFBKdwP5FCQtvTHAmTXeGecGkd10ISL7X3dqxA9eRv35l/eA1AUjFs5Dk6EAGUVDA=="
-        }
-      }
+      ]
     },
     "34f85d26-9554-440e-b6a2-1fc1e5feaa57": {
       "uuid": "34f85d26-9554-440e-b6a2-1fc1e5feaa57",
@@ -880,19 +780,6 @@
         }
       }
     },
-    "67ff1a0c-ca29-46ec-9a1b-011909bff640": {
-      "uuid": "67ff1a0c-ca29-46ec-9a1b-011909bff640",
-      "display_id": 71,
-      "title": "Verify PR #1154 stealth review artifacts vs implementation",
-      "status": "open",
-      "priority": "high",
-      "created_by": "claude",
-      "created_at": "2026-07-08T15:57:08.038768334Z",
-      "updated_at": "2026-07-08T15:57:14.125343947Z",
-      "labels": [
-        "review"
-      ]
-    },
     "689a8fd1-7828-4390-b8a8-046eac84a19f": {
       "uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
       "display_id": 2,
@@ -1068,25 +955,14 @@
       "priority": "medium",
       "created_by": "claude",
       "created_at": "2026-06-20T00:48:30.833745137Z",
-      "updated_at": "2026-07-02T23:52:47.573371640Z",
+      "updated_at": "2026-06-20T00:48:53.823137856Z",
       "labels": [
         "feature",
         "pumpable"
       ],
       "blockers": [
         "0e4e2876-2826-4123-88b1-78fa2cbf6737"
-      ],
-      "comments": {
-        "d77ae179-d7e0-461c-917e-2aec6b2e335f": {
-          "display_id": 276,
-          "author": "claude",
-          "content": "REFINEMENT (Stefan) — display-mode as a factor + ablation-from-most-realistic (full text: datadir/study-design-crawl-deployment.md §12).\n\nOnce stealth (#1154) lands: (step 0) reuse Krumnow et al. 2022 (arXiv:2205.08890) reliability/detectability method to measure stealth effectiveness vs the legacy positive control. Then reframe the study as an ABLATION from the single most-realistic config, elevating render/display mode to a first-class factor.\n\nThree factors (deviations from realism):\n1. Render/display mode: native (real GUI) / xvfb (SW-rendered) / headless. CANDIDATE 4TH = headless-Wayland (MOZ_ENABLE_WAYLAND on a headless compositor like cage/Weston-headless) — gives real GPU/compositor rendering without a display, closer to native than xvfb (which exposes SwiftShader/WebGL-renderer tells). [OPEN] confirm path + fingerprint vs native.\n2. Vantage: residential multi-machine (fleet) / residential single-machine / university single-machine / cloud.\n3. Instrument: stealth vs legacy — BOTH with navigator.webdriver=false (webdriver-hiding is a shared baseline knob, not the instrument choice; legacy arm = 'legacy but webdriver false', not raw automation).\n\nMOST-REALISTIC BASELINE = native x residential-multi x stealth (x webdriver=false).\n\nAblation, not full factorial (full = 4x4x2 = 32 cells, infeasible): run baseline, then flip ONE deviation at a time -> ~8 cells (baseline + 3 display + 3 vantage + 1 instrument), on the Replicated-Core subset, time-paired. Measures the MARGINAL distortion each unrealism (datacenter IP / headless-xvfb rendering / detectable instrument) introduces vs the realistic ground truth. Optional 2nd-order cell: cloud+headless+legacy = 'typical published-study config' to test super-additive interaction. Metrics unchanged (block_label, tracker/cookie/fingerprint Δ, §5.4 detectability), read as Δ-from-baseline per deviation. Still blocked by #44 (fleet entrypoint) for the multi-machine arm.",
-          "created_at": "2026-07-02T23:52:47.568455110Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1tOtMAeYvnPPhcfC7VF4/wSxCLrZtFTrWYvmtPD5mrHVaBPEEDiHr2f/Jf/3UuUDDIUvWA3UyjKW2pmZnyGGDQ=="
-        }
-      }
+      ]
     },
     "77f8b9a5-0d0b-4629-8613-a8ff7bf36788": {
       "uuid": "77f8b9a5-0d0b-4629-8613-a8ff7bf36788",
@@ -1248,31 +1124,6 @@
           "kind": "note",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABABppdg/Q5VavmYyaZIPyY5Tu/EXpRdZ1GaoATq0HxDcaW2R+3ekIvMfjrW8z4tXD1uRujEHEbJAHqNMokuR2CDw=="
-        }
-      }
-    },
-    "89a5902f-c760-4d79-aace-b21f94b0ceba": {
-      "uuid": "89a5902f-c760-4d79-aace-b21f94b0ceba",
-      "display_id": 73,
-      "title": "Fix numeric JS-call arguments captured as strings in serializeObject",
-      "status": "closed",
-      "priority": "high",
-      "created_by": "claude",
-      "created_at": "2026-07-11T13:26:11.520238251Z",
-      "updated_at": "2026-07-11T13:34:02.086533936Z",
-      "closed_at": "2026-07-11T13:34:02.086532102Z",
-      "labels": [
-        "bug"
-      ],
-      "comments": {
-        "759db41c-a097-4b2c-a7be-f842a348a984": {
-          "display_id": 279,
-          "author": "claude",
-          "content": "Delivered: reverted the strict-mode String(object) coercion in serializeObject (Extension/src/lib/js-instruments.ts) that was capturing numeric JS-call arguments as strings ([125,1,62,20] -> [\"125\",...]), failing test_canvas_fingerprinting deterministically. Fix is 'return object as string' — compile-time-only cast that restores master's exact runtime (raw primitive flows to transport JSON.stringify) while staying TS6-strict-clean; added a comment so a future strict pass doesn't re-introduce it. Verified: tsc 0 at #1195 and at the stealth tip, eslint 0. Also removed build-artifact pollution (bundled/stealth.js) + crosslink state (.active-issue) that an auto-snapshot had absorbed into #1195. Re-pushed all 3 stacked branches; CI re-running.",
-          "created_at": "2026-07-11T13:33:56.588854514Z",
-          "kind": "result",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABATQ0Zavo4RUMyDfr9NkkGoD3yNss6CRWKxJEnhQSUVfa9iclPPuOlvpRmM/LCke6gGsWXsLTFGnldztktLJFUDg=="
         }
       }
     },
@@ -1612,31 +1463,6 @@
         }
       }
     },
-    "9611e72f-66ad-4a97-9e2e-f45cbac27a0f": {
-      "uuid": "9611e72f-66ad-4a97-9e2e-f45cbac27a0f",
-      "display_id": 74,
-      "title": "Address Copilot review cleanups on #1195 (perf/style/log-readability)",
-      "status": "closed",
-      "priority": "medium",
-      "created_by": "claude",
-      "created_at": "2026-07-11T14:36:05.258581250Z",
-      "updated_at": "2026-07-11T14:46:00.624248585Z",
-      "closed_at": "2026-07-11T14:46:00.624246671Z",
-      "labels": [
-        "bug"
-      ],
-      "comments": {
-        "984222d2-f698-4142-9d2a-11332b124710": {
-          "display_id": 280,
-          "author": "claude",
-          "content": "Delivered: applied Copilot cleanups #2 (Uint8ToBase64 alloc), #3 (debounce null init), #5 (error-log separators+stack guard) on #1195 — all tsc-0/eslint-0, behavior-preserving. Rebutted #4 (eventId) as can't-meaningfully-fix (page-sandbox logging isn't captured; tests are the guard) and resolved. #1 (escapeUrl undefined) deferred to #1216, thread left open. Added .crosslink/ runtime-state files (.active-issue etc.) to root .gitignore outside the crosslink-managed markers to stop recurring snapshot pollution. Re-pushed all 3 branches; CI re-running.",
-          "created_at": "2026-07-11T14:45:55.302875213Z",
-          "kind": "result",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABALRx5IvNM0DBLIMDCKl5gR7qROgzkHSjVoQWgz2kR50nyNmzs5cF8sf1NG9U68nn53AilsgWnu8rBsP2RoMwRDQ=="
-        }
-      }
-    },
     "9c0a1105-e085-41b6-96e8-1fd958fde773": {
       "uuid": "9c0a1105-e085-41b6-96e8-1fd958fde773",
       "display_id": 61,
@@ -1671,47 +1497,11 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:52.678173839Z",
-      "updated_at": "2026-06-30T06:57:30.607283337Z",
+      "updated_at": "2026-06-21T00:28:56.437631843Z",
       "labels": [
         "bug",
         "pumpable"
-      ],
-      "comments": {
-        "7e7a4ff7-54fd-4d72-b21a-0eaf22b34715": {
-          "display_id": 272,
-          "author": "claude",
-          "content": "Overnight: 6/8 Copilot threads on PR #1126 resolved — ff commit 9405a845 restored the explicit typed save_configuration signature on InProcessStorageControllerHandle (matches prod StorageControllerHandle); 5 by-design parity rebuttals (the in-process handle verbatim-mirrors prod storage_controller.py:420-571, so those concerns belong in the shared prod path). LEFT OPEN (real, test-risky, for Stefan): in_process_storage.py:68 (asyncio debug=True/global logger side-effect) + :96 (no is_alive after join timeout). Worked against real head 877c4ad1; local bookmark bf646944 was a corrupted leftover, untouched.",
-          "created_at": "2026-06-30T06:57:30.602081862Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAt2FsHwa2QRbQaIHv7GTfIo23G7Qk8DxQC5QHJ3iPKh1nZEphWumNyaJCIvwg50i66HftwRMV4Xgzg8TOB8FSDQ=="
-        }
-      }
-    },
-    "9e5cedf6-f39b-48e6-83ee-c963e0708d7f": {
-      "uuid": "9e5cedf6-f39b-48e6-83ee-c963e0708d7f",
-      "display_id": 72,
-      "title": "Fix TypeScript strict-mode errors in stealth instrument",
-      "status": "closed",
-      "priority": "high",
-      "created_by": "claude",
-      "created_at": "2026-07-08T21:58:55.772921830Z",
-      "updated_at": "2026-07-08T22:23:05.857692312Z",
-      "closed_at": "2026-07-08T22:23:05.857690318Z",
-      "labels": [
-        "bug"
-      ],
-      "comments": {
-        "bbae3d18-44dd-40e0-b338-d8d32f6a956f": {
-          "display_id": 278,
-          "author": "claude",
-          "content": "Delivered: fixed all 165 TypeScript strict-mode errors in the stealth instrument (instrument.ts 98, index.ts 62, error.ts 5) under the real TS6 toolchain. All fixes are pure type annotations/assertions/casts — zero runtime change (the-hater independently confirmed emitted-JS is behavior-identical, zero forbidden ?? coercions). Verified green: tsc --noEmit 0 errors, eslint 0 errors, npm run build produces openwpm.xpi. Folded into the bottom stealth commit so it's self-contained/strict-clean. Pushed feat/stealth-js-instrument-v2 + chore/crosslink-config; retargeted PR bases to make the stack a structural invariant (#1195→#1214→#1154). CI running (browser suite is the remaining behavior gate).",
-          "created_at": "2026-07-08T22:23:00.163211181Z",
-          "kind": "result",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAXgp8E9T22Gnd63K2YHbwx2n0BPtp70Hxn++c2fITuvt2z+PlsJ9iGEM4YNmSs/2ttWtueQOlMoRWbxeDwXwEAA=="
-        }
-      }
+      ]
     },
     "9f0ca6f6-e101-4bd6-bb87-2e475c36e033": {
       "uuid": "9f0ca6f6-e101-4bd6-bb87-2e475c36e033",
@@ -1747,22 +1537,11 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:29.184778040Z",
-      "updated_at": "2026-06-30T06:56:04.573145584Z",
+      "updated_at": "2026-06-21T00:28:33.029740398Z",
       "labels": [
         "bug",
         "pumpable"
-      ],
-      "comments": {
-        "9ca35376-8a7c-4ca5-8aab-f31259f7518b": {
-          "display_id": 268,
-          "author": "claude",
-          "content": "Overnight: 3 of 4 Copilot threads on PR #1161 resolved via fast-forward commit c1052c16 — test:186 (mirror StorageController INVALID_VISIT_ID del; was silently skipping task/crawl inserts), test:39 (docstring claimed a defaults comparison it never does), provider:38 (async-interface/sync-impl is the shared StructuredStorageProvider contract — by-design). LEFT OPEN: provider:91 (rollback discards the whole uncommitted batch on one bad record) — real, needs a tested begin_nested/SAVEPOINT-per-insert change; untestable locally (no sqlalchemy/postgres in env). Ready-to-close minus the 1 deferred thread.",
-          "created_at": "2026-06-30T06:56:04.567929211Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAI+64XObQndmJ66eV5hr8l01hFKZTVQTHgUvfQn3EMWZBRStdAFM2S/JfTeKgpHLS+Qh2tiKO2IkSAyzScRmpBg=="
-        }
-      }
+      ]
     },
     "a53bd16b-4f97-4663-aeb1-867626f8a0da": {
       "uuid": "a53bd16b-4f97-4663-aeb1-867626f8a0da",
@@ -2297,22 +2076,11 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-06-21T00:28:23.310725020Z",
-      "updated_at": "2026-06-30T06:57:18.573329225Z",
+      "updated_at": "2026-06-21T00:28:27.213890262Z",
       "labels": [
         "bug",
         "pumpable"
-      ],
-      "comments": {
-        "d69208eb-3686-41a6-9f46-046e9c9b5234": {
-          "display_id": 270,
-          "author": "claude",
-          "content": "Overnight: all 7 Copilot threads on PR #1174 resolved (replied) — verified against the REAL head 0729d582 (local bookmark was stale at 76e30e00); every thread already addressed in the stripped-down revision (timeout restore, partial-frame buffering, timeout-vs-error split, ack/visit_id validation, flush-before-ack, stream-close-before-delete) or author-documented-deferred (UTF-8 byte-length). No code change needed. Ready to close.",
-          "created_at": "2026-06-30T06:57:18.568243770Z",
-          "kind": "note",
-          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
-          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA0SSsVvukHh9mmWXrheVo+ffUKd0hRPffL1maFxsIt4cAfjkKwI215Q1W0qxQIXAkwnf1yTz//851PH6psDFnAg=="
-        }
-      }
+      ]
     },
     "cb37a1f4-6c6e-46f2-89bd-093247725de7": {
       "uuid": "cb37a1f4-6c6e-46f2-89bd-093247725de7",
@@ -3260,8 +3028,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-07-11T14:46:00.624248585Z",
+    "timestamp": "2026-06-21T09:27:06.137628648Z",
     "agent_id": "claude",
-    "agent_seq": 83
+    "agent_seq": 52
   }
 }
