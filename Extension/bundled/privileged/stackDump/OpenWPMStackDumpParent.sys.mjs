@@ -141,6 +141,24 @@ const observer = {
           return;
         }
         recordRequestId(channelId, requestId);
+        // Enable alternate-stack capture as early as possible, race-free. The
+        // top-level document's channel opens in *this* (parent) process at
+        // document-on-opening-request -- before the content process creates the
+        // window or runs any page script -- so setting watchedByDevTools on the
+        // top BrowsingContext now guarantees the flag is replicated to content
+        // before the page's first async fetch/XHR/WebSocket fires. Relying on
+        // the parent actor's actorCreated instead would leave the flag unset
+        // until the child sends its first *sync* script-initiated stack, so any
+        // async request that precedes that first sync message (in the limit, the
+        // first page of every browser) would be captured with no initiator
+        // stack. loadInfo.browsingContext is [infallible] (returns null, never
+        // throws) and ensureAlternateStackCaptureEnabled no-ops on a null/
+        // already-flagged context, so this is safe and idempotent. We gate on
+        // the document topic to keep the subresource hot path free of the extra
+        // BrowsingContext resolution.
+        if (topic === "document-on-opening-request") {
+          ensureAlternateStackCaptureEnabled(channel.loadInfo?.browsingContext);
+        }
         break;
       }
       case "network-monitor-alternate-stack": {
@@ -233,6 +251,11 @@ function ensureAlternateStackCaptureEnabled(browsingContext) {
 
 export class OpenWPMStackDumpParent extends JSWindowActorParent {
   actorCreated() {
+    // Defense-in-depth fallback. The document-on-opening-request observer above
+    // is the primary, race-free enable point (it runs before page script); this
+    // covers the actor's own top BrowsingContext in case a context was never
+    // seen there. Idempotent -- ensureAlternateStackCaptureEnabled no-ops when
+    // the flag is already set.
     ensureAlternateStackCaptureEnabled(this.browsingContext);
   }
 
