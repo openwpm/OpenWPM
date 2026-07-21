@@ -25,6 +25,7 @@ from .failure_tracker import FailureTracker
 from .js_instrumentation import clean_js_instrumentation_settings
 from .mp_logger import MPLogger
 from .storage.storage_controller import DataSocket, StorageControllerHandle
+from .storage.storage_interface import StorageInterface
 from .storage.storage_providers import (
     StructuredStorageProvider,
     TableName,
@@ -281,7 +282,7 @@ class TaskManager:
         structured_storage_provider: StructuredStorageProvider,
         unstructured_storage_provider: Optional[UnstructuredStorageProvider],
     ) -> None:
-        self.storage_controller_handle = StorageControllerHandle(
+        self.storage_controller_handle: StorageInterface = StorageControllerHandle(
             structured_storage_provider, unstructured_storage_provider
         )
         self.storage_controller_handle.launch()
