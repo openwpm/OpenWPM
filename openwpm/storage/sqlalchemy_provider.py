@@ -73,22 +73,24 @@ class SQLAlchemyStorageProvider(StructuredStorageProvider):
         # the column's presence to avoid breaking those inserts.
         if "instance_id" in sa_table.c:
             record["instance_id"] = self._instance_id
+        # Wrap each insert in a SAVEPOINT (nested transaction) so a single bad row
+        # cannot destroy the rest of the batch. Records accumulate in ONE open
+        # transaction that is only committed on flush_cache/finalize_visit_id, so a
+        # plain self._connection.rollback() here would discard EVERY record buffered
+        # since the last commit (all visits, ~30s of data), not just the offending
+        # one. A SAVEPOINT rolls back only the failed statement while the outer
+        # transaction (the good rows) survives. On PostgreSQL this also clears the
+        # aborted-transaction state ("InFailedSqlTransaction") so subsequent inserts
+        # still succeed. SAVEPOINT is supported by both SQLite and PostgreSQL.
         try:
-            self._connection.execute(sa_table.insert(), record)
+            with self._connection.begin_nested():
+                self._connection.execute(sa_table.insert(), record)
             self._sql_counter += 1
         except Exception as e:
             self.logger.error(
                 "Unsupported record:\n%s\n%s\ntable=%s\n%s\n"
                 % (type(e), e, table, repr(record))
             )
-            # On PostgreSQL, a failed statement aborts the entire transaction.
-            # All subsequent statements would fail with "InFailedSqlTransaction"
-            # until a ROLLBACK is issued. We must rollback here so that
-            # subsequent inserts can succeed.
-            try:
-                self._connection.rollback()
-            except Exception as rollback_err:
-                self.logger.error("Rollback failed: %s", rollback_err)
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False

@@ -263,3 +263,83 @@ async def test_all_tables_access_postgresql(
 
     await structured_provider.flush_cache()
     await structured_provider.shutdown()
+
+
+@pytest.mark.pyonly
+@pytest.mark.asyncio
+async def test_store_record_persists_values(tmp_path) -> None:
+    """store_record must actually persist rows; read them back and verify values.
+
+    Guards against a store_record that silently no-ops (e.g. swallowing every
+    insert exception and rolling the batch back) — such a regression would still
+    pass a test that only checks store_record does not raise.
+    """
+    db = tmp_path / "readback.sqlite"
+    provider = SQLAlchemyStorageProvider(f"sqlite:///{db}")
+    await provider.init()
+    await provider.store_record(
+        TableName("site_visits"),
+        VisitId(42),
+        {"visit_id": 42, "browser_id": 7, "site_url": "https://example.com"},
+    )
+    await provider.finalize_visit_id(VisitId(42))
+    await provider.flush_cache()
+    await provider.shutdown()
+
+    conn = sqlite3.connect(str(db))
+    try:
+        rows = conn.execute(
+            "SELECT visit_id, browser_id, site_url FROM site_visits"
+        ).fetchall()
+    finally:
+        conn.close()
+    assert rows == [(42, 7, "https://example.com")]
+
+
+@pytest.mark.pyonly
+@pytest.mark.asyncio
+async def test_bad_row_does_not_drop_batched_good_rows(tmp_path) -> None:
+    """A single failing insert must not discard the rest of the uncommitted batch.
+
+    Records accumulate in one open transaction until flush_cache/finalize commits.
+    A bad row (here: a duplicate primary key) makes its own insert fail;
+    store_record must roll back only that statement (via SAVEPOINT), leaving the
+    good rows buffered before AND after it intact so they still commit.
+    """
+    db = tmp_path / "batch.sqlite"
+    provider = SQLAlchemyStorageProvider(f"sqlite:///{db}")
+    await provider.init()
+    # Good row buffered before the failure.
+    await provider.store_record(
+        TableName("site_visits"),
+        VisitId(1),
+        {"visit_id": 1, "browser_id": 1, "site_url": "https://a.example"},
+    )
+    # Bad row: a duplicate primary key (visit_id 1 already buffered above) makes
+    # this insert raise; store_record must swallow it AND roll back only this
+    # statement, not the whole batch.
+    await provider.store_record(
+        TableName("site_visits"),
+        VisitId(1),
+        {"visit_id": 1, "browser_id": 1, "site_url": "https://dup.example"},
+    )
+    # Good row buffered after the failure, in the same still-uncommitted batch.
+    await provider.store_record(
+        TableName("site_visits"),
+        VisitId(3),
+        {"visit_id": 3, "browser_id": 1, "site_url": "https://c.example"},
+    )
+    await provider.flush_cache()  # commit the batch
+    await provider.shutdown()
+
+    conn = sqlite3.connect(str(db))
+    try:
+        rows = {
+            row[0]: row[1]
+            for row in conn.execute("SELECT visit_id, site_url FROM site_visits")
+        }
+    finally:
+        conn.close()
+    # Both good rows survived; only the duplicate is absent. The pre-failure row
+    # keeps its original value (the duplicate did not overwrite it).
+    assert rows == {1: "https://a.example", 3: "https://c.example"}
