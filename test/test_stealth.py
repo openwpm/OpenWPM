@@ -73,6 +73,10 @@ SUPPRESS_PAGE = "/stealth_disruption_suppress.html"
 FORGE_PAGE = "/stealth_disruption_forge.html"
 ATTRIBUTION_PAGE = "/stealth_attribution.html"
 COOKIE_PAGE = "/stealth_cookie.html"
+# Calls window.fetch (a WebIDL [Global] member, own on the window INSTANCE not on
+# Window.prototype), so the migrator's instance-own resolution can be proven to
+# instrument it end to end. See TestStealthMigratedFetchCapture.
+FETCH_PAGE = "/stealth_fetch.html"
 IFRAME_PAGE = "/stealth_disruption_iframe.html"
 WINDOW_NAME_PAGE = "/stealth_window_name.html"
 # Provokes errors THROUGH instrumented methods (a native DOMException, a built-in
@@ -1391,6 +1395,67 @@ class TestStealthWindowName:
 
 
 # --------------------------------------------------------------------------- #
+# Migrated legacy `window.fetch` capture (regression for the migrator walk gap)
+#
+# window.fetch is a WebIDL [Global] member: Firefox installs it as an OWN property
+# of the window INSTANCE, not on Window.prototype. The migrator's prototype-chain
+# walk once dropped it as "absent" because it never inspects the instance's own
+# properties. The walk now recognises instance-own members and emits an
+# instance-resolved {object:"window", depth:0} entry. This test proves that
+# migrated entry actually instruments window.fetch end to end.
+# --------------------------------------------------------------------------- #
+@pytest.mark.usefixtures("xpi", "server")
+class TestStealthMigratedFetchCapture:
+    """A migrated legacy ``{"window": ["fetch"]}`` config captures fetch() calls.
+
+    Spec: the "Instance-own members of a global object" section of the migrator
+    module docstring (``openwpm/utilities/js_settings_migrator.py``).
+    """
+
+    def test_migrated_window_fetch_is_captured(
+        self, tmp_path_factory: pytest.TempPathFactory, server: ServerUrls
+    ) -> None:
+        """Migrate ``{"window": ["fetch"]}`` and confirm the call is recorded.
+
+        Runs the real sweep (headless Firefox) on the legacy config, applies the
+        generated stealth config, visits a page that calls ``window.fetch``, and
+        asserts a ``window.fetch`` ``call`` row lands in the ``javascript`` table.
+        Also pins that the sweep emits an instance-resolved ``window`` entry for
+        fetch and does NOT surface ``window.fetch`` as untranslated.
+        """
+        data_dir = tmp_path_factory.mktemp("migrated_fetch")
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            [{"window": ["fetch"]}], get_firefox_binary_path()
+        )
+        assert any(
+            e["object"] == "window"
+            and "fetch" in e["logSettings"]["propertiesToInstrument"]
+            for e in stealth_settings
+        ), (
+            "the sweep did not emit an instance-resolved window.fetch entry; got "
+            f"{stealth_settings}"
+        )
+        assert not any(r.path == "window.fetch" for r in untranslated), (
+            "window.fetch must not be surfaced as untranslated once the walk "
+            f"resolves it as an instance-own member; got {untranslated}"
+        )
+
+        db_path = _run_page(
+            _params_with(data_dir, stealth_settings),
+            _page_url(server, FETCH_PAGE),
+        )
+        rows = db_utils.query_db(
+            db_path,
+            "SELECT COUNT(*) FROM javascript WHERE symbol = ? AND operation = ?",
+            ("window.fetch", "call"),
+        )
+        assert rows[0][0] > 0, (
+            "the migrated stealth config did not record a window.fetch call — the "
+            "instance-own [Global] member was not instrumented end to end"
+        )
+
+
+# --------------------------------------------------------------------------- #
 # logSettings fidelity: preventSets, logFunctionGets, recursive/depth,
 # nonExistingPropertiesToInstrument. Each was previously inert in the stealth
 # instrument (present in settings/schema but never read). These tests prove the
@@ -1623,7 +1688,7 @@ class TestStealthLogSettings:
 # stealth surface requesting recursive is rejected at config-validation time
 # rather than silently crashing the page at runtime. Legacy ``js_instrument``
 # still supports recursive because it runs in the page compartment. See
-# ``docs/developers/Stealth-Instrumentation.md`` (Limitations).
+# ``docs/developers/Stealth-Instrumentation.rst`` (Limitations).
 # --------------------------------------------------------------------------- #
 class TestStealthRecursiveRejected:
     """Recursive under stealth is rejected with an actionable ConfigError."""
@@ -1724,7 +1789,7 @@ def _distinct_symbol_receiver_pairs(db_path: Path) -> set:
 
 # The ONLY intentional divergence between legacy and stealth symbols. It is a
 # structural GRANULARITY difference, not a label mismatch, and is documented in
-# docs/developers/Stealth-Instrumentation.md (Limitations).
+# docs/developers/Stealth-Instrumentation.rst (Limitations).
 #
 # Legacy instruments each AudioNode/BaseAudioContext CHILD prototype over its
 # FULL inherited chain, so a method defined on the shared parent prototype
@@ -2447,7 +2512,7 @@ class TestStealthNarrowSweepCapture:
 #       (e.g. symbol="EventTarget.addEventListener", receiver="HTMLDivElement").
 # Interface-level attribution is the goal; distinguishing two instances of the
 # same interface is explicitly NOT needed. See
-# docs/developers/Stealth-Instrumentation.md and
+# docs/developers/Stealth-Instrumentation.rst and
 # Extension/src/stealth/instrument.ts (logCall / getReceiverInterfaceName).
 # --------------------------------------------------------------------------- #
 # The probe page (stealth_shared_prototype.html) calls addEventListener on an
@@ -3621,6 +3686,90 @@ _GOLDEN_UNION_EXPECTED_UNTRANSLATED = [
 ]
 
 
+# Instance-own member of a [Global] object. window.fetch is an OWN property of the
+# window INSTANCE (WebIDL [Global] members are installed on the global object
+# itself), absent from Window.prototype. The constructor-prototype leaf entry
+# (object="Window", depth 0) resolves to Window.prototype and misses it, and
+# inheritedOwners (walking the prototype chain ABOVE the instance) never sees it —
+# so it arrives with owner=None, which the migrator once dropped as "absent". The
+# walk now marks it instance-own (instanceOwnNames) and instance-resolvable
+# (instanceObjectName), so the sweep emits a dedicated instance-resolved entry
+# (object="window", depth 0) — the same convention the bundled default uses for
+# window.name/localStorage. Regression pin for the migrator walk-resolution gap.
+_GOLDEN_INSTANCE_OWN_WALK = {
+    "errors": [],
+    "reached": [
+        {
+            "instrumentedName": "window",
+            "constructorName": "Window",
+            # Window.prototype's OWN names do NOT include fetch (it is instance-own).
+            "stealthOwnNames": ["length", "document"],
+            # fetch is an OWN property of the window INSTANCE.
+            "instanceOwnNames": ["fetch", "length", "document"],
+            "instanceObjectName": "window",
+            "propertyNames": ["fetch"],
+            "inheritedOwners": [],
+        }
+    ],
+}
+_GOLDEN_INSTANCE_OWN_LEGACY: List[Any] = [{"window": ["fetch"]}]
+_GOLDEN_INSTANCE_OWN_EXPECTED_SETTINGS: List[Dict[str, Any]] = [
+    {
+        "object": "window",
+        "instrumentedName": "window",
+        "depth": 0,
+        "logSettings": {
+            "propertiesToInstrument": ["fetch"],
+            "nonExistingPropertiesToInstrument": [],
+            "excludedProperties": [],
+            "logCallStack": False,
+            "logFunctionsAsStrings": False,
+            "logFunctionGets": False,
+            "preventSets": False,
+            "recursive": False,
+            "depth": 5,
+            "overwrittenProperties": [],
+        },
+    }
+]
+
+
+class TestStealthSweepInstanceOwnGlobalMember:
+    """The instance-own [Global] member path (regression for the walk gap).
+
+    ``window.fetch`` (and structurally-similar WebIDL ``[Global]`` members —
+    ``atob``, ``setTimeout``, ...) live as OWN properties of the window INSTANCE,
+    not on ``Window.prototype``. The migrator once dropped them as "absent" because
+    the prototype-chain walk never inspects the instance's own properties. The
+    sweep must instead emit a dedicated instance-resolved ``{object: "window",
+    depth: 0}`` entry that instruments them, and must NOT report ``window.fetch``
+    as untranslated. Driven by a synthetic walk (no browser).
+    """
+
+    def test_instance_own_member_translates_and_is_not_untranslated(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        settings, untranslated = _run_sweep_with_walk(
+            monkeypatch,
+            _GOLDEN_INSTANCE_OWN_WALK,
+            _GOLDEN_INSTANCE_OWN_LEGACY,
+        )
+        assert settings == _GOLDEN_INSTANCE_OWN_EXPECTED_SETTINGS, (
+            "window.fetch (instance-own [Global] member) did not translate to the "
+            f"expected instance-resolved entry; got {settings}"
+        )
+        assert not any(r.path == "window.fetch" for r in untranslated), (
+            "window.fetch must NOT be surfaced as untranslated once the walk "
+            f"resolves it as an instance-own member; got {untranslated}"
+        )
+        # And no over-broad leaf entry: the constructor-prototype leaf (which would
+        # resolve Window.prototype and miss fetch) must be suppressed, not emitted
+        # with an empty (== instrument-everything) propertiesToInstrument.
+        assert all(
+            e["object"] != "Window" for e in settings
+        ), f"an unwanted Window.prototype leaf entry was emitted: {settings}"
+
+
 class TestStealthSweepDisjointSharedPrototypeUnion:
     """The disjoint-members-on-shared-prototype UNION / over-capture path.
 
@@ -3716,6 +3865,13 @@ class TestStealthSweepDisjointSharedPrototypeUnion:
             _GOLDEN_UNION_EXPECTED_SETTINGS,
             _GOLDEN_UNION_EXPECTED_UNTRANSLATED,
             id="disjoint-shared-prototype-union",
+        ),
+        pytest.param(
+            _GOLDEN_INSTANCE_OWN_WALK,
+            _GOLDEN_INSTANCE_OWN_LEGACY,
+            _GOLDEN_INSTANCE_OWN_EXPECTED_SETTINGS,
+            [],
+            id="instance-own-global-member",
         ),
     ],
 )

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — window.fetch capture probe</title>
+</head>
+<body>
+    <h1>window.fetch</h1>
+    <script>
+    /*
+     * Calls window.fetch so the tests can assert the MIGRATED stealth config
+     * records the call in the javascript table. window.fetch is a WebIDL
+     * [Global] member: it lives as an OWN property of the window INSTANCE, not on
+     * Window.prototype — the exact resolution the migrator's instance-own path
+     * must handle (see openwpm/utilities/js_settings_migrator.py).
+     *
+     * A data: URL is used so the call resolves without any network dependency;
+     * the instrumented wrapper logs the call at invocation time regardless of how
+     * the returned promise settles.
+     */
+    try {
+      window.fetch("data:text/plain,openwpm-stealth-fetch-probe");
+    } catch (e) {
+      // The call is what the test asserts on; swallow any rejection/error.
+    }
+    document.title = "fetch-done";
+    </script>
+</body>
+</html>

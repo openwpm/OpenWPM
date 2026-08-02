@@ -52,6 +52,21 @@ classes:
    to a live node (``undefined``/``null``/throws) is surfaced as an
    :class:`UntranslatedEntry` too, and makes the CLI exit non-zero.
 
+Instance-own members of a global object
+----------------------------------------
+A WebIDL ``[Global]`` object (``window``) installs its interface and included-
+mixin members (``fetch``, ``atob``, ``setTimeout``, ``name``, ...) as OWN
+properties of the INSTANCE, not on ``Window.prototype``. The constructor-prototype
+leaf entry (``object: constructor.name``, depth 0) resolves to ``Window.prototype``
+and so misses them, and the walker's prototype-chain descent never sees them (they
+live ON the instance, below the chain). These are NOT absent: the sweep emits a
+dedicated entry that resolves the INSTANCE directly (``object`` = the instance
+global name, e.g. ``window``, which the stealth instrument resolves via
+``context.wrappedJSObject[object]`` with no ``.prototype`` redirection) and hooks
+the members at depth 0 — the same convention the bundled ``settings.ts`` default
+uses for ``window.name``/``localStorage``. Both methods and accessors are captured
+this way, since a ``[Global]`` object is a singleton (no receiver ambiguity).
+
 Interface-attributed shared-prototype capture
 ---------------------------------------------
 Inherited members owned by a REAL global interface prototype (e.g.
@@ -312,6 +327,53 @@ def _stealth_entry_from_node(
     }
 
 
+def _instance_own_entry(
+    node: Dict[str, Any],
+    object_name: str,
+    members: List[str],
+    log_settings: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Build a stealth entry that hooks INSTANCE-OWN members of a global object.
+
+    A WebIDL ``[Global]`` object (``window``) carries its interface and included-
+    mixin members (``fetch``, ``atob``, ``setTimeout``, ``name``, ...) as OWN
+    properties of the INSTANCE, not on ``Window.prototype``. The constructor-
+    prototype leaf entry (``object: constructor.name``, depth 0) resolves to
+    ``Window.prototype`` and so misses them, and the prototype-chain walk in the
+    walker never sees them (they live ON the instance, below the chain). This entry
+    instead resolves the INSTANCE directly: ``object`` is the instance global name
+    (``window``), which the stealth instrument resolves via
+    ``context.wrappedJSObject[object]`` with NO ``.prototype`` redirection (see
+    ``getPageObjectInContext`` in ``Extension/src/stealth/instrument.ts``), and it
+    instruments the members as own properties of that instance at depth 0. This is
+    exactly the convention the bundled default uses for its ``{object: "window",
+    depth: 0}`` ``name``/``localStorage``/``sessionStorage`` entry (see
+    ``Extension/src/stealth/settings.ts``).
+
+    Both methods AND accessors are captured here — unlike inherited members on a
+    SHARED prototype, a ``[Global]`` object is a singleton, so hooking the
+    instance's own accessor needs no receiver-interface filtering.
+    """
+    ls = dict(log_settings)
+    ls["recursive"] = False
+    # See legacy_settings_to_stealth: preventSets is dropped on translation.
+    ls["preventSets"] = False
+    ls["propertiesToInstrument"] = sorted(members)
+    # nonExistingPropertiesToInstrument belongs to the constructor-prototype leaf
+    # entry (which synthesizes those decoy accessors on the prototype); do not
+    # re-synthesize them on the instance object here.
+    ls["nonExistingPropertiesToInstrument"] = []
+    # overwrittenProperties is a stealth-only field; default it so the emitted
+    # entry validates against the shared schema.
+    ls.setdefault("overwrittenProperties", [])
+    return {
+        "object": object_name,
+        "instrumentedName": node["instrumentedName"],
+        "depth": 0,
+        "logSettings": ls,
+    }
+
+
 def legacy_settings_to_stealth(
     legacy_settings: List[Any],
     firefox_binary: Optional[Union[str, Path]] = None,
@@ -510,10 +572,15 @@ def legacy_settings_to_stealth(
         #     interface-attributed shared-prototype capture: aggregate
         #     (owner, member) → leaf ctor, emitted as a shared-prototype entry
         #     with receiverInterfaces (filtered+attributed at call time).
-        #   * everything else (members owned by a UNIVERSAL prototype, members of
-        #     unknown ownership, OR non-method members — inherited accessors/data
-        #     properties, whose call-time receiver cannot be filtered) →
-        #     surfaced as untranslated.
+        #   * an INSTANCE-OWN member (owner=None because it is an own property of
+        #     the instance, not on the prototype chain — e.g. the WebIDL [Global]
+        #     members window.fetch/atob/setTimeout) → captured via a dedicated
+        #     instance-resolved entry (object=instance_object_name, depth 0), the
+        #     same way the bundled default hooks window.name/localStorage.
+        #   * everything else (members owned by a UNIVERSAL prototype, members
+        #     genuinely absent from the object, OR non-method members — inherited
+        #     accessors/data properties, whose call-time receiver cannot be
+        #     filtered) → surfaced as untranslated.
         #
         # Non-existing properties (nonExistingPropertiesToInstrument) are absent
         # from the live prototype chain BY DESIGN, so the walk reports owner=None
@@ -533,6 +600,17 @@ def legacy_settings_to_stealth(
         non_existing_props = set(
             leaf_entry["logSettings"].get("nonExistingPropertiesToInstrument", [])
         )
+        # Instance-own members: OWN properties of the reached INSTANCE object that
+        # are absent from the resolved interface prototype (the canonical case is a
+        # WebIDL [Global] member like window.fetch). They are collected here and
+        # emitted as a single instance-resolved entry after the loop, rather than
+        # being misclassified as absent. ``instance_object_name`` is the global name
+        # the stealth instrument resolves the instance by (set only for a top-level
+        # node whose legacy object string resolves straight to the instance); when
+        # it is None the members fall through to the honest absent-member branch.
+        instance_own_names = set(node.get("instanceOwnNames") or [])
+        instance_object_name = node.get("instanceObjectName")
+        instance_captured: List[str] = []
         for member, owner, real_interface, is_function in _inherited_members_of_node(
             node
         ):
@@ -604,12 +682,28 @@ def legacy_settings_to_stealth(
                         ),
                     )
                 )
+            elif (
+                owner is None and instance_object_name and member in instance_own_names
+            ):
+                # Instance-own member: an OWN property of the reached INSTANCE
+                # object (owner is None because it is not on the prototype chain
+                # the walk inspects) that the resolved constructor-prototype leaf
+                # entry misses. The canonical case is a WebIDL [Global] member —
+                # window.fetch / atob / setTimeout / ... — which Firefox installs
+                # as an own property of the window INSTANCE, not on
+                # Window.prototype. It is NOT absent: the stealth instrument can
+                # hook it directly by resolving the instance global
+                # (object=instance_object_name, depth 0), exactly as the bundled
+                # default does for window.name/localStorage. Collect it for a
+                # single instance-resolved entry emitted after the loop.
+                instance_captured.append(member)
             elif owner is None:
                 # The member was requested by legacy but could not be located on
                 # the object's live prototype chain (no owning prototype found in
-                # the walk). It is genuinely absent from the live object — not an
-                # inherited member of any prototype — so stealth has nothing to
-                # hook for it.
+                # the walk) and is not an instance-own member of a resolvable
+                # global (handled above). It is genuinely absent from the live
+                # object — not an inherited member of any prototype — so stealth
+                # has nothing to hook for it.
                 untranslated.append(
                     UntranslatedEntry(
                         path=f"{name}.{member}",
@@ -633,6 +727,20 @@ def legacy_settings_to_stealth(
                         ),
                     )
                 )
+
+        # Emit ONE instance-resolved entry covering every instance-own member of
+        # this node (e.g. window.fetch/atob/setTimeout), resolved via the instance
+        # global rather than the constructor prototype. instance_captured is only
+        # non-empty when instance_object_name is set.
+        if instance_captured:
+            stealth_settings.append(
+                _instance_own_entry(
+                    node,
+                    instance_object_name,
+                    instance_captured,
+                    log_settings,
+                )
+            )
 
     # Emit one shared-prototype entry per (owner interface, member), instrumenting
     # the member once on the owner's prototype and filtering+attributing by

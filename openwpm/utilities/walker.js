@@ -206,10 +206,24 @@ function inheritedOwners(object, leafOwnSet) {
 // once even if several properties point at it.
 const reached = {};
 
-function recordNode(object, instrumentedName, propertyNames) {
+function recordNode(object, instrumentedName, propertyNames, instanceObjectName) {
   if (!(instrumentedName in reached)) {
     const ctor = constructorName(object);
     const leafOwn = stealthOwnNames(ctor);
+    // The OWN property names of the reached INSTANCE object itself. For a WebIDL
+    // [Global] object (window) the interface and included-mixin members (fetch,
+    // atob, setTimeout, name, ...) are installed as OWN properties of the
+    // instance, NOT on Window.prototype — so they appear here yet are absent from
+    // BOTH stealthOwnNames (window[ctor].prototype's own names) AND inheritedOwners
+    // (which walks the prototype chain ABOVE the instance). The Python side uses
+    // this set to route such instance-own members to a dedicated instance-resolved
+    // entry instead of misclassifying them as absent from the object.
+    let instanceOwn;
+    try {
+      instanceOwn = Object.getOwnPropertyNames(object);
+    } catch (e) {
+      instanceOwn = [];
+    }
     reached[instrumentedName] = {
       instrumentedName: instrumentedName,
       constructorName: ctor,
@@ -220,6 +234,14 @@ function recordNode(object, instrumentedName, propertyNames) {
       // covers: the OWN names of window[ctor].prototype. null when the
       // constructor does not resolve to a hookable prototype.
       stealthOwnNames: leafOwn,
+      // The OWN names of the instance object (see above).
+      instanceOwnNames: instanceOwn,
+      // A name by which the stealth instrument can resolve this node directly as
+      // an INSTANCE (context.wrappedJSObject[name], with NO constructor .prototype
+      // redirection), or null. Only set for a top-level node whose legacy object
+      // string resolves straight to the instance (e.g. "window"); required to hook
+      // a [Global] object's instance-own members.
+      instanceObjectName: instanceObjectName || null,
       // Per inherited member: which prototype owns it and whether that prototype
       // is a hookable global interface (→ interface-attributed shared-prototype
       // capture) or a universal prototype (→ untranslated). Keyed off the live chain.
@@ -236,7 +258,7 @@ function recordNode(object, instrumentedName, propertyNames) {
 
 // Faithful replay of instrumentObject (lib/js-instruments.ts ~660-732), recording
 // instead of instrumenting.
-function walk(object, instrumentedName, logSettings) {
+function walk(object, instrumentedName, logSettings, instanceObjectName) {
   let propertiesToInstrument;
   if (logSettings.propertiesToInstrument === null) {
     propertiesToInstrument = [];
@@ -268,7 +290,11 @@ function walk(object, instrumentedName, logSettings) {
         child = undefined;
       }
       if (child !== undefined && child !== null) {
-        walk(child, newInstrumentedName, newLogSettings);
+        // Recursively-reached children carry a dotted path (e.g.
+        // "window.navigator.permissions") that the stealth instrument cannot
+        // resolve as a bracket-indexed instance global, so they are never
+        // instance-resolvable — pass null.
+        walk(child, newInstrumentedName, newLogSettings, null);
       }
     }
     instrumentedHere.push(propertyName);
@@ -279,7 +305,7 @@ function walk(object, instrumentedName, logSettings) {
     }
     instrumentedHere.push(propertyName);
   }
-  recordNode(object, instrumentedName, instrumentedHere);
+  recordNode(object, instrumentedName, instrumentedHere, instanceObjectName);
 }
 
 const errors = [];
@@ -297,7 +323,24 @@ for (const setting of settings) {
     errors.push({ object: setting.object, error: "resolved to null/undefined" });
     continue;
   }
-  walk(object, setting.instrumentedName, setting.logSettings);
+  // Whether the stealth instrument can resolve this top-level node DIRECTLY as an
+  // instance (window[objectString], with no constructor .prototype redirection) —
+  // the path needed to hook a [Global] object's instance-own members
+  // (window.fetch etc.). Mirrors getPageObjectInContext in
+  // Extension/src/stealth/instrument.ts: window[name].prototype || window[name].
+  // A constructor string (e.g. "Navigator") is excluded because window[name]
+  // .prototype is truthy, so getPageObjectInContext would resolve the PROTOTYPE,
+  // not the instance.
+  let instanceObjectName = null;
+  try {
+    const resolved = window[setting.object];
+    if (resolved === object && !resolved.prototype) {
+      instanceObjectName = setting.object;
+    }
+  } catch (e) {
+    instanceObjectName = null;
+  }
+  walk(object, setting.instrumentedName, setting.logSettings, instanceObjectName);
 }
 
 return JSON.stringify({ reached: Object.values(reached), errors: errors });
