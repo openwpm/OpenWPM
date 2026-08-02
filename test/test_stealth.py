@@ -453,13 +453,14 @@ DETECTABILITY_REQUIREMENTS: List[DetectabilityRequirement] = [
     # (Extension/src/stealth/index.ts, createProxyFunction) installs PAGE-FACING
     # Proxy objects on page prototypes for appendChild / document.write /
     # window.open and the iframe contentWindow getter, masking them by patching
-    # the MAIN-REALM Function.prototype.toString. Each hook is probed four ways:
-    # same-realm toString ([native code]), arity (.length), .name, and a
-    # CROSS-REALM toString taken from a fresh same-origin iframe realm. The
-    # _xrealm vectors test whether the main-realm Function.prototype.toString
-    # swap (index.ts) is bypassable from a fresh realm — the same cross-realm
-    # tell the ADR identifies as Wall 1: the swap does not reach the iframe
-    # realm, so a Proxy/JS hook is unmasked there. legacy_detectable=None for all
+    # Function.prototype.toString in the main realm AND each same-origin child
+    # realm it reaches. Each hook is probed four ways: same-realm toString
+    # ([native code]), arity (.length), .name, and a CROSS-REALM toString taken
+    # from a fresh same-origin iframe realm. The _xrealm vectors test whether the
+    # toString swap holds from a fresh realm — a naive main-realm-ONLY swap would
+    # NOT reach the iframe realm and a Proxy/JS hook would be unmasked there (the
+    # cross-realm tell the ADR identifies as Wall 1), so these rows assert stealth
+    # closes that gap by reaching child realms. legacy_detectable=None for all
     # rows: legacy does not hook this frame-protection surface at all (same
     # handling as D6/D7/D9), so only the stealth direction is asserted.
     DetectabilityRequirement(
@@ -495,6 +496,20 @@ DETECTABILITY_REQUIREMENTS: List[DetectabilityRequirement] = [
     ),
     DetectabilityRequirement(
         "D10-fp-contentwindow-getter-xrealm", "fp_contentwindow_xrealm_native", None
+    ),
+    # D11: recursive toString identity. The frame-protection layer masks the
+    # hooked members by SWAPPING Function.prototype.toString for a spoof that
+    # returns "[native code]". That spoof is itself a function, so a page can turn
+    # it on itself — Function.prototype.toString.toString() (the spoof stringifies
+    # itself) and the spoof's own .toString stringified. A faithful spoof must,
+    # like the native Function.prototype.toString, report "[native code]" for
+    # ITSELF rather than leaking its JS source. legacy_detectable=None: legacy
+    # does not swap Function.prototype.toString at all, so its recursive identity
+    # is genuinely native — this asserts only the stealth direction (that the
+    # spoof does not leak itself), same handling as the other frame-protection
+    # rows (D10).
+    DetectabilityRequirement(
+        "D11-tostring-recursive-native", "tostring_recursive_native", None
     ),
 ]
 
@@ -2329,6 +2344,46 @@ class TestStealthNarrowSweepCapture:
             f"from the live object's prototype chain; got: {reason!r}"
         )
 
+    def test_narrow_inherited_only_request_emits_no_empty_leaf(self) -> None:
+        """A narrow request naming ONLY inherited/absent members must NOT emit a
+        leaf entry with an empty ``propertiesToInstrument``.
+
+        ``{"window.navigator": ["addEventListener"]}`` names a member that is NOT
+        own on ``Navigator.prototype`` (navigator is not an ``EventTarget``, so it
+        is absent from the live chain). The requested-own intersection is therefore
+        empty. If the sweep still emitted a ``window.navigator`` leaf entry, its
+        ``propertiesToInstrument`` would be ``[]`` — which the stealth instrument
+        reads as "instrument EVERY own member of the resolved prototype", silently
+        widening a single-member request to all ~35 ``Navigator.prototype``
+        members. The requested member is not lost: it is surfaced in the
+        untranslated list (asserted by
+        ``test_absent_member_untranslated_reason_is_not_universal_prototype``).
+        """
+        stealth_settings, untranslated = legacy_settings_to_stealth(
+            [{"window.navigator": ["addEventListener"]}]
+        )
+        nav_entries = [
+            e for e in stealth_settings if e["instrumentedName"] == "window.navigator"
+        ]
+        assert nav_entries == [], (
+            "a narrow request naming only an inherited/absent member emitted a "
+            "leaf stealth entry for window.navigator, wholesale-instrumenting "
+            f"Navigator.prototype. Emitted nav entries: {nav_entries!r}"
+        )
+        # Belt and suspenders: no leaf entry anywhere may carry the over-broad
+        # empty propertiesToInstrument that means "instrument everything".
+        empty_leaves = [
+            e
+            for e in stealth_settings
+            if e["logSettings"].get("propertiesToInstrument") == []
+            and not e["logSettings"].get("nonExistingPropertiesToInstrument")
+            and not e["logSettings"].get("receiverInterfaces")
+        ]
+        assert empty_leaves == [], (
+            "an over-broad leaf entry with empty propertiesToInstrument (reads as "
+            f"'instrument every own member' under stealth) was emitted: {empty_leaves!r}"
+        )
+
     def test_non_existing_property_is_not_reported_as_untranslated(self) -> None:
         """A non-existing property (``nonExistingPropertiesToInstrument``) is
         CAPTURED, not reported as untranslated.
@@ -3528,31 +3583,7 @@ _GOLDEN_UNION_LEGACY: List[Any] = [
 ]
 
 
-def _leaf_entry(name: str, ctor: str) -> Dict[str, Any]:
-    """A migrated leaf entry whose requested members were all INHERITED (so the
-    leaf's own propertiesToInstrument is empty)."""
-    return {
-        "object": ctor,
-        "instrumentedName": name,
-        "depth": 0,
-        "logSettings": {
-            "propertiesToInstrument": [],
-            "nonExistingPropertiesToInstrument": [],
-            "excludedProperties": [],
-            "logCallStack": False,
-            "logFunctionsAsStrings": False,
-            "logFunctionGets": False,
-            "preventSets": False,
-            "recursive": False,
-            "depth": 5,
-            "overwrittenProperties": [],
-        },
-    }
-
-
 _GOLDEN_UNION_EXPECTED_SETTINGS: List[Dict[str, Any]] = [
-    _leaf_entry("window.document", "HTMLDocument"),
-    _leaf_entry("window.document.body", "HTMLBodyElement"),
     {
         "object": "EventTarget",
         "instrumentedName": "EventTarget",

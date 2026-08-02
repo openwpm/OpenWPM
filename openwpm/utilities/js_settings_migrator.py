@@ -482,7 +482,24 @@ def legacy_settings_to_stealth(
             root = _root_for(name, cleaned_by_name)
         log_settings = root["logSettings"] if root else {}
         leaf_entry = _stealth_entry_from_node(node, log_settings)
-        stealth_settings.append(leaf_entry)
+        # Emit the leaf entry ONLY when it actually captures something at this
+        # node — i.e. it has at least one own name to instrument
+        # (propertiesToInstrument) or a synthesized non-existing property
+        # (nonExistingPropertiesToInstrument). A leaf whose requested own set is
+        # empty (a NARROW legacy request that named only inherited/absent
+        # members, so the intersection with the resolved prototype's own names is
+        # empty) would carry propertiesToInstrument == [] — which the stealth
+        # instrument reads as "instrument EVERY own member of the resolved
+        # prototype" (Extension/src/stealth/instrument.ts getObjectProperties).
+        # Appending it would silently widen a narrow request to the whole leaf
+        # prototype. Nothing requested is lost by dropping it: the inherited
+        # members route to the shared-prototype path and the absent members to
+        # the untranslated list in the loop below.
+        leaf_log = leaf_entry["logSettings"]
+        if leaf_log.get("propertiesToInstrument") or leaf_log.get(
+            "nonExistingPropertiesToInstrument"
+        ):
+            stealth_settings.append(leaf_entry)
 
         # Inherited-chain members: legacy instruments node.propertyNames (own +
         # the ENTIRE prototype chain, getPropertyNames); the emitted leaf stealth

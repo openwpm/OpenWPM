@@ -229,24 +229,54 @@
         return true;
     }
 
+    // D11: recursive toString identity.
+    //
+    // The frame-protection layer masks the hooked members by SWAPPING
+    // Function.prototype.toString itself for a spoof that returns "[native code]".
+    // That spoof is ITSELF a function, so a page can turn the spoof on itself:
+    //   * Function.prototype.toString.toString()  -- the spoof stringifies itself
+    //   * (any fn).toString IS Function.prototype.toString, so the spoof's own
+    //     .toString stringified must also look native.
+    // A naive spoof leaks its JS source here (revealing the wrapper); a correct
+    // one, like the native Function.prototype.toString, reports "[native code]"
+    // even for itself. On a clean Firefox every step is genuinely native, so this
+    // returns true; a leaking spoof returns false. (returns true = undetectable)
+    function testRecursiveToStringNative() {
+        const fpts = Function.prototype.toString;
+        // The spoof asked to stringify ITSELF.
+        if (fpts.toString().indexOf("[native code]") === -1) return false;
+        // The spoof's OWN .toString (=== the spoof) stringified.
+        if (fpts.toString.toString().indexOf("[native code]") === -1) return false;
+        // One more level: stringify the result-producing call chain again to be
+        // sure the identity is stable, not a single-shot canned string.
+        if (fpts.toString.toString.call(fpts).indexOf("[native code]") === -1)
+            return false;
+        return true;
+    }
+
     // D10: Frame-protection / DOM-hook detectability.
     //
     // The stealth instrument's inherited frame-protection layer (index.ts,
     // createProxyFunction) installs PAGE-FACING Proxy objects on page prototypes
     // for appendChild / document.write / window.open and the iframe
-    // contentWindow getter, masking them by patching the MAIN-REALM
-    // Function.prototype.toString. A page can probe each hook four ways:
+    // contentWindow getter, masking them by patching Function.prototype.toString
+    // in the main realm AND in each same-origin child realm it reaches. A page
+    // can probe each hook four ways:
     //   _native  -- same-realm Function.prototype.toString is "[native code]"
     //   _arity   -- fn.length equals the native arity
     //   _name    -- fn.name equals the native name
     //   _xrealm_native -- a Function.prototype.toString taken from a FRESH
     //                     same-origin iframe realm, called on the main-realm
     //                     hooked fn, still reports "[native code]".
-    // The main-realm toString swap does NOT reach the iframe realm, so if the
-    // hook is a Proxy/JS wrapper the cross-realm toString reveals it is not
-    // native — the exact cross-realm tell the ADR calls "Wall 1". A clean
-    // Firefox (and an ideally-undetectable stealth) returns true on EVERY key,
-    // including _xrealm_native. Each result is recorded defensively per probe
+    // The frame-protection layer DOES reach each same-origin child realm: the
+    // instrument patches the iframe realm's Function.prototype.toString too (not
+    // just the main realm's), so the cross-realm toString still reports
+    // "[native code]" for the hooked fn. A naive main-realm-ONLY swap would not —
+    // the cross-realm toString would then reveal the hook is a Proxy/JS wrapper,
+    // the exact cross-realm tell the ADR calls "Wall 1", which stealth closes by
+    // reaching child realms. A clean Firefox (and an ideally-undetectable
+    // stealth) returns true on EVERY key, including _xrealm_native. Each result
+    // is recorded defensively per probe
     // (boolean, or "error:<msg>" if that single probe throws).
     function runFrameProtectionProbes() {
         // A separate realm: a same-origin about:blank iframe. Its realm-local
@@ -261,9 +291,11 @@
         // swapped.
         const xToString = iwin.Function.prototype.toString;
 
-        // Native source-of-truth members FROM THE IFRAME REALM (pristine, since
-        // the instrument hooks only the main realm): expected arity/name come
-        // from these.
+        // Source-of-truth members FROM THE IFRAME REALM: expected arity/name come
+        // from these. (The instrument reaches this child realm too, so the
+        // members' arity/name are preserved to match native — see the proxy
+        // arity/name masking in createProxyFunction — which is exactly why the
+        // arity/name probes below still pass under stealth.)
         const nativeAppendChild = iwin.Node.prototype.appendChild;
         const nativeDocWrite = iwin.document.write;
         const nativeWindowOpen = iwin.open;
@@ -351,6 +383,7 @@
     safeRun("function_arity_native", testFunctionArityNative);
     safeRun("accessor_name_native", testAccessorNameNative);
     safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
+    safeRun("tostring_recursive_native", testRecursiveToStringNative);
 
     // D10: frame-protection / DOM-hook probes write their own per-key results
     // (see runFrameProtectionProbes); wrapped so a setup failure cannot abort
