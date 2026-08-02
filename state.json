@@ -1,5 +1,5 @@
 {
-  "next_display_id": 70,
+  "next_display_id": 71,
   "next_comment_id": 268,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -50,6 +50,7 @@
     "aa0ecde9-be6e-42ed-a587-1704151a10b1": 41,
     "aa835c8d-85ff-4de7-a2f4-c9200982c9cf": 48,
     "ab506265-7418-4bd7-bee8-6c761485052c": 28,
+    "ad35e544-5612-4d13-ba76-94142109dbe7": 70,
     "ade61359-4f05-4a17-b59b-3127c4151d68": 18,
     "b6f1fc91-f980-4876-8d17-f98fa28dee91": 4,
     "b9efb2e3-947a-4296-b68b-669bb70b8671": 10,
@@ -1713,6 +1714,16 @@
       "created_at": "2026-06-14T20:51:47.734646696Z",
       "updated_at": "2026-06-14T20:51:47.734646696Z"
     },
+    "ad35e544-5612-4d13-ba76-94142109dbe7": {
+      "uuid": "ad35e544-5612-4d13-ba76-94142109dbe7",
+      "display_id": 70,
+      "title": "Diagnostic: stealth-legacy equivalence harness",
+      "status": "open",
+      "priority": "medium",
+      "created_by": "claude",
+      "created_at": "2026-08-02T21:37:48.895038661Z",
+      "updated_at": "2026-08-02T21:37:48.895038661Z"
+    },
     "ade61359-4f05-4a17-b59b-3127c4151d68": {
       "uuid": "ade61359-4f05-4a17-b59b-3127c4151d68",
       "display_id": 18,
@@ -3028,8 +3039,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-06-21T09:27:06.137628648Z",
+    "timestamp": "2026-08-02T21:37:48.895038661Z",
     "agent_id": "claude",
-    "agent_seq": 52
+    "agent_seq": 53
   }
 }
