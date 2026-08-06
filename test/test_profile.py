@@ -155,8 +155,8 @@ class AssertConfigSetCommand(BaseCommand):
         # about:config and running execute_script there is no longer supported
         # (Firefox 151 rejects ExecuteScript in parent process browsing
         # contexts), so we switch into the privileged chrome context instead.
-        # This requires Firefox to be launched with -remote-allow-system-access,
-        # which deploy_firefox sets.
+        # This requires privileged parent-process access, which deploy_firefox
+        # enables via geckodriver's --allow-system-access flag.
         with webdriver.context(webdriver.CONTEXT_CHROME):
             result = webdriver.execute_script(f"""
                     var prefs = Components

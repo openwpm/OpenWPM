@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.36.0 - 2026-08-23
+
+Bump to Firefox 154
+
+### Fixes & improvements
+
+- Request privileged parent-process access via geckodriver's `--allow-system-access` command-line flag instead of Firefox's `-remote-allow-system-access` argument. geckodriver 0.37.1 rejects the latter when it arrives through capabilities (a remote client granting itself system access would be a privilege escalation), which made every browser fail to launch and retry until the crawl gave up
+- Harden the Extension ↔ StorageController socket path: reject payloads ≥ 4 GiB instead of letting the u32 length field clamp and permanently desync the length-prefixed stream, accept the `u` (UTF-8 string) tag that the Python side already emits, surface send failures instead of swallowing them, and decode the receive side as real UTF-8 rather than narrowing through Latin-1
+- Validate `echo_mode` at config time so a misconfigured browser aborts cleanly instead of driving an infinite worker-restart loop that burns the failure budget
+- Cache the UTF-8 decoder on the socket receive hot path, and gate the accept-loop shutdown message behind `verbose` so expected teardown stops writing to stdout
+- Resolve the remaining TypeScript 6 strict-mode errors across the extension; `strict: true` is now enabled explicitly as a standing guardrail rather than opted out of
+- Deduplicate string helpers into `lib/string-utils` — `loggingdb.ts` carried private copies of `Uint8ToBase64`, `escapeString`, `boolToInt` and `encode_utf8`, and the two `Uint8ToBase64` copies had already drifted
+
+### Tooling / tests
+
+- `scripts/firefox_version.py` now verifies that a release tag's revision actually has unbranded TaskCluster builds for every platform `install-firefox.sh` supports before pinning it; previously such a tag was pinned happily and only failed with a 404 at download time (#964). `FIREFOX_153_0_3_RELEASE` is the motivating case: its tagged revision has no unbranded builds on any platform, because 153.0.3's builds were produced from a later, untagged `mozilla-release` revision. Resolving the build revision from the TaskCluster index instead of the hg tag, which would make such releases reachable, is tracked in #1221
+- `scripts/firefox_version.py` now patches only the `strict_min_version` value in `Extension/bundled/manifest.json` instead of re-serializing the whole document. `json.dumps(indent=2)` expands short arrays that prettier keeps on one line, so every Firefox bump used to leave the manifest failing the Extension lint gate
+- Pin a floor of `python>=3.14` in `scripts/environment-unpinned.yaml`. Left fully unpinned, the conda solver selected python 3.13 in order to maximize another package, which silently dragged pandas back a major version (3.0.x → 2.2.x) — below what the previous release already shipped. The floor keeps the interpreter current while still picking up future majors automatically
+- The Extension's `test:lint` script no longer ends in `|| exit 0`, which made it impossible for eslint or prettier to fail the build. Since `npm ci` runs it through the `prepare` lifecycle, this was the only place Extension lint ran at all — so lint was effectively unenforced everywhere, locally and in CI
+- `scripts/update.py` fails loudly when npm rejects the dependency tree and no actionable peer conflict can be parsed out of the output, instead of silently retrying the identical install ten times
+- Major JS/TS toolchain upgrade: TypeScript 5 → 6, babel 7 → 8, eslint 9 → 10, eslint-plugin-unicorn 64 → 73. `@microsoft/eslint-plugin-sdl` stays at 1.x (it still peers eslint ^9) and runs under eslint 10 via an npm `overrides` entry
+- TypeScript is held at 6.x: `typescript-eslint`'s latest stable (8.66.0) peers `typescript >=4.8.4 <6.1.0`, so TypeScript 7 — the native compiler rewrite — cannot resolve. It warrants its own migration PR regardless
+- Drop the unused `typedoc` devDependency. Nothing invoked it — no npm script, no CI step, and the Sphinx docs never consumed its output
+- End-to-end socket wire-protocol test that drives the real extension → Python path (privileged sockets API, `socket.ts`, `socket_interface.py`) via a test-only echo mode
+- Register assertion rewriting for shared test helper modules so a failing `assert` inside them reports an observed-vs-expected diff instead of a bare `AssertionError`
+- Add a `SetResolution` custom-command example
+- Full conda + npm dependency churn
+
 ## v0.35.0 - 2026-06-17
 
 Bump to Firefox 152

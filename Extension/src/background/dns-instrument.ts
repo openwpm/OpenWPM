@@ -17,11 +17,9 @@ const DNS_ERROR_STRINGS = ["NS_ERROR_UNKNOWN_HOST"];
 export class DnsInstrument {
   private readonly dataReceiver: DataReceiver;
   private onHeadersReceivedListener:
-    | ((details: WebRequestOnHeadersReceivedDetails) => void)
-    | undefined;
+    ((details: WebRequestOnHeadersReceivedDetails) => void) | undefined;
   private onErrorOccurredListener:
-    | ((details: WebRequestOnErrorOccurredDetails) => void)
-    | undefined;
+    ((details: WebRequestOnErrorOccurredDetails) => void) | undefined;
 
   constructor(dataReceiver: DataReceiver) {
     this.dataReceiver = dataReceiver;
@@ -32,8 +30,7 @@ export class DnsInstrument {
 
     const requestStemsFromExtension = (
       details:
-        | WebRequestOnHeadersReceivedDetails
-        | WebRequestOnErrorOccurredDetails,
+        WebRequestOnHeadersReceivedDetails | WebRequestOnErrorOccurredDetails,
     ) => {
       return (
         details.originUrl &&
