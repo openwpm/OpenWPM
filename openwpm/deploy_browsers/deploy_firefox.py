@@ -51,12 +51,9 @@ def deploy_firefox(
     # https://github.com/openwpm/OpenWPM/issues/423#issuecomment-521018093
     fo.add_argument("-profile")
     fo.add_argument(str(browser_profile_path))
-    # Allow WebDriver to access the parent process and privileged Gecko APIs
-    # (e.g. switching to the chrome context). Firefox 138+ gates this behind an
-    # explicit launch flag; without it commands such as reading preferences via
-    # the chrome context fail with "System access is required".
-    # https://firefox-source-docs.mozilla.org/remote/Security.html
-    fo.add_argument("-remote-allow-system-access")
+    # Privileged access to the parent process is requested via a geckodriver
+    # command-line flag rather than a Firefox argument here -- see the Service
+    # construction below for why.
     assert browser_params.browser_id is not None
     if browser_params.seed_tar and not crash_recovery:
         logger.info(
@@ -153,6 +150,21 @@ def deploy_firefox(
         service=Service(
             executable_path=geckodriver_path,
             log_output=open(webdriver_interceptor.fifo, "w"),
+            # Allow WebDriver to access the parent process and privileged Gecko
+            # APIs (e.g. switching to the chrome context). Firefox 138+ gates
+            # this behind an explicit launch flag; without it commands such as
+            # reading preferences via the chrome context fail with "System
+            # access is required".
+            # https://firefox-source-docs.mozilla.org/remote/Security.html
+            #
+            # This must be a geckodriver command-line flag. Passing Firefox's
+            # -remote-allow-system-access through capabilities instead is
+            # rejected by geckodriver 0.37.1+ ("Argument
+            # --remote-allow-system-access can't be set via capabilities"),
+            # because a remote client granting itself system access would be a
+            # privilege escalation. Only the process launching geckodriver may
+            # opt in, which is exactly what we are doing here.
+            service_args=["--allow-system-access"],
         ),
     )
 

@@ -18,7 +18,12 @@ dependencies:
     - plyvel
     - psutil
     - pyarrow
-    - python
+    # Floor the interpreter rather than leaving it fully unpinned. Left open,
+    # the solver has been observed to pick an older python (3.13) to maximize
+    # some other package, which silently drags pandas back a major version
+    # (3.0.x -> 2.2.x). A floor keeps us on modern python while still allowing
+    # the next major to be picked up automatically.
+    - python>=3.14
     - pyvirtualdisplay
     - redis-py
     - s3fs

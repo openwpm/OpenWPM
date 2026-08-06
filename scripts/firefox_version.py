@@ -17,6 +17,7 @@ import argparse
 import json
 import re
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -27,6 +28,20 @@ MANIFEST = (
 TAGS_URL = "https://hg.mozilla.org/releases/mozilla-release/json-tags"
 _TAG_RE = re.compile(r"FIREFOX_(\d+)_(\d+)(?:_(\d+))?_RELEASE")
 
+# TaskCluster index for the unbranded ("add-on-devel") builds that
+# install-firefox.sh downloads. Keep the platform list in sync with the
+# platforms install-firefox.sh knows how to install.
+_INDEX_URL = (
+    "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/"
+    "gecko.v2.mozilla-release.revision.{node}.firefox.{platform}-add-on-devel"
+)
+_PLATFORMS = ("linux64", "macosx64")
+
+# How many release tags to walk back before giving up looking for one with
+# unbranded builds. Generous enough to skip a run of unbuilt dot releases,
+# small enough that a systemic TaskCluster outage fails fast.
+_MAX_TAG_LOOKBACK = 10
+
 
 def _version_key(tag: str) -> tuple[int, int, int]:
     m = _TAG_RE.fullmatch(tag)
@@ -35,8 +50,42 @@ def _version_key(tag: str) -> tuple[int, int, int]:
     return (int(m.group(1)), int(m.group(2)), int(m.group(3) or 0))
 
 
+def has_unbranded_build(node: str) -> bool:
+    """Return True if unbranded builds exist for ``node`` on every platform.
+
+    The revision a release is *tagged* at does not always have unbranded
+    ("add-on-devel") builds indexed against it: Mozilla sometimes builds a dot
+    release from a later mozilla-release revision than the one the
+    FIREFOX_..._RELEASE tag points at, and expedited dot releases also ship a
+    trimmed task graph that drops the unbranded builds entirely. Either way,
+    pinning such a tag makes install-firefox.sh fail with a 404 at download
+    time (see #964), so the index is consulted before a tag is chosen rather
+    than after.
+
+    Note this checks the tagged revision only, so a release whose builds live
+    at an untagged revision is skipped rather than resolved to that revision --
+    we pin one release behind instead of failing. Resolving the build revision
+    from the index itself is tracked in #1221.
+    """
+    for platform in _PLATFORMS:
+        url = _INDEX_URL.format(node=node, platform=platform)
+        req = urllib.request.Request(url, method="HEAD")
+        try:
+            urllib.request.urlopen(req, timeout=15).close()
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return False
+            raise
+    return True
+
+
 def fetch_latest() -> tuple[str, str]:
-    """Return (tag_name, commit_hash) for the newest Firefox release on hg.mozilla.org."""
+    """Return (tag_name, commit_hash) for the newest installable Firefox release.
+
+    "Installable" means the tag has unbranded builds on TaskCluster for every
+    platform install-firefox.sh supports. Newer tags without them are skipped,
+    because pinning one would break every fresh install.
+    """
     req = urllib.request.Request(TAGS_URL, headers={"Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=15) as resp:
         data = json.load(resp)
@@ -44,7 +93,17 @@ def fetch_latest() -> tuple[str, str]:
     if not tags:
         raise RuntimeError("No Firefox release tags found")
     tags.sort(key=lambda t: _version_key(t[0]), reverse=True)
-    return tags[0]
+
+    for tag, node in tags[:_MAX_TAG_LOOKBACK]:
+        if has_unbranded_build(node):
+            return tag, node
+        print(f"  Skipping {tag}: no unbranded build on TaskCluster")
+
+    raise RuntimeError(
+        f"None of the {_MAX_TAG_LOOKBACK} newest Firefox release tags have "
+        f"unbranded builds on TaskCluster. This is unusual — check "
+        f"https://firefox-ci-tc.services.mozilla.com/ before pinning by hand."
+    )
 
 
 def get_current() -> str:
@@ -64,7 +123,8 @@ def _update_manifest_min_version(major: int) -> None:
     Firefox we need to support.
     """
     target = f"{major}.0"
-    data = json.loads(MANIFEST.read_text())
+    text = MANIFEST.read_text()
+    data = json.loads(text)
     gecko = data.get("applications", {}).get("gecko", {})
     current = gecko.get("strict_min_version")
 
@@ -72,8 +132,21 @@ def _update_manifest_min_version(major: int) -> None:
         return
 
     print(f"  manifest strict_min_version: {current!r} -> {target!r}")
-    data["applications"]["gecko"]["strict_min_version"] = target
-    MANIFEST.write_text(json.dumps(data, indent=2) + "\n")
+
+    # Patch the single value in place instead of re-serializing the document.
+    # json.dumps(indent=2) expands short arrays onto one element per line,
+    # which is not how prettier formats them, so a full rewrite would leave
+    # the manifest failing the Extension lint gate after every Firefox bump.
+    new_text, count = re.subn(
+        r'("strict_min_version"\s*:\s*)"[^"]*"',
+        lambda m: m.group(1) + json.dumps(target),
+        text,
+    )
+    if count != 1:
+        raise RuntimeError(
+            f"Expected exactly one strict_min_version in {MANIFEST}, found {count}"
+        )
+    MANIFEST.write_text(new_text)
 
 
 def update_if_needed() -> bool:

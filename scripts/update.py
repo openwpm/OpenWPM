@@ -235,6 +235,14 @@ def npm_bump_and_resolve(cwd: Path) -> None:
     # relaxes its peer range; the plugin's rules are plain AST visitors and
     # function unchanged. Drop the reject (and the override) once SDL ships an
     # eslint-10-compatible release.
+    #
+    # typescript is held at 6.x: typescript-eslint's latest (8.66.0) peers
+    # "typescript >=4.8.4 <6.1.0", so TypeScript 7 cannot resolve at all, and
+    # there is no stable typescript-eslint release that accepts it yet (only
+    # 8.66.1 alphas). TS 7 is also the native (Go) compiler rewrite and
+    # deserves its own migration PR rather than riding along with a release
+    # bump. Drop the reject once typescript-eslint declares TypeScript 7
+    # support.
     conda_run(
         "npx",
         "--yes",
@@ -242,6 +250,8 @@ def npm_bump_and_resolve(cwd: Path) -> None:
         "--upgrade",
         "--reject",
         "@microsoft/eslint-plugin-sdl",
+        "--reject",
+        "typescript",
         cwd=cwd,
     )
 
@@ -251,6 +261,17 @@ def npm_bump_and_resolve(cwd: Path) -> None:
         if success and not conflicts:
             print(f"  Clean install on attempt {attempt}.")
             return
+        if not conflicts:
+            # npm rejected the tree but we could not parse a downgrade out of
+            # it, so retrying is guaranteed to reproduce the same failure.
+            # Fail loudly with npm's own diagnosis instead of burning the
+            # remaining attempts on identical no-op installs. Usually means a
+            # dep needs an explicit hold in the --reject list above.
+            raise RuntimeError(
+                f"npm install failed in {cwd.relative_to(ROOT) or '.'} and no "
+                f"actionable peer dep conflict could be parsed from the "
+                f"output:\n{output}"
+            )
         print(f"  Attempt {attempt}: {len(conflicts)} peer dep conflict(s)")
         _apply_downgrades(cwd, conflicts)
 
