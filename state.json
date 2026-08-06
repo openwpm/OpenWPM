@@ -82,10 +82,6 @@
     "10": {
       "agent_id": "refactor-ports",
       "claimed_at": "2026-03-30T07:52:33.927826935Z"
-    },
-    "71": {
-      "agent_id": "claude",
-      "claimed_at": "2026-08-06T10:06:01.362818215Z"
     }
   },
   "issues": {
@@ -3060,8 +3056,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-06T10:06:01.362818215Z",
+    "timestamp": "2026-08-06T12:34:00.480422287Z",
     "agent_id": "claude",
-    "agent_seq": 59
+    "agent_seq": 60
   }
 }
