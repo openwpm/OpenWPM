@@ -152,17 +152,28 @@ class ArrowProvider(StructuredStorageProvider):
 
         assert lock == self.storing_lock and lock.locked()
 
-        for table_name, batches in self._batches.items():
-            table = pa.Table.from_batches(batches)
-            await self.write_table(table_name, table)
-        self._batches.clear()
+        try:
+            # A multi-table flush is NOT a single atomic write: every
+            # write_table call independently persists its own parquet file. We
+            # therefore drop each table's batches as soon as *its* write
+            # succeeds, so that if a later table's write fails (e.g. a transient
+            # S3/parquet error) a retry rewrites only the still-pending tables
+            # and does not duplicate the rows of tables that already committed.
+            # The flush_events are signalled only once *every* table has been
+            # written, so a partial failure leaves the batches for the pending
+            # tables intact and the finalize tokens unresolved; a later flush
+            # (periodic timeout or shutdown drain) retries and completes it.
+            for table_name in list(self._batches.keys()):
+                table = pa.Table.from_batches(self._batches[table_name])
+                await self.write_table(table_name, table)
+                del self._batches[table_name]
 
-        for event in self.flush_events:
-            event.set()
-        self.flush_events.clear()
-
-        if not has_lock_arg:
-            lock.release()
+            for event in self.flush_events:
+                event.set()
+            self.flush_events.clear()
+        finally:
+            if not has_lock_arg:
+                lock.release()
 
     async def shutdown(self) -> None:
         for table_name, batches in self._batches.items():
