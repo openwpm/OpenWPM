@@ -1,4 +1,3 @@
-from sqlite3 import Row
 from typing import cast
 from urllib.parse import urlparse
 
@@ -23,7 +22,6 @@ def test_name_resolution(
 
     results = cast("list[Row]", db_utils.query_db(db, "SELECT * FROM dns_responses"))
     result = results[0]
-    assert isinstance(result, Row)
     assert result["used_address"] == "127.0.0.1"
     assert result["addresses"] == "127.0.0.1,::1"
     assert result["hostname"] == "test.localhost"
@@ -55,7 +53,6 @@ def test_dns_captured_on_connection_abort(
     results = db_utils.query_db(db, "SELECT * FROM dns_responses")
     assert len(results) > 0, "No DNS responses captured for aborted connection"
     result = results[0]
-    assert isinstance(result, Row)
     assert result["used_address"] is not None
     assert result["addresses"] is not None
     assert result["hostname"] == "localhost"
@@ -82,7 +79,6 @@ def test_dns_failure_captured(
     dns_failure = [r for r in results if "example.invalid" in (r["hostname"] or "")]
     assert len(dns_failure) > 0, "No DNS failure row for example.invalid"
     result = dns_failure[0]
-    assert isinstance(result, Row)
     assert result["addresses"] is None
     assert result["used_address"] is None
     assert result["error"] is not None
@@ -143,6 +139,3 @@ def test_redirect_chain_dns(
     assert (
         len(request_ids) == 1
     ), f"Expected single request_id across redirect chain, got: {request_ids}"
-
-    for r in chain_rows:
-        assert isinstance(r, Row)

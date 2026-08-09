@@ -12,6 +12,7 @@ from openwpm.commands.profile_commands import load_profile
 from openwpm.commands.types import BaseCommand
 from openwpm.config import BrowserParamsInternal
 from openwpm.errors import CommandExecutionError, ProfileLoadError
+from openwpm.types import BrowserId
 from openwpm.utilities import db_utils
 
 from . import openwpmtest
@@ -190,7 +191,7 @@ def test_load_tar_file(tmp_path):
     """Test that load_profile does not delete or modify the tar file."""
     tar_path = Path("profile.tar.gz")
     profile_path = tmp_path / "browser_profile"
-    browser_params = BrowserParamsInternal(browser_id=1)
+    browser_params = BrowserParamsInternal(browser_id=BrowserId(1))
     modified_time_before_load = tar_path.stat().st_mtime
     load_profile(profile_path, browser_params, tar_path)
     assert modified_time_before_load == tar_path.stat().st_mtime

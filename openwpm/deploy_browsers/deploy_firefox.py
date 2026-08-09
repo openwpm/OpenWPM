@@ -24,7 +24,7 @@ logger = logging.getLogger("openwpm")
 
 
 def deploy_firefox(
-    status_queue: Queue,
+    status_queue: "Queue[Any]",
     browser_params: BrowserParamsInternal,
     manager_params: ManagerParamsInternal,
     crash_recovery: bool,
@@ -148,6 +148,7 @@ def deploy_firefox(
     geckodriver_path = subprocess.check_output(
         "which geckodriver", encoding="utf-8", shell=True
     ).strip()
+    assert webdriver_interceptor.fifo is not None
     driver = webdriver.Firefox(
         options=fo,
         service=Service(

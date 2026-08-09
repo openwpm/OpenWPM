@@ -50,9 +50,9 @@ class StorageController:
         self,
         structured_storage: StructuredStorageProvider,
         unstructured_storage: Optional[UnstructuredStorageProvider],
-        status_queue: Queue,
-        completion_queue: Queue,
-        shutdown_queue: Queue,
+        status_queue: "Queue[Any]",
+        completion_queue: "Queue[Tuple[VisitId, bool]]",
+        shutdown_queue: "Queue[Tuple[str, bool]]",
     ) -> None:
         """
         Parameters
@@ -542,6 +542,7 @@ class StorageControllerHandle:
             self._last_status_received = time.time()
 
         # Check last status signal
+        assert self._last_status_received is not None
         if (time.time() - self._last_status_received) > STATUS_TIMEOUT:
             raise RuntimeError(
                 "No status update from the storage controller process "
