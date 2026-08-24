@@ -1,5 +1,5 @@
 {
-  "next_display_id": 73,
+  "next_display_id": 74,
   "next_comment_id": 275,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -36,6 +36,7 @@
     "79742ad4-e588-490c-bc8f-abdeb33f3f9c": 24,
     "7a08777f-0a60-4c7d-ba39-f31b4d8efb4c": 54,
     "811612a2-88c4-474e-bf7a-76a526493d04": 55,
+    "811909de-c6ba-43b1-a357-5bd97fedaa53": 73,
     "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2": 19,
     "896efbe4-11ce-49ab-8155-a1df7896c7f6": 36,
     "8c495722-ebd4-415e-914c-674373428fdc": 39,
@@ -1067,6 +1068,16 @@
       "related": [
         "2ef2d0a1-5d49-475d-84e6-ecace723e17b"
       ]
+    },
+    "811909de-c6ba-43b1-a357-5bd97fedaa53": {
+      "uuid": "811909de-c6ba-43b1-a357-5bd97fedaa53",
+      "display_id": 73,
+      "title": "Parametrize legacy JS-instrument test suite over stealth/legacy switch (legacy settings -> transpile -> stealth capture -> back-project -> legacy asserts)",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-08-24T23:44:38.766109337Z",
+      "updated_at": "2026-08-24T23:44:38.766109337Z"
     },
     "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2": {
       "uuid": "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2",
@@ -3136,8 +3147,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-24T23:44:26.478551998Z",
+    "timestamp": "2026-08-24T23:44:38.766109337Z",
     "agent_id": "claude",
-    "agent_seq": 70
+    "agent_seq": 71
   }
 }
