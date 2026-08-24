@@ -257,10 +257,162 @@ To activate a given instrument set `browser_params[i].instrument_name = True`
 
 ### `callstack_instrument`
 
-- **Currently broken.** The callstack instrument requires intricate machinery that broke in a previous Firefox version. Enabling it will raise a `ConfigError`.
-- When functional, it recorded JavaScript call stacks for HTTP requests.
-- Data is saved to the `callstacks` table.
-- See [#557](https://github.com/openwpm/OpenWPM/issues/557) for status.
+- Records the JavaScript call stack responsible for each captured HTTP request.
+- Requires `js_instrument` to also be enabled (enforced in `config.py`).
+- Data is saved to the `callstacks` table, joined to `http_requests` by
+  `request_id`/`visit_id`/`browser_id`. Each call stack is a newline-separated
+  list of `functionName@file:line:column;asyncCause` frames, outermost-last.
+
+#### Capture scope
+
+The instrument captures the initiator stack for both **synchronously
+script-initiated** requests (e.g. injecting a `<script>`/`<link>`, or any
+request opened directly on the JS stack) and **asynchronously initiated**
+requests, whose channels are opened off the JS stack.
+
+The test suite verifies the synchronous (`<script>`) path and the asynchronous
+`fetch`/`XHR` paths. `WebSocket` and worker initiators are gated by the same
+gecko mechanism (their C++ origin-stack paths key off the same
+`watchedByDevTools` flag) and are therefore expected to be captured too, but this
+is currently untested.
+
+The two cases reach the instrument through two different Firefox mechanisms:
+
+- **Synchronous path.** The channel is opened on the JS stack, so a child
+  [JSWindowActor](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html)
+  running in the content process reads `Components.stack` at the
+  `http-on-opening-request`/`document-on-opening-request`
+  [`nsIObserverService`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/xpcom/ds/nsIObserverService.idl#20)
+  [HTTP topics](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/netwerk/protocol/http/nsIHttpProtocolHandler.idl#141),
+  walks the frames, formats them, and sends them to the parent actor.
+- **Asynchronous path** (closes
+  [#1177](https://github.com/openwpm/OpenWPM/issues/1177)). For requests
+  opened off the JS stack, `Components.stack` in the content process is empty.
+  Firefox instead captures the initiator stack at request time, serializes it
+  (`SerializedStackHolder`, converted to a plain SavedFrame object and
+  JSON-stringified), and delivers it in the parent process via the
+  `network-monitor-alternate-stack` observer notification — the subject is the
+  request channel and the data is the JSON stack. The parent actor observes that
+  topic, `JSON.parse`s the stack, walks `parent`/`asyncParent` links (preserving
+  `asyncCause` for async boundaries), and reformats each frame into the **same**
+  `name@file:line:column;asyncCause` string the synchronous path produces, so
+  both paths feed identical rows into the `callstacks` table.
+
+  Firefox only captures and emits the alternate stack when the top-level
+  `BrowsingContext` is flagged `watchedByDevTools` (the same gecko behavior the
+  DevTools network monitor relies on; the `fetch`/`XHR`/`WebSocket` C++ paths all
+  gate origin-stack capture on it). The parent actor sets that flag on the top
+  browsing context in `actorCreated`, which turns on alternate-stack capture
+  without attaching an actual DevTools client. The flag is chrome-only (page JS
+  cannot read it) and does not trip the standard anti-debugging vectors. It does
+  have side effects beyond stack capture: HTML-content reporting (benign here),
+  and — more notably — it forces the top-level document load through the content
+  process instead of the parent process
+  (`CanonicalBrowsingContext::SupportsLoadingInParent` returns false when set).
+  That is not page-script-visible, but it does change the document load path and
+  can perturb navigation timing. We judge this benign for measurement, but
+  disclose it here rather than claim a single side effect.
+
+Both the synchronous child observer and the asynchronous parent observer are
+registered once as guarded module-global singletons (the observer service does
+not deduplicate, and a parent actor is created per top-level content window), so
+the same observer is not appended per page over a long crawl.
+
+#### Extension install location
+
+The instrument loads a privileged JSWindowActor child ES module into the content
+process. So the
+[content sandbox](https://wiki.mozilla.org/Security/Sandbox) can read it, OpenWPM
+installs the extension into the Firefox profile's `extensions/` directory (which
+the content sandbox broker grants read-only by default) rather than via
+geckodriver's temporary install. The content sandbox stays fully enabled at its
+default level -- no sandbox relaxation or path whitelist. This profile sideload is
+the single install mechanism used for all crawls (the extension does not require
+privilege; its
+[experiment APIs](https://firefox-source-docs.mozilla.org/toolkit/components/extensions/webextensions/index.html)
+load under `AddonSettings.EXPERIMENTS_ENABLED` on the unbranded build OpenWPM
+uses).
+
+- See [#557](https://github.com/openwpm/OpenWPM/issues/557) for history.
+
+#### References
+
+Firefox internals the call stack instrument mirrors or depends on. Searchfox
+permalinks are pinned to the `firefox-main` revision
+[`ad704963dac696aa26a7cb39eded9642c10c0ae0`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/source);
+this is a recent indexed mozilla-central revision (FF150-equivalent — searchfox
+does not serve the exact `FIREFOX_150_0_2_RELEASE` mozilla-release revision the
+crawler runs).
+
+DevTools request-stack mechanism (the dual-observer model this extension ports):
+
+- [`network-events-stacktraces.js`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#41-43) —
+  registers the same dual observer set (`http-on-opening-request` /
+  `document-on-opening-request` / `network-monitor-alternate-stack`); the
+  [`network-monitor-alternate-stack` case](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/resources/network-events-stacktraces.js#157-170)
+  `JSON.parse`s the data and walks `parent || asyncParent`, which the parent
+  actor's `deserializeAlternateStack` mirrors.
+- [`network-event-actor.js`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/devtools/server/actors/network-monitor/network-event-actor.js) —
+  the DevTools actor that consumes those collected stacks.
+
+Alternate-stack serialization (parent-process deserialization mirrors this):
+
+- [`SerializedStackHolder.cpp` `ConvertSerializedStackToJSON`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/base/SerializedStackHolder.cpp#111-137) —
+  `JS::ConvertSavedFrameToPlainObject` + `StringifyJSON` produce the JSON string
+  delivered with the notification.
+- [`SavedStacks.cpp` `ConvertSavedFrameToPlainObject`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/js/src/vm/SavedStacks.cpp#1132) —
+  defines the `source`/`line`/`column`/`functionDisplayName`/`asyncCause`/`parent`/`asyncParent`
+  field names the deserializer walks.
+
+`watchedByDevTools` gating of async origin-stack capture:
+
+- [`Fetch.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/fetch/Fetch.cpp#801,835),
+  [`XMLHttpRequestMainThread.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/xhr/XMLHttpRequestMainThread.cpp#2915),
+  [`WebSocket.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/websocket/WebSocket.cpp#1510) —
+  each captures/emits the alternate stack only when the context is watched by
+  DevTools.
+- [`BrowsingContext.webidl`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/chrome-webidl/BrowsingContext.webidl#84-85,235) —
+  `[Exposed=Window, ChromeOnly]` interface; `[SetterThrows] attribute boolean
+  watchedByDevTools` (page JS cannot read it).
+- [`CanonicalBrowsingContext::SupportsLoadingInParent`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/docshell/base/CanonicalBrowsingContext.cpp#2696-2704) —
+  returns false when `WatchedByDevTools()`, forcing the top-level document load
+  through the content process (the disclosed side effect).
+
+Extension install / sandbox (why the profile sideload works):
+
+- [`SandboxBrokerPolicyFactory.cpp`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp#719-750) —
+  grants the profile's `extensions/` directory read-only to the content sandbox
+  broker.
+- [`firefox.js`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/browser/app/profile/firefox.js#1628) —
+  Linux content sandbox defaults to `security.sandbox.content.level = 6`.
+- [`Extension.sys.mjs` `canUseAPIExperiment`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/toolkit/components/extensions/Extension.sys.mjs#1567) —
+  experiment APIs allowed when `AddonSettings.EXPERIMENTS_ENABLED`.
+- [`AddonSettings.sys.mjs` `EXPERIMENTS_ENABLED`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/toolkit/mozapps/extensions/internal/AddonSettings.sys.mjs#84-116) —
+  true on unbranded `MOZ_REQUIRE_SIGNING=0` builds (which OpenWPM uses).
+
+Actor / window plumbing:
+
+- [`JSWindowActorChild::GetContentWindow`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/dom/ipc/jsactor/JSWindowActorChild.cpp#95-120) —
+  throws `InvalidStateError` once the actor's manager is gone and returns null
+  for a non-current inner window (the child observer guards both).
+
+Background:
+
+- [`nsIObserverService`](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/xpcom/ds/nsIObserverService.idl#20)
+  and the
+  [HTTP observer topics](https://searchfox.org/firefox-main/rev/ad704963dac696aa26a7cb39eded9642c10c0ae0/netwerk/protocol/http/nsIHttpProtocolHandler.idl#141)
+  (`http-on-opening-request` etc.).
+- [JSActors / `JSWindowActor` framework](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html)
+  (firefox-source-docs).
+- [Content-process sandboxing & levels](https://wiki.mozilla.org/Security/Sandbox)
+  (MozillaWiki).
+- [WebExtensions Experiments / experimental APIs](https://firefox-source-docs.mozilla.org/toolkit/components/extensions/webextensions/index.html)
+  (firefox-source-docs).
+- Bugzilla [Bug 1881888](https://bugzilla.mozilla.org/show_bug.cgi?id=1881888)
+  (JSM / `EXPORTED_SYMBOLS` removal in FF136, why the legacy `.jsm` modules were
+  ported to `.sys.mjs`) and
+  [Bug 634073](https://bugzilla.mozilla.org/show_bug.cgi?id=634073)
+  (cache-image observer behavior the HTTP request tests account for).
 
 ### `dns_instrument`
 

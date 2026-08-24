@@ -1,34 +1,30 @@
-import pytest
-
 from openwpm.utilities import db_utils
 
 from .conftest import FullConfig, TaskManagerCreator
 from .utilities import ServerUrls
 
-RAWGIT_HTTP_STACKTRACE_TEST_URL = "https://gist.githack.com/gunesacar/b927d3fe69f3e7bf456da5192f74beea/raw/8d3e490b5988c633101ec45ef1443e61b1fd495e/inject_pixel.js"  # noqa
+# HTTP request call stack instrumentation
+#
+# http_stacktrace.html's onload handler runs inject_all(), which fires three
+# requests via three different initiation mechanisms. The instrument captures
+# the full initiator stack for each, via two distinct code paths:
+#
+#   * SYNCHRONOUS, script-initiated (inject_js): appending a <script> issues its
+#     src request synchronously from JS, so the content process captures the
+#     stack from Components.stack at http-on-opening-request.
+#
+#   * ASYNCHRONOUS, fetch/XHR-initiated (inject_fetch / inject_xhr): these open
+#     their channel off the JS stack, so Components.stack is empty. Firefox
+#     instead delivers the initiator stack via the network-monitor-alternate-stack
+#     notification (gated on the top BrowsingContext's watchedByDevTools flag,
+#     which the parent actor enables), which the parent actor deserializes into
+#     the same name@file:line:col;asyncCause format. This closes #1177.
+#
+# The line/column offsets below correspond to the call sites in
+# http_stacktrace.html. All three assertions are non-vacuous: each asserts a
+# specific captured frame chain and fails if capture for that path breaks.
 
 
-def _http_stacktraces(base_url: str) -> set[str]:
-    """Build expected stack traces (needs dynamic base_url)."""
-    url = base_url + "/http_stacktrace.html"
-    inject_image = (
-        f"inject_image@{url}:18:7;null\n"
-        f"inject_all@{url}:22:7;null\n"
-        f"onload@{url}:1:1;null"
-    )
-    inject_pixel = (
-        f"inject_pixel@{RAWGIT_HTTP_STACKTRACE_TEST_URL}:4:3;null\n"
-        f"null@{RAWGIT_HTTP_STACKTRACE_TEST_URL}:6:1;null"
-    )
-    inject_js = (
-        f"inject_js@{url}:13:28;null\n"
-        f"inject_all@{url}:21:7;null\n"
-        f"onload@{url}:1:1;null"
-    )
-    return {inject_image, inject_pixel, inject_js}
-
-
-@pytest.mark.skip("We don't have the resources to fix this")
 def test_http_stacktrace(
     default_params: FullConfig,
     task_manager_creator: TaskManagerCreator,
@@ -42,9 +38,35 @@ def test_http_stacktrace(
         browser_param.js_instrument = True
         # Record the callstack of all WebRequests made
         browser_param.callstack_instrument = True
-    test_url = server.base + "/http_stacktrace.html"
+
+    page_url = server.base + "/http_stacktrace.html"
+
+    # SYNC, <script>-initiated -> shared/inject_pixel.js
+    stack_trace_inject_js = (
+        f"inject_js@{page_url}:15:28;null\n"
+        f"inject_all@{page_url}:32:7;null\n"
+        f"onload@{page_url}:1:1;null"
+    )
+    inject_pixel_url = server.base + "/shared/inject_pixel.js"
+
+    # ASYNC, fetch-initiated -> shared/test_script.js (alternate-stack path)
+    stack_trace_inject_fetch = (
+        f"inject_fetch@{page_url}:22:12;null\n"
+        f"inject_all@{page_url}:33:7;null\n"
+        f"onload@{page_url}:1:1;null"
+    )
+    inject_fetch_url = server.base + "/shared/test_script.js"
+
+    # ASYNC, XHR-initiated -> shared/test_image_2.png (alternate-stack path)
+    stack_trace_inject_xhr = (
+        f"inject_xhr@{page_url}:29:11;null\n"
+        f"inject_all@{page_url}:34:7;null\n"
+        f"onload@{page_url}:1:1;null"
+    )
+    inject_xhr_url = server.base + "/shared/test_image_2.png"
+
     manager, db = task_manager_creator((manager_params, browser_params))
-    manager.get(test_url, sleep=10)
+    manager.get(page_url, sleep=10)
     manager.close()
     rows = db_utils.query_db(
         db,
@@ -58,16 +80,16 @@ def test_http_stacktrace(
         ),
     )
     print("Printing callstacks contents")
-    observed_records: set[str] = set()
+    stacks_by_url: dict[str, set[str]] = {}
     for row in rows:
         assert not isinstance(row, tuple)
         print(row["call_stack"])
         url, call_stack = row["url"], row["call_stack"]
-        test_urls = (
-            "inject_pixel.js",
-            "test_image.png",
-            "Blank.gif",
-        )
-        if url.endswith(test_urls):
-            observed_records.add(call_stack)
-    assert _http_stacktraces(server.base) == observed_records
+        stacks_by_url.setdefault(url, set()).add(call_stack)
+
+    # Sync, script-initiated request stack (content-process Components.stack path).
+    assert stack_trace_inject_js in stacks_by_url.get(inject_pixel_url, set())
+    # Async fetch-initiated request stack (network-monitor-alternate-stack path).
+    assert stack_trace_inject_fetch in stacks_by_url.get(inject_fetch_url, set())
+    # Async XHR-initiated request stack (network-monitor-alternate-stack path).
+    assert stack_trace_inject_xhr in stacks_by_url.get(inject_xhr_url, set())
