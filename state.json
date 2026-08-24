@@ -1,6 +1,6 @@
 {
   "next_display_id": 74,
-  "next_comment_id": 277,
+  "next_comment_id": 278,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1088,10 +1088,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-24T23:44:38.766109337Z",
-      "updated_at": "2026-08-24T23:44:44.867915359Z",
+      "updated_at": "2026-08-24T23:56:37.864448557Z",
       "labels": [
         "feature"
-      ]
+      ],
+      "comments": {
+        "8490b323-34f7-4f3d-8132-61d091f226bf": {
+          "display_id": 277,
+          "author": "claude",
+          "content": "Scoping complete: datadir/objective2-parametric-plan.md.\n\nKEY REFRAME: the adapter is nearly a no-op. Stealth builds symbol = instrumentedName + '.' + prop (stealth/instrument.ts:1219), identical to legacy (lib/js-instruments.ts:519,595,674), and the migrator preserves the legacy dotted path as instrumentedName. document_url/top_level_url come from the SHARED background handler, so cannot diverge. Only schema delta is 'receiver' (schema.sql:153), which no assertion reads. Back-projection = drop one column.\n\nDESIGN DOC IS MATERIALLY STALE. The archived diagnostic run was 7 failed / 0 passed and every row failure was 'assert set() == {...}' — stealth emitted ZERO rows. The doc's row-level divergence inventory (D2/D3/D4/D8) never actually manifested; structural failures masked it.\n\nANTI-DEFANG MECHANISM: _check_calls comparison body (openwpm_jstest.py:31-44) stays byte-identical; parametrize via autouse fixture, transpile in get_config, back-project in a new _js_rows hook. Explicitly REJECTS the design doc's H2 'subtract the untranslated paths' suggestion as the defanging move; instead 'assert not untranslated' DISQUALIFIES a class from stealth mode. Prototype's global monkeypatch of db_utils.get_javascript_entries is rejected for the same reason (invisible at the assertion site).\n\nBLOCKERS:\n- D10 document.cookie is a MIGRATOR GAP not a capability gap. Stealth already captures it (settings.ts:292-297, pinned by test_stealth.py:1205-1229); the migrator never emits the {depth,propertyNames} form (js_settings_migrator.py:663-679). ~1/2 day fix. Do not delete cookie expectations.\n- D12 (SERIOUS, escalating): stealth has NO failure-propagation path. GetCommand's check is gated on browser_params.js_instrument (browser_commands.py:143-144); stealth only console.errors (instrument.ts:1266-1270,1292-1295). A stealth browser with an unresolvable target launches HEALTHY WITH ZERO INSTRUMENTATION — silent data loss for a measurement framework.\n\nSCOPE HONESTY: done properly this makes ONE test class (TestJSInstrumentByPython) dual-mode green. The five page-driven classes configure via window.instrumentJS which stealth deliberately lacks. Value is as the enabling step.\n\nFive open decisions for the owner in section 6 of the plan doc.",
+          "created_at": "2026-08-24T23:56:37.859490850Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA3jIbAB2pV+kgKFPN+e0vWQrmpboqZmaxRmXkwaG16LjhXD+CcEZOzSGHwqSKYvuFBfdLti7yuym2WSonMBayDA=="
+        }
+      }
     },
     "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2": {
       "uuid": "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2",
@@ -3172,8 +3183,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-24T23:56:17.206661774Z",
+    "timestamp": "2026-08-24T23:56:37.864448557Z",
     "agent_id": "claude",
-    "agent_seq": 74
+    "agent_seq": 75
   }
 }
