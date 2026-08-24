@@ -2101,11 +2101,12 @@
       "uuid": "c7abdd25-b0be-48e0-b6e1-4d9aee7341dc",
       "display_id": 71,
       "title": "Release: update deps + Firefox 153",
-      "status": "open",
+      "status": "closed",
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-06T10:05:44.266784374Z",
-      "updated_at": "2026-08-24T21:42:48.136957481Z",
+      "updated_at": "2026-08-24T23:44:13.953828074Z",
+      "closed_at": "2026-08-24T23:44:13.953268874Z",
       "labels": [
         "maintenance"
       ],
@@ -3121,8 +3122,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-24T21:42:48.136957481Z",
+    "timestamp": "2026-08-24T23:44:13.953828074Z",
     "agent_id": "claude",
-    "agent_seq": 67
+    "agent_seq": 68
   }
 }
