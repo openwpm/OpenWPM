@@ -1,6 +1,6 @@
 {
   "next_display_id": 74,
-  "next_comment_id": 276,
+  "next_comment_id": 277,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -792,10 +792,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-24T23:44:20.341193478Z",
-      "updated_at": "2026-08-24T23:44:26.478551998Z",
+      "updated_at": "2026-08-24T23:56:17.206661774Z",
       "labels": [
         "docs"
-      ]
+      ],
+      "comments": {
+        "15b5bb2e-c2f0-4807-b82b-ca847cd12182": {
+          "display_id": 276,
+          "author": "claude",
+          "content": "Audit complete: datadir/objective1-guide-audit.md (231 lines).\n\nGuide fails both owner tests. 13 staleness items, 13 legacy claims triaged.\n\nUNSUBSTANTIATED (must delete or earn):\n- FingerprintJS oracle '27/28 components, Strong' — NO artifact exists anywhere (grep + git log -S both empty). Same claim is in the PR #1154 body.\n- '50+ introspection probes' — branch has 30 DetectabilityRequirement rows (D1-D11).\n- 'collapsed frontier' framing — zero hits in docs/; ADR frames axes as independent (opposite).\n\nCONTRADICTED:\n- 'Xray forbids accessor-defines ... the one true coverage ceiling, re-verified real' — retracted by the branch itself (config.py:336-344: the define IS reachable, deliberately refused as page-observable). Still stamped 're-verified' in guide AND still shipped in Stealth-Instrumentation.rst:572-583 (retraction only half-applied).\n- Prototype pollution 'fixable without capture loss' — CONTRADICTED by experiment (datadir/r56-repro/run_attrib.py): the flatten is load-bearing, 11 of 14 collection_fingerprinting entries depend on it. ADR is right ('removable but costly'); Stealth-Instrumentation.rst:34-44 contradicts the ADR.\n\nSTALENESS highlights: openwpm/utilities/stealth_settings.py does not exist (it is js_settings_migrator.py + walker.js); 6 commits claimed vs 7 actual, with an entire feature commit (configurable surface, 1593 ins) missing from the guide; ~9000 lines claimed vs 11726 actual; D/X detectability ratchet was measured on Firefox 150, master is now FF154.\n\nONE EXPERIMENT REQUIRED to keep the guide honest: re-ratchet D1-D11 / X1-X3 on Firefox 154.\n\nBranch defects found in scope: C1 retracted Xray claim still in .rst; C2 prototype-pollution self-contradiction rst vs ADR; C3 adr 0001 'legacy wraps on the instance' is false (js_instrumentation.py:119 resolves .prototype, same as stealth). Durability gap: strongest legacy experiments live in gitignored datadir/, so a reviewer cannot re-run them.",
+          "created_at": "2026-08-24T23:56:17.201342321Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA4C2g64TTL/7lym//g2AwjvL4I0s2+ry5Jp6ksGGSD6bwXgCbSK8LkOzMvhuOEZZR9iD62haaBnCQGcIB5bHcCg=="
+        }
+      }
     },
     "689a8fd1-7828-4390-b8a8-046eac84a19f": {
       "uuid": "689a8fd1-7828-4390-b8a8-046eac84a19f",
@@ -3161,8 +3172,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-24T23:44:51.417020688Z",
+    "timestamp": "2026-08-24T23:56:17.206661774Z",
     "agent_id": "claude",
-    "agent_seq": 73
+    "agent_seq": 74
   }
 }
