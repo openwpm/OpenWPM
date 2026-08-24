@@ -1,10 +1,10 @@
-import * as socket from "./socket";
 import { escapeString, Uint8ToBase64 } from "./lib/string-utils";
+import { OpenWPMWebSocket } from "./websocket-client";
 
 /**
- * Control message exchanged over the listening socket. In the legacy path the
- * peer may instead send a bare visit id (number or numeric string), which is
- * why the callback also handles non-object payloads.
+ * Control message from Python: either an Initialize/Finalize action or a bare
+ * legacy visit id (number or numeric string), which is why the callback also
+ * handles non-object payloads.
  */
 interface VisitControlMessage {
   action?: "Initialize" | "Finalize";
@@ -16,12 +16,11 @@ interface VisitControlMessage {
 let crawlID: number | null = null;
 let visitID: number | null = null;
 let debugging = false;
-let storageController: socket.SendingSocket | null = null;
-let logAggregator: socket.SendingSocket | null = null;
-let listeningSocket: socket.ListeningSocket | null = null;
+let wsClient: OpenWPMWebSocket | null = null;
 
-const listeningSocketCallback = async (data: unknown) => {
-  // This works even if data is an int
+const commandCallback = async (data: unknown) => {
+  // Handle commands from Python (Initialize, Finalize, legacy visit_id).
+  // This works even if data is a bare visit id.
   const message = data as VisitControlMessage;
   const action = message.action;
   let newVisitID = message.visit_id ?? null;
@@ -31,8 +30,11 @@ const listeningSocketCallback = async (data: unknown) => {
         logWarn("Set visit_id while another visit_id was set");
       }
       visitID = newVisitID;
-      message.browser_id = crawlID ?? null;
-      storageController?.send(JSON.stringify(["meta_information", message]));
+      wsClient?.sendRecord("meta_information", {
+        action: "Initialize",
+        visit_id: newVisitID,
+        browser_id: crawlID,
+      });
       break;
     case "Finalize":
       if (!visitID) {
@@ -44,95 +46,48 @@ const listeningSocketCallback = async (data: unknown) => {
             `Current visit_id ${newVisitID}, received visit_id ${visitID}.`,
         );
       }
-      message.browser_id = crawlID ?? null;
-      message.success = true;
-      storageController?.send(JSON.stringify(["meta_information", message]));
+      wsClient?.sendRecord("meta_information", {
+        action: "Finalize",
+        visit_id: newVisitID,
+        browser_id: crawlID,
+        success: true,
+      });
       visitID = null;
       break;
     default:
-      // Just making sure that it's a valid number before logging
-      newVisitID = parseInt(String(data), 10);
-      logDebug("Setting visit_id the legacy way");
-      visitID = newVisitID;
+      // Legacy: command is a bare visit id with no action field.
+      if (newVisitID !== null) {
+        newVisitID = parseInt(String(newVisitID), 10);
+        logDebug("Setting visit_id the legacy way");
+        visitID = newVisitID;
+      } else {
+        logWarn("Received unknown command: " + JSON.stringify(data));
+      }
   }
 };
-/** A network endpoint as a `[host, port]` tuple. */
-type SocketAddress = [host: string, port: number];
 
 export const open = async function (
-  storageControllerAddress: SocketAddress | null,
-  logAddress: SocketAddress | null,
+  websocketPort: number,
   curr_crawlID: number,
 ) {
-  if (
-    storageControllerAddress == null &&
-    logAddress == null &&
-    curr_crawlID === 0
-  ) {
+  if (websocketPort == null && curr_crawlID === 0) {
     console.log("Debugging, everything will output to console");
     debugging = true;
     return;
   }
   crawlID = curr_crawlID;
 
-  console.log("Opening socket connections...");
+  console.log("Opening WebSocket connection...");
 
-  // Connect to MPLogger for extension info/debug/error logging
-  if (logAddress != null) {
-    logAggregator = new socket.SendingSocket();
-    const rv = await logAggregator.connect(logAddress[0], logAddress[1]);
-    console.log("logSocket started?", rv);
-  }
-
-  // Connect to databases for saving data
-  if (storageControllerAddress != null) {
-    storageController = new socket.SendingSocket();
-    const rv = await storageController.connect(
-      storageControllerAddress[0],
-      storageControllerAddress[1],
-    );
-    console.log("StorageController started?", rv);
-  }
-  storageController?.send(JSON.stringify(`Browser-${crawlID}`));
-  // Listen for incoming urls as visit ids
-  listeningSocket = new socket.ListeningSocket(listeningSocketCallback);
-  console.log("Starting socket listening for incoming connections.");
-  await listeningSocket.startListening();
-  browser.profileDirIO.writeFile(
-    "extension_port.txt",
-    `${listeningSocket.port}`,
-  );
-};
-
-// Accessor for echo mode (see Extension/src/echo.ts). The connected
-// storageController SendingSocket is module-private; expose it rather than
-// reaching into internals so the echo routine can reuse the live connection
-// instead of opening a second one.
-export const getStorageController = function (): socket.SendingSocket | null {
-  return storageController;
+  wsClient = new OpenWPMWebSocket(commandCallback);
+  await wsClient.connect(websocketPort);
+  console.log("WebSocket connected to port", websocketPort);
 };
 
 export const close = function () {
-  if (storageController != null) {
-    storageController.close();
+  if (wsClient != null) {
+    wsClient.close();
   }
-  if (logAggregator != null) {
-    logAggregator.close();
-  }
-};
-
-const makeLogJSON = function (lvl: number, msg: string) {
-  const log_json = {
-    name: "Extension-Logger",
-    level: lvl,
-    pathname: "FirefoxExtension",
-    lineno: 1,
-    msg: escapeString(msg),
-    args: null,
-    exc_info: null,
-    func: null,
-  };
-  return log_json;
 };
 
 export const logInfo = function (msg: string) {
@@ -143,9 +98,8 @@ export const logInfo = function (msg: string) {
     return;
   }
 
-  // Log level INFO == 20 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(20, msg);
-  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level INFO == 20
+  wsClient?.sendLog(20, escapeString(msg));
 };
 
 export const logDebug = function (msg: string) {
@@ -156,9 +110,8 @@ export const logDebug = function (msg: string) {
     return;
   }
 
-  // Log level DEBUG == 10 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(10, msg);
-  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level DEBUG == 10
+  wsClient?.sendLog(10, escapeString(msg));
 };
 
 export const logWarn = function (msg: string) {
@@ -169,9 +122,8 @@ export const logWarn = function (msg: string) {
     return;
   }
 
-  // Log level WARN == 30 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(30, msg);
-  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level WARN == 30
+  wsClient?.sendLog(30, escapeString(msg));
 };
 
 export const logError = function (msg: string) {
@@ -182,9 +134,8 @@ export const logError = function (msg: string) {
     return;
   }
 
-  // Log level INFO == 40 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(40, msg);
-  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level ERROR == 40
+  wsClient?.sendLog(40, escapeString(msg));
 };
 
 export const logCritical = function (msg: string) {
@@ -195,9 +146,8 @@ export const logCritical = function (msg: string) {
     return;
   }
 
-  // Log level CRITICAL == 50 (https://docs.python.org/2/library/logging.html#logging-levels)
-  const log_json = makeLogJSON(50, msg);
-  logAggregator?.send(JSON.stringify(["EXT", JSON.stringify(log_json)]));
+  // Log level CRITICAL == 50
+  wsClient?.sendLog(50, escapeString(msg));
 };
 
 /**
@@ -242,7 +192,7 @@ export const saveRecord = function (instrument: string, record: object) {
     console.log("EXTENSION", instrument, record);
     return;
   }
-  storageController?.send(JSON.stringify([instrument, record]));
+  wsClient?.sendRecord(instrument, record);
 };
 
 // Stub for now
@@ -261,5 +211,5 @@ export const saveContent = async function (
   const bytes =
     typeof content === "string" ? new TextEncoder().encode(content) : content;
   const b64 = Uint8ToBase64(bytes);
-  storageController?.send(JSON.stringify(["page_content", [b64, contentHash]]));
+  wsClient?.sendRecord("page_content", [b64, contentHash]);
 };

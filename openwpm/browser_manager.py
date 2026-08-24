@@ -1,4 +1,3 @@
-import errno
 import json
 import logging
 import os
@@ -31,9 +30,9 @@ from .errors import (
     BrowserCrashError,
     ProfileLoadError,
 )
-from .socket_interface import ClientSocket
 from .storage.storage_providers import TableName
 from .types import BrowserId, VisitId
+from .websocket_bridge import ExtensionSocketAdapter, WebSocketBridge
 from .utilities.multiprocess_utils import (
     Process,
     kill_process_and_children,
@@ -77,6 +76,7 @@ class BrowserManagerHandle:
         self,
         manager_params: ManagerParamsInternal,
         browser_params: BrowserParamsInternal,
+        data_queue: Queue,
     ) -> None:
         # Constants
         self._SPAWN_TIMEOUT = 120  # seconds
@@ -84,7 +84,7 @@ class BrowserManagerHandle:
 
         # manager parameters
         self.current_profile_path: Optional[Path] = None
-        self.db_socket_address = manager_params.storage_controller_address
+        self.data_queue = data_queue
         assert browser_params.browser_id is not None
         self.browser_id: BrowserId = browser_params.browser_id
         self.curr_visit_id: Optional[VisitId] = None
@@ -185,6 +185,7 @@ class BrowserManagerHandle:
                 self.browser_params,
                 self.manager_params,
                 crash_recovery,
+                self.data_queue,
             )
             self.browser_manager.daemon = True
             self.browser_manager.start()
@@ -681,6 +682,7 @@ class BrowserManager(Process):
         browser_params: BrowserParamsInternal,
         manager_params: ManagerParamsInternal,
         crash_recovery: bool,
+        data_queue: Queue,
     ) -> None:
         super().__init__()
         self.logger = logging.getLogger("openwpm")
@@ -689,6 +691,7 @@ class BrowserManager(Process):
         self.browser_params = browser_params
         self.manager_params = manager_params
         self.crash_recovery = crash_recovery
+        self.data_queue = data_queue
 
         self.critical_exceptions: Tuple[Type[BaseException], ...] = (
             ProfileLoadError,
@@ -697,81 +700,64 @@ class BrowserManager(Process):
         if self.manager_params.testing:
             self.critical_exceptions += (AssertionError,)
 
-    def _start_extension(self, browser_profile_path: Path) -> ClientSocket:
-        """Start up the extension
-        Blocks until the extension has fully started up
+    def _wait_for_extension(self, browser_profile_path: Path) -> None:
+        """Wait for the extension to finish starting up.
+
+        The extension writes OPENWPM_STARTUP_SUCCESS.txt to the profile
+        directory once it has connected to the WebSocket bridge and
+        completed initialization.
         """
         assert self.browser_params.browser_id is not None
-        self.logger.debug(
-            "BROWSER %i: Looking for extension port information "
-            "in %s" % (self.browser_params.browser_id, browser_profile_path)
-        )
-        elapsed = 0.0
-        port = None
-        ep_filename = browser_profile_path / "extension_port.txt"
-        while elapsed < 5:
-            try:
-                with open(ep_filename, "rt") as f:
-                    port = int(f.read().strip())
-                    break
-            except IOError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-            time.sleep(0.1)
-            elapsed += 0.1
-        if port is None:
-            # try one last time, allowing all exceptions to propagate
-            with open(ep_filename, "rt") as f:
-                port = int(f.read().strip())
-
-        ep_filename.unlink()
-        self.logger.debug(
-            "BROWSER %i: Connecting to extension on port %i"
-            % (self.browser_params.browser_id, port)
-        )
-        extension_socket = ClientSocket(serialization="json")
-        extension_socket.connect("127.0.0.1", int(port))
-
         success_filename = browser_profile_path / "OPENWPM_STARTUP_SUCCESS.txt"
-        startup_successful = False
-        while elapsed < 10:
+        elapsed = 0.0
+        while elapsed < 30:
             if success_filename.exists():
-                startup_successful = True
-                break
+                success_filename.unlink()
+                self.logger.debug(
+                    "BROWSER %i: Extension startup confirmed",
+                    self.browser_params.browser_id,
+                )
+                return
             time.sleep(0.1)
             elapsed += 0.1
 
-        if not startup_successful:
-            self.logger.error(
-                "BROWSER %i: Failed to complete extension startup in time",
-                self.browser_params.browser_id,
-            )
-            raise BrowserConfigError("The extension did not boot up in time")
-        success_filename.unlink()
-        return extension_socket
+        self.logger.error(
+            "BROWSER %i: Failed to complete extension startup in time",
+            self.browser_params.browser_id,
+        )
+        raise BrowserConfigError("The extension did not boot up in time")
 
     def run_impl(self) -> None:
         assert self.browser_params.browser_id is not None
         display = None
 
-        if self.browser_params.echo_mode:
-            raise BrowserConfigError(
-                "echo_mode is a single-process, test-only socket mode and "
-                "cannot be run through BrowserManager. Use the in-process "
-                "harness in test/test_socket_echo.py, which calls "
-                "deploy_firefox directly."
-            )
+        ws_bridge = None
 
         try:
+            # Start WebSocket bridge before launching Firefox so the
+            # extension can connect to it during initialization
+            ws_bridge = WebSocketBridge(
+                self.data_queue, self.browser_params.browser_id
+            )
+            ws_port = ws_bridge.start()
+            self.logger.debug(
+                "BROWSER %i: WebSocket bridge started on port %d",
+                self.browser_params.browser_id,
+                ws_port,
+            )
+
             # Start Xvfb (if necessary), webdriver, and browser
             driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
                 self.status_queue,
                 self.browser_params,
                 self.manager_params,
                 self.crash_recovery,
+                websocket_port=ws_port,
             )
 
-            extension_socket = self._start_extension(browser_profile_path)
+            # Wait for the extension to start up and connect via WebSocket
+            self._wait_for_extension(browser_profile_path)
+            extension_socket = ExtensionSocketAdapter(ws_bridge)
 
             self.logger.debug(
                 "BROWSER %i: BrowserManager ready." % self.browser_params.browser_id
@@ -851,5 +837,7 @@ class BrowserManager(Process):
             )
             self.status_queue.put(("FAILED", pickle.dumps(sys.exc_info())))
         finally:
+            if ws_bridge is not None:
+                ws_bridge.stop()
             if display is not None:
                 display.stop()
