@@ -359,6 +359,32 @@
         frame.remove();
     }
 
+    // D12: the custom-surface settings global must not be page-observable.
+    //
+    // When a study configures a custom instrumentation surface, the background
+    // script injects it as `window.openWpmStealthInstrumentSettings` (see
+    // background/javascript-instrument.ts). That assignment runs in a script
+    // registered via browser.contentScripts.register, i.e. in the extension's
+    // ISOLATED content-script compartment, where `window` is an Xray wrapper
+    // around the page's window. A plain property assignment there creates an
+    // Xray EXPANDO, visible only to the extension's own content scripts —
+    // stealth.js is registered the same way and reads it back — and NOT to page
+    // script. Anything the instrument deliberately exposes to the page goes
+    // through wrappedJSObject / exportFunction instead.
+    //
+    // This is the same compartment-isolation property D9 asserts for the
+    // prototype-walk helpers. A page probing its own window every way it can
+    // must not see the settings global; if it ever does, a custom surface would
+    // be a one-line detection hook. (returns true = clean)
+    function testNoStealthSettingsLeak() {
+        const name = "openWpmStealthInstrumentSettings";
+        if (typeof window[name] !== "undefined") return false;
+        if (name in window) return false;
+        if (Object.getOwnPropertyNames(window).indexOf(name) !== -1) return false;
+        if (Object.getOwnPropertyDescriptor(window, name) !== undefined) return false;
+        return true;
+    }
+
     // Run all tests and store results, wrapping each in try/catch
     // so that one failing test doesn't prevent others from running
     function safeRun(name, fn) {
@@ -384,6 +410,7 @@
     safeRun("accessor_name_native", testAccessorNameNative);
     safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
     safeRun("tostring_recursive_native", testRecursiveToStringNative);
+    safeRun("no_stealth_settings_leak", testNoStealthSettingsLeak);
 
     // D10: frame-protection / DOM-hook probes write their own per-key results
     // (see runFrameProtectionProbes); wrapped so a setup failure cannot abort

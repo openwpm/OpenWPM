@@ -397,6 +397,13 @@ def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Pa
 # A False result means the legacy instrument was DETECTED, so legacy_detectable=True.
 # D3/D6/D7 legacy results were True (not detected) in this build, so they stay
 # None (stealth-only assertion) rather than asserting a control that does not hold.
+#
+# RE-VERIFIED on Firefox 154.0 (unbranded add-on-devel) 2026-08-25: the full
+# suite ran green — all 8 asserted legacy controls (D1, D2 canvas/storage/rtc,
+# D4, D5, D8, D8b) still hold, and all 30 stealth rows still pass. Scope of that
+# re-verification: it confirms the *assertions* above still hold on FF154. It did
+# not re-record the raw self-report values, so the FF154 status of the three
+# unasserted (None) rows D3/D6/D7 remains unknown — they are still stealth-only.
 class DetectabilityRequirement(typing.NamedTuple):
     """One D* detection vector: id, self-report key, and legacy control flag.
 
@@ -514,6 +521,21 @@ DETECTABILITY_REQUIREMENTS: List[DetectabilityRequirement] = [
     # rows (D10).
     DetectabilityRequirement(
         "D11-tostring-recursive-native", "tostring_recursive_native", None
+    ),
+    # D12: a custom instrumentation surface must not become a detection hook.
+    # When a study configures one, the background script injects it as
+    # ``window.openWpmStealthInstrumentSettings``. That assignment runs inside a
+    # script registered via ``browser.contentScripts.register``, i.e. in the
+    # extension's isolated content-script compartment, so it creates an Xray
+    # EXPANDO readable only by the extension's own content scripts (stealth.js is
+    # registered the same way and reads it back) and invisible to page script —
+    # the same compartment isolation D9 asserts for the prototype-walk helpers.
+    # ``test_custom_settings_stay_undetectable`` exercises this row with a custom
+    # surface actually configured, so the global really is injected when the page
+    # probes for it. legacy_detectable=None: legacy never injects this global, so
+    # the vector does not exist there; this asserts only the stealth direction.
+    DetectabilityRequirement(
+        "D12-no-stealth-settings-leak", "no_stealth_settings_leak", None
     ),
 ]
 
