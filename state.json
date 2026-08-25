@@ -1,6 +1,6 @@
 {
   "next_display_id": 75,
-  "next_comment_id": 285,
+  "next_comment_id": 286,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -2699,10 +2699,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-25T09:11:54.485642955Z",
-      "updated_at": "2026-08-25T09:12:00.696934471Z",
+      "updated_at": "2026-08-25T09:38:11.262531909Z",
       "labels": [
         "feature"
-      ]
+      ],
+      "comments": {
+        "f76294b6-612a-42a6-a36f-0909d3d9421b": {
+          "display_id": 285,
+          "author": "claude",
+          "content": "EXPERIMENT RUN. VERDICT: the claim is half true, and the persuasive half is FALSE.\n\n- 'stealth stamp == baseline': CONFIRMED. Identical on all 42 built-in components plus 4 reproducible extra probes, visitorId included.\n- 'legacy stamp != baseline': REFUTED. Legacy is ALSO byte-identical to baseline on every reproducible probe. All four runs produced visitorId adb59d565c781837fa88a1929fcd66fe. There is no component on which legacy differs from baseline.\n\nNOT a dead experiment — the activity control proves both instruments were live and watching FingerprintJS compute its stamp: baseline 0 rows/0 symbols; stealth 124 rows/46 symbols; legacy 92 rows/39 symbols, including CanvasRenderingContext2D.fillText, HTMLCanvasElement.toDataURL, OscillatorNode.start, window.navigator.*, window.screen.*, window.{local,session}Storage.\n\nWHY legacy is invisible is a property of the ORACLE, not the instrument. FingerprintJS OSS reads values, and OpenWPM's legacy wrappers are value-transparent. The bundle has exactly ONE isFunctionNative call site, guarding window.print inside a Safari-detection helper Gecko never reaches; it performs no integrity check on any instrumented surface. The vectors that DO expose legacy (Function.prototype.toString on wrapped natives, prototype shape, arity/name drift) are bot-detection vectors, and FingerprintJS OSS is not a bot detector.\n\nCONSEQUENCE: stop citing FingerprintJS for the legacy half — it does not support it, and the '27/28 components' claim in the guide and the #1154 PR body was not merely unsourced but wrong in direction. The correct evidence for the legacy half is test_stealth.py::TestStealthDetectability (8 legacy vectors failing on this same FF154 build). Honest framing that the data supports: stealth is invisible to a commodity fingerprinter, AND additionally invisible to the tamper vectors that expose legacy.\n\nVALIDITY GATE: baseline ran twice first; all 42 built-in components and visitorId stable. Excluded 2 probes (both halves of the forced-render canvas) after a control run entirely OUTSIDE OpenWPM (bare Selenium, plain FF154, no extension) showed Firefox re-seeds canvas noise PER PROFILE — 3 loads in one profile byte-identical, 2 fresh profiles differ, under stock prefs with fingerprintingProtection/resistFingerprinting/randomization all false and a -CanvasRandomization override. OpenWPM gives every launch a fresh profile; no pref pins it.\n\nBUG CAUGHT MID-FLIGHT: FingerprintJS v5's stabilized canvas source deliberately returns {geometry:skipped,text:skipped} on Firefox 120+. Canvas is the most heavily instrumented surface in the preset, so run #2 would have reported a vacuous canvas comparison. A forced-render probe via the library's own getUnstableCanvasFingerprint(false) export surfaced the per-profile randomization above.\n\nDELIVERED: test/test_pages/vendor/fingerprintjs-5.2.0.umd.min.js (byte-identical to npm, SHA-256 a8de5ead580c42d2e2b01a5752aa08da510852230971aa18554d67cd5de5775b, MIT, hash asserted in-test, monitoring:false to suppress the 1-in-1000 XHR to m1.openfpcdn.io), test/test_pages/fingerprintjs_stamp.html, test/test_fingerprintjs_stamp.py (6 tests, ~100s, 4 browser launches). 6/6 pass, 276 tests still collect, jj-precommit green.\n\nKNOWN HOLE: canvas image data is unmeasurable in this environment because of the per-profile randomization. If legacy leaks into rendered canvas bytes, this experiment could not see it.",
+          "created_at": "2026-08-25T09:38:11.256707186Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAVdDxCzQMR166zFJh//z7m1stajp7/Vpfo/uHZJTzd2dFsexayi6BYBIctrtUtJhfRcHpFTRFsw+PB4PJUm1tBw=="
+        }
+      }
     },
     "e7a9237b-0777-41f9-91d4-3b872ea58a14": {
       "uuid": "e7a9237b-0777-41f9-91d4-3b872ea58a14",
@@ -3260,8 +3271,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T09:18:46.597748Z",
+    "timestamp": "2026-08-25T09:38:11.262531909Z",
     "agent_id": "claude",
-    "agent_seq": 84
+    "agent_seq": 85
   }
 }
