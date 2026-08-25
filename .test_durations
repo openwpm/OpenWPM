@@ -31,6 +31,8 @@
   "test/test_extension.py::TestExtension::test_property_enumeration": 23.16,
   "test/test_extension.py::TestExtension::test_webrtc_localip": 23.16,
   "test/test_extension.py::test_audio_fingerprinting": 0.0,
+  "test/test_fingerprintjs_stamp.py::test_fingerprintjs_cannot_distinguish_the_arms": 155.56,
+  "test/test_fingerprintjs_stamp.py::test_vendored_bundle_is_the_pinned_artifact": 0.02,
   "test/test_http_instrumentation.py::TestHTTPInstrument::test_service_worker_requests": 23.18,
   "test/test_http_instrumentation.py::TestHTTPInstrument::test_worker_script_requests": 23.19,
   "test/test_http_instrumentation.py::TestPOSTInstrument::test_record_binary_post_data": 23.18,
