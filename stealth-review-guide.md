@@ -209,7 +209,7 @@ master today**:
   `datadir/r56-repro/run_attrib.py`, verdict in `datadir/r56-protochain-flattening-verdict.md`.
 - **"Frame coverage is fixable in legacy" is unsubstantiated.** X3 proves only that legacy *misses*
   dynamic iframes. All 16 D10 rows carry `legacy_detectable=None` with no paired legacy control
-  (`test_stealth.py:467` onward). Nothing measures a legacy fix.
+  (`test_stealth.py:456-518`; the block comment there records that legacy does not hook this surface at all). Nothing measures a legacy fix.
 - **`navigator.webdriver === true` is a Selenium tell, not an instrument tell.** Stealth also sets it
   to `false`. The "one line would fix it for legacy" half has never been built or measured; ADR-0001
   proposes it as follow-up #3.
