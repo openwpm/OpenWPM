@@ -1,6 +1,6 @@
 {
   "next_display_id": 75,
-  "next_comment_id": 284,
+  "next_comment_id": 285,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -793,11 +793,20 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-24T23:44:20.341193478Z",
-      "updated_at": "2026-08-25T02:35:00.928427159Z",
+      "updated_at": "2026-08-25T09:18:46.597748Z",
       "labels": [
         "docs"
       ],
       "comments": {
+        "06bb4745-97d2-4065-8fed-d264e39e2f58": {
+          "display_id": 284,
+          "author": "claude",
+          "content": "PR CLASSIFICATION CORRECTED — the earlier file-path heuristic ('does the diff touch a stealth/ path') was wrong and under-scoped the cohort. Full sweep of all ~30 open PR descriptions: datadir/open-pr-stealth-classification.md.\n\nThe stealth cohort is 7 PRs, not 2. The decisive evidence was NOT in the PR bodies — it is in .crosslink/issues.db, which links crosslink #53 -> PR #1207, #56 -> #1210/#1191, #57 -> cited by #1212. ADR-0001 exists only on the #1154 branch, and GH #1187 (closed by #1191) names the stealth ADR outright.\n\nCORE: #1154, #1206 (do-not-merge PoC).\nEVIDENCE (the experimental substantiation for legacy claims): #1191, #1210, #1213, #1212, #1207 — NONE merged, which is precisely why those legacy claims remain true on master.\nINTERACTS (collision risk, not stealth work): #1178 (config.py; 'callstack_instrument requires js_instrument'), #1101 (replaces the browser_params.json path stealth config rides on), #1144, #1170, #1175, #526.\n\nACTION TAKEN: rebased and pushed all five EVIDENCE branches onto master 61d285fc (v0.36.0/FF154). All five rebased cleanly, zero conflicts. This matters beyond tidiness: a RED proof is only as good as the master it is proven against, and all five were proven against a pre-FF154 master.\n\nTWO FINDINGS THAT CHANGE THE GUIDE:\n1. #1207 substantiates NOTHING. Its body claims a cleanErrorStack back-port but the diff is test-only (grep -c cleanErrorStack = 0) and its own docstring concedes the assertion 'holds by construction'. #1212 shows it is vacuous. It is superseded/corrected by #1212, and crosslink #53, which it claims to close, is not addressed by its diff.\n2. Firefox-version incoherence a rebase cannot fix: #1210/#1212 were verified on FF152, #1183/#1184/#1189 on FF150, and #1154's own legacy_detectable ratchet was originally set from an FF150 run — all against an FF154 master. (The #1154 ratchet has since been re-verified on FF154; the others have not.) #1189 is worse than stale: its 'prime with N-1' premise is two majors obsolete.\n\nBLOCKED MERGEABLE WORK: #1191 is MERGEABLE, non-draft, zero capture cost (implementations moved to closure locals, byte-for-byte unchanged), RED-proven, and fixes the most damning config-independent OpenWPM tell that EVERY current legacy user ships — and it needs nothing from stealth. #1210 same argument. Both are sitting idle behind the stealth stack. #526 should be closed as superseded by #1154's D1 requirement (it is 508 commits behind), not rebased.",
+          "created_at": "2026-08-25T09:18:46.592703788Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA/MQLC+wUQhn2RHTtn3cnLtpRiertHgOeyYqN0/+B/WaFO6f3/xaSWhuod/ftnpRugEMuc+L6N0Ecf704RiGNBw=="
+        },
         "15b5bb2e-c2f0-4807-b82b-ca847cd12182": {
           "display_id": 276,
           "author": "claude",
@@ -3251,8 +3260,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T09:12:00.696934471Z",
+    "timestamp": "2026-08-25T09:18:46.597748Z",
     "agent_id": "claude",
-    "agent_seq": 83
+    "agent_seq": 84
   }
 }
