@@ -424,10 +424,10 @@ def test_fingerprintjs_cannot_distinguish_the_arms(
     value-transparent. Its single `isFunctionNative` call site guards
     `window.print` inside a Safari-detection helper that Gecko never reaches.
     The vectors that do expose legacy (toString on wrapped natives, prototype
-    shape) are covered by test_stealth.py::TestStealthDetectability. If this
-    starts failing, an instrument has started leaking into a
-    fingerprinting-visible value: re-run the measurement rather than relaxing
-    the assertion.
+    shape) are covered by test_stealth.py::TestStealthDetectability and
+    test_bot_detection.py. If this starts failing, an instrument has started
+    leaking into a fingerprinting-visible value: re-run the measurement rather
+    than relaxing the assertion.
     """
     url = _page_url(server, STAMP_PAGE)
     stamps: Dict[str, Dict] = {}
