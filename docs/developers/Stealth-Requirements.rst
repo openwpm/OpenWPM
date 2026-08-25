@@ -14,7 +14,7 @@ D1–D4, D7, D8, X1 and X2 are the reliability threats catalogued in Krumnow,
 Jonker & Karsch, *"Analysing and strengthening OpenWPM's reliability"*
 (`arXiv:2205.08890 <https://arxiv.org/abs/2205.08890>`_, 2022; §4.1 detection,
 §6/RQ5–RQ8 data integrity); D3 and X3 test a paper-named threat at a finer
-granularity (footnotes). Rows marked **†** (**C1, A1, D5, D6, D8b, D8c, D9, D11**) are
+granularity (footnotes). Rows marked **†** (**C1, A1, D5, D6, D8b, D8c, D9, D11, D12**) are
 OpenWPM project requirements the paper does not name: native-API fidelity,
 provenance and runtime configurability.
 
@@ -122,9 +122,17 @@ Detectability requirements
      - not touched by legacy either
      - ``toString`` is never patched
      - ``tostring_recursive_native``
+   * - **D12** †
+     - A custom surface does not become a detection hook
+     - look for the name an injected settings global would use on the page's
+       window
+     - n/a — legacy injects its configuration differently
+     - settings reach the instrument through ``sharedData`` and its sandbox,
+       never the page; checked with a custom surface configured
+     - ``no_stealth_settings_leak``
 
 ``TestStealthDetectability`` asserts stealth is clean on every parametrized
-vector (the 13 D1–D9 vectors, the 16 D10 rows and D11) and, as a control, that
+vector (the 13 D1–D9 vectors, the 16 D10 rows, D11 and D12) and, as a control, that
 legacy trips D1, D2×3, D4, D5, D8 and D8b (❌ above; recorded legacy results,
 re-asserted every run). The other vectors are stealth-only
 (``legacy_detectable=None``): legacy's result depends on the environment or
