@@ -25,7 +25,8 @@ inside a Safari-detection helper Gecko never reaches. The vectors where legacy
 *is* detectable (`Function.prototype.toString` on wrapped natives, prototype
 shape, arity/name drift, leaked globals) belong to bot-detection scripts.
 FingerprintJS OSS is not one; `test/test_stealth.py::TestStealthDetectability`
-covers those vectors.
+and [Bot-Detector-Visibility-Experiment.md](Bot-Detector-Visibility-Experiment.md)
+cover those vectors.
 
 ## What was built
 
