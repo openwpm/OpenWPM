@@ -1,6 +1,6 @@
 {
   "next_display_id": 74,
-  "next_comment_id": 278,
+  "next_comment_id": 279,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -792,7 +792,7 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-24T23:44:20.341193478Z",
-      "updated_at": "2026-08-24T23:56:17.206661774Z",
+      "updated_at": "2026-08-25T00:29:43.124749215Z",
       "labels": [
         "docs"
       ],
@@ -805,6 +805,15 @@
           "kind": "result",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA4C2g64TTL/7lym//g2AwjvL4I0s2+ry5Jp6ksGGSD6bwXgCbSK8LkOzMvhuOEZZR9iD62haaBnCQGcIB5bHcCg=="
+        },
+        "224c94a7-7f5a-4dc9-95f0-0e4715682ac7": {
+          "display_id": 278,
+          "author": "claude",
+          "content": "Tick 2026-08-25: CI on #1154 was RED (7/7 test shards). Root cause: the stealth branch carries a second Firefox launch site — js_settings_migrator._launch_browser — still passing -remote-allow-system-access through capabilities, which geckodriver 0.37.1 (landed on master in v0.36.0) rejects. Same class of failure as the release fix, different call site. Fixed by moving it to service_args=['--allow-system-access'], folded into cbd24fed (the commit that introduces the migrator) so each commit stays self-contained. Two failing tests verified green locally; pushed.",
+          "created_at": "2026-08-25T00:29:43.119409029Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAkN7/CDbuZ4Nvvr9Hsys96LZE8ZmzpKMZC/HwjU57NzrKJFJNmmeq/jhYplAotmXU/be/yCzcv2VKZuDaCTLRCg=="
         }
       }
     },
@@ -3183,8 +3192,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-24T23:56:37.864448557Z",
+    "timestamp": "2026-08-25T00:29:43.124749215Z",
     "agent_id": "claude",
-    "agent_seq": 75
+    "agent_seq": 76
   }
 }
