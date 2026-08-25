@@ -1,6 +1,6 @@
 {
   "next_display_id": 74,
-  "next_comment_id": 281,
+  "next_comment_id": 282,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -792,7 +792,7 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-24T23:44:20.341193478Z",
-      "updated_at": "2026-08-25T00:57:28.253978063Z",
+      "updated_at": "2026-08-25T02:35:00.928427159Z",
       "labels": [
         "docs"
       ],
@@ -832,6 +832,15 @@
           "kind": "result",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAC8OXA2FfDTzzjkYr9DIsb/PZR6XQN4Z3Ypvt2oWMjX/VHqXY9b0PE+4LsZ0HlGgr0KbZjMttmHU4YfxjSBj6Bg=="
+        },
+        "7b64b77f-9326-486a-b4ef-e44a92fb91ca": {
+          "display_id": 281,
+          "author": "claude",
+          "content": "FF154 RE-RATCHET EXPERIMENT RUN — this was the one experiment the rewritten guide said was required.\n\nResult: 51 passed, 0 failed, 0 skipped on Firefox 154.0 (unbranded add-on-devel), 6m15s.\n- 8 asserted legacy control rows still hold: D1-webdriver-flag, D2-native-fn-{canvas,storage,rtc}, D4-no-global-leaks, D5-constructors-present, D8-no-prototype-pollution, D8b-native-fn-arity.\n- All 30 stealth_undetectable rows pass.\n\nSo the FF150-era ratchet survives the FF152->154 jump; no drift, no regression, and the guide's legacy claims that rest on those 8 controls are now backed on the browser this branch actually targets.\n\nSCOPE STATED HONESTLY (recorded in both the guide and test_stealth.py:401): the run confirms the ASSERTIONS hold on FF154. It did NOT re-record the raw self-report values, so the FF154 status of the three unasserted (None) rows D3/D6/D7 is still unknown — they remain stealth-only with no legacy control. '51 passed' must not be read as 'legacy was measured on all 30 vectors'.\n\nUpdated: guide section now reads 'D/X numbers: verified on Firefox 154' (was a warning that they were unverified); test_stealth.py ratchet comment carries the re-verification note with the same scope caveat. Not yet committed — the Phase 1 agent is working in the same tree.",
+          "created_at": "2026-08-25T02:35:00.923502047Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAffKMFitT+3GT/+w8FWkJB6/x5mZhCRoDg1ynZL9myBBsaSd6s76dpuOLZep0Bgk/getUUHFD7RQZgdv7BcTjAw=="
         }
       }
     },
@@ -3210,8 +3219,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T00:57:28.253978063Z",
+    "timestamp": "2026-08-25T02:35:00.928427159Z",
     "agent_id": "claude",
-    "agent_seq": 78
+    "agent_seq": 79
   }
 }
