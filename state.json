@@ -1,6 +1,6 @@
 {
   "next_display_id": 74,
-  "next_comment_id": 283,
+  "next_comment_id": 284,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1124,7 +1124,7 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-24T23:44:38.766109337Z",
-      "updated_at": "2026-08-25T03:02:02.829574475Z",
+      "updated_at": "2026-08-25T04:27:37.110170002Z",
       "labels": [
         "feature"
       ],
@@ -1137,6 +1137,15 @@
           "kind": "result",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA3jIbAB2pV+kgKFPN+e0vWQrmpboqZmaxRmXkwaG16LjhXD+CcEZOzSGHwqSKYvuFBfdLti7yuym2WSonMBayDA=="
+        },
+        "8ced4d73-f696-4f16-b5d8-e99b3e0ab90d": {
+          "display_id": 283,
+          "author": "claude",
+          "content": "Closed the Phase 1 zero-coverage gap: added test/test_js_data_backprojector.py (9 pyonly tests, 0.03s), folded into the Phase 1 commit so the module ships with its own guard rails.\n\nThe tests assert the ABSENCE of transformation at least as hard as its presence, because 'almost a no-op' is the load-bearing property: every non-receiver column preserved byte-for-byte; caller rows not mutated; sqlite3.Row accepted (that is what db_utils actually returns, not dict); row order preserved; duplicate rows NOT collapsed (legacy assertions count occurrences, so collapsing would hide capture loss); idempotent on already-legacy-shaped rows; and STEALTH_ONLY_COLUMNS == ('receiver',) pinned so widening the drop list is a visible defang rather than a quiet edit.\n\nTwo of the three previously-uncovered pieces remain uncovered by construction (the stealth branch of get_config and transpile_cached) — those need a class to opt in, i.e. Phase 2, which is blocked on owner decisions.",
+          "created_at": "2026-08-25T04:27:37.104904614Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKObleIXR+3YvYoVu0nM1pV5T73QpL7I01T3VTj7J0ReJafE3bm3UgHeDI9iSzYZEtskuTRllsGo0EiiB1s5gDQ=="
         },
         "af0523b9-c816-4353-9a21-e4392f6e411e": {
           "display_id": 282,
@@ -3228,8 +3237,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T03:02:02.829574475Z",
+    "timestamp": "2026-08-25T04:27:37.110170002Z",
     "agent_id": "claude",
-    "agent_seq": 80
+    "agent_seq": 81
   }
 }
