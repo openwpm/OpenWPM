@@ -7,6 +7,7 @@ created: 2026-06-16
 updated: 2026-08-25
 ---
 
+
 ## Design Specification
 
 ### Standard of evidence for this page
@@ -28,21 +29,27 @@ not softened. Removed in this revision, and not to be reintroduced without an ar
   frames detectability and tamper-resilience as **independent axes**
   (`adr/0001-retain-legacy-js-instrument.rst:113-144`, `:259-289`), which is the opposite claim.
 
-### ⚠️ Read this before trusting any D/X number
+### D/X numbers: verified on Firefox 154
 
-The `legacy_detectable` ratchet was **measured on Firefox 150** (`test/test_stealth.py:391-399`,
-unbranded add-on-devel run). Master is now **Firefox 154** (`scripts/install-firefox.sh` →
-`FIREFOX_154_0_RELEASE`; `VERSION` = 0.36.0). A Firefox 152 spot-check was recorded in an earlier
-session; **no Firefox 154 run is recorded anywhere.**
+The `legacy_detectable` ratchet was originally measured on **Firefox 150**
+(`test/test_stealth.py:391-399`, unbranded add-on-devel). Master now targets
+**Firefox 154** (`scripts/install-firefox.sh` -> `FIREFOX_154_0_RELEASE`; `VERSION` = 0.36.0).
 
-Consequence: the D/X ratchet is **unverified on the browser this branch now targets**. Re-run and
-re-ratchet before treating any of the numbers below as current, and before concluding that any area
-needs less scrutiny:
+**Re-verified on Firefox 154.0 on 2026-08-25** — the suite ran green:
+**8 asserted legacy controls** (D1, D2 canvas/storage/rtc, D4, D5, D8, D8b) and
+**30 stealth rows**, 51 tests, 0 failures, 0 skipped.
+
+Scope of that re-verification, stated precisely: it confirms the *assertions* still hold on
+FF154. It did **not** re-record the raw self-report values, so the FF154 status of the three
+**unasserted (`None`) rows D3/D6/D7 is still unknown** — those remain stealth-only assertions
+with no legacy control, exactly as before. Do not read "51 passed" as "legacy was measured on
+all 30 vectors".
+
+Re-run with:
 
 ```
 scripts/build-extension.sh        # need a built openwpm.xpi + firefox-bin/
-pytest test/test_stealth.py::TestStealthDetectability -v
-pytest test/test_stealth.py::TestStealthDisruption -v
+pytest test/test_stealth.py -k "Detectab or Disruption or legacy_detectable" -v
 ```
 
 These are browser tests (no `pyonly` marker). The `server` fixture is session-scoped, so run one
