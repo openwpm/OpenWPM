@@ -13,7 +13,7 @@ that demonstrates the problem, but a few (notably **D7**) are asserted only in
 the stealth direction because legacy's result on them depends on the
 environment or configuration (see the Confidence note below).
 
-Requirements marked **†** (**C1, A1, D5, D6, D8b, D8c, D9, D11**) are **OpenWPM
+Requirements marked **†** (**C1, A1, D5, D6, D8b, D8c, D9, D11, D12**) are **OpenWPM
 project requirements** that the paper does not name: finer-grained native-API
 fidelity checks, provenance (attribution) guarantees, and runtime
 configurability that the framework needs in practice but that fall outside the
@@ -130,6 +130,14 @@ Detectability requirements
      - not touched by legacy either
      - ``toString`` is never patched
      - ``tostring_recursive_native``
+   * - **D12** †
+     - A custom surface does not become a detection hook
+     - look for the name an injected settings global would use on the page's
+       window
+     - n/a — legacy injects its configuration differently
+     - settings reach the instrument through ``sharedData`` and its sandbox,
+       never the page; checked with a custom surface configured
+     - ``no_stealth_settings_leak``
 
 All D* vectors are proven by a single parametrized test that asserts the stealth
 instrument is clean for every vector, paired with a control that asserts legacy
@@ -185,7 +193,7 @@ from three kinds of same-origin iframe realm.
      (legacy defines no such helpers either).
 
    The **stealth** direction is asserted unconditionally for every parametrized
-   vector: the 13 D1–D9 vectors, the 16 D10 rows and D11.
+   vector: the 13 D1–D9 vectors, the 16 D10 rows, D11 and D12.
 
 Frame-creation detection vectors (D10)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -460,8 +468,8 @@ specific concern. To keep browser launches bounded, the detection page is run
 **once per mode** (class-scoped fixtures) and every D* test asserts against the
 shared results; X* tests each run their own attack page per mode.
 
-- **D1–D11** → ``TestStealthDetectability`` — ``test_stealth_undetectable[D*]``
-  (asserts stealth clean, all 30 parametrized vectors) and
+- **D1–D12** → ``TestStealthDetectability`` — ``test_stealth_undetectable[D*]``
+  (asserts stealth clean, all 31 parametrized vectors) and
   ``test_legacy_detectable`` (asserts legacy trips the empirically-confirmed
   vectors: D1, D2×3, D4, D5, D8, D8b).
 - **X1** → ``TestStealthDisruption`` — ``test_x1_legacy_channel_can_be_suppressed``

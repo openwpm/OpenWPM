@@ -418,40 +418,14 @@ def _run_page(params: Tuple[ManagerParams, List[BrowserParams]], url: str) -> Pa
 
 
 # --------------------------------------------------------------------------- #
-# Detectability requirements (D*)
+# Detectability requirements (D*), specified in
+# ``docs/developers/Stealth-Requirements.rst``.
 #
-# See the "Detectability requirements" section of
-# ``docs/developers/Stealth-Requirements.rst`` (the D1-D9 table, which
-# ``literalinclude``s the tests below) for the per-row rationale, and
-# ``docs/developers/Stealth-Instrumentation.rst`` ("Detectability (a property of
-# the legacy instrument)") for the mechanism each vector exploits.
-#
-# Each row is a ``DetectabilityRequirement`` with three named fields:
-#   req_id            -- stable D* identifier (also the parametrize test id)
-#   result_key        -- key under which the detection page self-reports the
-#                        vector's pass/fail on ``#results``
-#   legacy_detectable -- THREE-state control flag (kept Optional[bool], NOT
-#                        collapsed to bool, because None is a distinct "N/A"
-#                        state, not False):
-#     True  -> legacy is expected to TRIP this check, so a control test asserts
-#              legacy is detected (``results[result_key] is not True``).
-#     None  -> legacy behaviour is environment/path-dependent in this build, so
-#              NO legacy control is asserted; only the stealth direction is
-#              tested. Collapsing None to False would wrongly claim legacy is
-#              provably-undetectable here and would not change ``_LEGACY_DETECTABLE``
-#              (which filters on truthiness either way) — so the third state is
-#              retained to keep the documented meaning.
-#   (No row is False: every vector is either an asserted control (True) or
-#    not-asserted/env-dependent (None).)
+# ``legacy_detectable``: True where a recorded legacy run trips the vector, so
+# ``test_legacy_detectable`` asserts it as a control; None where legacy's result
+# depends on the environment or configuration, or legacy does not touch the
+# probed member, so only the stealth direction is asserted. Never False.
 # --------------------------------------------------------------------------- #
-# legacy_detectable values below were ratcheted from an empirical Firefox 150
-# run (unbranded add-on-devel) recording the legacy detection page results:
-#   webdriver_flag=False, canvas/storage/rtc native=False, navigator_native=True,
-#   no_global_leaks=False, constructors_present=False ("too much recursion"),
-#   bind_integrity=True, clean_error_stacks=True, no_extra_prototype_properties=False.
-# A False result means the legacy instrument was DETECTED, so legacy_detectable=True.
-# D3/D6/D7 legacy results were True (not detected) in this build, so they stay
-# None (stealth-only assertion) rather than asserting a control that does not hold.
 class DetectabilityRequirement(typing.NamedTuple):
     """One D* detection vector: id, self-report key, and legacy control flag.
 
@@ -554,6 +528,15 @@ DETECTABILITY_REQUIREMENTS: List[DetectabilityRequirement] = [
     # it either.
     DetectabilityRequirement(
         "D11-tostring-recursive-native", "tostring_recursive_native", None
+    ),
+    # D12: a custom instrumentation surface must not become a detection hook.
+    # It reaches the instrument through sharedData and the instrument's
+    # sandbox, never the page's window.
+    # ``test_custom_settings_stay_undetectable`` exercises this row with a custom
+    # surface actually configured. legacy_detectable=None: legacy injects its
+    # config differently; this asserts only the stealth direction.
+    DetectabilityRequirement(
+        "D12-no-stealth-settings-leak", "no_stealth_settings_leak", None
     ),
 ]
 
