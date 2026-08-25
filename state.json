@@ -254,7 +254,10 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-25T09:54:55.690251317Z",
-      "updated_at": "2026-08-25T09:54:55.690251317Z"
+      "updated_at": "2026-08-25T09:55:01.980494225Z",
+      "labels": [
+        "feature"
+      ]
     },
     "2ae4638a-df42-4a7a-88ba-6b65d3f57083": {
       "uuid": "2ae4638a-df42-4a7a-88ba-6b65d3f57083",
@@ -3282,8 +3285,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T09:54:55.690251317Z",
+    "timestamp": "2026-08-25T09:55:01.980494225Z",
     "agent_id": "claude",
-    "agent_seq": 86
+    "agent_seq": 87
   }
 }
