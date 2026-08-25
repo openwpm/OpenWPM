@@ -27,7 +27,7 @@ advance what a page might look at.
    * - Wrapper source, arity, name, constructibility, prototype shape, leaked
        globals, ``webdriver``, stacks, settings injection
      - ``test_stealth.py::TestStealthDetectability::test_stealth_undetectable``
-       (30 vectors, D1–D11, :doc:`Stealth-Requirements`), with
+       (31 vectors, D1–D12, :doc:`Stealth-Requirements`), with
        ``test_legacy_detectable`` as the control
      -
    * - Anything else the page can read about the wrapped members: which page

@@ -316,6 +316,20 @@
         other.remove();
     }
 
+    // D12: a custom instrumentation surface must not be page-observable. It
+    // reaches the instrument through sharedData and the instrument's sandbox,
+    // never the page's window; a page probing its window every way it can must
+    // not find it under the name an injected global would use. (returns true =
+    // clean)
+    function testNoStealthSettingsLeak() {
+        const name = "openWpmStealthInstrumentSettings";
+        if (typeof window[name] !== "undefined") return false;
+        if (name in window) return false;
+        if (Object.getOwnPropertyNames(window).indexOf(name) !== -1) return false;
+        if (Object.getOwnPropertyDescriptor(window, name) !== undefined) return false;
+        return true;
+    }
+
     // Run all tests and store results, wrapping each in try/catch
     // so that one failing test doesn't prevent others from running
     function safeRun(name, fn) {
@@ -341,6 +355,7 @@
     safeRun("accessor_name_native", testAccessorNameNative);
     safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
     safeRun("tostring_recursive_native", testRecursiveToStringNative);
+    safeRun("no_stealth_settings_leak", testNoStealthSettingsLeak);
 
     // D10: the frame-creation probes write their own per-key results
     // (see runFrameProtectionProbes); wrapped so a setup failure cannot abort

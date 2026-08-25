@@ -716,7 +716,7 @@ Test coverage
 the test that guards it. ``test/test_stealth.py`` is requirement-driven: each
 test maps to a numbered
 requirement in ``docs/developers/Stealth-Requirements.rst``. See that document for
-the full detectability (D1–D11), disruptability (X1–X3), attribution (A1) and
+the full detectability (D1–D12), disruptability (X1–X3), attribution (A1) and
 configurability (C1) matrices and the per-requirement test names. The
 detectability vectors are asserted in both directions — stealth must pass, legacy
 (as a control) must trip the reliably-detected subset:
@@ -731,8 +731,8 @@ detectability vectors are asserted in both directions — stealth must pass, leg
 
 In summary:
 
-- **Detectability** — ``stealth_detection.html`` exercises the 30 parametrized
-  vectors (D1, D2×3, D3, D4, D5, D6, D7, D8, D8b, D8c, D9, D10×16, D11);
+- **Detectability** — ``stealth_detection.html`` exercises the 31 parametrized
+  vectors (D1, D2×3, D3, D4, D5, D6, D7, D8, D8b, D8c, D9, D10×16, D11, D12);
   ``TestStealthDetectability`` asserts stealth passes every vector and that legacy
   trips the reliably-detected subset (D1, D2×3, D4, D5, D8, D8b) as a control.
   The others are asserted only in the stealth direction, because legacy's
