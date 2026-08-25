@@ -1,6 +1,6 @@
 {
   "next_display_id": 76,
-  "next_comment_id": 286,
+  "next_comment_id": 287,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -254,10 +254,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-25T09:54:55.690251317Z",
-      "updated_at": "2026-08-25T09:55:01.980494225Z",
+      "updated_at": "2026-08-25T10:24:47.308713676Z",
       "labels": [
         "feature"
-      ]
+      ],
+      "comments": {
+        "a9a8ce74-91b6-4336-8902-3ec7d4419578": {
+          "display_id": 286,
+          "author": "claude",
+          "content": "EXPERIMENT RUN. The owner's desired stance is REFUTED for the legacy half, and CONFIRMED (inverted) for the stealth half.\n\nLEGACY vs BASELINE: off-the-shelf OSS bot detection does NOT distinguish them — not on a single one of 185 oracle signals. BotD 2.0.0 (18 detectors, 23 sources) and fpscanner 1.0.8 (21 rules, 116 signals) read legacy identically to an uninstrumented OpenWPM browser, while legacy demonstrably wrapped canvas/navigator/screen during the same run (103 rows, 32 symbols).\n\nSTEALTH vs BASELINE: 10 signals differ, ALL navigator.webdriver — botd.component.webDriver, botd.detection.detectWebDriver, botd.verdict.bot (flips true->FALSE), botd.verdict.botKind, fpscanner.rule.hasWebdriver / hasWebdriverWritable / hasWebdriverIframe, plus three underlying signal readings. So 'off-the-shelf bot detection can't tell stealth from baseline' is FALSE — stealth is measurably LESS bot-like than baseline. contexts.iframe.webdriver also flips, i.e. stealth's frame protection holds inside a freshly-created iframe.\n\nWHY THE ORACLES MISS LEGACY — coverage, not innocence:\n- BotD's only native-toString read is Function.prototype.bind, and detectFunctionBind never compares the string; it fires only if bind is undefined.\n- BotD's detectErrorTrace provokes an error inside BotD's OWN code and regex-matches /PhantomJS/i.\n- BotD's checkDistinctiveProperties walks a fixed roster of bot globals that does not include getInstrumentJS.\n- fpscanner's one prototype-shape check reads Navigator.prototype, which legacy never touches (it patches the navigator INSTANCE), reading '00000' in every arm.\n\nLEGACY IS STILL DETECTABLE — measured in the same page load via a separate, clearly-labelled paper.* namespace (35 probes, never counted as oracle signals): all four Krumnow/Jonker/Karsch instrumentation tells fire on legacy — window.getInstrumentJS present, [native code] gone from 4 wrapped natives, a getInstrumentJS/instrumentFunction/< frame at the top of the stack, and prototype flattening taking HTMLCanvasElement.prototype from 10 to 351 own properties. Stealth fires NONE of them.\n\nHONESTY GUARD: stealth does not make OpenWPM undetectable as automation. fpscanner.fastBotDetection is true in ALL FOUR arms (via hasUTCTimezone), and the paper's Table 4 display-less signature (availTop/availLeft = 0, WebGL absent) is present everywhere. A test asserts this so the module can never be repurposed as evidence for the opposite.\n\nFOURTH-ARM CONTROL: plain Firefox (bare Selenium, no extension) vs OpenWPM baseline = ZERO differing signals. That licenses classifying every firing signal as AUTOMATION rather than an OpenWPM tell, and it also answers the open question from the design review: the extension's mere presence adds no oracle-visible signal, so no fifth arm is needed.\n\nDELIVERED: vendored botd-2.0.0.esm.js + fpscanner-1.0.8.es.js (byte-identical to npm, SHA-256 asserted in-test, ESM-only so the page uses script type=module; BotD monitoring:false, fpscanner has no network call site), test/test_pages/bot_detection.html, test/test_bot_detection.py (9 tests, all passing, 171s), docs/developers/Bot-Detector-Visibility-Experiment.md in-repo. 15 passed together with the FingerprintJS suite. jj-precommit green.\n\nBRIEF CORRECTION: fp-scanner (the academic scanner with CONSISTENT/UNSURE/INCONSISTENT) is 404 on npm. fpscanner@1.0.8 is a 2025 TypeScript rewrite by the same author with {detected, severity} rules — right oracle, different vocabulary.",
+          "created_at": "2026-08-25T10:24:47.302649465Z",
+          "kind": "result",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA4/rIci6jMI5k6wqhND60Ztvmn3CzigCCUhAOSZCddbWXjZthDtMrus8lGluIhTfNbSUylfae3baSxb7XqE80Dg=="
+        }
+      }
     },
     "2ae4638a-df42-4a7a-88ba-6b65d3f57083": {
       "uuid": "2ae4638a-df42-4a7a-88ba-6b65d3f57083",
@@ -3285,8 +3296,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T09:55:01.980494225Z",
+    "timestamp": "2026-08-25T10:24:47.308713676Z",
     "agent_id": "claude",
-    "agent_seq": 87
+    "agent_seq": 88
   }
 }
