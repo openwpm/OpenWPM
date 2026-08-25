@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Bot-Detector Probe</title>
+</head>
+<body>
+    <h1>Bot-Detector Probe</h1>
+    <!--
+      Loads the two VENDORED bot-detection oracles (see test_pages/vendor/README.md
+      for package, version, license and SHA-256 of each). Both are served by the
+      test HTTP server from disk, so the page is hermetic: no CDN fetch.
+
+      Both bundles are shipped by npm as ES modules only (there is no UMD/IIFE
+      build for either), so they are imported from a module script rather than
+      loaded with a classic <script src>. That keeps each file BYTE-IDENTICAL to
+      the published npm artifact, which is what makes the pinned SHA-256
+      reproducible against upstream with no local edits to account for.
+
+      Hermeticity:
+        * BotD's `load()` sends an unpersonalized install-statistics XHR to
+          m1.openfpcdn.io with probability 0.001 unless `monitoring` is
+          disabled -- the same mechanism FingerprintJS has. `monitoring: false`
+          below suppresses it. Do not remove it.
+        * fpscanner issues no network request at all: it has no fetch/XHR/
+          sendBeacon/WebSocket call site, and its single `new Image()` is a
+          14-byte inline `data:image/png` used for the canvas-tamper check.
+        * `encrypt: false` is passed to fpscanner so it returns the plain
+          Fingerprint object rather than an encrypted string. Nothing is sent
+          anywhere either way; this only decides what the page can read back.
+    -->
+    <div id="results"></div>
+    <script type="module">
+    /**
+     * Runs two off-the-shelf OSS bot detectors and publishes every individual
+     * check verdict on #results/@data-results for the harness to read back.
+     *
+     * This page is an ORACLE, not an assertion: it reports what the detectors
+     * observe. The comparison between arms (plain Firefox / OpenWPM with no
+     * instrument / legacy js_instrument / stealth) happens in
+     * test/test_bot_detection.py.
+     *
+     * Unlike the FingerprintJS probe, values are NOT hashed here. A bot
+     * detector's output is a handful of small booleans, short strings and
+     * numbers, and the whole point of this measurement is a per-signal matrix a
+     * human can read. Hashing would throw away exactly the information the
+     * report needs. The harness flattens the nested objects into dotted paths
+     * and does the comparing.
+     */
+    import * as botd from "./vendor/botd-2.0.0.esm.js";
+    import FingerprintScanner from "./vendor/fpscanner-1.0.8.es.js";
+
+    // Pinned to the vendored bundles. Neither library exposes its own version
+    // at runtime; the harness cross-checks these against the vendored
+    // filenames so the page cannot silently drift off the fixtures.
+    const BOTD_VERSION = "2.0.0";
+    const FPSCANNER_VERSION = "1.0.8";
+
+    function publish(payload) {
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.setAttribute("data-results", JSON.stringify(payload));
+        resultsDiv.textContent = JSON.stringify(payload, null, 2);
+    }
+
+    function errStr(e) {
+        if (!e) return String(e);
+        return (e.name ? e.name + ": " : "") + (e.message ? e.message : String(e));
+    }
+
+    /**
+     * BotD: 23 sources feeding 18 detectors.
+     *
+     * `getComponents()` gives the raw per-source reading (with BotD's own
+     * State enum when a source failed), `getDetections()` gives the per-DETECTOR
+     * verdict, and `detect()` gives the single aggregate verdict. All three are
+     * reported: the aggregate is what a site would act on, the per-detector map
+     * is what tells us WHICH check fired, and the components are what lets us
+     * see the underlying value that made it fire.
+     */
+    async function runBotd() {
+        // monitoring:false -- see the hermeticity note above.
+        const detector = await botd.load({ monitoring: false });
+        const components = detector.getComponents();
+        // detect() is what populates getDetections(); it must run first.
+        let verdict;
+        try {
+            verdict = detector.detect();
+        } catch (e) {
+            verdict = { bot: null, error: errStr(e) };
+        }
+        return {
+            version: BOTD_VERSION,
+            verdict: verdict,
+            detections: detector.getDetections(),
+            components: components,
+        };
+    }
+
+    /**
+     * fpscanner: ~150 leaf signals grouped by area, plus 21 named detection
+     * rules exposed individually as `fastBotDetectionDetails` (each
+     * {detected, severity}) and one aggregate `fastBotDetection` boolean.
+     *
+     * `encrypt: false` returns the Fingerprint object instead of an encrypted
+     * string. `nonce` and `time` are deliberately left in the report even
+     * though they are random/wall-clock by construction -- the harness's
+     * validity gate is supposed to discover and exclude them from the data
+     * rather than have them hidden here.
+     */
+    async function runFpScanner() {
+        const scanner = new FingerprintScanner();
+        const fp = await scanner.collectFingerprint({ encrypt: false });
+        return { version: FPSCANNER_VERSION, fingerprint: fp };
+    }
+
+
+    /**
+     * PAPER PROBES -- a deliberately separate, NON-oracle section.
+     *
+     * Krumnow, Jonker & Karsch (arXiv:2205.08890) document specific tells for
+     * OpenWPM, split across two classes that this experiment must not conflate:
+     *
+     *   AUTOMATION tells, which apply to "every mode of running OpenWPM"
+     *     (their Sec. 4.1): navigator.webdriver; screen position/dimension
+     *     properties that "cannot be changed from OpenWPM" (their Table 3);
+     *     and WebGL vendor/renderer strings in display-less and virtualised
+     *     modes (their Table 4).
+     *
+     *   INSTRUMENTATION tells, specific to the JS instrument (their Sec. 4.1,
+     *     "Detecting instrumentation" + Listing 1): Function.prototype.toString
+     *     on overwritten natives; the window.getInstrumentJS global "which is
+     *     not present in any common desktop browser"; OpenWPM wrapper functions
+     *     appearing in stack traces; and prototype-chain pollution, where the
+     *     properties of later ancestor prototypes are flattened onto the first
+     *     ancestor (their Fig. 2).
+     *
+     * These probes exist so the report can say WHERE the two off-the-shelf
+     * oracles above sit relative to a detector that knows what to look for.
+     * They are NOT part of BotD or fpscanner and must never be presented as
+     * such -- the paper predates both and mentions neither. The exhaustive
+     * detection-vector suite lives in test/test_stealth.py::TestStealthDetectability;
+     * this is only the paper's own named list, measured in the same run as the
+     * oracles so the two are directly comparable.
+     */
+    function collectPaperProbes() {
+        const out = {};
+        function record(name, fn) {
+            try {
+                out[name] = fn();
+            } catch (e) {
+                out[name] = "__error__:" + errStr(e);
+            }
+        }
+
+        // (b) The instrumentation globals the paper names. `getInstrumentJS` is
+        // injected as a top-level FUNCTION DECLARATION in a classic script, so
+        // it lands on `window`. `jsInstrumentationSettings` is a top-level
+        // `const`, which creates a global LEXICAL binding that is NOT a window
+        // property -- so both spellings are probed. `instrumentJS` is only
+        // published when OpenWPM runs with manager_params.testing=True; the
+        // arms here run with testing=False (the production setting), so its
+        // presence here would be a harness leak, not a real crawl property.
+        const globalNames = [
+            "getInstrumentJS",
+            "jsInstruments",
+            "instrumentFingerprintingApis",
+            "instrumentJS",
+            "jsInstrumentationSettings",
+        ];
+        record("globalsOnWindow", function () {
+            return globalNames.filter(function (n) { return n in window; });
+        });
+        record("globalsInScope", function () {
+            // A global lexical binding is invisible to `in window` but visible
+            // to an unqualified reference, which is exactly how a detector
+            // written as page script would find it.
+            return globalNames.filter(function (n) {
+                try {
+                    return eval("typeof " + n) !== "undefined";
+                } catch (e) {
+                    return false;
+                }
+            });
+        });
+
+        // (b) Listing 1: toString on an overwritten native. A native function
+        // stringifies to "[native code]"; a JS wrapper stringifies to its own
+        // source. Probed on the canvas surface the paper uses, plus navigator
+        // and storage, which both presets also instrument.
+        record("nativeToString", function () {
+            const targets = {
+                "HTMLCanvasElement.prototype.getContext": HTMLCanvasElement.prototype.getContext,
+                "HTMLCanvasElement.prototype.toDataURL": HTMLCanvasElement.prototype.toDataURL,
+                "CanvasRenderingContext2D.prototype.fillText": CanvasRenderingContext2D.prototype.fillText,
+                "Storage.prototype.setItem": Storage.prototype.setItem,
+            };
+            const res = {};
+            Object.keys(targets).forEach(function (k) {
+                try {
+                    res[k] = Function.prototype.toString.call(targets[k]).indexOf("[native code]") !== -1;
+                } catch (e) {
+                    res[k] = "__error__:" + errStr(e);
+                }
+            });
+            return res;
+        });
+
+        // (b) Wrapper frames in stack traces: provoke an error inside an
+        // instrumented function and inspect the resulting frames.
+        //
+        // Reported as the raw stack PLUS the list of frame function names and
+        // the frame count. Note deliberately what is NOT used here: filtering
+        // frames by origin. OpenWPM's legacy page script is injected inline
+        // into the visited document, so its wrapper frames carry THIS PAGE's
+        // URL -- an origin filter would report zero foreign frames while the
+        // instrument is plainly visible in the trace. The function NAMES are
+        // where the tell actually lives, and counting frames is a
+        // question-begging-free way to see one appear.
+        record("errorStack", function () {
+            let stack = null;
+            try {
+                // Bad `this` -> the method throws before doing any work.
+                HTMLCanvasElement.prototype.toDataURL.call(null);
+            } catch (e) {
+                stack = e && e.stack ? String(e.stack) : null;
+            }
+            if (stack === null) {
+                return { raw: null, frameFunctions: [], frameCount: 0 };
+            }
+            const frames = stack.split("\n").filter(function (line) {
+                return line.trim() !== "";
+            });
+            return {
+                raw: stack,
+                // Everything before the "@" in a Gecko stack frame.
+                frameFunctions: frames.map(function (line) {
+                    const at = line.indexOf("@");
+                    return at === -1 ? line : line.slice(0, at);
+                }),
+                frameCount: frames.length,
+            };
+        });
+
+        // (b) Prototype pollution (their Fig. 2): instrumenting walks the
+        // prototype chain and flattens later ancestors' properties onto the
+        // FIRST ancestor, so the first ancestor's own-property count grows.
+        // Counts, not names, keep this readable; a change in any count is the
+        // signal.
+        record("prototypeOwnPropertyCounts", function () {
+            const protos = {
+                "HTMLCanvasElement.prototype": HTMLCanvasElement.prototype,
+                "CanvasRenderingContext2D.prototype": CanvasRenderingContext2D.prototype,
+                "Navigator.prototype": Navigator.prototype,
+                "Screen.prototype": Screen.prototype,
+                "Storage.prototype": Storage.prototype,
+                "Document.prototype": Document.prototype,
+            };
+            const res = {};
+            Object.keys(protos).forEach(function (k) {
+                try {
+                    res[k] = Object.getOwnPropertyNames(protos[k]).length;
+                } catch (e) {
+                    res[k] = "__error__:" + errStr(e);
+                }
+            });
+            return res;
+        });
+
+        // (a) The automation tells. Their Table 3 records screen position and
+        // dimension properties that "cannot be changed from OpenWPM"; their
+        // Table 4 records availTop/availLeft = 0,0 in headless and Xvfb, and
+        // the WebGL vendor string that gives away a display-less or virtualised
+        // host. Reported so the classification can show these firing on EVERY
+        // arm -- including plain Firefox -- and therefore being outside what
+        // any JS instrument could fix.
+        record("screen", function () {
+            return {
+                width: screen.width,
+                height: screen.height,
+                availWidth: screen.availWidth,
+                availHeight: screen.availHeight,
+                availTop: screen.availTop,
+                availLeft: screen.availLeft,
+                colorDepth: screen.colorDepth,
+                pixelDepth: screen.pixelDepth,
+                outerWidth: window.outerWidth,
+                outerHeight: window.outerHeight,
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                screenX: window.screenX,
+                screenY: window.screenY,
+            };
+        });
+        record("webgl", function () {
+            const canvas = document.createElement("canvas");
+            const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+            if (!gl) {
+                return { available: false, vendor: null, renderer: null, unmaskedVendor: null, unmaskedRenderer: null };
+            }
+            const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+            return {
+                available: true,
+                vendor: gl.getParameter(gl.VENDOR),
+                renderer: gl.getParameter(gl.RENDERER),
+                unmaskedVendor: dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : null,
+                unmaskedRenderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : null,
+            };
+        });
+        record("navigatorWebdriver", function () {
+            return navigator.webdriver;
+        });
+
+        return out;
+    }
+
+    (async function () {
+        const payload = {
+            ok: true,
+            botd: null,
+            botdError: null,
+            fpscanner: null,
+            fpscannerError: null,
+            paperProbes: null,
+            paperProbesError: null,
+            error: null,
+        };
+        // The two oracles are run independently and their failures are
+        // reported independently: one library throwing must not silently erase
+        // the other's measurement.
+        try {
+            payload.botd = await runBotd();
+        } catch (e) {
+            payload.botdError = errStr(e);
+        }
+        try {
+            payload.fpscanner = await runFpScanner();
+        } catch (e) {
+            payload.fpscannerError = errStr(e);
+        }
+        try {
+            payload.paperProbes = collectPaperProbes();
+        } catch (e) {
+            payload.paperProbesError = errStr(e);
+        }
+        payload.ok =
+            payload.botd !== null &&
+            payload.fpscanner !== null &&
+            payload.paperProbes !== null;
+        if (!payload.ok) {
+            payload.error =
+                "botd: " + payload.botdError +
+                " / fpscanner: " + payload.fpscannerError +
+                " / paperProbes: " + payload.paperProbesError;
+        }
+        publish(payload);
+    })();
+    </script>
+</body>
+</html>
