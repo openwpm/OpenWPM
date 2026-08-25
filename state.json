@@ -1,6 +1,6 @@
 {
   "next_display_id": 76,
-  "next_comment_id": 287,
+  "next_comment_id": 288,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -254,11 +254,20 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-08-25T09:54:55.690251317Z",
-      "updated_at": "2026-08-25T10:24:47.308713676Z",
+      "updated_at": "2026-08-25T10:36:19.783307553Z",
       "labels": [
         "feature"
       ],
       "comments": {
+        "446dd932-ecf2-4cd8-9780-b8a4191d142d": {
+          "display_id": 287,
+          "author": "claude",
+          "content": "Fixed a hermeticity defect in the plain-Firefox arm before it could reach CI: it launched with a bare Service(), which defers to Selenium Manager and tries to DOWNLOAD a geckodriver rather than using the one on PATH. It passed in isolation only because a driver happened to be cached; running the two oracle suites together surfaced 8 NoSuchDriverException errors. Now resolves geckodriver via shutil.which with an explicit guard, matching deploy_firefox. Both suites together: 15 passed.",
+          "created_at": "2026-08-25T10:36:19.776163474Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKvOW0p5npd88j1uZXJRiYA8tpJqZFoBNuiw2JeYkCwI/NUj7scO0HV6sj4DPv4LIxrjtZWHufaGrU1wxV387BQ=="
+        },
         "a9a8ce74-91b6-4336-8902-3ec7d4419578": {
           "display_id": 286,
           "author": "claude",
@@ -3296,8 +3305,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T10:24:47.308713676Z",
+    "timestamp": "2026-08-25T10:36:19.783307553Z",
     "agent_id": "claude",
-    "agent_seq": 88
+    "agent_seq": 89
   }
 }
