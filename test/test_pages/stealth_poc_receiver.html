@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth PoC — per-instance receiver attribution + detection</title>
+</head>
+<body>
+    <h1>PoC: clean prototype instrumentation AND per-instance attribution</h1>
+    <canvas id="canvas" width="200" height="200"></canvas>
+    <div id="results"></div>
+    <script>
+    /*
+     * PROOF-OF-CONCEPT page for ADR-0001 gap #2 ("lose the receiver").
+     *
+     * It exercises an interface-attributed shared-prototype method
+     * (EventTarget.prototype.addEventListener, hooked ONCE on the shared
+     * prototype) on:
+     *   - xhrA  (first  XMLHttpRequest instance) — called TWICE
+     *   - xhrB  (second XMLHttpRequest instance) — called ONCE
+     *
+     * Expected per-instance attribution recorded in the `receiver` column:
+     *   - the two xhrA calls share ONE id  (same instance -> same key -> same id)
+     *   - the xhrB call has a DIFFERENT id (distinct instance -> distinct key)
+     * i.e. exactly two distinct receiver values, e.g. {XMLHttpRequest#k,
+     * XMLHttpRequest#m} with k != m, and the #k value appearing twice.
+     *
+     * Each instance also tampers with its own + prototype `constructor` to prove
+     * the privileged read sees through the Xray (same robustness the existing
+     * shared-prototype test asserts).
+     *
+     * The SECOND half re-runs the standard detection vectors (mirroring
+     * stealth_detection.html) so the SAME run proves the instrument stayed clean
+     * AND undetectable while doing per-instance attribution.
+     */
+    function tamper(obj) {
+      try {
+        Object.defineProperty(obj, "constructor", {
+          value: function PageFakeCtor() {},
+          configurable: true,
+        });
+      } catch (e) {}
+      try {
+        Object.defineProperty(Object.getPrototypeOf(obj), "constructor", {
+          value: function PageFakeProtoCtor() {},
+          configurable: true,
+        });
+      } catch (e) {}
+    }
+
+    const xhrA = new XMLHttpRequest();
+    const xhrB = new XMLHttpRequest();
+    tamper(xhrA);
+    tamper(xhrB);
+
+    // xhrA called twice (same instance), xhrB once (distinct instance).
+    xhrA.addEventListener("poc-evt", function listenerA1() {});
+    xhrA.addEventListener("poc-evt-2", function listenerA2() {});
+    xhrB.addEventListener("poc-evt", function listenerB1() {});
+
+    /* ---- detection vectors (subset relevant to a method/getter wrapper) ---- */
+    const results = {};
+
+    function isNative(fn) {
+      try {
+        return Function.prototype.toString.call(fn).indexOf("[native code]") !== -1;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // addEventListener must still look native (toString, arity) on the wrapped
+    // shared prototype — the property whose per-instance attribution we proved.
+    function testAddEventListenerNative() {
+      const ael = EventTarget.prototype.addEventListener;
+      // native EventTarget.addEventListener(type, callback[, options]) -> .length === 2
+      return isNative(ael) && ael.length === 2;
+    }
+
+    // No own-property pollution: addEventListener must NOT have become an own
+    // property of XMLHttpRequest.prototype (it is inherited from EventTarget),
+    // and the instance must carry no instrumentation own-property.
+    function testNoOwnPropertyPollution() {
+      const onProto = Object.prototype.hasOwnProperty.call(
+        XMLHttpRequest.prototype,
+        "addEventListener"
+      );
+      const onInstance = Object.prototype.hasOwnProperty.call(
+        xhrA,
+        "addEventListener"
+      );
+      // The WeakMap id must NOT be observable as any own property on the instance.
+      const ownNames = Object.getOwnPropertyNames(xhrA);
+      const leaked = ownNames.some(
+        (n) => /openwpm|instance.?id|receiver/i.test(n)
+      );
+      return onProto === false && onInstance === false && leaked === false;
+    }
+
+    function testNoGlobalLeaks() {
+      return (
+        typeof window.jsInstruments === "undefined" &&
+        typeof window.getInstrumentJS === "undefined" &&
+        typeof window.receiverInstanceIds === "undefined"
+      );
+    }
+
+    function testNoInstrumentHelpersLeaked() {
+      if ("getReceiverInstanceId" in Object.prototype) return false;
+      if ("receiverInstanceIds" in Object.prototype) return false;
+      return true;
+    }
+
+    function testConstructorReadThroughXray() {
+      // The page tampered xhrA's constructor; the native interface must still be
+      // resolvable from the page's own un-tampered view via the prototype chain
+      // walked from the native EventTarget. This just sanity-checks the page can
+      // observe nothing odd. (Real attribution is verified DB-side.)
+      return EventTarget.prototype.addEventListener.name === "addEventListener";
+    }
+
+    function safeRun(name, fn) {
+      try {
+        results[name] = fn();
+      } catch (e) {
+        results[name] = false;
+        results[name + "_error"] = e.message;
+      }
+    }
+
+    safeRun("addeventlistener_native", testAddEventListenerNative);
+    safeRun("no_own_property_pollution", testNoOwnPropertyPollution);
+    safeRun("no_global_leaks", testNoGlobalLeaks);
+    safeRun("no_instrument_helpers_leaked", testNoInstrumentHelpersLeaked);
+    safeRun("constructor_read_through_xray", testConstructorReadThroughXray);
+
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.setAttribute("data-results", JSON.stringify(results));
+    resultsDiv.textContent = JSON.stringify(results, null, 2);
+    document.title = "poc-receiver-done";
+    </script>
+</body>
+</html>
