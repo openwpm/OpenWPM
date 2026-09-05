@@ -1,8 +1,10 @@
 version: 2
 build:
-  os: ubuntu-20.04
+  os: ubuntu-24.04
   tools:
-    python: mambaforge-4.10
+    # mambaforge is deprecated by Read the Docs; miniforge3 is the successor.
+    # The python version itself comes from environment.yaml.
+    python: miniforge3-latest
 sphinx:
   builder: html
   configuration: docs/conf.py
