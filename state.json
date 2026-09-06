@@ -1,5 +1,5 @@
 {
-  "next_display_id": 82,
+  "next_display_id": 83,
   "next_comment_id": 302,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -61,6 +61,7 @@
     "ab506265-7418-4bd7-bee8-6c761485052c": 28,
     "ad35e544-5612-4d13-ba76-94142109dbe7": 70,
     "ade61359-4f05-4a17-b59b-3127c4151d68": 18,
+    "b175ca8b-f3a0-4865-b544-2a7d5a9807c2": 82,
     "b6f1fc91-f980-4876-8d17-f98fa28dee91": 4,
     "b9efb2e3-947a-4296-b68b-669bb70b8671": 10,
     "c2ad3ecb-4f10-4dec-b46c-d6e35a98a487": 59,
@@ -2165,6 +2166,16 @@
         }
       }
     },
+    "b175ca8b-f3a0-4865-b544-2a7d5a9807c2": {
+      "uuid": "b175ca8b-f3a0-4865-b544-2a7d5a9807c2",
+      "display_id": 82,
+      "title": "Port the stealth instrument's frame reach from page-scope hooks to a JSWindowActor",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-09-06T23:32:46.881616106Z",
+      "updated_at": "2026-09-06T23:32:46.881616106Z"
+    },
     "b6f1fc91-f980-4876-8d17-f98fa28dee91": {
       "uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
       "display_id": 4,
@@ -3547,8 +3558,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T23:08:18.699387362Z",
+    "timestamp": "2026-09-06T23:32:46.881616106Z",
     "agent_id": "claude",
-    "agent_seq": 122
+    "agent_seq": 123
   }
 }
