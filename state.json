@@ -1,6 +1,6 @@
 {
   "next_display_id": 81,
-  "next_comment_id": 299,
+  "next_comment_id": 300,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -881,7 +881,7 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T19:58:12.794900027Z",
-      "updated_at": "2026-09-06T22:07:00.990549151Z",
+      "updated_at": "2026-09-06T22:48:51.423582518Z",
       "labels": [
         "bug"
       ],
@@ -894,6 +894,15 @@
           "kind": "note",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAfFz8g2V1WRXkZr5V2rGCprYQCVqye6oRJTcMzz7/v1TMU12eUhaTrQSn8vzTKhsNjM/5YzW7pIXEkTCT+pvYBg=="
+        },
+        "67f1e06e-315b-4e2c-9ada-2a8c62b21417": {
+          "display_id": 299,
+          "author": "claude",
+          "content": "DECISION (owner, 2026-09-06, end of session): accept the gap, do not chase it in OpenWPM.\n\nRationale as stated: this is a Firefox behaviour that the owner intends to fix upstream over the next few releases, and OpenWPM is not regressing — the uncommitted about:blank placeholder is equally uninstrumented under legacy and under stealth, so nothing that works today stops working.\n\nStanding policy adopted: be strict about not touching web-content scope. Closing this vector by hooking more frame-injection paths is explicitly NOT the direction, because the enumeration is very likely unbounded — a frame in server-sent markup is created by the HTML parser with no DOM method call to intercept, so hook enumeration cannot be complete by construction, and a partial enumeration would buy a permanent page-scope detectable surface plus a residual bypass.\n\nThe overnight as-if-rule investigation was stopped; the workspace is removed. Its primary hypothesis is recorded in the preceding comment and remains unmeasured: whether a realm reached via an unhooked path yields an unpatched Function.prototype.toString that unmasks the parent's hooked members. Worth measuring only if the existing layer's fate (#80) is reopened.\n\nStill worth doing, cheaply, and NOT blocked by this decision: document the limitation in user-facing docs for BOTH instruments. The user-relevant statement is not 'navigator.webdriver may read true' but the capture consequence — a page can call instrumented APIs through the placeholder realm's prototypes and those calls are not recorded, so absent from the dataset does not mean did not happen.",
+          "created_at": "2026-09-06T22:48:51.417825898Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA8yNwlxyKlaecnbp97nO1CGGUb2fIrTtW+A3moYEGXFi/4/+LJTaDGCI3urOJpGnhakHxl+zsLhuxO/Y+rluIDw=="
         },
         "86e524aa-b90b-4d6c-bce3-c17e06e0ae96": {
           "display_id": 294,
@@ -3500,8 +3509,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T22:07:00.990549151Z",
+    "timestamp": "2026-09-06T22:48:51.423582518Z",
     "agent_id": "claude",
-    "agent_seq": 116
+    "agent_seq": 117
   }
 }
