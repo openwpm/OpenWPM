@@ -102,10 +102,6 @@
     "78": {
       "agent_id": "claude",
       "claimed_at": "2026-09-06T15:58:31.154663598Z"
-    },
-    "79": {
-      "agent_id": "claude",
-      "claimed_at": "2026-09-06T19:58:28.755924193Z"
     }
   },
   "issues": {
@@ -3439,8 +3435,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T19:58:56.075339938Z",
+    "timestamp": "2026-09-06T20:00:30.237574055Z",
     "agent_id": "claude",
-    "agent_seq": 107
+    "agent_seq": 108
   }
 }
