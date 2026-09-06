@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Behaviour changes
+
+- `navigator.webdriver` now reads as `false` by default. Selenium sets it to
+  `true`, which is the cheapest signal a site has that a visit is automated, so
+  crawls have been announcing themselves to every page they visit. The new
+  `BrowserParams.spoof_webdriver` controls it and defaults to `True`, meaning
+  **existing crawls will present differently to sites than they did before** —
+  set it to `False` to keep the old behaviour, or to measure how much of a
+  site's treatment of a crawl is attributable to that one signal. The spoof
+  records nothing. `js_instrument` still records reads of
+  `window.navigator.webdriver` (now with value `false`), but the legacy
+  instrument's own-property tell (fpscanner `webdriverWritable`) remains; leave
+  `webdriver` out of `js_instrument_settings` to avoid it. The spoof requires
+  `dom.ipc.processPrelaunch.enabled`; disabling that pref while the spoof is on
+  is now a `ConfigError` rather than a crawl with some content processes
+  unhooked.
+- `validate_browser_params` no longer replaces its own explanatory errors with
+  a generic "Something went wrong" message, so rejections such as `echo_mode`
+  or `callstack_instrument` now say what is actually wrong.
+
 ## v0.38.0 - 2026-10-04
 
 Bump to Firefox 157
