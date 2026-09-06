@@ -1,6 +1,6 @@
 {
   "next_display_id": 81,
-  "next_comment_id": 296,
+  "next_comment_id": 297,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -872,7 +872,7 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T19:58:12.794900027Z",
-      "updated_at": "2026-09-06T20:00:36.658495877Z",
+      "updated_at": "2026-09-06T21:06:35.113496231Z",
       "labels": [
         "bug"
       ],
@@ -894,6 +894,15 @@
           "kind": "handoff",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAfPBSODWLtdJwXHVbHPObjpMN68MItjJi6DZbqaqI8QAsbjjiPTz8YONvxYqBi8JSuxE6q9YZusPtXDbRkJX7BA=="
+        },
+        "e6d06ec4-c0ed-4526-b122-c73af2bd4ed3": {
+          "display_id": 296,
+          "author": "claude",
+          "content": "REPRODUCED, and it is worse than a detection signal: it is a working capture-evasion primitive. Measured in .workspace/srcdoc on Firefox 155.0.1 unbranded, headless, three runs, consistent.\n\n## The mechanism is structural, not a race\n\nSetting srcdoc before insertion queues a navigation. The iframe's TRANSIENT INITIAL about:blank document never receives the content script at all — it is simply replaced. Yielding does not help: a read after setTimeout(...,0) is identical, and so is creating the frame entirely inside a later task. At 250ms the frame has navigated (location flips about:blank -> about:srcdoc) and the NEW document IS instrumented, but the page can hold references out of the pristine initial document for as long as it likes.\n\nA bare iframe or src='about:blank' is NOT affected: matchAboutBlank injection reaches those synchronously. srcdoc is the special case, and that is the whole mechanism.\n\n## It evades CAPTURE, not just spoofing\n\nThe probe called toDataURL twice on PARENT-realm canvases: once through the pristine child realm's prototype (image/webp), once normally (image/jpeg). Both succeeded. The crawl DB under BOTH legacy and stealth contains exactly one row:\n\n    ('HTMLCanvasElement.toDataURL', '[\"image/jpeg\"]')\n\nThe webp call left no record. WebIDL methods brand-check the RECEIVER, not the realm, so a pristine cross-realm prototype is a usable instrument-evasion primitive. This is the finding that matters most: a page can run instrumented APIs unrecorded.\n\n## Stealth is partially protected, and only by the frame-protection layer\n\nThe literal snippet does NOT leak under stealth: appendChild is hooked, so interceptAllFrames reaches the frame first. But avoid both hooks and it does leak the pristine value:\n\n- insert via Element.prototype.replaceChildren + read via window[i]  -> webdriver reads true (pristine)\n- hooked insert (appendChild) + unhooked read (window[i])            -> false (protected)\n- unhooked insert (replaceChildren) + hooked read (.contentWindow)   -> false (protected)\n\nEither hook alone closes it. So this is a hook ENUMERATION problem in Extension/src/stealth/index.ts. protectDOMModifications covers Node.prototype.{appendChild,insertBefore,replaceChild}, Element.prototype.{append,prepend,insertAdjacent*,replaceWith} and the innerHTML/outerHTML setters. It does NOT cover Element.prototype.replaceChildren, after, before, or Document.prototype.adoptNode. protectFrameProperties hooks contentWindow/contentDocument but not the indexed window[i] accessor — the window.length/frames getters are commented out as 'useless'. The MutationObserver catches it only at a task boundary, too late for a synchronous read.\n\nUnder legacy it leaks unconditionally for every srcdoc variant.\n\n## Reading rules for the raw table\n\nTwo traps, both worth stating because they invert the naive reading:\n- Legacy has NO webdriver spoof at all, so its webdriver column is true everywhere including the top frame. That is not evidence about spoof bypass; legacy's presence signal is toDataURL/prototype pollution.\n- Stealth masks Function.prototype.toString per realm, so 'toDataURL looks native' under stealth is NOT evidence of non-instrumentation. The only decisive stealth signal is the raw webdriver value.\n\n## Consequences\n\n1. The layer is load-bearing for this vector. See #80 — this argues against deleting it.\n2. PR #1230 would be defeated by the simplest form. It registers a document_start/allFrames/matchAboutBlank content script on the same registration path legacy uses, and the legacy column proves that path does not reach a srcdoc frame's initial document. With no eager frame-protection layer to compensate, f.srcdoc=...; appendChild(f); f.contentWindow.navigator.webdriver returns true. Inference by mechanism identity, not direct measurement — that branch was not checked out.\n3. The ADR's framing needs scoping. 'Running outside web content replaces the race with coverage' is right that it is not a race, but the coverage is incomplete for this document.\n\n## Next\n\nExtend the hook enumeration (replaceChildren, after, before, adoptNode, indexed window access) and pin each with a probe row. Probe page and harness left uncommitted in .workspace/srcdoc: test/test_pages/stealth_frame_pristine_read.html and test/test_stealth_frame_pristine.py.",
+          "created_at": "2026-09-06T21:06:35.107138613Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABACOKHBKgR71SMOINkm6wUI3xFWc+WT3SrbN6STtnRGuCbszTPa0VcZ0CuoLzcdxMu6nuk+EH7zNK6HzaWqJ2mBQ=="
         }
       }
     },
@@ -3473,8 +3482,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T20:01:43.373609851Z",
+    "timestamp": "2026-09-06T21:06:35.113496231Z",
     "agent_id": "claude",
-    "agent_seq": 113
+    "agent_seq": 114
   }
 }
