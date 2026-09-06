@@ -6,21 +6,21 @@ dependencies:
 - click=8.4.2
 - dill=0.4.1
 - easyprocess=1.1
-- gcsfs=2026.7.0
+- gcsfs=2026.8.0
 - geckodriver=0.37.1
-- ipython=9.16.1
-- isort=8.0.1
+- ipython=9.17.1
+- isort=9.0.1
 - leveldb=1.23
 - multiprocess=0.70.19
 - mypy=2.3.1
-- nodejs=26.3.1
+- nodejs=26.8.1
 - pandas=3.0.5
 - pillow=12.3.0
 - pip=26.2.1
 - plyvel=1.5.1
 - pre-commit=4.6.2
 - psutil=7.2.2
-- pyarrow=24.0.0
+- pyarrow=25.0.0
 - pytest-asyncio=1.4.0
 - pytest-cov=7.1.0
 - pytest=9.1.1
@@ -28,9 +28,9 @@ dependencies:
 - pyvirtualdisplay=3.0
 - recommonmark=0.7.1
 - redis-py=8.1.0
-- s3fs=2026.6.0
-- selenium=4.47.0
-- sentry-sdk=2.68.0
+- s3fs=2026.7.0
+- selenium=4.48.0
+- sentry-sdk=2.68.1
 - sphinx-markdown-tables=0.0.17
 - sphinx=9.1.0
 - tabulate=0.10.0
@@ -38,11 +38,11 @@ dependencies:
 - wget=1.25.0
 - pip:
   - dataclasses-json==0.6.7
-  - domain-utils==0.7.1
+  - domain-utils==0.8.0
   - jsonschema==4.26.0
   - pytest-split==0.11.0
   - tranco==0.8.1
-  - types-pyyaml==6.0.12.20260815
+  - types-pyyaml==6.0.12.20260906
   - types-redis==4.6.0.20241004
   - types-tabulate==0.10.0.20260508
 name: openwpm

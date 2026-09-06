@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.37.0 - 2026-09-06
+
+Bump to Firefox 155
+
+### Fixes & improvements
+
+- Set `security.allow_unsafe_subscript_loads` when launching Firefox. Firefox 155 changed `CheckAllowedURI` in the subscript loader so that `file:`, `jar:` and `moz-extension:` URLs are only loadable with an explicit opt-in. Our privileged WebExtension experiment APIs are packed in the XPI and therefore load from a `jar:file:` URL, so without this every browser installed the extension, threw during its startup, never wrote `extension_port.txt`, and was torn down as not ready. Mozilla tracks moving those scripts off `jar:file:` in bug 1976115
+- Bump `domain-utils` to 0.8.0, which fixes occasional crashes at browser startup. 0.7.1 pinned `tldextract` 2.2.2, whose extractor cached the Public Suffix List inside the installed package directory and refreshed it through an unguarded check-then-act `unlink`. That path is shared by every process on the machine, so with several browsers reaching URL parsing at once one could observe the cache file as present and have a sibling delete it first, raising `FileNotFoundError` out of the visit. 0.8.0 relaxes the pin, moving the cache out of the package directory. The release also fixes URL parsing on modern CPython, which matters now that we ship Python 3.14
+- Move Read the Docs onto supported build settings: `build.os` `ubuntu-20.04` had been retired upstream, which failed the docs build at config validation, and the `mambaforge-4.10` toolchain it sat alongside is deprecated
+
+### Tooling / tests
+
+- Full conda + npm dependency churn
+
 ## v0.36.0 - 2026-08-23
 
 Bump to Firefox 154
