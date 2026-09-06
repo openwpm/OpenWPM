@@ -1,6 +1,6 @@
 {
   "next_display_id": 81,
-  "next_comment_id": 297,
+  "next_comment_id": 298,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -275,11 +275,20 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T20:01:00.378253123Z",
-      "updated_at": "2026-09-06T20:01:43.373609851Z",
+      "updated_at": "2026-09-06T21:06:56.245931008Z",
       "labels": [
         "refactor"
       ],
       "comments": {
+        "d8001ca8-bded-42b1-aae2-6454b5dd54e4": {
+          "display_id": 297,
+          "author": "claude",
+          "content": "REVERSES the direction of this issue. The srcdoc experiment in #79 shows the frame-protection layer is load-bearing for a live bypass, not only for attribution.\n\nMeasured under stealth: a page that inserts a srcdoc iframe and reads through the parent scope gets the PRISTINE child realm only if it avoids the layer's hooks. Insert via appendChild (hooked) or read via .contentWindow (hooked) and the read is protected. Insert via Element.prototype.replaceChildren and read via window[i], neither of which the layer hooks, and it leaks. Either hook alone closes it.\n\nThat matters here because the pristine realm is not merely a detection signal: calls made through its prototypes on parent-realm objects are NOT captured. The probe called toDataURL through the pristine child prototype and the crawl DB has no row for it, under both legacy and stealth. WebIDL brand-checks the receiver rather than the realm, so this is instrument evasion.\n\nSo the trade recorded earlier is now:\n\nKEEP the layer: duplicate per-ancestor attribution rows, plus a main-realm Function.prototype.toString patch and a realm treadmill, BUT it is currently the only thing closing the srcdoc pristine-realm bypass for the common insertion paths.\n\nDELETE the layer: cleaner attribution via top_level_url + script_url + a navigations join, one row per call, no main-realm intrinsic patching — and the bypass opens for every insertion path, not just the two unhooked ones.\n\nDeleting it should therefore not proceed on the attribution argument alone. If the layer goes, the frame coverage it provides has to be replaced by something, or the bypass has to be accepted and documented.\n\nThe narrower conclusion from the attribution experiment still stands unchanged: the layer is not needed to CAPTURE inside dynamically created frames, and its parent-context rows duplicate information already present in top_level_url and script_url. That was never the argument for keeping it; this is.",
+          "created_at": "2026-09-06T21:06:56.240825215Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAs8PZQvGRsE5ybUQFtyCREt3Zge457ubp4LClS3+fwqA0YcweuVACrscuZNNr4LI8G8QMzlRYn+9vKZX/XvYVDg=="
+        },
         "e11fd4b5-b530-4950-ac7b-861a7d2a78c1": {
           "display_id": 295,
           "author": "claude",
@@ -3482,8 +3491,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T21:06:35.113496231Z",
+    "timestamp": "2026-09-06T21:06:56.245931008Z",
     "agent_id": "claude",
-    "agent_seq": 114
+    "agent_seq": 115
   }
 }
