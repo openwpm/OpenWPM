@@ -1,5 +1,5 @@
 {
-  "next_display_id": 81,
+  "next_display_id": 82,
   "next_comment_id": 301,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -19,6 +19,7 @@
     "362ea397-eb84-4a49-94b5-d4d23019d758": 35,
     "3737862a-9f41-4d66-aff7-b700b6c09cb7": 37,
     "38da4b5f-6781-4f3b-8ba1-471e079be296": 27,
+    "3edcd23f-bbb9-4d56-a837-e30dc9091b0f": 81,
     "4025dc0a-d135-4207-8cc7-0d83eddae4cf": 45,
     "4880caec-4a4e-4fef-8713-bd3bbd54d232": 34,
     "4d10513d-1ff1-4938-b369-6db92d904e42": 1,
@@ -529,6 +530,16 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADt1DKM4E20h9SX4yhlnnjoYUWtJN9ljZb2VlxXbCLNQw0Ao77w1VZXhdSD+IAuBf896Li3+gvo4PApd8/iEiDg=="
         }
       }
+    },
+    "3edcd23f-bbb9-4d56-a837-e30dc9091b0f": {
+      "uuid": "3edcd23f-bbb9-4d56-a837-e30dc9091b0f",
+      "display_id": 81,
+      "title": "Migrate the stackDump actor off .jsm to .sys.mjs ESM",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-09-06T23:07:56.770769739Z",
+      "updated_at": "2026-09-06T23:07:56.770769739Z"
     },
     "4025dc0a-d135-4207-8cc7-0d83eddae4cf": {
       "uuid": "4025dc0a-d135-4207-8cc7-0d83eddae4cf",
@@ -3518,8 +3529,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T22:49:12.229441005Z",
+    "timestamp": "2026-09-06T23:07:56.770769739Z",
     "agent_id": "claude",
-    "agent_seq": 118
+    "agent_seq": 119
   }
 }
