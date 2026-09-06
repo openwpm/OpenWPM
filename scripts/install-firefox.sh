@@ -10,7 +10,7 @@ set -e
 # remove the existing Firefox in the OpenWPM directory
 
 # OpenWPM tracks the latest available stable Firefox release.
-TAG='9ce1ee6baeb9a3c326dbd180bdece65d8fc2eadc' # FIREFOX_154_0_RELEASE
+TAG='5fdfd0092780e85643e2cddc0e1b590c8b9ef860' # FIREFOX_155_0_1_RELEASE
 
 case "$(uname -s)" in
 Darwin)
