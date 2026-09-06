@@ -13,7 +13,7 @@ We aim to release a new version of OpenWPM with each new Firefox release (~1 rel
 2. Run `./scripts/install-firefox.sh` to install the updated Firefox locally and verify the test suite passes.
 3. Increment the version number in [VERSION](../VERSION)
 4. Add a summary of changes since the last version to [CHANGELOG](../CHANGELOG.md)
-5. Squash and merge the release PR to master.
+5. Squash and merge the release PR to master. Title the commit `chore(release): vX.X.X`; `release` alone is not a conventional commit type.
 6. Publish a new release from <https://github.com/openwpm/OpenWPM/releases>:
     1. Click "Draft a new release".
     2. Enter the "Tag version" and "Release title" as `vX.X.X`.
