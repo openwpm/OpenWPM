@@ -1,5 +1,5 @@
 {
-  "next_display_id": 76,
+  "next_display_id": 77,
   "next_comment_id": 288,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -36,6 +36,7 @@
     "77f8b9a5-0d0b-4629-8613-a8ff7bf36788": 26,
     "79742ad4-e588-490c-bc8f-abdeb33f3f9c": 24,
     "7a08777f-0a60-4c7d-ba39-f31b4d8efb4c": 54,
+    "7cbf88ba-b84b-4b0b-9459-7d96f4bfd9bb": 76,
     "811612a2-88c4-474e-bf7a-76a526493d04": 55,
     "811909de-c6ba-43b1-a357-5bd97fedaa53": 73,
     "88a449f1-d09a-46ad-8ec9-0ce16b5a32e2": 19,
@@ -1138,6 +1139,16 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA7RYzGIvuJ7hXfH3ubSxdRGMoLDag2sbBH60ooJoUXJe1yFyyzOpMQUA8DMrcbieZEHiREcqBgk2D61qZ06bAAQ=="
         }
       }
+    },
+    "7cbf88ba-b84b-4b0b-9459-7d96f4bfd9bb": {
+      "uuid": "7cbf88ba-b84b-4b0b-9459-7d96f4bfd9bb",
+      "display_id": 76,
+      "title": "Firefox 155 breaks the WebExtension: extension_port.txt never written",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-09-06T09:24:38.831983863Z",
+      "updated_at": "2026-09-06T09:24:38.831983863Z"
     },
     "811612a2-88c4-474e-bf7a-76a526493d04": {
       "uuid": "811612a2-88c4-474e-bf7a-76a526493d04",
@@ -3305,8 +3316,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-08-25T10:36:19.783307553Z",
+    "timestamp": "2026-09-06T09:24:38.831983863Z",
     "agent_id": "claude",
-    "agent_seq": 89
+    "agent_seq": 90
   }
 }
