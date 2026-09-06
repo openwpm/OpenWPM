@@ -1,6 +1,6 @@
 {
   "next_display_id": 77,
-  "next_comment_id": 290,
+  "next_comment_id": 291,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1152,11 +1152,20 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T09:24:38.831983863Z",
-      "updated_at": "2026-09-06T10:33:29.415568205Z",
+      "updated_at": "2026-09-06T14:08:45.568700917Z",
       "labels": [
         "bug"
       ],
       "comments": {
+        "b4025eee-72b2-45c9-9db0-a215106378a6": {
+          "display_id": 290,
+          "author": "claude",
+          "content": "Corrected bug attribution after checking Bugzilla directly.\n\nThe breaking change is bug 1974213 — \"Don't allow file: and jar: schemes in Services.scriptloader.loadSubScript\" — RESOLVED/FIXED, shipped in Firefox 155. That is what rewrote CheckAllowedURI and refused our jar:file: experiment API scripts.\n\nBug 1976115 — \"experiment_apis scripts are run from jar:file: URL instead of moz-extension:-URL\" — is NEW and tracks moving those scripts to a scheme that needs no opt-in. Once it lands, the security.allow_unsafe_subscript_loads pref can be dropped.\n\nBug 1974691 — \"Don't load subscripts from un-privileged moz-extension:\" — is NEW and would tighten the remaining scheme in the same function. This area is still in motion upstream, so CheckAllowedURI is worth re-checking at each Firefox bump.\n\nEarlier comments referred to 1976115 as though it were the cause; it is the tracking bug for the fix, not the regression.\n\nFix shipped in PR #1227, full CI green including the 7-way test matrix on Firefox 155.0.1.\n\nObsolete branch fix/tldextract-cache-race removed (local-only, never pushed, no PR). Its commit remains recoverable at change kovvwntpsmwqopolxxwrkytorvmrykuu / 1b08a187 if the workaround is ever wanted again.",
+          "created_at": "2026-09-06T14:08:45.563326429Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAosDC4dbX3Gs/0jizV6JAAKYKDJMxzqq9htMmAbv07zALIQEw7cyupBayWdBOF29sOujASGu7lcSrDwNGnZetBA=="
+        },
         "df42a3f9-3f39-49f1-9b6c-1a84404bff06": {
           "display_id": 288,
           "author": "claude",
@@ -3343,8 +3352,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T10:33:29.415568205Z",
+    "timestamp": "2026-09-06T14:08:45.568700917Z",
     "agent_id": "claude",
-    "agent_seq": 94
+    "agent_seq": 95
   }
 }
