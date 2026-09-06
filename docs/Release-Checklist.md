@@ -4,7 +4,8 @@ We aim to release a new version of OpenWPM with each new Firefox release (~1 rel
 
 1. Run `python scripts/update.py` — this will:
     - Repin the conda environment
-    - Sync linter versions in `.pre-commit-config.yaml` to match `environment.yaml` (black, isort, mypy)
+    - Sync linter versions in `.pre-commit-config.yaml` to match `environment.yaml` (black, isort)
+    - Sync `[tool.mypy] python_version` in `pyproject.toml` to the conda `python` feature version (mypy itself runs from the conda env, so its version comes straight from `environment.yaml`)
     - Sync `engines.node` in `Extension/package.json` to match the conda `nodejs` version (the Extension is only built inside this project, so the engines field documents what we test against rather than a public compatibility floor)
     - Bump `VERSION` to next-minor after the latest `v*` git tag if it has drifted behind (catches the case where a release was tagged but `VERSION` was never bumped — historically happened between v0.32.0 and v0.33.0)
     - Bump all npm dependencies to their latest compatible versions

@@ -18,6 +18,9 @@ is used by `./install.sh` script).
 You can install pre-commit hooks that lint all of your changes by
 running `pre-commit install`.
 
+The mypy hook runs whichever `mypy` is on your `PATH`, so commit with the
+`openwpm` conda env active; otherwise it type-checks against the wrong packages.
+
 ## General Hints and Guidelines
 
 ### Avoid failing tests for PRs caused by formatting/linting issues
