@@ -1,6 +1,6 @@
 {
   "next_display_id": 81,
-  "next_comment_id": 300,
+  "next_comment_id": 301,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -275,11 +275,20 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T20:01:00.378253123Z",
-      "updated_at": "2026-09-06T21:06:56.245931008Z",
+      "updated_at": "2026-09-06T22:49:12.229441005Z",
       "labels": [
         "refactor"
       ],
       "comments": {
+        "3ff89109-4995-42e6-a30a-3524e41aa7a8": {
+          "display_id": 300,
+          "author": "claude",
+          "content": "Bearing of the #79 decision on this issue.\n\nThe owner adopted a standing policy of not touching web-content scope, and accepted the srcdoc placeholder gap rather than closing it by hooking more injection paths.\n\nThat policy is in tension with the existing frame-protection layer, which DOES touch web-content scope: createProxyFunction reaches through wrappedJSObject to replace the page's own Node.prototype.appendChild and friends with page-realm Proxy objects, and patches the page's Function.prototype.toString to mask them. It is stealth's only page-scope mutation and its only main-realm intrinsic patch.\n\nSo this issue is now the question of whether the policy applies retroactively. Neither reading was confirmed, so it needs an explicit call:\n\nREADING A — policy is forward-looking. Keep the layer; do not extend it. Nothing changes in #1154, the D10-fp-* rows stay, and the layer keeps buying synchronous same-task frame coverage.\n\nREADING B — policy applies to what ships. Remove the page-facing Proxy triggers, keep interceptWindow/instrument recursion, and rely on content-script injection plus MutationObserver latency. Stealth then has no page-scope surface at all. Costs: the same-task synchronous read (already accepted as a limitation under #79), the X3 differential, and the 16 D10-fp-* rows plus D11, which would need deleting rather than left passing against a surface that no longer exists.\n\nEvidence relevant to the call, from the two experiments already run:\n- Capture does NOT depend on the layer. Content-script registration with allFrames and matchAboutBlank captures the in-frame call regardless; nothing is lost from the dataset.\n- Attribution does not depend on it either. top_level_url and script_url already carry the parent page, and navigations gives the exact frame tree via frame_id/parent_frame_id.\n- What the layer uniquely provides is the same-task synchronous read, and duplicate per-ancestor rows scaling with nesting depth.\n\nNot acting tonight. Recorded for the owner's call, since removing the layer would churn X3, D10 and three docs in the middle of #1154's review.",
+          "created_at": "2026-09-06T22:49:12.224393169Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFFMFnTFnHLs4Phjt1q9yXrCIFLCvdciEnX72ypkYyg9aKYRoMdjKSTG25cKLN6SmYIwtC9MUQ2TnGJLtWIOvBw=="
+        },
         "d8001ca8-bded-42b1-aae2-6454b5dd54e4": {
           "display_id": 297,
           "author": "claude",
@@ -3509,8 +3518,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T22:48:51.423582518Z",
+    "timestamp": "2026-09-06T22:49:12.229441005Z",
     "agent_id": "claude",
-    "agent_seq": 117
+    "agent_seq": 118
   }
 }
