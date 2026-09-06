@@ -41,6 +41,7 @@ async function main() {
       ],
       http_instrument: true,
       callstack_instrument: true,
+      spoof_webdriver: true,
       save_content: false,
       testing: true,
       browser_id: 0,
@@ -84,6 +85,23 @@ async function main() {
     loggingDB.logDebug("Cookie instrumentation enabled");
     const cookieInstrument = new CookieInstrument(loggingDB);
     cookieInstrument.run(config.browser_id);
+  }
+
+  if (config.spoof_webdriver) {
+    loggingDB.logDebug("navigator.webdriver spoofing enabled");
+    try {
+      await browser.webdriverSpoof.enable();
+    } catch (err) {
+      loggingDB.logError(
+        "webdriverSpoof.enable failed: " +
+          String(err) +
+          " :: " +
+          String((err as Error)?.stack),
+      );
+      // A crawl that silently lost the spoof would record data with the
+      // automation flag still visible, so fail startup instead.
+      throw err;
+    }
   }
 
   if (config.js_instrument) {
