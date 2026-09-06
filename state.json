@@ -1,5 +1,5 @@
 {
-  "next_display_id": 80,
+  "next_display_id": 81,
   "next_comment_id": 295,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -9,6 +9,7 @@
     "0c9354b1-f738-4b7e-bd4e-6c9c57cd4aa7": 25,
     "0e4e2876-2826-4123-88b1-78fa2cbf6737": 44,
     "0eeb2f41-a2cc-493d-b379-f602df63c9d1": 29,
+    "23659d96-1367-4e3a-b1d0-28f8783becb5": 80,
     "258fa3d1-f63c-40fd-bc2b-0848a9c23d2b": 75,
     "2ae4638a-df42-4a7a-88ba-6b65d3f57083": 43,
     "2d7eb9a1-42a8-492c-b047-5e586acd204e": 69,
@@ -261,6 +262,16 @@
       "created_at": "2026-06-14T21:06:30.534649356Z",
       "updated_at": "2026-06-14T21:06:59.125427416Z",
       "closed_at": "2026-06-14T21:06:59.125427416Z"
+    },
+    "23659d96-1367-4e3a-b1d0-28f8783becb5": {
+      "uuid": "23659d96-1367-4e3a-b1d0-28f8783becb5",
+      "display_id": 80,
+      "title": "Decide: delete the CanvasBlocker frame-protection layer (attribution is already recorded)",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-09-06T20:01:00.378253123Z",
+      "updated_at": "2026-09-06T20:01:00.378253123Z"
     },
     "258fa3d1-f63c-40fd-bc2b-0848a9c23d2b": {
       "uuid": "258fa3d1-f63c-40fd-bc2b-0848a9c23d2b",
@@ -3444,8 +3455,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T20:00:36.658495877Z",
+    "timestamp": "2026-09-06T20:01:00.378253123Z",
     "agent_id": "claude",
-    "agent_seq": 109
+    "agent_seq": 110
   }
 }
