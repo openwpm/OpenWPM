@@ -21,6 +21,14 @@ on:
   schedule:
     - cron: "33 19 * * 6"
 
+# on PRs only run the latest changes, everything else should run and also run
+# in parallel. no queuing
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.event_name == 'pull_request'
+    && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze

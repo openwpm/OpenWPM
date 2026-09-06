@@ -10,15 +10,8 @@ on:
   schedule:
     - cron: "0 0 */2 * *"
 
-# A force-push during review supersedes the previous run; without this it keeps
-# running and holding runners.
-#
-# The group is per-ref for pull requests, so a new push replaces the run it
-# supersedes, and per-run for everything else. A shared group would serialize
-# even without cancellation: pushes to master and the nightly schedule both
-# resolve to refs/heads/master, so they would queue behind one another. Merge
-# queue entries must report on their temporary branch and master pushes are the
-# record for the landed commit, so neither may be cancelled or delayed.
+# on PRs only run the latest changes, everything else should run and also run
+# in parallel. no queuing
 concurrency:
   group: >-
     ${{ github.workflow }}-${{ github.event_name == 'pull_request'
