@@ -28,6 +28,7 @@ concurrency:
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -35,6 +36,7 @@ jobs:
 
   demo:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
