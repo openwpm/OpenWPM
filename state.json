@@ -1,6 +1,6 @@
 {
   "next_display_id": 83,
-  "next_comment_id": 302,
+  "next_comment_id": 303,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -2178,10 +2178,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T23:32:46.881616106Z",
-      "updated_at": "2026-09-06T23:32:52.491445398Z",
+      "updated_at": "2026-09-06T23:33:37.019248718Z",
       "labels": [
         "refactor"
-      ]
+      ],
+      "comments": {
+        "b6c0ad2d-908d-41ec-94d3-0e80586f7e52": {
+          "display_id": 302,
+          "author": "claude",
+          "content": "Owner decision, 2026-09-06: commit to the actor design for #1154. Rationale — will not ship something less precise than what the researchers handed over, and the actor version is strictly superior because it operates beneath the content-script layer, accepting a higher maintenance cost against Firefox internals.\n\n## What is being replaced, and what is not\n\nNOT the instrumentation. instrument(context) in Extension/src/stealth/instrument.ts is already realm-agnostic and undetectable: it reaches the page through Xray and exportFunction, so wrapped members report native toString, arity and name. It does not change.\n\nONLY the frame-reaching TRIGGER. Extension/src/stealth/index.ts protectAllFrames exists solely so the extension learns a new realm exists in time to instrument it before page script runs. It does this by replacing the page's own Node.prototype.appendChild and friends with page-realm Proxy objects via wrappedJSObject, and masking them by swapping the page's Function.prototype.toString. That is stealth's only page-scope mutation and its only main-realm intrinsic patch, and it is what the 16 D10-fp-* rows exist to bound.\n\n## Why the actor is strictly better\n\nThe relevant guarantee, stated precisely in PR #1230:\n\n    Firefox guarantees content scripts run BEFORE the document's own scripts.\n    It does not guarantee a realm is UNREACHABLE FROM ANOTHER REALM until its\n    content scripts have run.\n\nOnly the second is sufficient for a measurement tool, and the two differ exactly at a frame's uncommitted initial about:blank — the placeholder between appendChild and the real document committing, which Firefox deliberately never injects content scripts into (Mozilla bug 1415539, cited in ExtensionContent.sys.mjs). No content-script configuration reaches it; matchAboutBlank does not, and matchOriginAsFallback disables matchAboutBlank while requiring a wildcard path glob <all_urls> does not provide.\n\nA JSWindowActor child observing content-document-global-created fires synchronously for every window global, uncommitted ones included. #1230 measured this and closed the case for navigator.webdriver, including realms no content script can reach.\n\nSo the actor closes a gap the hooks cannot, AND removes the page-scope surface entirely. That is not a trade; it is strictly better on both axes.\n\n## The design question the port must answer\n\ninstrument() currently runs in the content-script compartment. A JSWindowActor child runs per-window in a privileged context with this.contentWindow. The port has to establish how instrument() is invoked for a realm the actor observes:\n  (a) the actor child imports and runs the instrument directly against this.contentWindow; or\n  (b) the actor notifies the existing content-script side, which then instruments the realm.\n\n(a) removes the dependency on content-script timing entirely and is the reason to do this at all; (b) reintroduces the ordering problem the actor exists to solve. Prefer (a) unless it proves impossible, and record why if it does.\n\n## Known costs, already documented by #1230 and applying verbatim\n\n- resource: is the only scheme the system ESM loader accepts for an actor module. moz-extension: and the XPI's jar: URL are SILENTLY declined: no error, the actor simply never runs.\n- The resource: substitution is per-process; registering only in the parent leaves content processes unable to resolve the module. bootstrap.js re-registers per process.\n- safeForUntrustedWebProcess: true is mandatory, or registerWindowActor succeeds, reports nothing, and the actor is never instantiated for web content.\n- Preallocated content processes must be drained once at startup, or pages intermittently land in processes that never ran the bootstrap. Observing process-type-set does not fix it.\n- Use .sys.mjs, not .jsm. See #81.\n\n## Expected fallout\n\n- The 16 D10-fp-* rows and D11 lose their subject. They bound the masking of a page-scope surface that would no longer exist; they should be deleted, not left passing against nothing.\n- X3's stealth-vs-legacy differential changes. Per the #80 experiments, capture does not depend on the layer and attribution is already carried by top_level_url, script_url and a navigations join.\n- ADR 0001's frame-protection exception and the Stealth-Requirements D10 table need rewriting: the exception disappears, and the structural claim becomes unconditional.\n\n## Success criteria\n\nThe D/X suite green on Firefox 155.0.1 with no page-scope mutation remaining in the stealth path, and a probe proving a srcdoc placeholder realm is instrumented before a parent's same-task read.",
+          "created_at": "2026-09-06T23:33:37.014267368Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAzR9HsMpBPx/ta00SuBl2aLn/wizaL1zV8FWEYuRnpYYgc7dD3gF/nvinRKLKplprgil95exZPYyXvLj1WOkvCw=="
+        }
+      }
     },
     "b6f1fc91-f980-4876-8d17-f98fa28dee91": {
       "uuid": "b6f1fc91-f980-4876-8d17-f98fa28dee91",
@@ -3565,8 +3576,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T23:33:01.114438410Z",
+    "timestamp": "2026-09-06T23:33:37.019248718Z",
     "agent_id": "claude",
-    "agent_seq": 125
+    "agent_seq": 126
   }
 }
