@@ -1,7 +1,9 @@
+import math
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 from .commands.browser_commands import (
+    FINALIZE_ACK_MARGIN,
     BrowseCommand,
     DumpPageSourceCommand,
     FinalizeCommand,
@@ -197,5 +199,13 @@ class CommandSequence:
         """
         commands = list(self._commands_with_timeout)
         commands.insert(0, (InitializeCommand(), 10))
-        commands.append((FinalizeCommand(sleep=5), 10))
+        # FinalizeCommand.execute() blocks up to ``sleep + FINALIZE_ACK_MARGIN``
+        # seconds waiting for the extension's FinalizeAck. The command timeout
+        # MUST exceed that bound (plus headroom for the command-queue handoff),
+        # otherwise the watchdog would kill a healthy browser that is still
+        # draining in-flight events before its ack arrives. Derive both from the
+        # same constants so they cannot silently drift apart.
+        finalize_sleep = 5
+        finalize_timeout = math.ceil(finalize_sleep + FINALIZE_ACK_MARGIN) + 5
+        commands.append((FinalizeCommand(sleep=finalize_sleep), finalize_timeout))
         return commands
