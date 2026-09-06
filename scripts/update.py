@@ -26,10 +26,15 @@ _MAX_RESOLVE_ATTEMPTS = 10
 
 # Mapping: conda package name → (pre-commit repo URL, rev prefix)
 # The prefix is prepended to the conda version to form the pre-commit rev tag.
+#
+# Only tools pre-commit installs itself belong here. mypy is deliberately
+# absent: it runs as a `language: system` hook so it can see the project's real
+# dependencies, which means its version already comes from environment.yaml and
+# there is no rev to pin. What does need syncing for mypy is `python_version`
+# in pyproject.toml — see sync_mypy_python_version.
 _LINTER_MAP: dict[str, tuple[str, str]] = {
     "black": ("https://github.com/psf/black", ""),
     "isort": ("https://github.com/timothycrosley/isort", ""),
-    "mypy": ("https://github.com/pre-commit/mirrors-mypy", "v"),
 }
 
 
@@ -310,6 +315,56 @@ def sync_extension_node_engine(env_name: str = "openwpm") -> None:
     pkg_json.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def sync_mypy_python_version(env_name: str = "openwpm") -> None:
+    """Sync ``[tool.mypy] python_version`` in ``pyproject.toml`` to the conda env.
+
+    mypy checks code against whatever ``python_version`` says, not against the
+    interpreter it happens to run on. Once that setting falls behind the conda
+    env, two things go wrong quietly. The project gets type-checked at an older
+    language level than it actually ships. And mypy rejects newer syntax in the
+    installed third-party stubs it follows -- a local ``mypy openwpm`` dies on
+    somebody else's ``.pyi`` while the pre-commit hook, which runs in an
+    isolated env without those packages, never reaches the file and stays
+    green. Pinning the setting to the conda python keeps the two from drifting
+    after a repin.
+    """
+    pyproject = ROOT / "pyproject.toml"
+
+    print("\n=== Syncing mypy python_version with conda python ===")
+
+    versions = _query_conda_versions(env_name)
+    if "python" not in versions:
+        raise RuntimeError(f"python not found in conda env '{env_name}'.")
+
+    # mypy takes a feature level, not a patch release: 3.14.7 -> "3.14".
+    target = ".".join(versions["python"].split(".")[:2])
+
+    content = pyproject.read_text()
+
+    header = re.search(r"^\[tool\.mypy\][^\S\n]*$", content, re.MULTILINE)
+    if not header:
+        raise RuntimeError("No [tool.mypy] section found in pyproject.toml")
+
+    # The section body runs to the next table header, or to the end of file.
+    rest = content[header.end() :]
+    next_header = re.search(r"^\[", rest, re.MULTILINE)
+    end = header.end() + (next_header.start() if next_header else len(rest))
+    body = content[header.end() : end]
+
+    setting = re.search(r'python_version\s*=\s*"([^"]*)"', body)
+    if not setting:
+        raise RuntimeError("No python_version setting found in [tool.mypy]")
+
+    current = setting.group(1)
+    if current == target:
+        print(f"  python_version: already in sync ({current})")
+        return
+
+    print(f"  python_version: {current} -> {target}")
+    new_body = body[: setting.start(1)] + target + body[setting.end(1) :]
+    pyproject.write_text(content[: header.end()] + new_body + content[end:])
+
+
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _TAG_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 
@@ -374,6 +429,9 @@ def main() -> None:
 
     # Sync Extension's engines.node to match the freshly pinned conda env
     sync_extension_node_engine()
+
+    # Sync mypy's python_version to match the freshly pinned conda python
+    sync_mypy_python_version()
 
     # Catch silent VERSION drift relative to the latest release tag
     bump_version_if_behind()
