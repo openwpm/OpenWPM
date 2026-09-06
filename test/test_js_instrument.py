@@ -90,7 +90,9 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
     TEST_PAGE = "instrument_pyside.html"
 
     GETS_AND_SETS = {
-        ("window.navigator.webdriver", "get", "true"),
+        # "false", not "true": `spoof_webdriver` is on by default, and the
+        # instrument records the value the page actually saw.
+        ("window.navigator.webdriver", "get", "false"),
         ("window.document.cookie", "set", "a=COOKIE"),
         ("window.document.cookie", "get", "a=COOKIE"),
     }
@@ -482,3 +484,41 @@ class TestJSInstrumentFailurePropagates(OpenWPMJSTest):
         # The visit must be recorded as incomplete (finalized success=False).
         incomplete = db_utils.query_db(db, "SELECT visit_id FROM incomplete_visits")
         assert incomplete, "expected the failed visit to be marked incomplete"
+
+
+class TestSrcdocFrameInstrumentation(OpenWPMJSTest):  # noqa
+    """Instrumentation reaches `srcdoc` frames, not just frames with a URL.
+
+    A srcdoc frame's document is written inline in the attribute, lives at
+    `about:srcdoc`, and inherits the parent's origin. Ad frames and embed
+    widgets use them heavily, so a gap here would be a silent measurement hole
+    rather than an obvious one. `matchAboutBlank` on the registered content
+    script is what covers them.
+    """
+
+    TEST_PAGE = "srcdoc_probe.html"
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].js_instrument_settings = [{"window.navigator": ["userAgent"]}]
+        return manager_params, browser_params
+
+    def test_srcdoc_frame_is_instrumented(self):
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        base = f"{self.server.base}/js_instrument"
+        observed = {
+            (row["document_url"], row["symbol"])
+            for row in db_utils.get_javascript_entries(db, all_columns=True)
+        }
+        assert observed == {
+            # Top-level document.
+            (f"{base}/{self.TEST_PAGE}", "window.navigator.userAgent"),
+            # Control: an ordinary same-origin child document.
+            (f"{base}/srcdoc_child.html", "window.navigator.userAgent"),
+            # The case under test. The call is made by a <script> inside the
+            # srcdoc attribute, so this also shows the content script lands
+            # before the frame's own code runs.
+            ("about:srcdoc", "window.navigator.userAgent"),
+        }

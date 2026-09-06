@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for navigator.webdriver spoofing.</title>
+    <script type="text/javascript">
+      // Runs in the page world during parsing, i.e. as early as a bot check on
+      // a real site would. The result is written into the DOM at load, because
+      // Selenium's execute_script sees the page through Xray vision and would
+      // read the unspoofed value and none of the page's expandos.
+      window.__openwpmWebdriverProbe = (function () {
+        var descriptor = Object.getOwnPropertyDescriptor(
+          Navigator.prototype,
+          "webdriver"
+        );
+        return {
+          value: navigator.webdriver,
+          ownOnInstance: Object.prototype.hasOwnProperty.call(
+            navigator,
+            "webdriver"
+          ),
+          prototypeKeys: Object.getOwnPropertyNames(Navigator.prototype),
+          getterName: descriptor.get.name,
+          getterSource: descriptor.get.toString(),
+          hasSetter: descriptor.set !== undefined,
+          // A replaced accessor tends to differ from native here: native
+          // throws when called on a non-Navigator, and reports its own
+          // property order.
+          getterOnWrongReceiver: (function () {
+            try {
+              descriptor.get.call({});
+              return "returned";
+            } catch (e) {
+              return "threw:" + e.name;
+            }
+          })(),
+          getterOwnKeys: Object.getOwnPropertyNames(descriptor.get).join(","),
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        };
+      })();
+    </script>
+  </head>
+  <body>
+    <h3>Test page for navigator.webdriver spoofing.</h3>
+    <iframe id="static-frame" src="simple_a.html"></iframe>
+    <pre id="probe"></pre>
+    <script type="text/javascript">
+      window.addEventListener("load", function () {
+        var probe = window.__openwpmWebdriverProbe;
+        probe.staticFrameValue = document.getElementById("static-frame")
+          .contentWindow.navigator.webdriver;
+        document.getElementById("probe").textContent = JSON.stringify(probe);
+        document.documentElement.setAttribute("data-probe-complete", "1");
+      });
+    </script>
+  </body>
+</html>

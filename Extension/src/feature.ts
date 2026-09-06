@@ -41,6 +41,7 @@ async function main() {
       ],
       http_instrument: true,
       callstack_instrument: true,
+      spoof_webdriver: true,
       save_content: false,
       testing: true,
       browser_id: 0,
@@ -84,6 +85,24 @@ async function main() {
     loggingDB.logDebug("Cookie instrumentation enabled");
     const cookieInstrument = new CookieInstrument(loggingDB);
     cookieInstrument.run(config.browser_id);
+  }
+
+  // Enabled before the JavaScript instrument so that, when both are on, the
+  // instrument wraps the spoofed getter and still records every read of
+  // `navigator.webdriver` -- with the value the page actually saw. Enabling it
+  // afterwards would replace the instrument's wrapper and lose the capture.
+  if (config.spoof_webdriver) {
+    loggingDB.logDebug("navigator.webdriver spoofing enabled");
+    try {
+      await browser.webdriverSpoof.enable();
+    } catch (err) {
+      loggingDB.logError(
+        "webdriverSpoof.enable failed: " +
+          String(err) +
+          " :: " +
+          String((err as Error)?.stack),
+      );
+    }
   }
 
   if (config.js_instrument) {

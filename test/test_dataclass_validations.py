@@ -111,3 +111,22 @@ def test_num_browser_crawl_config():
 
     browser_params.append(BrowserParams())
     validate_crawl_configs(manager_params, browser_params)
+
+
+def test_spoof_webdriver_requires_process_prelaunch() -> None:
+    """The spoof replaces the preallocated pool, so it needs preallocation on.
+
+    Without it the content processes that predate the extension stay unhooked
+    and pages landing in them still see `navigator.webdriver === true`, which
+    is worse than not spoofing at all because it is silent.
+    """
+    browser_params = BrowserParams(spoof_webdriver=True)
+    browser_params.prefs = {"dom.ipc.processPrelaunch.enabled": False}
+    with pytest.raises(ConfigError, match="processPrelaunch"):
+        validate_browser_params(browser_params)
+
+    # Leaving the pref alone, or turning the spoof off, is fine.
+    validate_browser_params(BrowserParams(spoof_webdriver=True))
+    off = BrowserParams(spoof_webdriver=False)
+    off.prefs = {"dom.ipc.processPrelaunch.enabled": False}
+    validate_browser_params(off)

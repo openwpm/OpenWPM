@@ -105,6 +105,33 @@ left out of this section.
     - `from_visited`: Only accept third-party cookies from sites that have been visited as a first party.
 - `donottrack`
   - Set to `True` to enable Do Not Track in the browser.
+- `spoof_webdriver`
+  - Defaults to `True`. Makes `navigator.webdriver` read as `false` in every
+    page and frame, hiding the loudest signal that the visit is automated.
+  - Selenium sets `navigator.webdriver = true`. A privileged window actor
+    replaces the page's `Navigator.prototype.webdriver` getter with one compiled
+    in the page's compartment, so the page sees `[native code]` under the native
+    accessor name. The rest of the accessor is matched too: the descriptor
+    flags, the absent setter, the getter's own property order, and its behaviour
+    when called on something that is not a `Navigator` (it throws, as the native
+    one does). No own property is added to the `navigator` instance.
+  - The actor patches each realm as its global is created, so this covers every
+    realm the page can reach -- including a frame's *uncommitted initial
+    `about:blank`*, the placeholder document that exists between `appendChild`
+    and the real document committing, which content scripts are never injected
+    into ([bug 1415539](https://bugzilla.mozilla.org/show_bug.cgi?id=1415539)).
+    A page that appends a `srcdoc` iframe and reads
+    `frame.contentWindow.navigator.webdriver` in the same task reads exactly
+    that document.
+  - This is independent of `js_instrument`: it records nothing and applies
+    whether or not any instrument is enabled. If `js_instrument` is configured
+    to capture `window.navigator.webdriver`, it records the spoofed value.
+  - Requires `dom.ipc.processPrelaunch.enabled`. Setting that pref to `False`
+    in `prefs` while the spoof is on raises a `ConfigError`, rather than
+    crawling with the processes that predate the extension left unhooked.
+  - Set to `False` to leave `navigator.webdriver` at its real value, e.g. to
+    measure how much of a crawl's treatment by sites is attributable to this
+    one signal.
 - `tracking_protection`
   - **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   - Set to `True` to enable Firefox's built-in
