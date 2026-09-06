@@ -68,6 +68,15 @@ pygments_style = "sphinx"
 #
 html_theme = "alabaster"
 
+# Alabaster centres a fixed 940px page, which leaves the sidebar floating
+# mid-screen and wraps wide tables (e.g. the requirements matrix in
+# developers/Stealth-Requirements.rst) into a narrow column. Use the whole
+# viewport: the sidebar sits flush left and the body takes the rest.
+html_theme_options = {
+    "page_width": "100%",
+    "sidebar_width": "260px",
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
