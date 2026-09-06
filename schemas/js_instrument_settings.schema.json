@@ -18,6 +18,9 @@
         "description": "The name recorded by the instrumentation for this object.",
         "type": "string"
       },
+      "depth": {
+        "type": "integer"
+      },
       "logSettings": {
         "title": "Log settings",
         "description": "The log settings object.",
@@ -28,7 +31,25 @@
             "description": "An array of properties to instrument on this object. If array is empty, then all properties are instrumented.",
             "type": ["array", "null"],
             "items": {
-              "type": "string"
+              "anyOf": [{
+                "type": "object",
+                "properties": {
+                  "depth": {
+                    "type": "integer"
+                  },
+                  "propertyNames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["depth", "propertyNames"],
+                "additionalProperties": false
+              },
+                {
+                  "type": "string"
+                }]
             },
             "default": []
           },
@@ -80,11 +101,62 @@
             "type": "boolean",
             "default": false
           },
+          "receiverInterfaces": {
+            "title": "Receiver interfaces of interest",
+            "description": "Stealth-only. For a SHARED-PROTOTYPE (inherited) method hooked once on a real-interface prototype (e.g. `addEventListener` on `EventTarget.prototype`): the set of concrete receiver interface names whose calls should be recorded. At call time the privileged forwarder reads the receiver's interface name (its `constructor.name`, read through the Xray so page tampering cannot fool it); a call is EMITTED only when that name is in this set. The recorded `symbol` stays the STATIC shared-prototype method `<owner>.<method>` (e.g. `EventTarget.addEventListener`); the concrete receiver interface is written to the dedicated `receiver` column, not encoded into `symbol`. Attribution is interface-level, not instance-level, by design. When absent, the method is instrumented with a static symbol, the `receiver` column is null, and every call is recorded (unchanged behaviour).",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "depth": {
             "title": "Recursion depth",
             "description": "Recursion limit when instrumenting object recursively",
             "type": "number",
             "default": 5
+          },
+          "overwrittenProperties": {
+            "title": "Overwritten Property",
+            "description": "A property whose value will be overwritten during instrumentation",
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "The property that will be overwritten"
+                },
+                "value": {
+                  "description": "The value that should be returned",
+                  "anyOf": [{
+                    "type": "string"
+                  },
+                    {
+                      "type": "array"
+                    }, {
+                    "type": "object"
+                  },{
+                    "type": "boolean"
+                  },{
+                    "type": "number"
+                  },{
+                    "type": "integer"
+                  }]
+                },
+                "level": {
+                  "title": "Prototype Level",
+                  "type": "integer",
+                  "description": "The depth in the prototype chain where the property resides"
+                }
+
+              },
+              "required": [
+                  "key",
+                "value",
+                "level"
+                ]
+            },
+            "default": []
           }
         },
         "required": [

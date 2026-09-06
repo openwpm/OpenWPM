@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — function-valued argument probe</title>
+</head>
+<body>
+    <h1>function argument</h1>
+    <script>
+    /*
+     * Calls an instrumented method (EventTarget.addEventListener) with a FUNCTION
+     * as one of its arguments. The function's source contains a distinctive marker
+     * token so the test can assert how the argument was serialized:
+     *   - logFunctionsAsStrings:true  -> recorded "arguments" contain the source
+     *                                    string (and thus STEALTH_FN_MARKER)
+     *   - logFunctionsAsStrings:false -> recorded "arguments" contain "FUNCTION"
+     */
+    function STEALTH_FN_MARKER_listener() {
+        // marker token: STEALTH_FN_MARKER
+        return 1;
+    }
+    document.addEventListener("stealth-fn-arg-probe", STEALTH_FN_MARKER_listener);
+    document.title = "function-arg-done";
+    </script>
+</body>
+</html>

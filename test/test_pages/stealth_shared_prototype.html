@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — shared-prototype receiver-interface probe</title>
+</head>
+<body>
+    <h1>shared prototype</h1>
+    <script>
+    /*
+     * Calls EventTarget.prototype.addEventListener on TWO different receiver
+     * interfaces:
+     *   - an HTMLDivElement (the TARGETED interface in the test config)
+     *   - an XMLHttpRequest (a NON-targeted interface)
+     * The interface-attributed shared-prototype instrumentation must:
+     *   - record the div call as "HTMLDivElement.addEventListener"
+     *   - NOT record the xhr call at all (content-script-side filter)
+     *
+     * Each receiver also tampers with its own and its prototype's `constructor`
+     * to prove the privileged interface read sees through the Xray and is not
+     * fooled by page-side redefinition.
+     */
+    function tamper(obj) {
+      try {
+        Object.defineProperty(obj, "constructor", {
+          value: function PageFakeCtor() {},
+          configurable: true,
+        });
+      } catch (e) {}
+      try {
+        Object.defineProperty(Object.getPrototypeOf(obj), "constructor", {
+          value: function PageFakeProtoCtor() {},
+          configurable: true,
+        });
+      } catch (e) {}
+    }
+
+    const div = document.createElement("div");
+    tamper(div);
+    div.addEventListener("stealth-shared-evt", function targetedListener() {});
+
+    const xhr = new XMLHttpRequest();
+    tamper(xhr);
+    xhr.addEventListener("stealth-shared-evt", function untargetedListener() {});
+
+    document.title = "shared-prototype-done";
+    </script>
+</body>
+</html>

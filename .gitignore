@@ -93,6 +93,11 @@ docs/apidoc/
 # npm packages
 node_modules
 
+# Generated from schemas/js_instrument_settings.schema.json by the
+# build:generate_from_schema step (json-schema-to-typescript). The schema is the
+# single source of truth; the .d.ts is derived and regenerated on every build.
+Extension/src/types/js_instrument_settings.d.ts
+
 datadir
 
 # Code-review scratch artifact (transient; never commit)
