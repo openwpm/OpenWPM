@@ -124,6 +124,14 @@ def deploy_firefox(
     # Set various prefs to improve speed and eliminate traffic to Mozilla
     configure_firefox.optimize_prefs(fo)
 
+    # Firefox 155 gates file:, jar: and moz-extension: subscript loads behind
+    # an opt-in (mozJSSubScriptLoader's CheckAllowedURI). Our WebExtension
+    # experiment APIs under Extension/bundled/privileged are loaded from a
+    # jar:file: URL, so without this the API scripts never run: the extension
+    # installs, its startup throws, and extension_port.txt is never written.
+    # Mozilla tracks removing the need for this in bug 1976115.
+    fo.set_preference("security.allow_unsafe_subscript_loads", True)
+
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.
     webdriver_interceptor = FirefoxLogInterceptor(browser_params.browser_id)
