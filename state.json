@@ -1,5 +1,5 @@
 {
-  "next_display_id": 79,
+  "next_display_id": 80,
   "next_comment_id": 293,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
@@ -29,6 +29,7 @@
     "5cbb8a7b-93c8-4a00-a394-41de2b294b3c": 51,
     "5f186bf4-1fce-469c-ac41-a518e8883213": 11,
     "5f3c564a-6559-4301-aac7-0102bd4077c4": 8,
+    "62920209-b8d2-4329-a0f1-30fafef57529": 79,
     "65d58730-47fd-4422-8ba6-c24e331aff08": 72,
     "689a8fd1-7828-4390-b8a8-046eac84a19f": 2,
     "724fc4ec-a31e-4fa7-8de3-9ae66ef59867": 46,
@@ -833,6 +834,16 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFwxr9MSNH54ytenHJ7jaboMhAepdfC5hKU+0ojrzRXew9QZ4h8VDdvabIhNIavKMcrp7GXyxXMoEisY1GFqOAg=="
         }
       }
+    },
+    "62920209-b8d2-4329-a0f1-30fafef57529": {
+      "uuid": "62920209-b8d2-4329-a0f1-30fafef57529",
+      "display_id": 79,
+      "title": "Stealth bypass: srcdoc iframe + parent-scope read defeats property overwrites",
+      "status": "open",
+      "priority": "high",
+      "created_by": "claude",
+      "created_at": "2026-09-06T19:58:12.794900027Z",
+      "updated_at": "2026-09-06T19:58:12.794900027Z"
     },
     "65d58730-47fd-4422-8ba6-c24e331aff08": {
       "uuid": "65d58730-47fd-4422-8ba6-c24e331aff08",
@@ -3410,8 +3421,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T15:58:53.090858976Z",
+    "timestamp": "2026-09-06T19:58:12.794900027Z",
     "agent_id": "claude",
-    "agent_seq": 103
+    "agent_seq": 104
   }
 }
