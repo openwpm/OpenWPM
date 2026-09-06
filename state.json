@@ -1,6 +1,6 @@
 {
   "next_display_id": 81,
-  "next_comment_id": 298,
+  "next_comment_id": 299,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -881,7 +881,7 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T19:58:12.794900027Z",
-      "updated_at": "2026-09-06T21:06:35.113496231Z",
+      "updated_at": "2026-09-06T22:07:00.990549151Z",
       "labels": [
         "bug"
       ],
@@ -903,6 +903,15 @@
           "kind": "handoff",
           "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAfPBSODWLtdJwXHVbHPObjpMN68MItjJi6DZbqaqI8QAsbjjiPTz8YONvxYqBi8JSuxE6q9YZusPtXDbRkJX7BA=="
+        },
+        "bd6913dd-f787-42ae-bde8-c9acce1b1de0": {
+          "display_id": 298,
+          "author": "claude",
+          "content": "Overnight investigation launched (.workspace/asif) against the as-if rule: page-scope pollution is acceptable iff no adversary can distinguish it from a stock browser.\n\nPRIMARY HYPOTHESIS, reasoned not yet measured: a pristine realm obtained through an UNHOOKED path hands the page an unpatched Function.prototype.toString, which it can turn on the PARENT's hooked members to unmask them.\n\n    const f = document.createElement('iframe');\n    f.srcdoc = '';\n    document.body.replaceChildren(f);        // unhooked insertion\n    const w = window[window.length - 1];     // unhooked read\n    w.Function.prototype.toString.call(Node.prototype.appendChild);\n\nThe D10-fp-* suite would not catch this. Its cross-realm probes build their escape realm with frame.src='about:blank' + appendChild — a HOOKED path — so the layer reaches that realm, patches its Function.prototype.toString via createProxyFunction's per-context changedToStrings map, and the probe passes. A realm reached through an unhooked path never gets that patch.\n\nIf it holds, the srcdoc gap is not only a capture hole: it is a detection vector against the frame-protection layer itself. That materially weakens the case for keeping the layer (#80), because the layer's cost is justified by masking that survives cross-realm probing, and this would be an adversary getting an unpatched toString for free.\n\nMechanism split established while reasoning about this, worth recording:\n- instrument(context) is undetectable — exportFunction from the content-script compartment, native toString/arity/name.\n- The TRIGGER is what is detectable. To notice frame creation synchronously you must be the function the page calls, so createProxyFunction reaches through wrappedJSObject and replaces the page's own Node.prototype.appendChild with a page-realm Proxy, then patches the page's Function.prototype.toString to mask it. MutationObserver cannot substitute because it fires at a task boundary — the code comment at index.ts:93 says exactly this.\n\nSo dropping the page-facing triggers costs synchronous frame coverage, not instrumentation quality, and removes stealth's only page-scope mutation. That is direction 3 of the investigation.\n\nAlso being measured: the full unhooked surface (replaceChildren/after/before/adoptNode/importNode/Range.insertNode/insertAdjacentHTML for insertion; window[i]/window.frames/named access for reads), whether extending the enumeration closes the vector or merely enlarges the detectable surface, and whether any capture is lost under the MutationObserver-only option.",
+          "created_at": "2026-09-06T22:07:00.985359198Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAOIDaRyvjJzHRQXP84lF4jUQ7xdMXj0DvpphVz2CH2LCV3J5NAuXoXAb5f59lPoAs24p1a0Vme+eTvGy7mUSBDg=="
         },
         "e6d06ec4-c0ed-4526-b122-c73af2bd4ed3": {
           "display_id": 296,
@@ -3491,8 +3500,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T21:06:56.245931008Z",
+    "timestamp": "2026-09-06T22:07:00.990549151Z",
     "agent_id": "claude",
-    "agent_seq": 115
+    "agent_seq": 116
   }
 }
