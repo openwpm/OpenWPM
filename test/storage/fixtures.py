@@ -1,3 +1,4 @@
+import shutil
 from typing import Any, List
 
 import pytest
@@ -11,6 +12,7 @@ from openwpm.storage.in_memory_storage import (
 from openwpm.storage.leveldb import LevelDbProvider
 from openwpm.storage.local_storage import LocalGzipProvider
 from openwpm.storage.sql_provider import SQLiteStorageProvider
+from openwpm.storage.sqlalchemy_provider import SQLAlchemyStorageProvider
 from openwpm.storage.storage_controller import INVALID_VISIT_ID
 from openwpm.storage.storage_providers import (
     StructuredStorageProvider,
@@ -18,8 +20,21 @@ from openwpm.storage.storage_providers import (
 )
 from test.storage.test_values import dt_test_values, generate_test_values
 
+try:
+    from pytest_postgresql import factories  # noqa: F401
+
+    # pytest-postgresql spins up a real PostgreSQL instance, which requires the
+    # server binaries on PATH (it locates them via ``pg_config``). When the
+    # package is installed but no PostgreSQL binary is available (e.g. CI images
+    # without a postgres server), the scenario must be skipped rather than error.
+    HAS_PYTEST_POSTGRESQL = shutil.which("pg_config") is not None
+except ImportError:
+    HAS_PYTEST_POSTGRESQL = False
+
 memory_structured = "memory_structured"
 sqlite = "sqlite"
+sqlalchemy_sqlite = "sqlalchemy_sqlite"
+postgresql_scenario = "postgresql"
 memory_arrow = "memory_arrow"
 
 
@@ -32,6 +47,17 @@ def structured_provider(
     elif request.param == sqlite:
         tmp_path = tmp_path_factory.mktemp("sqlite")
         return SQLiteStorageProvider(tmp_path / "test_db.sqlite")
+    elif request.param == sqlalchemy_sqlite:
+        tmp_path = tmp_path_factory.mktemp("sqlalchemy_sqlite")
+        return SQLAlchemyStorageProvider(f"sqlite:///{tmp_path / 'test_db.sqlite'}")
+    elif request.param == postgresql_scenario:
+        pg = request.getfixturevalue("postgresql")
+        info = pg.info
+        pg_url = (
+            f"postgresql+psycopg://{info.user}:{info.password or ''}"
+            f"@{info.host}:{info.port}/{info.dbname}"
+        )
+        return SQLAlchemyStorageProvider(pg_url)
     elif request.param == memory_arrow:
         return MemoryArrowProvider()
     assert isinstance(
@@ -43,8 +69,13 @@ def structured_provider(
 structured_scenarios: List[str] = [
     memory_structured,
     sqlite,
+    sqlalchemy_sqlite,
     memory_arrow,
 ]
+
+# PostgreSQL scenarios are separate so that tests not requiring a running
+# PostgreSQL instance (the vast majority) can run without one.
+postgresql_scenarios: List[str] = [postgresql_scenario] if HAS_PYTEST_POSTGRESQL else []
 
 # Unstructured Providers
 memory_unstructured = "memory_unstructured"
