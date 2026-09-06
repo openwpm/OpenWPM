@@ -8,14 +8,29 @@ repos:
     hooks:
       - id: black
         language_version: python3
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
+  - repo: local
     hooks:
+      # mypy runs from the conda env rather than a pre-commit-managed venv, so
+      # it type-checks against the packages the project actually installs and
+      # their bundled type information. Under mirrors-mypy it saw only a
+      # hand-listed subset of dependencies, so every other third-party import
+      # degraded to `Any` -- and that list was a second copy of the dependency
+      # set, free to drift from environment.yaml. Its version now comes from
+      # environment.yaml like every other tool, and `python_version` in
+      # pyproject.toml is kept in step by scripts/update.py.
+      #
+      # `--scripts-are-modules` is inherited from the mirrors-mypy hook
+      # definition and is load-bearing: without it a file with a shebang is
+      # named `__main__`, which the `module = "test.*"` overrides would not
+      # match. `--ignore-missing-imports` is dropped because pyproject.toml
+      # already sets it.
       - id: mypy
-        additional_dependencies:
-          [pytest, types-tabulate, types-PyYAML, types-redis]
-        # We may need to add more and more dependencies here, as pre-commit
-        # runs in an environment without our dependencies
+        name: mypy
+        entry: mypy
+        language: system
+        types_or: [python, pyi]
+        args: [--scripts-are-modules]
+        require_serial: true
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.11
     hooks:
