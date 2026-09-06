@@ -1,6 +1,6 @@
 {
   "next_display_id": 82,
-  "next_comment_id": 301,
+  "next_comment_id": 302,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -543,10 +543,21 @@
       "priority": "high",
       "created_by": "claude",
       "created_at": "2026-09-06T23:07:56.770769739Z",
-      "updated_at": "2026-09-06T23:08:02.065487953Z",
+      "updated_at": "2026-09-06T23:08:18.699387362Z",
       "labels": [
         "refactor"
-      ]
+      ],
+      "comments": {
+        "ac858d7c-0f8a-409d-ace2-a41403b6af69": {
+          "display_id": 301,
+          "author": "claude",
+          "content": "All remaining .jsm in the tree, and every legacy ChromeUtils.import with it, must go.\n\n## What is left\n\nTwo files, both the stackDump window actor:\n\n    Extension/bundled/privileged/stackDump/OpenWPMStackDumpChild.jsm\n    Extension/bundled/privileged/stackDump/OpenWPMStackDumpParent.jsm\n\nRegistered from api.js by moduleURI:\n\n    resource://openwpm/privileged/stackDump/OpenWPMStackDumpParent.jsm\n    resource://openwpm/privileged/stackDump/OpenWPMStackDumpChild.jsm\n\nLegacy imports inside them:\n\n    ChromeUtils.import('resource://gre/modules/Services.jsm')\n    ChromeUtils.import('resource://gre/modules/XPCOMUtils.jsm')\n    lazy setTimeout from 'resource://gre/modules/Timer.jsm'\n\nThese are the last of it — nothing under Extension/src uses .jsm, and the sockets and profileDirIO experiment APIs are plain api.js with no module imports.\n\n## Why now\n\n1. Firefox is actively retiring this surface. The v0.37.0 release was blocked by exactly this class of decay: FF155 gated file:/jar:/moz-extension: subscript loads behind an opt-in (Mozilla bug 1974213), which is why security.allow_unsafe_subscript_loads is now set in deploy_firefox.py. ChromeUtils.import and .jsm are further along the same retirement path — Services is a global now, and the ESM loader is the supported route.\n\n2. The pattern to copy already exists in-tree. PR #1230 rewrote the webdriver spoof as a JSWindowActor using .sys.mjs modules:\n\n    Extension/bundled/privileged/webdriverSpoof/OpenWPMWebdriverSpoofChild.sys.mjs\n    Extension/bundled/privileged/webdriverSpoof/OpenWPMWebdriverSpoofParent.sys.mjs\n\n   Same registerWindowActor shape, same content-document-global-created observer, same allFrames: true — but modern module form. This is a mechanical port against a worked example, not a design exercise.\n\n3. #1230 also documents the traps, which apply here verbatim: resource: is the only scheme the system ESM loader accepts (moz-extension: and the XPI's jar: URL are SILENTLY declined, no error, the actor just never runs); the resource: substitution is per-process so it must be re-registered in content processes; safeForUntrustedWebProcess: true is mandatory or the actor silently never instantiates; and the preallocated content-process pool must be drained at startup or pages intermittently land in unhooked processes.\n\n## Caveat worth checking first\n\ncallstack_instrument is currently broken by design — enabling it raises ConfigError (see #557 and the note in CLAUDE.md). stackDump is its privileged half. So establish whether this code is reachable at all before porting it: if the instrument stays disabled, deleting the actor may be the better answer than migrating it, and that decision should be made deliberately rather than by porting dead code.\n\n## Done when\n\nNo .jsm file remains under Extension/, no ChromeUtils.import remains, and either the actor is registered from .sys.mjs modules and exercised by a test, or it is removed along with the instrument that owns it.",
+          "created_at": "2026-09-06T23:08:18.694407963Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA18zIvEd6clyP467VUbg+NNXJNZ7GDeRFfVpIykleWmGAG7nFy/PjE7cqu70qX0uc9ddK8YL2mcwPFgtm2MnrCw=="
+        }
+      }
     },
     "4025dc0a-d135-4207-8cc7-0d83eddae4cf": {
       "uuid": "4025dc0a-d135-4207-8cc7-0d83eddae4cf",
@@ -3536,8 +3547,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T23:08:10.964406367Z",
+    "timestamp": "2026-09-06T23:08:18.699387362Z",
     "agent_id": "claude",
-    "agent_seq": 121
+    "agent_seq": 122
   }
 }
