@@ -1,6 +1,6 @@
 {
   "next_display_id": 79,
-  "next_comment_id": 292,
+  "next_comment_id": 293,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1204,10 +1204,21 @@
       "priority": "medium",
       "created_by": "claude",
       "created_at": "2026-09-06T15:58:16.018530074Z",
-      "updated_at": "2026-09-06T15:58:22.022431725Z",
+      "updated_at": "2026-09-06T15:58:53.090858976Z",
       "labels": [
         "docs"
-      ]
+      ],
+      "comments": {
+        "ec9cc289-d243-4405-9be4-04bd398f64dc": {
+          "display_id": 292,
+          "author": "claude",
+          "content": "Docs cite implementation sites as `file:line` (e.g. `openwpm/js_instrumentation.py:119` in ADR 0001). Line numbers rot silently: an unrelated edit to `_validate` in the same file during PR #1154 review shifted that exact citation from 119 to 125, and nothing flagged it. Sphinx cross-references would move with the code instead.\n\n## Obstacles found while scoping this\n\n1. **No `:py:` cross-references are used anywhere in `docs/` today.** This would be the first, so it needs a convention decided rather than a mechanical sweep.\n\n2. **The cited symbols are private, and apidoc does not document them.** `docs/conf.py:83` runs:\n\n       apidoc.main([\"-o\", output_path, module_path, \"--separate\", \"--force\"])\n\n   with no `--private-members`, so `_handle_obj_string`, `_validate` and friends are absent from the generated API pages. A `:py:func:` xref to them would not resolve and would emit a Sphinx warning. Options:\n   - enable private members in the apidoc invocation (widens the published API surface — probably unwanted);\n   - cite the nearest public entry point (e.g. `clean_js_instrumentation_settings`) and name the private helper in prose;\n   - keep a path reference but drop the line number, so it degrades to 'find this symbol in this file' rather than pointing at the wrong line.\n\n3. **TypeScript has no autodoc in this project**, so `Extension/src/lib/js-instruments.ts:587` style references cannot become xrefs at all. Best available improvement there is citing the symbol (`Object.defineProperty` call in `instrumentObjectProperty`) rather than a line.\n\n## Suggested scope\n\nDecide the convention first, then apply. Even without xrefs, dropping bare line numbers in favour of symbol names would remove the rot. ADR 0001 is the densest user of these citations and is the natural first target.\n\nRelated: #77 (ADR index page).",
+          "created_at": "2026-09-06T15:58:53.085821260Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1UpS9iWe905fBsJPoDWSjOQYFi/qTrkj18f9YPFG7KsyXhdXY6IgzUd9cMF8SC044JSG7ndeWFsPQqe0UKq6BA=="
+        }
+      }
     },
     "7e00531b-3d1d-4b48-b81d-cde91c54814d": {
       "uuid": "7e00531b-3d1d-4b48-b81d-cde91c54814d",
@@ -3399,8 +3410,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T15:58:31.154663598Z",
+    "timestamp": "2026-09-06T15:58:53.090858976Z",
     "agent_id": "claude",
-    "agent_seq": 102
+    "agent_seq": 103
   }
 }
