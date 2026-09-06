@@ -1,6 +1,6 @@
 {
   "next_display_id": 78,
-  "next_comment_id": 291,
+  "next_comment_id": 292,
   "display_id_map": {
     "016bf1cb-e13d-4423-8bba-5aa80e7dee2b": 65,
     "03499c50-2d5f-4bf0-a686-ff614d17a088": 20,
@@ -1199,10 +1199,21 @@
       "priority": "medium",
       "created_by": "claude",
       "created_at": "2026-09-06T15:52:44.184306324Z",
-      "updated_at": "2026-09-06T15:52:50.208335939Z",
+      "updated_at": "2026-09-06T15:53:21.836358052Z",
       "labels": [
         "docs"
-      ]
+      ],
+      "comments": {
+        "03483c27-171c-4766-a920-10e2ebb163d8": {
+          "display_id": 291,
+          "author": "claude",
+          "content": "Every ADR currently gets its own top-level entry in the Read the Docs navigation sidebar. With one ADR that is merely noisy; it does not scale, and the sidebar is not the place to enumerate decision records.\n\nCurrent state — `docs/index.rst:47` lists the ADR directly in the hidden toctree:\n\n    developers/JS-Instrument\n    developers/Stealth-Instrumentation\n    developers/Stealth-Requirements\n    developers/adr/0001-retain-legacy-js-instrument\n\n`docs/developers/adr/` holds a single file today (`0001-retain-legacy-js-instrument.rst`), so this is cheap to restructure now and gets more expensive with each ADR added.\n\n## Wanted\n\n1. Add `docs/developers/adr/index.rst` that explains what an ADR is, when to write one, and how they are numbered, then carries its own toctree listing the individual records.\n2. Replace the per-ADR entry in `docs/index.rst` with a single link to that index, so the sidebar shows one 'Architecture Decision Records' entry rather than one entry per decision.\n\n## Watch out for\n\n- Existing cross-references must keep resolving. Current inbound links:\n  - `docs/developers/Stealth-Instrumentation.rst:43` — `:doc:`ADR 0001 <adr/0001-retain-legacy-js-instrument>``\n  - `docs/developers/Stealth-Instrumentation.rst:822` — same target, different link text\n  - `docs/developers/Stealth-Requirements.rst:253` — refers to the file by path in prose\n- The docs build must stay warning-clean. A file that is in no toctree raises `document isn't included in any toctree`, so the new index has to pick the ADRs up.\n\nVerify with a local Sphinx build and confirm no new warnings versus the current baseline.",
+          "created_at": "2026-09-06T15:53:21.831170601Z",
+          "kind": "note",
+          "signed_by": "SHA256:s7/xSWzYQxlilryCkQ+87ei/Tb4h7UF7S3hGGeMOxBg",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgxYoY2+ykEqIdJITiF+QWTxSzAQrzXLyHaApd+5sgGJAAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAvWCFkwLDB8PZFNTdJ1EWzA6veJLMRy0q7hNxXebXg5eYFj3c/YeN55V2X9WGjKLzL06Q9sElwBGwSLZFKc8fAw=="
+        }
+      }
     },
     "811612a2-88c4-474e-bf7a-76a526493d04": {
       "uuid": "811612a2-88c4-474e-bf7a-76a526493d04",
@@ -3370,8 +3381,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-06T15:53:00.268760876Z",
+    "timestamp": "2026-09-06T15:53:21.836358052Z",
     "agent_id": "claude",
-    "agent_seq": 98
+    "agent_seq": 99
   }
 }
