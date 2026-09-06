@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM FingerprintJS Stamp Probe</title>
+</head>
+<body>
+    <h1>FingerprintJS Stamp Probe</h1>
+    <!--
+      Loads the VENDORED FingerprintJS bundle (see test_pages/vendor/README.md
+      for package, version, license and SHA-256). The bundle is served by the
+      test HTTP server from disk, so the page is hermetic: no CDN fetch, and
+      `monitoring: false` suppresses the one XHR the agent would otherwise send
+      to m1.openfpcdn.io with probability 0.001.
+    -->
+    <script src="vendor/fingerprintjs-5.2.0.umd.min.js"></script>
+    <div id="results"></div>
+    <script>
+    /**
+     * Computes the FingerprintJS "stamp" of this browser and publishes it on
+     * #results/@data-results for the harness to read back.
+     *
+     * This page is an ORACLE, not an assertion: it reports what FingerprintJS
+     * observes. The comparison between OpenWPM configurations (no instrument /
+     * stealth / legacy) happens in test/test_fingerprintjs_stamp.py.
+     *
+     * Per component we publish:
+     *   hash    -- murmurX64Hash128 of JSON.stringify(value); the comparison key.
+     *              FingerprintJS's own hash function, already in the bundle.
+     *   preview -- the first 200 chars of the same JSON, for human diffing.
+     *   len     -- full JSON length, so truncation cannot hide a difference
+     *              (the hash is over the FULL value, never the preview).
+     *   error   -- "<name>: <message>" if the source threw, else null.
+     * `duration` is DELIBERATELY dropped: it is wall-clock timing, differs on
+     * every run by construction, and carries no fingerprinting signal.
+     */
+    const PREVIEW_CHARS = 200;
+    // Pinned to the vendored bundle; the library does not export its own
+    // version at runtime, and the harness cross-checks this against the
+    // vendored filename so the page cannot silently drift off the fixture.
+    const FPJS_VERSION = "5.2.0";
+
+    function stableStringify(value) {
+        // FingerprintJS component values are plain JSON data (numbers, strings,
+        // arrays, flat records) produced by the same code path on every run, so
+        // JSON.stringify's insertion order is already deterministic. undefined
+        // has no JSON encoding, so it gets an explicit sentinel.
+        if (value === undefined) {
+            return "__undefined__";
+        }
+        try {
+            return JSON.stringify(value);
+        } catch (e) {
+            return "__unserializable__:" + e.message;
+        }
+    }
+
+    function describe(component) {
+        if (component && component.error) {
+            const err = component.error;
+            return {
+                hash: null,
+                preview: null,
+                len: null,
+                error: (err.name || "Error") + ": " + (err.message || ""),
+            };
+        }
+        const json = stableStringify(component ? component.value : undefined);
+        return {
+            hash: FingerprintJS.murmurX64Hash128(json),
+            preview: json.length > PREVIEW_CHARS ? json.slice(0, PREVIEW_CHARS) : json,
+            len: json.length,
+            error: null,
+        };
+    }
+
+    function publish(payload) {
+        const resultsDiv = document.getElementById("results");
+        const json = JSON.stringify(payload);
+        resultsDiv.setAttribute("data-results", json);
+        resultsDiv.textContent = JSON.stringify(payload, null, 2);
+    }
+
+    /**
+     * Extra probes, reported separately from the built-in component set and NOT
+     * part of visitorId.
+     *
+     * Why they exist: FingerprintJS's *stabilized* `canvas` source deliberately
+     * SKIPS image rendering on Firefox 120+ (it assumes canvas randomization may
+     * be on) and returns {winding, geometry:"skipped", text:"skipped"}. Canvas
+     * is the single most heavily instrumented surface in OpenWPM's fingerprinting
+     * preset, so without forcing a real render the comparison would be vacuous
+     * for exactly the surface that matters most. `getUnstableCanvasFingerprint`
+     * is a documented FingerprintJS export; calling it with skipImages=false
+     * drives the real render path: canvas.width/height, ctx.textBaseline,
+     * ctx.fillStyle, ctx.fillRect, ctx.font, ctx.fillText, ctx.arc, ctx.ellipse,
+     * ctx.globalCompositeOperation and canvas.toDataURL -- all of which the
+     * legacy `collection_fingerprinting` preset and the stealth bundled default
+     * both wrap.
+     *
+     * `screenFrame` is included because its stabilized counterpart returns
+     * undefined here, and the unstable one reads window.screen AND caches
+     * through sessionStorage -- two more instrumented surfaces.
+     *
+     * These are "unstable" by FingerprintJS's own labelling, which is precisely
+     * why the harness runs the baseline arm twice: anything that does not
+     * reproduce baseline-vs-baseline is excluded from the comparison.
+     */
+    async function collectExtras() {
+        const extras = {};
+        function record(name, fn) {
+            try {
+                extras[name] = describe({ value: fn() });
+            } catch (e) {
+                extras[name] = {
+                    hash: null, preview: null, len: null,
+                    error: (e && e.name ? e.name : "Error") + ": " + (e && e.message ? e.message : String(e)),
+                };
+            }
+        }
+        // Split into its three sub-values rather than hashing the record as a
+        // whole: the parts have very different stability, and a single combined
+        // hash would let the noisiest part mask the others.
+        var canvasFp = null;
+        var canvasErr = null;
+        try {
+            canvasFp = FingerprintJS.getUnstableCanvasFingerprint(false);
+        } catch (e) {
+            canvasErr = (e && e.name ? e.name : "Error") + ": " + (e && e.message ? e.message : String(e));
+        }
+        ["winding", "geometry", "text"].forEach(function (part) {
+            const name = "unstableCanvas_" + part;
+            if (canvasErr !== null) {
+                extras[name] = { hash: null, preview: null, len: null, error: canvasErr };
+            } else {
+                extras[name] = describe({ value: canvasFp[part] });
+            }
+        });
+        record("unstableScreenResolution", function () {
+            return FingerprintJS.getUnstableScreenResolution();
+        });
+        record("unstableHardwareConcurrency", function () {
+            return FingerprintJS.getUnstableHardwareConcurrency();
+        });
+        try {
+            const frame = await FingerprintJS.getUnstableScreenFrame()();
+            extras["unstableScreenFrame"] = describe({ value: frame });
+        } catch (e) {
+            extras["unstableScreenFrame"] = {
+                hash: null, preview: null, len: null,
+                error: (e && e.name ? e.name : "Error") + ": " + (e && e.message ? e.message : String(e)),
+            };
+        }
+        return extras;
+    }
+
+    (async function () {
+        try {
+            // monitoring:false -- see the hermeticity note in vendor/README.md.
+            const agent = await FingerprintJS.load({ monitoring: false });
+            const result = await agent.get();
+            const components = {};
+            Object.keys(result.components).sort().forEach(function (name) {
+                components[name] = describe(result.components[name]);
+            });
+            const extras = await collectExtras();
+            publish({
+                ok: true,
+                fpjsVersion: FPJS_VERSION,
+                visitorId: result.visitorId,
+                confidence: result.confidence ? result.confidence.score : null,
+                components: components,
+                extras: extras,
+                error: null,
+            });
+        } catch (e) {
+            publish({
+                ok: false,
+                fpjsVersion: FPJS_VERSION,
+                visitorId: null,
+                confidence: null,
+                components: {},
+                extras: {},
+                error: (e && e.name ? e.name + ": " : "") + (e && e.message ? e.message : String(e)),
+            });
+        }
+    })();
+    </script>
+</body>
+</html>
