@@ -57,6 +57,8 @@ SAMPLE_CONDA_LIST = json.dumps(
 )
 
 
+# mypy is absent on purpose: it is a `language: system` hook, so it carries no
+# rev for sync_precommit_linter_versions to rewrite.
 PRECOMMIT_YAML_TEMPLATE = """\
 repos:
   - repo: https://github.com/timothycrosley/isort
@@ -68,10 +70,12 @@ repos:
     hooks:
       - id: black
         language_version: python3
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: {mypy_rev}
+  - repo: local
     hooks:
       - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
 """
 
 
@@ -91,9 +95,7 @@ def test_versions_from_conda_list_json_invalid_json_raises(update_module):
 def test_sync_updates_outdated_revs(update_module, tmp_path, monkeypatch, capsys):
     precommit = tmp_path / ".pre-commit-config.yaml"
     precommit.write_text(
-        PRECOMMIT_YAML_TEMPLATE.format(
-            isort_rev="1.0.0", black_rev="20.0.0", mypy_rev="v1.0.0"
-        )
+        PRECOMMIT_YAML_TEMPLATE.format(isort_rev="1.0.0", black_rev="20.0.0")
     )
     monkeypatch.setattr(update_module, "ROOT", tmp_path)
     monkeypatch.setattr(
@@ -111,15 +113,12 @@ def test_sync_updates_outdated_revs(update_module, tmp_path, monkeypatch, capsys
     new_content = precommit.read_text()
     assert "rev: 26.1.0" in new_content
     assert "rev: 8.0.1" in new_content
-    assert "rev: v1.19.1" in new_content
     assert "20.0.0" not in new_content
-    assert "v1.0.0" not in new_content
+    assert "1.0.0" not in new_content
 
 
 def test_sync_noop_when_versions_match(update_module, tmp_path, monkeypatch):
-    initial = PRECOMMIT_YAML_TEMPLATE.format(
-        isort_rev="8.0.1", black_rev="26.1.0", mypy_rev="v1.19.1"
-    )
+    initial = PRECOMMIT_YAML_TEMPLATE.format(isort_rev="8.0.1", black_rev="26.1.0")
     precommit = tmp_path / ".pre-commit-config.yaml"
     precommit.write_text(initial)
     mtime_before = precommit.stat().st_mtime_ns
@@ -145,33 +144,27 @@ def test_sync_noop_when_versions_match(update_module, tmp_path, monkeypatch):
 def test_sync_raises_when_linter_missing_from_env(update_module, tmp_path, monkeypatch):
     precommit = tmp_path / ".pre-commit-config.yaml"
     precommit.write_text(
-        PRECOMMIT_YAML_TEMPLATE.format(
-            isort_rev="8.0.1", black_rev="26.1.0", mypy_rev="v1.19.1"
-        )
+        PRECOMMIT_YAML_TEMPLATE.format(isort_rev="8.0.1", black_rev="26.1.0")
     )
     monkeypatch.setattr(update_module, "ROOT", tmp_path)
     monkeypatch.setattr(
         update_module,
         "_query_conda_versions",
-        # mypy intentionally missing
-        lambda env_name="openwpm": {"black": "26.1.0", "isort": "8.0.1"},
+        # isort intentionally missing
+        lambda env_name="openwpm": {"black": "26.1.0", "mypy": "1.19.1"},
     )
 
-    with pytest.raises(RuntimeError, match="mypy"):
+    with pytest.raises(RuntimeError, match="isort"):
         update_module.sync_precommit_linter_versions()
 
 
 def test_sync_raises_when_hook_missing_from_precommit_config(
     update_module, tmp_path, monkeypatch
 ):
-    # File is missing the mypy hook entirely.
+    # File is missing the isort hook entirely.
     precommit = tmp_path / ".pre-commit-config.yaml"
     precommit.write_text("""\
 repos:
-  - repo: https://github.com/timothycrosley/isort
-    rev: 8.0.1
-    hooks:
-      - id: isort
   - repo: https://github.com/psf/black
     rev: 26.1.0
     hooks:
@@ -188,8 +181,120 @@ repos:
         },
     )
 
-    with pytest.raises(RuntimeError, match="mypy"):
+    with pytest.raises(RuntimeError, match="isort"):
         update_module.sync_precommit_linter_versions()
+
+
+def test_mypy_is_not_rev_synced(update_module):
+    """mypy runs as a `language: system` hook, so it has no rev to sync.
+
+    Putting it back in _LINTER_MAP would make sync_precommit_linter_versions
+    raise on the next repin, since the local hook carries no `rev:` line.
+    """
+    assert "mypy" not in update_module._LINTER_MAP
+
+
+PYPROJECT_TEMPLATE = """\
+[tool.black]
+line-length = 88
+
+[tool.mypy]
+follow_imports = "silent"
+python_version = "{python_version}"
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "test.*"
+python_version = "1.0"
+
+[tool.coverage.run]
+parallel = true
+"""
+
+
+def _patch_conda_python(update_module, monkeypatch, version):
+    monkeypatch.setattr(
+        update_module,
+        "_query_conda_versions",
+        lambda env_name="openwpm": {"python": version},
+    )
+
+
+def test_sync_mypy_python_version_updates_stale_setting(
+    update_module, tmp_path, monkeypatch
+):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(PYPROJECT_TEMPLATE.format(python_version="3.10"))
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    _patch_conda_python(update_module, monkeypatch, "3.14.7")
+
+    update_module.sync_mypy_python_version()
+
+    new_content = pyproject.read_text()
+    # The feature level, not the patch release.
+    assert 'python_version = "3.14"' in new_content
+    assert '"3.10"' not in new_content
+    # A python_version in a later table is left alone -- only [tool.mypy] itself
+    # is rewritten.
+    assert 'python_version = "1.0"' in new_content
+
+
+def test_sync_mypy_python_version_noop_when_in_sync(
+    update_module, tmp_path, monkeypatch
+):
+    initial = PYPROJECT_TEMPLATE.format(python_version="3.14")
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(initial)
+    mtime_before = pyproject.stat().st_mtime_ns
+
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    _patch_conda_python(update_module, monkeypatch, "3.14.7")
+
+    update_module.sync_mypy_python_version()
+
+    assert pyproject.read_text() == initial
+    # File should not have been rewritten when nothing changed.
+    assert pyproject.stat().st_mtime_ns == mtime_before
+
+
+def test_sync_mypy_python_version_raises_when_python_missing_from_env(
+    update_module, tmp_path, monkeypatch
+):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(PYPROJECT_TEMPLATE.format(python_version="3.10"))
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        update_module,
+        "_query_conda_versions",
+        lambda env_name="openwpm": {"mypy": "1.19.1"},
+    )
+
+    with pytest.raises(RuntimeError, match="python not found"):
+        update_module.sync_mypy_python_version()
+
+
+def test_sync_mypy_python_version_raises_when_section_missing(
+    update_module, tmp_path, monkeypatch
+):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.black]\nline-length = 88\n")
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    _patch_conda_python(update_module, monkeypatch, "3.14.7")
+
+    with pytest.raises(RuntimeError, match=r"\[tool\.mypy\]"):
+        update_module.sync_mypy_python_version()
+
+
+def test_sync_mypy_python_version_raises_when_setting_missing(
+    update_module, tmp_path, monkeypatch
+):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.mypy]\nwarn_unused_configs = true\n")
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    _patch_conda_python(update_module, monkeypatch, "3.14.7")
+
+    with pytest.raises(RuntimeError, match="python_version"):
+        update_module.sync_mypy_python_version()
 
 
 def test_query_conda_versions_raises_when_conda_missing(update_module, monkeypatch):
