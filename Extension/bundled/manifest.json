@@ -52,6 +52,14 @@
         "script": "./privileged/stackDump/api.js",
         "paths": [["stackDump"]]
       }
+    },
+    "webdriverSpoof": {
+      "schema": "./privileged/webdriverSpoof/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "./privileged/webdriverSpoof/api.js",
+        "paths": [["webdriverSpoof"]]
+      }
     }
   }
 }

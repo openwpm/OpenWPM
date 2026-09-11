@@ -95,6 +95,13 @@ class BrowserParams(DataClassJsonMixin):
     prefs: dict = field(default_factory=dict)
     tp_cookies: str = "always"
     bot_mitigation: bool = False
+    spoof_webdriver: bool = True
+    """Make ``navigator.webdriver`` read as ``false`` in the page.
+
+    Hides the flag Selenium sets, which is the cheapest signal a site has that
+    a visit is automated. Records nothing and is independent of the
+    instruments. See ``docs/Configuration.md``.
+    """
     profile_archive_dir: Optional[Path] = field(
         default=None, metadata=DCJConfig(encoder=path_to_str, decoder=str_to_path)
     )
@@ -245,6 +252,20 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 )
             )
 
+        # The spoof covers every content process by replacing the
+        # preallocated pool, which it cannot do if preallocation is off.
+        # Refuse rather than crawl with some processes unhooked.
+        if browser_params.spoof_webdriver and (
+            browser_params.prefs.get("dom.ipc.processPrelaunch.enabled") is False
+        ):
+            raise ConfigError(
+                "spoof_webdriver requires dom.ipc.processPrelaunch.enabled; "
+                "with preallocation disabled, content processes that predate "
+                "the extension stay unhooked and pages landing in them would "
+                "still see navigator.webdriver === true. Either leave the pref "
+                "alone or set spoof_webdriver=False."
+            )
+
         if browser_params.browser.lower() not in SUPPORTED_BROWSER_LIST:
             raise ConfigError(
                 CONFIG_ERROR_STRING.format(
@@ -307,7 +328,11 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        # Deliberate, already-explained rejections carry an actionable message;
+        # re-raise them instead of flattening them into the generic one below.
+        raise
+    except Exception:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"
