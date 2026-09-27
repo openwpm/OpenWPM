@@ -28,6 +28,7 @@ dependencies:
 - pyvirtualdisplay=3.0
 - recommonmark=0.7.1
 - redis-py=8.1.0
+- ruamel.yaml=0.19.1
 - s3fs=2026.7.0
 - selenium=4.48.0
 - sentry-sdk=2.68.1
@@ -35,6 +36,7 @@ dependencies:
 - sphinx=9.1.0
 - tabulate=0.10.0
 - tblib=3.2.2
+- tomlkit=0.15.1
 - wget=1.25.0
 - pip:
   - dataclasses-json==0.6.7

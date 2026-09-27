@@ -72,6 +72,7 @@ repos:
         language_version: python3
   - repo: local
     hooks:
+      # A comment the rewrite must preserve.
       - id: mypy
         name: mypy
         entry: mypy
@@ -110,11 +111,10 @@ def test_sync_updates_outdated_revs(update_module, tmp_path, monkeypatch, capsys
 
     update_module.sync_precommit_linter_versions()
 
-    new_content = precommit.read_text()
-    assert "rev: 26.1.0" in new_content
-    assert "rev: 8.0.1" in new_content
-    assert "20.0.0" not in new_content
-    assert "1.0.0" not in new_content
+    # Only the revs change; comments and layout survive byte-for-byte.
+    assert precommit.read_text() == PRECOMMIT_YAML_TEMPLATE.format(
+        isort_rev="8.0.1", black_rev="26.1.0"
+    )
 
 
 def test_sync_noop_when_versions_match(update_module, tmp_path, monkeypatch):
@@ -185,6 +185,57 @@ repos:
         update_module.sync_precommit_linter_versions()
 
 
+def test_sync_rewrites_only_rev_lines_of_real_config(
+    update_module, tmp_path, monkeypatch
+):
+    """The fixture above is hand-written; guard the round-trip on the real file."""
+    repo_root = Path(__file__).resolve().parent.parent
+    original = (repo_root / ".pre-commit-config.yaml").read_text()
+    (tmp_path / ".pre-commit-config.yaml").write_text(original)
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        update_module,
+        "_query_conda_versions",
+        lambda env_name="openwpm": {pkg: "99.0.0" for pkg in update_module._LINTER_MAP},
+    )
+
+    update_module.sync_precommit_linter_versions()
+
+    before = original.splitlines()
+    after = (tmp_path / ".pre-commit-config.yaml").read_text().splitlines()
+    assert len(before) == len(after)
+    changed = [(b, a) for b, a in zip(before, after) if b != a]
+    assert len(changed) == len(update_module._LINTER_MAP)
+    for b, a in changed:
+        assert b.strip().startswith("rev:")
+        assert a.strip() == "rev: 99.0.0"
+
+
+def test_sync_updates_every_entry_of_a_repeated_repo(
+    update_module, tmp_path, monkeypatch
+):
+    precommit = tmp_path / ".pre-commit-config.yaml"
+    precommit.write_text(
+        PRECOMMIT_YAML_TEMPLATE.format(isort_rev="8.0.1", black_rev="1.0.0")
+        + "  - repo: https://github.com/psf/black\n"
+        "    rev: 2.0.0\n"
+        "    hooks:\n"
+        "      - id: black-jupyter\n"
+    )
+    monkeypatch.setattr(update_module, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        update_module,
+        "_query_conda_versions",
+        lambda env_name="openwpm": {"black": "26.1.0", "isort": "8.0.1"},
+    )
+
+    update_module.sync_precommit_linter_versions()
+
+    content = precommit.read_text()
+    assert content.count("rev: 26.1.0") == 2
+    assert "1.0.0" not in content and "2.0.0" not in content
+
+
 def test_mypy_is_not_rev_synced(update_module):
     """mypy runs as a `language: system` hook, so it has no rev to sync.
 
@@ -230,13 +281,9 @@ def test_sync_mypy_python_version_updates_stale_setting(
 
     update_module.sync_mypy_python_version()
 
-    new_content = pyproject.read_text()
-    # The feature level, not the patch release.
-    assert 'python_version = "3.14"' in new_content
-    assert '"3.10"' not in new_content
-    # A python_version in a later table is left alone -- only [tool.mypy] itself
-    # is rewritten.
-    assert 'python_version = "1.0"' in new_content
+    # The feature level, not the patch release. The override's python_version
+    # and the rest of the file are untouched.
+    assert pyproject.read_text() == PYPROJECT_TEMPLATE.format(python_version="3.14")
 
 
 def test_sync_mypy_python_version_noop_when_in_sync(

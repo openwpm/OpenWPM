@@ -19,6 +19,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+import tomlkit
+from ruamel.yaml import YAML
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
 
@@ -98,41 +101,39 @@ def sync_precommit_linter_versions(env_name: str = "openwpm") -> None:
     print("\n=== Syncing pre-commit linter versions with conda ===")
 
     conda_versions = _query_conda_versions(env_name)
-    content = precommit_yaml.read_text()
+
+    # Round-trip mode keeps comments, quoting and key order; the indent settings
+    # match the file's layout so untouched lines are written back byte-for-byte.
+    yaml = YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.preserve_quotes = True
+    yaml.width = 4096
+    config = yaml.load(precommit_yaml.read_text())
 
     updated = False
     for pkg, (repo_url, prefix) in _LINTER_MAP.items():
         if pkg not in conda_versions:
             raise RuntimeError(f"{pkg} not found in conda env '{env_name}'.")
-
-        target_rev = f"{prefix}{conda_versions[pkg]}"
-
-        # Match the repo URL line followed by the rev line, preserving whitespace.
-        pattern = re.compile(
-            rf"(- repo: {re.escape(repo_url)}\s*\n\s*rev:\s*)\S+",
-        )
-        match = pattern.search(content)
-        if not match:
+        # A repo may be listed more than once; every entry must carry the rev.
+        entries = [r for r in config["repos"] if r["repo"] == repo_url]
+        if not entries or any("rev" not in r for r in entries):
             raise RuntimeError(
-                f"No rev: line found for {repo_url} in .pre-commit-config.yaml"
+                f"No rev found for {repo_url} ({pkg}) in .pre-commit-config.yaml"
             )
 
-        current_rev = content[match.start(0) + len(match.group(1)) : match.end(0)]
-        if current_rev == target_rev:
-            print(f"  {pkg}: already in sync ({current_rev})")
-            continue
+        target_rev = f"{prefix}{conda_versions[pkg]}"
+        for entry in entries:
+            current_rev = str(entry["rev"])
+            if current_rev == target_rev:
+                print(f"  {pkg}: already in sync ({current_rev})")
+                continue
 
-        print(f"  {pkg}: {current_rev} -> {target_rev}")
-        content = (
-            content[: match.start(0)]
-            + match.group(1)
-            + target_rev
-            + content[match.end(0) :]
-        )
-        updated = True
+            print(f"  {pkg}: {current_rev} -> {target_rev}")
+            entry["rev"] = target_rev
+            updated = True
 
     if updated:
-        precommit_yaml.write_text(content)
+        yaml.dump(config, precommit_yaml)
         print("Updated .pre-commit-config.yaml")
     else:
         print("All linter versions already in sync.")
@@ -318,15 +319,9 @@ def sync_extension_node_engine(env_name: str = "openwpm") -> None:
 def sync_mypy_python_version(env_name: str = "openwpm") -> None:
     """Sync ``[tool.mypy] python_version`` in ``pyproject.toml`` to the conda env.
 
-    mypy checks code against whatever ``python_version`` says, not against the
-    interpreter it happens to run on. Once that setting falls behind the conda
-    env, two things go wrong quietly. The project gets type-checked at an older
-    language level than it actually ships. And mypy rejects newer syntax in the
-    installed third-party stubs it follows -- a local ``mypy openwpm`` dies on
-    somebody else's ``.pyi`` while the pre-commit hook, which runs in an
-    isolated env without those packages, never reaches the file and stays
-    green. Pinning the setting to the conda python keeps the two from drifting
-    after a repin.
+    mypy checks against ``python_version``, not the interpreter it runs on, and
+    applies it to installed third-party stubs too: a stale value type-checks the
+    project at the wrong language level and rejects newer syntax in dependencies.
     """
     pyproject = ROOT / "pyproject.toml"
 
@@ -339,30 +334,21 @@ def sync_mypy_python_version(env_name: str = "openwpm") -> None:
     # mypy takes a feature level, not a patch release: 3.14.7 -> "3.14".
     target = ".".join(versions["python"].split(".")[:2])
 
-    content = pyproject.read_text()
-
-    header = re.search(r"^\[tool\.mypy\][^\S\n]*$", content, re.MULTILINE)
-    if not header:
+    doc = tomlkit.parse(pyproject.read_text())
+    mypy = doc.get("tool", {}).get("mypy")
+    if mypy is None:
         raise RuntimeError("No [tool.mypy] section found in pyproject.toml")
-
-    # The section body runs to the next table header, or to the end of file.
-    rest = content[header.end() :]
-    next_header = re.search(r"^\[", rest, re.MULTILINE)
-    end = header.end() + (next_header.start() if next_header else len(rest))
-    body = content[header.end() : end]
-
-    setting = re.search(r'python_version\s*=\s*"([^"]*)"', body)
-    if not setting:
+    if "python_version" not in mypy:
         raise RuntimeError("No python_version setting found in [tool.mypy]")
 
-    current = setting.group(1)
+    current = mypy["python_version"]
     if current == target:
         print(f"  python_version: already in sync ({current})")
         return
 
     print(f"  python_version: {current} -> {target}")
-    new_body = body[: setting.start(1)] + target + body[setting.end(1) :]
-    pyproject.write_text(content[: header.end()] + new_body + content[end:])
+    mypy["python_version"] = target
+    pyproject.write_text(tomlkit.dumps(doc))
 
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")

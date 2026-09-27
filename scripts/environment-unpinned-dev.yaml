@@ -12,7 +12,9 @@ dependencies:
     - pytest-asyncio
     - sphinx
     - recommonmark
+    - ruamel.yaml
     - sphinx-markdown-tables
+    - tomlkit
     - pip:
         - pytest-split
         - types-pyyaml
