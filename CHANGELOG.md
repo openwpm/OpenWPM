@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.38.0 - 2026-09-30
+
+Bump to Firefox 157
+
+### Data changes
+
+- Firefox 157 (bug 2061470) no longer drops form fields named `__proto__` from `requestBody.formData`, so such fields now appear in `http_requests.post_body` where v0.37.0 silently omitted them
+
+### Tooling / tests
+
+- Type-check with mypy from the conda environment instead of an isolated pre-commit venv, so it sees the project's real dependencies, and target Python 3.14 to match the pinned interpreter. `scripts/update.py` now keeps `[tool.mypy] python_version` in sync on repin
+- `scripts/update.py` edits `.pre-commit-config.yaml` and `pyproject.toml` through their parsers rather than regex splicing
+- CI: cancel superseded runs on the same pull request (including CodeQL), and bound the demo and pre-commit jobs to 10 minutes
+- Full conda + npm dependency churn (notably selenium 4.49.0, nodejs 26.10.0, eslint-plugin-unicorn 76)
+- Ignore the bundled `stealth.js` build output so a local extension build doesn't leave the tree dirty
+- Docs: let the page use the full viewport width; point the README CI badge at the workflow file
+
 ## v0.37.0 - 2026-09-06
 
 Bump to Firefox 155

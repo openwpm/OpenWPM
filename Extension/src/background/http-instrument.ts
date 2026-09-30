@@ -192,13 +192,9 @@ export class HttpInstrument {
   }
 
   private isContentSavingEnabled(saveContentOption: SaveContentOption) {
-    if (saveContentOption === true) {
-      return true;
-    }
-    if (saveContentOption === false) {
-      return false;
-    }
-    return this.saveContentResourceTypes(saveContentOption).length > 0;
+    return typeof saveContentOption === "boolean"
+      ? saveContentOption
+      : this.saveContentResourceTypes(saveContentOption).length > 0;
   }
 
   private saveContentResourceTypes(saveContentOption: string): ResourceType[] {
@@ -216,15 +212,9 @@ export class HttpInstrument {
     saveContentOption: SaveContentOption,
     resourceType: ResourceType,
   ) {
-    if (saveContentOption === true) {
-      return true;
-    }
-    if (saveContentOption === false) {
-      return false;
-    }
-    return this.saveContentResourceTypes(saveContentOption).includes(
-      resourceType,
-    );
+    return typeof saveContentOption === "boolean"
+      ? saveContentOption
+      : this.saveContentResourceTypes(saveContentOption).includes(resourceType);
   }
 
   private getPendingRequest(requestId: string): PendingRequest {
