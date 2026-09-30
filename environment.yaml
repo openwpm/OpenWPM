@@ -3,18 +3,18 @@ channels:
 dependencies:
 - beautifulsoup4=4.15.0
 - black=26.5.1
-- click=8.4.2
+- click=8.5.0
 - dill=0.4.1
 - easyprocess=1.1
-- gcsfs=2026.8.0
+- gcsfs=2026.8.1
 - geckodriver=0.37.1
 - ipython=9.17.1
-- isort=9.0.1
+- isort=9.0.2
 - leveldb=1.23
 - multiprocess=0.70.19
 - mypy=2.3.1
-- nodejs=26.8.1
-- pandas=3.0.5
+- nodejs=26.10.0
+- pandas=3.0.6
 - pillow=12.3.0
 - pip=26.2.1
 - plyvel=1.5.1
@@ -30,8 +30,8 @@ dependencies:
 - redis-py=8.1.0
 - ruamel.yaml=0.19.1
 - s3fs=2026.7.0
-- selenium=4.48.0
-- sentry-sdk=2.68.1
+- selenium=4.49.0
+- sentry-sdk=2.71.0
 - sphinx-markdown-tables=0.0.17
 - sphinx=9.1.0
 - tabulate=0.10.0
