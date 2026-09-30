@@ -7,8 +7,7 @@ from selenium.webdriver import Firefox
 from openwpm.config import BrowserParamsInternal, ManagerParamsInternal
 
 from ..errors import ProfileLoadError
-from ..socket_interface import ClientSocket
-from .types import BaseCommand
+from .types import BaseCommand, ExtensionSocket
 from .utils.firefox_profile import sleep_until_sqlite_checkpoint
 
 logger = logging.getLogger("openwpm")
@@ -87,7 +86,7 @@ class DumpProfileCommand(BaseCommand):
         webdriver: Firefox,
         browser_params: BrowserParamsInternal,
         manager_params: ManagerParamsInternal,
-        extension_socket: ClientSocket,
+        extension_socket: ExtensionSocket,
     ) -> None:
         # if this is a dump on close, close the webdriver and wait for checkpoint
         if self.close_webdriver:

@@ -4,7 +4,6 @@ from typing import Awaitable, Dict
 import pytest
 from pandas import DataFrame
 
-from openwpm.mp_logger import MPLogger
 from openwpm.storage.arrow_storage import CACHE_SIZE
 from openwpm.storage.in_memory_storage import MemoryArrowProvider
 from openwpm.storage.storage_providers import TableName
@@ -13,7 +12,7 @@ from test.storage.test_values import dt_test_values
 
 
 @pytest.mark.asyncio
-async def test_arrow_cache(mp_logger: MPLogger, test_values: dt_test_values) -> None:
+async def test_arrow_cache(mp_logger, test_values: dt_test_values) -> None:
     prov = MemoryArrowProvider()
     await prov.init()
     site_visit = test_values[0][TableName("site_visits")]

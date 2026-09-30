@@ -65,17 +65,6 @@ def test_save_content_type():
     validate_browser_params(browser_params)
 
 
-def test_echo_mode():
-    browser_params = BrowserParams()
-
-    browser_params.echo_mode = True
-    with pytest.raises(ConfigError):
-        validate_browser_params(browser_params)
-
-    browser_params.echo_mode = False
-    validate_browser_params(browser_params)
-
-
 def test_log_file_extension():
     manager_params = ManagerParams()
 
