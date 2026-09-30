@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.38.0 - 2026-10-04
+
+Bump to Firefox 157
+
+### Fixes & improvements
+
+- Storage: a record containing an unpaired UTF-16 surrogate (e.g. a page-chosen JavaScript string `"\ud800"`) no longer raises `UnicodeEncodeError` in the SQLite provider, which ended the extension's connection and lost every later record of the session. Lone surrogates in string fields are now stored as U+FFFD
+- Firefox prefs: remove prefs Firefox no longer reads. Normandy is now disabled via `app.normandy.enabled` (the old `extensions.shield-recipe-client.enabled` only worked through a startup migration), browser updates via `app.update.disabledForTesting`, and Safe Browsing list updates via `browser.safebrowsing.update.enabled` plus the new `google5` provider, which previously kept updating
+
+### Data changes
+
+- Firefox 157 (bug 2061470) no longer drops form fields named `__proto__` from `requestBody.formData`, so such fields now appear in `http_requests.post_body` where v0.37.0 silently omitted them
+- Phishing Safe Browsing is now actually disabled: the misspelled `browser.safebrowsing.phising.enabled` is replaced by `browser.safebrowsing.phishing.enabled`, so phishing protection no longer runs during crawls
+
+### Tooling / tests
+
+- Type-check with mypy from the conda environment instead of an isolated pre-commit venv, so it sees the project's real dependencies, and target Python 3.14 to match the pinned interpreter. `scripts/update.py` now keeps `[tool.mypy] python_version` in sync on repin
+- `scripts/update.py` edits `.pre-commit-config.yaml` and `pyproject.toml` through their parsers rather than regex splicing
+- CI: cancel superseded runs on the same pull request (including CodeQL), and bound the demo and pre-commit jobs to 10 minutes
+- Full conda + npm dependency churn (notably selenium 4.49.0, nodejs 26.10.0, eslint-plugin-unicorn 76)
+- Ignore the bundled `stealth.js` build output so a local extension build doesn't leave the tree dirty
+- Docs: let the page use the full viewport width; point the README CI badge at the workflow file
+
 ## v0.37.0 - 2026-09-06
 
 Bump to Firefox 155
