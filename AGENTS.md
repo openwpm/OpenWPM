@@ -97,6 +97,14 @@ Schema files must be kept in sync:
 - `openwpm/storage/schema.sql` (SQLite)
 - `openwpm/storage/parquet_schema.py` (Parquet)
 
+## Writing Style
+
+Be terse, in code comments, docstrings, commit messages and PR descriptions alike.
+
+- A comment says what the code cannot: a non-obvious why, a footgun, a constraint from outside the file. Default to none; one or two lines when needed.
+- Don't restate the code, narrate the next line, or record history ("used to be X, changed because Y"). History belongs in the commit message.
+- Commit messages and PR descriptions: what changed and why. No motivation essays, nothing the diff already shows. The maintainer is the only reviewer and already has the context.
+
 ## Scratch Space
 
 Use `datadir/` (project root) for any temporary or scratch data — crawl outputs, test databases, logs, etc. This directory is gitignored and is the conventional location for local data. Do not use `/tmp`, `~`, or other locations outside the project.
