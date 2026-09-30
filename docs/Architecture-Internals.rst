@@ -72,11 +72,38 @@ Communication Channels
    * - Extension startup → BrowserManager
      - File-based (``extension_port.txt``)
      - Polling every 0.1s for 5s
+   * - BrowserManager → Extension (startup)
+     - File-based (``browser_params.json`` in the profile directory)
+     - Write-once at launch
+   * - BrowserManager → Extension (per visit)
+     - TCP socket (:py:class:`~openwpm.socket_interface.ClientSocket`)
+     - Request per navigation
 
 **Key observation**: No channel supports bidirectional communication. The
 ``status_queue`` between ``BrowserManager`` and ``TaskManager`` is the
 closest, but it is strictly request-reply: ``TaskManager`` sends one command,
 then blocks waiting for exactly one status response.
+
+BrowserManager → Extension Details
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Config file** (``browser_params.json``): written by ``deploy_firefox.py``
+before browser launch. It holds ``browser_id``, the instrumentation flags
+(``cookie_instrument``, ``js_instrument``, ...), ``storage_controller_address``,
+``logger_address`` and ``custom_params``. The extension reads it once at
+startup via ``browser.profileDirIO.readFile()`` in ``feature.ts`` and enables
+instruments accordingly.
+
+**Socket**: the extension opens a listening TCP socket and writes its port to
+``extension_port.txt``; ``BrowserManager`` then connects via ``ClientSocket``.
+Commands send JSON messages over it:
+
+- ``GetCommand`` sends the raw ``visit_id`` (integer, legacy path)
+- ``InitializeCommand`` sends ``{"action": "Initialize", "visit_id": <int>}``
+- ``FinalizeCommand`` sends ``{"action": "Finalize", "visit_id": <int>}``
+
+``loggingdb.ts`` receives these and tags all data recorded for that navigation
+with the ``visit_id``.
 
 Socket Wire Protocol and Security
 ---------------------------------
