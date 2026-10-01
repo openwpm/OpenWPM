@@ -33,6 +33,7 @@ dependencies:
     - tblib
     - wget
     - pip:
+        - sqlalchemy
         - dataclasses-json
         - domain-utils
         - jsonschema
