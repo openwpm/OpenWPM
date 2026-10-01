@@ -9,7 +9,7 @@ import time
 from asyncio import IncompleteReadError, Task
 from asyncio.base_events import Server
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
+from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Set, Tuple
 
 from multiprocess import Queue
 
@@ -37,6 +37,12 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 INVALID_VISIT_ID = VisitId(-1)
+# A visit can be finalized twice: by the TaskManager after a failed
+# FinalizeCommand and by the still-running extension. Records can also follow
+# the finalize: the TaskManager's crawl_history row for the FinalizeCommand,
+# or extension stragglers. Both arrive within seconds, so a bounded memory
+# suffices.
+FINALIZED_VISIT_MEMORY = 10_000
 
 # Unpaired surrogates (JSON allows "\ud800"; Python keeps them) cannot be
 # encoded as UTF-8, and a provider failing on one ends the producer's connection.
@@ -85,6 +91,11 @@ class StorageController:
         """Contains all information required for update_completion_queue to work
             Tuple structure is: VisitId, optional completion token, success
         """
+        self._finalized_visits: Dict[VisitId, None] = {}
+        """Recently finalized visit_ids, oldest first"""
+        self._late_flushes: Set[VisitId] = set()
+        """Scheduled flushes of records that arrived after their visit's finalize"""
+        self._late_flush_tasks: Set[Task[None]] = set()
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
@@ -177,6 +188,31 @@ class StorageController:
                 )
             )
         )
+        if (
+            visit_id != INVALID_VISIT_ID
+            and visit_id in self._finalized_visits
+            and visit_id not in self._late_flushes
+        ):
+            # Flush soon rather than at shutdown, which would mark the visit
+            # interrupted. The task runs once the handler yields, so a burst
+            # of late records is flushed together.
+            task = asyncio.create_task(self._flush_late_records(visit_id))
+            self._late_flushes.add(visit_id)
+            self._late_flush_tasks.add(task)
+            task.add_done_callback(self._late_flush_tasks.discard)
+
+    async def _flush_late_records(self, visit_id: VisitId) -> None:
+        # Records arriving from here on belong to the next flush.
+        self._late_flushes.remove(visit_id)
+        token = await self.finalize_visit_id(visit_id, success=True)
+        if token is None:
+            return
+        # The visit's first finalize owns its outcome and completion entry;
+        # hold that completion until the late records are stored too. Flushes
+        # resolve tokens in order, so the later token implies the earlier one.
+        for i, (v, _, success) in enumerate(self.finalize_tasks):
+            if v == visit_id:
+                self.finalize_tasks[i] = (v, token, success)
 
     async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
         """
@@ -194,6 +230,17 @@ class StorageController:
             return
         elif action == ACTION_TYPE_FINALIZE:
             success: bool = data["success"]
+            # No await before the bookkeeping: a concurrent handler must see it.
+            if visit_id in self._finalized_visits:
+                self.logger.warning(
+                    "Ignoring duplicate finalize (success=%s) for visit_id %d",
+                    success,
+                    visit_id,
+                )
+                return
+            self._finalized_visits[visit_id] = None
+            if len(self._finalized_visits) > FINALIZED_VISIT_MEMORY:
+                del self._finalized_visits[next(iter(self._finalized_visits))]
             completion_token = await self.finalize_visit_id(visit_id, success)
             self.finalize_tasks.append((visit_id, completion_token, success))
         else:
@@ -265,6 +312,7 @@ class StorageController:
     async def shutdown(self, completion_queue_task: Task[None]) -> None:
         self.logger.info("Entering self.shutdown")
         completion_tokens = {}
+        await asyncio.gather(*self._late_flush_tasks)
         visit_ids = list(self.store_record_tasks.keys())
         for visit_id in visit_ids:
             # Even if the token is None, we still want to put the visit_id
