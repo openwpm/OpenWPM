@@ -3,6 +3,7 @@ import base64
 import logging
 import queue
 import random
+import re
 import socket
 import time
 from asyncio import IncompleteReadError, Task
@@ -36,6 +37,10 @@ BATCH_COMMIT_TIMEOUT = 30  # commit a batch if no new records for N seconds
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
 INVALID_VISIT_ID = VisitId(-1)
+
+# Unpaired surrogates (JSON allows "\ud800"; Python keeps them) cannot be
+# encoded as UTF-8, and a provider failing on one ends the producer's connection.
+LONE_SURROGATE = re.compile("[\ud800-\udfff]")
 
 
 class StorageController:
@@ -161,6 +166,9 @@ class StorageController:
         if visit_id == INVALID_VISIT_ID:
             # Hacking around the fact that task and crawl don't have a VisitID
             del data["visit_id"]
+        for key, value in data.items():
+            if isinstance(value, str) and not value.isascii():
+                data[key] = LONE_SURROGATE.sub("\ufffd", value)
         # Turning these into task to be able to have them complete without blocking the socket
         self.store_record_tasks[visit_id].append(
             asyncio.create_task(
