@@ -4,7 +4,7 @@ import random
 from abc import abstractmethod
 from asyncio import Task
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 import pyarrow as pa
@@ -42,6 +42,7 @@ class ArrowProvider(StructuredStorageProvider):
         self._instance_id = random.getrandbits(32)
 
         self.flush_events: List[asyncio.Event] = list()
+        self._reported_fields: Set[Tuple[TableName, str]] = set()
 
     async def init(self) -> None:
         # Used to synchronize the finalizing and the flushing
@@ -51,8 +52,19 @@ class ArrowProvider(StructuredStorageProvider):
         self, table: TableName, visit_id: VisitId, record: Dict[str, Any]
     ) -> None:
         records = self._records[visit_id]
+        schema = PQ_SCHEMAS[table]
+        for field in record.keys() - schema.names:
+            if (table, field) not in self._reported_fields:
+                self._reported_fields.add((table, field))
+                self.logger.error(
+                    "Table %s has no column %s; dropping the field."
+                    " Further occurrences are not logged.",
+                    table,
+                    field,
+                )
+            del record[field]
         # Add nulls
-        for item in PQ_SCHEMAS[table].names:
+        for item in schema.names:
             if item not in record:
                 record[item] = None
         # Add instance_id (for partitioning)
