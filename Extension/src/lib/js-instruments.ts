@@ -512,7 +512,7 @@ export function getInstrumentJS(
     func: any,
     logSettings: LogSettings,
   ) {
-    return function (this: unknown) {
+    const wrapper = function (this: unknown) {
       const callContext = getOriginatingScriptContext(logSettings.logCallStack);
       logCall(
         objectName + "." + methodName,
@@ -523,6 +523,21 @@ export function getInstrumentJS(
       // eslint-disable-next-line prefer-rest-params
       return func.apply(this, arguments);
     };
+    // Otherwise the page sees length 0 and name "".
+    copyMatchingDescriptor(wrapper, func, "length");
+    copyMatchingDescriptor(wrapper, func, "name");
+    return wrapper;
+  }
+
+  function copyMatchingDescriptor(to: any, from: any, propertyName: string) {
+    try {
+      const desc = Object.getOwnPropertyDescriptor(from, propertyName);
+      if (desc) {
+        Object.defineProperty(to, propertyName, desc);
+      }
+    } catch {
+      // Non-configurable target or exotic function; leave the wrapper as-is.
+    }
   }
 
   // Log properties of prototypes and objects
