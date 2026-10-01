@@ -3,6 +3,13 @@ declare namespace browser.profileDirIO {
   export function writeFile(filename: string, content: string): void;
 }
 
+declare namespace browser.webdriverSpoof {
+  // Registers the window actor that makes `navigator.webdriver` read as
+  // `false` in every content realm. See
+  // Extension/bundled/privileged/webdriverSpoof/.
+  export function enable(): Promise<void>;
+}
+
 declare namespace browser.sockets {
   export const onDataReceived: {
     // `data` is a UTF-8 string for the "j"/"u" tags (isJson is true only for

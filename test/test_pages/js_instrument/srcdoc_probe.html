@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Does instrumentation reach srcdoc frames?</title>
+  </head>
+  <body>
+    <h3>Does instrumentation reach srcdoc frames?</h3>
+    <script type="text/javascript">
+      // Top-level realm: the baseline that must always be captured.
+      void window.navigator.userAgent;
+    </script>
+    <!-- Control: an ordinary same-origin child document. -->
+    <iframe id="plain" src="srcdoc_child.html"></iframe>
+    <!-- The case under test: an inline document at about:srcdoc. -->
+    <iframe
+      id="sd"
+      srcdoc="<!doctype html><html><body><script>void window.navigator.userAgent;</script></body></html>"
+    ></iframe>
+  </body>
+</html>
