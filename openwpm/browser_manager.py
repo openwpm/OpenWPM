@@ -531,7 +531,7 @@ class BrowserManagerHandle:
         if self.browser_params.maximum_profile_size:
             assert self.current_profile_path is not None
 
-            reset = profile_size_exceeds_max_size(
+            reset = reset or profile_size_exceeds_max_size(
                 self.current_profile_path,
                 self.browser_params.maximum_profile_size,
             )
