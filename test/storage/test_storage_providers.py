@@ -27,8 +27,12 @@ async def test_local_arrow_storage_provider(
     structured_provider = LocalArrowProvider(tmp_path)
     await structured_provider.init()
     for table_name, test_data in test_table.items():
+        visit_id = test_data["visit_id"]
+        if visit_id == INVALID_VISIT_ID:
+            # Mirror StorageController: task and crawl have no visit_id.
+            del test_data["visit_id"]
         await structured_provider.store_record(
-            TableName(table_name), test_data["visit_id"], test_data
+            TableName(table_name), visit_id, test_data
         )
     token_list = []
     for i in visit_ids:
@@ -40,8 +44,6 @@ async def test_local_arrow_storage_provider(
         df: DataFrame = dataset.read().to_pandas()
         assert df.shape[0] == 1
         for row in df.itertuples(index=False):
-            if test_data["visit_id"] == INVALID_VISIT_ID:
-                del test_data["visit_id"]
             assert row._asdict() == test_data
 
 
