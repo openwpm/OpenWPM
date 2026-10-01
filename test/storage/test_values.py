@@ -206,7 +206,7 @@ def generate_test_values() -> dt_test_values:
         "before_navigate_event_ordinal": random.randint(0, 2**63 - 1),
         "before_navigate_time_stamp": random_word(12),
         "committed_event_ordinal": random.randint(0, 2**63 - 1),
-        "time_stamp": random_word(12),
+        "committed_time_stamp": random_word(12),
     }
     test_values[TableName("navigations")] = fields
     # callstacks
