@@ -264,6 +264,18 @@ async def get_message_from_reader(reader: asyncio.StreamReader) -> Any:
     return _parse(serialization, msg)
 
 
+async def send_to_writer(writer: asyncio.StreamWriter, msg: Any) -> None:
+    """Send a JSON-serialized message to an asyncio StreamWriter.
+
+    Uses the same wire format as ClientSocket.send() so that
+    ClientSocket can receive responses using the same protocol.
+    """
+    encoded = json.dumps(msg).encode("utf-8")
+    header = struct.pack(">Lc", len(encoded), b"j")
+    writer.write(header + encoded)
+    await writer.drain()
+
+
 def _parse(serialization: bytes, msg: bytes) -> Any:
     # SECURITY NOTE (single-tenant known issue; tracked in
     # https://github.com/openwpm/OpenWPM/issues/1179):
