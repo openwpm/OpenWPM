@@ -33,7 +33,7 @@ def generate_test_values() -> dt_test_values:
     test_values[TableName("task")] = fields
     # crawl
     fields = {
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "task_id": random.randint(0, 2**63 - 1),
         "browser_params": random_word(12),
     }
@@ -41,14 +41,14 @@ def generate_test_values() -> dt_test_values:
     # site_visits
     fields = {
         "visit_id": random.randint(0, 2**63 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "site_url": random_word(12),
-        "site_rank": random.randint(0, 2**31 - 1),
+        "site_rank": random.randint(0, 2**32 - 1),
     }
     test_values[TableName("site_visits")] = fields
     # crawl_history
     fields = {
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "command": random_word(12),
         "arguments": random_word(12),
@@ -62,7 +62,7 @@ def generate_test_values() -> dt_test_values:
     # http_requests
     fields = {
         "incognito": random.randint(0, 2**31 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "extension_session_uuid": random_word(12),
         "event_ordinal": random.randint(0, 2**63 - 1),
@@ -93,7 +93,7 @@ def generate_test_values() -> dt_test_values:
     # http_responses
     fields = {
         "incognito": random.randint(0, 2**31 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "extension_session_uuid": random_word(12),
         "event_ordinal": random.randint(0, 2**63 - 1),
@@ -115,7 +115,7 @@ def generate_test_values() -> dt_test_values:
     # http_redirects
     fields = {
         "incognito": random.randint(0, 2**31 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "old_request_url": random_word(12),
         "old_request_id": random_word(12),
@@ -135,7 +135,7 @@ def generate_test_values() -> dt_test_values:
     # javascript
     fields = {
         "incognito": random.randint(0, 2**31 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "extension_session_uuid": random_word(12),
         "event_ordinal": random.randint(0, 2**63 - 1),
@@ -160,7 +160,7 @@ def generate_test_values() -> dt_test_values:
     test_values[TableName("javascript")] = fields
     # javascript_cookies
     fields = {
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "extension_session_uuid": random_word(12),
         "event_ordinal": random.randint(0, 2**63 - 1),
@@ -184,7 +184,7 @@ def generate_test_values() -> dt_test_values:
     # navigations
     fields = {
         "incognito": random.randint(0, 2**31 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "extension_session_uuid": random_word(12),
         "process_id": random.randint(0, 2**63 - 1),
@@ -213,7 +213,7 @@ def generate_test_values() -> dt_test_values:
     fields = {
         "visit_id": random.randint(0, 2**63 - 1),
         "request_id": random.randint(0, 2**63 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "call_stack": random_word(12),
     }
     test_values[TableName("callstacks")] = fields
@@ -225,7 +225,7 @@ def generate_test_values() -> dt_test_values:
     # dns_responses
     fields = {
         "request_id": random.randint(0, 2**63 - 1),
-        "browser_id": random.randint(0, 2**31 - 1),
+        "browser_id": random.randint(0, 2**32 - 1),
         "visit_id": random.randint(0, 2**63 - 1),
         "hostname": random_word(12),
         "redirect_url": random_word(12),
