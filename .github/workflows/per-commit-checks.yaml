@@ -1,0 +1,27 @@
+name: Per-commit checks
+# Rebase-and-merge lands every PR commit on master individually, but CI only
+# tests the tip. This runs the fast static checks on each commit in the range.
+on:
+  pull_request:
+  merge_group:
+
+# on PRs only run the latest changes, everything else should run and also run
+# in parallel. no queuing
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.event_name == 'pull_request'
+    && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  per-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        # fetch-depth: 0 so the whole range is there to walk.
+        with: { fetch-depth: 0 }
+      - uses: ./.github/actions/setup
+      - run: python scripts/per_commit_checks.py
