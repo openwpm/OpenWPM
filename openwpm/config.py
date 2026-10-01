@@ -193,6 +193,9 @@ class ManagerParams(DataClassJsonMixin):
     """
 
     num_browsers: int = 1
+    tracing: bool = False
+    """Export OpenTelemetry traces over OTLP/HTTP. See the Tracing section of
+    docs/Configuration.md."""
     _failure_limit: Optional[int] = None
     """The number of command failures the platform will tolerate before raising a
         `CommandExecutionError` exception. Otherwise the default is set to 2 x the
