@@ -1,6 +1,7 @@
 """Test TaskManager functionality."""
 
 from contextlib import nullcontext as does_not_raise
+from typing import Optional
 
 import pytest
 
@@ -87,3 +88,22 @@ def test_assertion_error_propagation(
     with expectation:
         with manager:
             manager.execute_command_sequence(cs)
+
+
+@pytest.mark.parametrize("maximum_profile_size", [None, 1 << 40])
+def test_reset_restarts_browser(
+    task_manager_creator: TaskManagerCreator,
+    default_params: FullConfig,
+    server: ServerUrls,
+    maximum_profile_size: Optional[int],
+) -> None:
+    """A requested reset must survive the profile-size check."""
+    manager_params, browser_params = default_params
+    manager_params.num_browsers = 1
+    browser_params[0].maximum_profile_size = maximum_profile_size
+    manager, _ = task_manager_creator((manager_params, browser_params[:1]))
+    with manager:
+        cs = CommandSequence(server.base, reset=True, blocking=True)
+        cs.get()
+        manager.execute_command_sequence(cs)
+        assert manager.browsers[0].is_fresh
