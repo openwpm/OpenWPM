@@ -389,3 +389,51 @@ def test_query_conda_versions_parses_subprocess_output(update_module, monkeypatc
         "openwpm",
         "--json",
     ]
+
+
+def test_pref_check_fails_when_firefox_cannot_be_probed(update_module, tmp_path):
+    with pytest.raises(RuntimeError, match="could not probe"):
+        update_module.check_obsolete_firefox_prefs(tmp_path / "no-firefox")
+
+
+def test_pref_check_only_warns_on_candidates(update_module, monkeypatch, capsys):
+    class FakeResult:
+        returncode = 1
+
+    monkeypatch.setattr(update_module.subprocess, "run", lambda *a, **kw: FakeResult())
+
+    update_module.check_obsolete_firefox_prefs(Path("firefox"))
+    assert "WARNING" in capsys.readouterr().err
+
+
+def test_main_probes_firefox_after_bumping_it(update_module, monkeypatch):
+    calls = []
+    for name in (
+        "run",
+        "sync_precommit_linter_versions",
+        "sync_extension_node_engine",
+        "sync_mypy_python_version",
+        "bump_version_if_behind",
+        "npm_bump_and_resolve",
+    ):
+        monkeypatch.setattr(update_module, name, lambda *a, **kw: None)
+
+    class FakeFirefoxVersion:
+        @staticmethod
+        def update_if_needed():
+            calls.append("bump")
+
+    monkeypatch.setitem(sys.modules, "firefox_version", FakeFirefoxVersion)
+    monkeypatch.setattr(
+        update_module,
+        "install_pinned_firefox",
+        lambda dest: calls.append("install") or dest / "firefox",
+    )
+    monkeypatch.setattr(
+        update_module,
+        "check_obsolete_firefox_prefs",
+        lambda binary: calls.append("probe"),
+    )
+
+    update_module.main()
+    assert calls == ["bump", "install", "probe"]
