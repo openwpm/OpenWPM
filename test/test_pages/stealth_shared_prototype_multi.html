@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — shared-prototype MULTI-member probe</title>
+</head>
+<body>
+    <h1>shared prototype multi-member</h1>
+    <script>
+    /*
+     * Calls THREE different inherited methods of EventTarget.prototype
+     * (addEventListener, removeEventListener, dispatchEvent) on a single targeted
+     * receiver interface (HTMLDivElement). All three live on the SAME shared
+     * prototype object, so the stealth instrument must hook every one of them via
+     * a single needsWrapper(EventTarget.prototype) — not just the first member.
+     *
+     * This is the de-masking probe for the per-prototype needsWrapper bug: with
+     * the bug, only addEventListener (the first member) is recorded; the other two
+     * are silently dropped.
+     */
+    const div = document.createElement("div");
+
+    function sharedMultiListener() {}
+
+    div.addEventListener("stealth-multi-evt", sharedMultiListener);
+    div.removeEventListener("stealth-multi-evt", sharedMultiListener);
+    div.dispatchEvent(new Event("stealth-multi-evt"));
+
+    document.title = "shared-prototype-multi-done";
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Union
 
 from openwpm.config import BrowserParams, ManagerParams
 from openwpm.utilities import db_utils
@@ -8,6 +8,15 @@ from .openwpm_jstest import OpenWPMJSTest
 
 
 class TestJSInstrumentNonExistingWindowProperty(OpenWPMJSTest):
+    # A non-None STEALTH_UNSUPPORTED_REASON means the ``[stealth]`` parameter is
+    # SKIPPED for this class -- a documented gap, not a pass. See
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "The instrumentation target is declared by the page through "
+        "window.instrumentJS, which is legacy-only and has no stealth "
+        "counterpart."
+    )
+
     # Since the window property remains non-existing, attempts to
     # access the window property's attributes first fails when evaluating
     # the non-existing window property, thus preventing us from receiving
@@ -43,6 +52,13 @@ class TestJSInstrumentNonExistingWindowProperty(OpenWPMJSTest):
 
 
 class TestJSInstrumentExistingWindowProperty(OpenWPMJSTest):
+    # ``[stealth]`` is SKIPPED for this class -- see the note on
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "window.instrumentJS declares the target, and the object graph is "
+        "built by the page rather than being a real browser API."
+    )
+
     GETS_AND_SETS = {
         ("window.partiallyExisting", "get", '{"existingProp":"foo"}'),
         ("window.partiallyExisting", "get", '{"existingProp":"foo"}'),
@@ -89,6 +105,35 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
     # built in browser APIs, so we're not using html specced objects.
     TEST_PAGE = "instrument_pyside.html"
 
+    # ``[stealth]`` is SKIPPED for this class -- see the note on
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "The migrator reports window.document.cookie (an inherited accessor "
+        "on Document.prototype) as untranslated, so OpenWPMJSTest.get_config "
+        "rejects the class."
+    )
+
+    #: Transpiled to stealth form by ``OpenWPMJSTest.get_config`` under the
+    #: ``[stealth]`` parameter; used verbatim under ``[legacy]``.
+    JS_INSTRUMENT_SETTINGS: List[Union[str, dict]] = [
+        # Note that the string "window.document.cookie" does not work.
+        {
+            "window.document": [
+                "cookie",
+            ]
+        },
+        {
+            "window.navigator": [
+                "webdriver",
+            ]
+        },
+        {
+            "window": [
+                "fetch",
+            ]
+        },
+    ]
+
     GETS_AND_SETS = {
         ("window.navigator.webdriver", "get", "true"),
         ("window.document.cookie", "set", "a=COOKIE"),
@@ -107,24 +152,6 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         browser_params[0].prefs = {
             "network.dns.localDomains": "example.com,example.org"
         }
-        browser_params[0].js_instrument_settings = [
-            # Note that the string "window.document.cookie" does not work.
-            {
-                "window.document": [
-                    "cookie",
-                ]
-            },
-            {
-                "window.navigator": [
-                    "webdriver",
-                ]
-            },
-            {
-                "window": [
-                    "fetch",
-                ]
-            },
-        ]
         return manager_params, browser_params
 
     def test_instrument_object(self):
@@ -142,6 +169,13 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
 
 
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
+    # ``[stealth]`` is SKIPPED for this class -- see the note on
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "window.instrumentJS declares the target, and the instrumented "
+        "class is a page-defined mock rather than a real browser API."
+    )
+
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
@@ -212,6 +246,14 @@ class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
 
 
 class TestJSInstrument(OpenWPMJSTest):
+    # ``[stealth]`` is SKIPPED for this class -- see the note on
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "window.instrumentJS declares the target, the config recurses, and "
+        "the migrator drops preventSets (stealth's prevention semantics differ "
+        "from legacy's for data properties)."
+    )
+
     GETS_AND_SETS = {
         ("prop1", "get", "prop1"),
         ("prop1", "set", "blah1"),
@@ -317,7 +359,10 @@ class TestJSInstrument(OpenWPMJSTest):
         # Check calls of recursive instrumentation
         observed_gets_and_sets = set()
         observed_calls = set()
-        rows = db_utils.get_javascript_entries(db, all_columns=True)
+        # Same mode-aware row source as _check_calls. The two loops below
+        # (recursion depth limit, preventSets) reuse ``rows``, so all three
+        # inline checks are routed through the hook by this one assignment.
+        rows = self._js_rows(db)
         for row in rows:
             if not row["symbol"].startswith("window.test2.nestedObj"):
                 continue
@@ -363,6 +408,14 @@ class TestJSInstrument(OpenWPMJSTest):
 
 
 class TestJSInstrumentRecursiveProperties(OpenWPMJSTest):
+    # ``[stealth]`` is SKIPPED for this class -- see the note on
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "window.instrumentJS declares the target, and the config recurses, which "
+        "stealth rejects at config time (openwpm/config.py) because "
+        "descending into page-owned instances is page-observable."
+    )
+
     # Since the window property remains non-existing, attempts to
     # access the window property's attributes first fails when evaluating
     # the non-existing window property, thus preventing us from receiving
@@ -416,24 +469,28 @@ class TestJSInstrumentFailurePropagates(OpenWPMJSTest):
 
     TEST_PAGE = "instrument_pyside.html"
 
-    def get_config(
-        self, data_dir: Optional[Path]
-    ) -> Tuple[ManagerParams, List[BrowserParams]]:
-        manager_params, browser_params = super().get_config(data_dir)
-        # ``window.NonExistent`` is undefined, so resolving
-        # ``window.NonExistent.deeplyMissing`` throws while setting up the
-        # instrumentation. This stands in for a real-world misconfiguration
-        # such as instrumenting a Worker-only global on the window scope.
-        #
-        # Two distinct failing targets are configured so the test also
-        # verifies that *every* failure is reported, not just the first or
-        # last one: ``instrumentJS`` runs all requests to completion and
-        # aggregates their messages into a single error.
-        browser_params[0].js_instrument_settings = [
-            {"window.NonExistent.deeplyMissing": ["foo"]},
-            {"window.AlsoMissing.deeplyMissing": ["bar"]},
-        ]
-        return manager_params, browser_params
+    # ``[stealth]`` is SKIPPED for this class -- see the note on
+    # ``OpenWPMJSTest.STEALTH_UNSUPPORTED_REASON``.
+    STEALTH_UNSUPPORTED_REASON = (
+        "Stealth has no failure-propagation path: both targets "
+        "fail to resolve, the migrator surfaces them as untranslated, and the "
+        "stealth config collapses to [] -- so the browser launches healthy and "
+        "records an empty measurement, which this test forbids."
+    )
+
+    # ``window.NonExistent`` is undefined, so resolving
+    # ``window.NonExistent.deeplyMissing`` throws while setting up the
+    # instrumentation. This stands in for a real-world misconfiguration
+    # such as instrumenting a Worker-only global on the window scope.
+    #
+    # Two distinct failing targets are configured so the test also
+    # verifies that *every* failure is reported, not just the first or
+    # last one: ``instrumentJS`` runs all requests to completion and
+    # aggregates their messages into a single error.
+    JS_INSTRUMENT_SETTINGS: List[Union[str, dict]] = [
+        {"window.NonExistent.deeplyMissing": ["foo"]},
+        {"window.AlsoMissing.deeplyMissing": ["bar"]},
+    ]
 
     def test_failure_prevents_measurement(self):
         db = self.visit("/js_instrument/%s" % self.TEST_PAGE)

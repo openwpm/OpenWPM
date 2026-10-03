@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="results"></div>
+<script>
+// Interface objects a study may list as members (TestStealthConfigurability).
+const R = {};
+const t = (k, f) => { try { R[k] = String(f()); } catch (e) { R[k] = "THROW " + e.name + ": " + e.message; } };
+for (const [n, make] of [["Image", () => new Image()], ["OfflineAudioContext", () => new OfflineAudioContext(1, 1, 44100)]]) {
+    t(n + ".new", () => Object.prototype.toString.call(make()));
+    t(n + ".call", () => window[n]());
+    t(n + ".prototype", () => window[n].prototype === Object.getPrototypeOf(make()));
+    t(n + ".ownKeys", () => Reflect.ownKeys(window[n]).join(","));
+    t(n + ".toString", () => Function.prototype.toString.call(window[n]));
+}
+document.getElementById("results").setAttribute("data-results", JSON.stringify(R));
+</script>
+</body>
+</html>

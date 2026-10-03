@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth record integrity probe</title>
+</head>
+<body>
+<canvas id="c" width="10" height="10"></canvas>
+<script>
+/*
+ * Every call below is made by page script and must be recorded exactly once
+ * under the calling function's name (TestStealthRecordIntegrity).
+ */
+const c = document.getElementById("c");
+
+// A page getter that the native getContext reads while converting its
+// options dictionary: the call it makes is page-initiated and must be recorded.
+function integrity_reentrant_caller() { return c.toDataURL("image/png"); }
+c.getContext("2d", { get alpha() { integrity_reentrant_caller(); return true; } });
+
+// A native that converts its argument calls straight into an instrumented
+// getter or method installed as the argument's toString / @@toPrimitive. No
+// page frame sits between the two, and each read is still made by page script.
+function integrity_coerced_user_agent() {
+    navigator.toString = Object.getOwnPropertyDescriptor(Navigator.prototype, "userAgent").get;
+    localStorage.setItem("integrity_ua", navigator);
+}
+function integrity_coerced_cookie() {
+    document.toString = Object.getOwnPropertyDescriptor(Document.prototype, "cookie").get;
+    localStorage.setItem("integrity_ck", document);
+}
+function integrity_coerced_canvas() {
+    const k = document.createElement("canvas");
+    k.toString = HTMLCanvasElement.prototype.toDataURL;
+    localStorage.setItem("integrity_img", k);
+}
+function integrity_coerced_screen() {
+    screen[Symbol.toPrimitive] = Object.getOwnPropertyDescriptor(Screen.prototype, "height").get;
+    localStorage.setItem("integrity_h", screen);
+}
+integrity_coerced_user_agent();
+integrity_coerced_cookie();
+integrity_coerced_canvas();
+integrity_coerced_screen();
+
+// One call inside a dynamically created same-origin about:blank iframe.
+function integrity_iframe_caller() {
+    const f = document.createElement("iframe");
+    document.body.appendChild(f);
+    const canvas = f.contentDocument.createElement("canvas");
+    return canvas.toDataURL("image/jpeg");
+}
+integrity_iframe_caller();
+
+// setItem in a child frame is called again by the native while it converts
+// its argument.
+function integrity_nested_same_member() {
+    const f = document.createElement("iframe");
+    document.body.appendChild(f);
+    const storage = f.contentWindow.localStorage;
+    storage.setItem("integrity_outer", {
+        toString: storage.setItem.bind(storage, "integrity_inner", "v"),
+    });
+}
+integrity_nested_same_member();
+
+// The srcdoc document reuses the window of the initial about:blank document,
+// which was instrumented when it was created, and keeps its members.
+function integrity_srcdoc_caller() {
+    return this.contentDocument.createElement("canvas").toDataURL("image/webp");
+}
+{
+    const f = document.createElement("iframe");
+    f.srcdoc = "<p>srcdoc</p>";
+    f.onload = integrity_srcdoc_caller;
+    document.body.appendChild(f);
+}
+
+// A page that deletes the installed member and routes a bound copy of it
+// through a native's argument conversion: no page frame sits between the
+// native and the hidden call, and `this` and every argument are the page's.
+{
+    const f = document.createElement("iframe");
+    document.body.appendChild(f);
+    const w = f.contentWindow;
+    const hidden = (proto, name, run) => {
+        const d = Object.getOwnPropertyDescriptor(proto, name);
+        delete proto[name];
+        try { run(d); } finally { Object.defineProperty(proto, name, d); }
+    };
+    function integrity_hidden_setitem() {
+        const st = w.localStorage;
+        hidden(w.Storage.prototype, "setItem", (d) =>
+            d.value.call(st, "integrity_visible", { toString: d.value.bind(st, "integrity_hidden", "secret") }));
+    }
+    function integrity_hidden_filltext() {
+        const ctx = w.document.createElement("canvas").getContext("2d");
+        hidden(w.CanvasRenderingContext2D.prototype, "fillText", (d) =>
+            d.value.call(ctx, { toString: d.value.bind(ctx, "INTEGRITY_HIDDEN_TEXT", 1, 2) }, 0, 0));
+    }
+    function integrity_hidden_cookie() {
+        const doc = w.document;
+        hidden(w.Document.prototype, "cookie", (d) => {
+            doc.toString = d.get;
+            try { d.set.call(doc, doc); } finally { delete doc.toString; }
+        });
+    }
+    integrity_hidden_setitem();
+    integrity_hidden_filltext();
+    integrity_hidden_cookie();
+}
+
+// Arguments that structured cloning or JSON cannot carry as they are.
+function integrity_symbol_arg() { return c.toDataURL("image/png", Symbol("s")); }
+function integrity_bigint_arg() { return c.toDataURL("image/png", 1n); }
+function integrity_revoked_proxy_arg() {
+    const { proxy, revoke } = Proxy.revocable({}, {});
+    revoke();
+    localStorage.setItem("integrity_proxy", "v", proxy);
+}
+function integrity_cyclic_arg() {
+    const o = { a: 1 };
+    o.self = o;
+    localStorage.setItem("integrity_cyclic", "v", o);
+}
+function integrity_oversized_arg() {
+    const objects = [];
+    for (let i = 0; i < 60000; i++) objects.push({});
+    localStorage.getItem("integrity_oversized", objects);
+}
+function integrity_budget_spent_arg() {
+    const big = {};
+    for (let i = 0; i < 200; i++) big["k" + i] = i;
+    localStorage.getItem("integrity_budget", big, 7, "after");
+}
+function integrity_long_string_arg() {
+    localStorage.getItem("integrity_long", "y".repeat(1 << 20));
+}
+// The elapsed time is recorded as the second call's argument.
+function integrity_typed_array_arg() {
+    const bytes = new Uint8Array(1e7);
+    const t0 = performance.now();
+    localStorage.getItem("integrity_typed_array", bytes);
+    localStorage.getItem("integrity_typed_array_ms", performance.now() - t0);
+}
+// The native's conversion error names the page variable only without a
+// wrapper; the message is recorded as the second call's argument.
+function integrity_proxy_message() {
+    const px = new Proxy({}, { get() { return undefined; } });
+    try {
+        localStorage.setItem("integrity_px", px);
+    } catch (e) {
+        localStorage.getItem("integrity_px_message", e.message);
+    }
+}
+function integrity_proxy_arg() {
+    localStorage.getItem("integrity_proxy", new Proxy({ a: 1 }, {}), new Proxy([1], {}));
+}
+// Left to the HTTP instrument.
+function integrity_send_beacon() { navigator.sendBeacon("/integrity_beacon"); }
+integrity_symbol_arg();
+integrity_bigint_arg();
+integrity_send_beacon();
+integrity_proxy_arg();
+integrity_proxy_message();
+integrity_revoked_proxy_arg();
+integrity_cyclic_arg();
+integrity_oversized_arg();
+integrity_long_string_arg();
+integrity_budget_spent_arg();
+integrity_typed_array_arg();
+
+// Script URLs and function names that mention an extension scheme are still
+// page frames.
+for (const [tag, u] of [["mozext", "moz-extension://abcdef/x.js"], ["resource", "resource://openwpm/x.js"]]) {
+    const s = document.createElement("script");
+    s.src = "stealth_attribution_tracker.js?tag=" + tag + "&u=" + u;
+    document.body.appendChild(s);
+}
+const named = { ["integrity_named@moz-extension://abcdef/x.js"]() { localStorage.getItem("integrity_named"); } };
+named["integrity_named@moz-extension://abcdef/x.js"]();
+
+// HTMLElement members are not part of the default surface.
+const div = document.createElement("div");
+for (let i = 0; i < 1000; i++) { void div.hidden; void c.hidden; }
+</script>
+</body>
+</html>
