@@ -16,6 +16,7 @@ dependencies:
     - sphinx-markdown-tables
     - tomlkit
     - pip:
+        - pytest-postgresql
         - pytest-split
         - types-pyyaml
         - types-redis

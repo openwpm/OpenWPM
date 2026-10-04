@@ -19,6 +19,8 @@ from openwpm.storage.cloud_storage.gcp_storage import (
     GcsStructuredProvider,
     GcsUnstructuredProvider,
 )
+from openwpm.storage.sqlalchemy_provider import SQLAlchemyStorageProvider
+from openwpm.storage.storage_providers import StructuredStorageProvider
 from openwpm.task_manager import TaskManager
 from openwpm.utilities import rediswq
 
@@ -35,6 +37,10 @@ CRAWL_DIRECTORY = os.getenv("CRAWL_DIRECTORY", "crawl-data")
 GCS_BUCKET = os.getenv("GCS_BUCKET", "openwpm-crawls")
 GCP_PROJECT = os.getenv("GCP_PROJECT", "")
 AUTH_TOKEN = os.getenv("GCP_AUTH_TOKEN", "cloud")
+# When set, structured data is written to the database at this SQLAlchemy DSN
+# instead of GCS. The DSN must use the SQLAlchemy form, e.g.
+# postgresql+psycopg://user:pass@host:port/db
+POSTGRES_URL = os.getenv("OPENWPM_POSTGRES_URL")
 
 # Browser Params
 DISPLAY_MODE = os.getenv("DISPLAY_MODE", "headless")
@@ -92,12 +98,17 @@ for i in range(NUM_BROWSERS):
 manager_params.data_directory = Path("~/Desktop/") / CRAWL_DIRECTORY
 manager_params.log_path = Path("~/Desktop/") / CRAWL_DIRECTORY / "openwpm.log"
 
-structured = GcsStructuredProvider(
-    project=GCP_PROJECT,
-    bucket_name=GCS_BUCKET,
-    base_path=CRAWL_DIRECTORY,
-    token=AUTH_TOKEN,
-)
+structured: StructuredStorageProvider
+if POSTGRES_URL:
+    # One env var -> database-backed structured storage (e.g. PostgreSQL).
+    structured = SQLAlchemyStorageProvider(db_url=POSTGRES_URL)
+else:
+    structured = GcsStructuredProvider(
+        project=GCP_PROJECT,
+        bucket_name=GCS_BUCKET,
+        base_path=CRAWL_DIRECTORY,
+        token=AUTH_TOKEN,
+    )
 unstructured = GcsUnstructuredProvider(
     project=GCP_PROJECT,
     bucket_name=GCS_BUCKET,
@@ -121,6 +132,7 @@ if SENTRY_DSN:
         # tags generate breakdown charts and search filters
         scope.set_tag("CRAWL_DIRECTORY", CRAWL_DIRECTORY)
         scope.set_tag("GCS_BUCKET", GCS_BUCKET)
+        scope.set_tag("STRUCTURED_BACKEND", "postgres" if POSTGRES_URL else "gcs")
         scope.set_tag("DISPLAY_MODE", DISPLAY_MODE)
         scope.set_tag("HTTP_INSTRUMENT", HTTP_INSTRUMENT)
         scope.set_tag("COOKIE_INSTRUMENT", COOKIE_INSTRUMENT)
