@@ -12,7 +12,10 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, NoReturn, Optional, Tuple
 
 from multiprocess import Queue
+from opentelemetry import propagate
+from opentelemetry.trace import Tracer
 
+from openwpm.utilities import otel
 from openwpm.utilities.multiprocess_utils import Process
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
@@ -88,6 +91,7 @@ class StorageController:
         self.structured_storage = structured_storage
         self.unstructured_storage = unstructured_storage
         self._last_record_received: Optional[float] = None
+        self.tracer: Optional[Tracer] = None
 
     async def _handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -126,39 +130,53 @@ class StorageController:
             self._last_record_received = time.time()
             record_type, data = record
 
-            if record_type == RECORD_TYPE_CREATE:
-                raise RuntimeError(f"""{RECORD_TYPE_CREATE} is no longer supported.
-                    Please change the schema before starting the StorageController.
-                    For an example of that see test/test_custom_function.py
-                    """)
+            # Only records sent from a traced span get a span; extension
+            # records never carry a context.
+            carrier = data.pop("__otel_ctx", None) if isinstance(data, dict) else None
+            if carrier and self.tracer is not None:
+                with self.tracer.start_as_current_span(
+                    "process_record", context=propagate.extract(carrier)
+                ) as span:
+                    span.set_attribute("openwpm.record_type", record_type)
+                    await self._process_record(record_type, data)
+            else:
+                await self._process_record(record_type, data)
 
-            if record_type == RECORD_TYPE_CONTENT:
-                assert len(data) == 2
-                if self.unstructured_storage is None:
-                    self.logger.error("""Tried to save content while not having
-                        provided any unstructured storage provider.""")
-                    continue
-                content, content_hash = data
-                content = base64.b64decode(content)
-                await self.unstructured_storage.store_blob(
-                    filename=content_hash, blob=content
-                )
-                continue
+    async def _process_record(self, record_type: str, data: Any) -> None:
+        if record_type == RECORD_TYPE_CREATE:
+            raise RuntimeError(f"""{RECORD_TYPE_CREATE} is no longer supported.
+                Please change the schema before starting the StorageController.
+                For an example of that see test/test_custom_function.py
+                """)
 
-            if "visit_id" not in data:
-                self.logger.error(
-                    "Skipping record: No visit_id contained in record %r", record
-                )
-                continue
+        if record_type == RECORD_TYPE_CONTENT:
+            assert len(data) == 2
+            if self.unstructured_storage is None:
+                self.logger.error("""Tried to save content while not having
+                    provided any unstructured storage provider.""")
+                return
+            content, content_hash = data
+            content = base64.b64decode(content)
+            await self.unstructured_storage.store_blob(
+                filename=content_hash, blob=content
+            )
+            return
 
-            visit_id = VisitId(data["visit_id"])
+        if "visit_id" not in data:
+            self.logger.error(
+                "Skipping record: No visit_id contained in record %r",
+                (record_type, data),
+            )
+            return
 
-            if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
-                continue
+        visit_id = VisitId(data["visit_id"])
 
-            table_name = TableName(record_type)
-            await self.store_record(table_name, visit_id, data)
+        if record_type == RECORD_TYPE_META:
+            await self._handle_meta(visit_id, data)
+            return
+
+        table_name = TableName(record_type)
+        await self.store_record(table_name, visit_id, data)
 
     async def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
@@ -194,7 +212,11 @@ class StorageController:
             return
         elif action == ACTION_TYPE_FINALIZE:
             success: bool = data["success"]
-            completion_token = await self.finalize_visit_id(visit_id, success)
+            with otel.start_span(self.tracer, "finalize_visit_id") as span:
+                span.set_attributes(
+                    {"openwpm.visit_id": visit_id, "openwpm.success": success}
+                )
+                completion_token = await self.finalize_visit_id(visit_id, success)
             self.finalize_tasks.append((visit_id, completion_token, success))
         else:
             raise ValueError("Unexpected action: %s", action)
@@ -343,9 +365,12 @@ class StorageController:
             await asyncio.sleep(5)
 
     async def _run(self) -> None:
-        await self.structured_storage.init()
-        if self.unstructured_storage:
-            await self.unstructured_storage.init()
+        self.tracer = otel.process_tracer()
+        with otel.start_span(self.tracer, "startup"):
+            await self.structured_storage.init()
+            if self.unstructured_storage:
+                await self.unstructured_storage.init()
+        # Started outside any span: handler tasks inherit this context.
         server: Server = await asyncio.start_server(
             self._handler, "localhost", 0, family=socket.AF_INET
         )
@@ -378,11 +403,19 @@ class StorageController:
         await server.wait_closed()
         self.logger.info("Completed wait_closed")
 
-        await self.shutdown(update_completion_queue)
+        with otel.start_span(self.tracer, "shutdown"):
+            await self.shutdown(update_completion_queue)
 
     def run(self) -> None:
         logging.getLogger("asyncio").setLevel(logging.WARNING)
         asyncio.run(self._run(), debug=True)
+
+
+def _with_otel_context(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a copy of data carrying the current span context, if any."""
+    carrier: Dict[str, str] = {}
+    propagate.inject(carrier)
+    return {**data, "__otel_ctx": carrier} if carrier else data
 
 
 class DataSocket:
@@ -398,22 +431,19 @@ class DataSocket:
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
         data["visit_id"] = visit_id
-        self.socket.send(
-            (
-                table_name,
-                data,
-            )
-        )
+        self.socket.send((table_name, _with_otel_context(data)))
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
         self.socket.send(
             (
                 RECORD_TYPE_META,
-                {
-                    "action": ACTION_TYPE_FINALIZE,
-                    "visit_id": visit_id,
-                    "success": success,
-                },
+                _with_otel_context(
+                    {
+                        "action": ACTION_TYPE_FINALIZE,
+                        "visit_id": visit_id,
+                        "success": success,
+                    }
+                ),
             )
         )
 
@@ -430,7 +460,9 @@ class StorageControllerHandle:
         self,
         structured_storage: StructuredStorageProvider,
         unstructured_storage: Optional[UnstructuredStorageProvider],
+        tracing: bool = False,
     ) -> None:
+        self.tracing = tracing
         self.listener_address: Optional[Tuple[str, int]] = None
         self.listener_process: Optional[Process] = None
         self.status_queue = Queue()
@@ -503,6 +535,7 @@ class StorageControllerHandle:
         """Starts the storage controller"""
         self.storage_controller = Process(
             name="StorageController",
+            otel_service=otel.STORAGE_CONTROLLER_SERVICE if self.tracing else None,
             target=StorageController.run,
             args=(self.storage_controller,),
         )
