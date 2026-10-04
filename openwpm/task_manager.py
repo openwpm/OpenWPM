@@ -19,15 +19,19 @@ from openwpm.config import (
 )
 
 from .browser_manager import BrowserManagerHandle
+from .command_execution_context import CommandExecutionContext
 from .command_sequence import CommandSequence
 from .errors import CommandExecutionError
+from .failure_tracker import FailureTracker
 from .js_instrumentation import clean_js_instrumentation_settings
 from .mp_logger import MPLogger
 from .storage.storage_controller import DataSocket, StorageControllerHandle
 from .storage.storage_providers import (
     StructuredStorageProvider,
+    TableName,
     UnstructuredStorageProvider,
 )
+from .types import VisitId
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 from .utilities.storage_watchdog import StorageLogger
@@ -101,11 +105,7 @@ class TaskManager:
 
         # Flow control
         self.closing = False
-        self.failure_status: Optional[Dict[str, Any]] = None
-        self.threadlock = threading.Lock()
-        self.failure_count = 0
-
-        self.failure_limit = manager_params.failure_limit
+        self.failure_tracker = FailureTracker(manager_params.failure_limit)
         # Start logging server thread
         self.logging_server = MPLogger(
             self.manager_params.log_path,
@@ -331,6 +331,18 @@ class TaskManager:
         if hasattr(self, "callback_thread"):
             self.callback_thread.join()
 
+    # CommandExecutionContext protocol implementation
+
+    def store_record(
+        self, table: TableName, visit_id: VisitId, data: Dict[str, Any]
+    ) -> None:
+        """Send a record to the StorageController via DataSocket."""
+        self.sock.store_record(table, visit_id, data)
+
+    def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
+        """Signal that all data for a visit_id has been sent."""
+        self.sock.finalize_visit_id(visit_id, success)
+
     def _check_failure_status(self) -> None:
         """Check the status of command failures. Raise exceptions as necessary
 
@@ -340,25 +352,27 @@ class TaskManager:
         appropriate steps are taken to gracefully close the infrastructure
         """
         self.logger.debug("Checking command failure status indicator...")
-        if not self.failure_status:
+        failure_status = self.failure_tracker.get_critical_failure()
+        if failure_status is None:
             return
 
         self.logger.debug("TaskManager failure status set, halting command execution.")
         self._shutdown_manager()
-        if self.failure_status["ErrorType"] == "ExceedCommandFailureLimit":
+        if failure_status.error_type == "ExceedCommandFailureLimit":
             raise CommandExecutionError(
                 "TaskManager exceeded maximum consecutive command "
                 "execution failures.",
-                self.failure_status["CommandSequence"],
+                failure_status.command_sequence,
             )
-        elif self.failure_status["ErrorType"] == "ExceedLaunchFailureLimit":
+        elif failure_status.error_type == "ExceedLaunchFailureLimit":
             raise CommandExecutionError(
                 "TaskManager failed to launch browser within allowable "
                 "failure limit.",
-                self.failure_status["CommandSequence"],
+                failure_status.command_sequence,
             )
-        if self.failure_status["ErrorType"] == "CriticalChildException":
-            _, exc, tb = pickle.loads(self.failure_status["Exception"])
+        if failure_status.error_type == "CriticalChildException":
+            assert failure_status.exception is not None
+            _, exc, tb = pickle.loads(failure_status.exception)
             raise exc.with_traceback(tb)
 
     # CRAWLER COMMAND CODE
@@ -379,8 +393,11 @@ class TaskManager:
             self.unsaved_command_sequences[visit_id] = command_sequence
 
         # Start command execution thread
-        args = (self, command_sequence)
-        thread = threading.Thread(target=browser.execute_command_sequence, args=args)
+        # Thread args aren't type-checked; this makes mypy check the protocol.
+        context: CommandExecutionContext = self
+        thread = threading.Thread(
+            target=browser.execute_command_sequence, args=(context, command_sequence)
+        )
         thread.name = f"BrowserManagerHandle-{browser.browser_id}"
         browser.command_thread = thread
         thread.daemon = True
