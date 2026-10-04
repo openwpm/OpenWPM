@@ -141,6 +141,40 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         )
 
 
+class TestJSInstrumentFunctionArityAndName(OpenWPMJSTest):
+    """A wrapped function reports the native ``.length`` and ``.name``.
+
+    The page reads them off the ``fetch`` wrapper and writes them as JSON to
+    the instrumented ``window.name``.
+    """
+
+    TEST_PAGE = "instrument_function_arity_name.html"
+
+    EXPECTED_EXFIL = {"arity": 1, "name": "fetch"}
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].js_instrument_settings = [
+            {
+                "window": [
+                    "name",
+                    "fetch",
+                ]
+            },
+        ]
+        return manager_params, browser_params
+
+    def test_arity_and_name(self):
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        self._assert_exfil_json(
+            db=db,
+            symbol="window.name",
+            expected=self.EXPECTED_EXFIL,
+        )
+
+
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
