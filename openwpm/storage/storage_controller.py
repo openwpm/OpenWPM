@@ -5,6 +5,8 @@ import queue
 import random
 import re
 import socket
+import struct
+import threading
 import time
 from asyncio import IncompleteReadError, Task
 from asyncio.base_events import Server
@@ -16,7 +18,7 @@ from multiprocess import Queue
 from openwpm.utilities.multiprocess_utils import Process
 
 from ..config import BrowserParamsInternal, ManagerParamsInternal
-from ..socket_interface import ClientSocket, get_message_from_reader
+from ..socket_interface import ClientSocket, get_message_from_reader, send_to_writer
 from ..types import BrowserId, VisitId
 from .storage_providers import (
     StructuredStorageProvider,
@@ -117,7 +119,7 @@ class StorageController:
         await writer.wait_closed()
 
     async def handler(
-        self, reader: asyncio.StreamReader, _: asyncio.StreamWriter
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         """Created for every new connection to the Server"""
         client_name = await get_message_from_reader(reader)
@@ -125,7 +127,7 @@ class StorageController:
         while True:
             try:
                 record: Tuple[str, Any] = await get_message_from_reader(reader)
-            except IncompleteReadError:
+            except (IncompleteReadError, OSError):
                 self.logger.info(
                     f"Terminating handler for {client_name}, because the underlying socket closed"
                 )
@@ -165,7 +167,7 @@ class StorageController:
             visit_id = VisitId(data["visit_id"])
 
             if record_type == RECORD_TYPE_META:
-                await self._handle_meta(visit_id, data)
+                await self._handle_meta(visit_id, data, writer)
                 continue
 
             table_name = TableName(record_type)
@@ -214,7 +216,12 @@ class StorageController:
             if v == visit_id:
                 self.finalize_tasks[i] = (v, token, success)
 
-    async def _handle_meta(self, visit_id: VisitId, data: Dict[str, Any]) -> None:
+    async def _handle_meta(
+        self,
+        visit_id: VisitId,
+        data: Dict[str, Any],
+        writer: asyncio.StreamWriter,
+    ) -> None:
         """
         Messages for the table RECORD_TYPE_SPECIAL are meta information
         communicated to the storage controller
@@ -230,6 +237,8 @@ class StorageController:
             return
         elif action == ACTION_TYPE_FINALIZE:
             success: bool = data["success"]
+            # Records were handed to the provider; False for a skipped visit.
+            finalized = False
             # No await before the bookkeeping: a concurrent handler must see it.
             if visit_id in self._finalized_visits:
                 self.logger.warning(
@@ -237,12 +246,31 @@ class StorageController:
                     success,
                     visit_id,
                 )
-                return
-            self._finalized_visits[visit_id] = None
-            if len(self._finalized_visits) > FINALIZED_VISIT_MEMORY:
-                del self._finalized_visits[next(iter(self._finalized_visits))]
-            completion_token = await self.finalize_visit_id(visit_id, success)
-            self.finalize_tasks.append((visit_id, completion_token, success))
+            else:
+                self._finalized_visits[visit_id] = None
+                if len(self._finalized_visits) > FINALIZED_VISIT_MEMORY:
+                    del self._finalized_visits[next(iter(self._finalized_visits))]
+                # Not the provider's token: SQLite returns None either way.
+                finalized = visit_id in self.store_record_tasks
+                completion_token = await self.finalize_visit_id(visit_id, success)
+                self.finalize_tasks.append((visit_id, completion_token, success))
+            # Send ack back only if the client requested it.
+            # Writing to a closed connection poisons the asyncio transport,
+            # preventing any further reads on the same connection.
+            if data.get("want_ack"):
+                try:
+                    await send_to_writer(
+                        writer,
+                        {
+                            "action": "finalize_ack",
+                            "visit_id": visit_id,
+                            "finalized": finalized,
+                        },
+                    )
+                except Exception:
+                    self.logger.debug(
+                        "Failed to send finalize ack for visit_id %d", visit_id
+                    )
         else:
             raise ValueError("Unexpected action: %s", action)
 
@@ -434,19 +462,30 @@ class StorageController:
 
 
 class DataSocket:
-    """Wrapper around ClientSocket to make sending records to the StorageController more convenient"""
+    """Wrapper around ClientSocket to make sending records to the StorageController more convenient
+
+    Safe to share between threads (the TaskManager shares one across all
+    browser threads).
+    """
 
     def __init__(self, listener_address: Tuple[str, int], client_name: str) -> None:
         self.socket = ClientSocket(serialization="dill")
         self.socket.connect(*listener_address)
         self.logger = logging.getLogger("openwpm")
-        self.socket.send(client_name)
+        self._send_lock = threading.Lock()
+        self._ack_lock = threading.Lock()
+        self._send(client_name)
+
+    def _send(self, msg: Any) -> None:
+        # ClientSocket.send() may write a frame in several chunks.
+        with self._send_lock:
+            self.socket.send(msg)
 
     def store_record(
         self, table_name: TableName, visit_id: VisitId, data: Dict[str, Any]
     ) -> None:
         data["visit_id"] = visit_id
-        self.socket.send(
+        self._send(
             (
                 table_name,
                 data,
@@ -454,7 +493,7 @@ class DataSocket:
         )
 
     def finalize_visit_id(self, visit_id: VisitId, success: bool) -> None:
-        self.socket.send(
+        self._send(
             (
                 RECORD_TYPE_META,
                 {
@@ -464,6 +503,61 @@ class DataSocket:
                 },
             )
         )
+
+    def finalize_visit_id_with_ack(
+        self, visit_id: VisitId, success: bool, timeout: float = 10.0
+    ) -> Optional[bool]:
+        """Send finalize and wait for the StorageController's acknowledgment.
+
+        Returns the ack's ``finalized`` flag: True if the visit's records were
+        handed to the storage provider, False if the controller skipped the
+        visit (no records, or already finalized). Returns None if no ack
+        arrived within ``timeout`` or the connection broke while waiting; the
+        finalize was still sent, so do not retry it.
+
+        Concurrent calls are serialized; ``store_record`` from other threads
+        is not blocked by a pending ack.
+        """
+        with self._ack_lock:
+            self._send(
+                (
+                    RECORD_TYPE_META,
+                    {
+                        "action": ACTION_TYPE_FINALIZE,
+                        "visit_id": visit_id,
+                        "success": success,
+                        "want_ack": True,
+                    },
+                )
+            )
+            deadline = time.monotonic() + timeout
+            try:
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise socket.timeout()
+                    ack = self.socket.receive(timeout=remaining)
+                    # An ack for an earlier call that timed out may still be
+                    # buffered.
+                    if (
+                        isinstance(ack, dict)
+                        and ack.get("action") == "finalize_ack"
+                        and ack.get("visit_id") == visit_id
+                    ):
+                        return bool(ack.get("finalized"))
+                    self.logger.debug(
+                        "Discarding unexpected message while waiting for "
+                        "finalize ack of visit_id %d: %r",
+                        visit_id,
+                        ack,
+                    )
+            except (OSError, RuntimeError, ValueError, struct.error) as exc:
+                self.logger.debug(
+                    "Did not receive finalize ack for visit_id %d (%r)",
+                    visit_id,
+                    exc,
+                )
+                return None
 
     def close(self) -> None:
         self.socket.close()

@@ -272,7 +272,9 @@ async def _finalized_controller(
         TableName("crawl_history"), VisitId(1000), {**LATE_ROW, "command": "early"}
     )
     await controller._handle_meta(
-        VisitId(1000), {"action": ACTION_TYPE_FINALIZE, "success": success}
+        VisitId(1000),
+        {"action": ACTION_TYPE_FINALIZE, "success": success},
+        writer=None,  # type: ignore[arg-type]
     )
     return controller, provider
 
