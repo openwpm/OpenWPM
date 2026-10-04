@@ -9,6 +9,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from openwpm import js_instrumentation as jsi
+from openwpm.errors import ConfigError
 
 
 # Test our validation
@@ -361,3 +362,16 @@ def test_complete_pass():
     output = jsi.clean_js_instrumentation_settings(shortcut_input)
     assert settings_contain(output, "instrumentedName", "window")
     assert settings_contain(output, "recursive", True, True)
+
+
+@pytest.mark.parametrize(
+    "log_settings",
+    [
+        {"overwrittenProperties": [{"key": "webdriver", "value": False, "level": 0}]},
+        {"receiverInterfaces": ["HTMLDivElement"]},
+        {"propertiesToInstrument": [{"depth": 0, "propertyNames": ["userAgent"]}]},
+    ],
+)
+def test_legacy_rejects_stealth_only_settings(log_settings):
+    with pytest.raises(ConfigError, match="stealth_js_instrument_settings"):
+        jsi.clean_js_instrumentation_settings([{"window.navigator": log_settings}])

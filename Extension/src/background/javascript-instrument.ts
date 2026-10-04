@@ -20,6 +20,25 @@ interface JsInstrumentationMessage {
   data: JSLogMessageContent & { timeStamp: string };
 }
 
+/**
+ * Where a record came from.
+ *
+ * Legacy instrumentation delivers records over `runtime.sendMessage`, so the
+ * sender is a real `MessageSender`. The stealth instrument runs in a privileged
+ * actor with no extension messaging available, so `stealthInstrument.onRecord`
+ * reconstructs the same few fields in the parent process from the record's
+ * browsing context (see `privileged/stealthInstrument/api.js`, `resolveSender`).
+ * Only these fields were ever read.
+ */
+type RecordSender = Pick<MessageSender, "tab" | "frameId" | "url">;
+
+/** One record as delivered by the privileged stealth actor. */
+interface StealthRecord {
+  type: string;
+  data: JSLogMessageContent & { timeStamp: string };
+  sender: RecordSender;
+}
+
 export class JavascriptInstrument {
   /**
    * Converts received call and values data from the JS Instrumentation
@@ -30,7 +49,7 @@ export class JavascriptInstrument {
    */
   private static processCallsAndValues(
     data: JSLogMessageContent & { timeStamp: string },
-    sender: MessageSender,
+    sender: RecordSender,
   ) {
     const tab = sender.tab;
     const update = {} as JavascriptOperation;
@@ -47,6 +66,12 @@ export class JavascriptInstrument {
     update.script_loc_eval = escapeString(data.scriptLocEval);
     update.call_stack = escapeString(data.callStack);
     update.symbol = escapeString(data.symbol);
+    // Concrete receiver interface for interface-attributed shared-prototype
+    // capture (stealth). Null/absent for ordinary instrumentation and for value
+    // gets/sets, in which case the ``receiver`` column stays NULL.
+    if (data.receiver !== undefined && data.receiver !== null) {
+      update.receiver = escapeString(data.receiver);
+    }
     update.operation = escapeString(data.operation);
     update.value = escapeString(data.value);
     update.time_stamp = data.timeStamp;
@@ -69,11 +94,14 @@ export class JavascriptInstrument {
     sender: MessageSender,
   ) => void;
   private configured: boolean = false;
+  private legacy: boolean = true;
   private pendingRecords: JavascriptOperation[] = [];
   private crawlID?: number;
+  private stealthRecordListener?: (record: StealthRecord) => void;
 
-  constructor(dataReceiver: DataReceiver) {
+  constructor(dataReceiver: DataReceiver, legacy: boolean = true) {
     this.dataReceiver = dataReceiver;
+    this.legacy = legacy;
   }
 
   /**
@@ -103,7 +131,7 @@ export class JavascriptInstrument {
    */
   public handleJsInstrumentationMessage(
     message: JsInstrumentationMessage,
-    sender: MessageSender,
+    sender: RecordSender,
   ) {
     switch (message.type) {
       case "logCall":
@@ -142,30 +170,53 @@ export class JavascriptInstrument {
     });
   }
 
-  public async registerContentScript(
-    testing: boolean,
-    jsInstrumentationSettings: JSInstrumentRequest[],
+  /**
+   * Starts collection: legacy registers content scripts, stealth enables the
+   * privileged actor, which also reaches realms no content script runs in.
+   */
+  public async register(
+    testing?: boolean,
+    jsInstrumentationSettings?: JSInstrumentRequest[],
   ) {
+    if (!this.legacy) {
+      this.stealthRecordListener = (record: StealthRecord) => {
+        this.handleJsInstrumentationMessage(
+          { namespace: "javascript-instrumentation", ...record },
+          record.sender,
+        );
+      };
+      browser.stealthInstrument.onRecord.addListener(
+        this.stealthRecordListener,
+      );
+      // Rejects if the actor could not be set up, which fails the browser's
+      // start like a rejected content-script registration.
+      try {
+        await browser.stealthInstrument.enable(jsInstrumentationSettings);
+      } catch (error) {
+        this.dataReceiver.logError("Stealth instrument actor: " + error);
+        throw error;
+      }
+      return;
+    }
+
     const contentScriptConfig = {
       testing,
       jsInstrumentationSettings,
     };
-    if (contentScriptConfig) {
-      // TODO: Avoid using window to pass the content script config
-      await browser.contentScripts.register({
-        js: [
-          {
-            code: `window.openWpmContentScriptConfig = ${JSON.stringify(
-              contentScriptConfig,
-            )};`,
-          },
-        ],
-        matches: ["<all_urls>"],
-        allFrames: true,
-        runAt: "document_start",
-        matchAboutBlank: true,
-      });
-    }
+    // TODO: Avoid using window to pass the content script config
+    await browser.contentScripts.register({
+      js: [
+        {
+          code: `window.openWpmContentScriptConfig = ${JSON.stringify(
+            contentScriptConfig,
+          )};`,
+        },
+      ],
+      matches: ["<all_urls>"],
+      allFrames: true,
+      runAt: "document_start",
+      matchAboutBlank: true,
+    });
     return browser.contentScripts.register({
       js: [{ file: "/content.js" }],
       matches: ["<all_urls>"],
@@ -179,6 +230,11 @@ export class JavascriptInstrument {
     this.pendingRecords = [];
     if (this.onMessageListener) {
       browser.runtime.onMessage.removeListener(this.onMessageListener);
+    }
+    if (this.stealthRecordListener) {
+      browser.stealthInstrument.onRecord.removeListener(
+        this.stealthRecordListener,
+      );
     }
   }
 }

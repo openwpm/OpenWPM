@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth Disruption — X2 (record forgery)</title>
+    <script>
+    /*
+     * X2: attempt to FORGE records.
+     *
+     * Legacy OpenWPM ships records from page scope to the content script via
+     *   document.dispatchEvent(new CustomEvent(eventId, { detail: messages }))
+     * The eventId is a per-page random value the page does not know up front, but
+     * a page can learn it by intercepting the first real dispatch, then emit its
+     * own CustomEvent(eventId, ...) to inject fabricated rows into the dataset.
+     *
+     * The stealth instrument delivers records through privileged
+     * browser.runtime.sendMessage with no page-reachable id, so there is no
+     * channel to forge into.
+     */
+    (function () {
+        const realDispatch = document.dispatchEvent.bind(document);
+        let forged = false;
+        document.dispatchEvent = function (event) {
+            // Pass the real event through so normal recording still works.
+            const result = realDispatch(event);
+            // The first instrumented event reveals the secret eventId (its type).
+            if (!forged && event && typeof event.type === "string" && event.detail) {
+                forged = true;
+                const fake = new CustomEvent(event.type, {
+                    detail: [
+                        {
+                            type: "logCall",
+                            content: {
+                                operation: "call",
+                                symbol: "FORGED.injectedByPage",
+                                args: [],
+                                value: "",
+                                scriptUrl: "https://attacker.example/forged.js",
+                                scriptLine: "1",
+                                scriptCol: "1",
+                                funcName: "forged",
+                                scriptLocEval: "",
+                                callStack: "",
+                                ordinal: 999999,
+                            },
+                        },
+                    ],
+                });
+                realDispatch(fake);
+            }
+            return result;
+        };
+    })();
+    </script>
+</head>
+<body>
+    <h1>X2: record forgery</h1>
+    <canvas id="canvas" width="50" height="50"></canvas>
+    <script>
+    // Trigger an instrumented call so the eventId is revealed (legacy) and the
+    // forgery fires. Under stealth no CustomEvent is ever dispatched, so the
+    // override never sees an eventId and the forged record is never delivered.
+    document.getElementById("canvas").toDataURL();
+    document.title = "x2-forge-done";
+    </script>
+</body>
+</html>

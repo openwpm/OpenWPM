@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="results"></div>
+<script>
+// Instrumented calls made close to the stack limit (TestStealthOverflowErrors).
+const caught = [];
+function recurse() {
+    try {
+        recurse();
+    } catch (e) {
+        if (caught.length < 400) {
+            try { localStorage.getItem("overflow"); } catch (e2) { caught.push(e2); }
+        }
+        throw e;
+    }
+}
+try { recurse(); } catch (e) {}
+const R = { caught: caught.length, foreign: 0, kinds: {} };
+for (const e of caught) {
+    const page = e instanceof Error || e instanceof DOMException;
+    if (!page) {
+        R.foreign++;
+    }
+    const kind = (page ? "page " : "foreign ") + e.name;
+    R.kinds[kind] = (R.kinds[kind] || 0) + 1;
+}
+document.getElementById("results").setAttribute("data-results", JSON.stringify(R));
+</script>
+</body>
+</html>
