@@ -202,7 +202,7 @@ update the description of the field here.
 | before_navigate_event_ordinal | int64  |          |             |
 | before_navigate_time_stamp    | string |          |             |
 | committed_event_ordinal       | int64  |          |             |
-| time_stamp                    | string |          |
+| committed_time_stamp          | string |          |
 
 ## callstacks
 
