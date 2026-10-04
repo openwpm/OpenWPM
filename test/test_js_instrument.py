@@ -141,6 +141,57 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
         )
 
 
+class TestJSInstrumentNoGlobalLeak(OpenWPMJSTest):
+    """The injected instrument must leave no page-visible globals (#1187).
+
+    Covers the getPropertyDescriptor / getPropertyNames helpers formerly
+    assigned onto ``Object``, plus the ``getInstrumentJS`` function and the
+    ``jsInstrumentationSettings`` const the injected script declared at top
+    level. Each is a config-independent tell (Krumnow, Jonker & Karsch,
+    arXiv:2205.08890 §4.1). The page encodes what it sees into the URL of an
+    instrumented ``fetch`` call.
+    """
+
+    TEST_PAGE = "instrument_no_global_leak.html"
+
+    METHOD_CALLS = {
+        (
+            "window.fetch",
+            "call",
+            '["https://gpd-false.example.com/gpn-false/gij-undefined/jis-undefined"]',
+        ),
+    }
+    GETS_AND_SETS: Set[Tuple[str, str, str]] = set()
+
+    def get_config(
+        self, data_dir: Optional[Path]
+    ) -> Tuple[ManagerParams, List[BrowserParams]]:
+        manager_params, browser_params = super().get_config(data_dir)
+        browser_params[0].prefs = {
+            "network.dns.localDomains": ("gpd-false.example.com,gpd-true.example.com")
+        }
+        browser_params[0].js_instrument_settings = [
+            {
+                "window": [
+                    "fetch",
+                ]
+            },
+        ]
+        return manager_params, browser_params
+
+    def test_no_global_leak(self):
+        db = self.visit("/js_instrument/%s" % self.TEST_PAGE)
+        top_url = f"{self.server.base}/js_instrument/{self.TEST_PAGE}"
+        self._check_calls(
+            db=db,
+            symbol_prefix="",
+            doc_url=top_url,
+            top_url=top_url,
+            expected_method_calls=self.METHOD_CALLS,
+            expected_gets_and_sets=self.GETS_AND_SETS,
+        )
+
+
 class TestJSInstrumentMockWindowProperty(OpenWPMJSTest):
     GETS_AND_SETS = {
         ("window.alreadyInstantiatedMockClassInstance", "get", "{}"),
