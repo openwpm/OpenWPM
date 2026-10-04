@@ -32,6 +32,22 @@ GENERAL_ERROR_STRING = (
     "Please look at docs/Configuration.md for more information"
 )
 
+# Prefs the extension cannot load without; both are on in the Firefox build and
+# configuration OpenWPM uses.
+EXTENSION_REQUIRED_PREFS = {
+    "security.allow_unsafe_subscript_loads": "its experiment API scripts are "
+    "loaded from a jar:file: URL, which Firefox refuses to run as a subscript "
+    "without this opt-in",
+    "extensions.experiments.enabled": "the temporarily installed extension is "
+    "only privileged, and its experiment APIs only load, while this is on",
+}
+EXTENSION_PREF_ERROR_STRING = (
+    "browser_params.prefs sets `{pref}` to `{value!r}`, but the OpenWPM web "
+    "extension requires the boolean True ({reason}; Firefox ignores a value of "
+    "the wrong type). OpenWPM cannot collect any data without its extension, so "
+    "remove the pref from browser_params.prefs or set it to True."
+)
+
 ALL_RESOURCE_TYPES = {
     "beacon",
     "csp_report",
@@ -232,10 +248,27 @@ class ManagerParamsInternal(ManagerParams):
     )
 
 
+def validate_extension_prefs(prefs: dict) -> None:
+    """Reject browser_params.prefs values that keep the web extension from
+    loading, which would otherwise silently disable all instrumentation."""
+    if not isinstance(prefs, dict):
+        raise ConfigError(
+            f"browser_params.prefs must be a dict, not {type(prefs).__name__}"
+        )
+    for pref, reason in EXTENSION_REQUIRED_PREFS.items():
+        if pref in prefs and prefs[pref] is not True:
+            raise ConfigError(
+                EXTENSION_PREF_ERROR_STRING.format(
+                    pref=pref, value=prefs[pref], reason=reason
+                )
+            )
+
+
 def validate_browser_params(browser_params: BrowserParams) -> None:
     if BrowserParams() == browser_params:
         return
     try:
+        validate_extension_prefs(browser_params.prefs)
         if browser_params.display_mode.lower() not in DISPLAY_MODE_VALIDATION_LIST:
             raise ConfigError(
                 CONFIG_ERROR_STRING.format(
@@ -272,20 +305,6 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 "which drives deploy_firefox directly."
             )
 
-        if browser_params.callstack_instrument:
-            raise ConfigError(
-                "The callstacks instrument currently doesn't work "
-                "as it is requires intricate machinery that broke "
-                "in one of the previous Firefox versions."
-            )
-
-        if browser_params.callstack_instrument and not browser_params.js_instrument:
-            raise ConfigError(
-                "The callstacks instrument currently doesn't work without "
-                "the JS instrument enabled. see: "
-                "https://github.com/openwpm/OpenWPM/issues/557"
-            )
-
         if not isinstance(browser_params.save_content, bool) and not isinstance(
             browser_params.save_content, str
         ):
@@ -307,11 +326,13 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        raise
+    except Exception as e:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"
-        )
+        ) from e
 
 
 def validate_manager_params(manager_params: ManagerParams) -> None:

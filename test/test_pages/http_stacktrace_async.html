@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<title>requests whose channel opens off the JS stack</title>
+<link rel="icon" href="shared/test_favicon.ico">
+<script>
+  function start_worker() {
+    new Worker("shared/stacktrace_worker.js");
+  }
+  function open_websocket() {
+    new WebSocket(location.origin.replace("http", "ws") + "/stacktrace_ws");
+  }
+  function fetch_after_timeout() {
+    setTimeout(function timeout_cb() {
+      fetch("shared/test_script.js?after_timeout");
+    }, 0);
+  }
+  async function fetch_after_await() {
+    await Promise.resolve();
+    fetch("shared/test_script.js?after_await");
+  }
+  function run_all() {
+    start_worker();
+    open_websocket();
+    fetch_after_timeout();
+    fetch_after_await();
+  }
+</script>
+</head>
+<body onload="run_all()">
+<p>Starts a worker that fetches, opens a WebSocket, and fetches after a timeout and an await.</p>
+</body></html>

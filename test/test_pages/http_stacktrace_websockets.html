@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head>
+<title>WebSockets from cross-site iframes</title>
+<script>
+  for (const n of [2, 3, 4, 5, 6, 7]) {
+    const iframe = document.createElement("iframe");
+    iframe.src = `http://127.0.0.${n}:${location.port}/test_pages/shared/stacktrace_ws_child.html?n=${n}`;
+    document.documentElement.appendChild(iframe);
+  }
+</script>
+</head>
+<body></body></html>
