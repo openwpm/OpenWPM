@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>stealth worker frame</title></head>
+<body>
+<script>
+const worker = new Worker("stealth_worker_inner.js");
+worker.onmessage = ({ data }) => parent.postMessage({ frameWorker: data }, "*");
+</script>
+</body>
+</html>

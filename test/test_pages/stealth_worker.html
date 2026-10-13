@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>stealth worker probe</title></head>
+<body>
+<div id="results"></div>
+<script>
+// Main-thread twin of stealth_worker.js: CreepJS-style worker/window parity.
+function fnv(bytes) {
+  let h = 0x811c9dc5;
+  for (const b of bytes) {
+    h = Math.imul(h ^ b, 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
+function draw(ctx) {
+  ctx.fillStyle = "#f60";
+  ctx.fillRect(10, 5, 100, 20);
+  ctx.fillStyle = "#069";
+  ctx.font = "14px sans-serif";
+  ctx.fillText("OpenWPM worker \u{1F600}", 2, 18);
+}
+async function mainThread() {
+  const canvas = new OffscreenCanvas(220, 40);
+  const ctx = canvas.getContext("2d");
+  draw(ctx);
+  const blob = await canvas.convertToBlob();
+  return {
+    hardwareConcurrency: navigator.hardwareConcurrency,
+    userAgent: navigator.userAgent,
+    languages: navigator.languages.join(","),
+    platform: navigator.platform,
+    pixels: fnv(ctx.getImageData(0, 0, 220, 40).data),
+    blob: fnv(new Uint8Array(await blob.arrayBuffer())) + ":" + blob.size,
+  };
+}
+function spawn(url, options) {
+  return new Promise((resolve) => {
+    const worker = new Worker(url, options);
+    worker.onmessage = ({ data }) => resolve(data);
+    worker.onerror = (e) => resolve("error:" + e.message);
+  });
+}
+// A worker owned by a cross-site (out-of-process) frame.
+function frameWorker() {
+  return new Promise((resolve) => {
+    addEventListener("message", ({ data }) => resolve(data.frameWorker));
+    const frame = document.createElement("iframe");
+    frame.src = new URL(
+      "stealth_worker_frame.html",
+      location.href.replace("//localhost:", "//127.0.0.1:"),
+    );
+    document.body.append(frame);
+  });
+}
+// Worker kinds a script-rewriting instrument would miss or treat differently.
+async function coverage() {
+  const blob = URL.createObjectURL(
+    new Blob(["postMessage(navigator.hardwareConcurrency)"], {
+      type: "text/javascript",
+    }),
+  );
+  const spawnMs = [];
+  for (let i = 0; i < 20; i++) {
+    const start = performance.now();
+    await spawn(blob);
+    spawnMs.push(performance.now() - start);
+  }
+  spawnMs.sort((a, b) => a - b);
+  return {
+    blob: await spawn(blob),
+    data: await spawn("data:text/javascript,postMessage(navigator.onLine)"),
+    module: await spawn("stealth_worker_module.js", { type: "module" }),
+    nested: await spawn("stealth_worker_nested.js"),
+    crossSiteFrame: await frameWorker(),
+    spawnMedianMs: spawnMs[10],
+  };
+}
+(async () => {
+  const results = {
+    worker: await spawn("stealth_worker.js"),
+    main: await mainThread(),
+    coverage: await coverage(),
+  };
+  document
+    .getElementById("results")
+    .setAttribute("data-results", JSON.stringify(results));
+})();
+</script>
+</body>
+</html>

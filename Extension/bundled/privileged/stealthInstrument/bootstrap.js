@@ -39,6 +39,9 @@
       ChromeUtils.importESModule(
         "resource://openwpm/privileged/stealthInstrument/OpenWPMStealthChild.sys.mjs",
       );
+      ChromeUtils.importESModule(
+        "resource://openwpm/privileged/stealthInstrument/OpenWPMStealthWorkers.sys.mjs",
+      );
     }
     if (
       Services.prefs.getBoolPref("extensions.openwpm.stealthVerbose", false)
