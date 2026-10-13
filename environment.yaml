@@ -6,6 +6,7 @@ dependencies:
 - click=8.5.0
 - dill=0.4.1
 - easyprocess=1.1
+- furo=2025.12.19
 - gcsfs=2026.8.1
 - geckodriver=0.37.1
 - ipython=9.17.1
