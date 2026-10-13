@@ -1,0 +1,52 @@
+/* Furo shows both sidebars inline above these widths and has no toggle there;
+   below them its own drawer toggles take over. */
+.collapse-toggle {
+  display: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+}
+.collapse-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.collapse-toggle[aria-pressed="false"] {
+  color: var(--color-foreground-muted);
+}
+
+@media (min-width: 67.01em) {
+  .collapse-toggle-nav {
+    display: flex;
+  }
+  .collapse-nav .sidebar-drawer {
+    display: none;
+  }
+}
+@media (min-width: 82.01em) {
+  .collapse-toggle-toc {
+    display: flex;
+  }
+  .collapse-toc .toc-drawer {
+    display: none;
+  }
+}
+
+/* .content has a fixed 46em width, so hiding a sidebar alone would only add margin. */
+@media (min-width: 67.01em) {
+  .collapse-nav .content {
+    width: auto;
+    flex: 1;
+    max-width: 70em;
+    margin: 0 auto;
+  }
+}
+@media (min-width: 82.01em) {
+  .collapse-toc .content {
+    width: auto;
+    flex: 1;
+    max-width: 70em;
+    margin: 0 auto;
+  }
+}
