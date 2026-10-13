@@ -152,6 +152,7 @@ def generate_test_values() -> dt_test_values:
         "top_level_url": random_word(12),
         "call_stack": random_word(12),
         "symbol": random_word(12),
+        "receiver": random_word(12),
         "operation": random_word(12),
         "value": random_word(12),
         "arguments": random_word(12),

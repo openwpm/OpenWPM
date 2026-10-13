@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth dead realm probe</title>
+</head>
+<body>
+<div id="results"></div>
+<script>
+/*
+ * Members taken from a frame or popup keep working after its window is torn
+ * down (TestStealthDeadRealm). Firefox cuts privileged wrappers into a dead
+ * window about a second after it is destroyed, so every probe waits for that
+ * through the test-only innerWindowIdForTest / isNukedForTest.
+ */
+const R = {};
+const D = Object.getOwnPropertyDescriptor;
+const results = document.getElementById("results");
+const NUKE_TIMEOUT_MS = 5000;
+const child = "stealth_frame_ownership_child.html?dead_";
+const crossSite = "http://127.0.0.1:" + location.port + "/test_pages/" + child;
+
+function describe(e, O) {
+    const realm = e instanceof Error ? "top" : e instanceof O.Error ? "own" : "other";
+    return "THROW " + e.name + ": " + e.message + " realm=" + realm + " file=" + typeof e.fileName;
+}
+function grab(w, openStorage) {
+    // Firefox cannot open a dead window's storage, unless the process still
+    // has that origin's database open for another window. The blank frames
+    // leave it unopened, so recording the localStorage get must not open it.
+    if (openStorage) {
+        w.localStorage.getItem("dead");
+    }
+    return {
+        innerWindowId: innerWindowIdForTest(w),
+        Error: w.Error,
+        nav: w.navigator,
+        storage: w.localStorage,
+        canvas: w.document.createElement("canvas"),
+        webdriver: D(w.Navigator.prototype, "webdriver").get,
+        userAgent: D(w.Navigator.prototype, "userAgent").get,
+        cookie: D(w.Document.prototype, "cookie").get,
+        doc: w.document,
+        toDataURL: w.HTMLCanvasElement.prototype.toDataURL,
+        setItem: w.Storage.prototype.setItem,
+        getItem: w.Storage.prototype.getItem,
+    };
+}
+function exercise(tag, O) {
+    const t = (k, f) => {
+        try { R[tag + "." + k] = String(f()); } catch (e) { R[tag + "." + k] = describe(e, O); }
+    };
+    t("webdriver", () => O.webdriver.call(O.nav) === navigator.webdriver);
+    t("user_agent", () => typeof O.userAgent.call(O.nav));
+    t("cookie", () => typeof O.cookie.call(O.doc));
+    t("to_data_url", () => O.toDataURL.call(O.canvas, "image/png", "dead_" + tag).slice(0, 22));
+    t("to_data_url_here", () => O.toDataURL.call(document.createElement("canvas")).slice(0, 22));
+    t("set_item", () => O.setItem.call(O.storage, "dead", tag));
+    t("get_item", () => O.getItem.call(O.storage, "dead"));
+    t("bad_this", () => O.toDataURL.call({}));
+    t("to_string", () => Function.prototype.toString.call(O.toDataURL));
+    t("getter_to_string", () => Function.prototype.toString.call(O.webdriver));
+    t("length", () => O.setItem.length + "," + O.webdriver.length);
+}
+function later(tag, O) {
+    return new Promise((resolve) => {
+        const start = performance.now();
+        const poll = setInterval(() => {
+            const nuked = isNukedForTest(O.innerWindowId);
+            if (!nuked && performance.now() - start < NUKE_TIMEOUT_MS) {
+                return;
+            }
+            clearInterval(poll);
+            R[tag + ".nuked"] = nuked;
+            exercise(tag, O);
+            resolve();
+        }, 50);
+    });
+}
+const loadOf = (target) => new Promise((resolve) => target.addEventListener("load", resolve, { once: true }));
+function frame(src) {
+    const f = document.createElement("iframe");
+    if (src) {
+        f.src = src;
+    }
+    document.body.appendChild(f);
+    return f;
+}
+
+// Frames that never open storage: used before any window of this origin
+// opens it (see grab).
+async function unopened() {
+    // Pristine natives from a throwaway frame: the frame never leaves its
+    // initial about:blank.
+    const blank = frame();
+    const blankMembers = grab(blank.contentWindow);
+    blank.remove();
+    // The same, used right after removal, before any wrapper is cut.
+    const now = frame();
+    const nowMembers = grab(now.contentWindow);
+    now.remove();
+    exercise("blank_removed_now", nowMembers);
+    await later("blank_removed", blankMembers);
+}
+
+async function loadedRemoved() {
+    const f = frame(child + "loaded");
+    await loadOf(f);
+    const O = grab(f.contentWindow, true);
+    f.remove();
+    await later("loaded_removed", O);
+}
+
+async function navigated() {
+    const f = frame(child + "nav_a");
+    await loadOf(f);
+    const O = grab(f.contentWindow, true);
+    f.src = child + "nav_b";
+    await loadOf(f);
+    await later("navigated", O);
+}
+
+// The frame's next document is cross-site, so the old one leaves a process
+// the frame no longer lives in.
+async function navigatedCrossSite() {
+    const f = frame(child + "xnav_a");
+    await loadOf(f);
+    const O = grab(f.contentWindow, true);
+    f.contentWindow.addEventListener("pagehide", () => {
+        O.toDataURL.call(O.canvas, "image/png", "dead_xsite_pagehide");
+    });
+    f.src = crossSite + "xnav_b";
+    await loadOf(f);
+    O.toDataURL.call(O.canvas, "image/png", "dead_xsite_at_load");
+    await later("navigated_xsite", O);
+}
+
+async function popupClosed() {
+    const popup = window.open(child + "popup", "dead_realm", "width=100,height=100");
+    await loadOf(popup);
+    const O = grab(popup, true);
+    popup.close();
+    await later("popup_closed", O);
+}
+
+window.addEventListener("load", async () => {
+    await unopened();
+    await Promise.all([loadedRemoved(), navigated(), navigatedCrossSite(), popupClosed()]);
+    results.setAttribute("data-results", JSON.stringify(R));
+});
+</script>
+</body>
+</html>

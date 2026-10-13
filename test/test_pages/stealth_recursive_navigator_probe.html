@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>recursive navigator probe</title></head>
+<body>
+<script>
+// Exercises navigator AND a slice of its nested interface objects so that
+// recursive legacy instrumentation (window.navigator, depth 1) and the flat
+// stealth config generated from it by openwpm/utilities/stealth_settings.py
+// both record symbols we can diff. Each nested member is GOT off navigator (so
+// the navigator-level get is recorded) and then a property/method of the nested
+// interface is touched (so the recursed/flat child entry is recorded too).
+// Wrapped in try/catch so one unsupported member does not abort the rest.
+function safe(fn) { try { fn(); } catch (e) { /* ignore */ } }
+
+// navigator-level scalar members
+safe(() => { void navigator.userAgent; });
+safe(() => { void navigator.platform; });
+safe(() => { void navigator.webdriver; });
+
+// Nested interface objects on navigator. Reading the member emits the
+// window.navigator.<member> symbol; touching a property/method of it emits the
+// window.navigator.<member>.<prop> symbol from the child entry.
+safe(() => { void navigator.permissions; void navigator.permissions.query; });
+safe(() => { void navigator.geolocation; void navigator.geolocation.getCurrentPosition; });
+safe(() => { void navigator.mediaCapabilities; void navigator.mediaCapabilities.decodingInfo; });
+safe(() => { void navigator.mimeTypes; void navigator.mimeTypes.length; });
+safe(() => { void navigator.plugins; void navigator.plugins.length; });
+safe(() => { void navigator.userActivation; void navigator.userActivation.isActive; });
+safe(() => { void navigator.mediaSession; void navigator.mediaSession.metadata; });
+
+// INHERITED member on a recursed node. `toString` is NOT an own name of
+// Permissions.prototype — it is inherited from Object.prototype up the chain.
+// Legacy's getPropertyNames(navigator.permissions) covers the whole chain, so
+// legacy instruments and records `window.navigator.permissions.toString`. The
+// flat stealth entry the sweep emits for this node uses depth 0, which covers
+// only Permissions.prototype's OWN names, so stealth does NOT instrument it.
+// This call is what makes the silent-drop visible: the symbol appears in legacy
+// set A, is absent from stealth set B, and MUST therefore be reported as
+// untranslated by the sweep (the honesty guarantee this probe exercises).
+safe(() => { void navigator.permissions.toString(); });
+
+const done = document.createElement("div");
+done.id = "results";
+done.setAttribute("data-results", JSON.stringify({ done: true }));
+document.body.appendChild(done);
+</script>
+</body>
+</html>

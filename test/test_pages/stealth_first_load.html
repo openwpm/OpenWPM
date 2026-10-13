@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth first-load probe</title>
+</head>
+<body>
+<div id="results"></div>
+<div id="anchor"></div>
+<script>
+/*
+ * Documents no content script runs in: a popup's and a frame's initial
+ * about:blank before their URL loads, the frame inserted by an unhooked method
+ * and reached through window[n] (TestStealthFirstLoad). Only the webdriver.*
+ * keys may differ from an uninstrumented Firefox.
+ */
+const R = {};
+const D = Object.getOwnPropertyDescriptor;
+const child = "stealth_frame_ownership_child.html?";
+let pending = 2;
+function done() {
+    if (!--pending) {
+        document.getElementById("results").setAttribute("data-results", JSON.stringify(R));
+    }
+}
+function sample(tag, w) {
+    R["webdriver." + tag] = String(w.navigator.webdriver);
+    R[tag + ".href"] = w.location.href;
+    w.document.createElement("canvas").toDataURL("image/png", "first_load_" + tag);
+    return D(w.Navigator.prototype, "userAgent").get;
+}
+
+window.addEventListener("load", () => {
+    const popup = window.open(child + "first_load_popup", "first_load", "width=100,height=100");
+    const popupGetter = sample("popup", popup);
+    const poll = setInterval(() => {
+        if (popup.location.href.includes("first_load_popup") && popup.document.readyState === "complete") {
+            clearInterval(poll);
+            R["popup.same_getter"] = String(D(popup.Navigator.prototype, "userAgent").get === popupGetter);
+            done();
+        }
+    }, 50);
+
+    const frame = document.createElement("iframe");
+    frame.src = child + "first_load_frame";
+    const range = document.createRange();
+    range.selectNode(document.getElementById("anchor"));
+    range.insertNode(frame);
+    const w = window[window.length - 1];
+    const frameGetter = sample("frame", w);
+    frame.addEventListener("load", () => {
+        R["frame.same_getter"] = String(D(w.Navigator.prototype, "userAgent").get === frameGetter);
+        done();
+    });
+});
+</script>
+</body>
+</html>

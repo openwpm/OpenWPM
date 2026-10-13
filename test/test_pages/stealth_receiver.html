@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — receiver probe</title>
+</head>
+<body>
+    <script>
+    // A call, a set and a get on members the default surface hooks on a
+    // shared prototype (AudioNode, BaseAudioContext).
+    const ac = new OfflineAudioContext(1, 128, 44100);
+    const gain = ac.createGain();
+    gain.channelCount = 1;
+    gain.connect(ac.destination);
+    document.title = "receiver-done:" + ac.sampleRate;
+    </script>
+</body>
+</html>

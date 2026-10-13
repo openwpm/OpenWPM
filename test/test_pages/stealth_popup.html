@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth popup probe</title>
+</head>
+<body>
+<div id="results"></div>
+<script>
+/*
+ * Opens an about:blank popup, gives it a sampler script, then navigates away.
+ * stealth_popup_after.html asks the popup to sample instrumented members once
+ * this page is gone (TestStealthPopup). With ?nobf an unload listener keeps
+ * this page out of the bfcache.
+ */
+if (location.search.includes("nobf")) {
+    window.addEventListener("unload", () => {});
+}
+const popup = window.open("", "stealth_popup", "width=200,height=200");
+popup.document.write(`<body><script>
+function popup_sample() {
+    const r = {};
+    const t = (k, f) => {
+        try { r[k] = String(f()); } catch (e) { r[k] = "THROW " + e.name + ": " + e.message; }
+    };
+    t("user_agent", () => navigator.userAgent);
+    t("webdriver", () => navigator.webdriver);
+    t("cookie", () => typeof document.cookie);
+    t("get_item", () => localStorage.getItem("stealth_popup"));
+    t("to_data_url", () => document.createElement("canvas").toDataURL().length);
+    t("screen", () => screen.width);
+    t("append_child", () => {
+        const f = document.createElement("iframe");
+        document.body.appendChild(f);
+        return typeof f.contentWindow.navigator.userAgent;
+    });
+    return r;
+}
+const channel = new BroadcastChannel("stealth_popup");
+channel.onmessage = () => channel.postMessage(popup_sample());
+<\/script></body>`);
+popup.document.close();
+setTimeout(() => { location.href = "stealth_popup_after.html"; }, 300);
+</script>
+</body>
+</html>

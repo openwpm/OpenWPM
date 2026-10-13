@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — document.cookie capture probe</title>
+</head>
+<body>
+    <h1>document.cookie</h1>
+    <script>
+    /*
+     * Exercises the document.cookie get and set paths so the tests can assert
+     * the stealth DEFAULT surface records script cookie access in the
+     * javascript table (legacy's collection_fingerprinting instruments
+     * document -> [cookie, referrer]; the stealth default must match).
+     */
+    document.cookie = "openwpm_stealth_cookie=probe-value; path=/";
+    // Read it back so the get path is also exercised.
+    var readBack = document.cookie;
+    document.title = "cookie-done:" + readBack;
+    </script>
+</body>
+</html>

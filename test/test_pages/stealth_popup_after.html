@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth popup probe, opener after navigating</title>
+</head>
+<body>
+<div id="results"></div>
+<script>
+const channel = new BroadcastChannel("stealth_popup");
+channel.onmessage = (e) => {
+    document.getElementById("results").setAttribute("data-results", JSON.stringify(e.data));
+};
+channel.postMessage("sample");
+</script>
+</body>
+</html>

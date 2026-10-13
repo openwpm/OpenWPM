@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+// The first script's view of the global's own keys: lazily defined interface
+// objects are listed in the order they were first resolved.
+const GLOBAL_NAMES_AT_FIRST_SCRIPT = Object.getOwnPropertyNames(window);
+</script>
+    <meta charset="utf-8">
+    <title>OpenWPM Stealth native parity probe</title>
+</head>
+<body>
+<canvas id="canvas" width="10" height="10"></canvas>
+<div id="anchor"></div>
+<div id="results"></div>
+<script>
+/*
+ * Differential probe: every value recorded here must be IDENTICAL between a
+ * pristine Firefox and one running the stealth instrument with its bundled
+ * default surface (TestStealthNativeParity). Keys are "<section>.<name>"; the
+ * test compares section by section. Values are strings/numbers/booleans so a
+ * mismatch prints both observations verbatim.
+ */
+const R = {};
+const RA = Reflect.apply;
+const FTS = Function.prototype.toString;
+function rec(key, fn) {
+    try { R[key] = fn(); } catch (e) { R[key] = "THREW:" + describeError(e); }
+}
+function describeError(e) {
+    if (e === null || typeof e !== "object") return typeof e + ":" + String(e);
+    let own;
+    try { own = Object.getOwnPropertyNames(e).join(","); } catch (x) { own = "?"; }
+    return JSON.stringify({
+        proto: Object.prototype.toString.call(e),
+        ctor: e.constructor && e.constructor.name,
+        name: e.name, message: e.message, own,
+        fileName: e.fileName, lineNumber: e.lineNumber, columnNumber: e.columnNumber,
+        filename: e.filename, stack: String(e.stack),
+    });
+}
+const canvas = document.getElementById("canvas");
+const anchor = document.getElementById("anchor");
+
+// Touches a slice of the default surface and the frame-creation members.
+function workload() {
+    void navigator.userAgent;
+    void screen.width;
+    const c = document.createElement("canvas");
+    c.getContext("2d", { alpha: true }).fillText("x", 1, 1);
+    c.toDataURL("image/png");
+    const s = document.createElement("span");
+    anchor.appendChild(s);
+    anchor.removeChild(s);
+    localStorage.getItem("k");
+    void document.cookie;
+    window.name = window.name;
+    void document.createElement("iframe").contentWindow;
+}
+
+// ---- hooks: instrument code must never reach page-overridable builtins ----
+const HOOKS = [
+    ["Function.prototype", Function.prototype, "call"],
+    ["Function.prototype", Function.prototype, "apply"],
+    ["Function.prototype", Function.prototype, "bind"],
+    ["Function.prototype", Function.prototype, "toString"],
+    ["Reflect", Reflect, "apply"],
+    ["Reflect", Reflect, "construct"],
+    ["Object", Object, "getOwnPropertyDescriptor"],
+    ["Object", Object, "getPrototypeOf"],
+    ["Object", Object, "defineProperty"],
+    ["Array.prototype", Array.prototype, Symbol.iterator],
+    ["Array.prototype", Array.prototype, "push"],
+    ["Array.prototype", Array.prototype, "join"],
+    ["JSON", JSON, "stringify"],
+    ["String.prototype", String.prototype, "split"],
+];
+for (const [owner, obj, prop] of HOOKS) {
+    const label = owner + "." + String(prop);
+    const orig = obj[prop];
+    let hits = 0;
+    obj[prop] = function () { hits++; return RA(orig, this, arguments); };
+    let outcome = "ok";
+    try { workload(); } catch (e) { outcome = "THREW:" + e; }
+    obj[prop] = orig;
+    R["hooks.count:" + label] = hits;
+    R["hooks.outcome:" + label] = outcome;
+    obj[prop] = function () { throw new Error("hooked " + label); };
+    try { workload(); outcome = "ok"; } catch (e) { outcome = "THREW:" + e.message; }
+    obj[prop] = orig;
+    R["hooks.throwing:" + label] = outcome;
+}
+for (const name of ["wrappedJSObject", "toJSON", "then", "length"]) {
+    let hits = 0;
+    Object.defineProperty(Object.prototype, name, {
+        get() { hits++; return undefined; }, configurable: true,
+    });
+    try { workload(); } catch (e) { /* recorded via the count */ }
+    delete Object.prototype[name];
+    R["serialization.objproto_getter:" + name] = hits;
+}
+
+// ---- ctor: non-instrumented own properties keep their identity ----
+for (const name of ["Navigator", "Screen", "Storage", "HTMLCanvasElement",
+    "HTMLElement", "CanvasRenderingContext2D", "RTCPeerConnection",
+    "AudioContext", "OscillatorNode", "Node", "Element", "Document"]) {
+    rec("ctor.identity:" + name,
+        () => window[name].prototype.constructor === window[name]);
+}
+rec("ctor.navigator_instance", () => navigator.constructor === Navigator);
+rec("ctor.new_navigator_constructor", () => { new navigator.constructor(); return "nothrow"; });
+
+// ---- construct: instrumented functions keep native [[Construct]] behaviour ----
+function isCtor(f) {
+    try { Reflect.construct(String, [], f); return true; } catch (e) { return false; }
+}
+const FUNCS = {
+    toDataURL: () => HTMLCanvasElement.prototype.toDataURL,
+    getContext: () => HTMLCanvasElement.prototype.getContext,
+    fillText: () => CanvasRenderingContext2D.prototype.fillText,
+    getItem: () => Storage.prototype.getItem,
+    appendChild: () => Node.prototype.appendChild,
+    append: () => Element.prototype.append,
+    write: () => Document.prototype.write,
+    open: () => window.open,
+    userAgent_get: () => Object.getOwnPropertyDescriptor(Navigator.prototype, "userAgent").get,
+    contentWindow_get: () => Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentWindow").get,
+    innerHTML_set: () => Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML").set,
+    name_set: () => Object.getOwnPropertyDescriptor(window, "name").set,
+};
+for (const [k, get] of Object.entries(FUNCS)) {
+    rec("construct.isCtor:" + k, () => isCtor(get()));
+    rec("construct.new:" + k, () => { const F = get(); new F(); return "nothrow"; });
+    rec("construct.reflect:" + k, () => { Reflect.construct(get(), []); return "nothrow"; });
+    rec("construct.hasPrototype:" + k, () => "prototype" in get());
+    rec("construct.ownKeys:" + k, () => Reflect.ownKeys(get()).map(String).join(","));
+    rec("construct.toString:" + k, () => FTS.call(get()));
+    rec("construct.length:" + k, () => get().length);
+    rec("construct.name:" + k, () => get().name);
+}
+
+// ---- errors: exceptions crossing an instrumented call are untouched ----
+class PageError extends Error {}
+const pageErr = new PageError("page");
+const plainThrown = { stack: "fake@x:1:1", name: "TypeError", message: "m" };
+rec("errors.page_error_identity", () => {
+    try { canvas.toDataURL({ toString() { throw pageErr; } }); return "nothrow"; }
+    catch (e) { return e === pageErr; }
+});
+rec("errors.plain_object_identity", () => {
+    try { canvas.toDataURL({ toString() { throw plainThrown; } }); return "nothrow"; }
+    catch (e) { return e === plainThrown; }
+});
+rec("errors.primitive_identity", () => {
+    try { canvas.toDataURL({ toString() { throw 42; } }); return "nothrow"; }
+    catch (e) { return e === 42; }
+});
+const ERROR_CASES = {
+    toDataURL_wrong_this: () => HTMLCanvasElement.prototype.toDataURL.call({}),
+    getItem_wrong_this: () => Storage.prototype.getItem.call({}, "x"),
+    userAgent_wrong_this: () => Object.getOwnPropertyDescriptor(Navigator.prototype, "userAgent").get.call({}),
+    name_set_wrong_this: () => Object.getOwnPropertyDescriptor(window, "name").set.call({}, "x"),
+    appendChild_null: () => anchor.appendChild(null),
+    getImageData_zero: () => canvas.getContext("2d").getImageData(0, 0, 0, 0),
+    getContext_no_args: () => canvas.getContext(),
+};
+for (const [k, fn] of Object.entries(ERROR_CASES)) {
+    rec("errors.shape:" + k, () => { fn(); return "nothrow"; });
+}
+
+// ---- serialization: recording arguments runs no page code ----
+function counting() {
+    const c = { hits: 0 };
+    c.obj = {
+        get zzz() { c.hits++; return 1; },
+        toJSON() { c.hits++; return {}; },
+        nested: { get deep() { c.hits++; return 2; } },
+    };
+    c.proxy = new Proxy({}, {
+        get(t, p) { c.hits++; return Reflect.get(t, p); },
+        ownKeys(t) { c.hits++; return Reflect.ownKeys(t); },
+        has(t, p) { c.hits++; return Reflect.has(t, p); },
+        getOwnPropertyDescriptor(t, p) { c.hits++; return Reflect.getOwnPropertyDescriptor(t, p); },
+        getPrototypeOf(t) { c.hits++; return Reflect.getPrototypeOf(t); },
+    });
+    return c;
+}
+rec("serialization.getter_and_toJSON", () => {
+    const c = counting();
+    document.createElement("canvas").getContext("2d", c.obj);
+    return c.hits;
+});
+rec("serialization.proxy_traps", () => {
+    const c = counting();
+    document.createElement("canvas").getContext("2d", c.proxy);
+    return c.hits;
+});
+rec("serialization.array_arg", () => {
+    const c = counting();
+    const arr = [c.obj, c.proxy];
+    document.createElement("canvas").getContext("2d", arr);
+    return c.hits;
+});
+
+// ---- framehooks: the frame-creation members behave like the natives ----
+rec("framehooks.write_wrong_this", () => { document.write.call({}); return "nothrow"; });
+rec("framehooks.write_wrong_this_string", () => { document.write.call({}, "x"); return "nothrow"; });
+rec("framehooks.writeln_wrong_this", () => { document.writeln.call({}); return "nothrow"; });
+{
+    let hits = 0;
+    rec("framehooks.write_wrong_this_object", () => {
+        document.write.call({}, { toString() { hits++; return ""; } });
+        return "nothrow";
+    });
+    R["framehooks.write_wrong_this_object_hits"] = hits;
+}
+rec("framehooks.write_symbol", () => { document.write(Symbol("s")); return "nothrow"; });
+rec("framehooks.writeln_symbol", () => { document.writeln(Symbol("s")); return "nothrow"; });
+rec("framehooks.write_converts_before_writing", () => {
+    let seen = "unset";
+    document.write('<i id="parity_w1"></i>', {
+        toString() { seen = !!document.getElementById("parity_w1"); return ""; },
+    });
+    return seen;
+});
+rec("framehooks.write_to_primitive_hint", () => {
+    const log = [];
+    document.write({
+        valueOf() { log.push("valueOf"); return '<i id="parity_w2"></i>'; },
+        toString() { log.push("toString"); return '<i id="parity_w3"></i>'; },
+    });
+    return log.join() + ":" + !!document.getElementById("parity_w2") +
+        !!document.getElementById("parity_w3");
+});
+rec("framehooks.write_non_string_args", () => {
+    document.write('<b id="parity_w4">', 1, null, undefined, true, "</b>");
+    return document.getElementById("parity_w4").textContent;
+});
+rec("framehooks.writeln_multiple", () => {
+    document.writeln('<pre id="parity_w5">a', "b</pre>");
+    return JSON.stringify(document.getElementById("parity_w5").textContent);
+});
+
+// ---- realm: accessors and methods of a frame belong to that frame's realm ----
+const REALM_TARGETS = {
+    userAgent_get: (w) => w.Object.getOwnPropertyDescriptor(w.Navigator.prototype, "userAgent").get,
+    webdriver_get: (w) => w.Object.getOwnPropertyDescriptor(w.Navigator.prototype, "webdriver").get,
+    screen_width_get: (w) => w.Object.getOwnPropertyDescriptor(w.Screen.prototype, "width").get,
+    cookie_get: (w) => w.Object.getOwnPropertyDescriptor(w.Document.prototype, "cookie").get,
+    cookie_set: (w) => w.Object.getOwnPropertyDescriptor(w.Document.prototype, "cookie").set,
+    name_get: (w) => w.Object.getOwnPropertyDescriptor(w, "name").get,
+    name_set: (w) => w.Object.getOwnPropertyDescriptor(w, "name").set,
+    localStorage_get: (w) => w.Object.getOwnPropertyDescriptor(w, "localStorage").get,
+    toDataURL: (w) => w.HTMLCanvasElement.prototype.toDataURL,
+    getItem: (w) => w.Storage.prototype.getItem,
+    appendChild: (w) => w.Node.prototype.appendChild,
+    write: (w) => w.Document.prototype.write,
+    open: (w) => w.open,
+    contentWindow_get: (w) => w.Object.getOwnPropertyDescriptor(w.HTMLIFrameElement.prototype, "contentWindow").get,
+};
+function realmOf(label, w) {
+    for (const [k, get] of Object.entries(REALM_TARGETS)) {
+        rec("realm." + label + ":" + k, () => {
+            const f = get(w);
+            return [
+                Object.getPrototypeOf(f) === w.Function.prototype,
+                f instanceof w.Function,
+                f instanceof Function,
+            ].join();
+        });
+    }
+}
+realmOf("top", window);
+
+// ---- xrealm: hooks stringify natively from every realm ----
+const XREALM_TARGETS = {
+    appendChild: (w) => w.Node.prototype.appendChild,
+    write: (w) => w.Document.prototype.write,
+    open: (w) => w.open,
+    contentWindow_get: (w) => Object.getOwnPropertyDescriptor(w.HTMLIFrameElement.prototype, "contentWindow").get,
+    toDataURL: (w) => w.HTMLCanvasElement.prototype.toDataURL,
+    userAgent_get: (w) => Object.getOwnPropertyDescriptor(w.Navigator.prototype, "userAgent").get,
+};
+function crossRealm(label, other) {
+    for (const [k, get] of Object.entries(XREALM_TARGETS)) {
+        // this realm's toString over the other realm's function, and vice versa
+        rec("xrealm." + label + ":here_on_there:" + k, () => FTS.call(get(other)));
+        rec("xrealm." + label + ":there_on_here:" + k, () => other.Function.prototype.toString.call(get(window)));
+        rec("xrealm." + label + ":there_on_there:" + k, () => other.Function.prototype.toString.call(get(other)));
+    }
+}
+function finish() {
+    R["globals.at_first_script"] = GLOBAL_NAMES_AT_FIRST_SCRIPT.join(",");
+    document.getElementById("results").setAttribute("data-results", JSON.stringify(R));
+}
+document.addEventListener("DOMContentLoaded", () => {
+    const a = document.createElement("iframe");
+    anchor.appendChild(a);
+    crossRealm("appended", a.contentWindow);
+    realmOf("appended", a.contentWindow);
+    const opened = document.createElement("iframe");
+    anchor.appendChild(opened);
+    opened.contentDocument.open();
+    opened.contentDocument.write("<p>reopened</p>");
+    opened.contentDocument.close();
+    realmOf("document_open", opened.contentWindow);
+    const b = document.createElement("iframe");
+    anchor.after(b);
+    crossRealm("after_indexed", window[window.length - 1]);
+    const c = document.createElement("iframe");
+    c.src = "/test_pages/simple_b.html";
+    c.onload = () => {
+        crossRealm("src_loaded", c.contentWindow);
+        realmOf("src_loaded", c.contentWindow);
+        // A named frame that has navigated cross-origin is still found by name.
+        const xo = document.createElement("iframe");
+        xo.name = "parity_cross_origin";
+        xo.src = location.protocol + "//127.0.0.1:" + location.port +
+            "/test_pages/simple_b.html";
+        xo.onload = () => {
+            rec("framehooks.open_named_cross_origin_frame",
+                () => window.open("", "parity_cross_origin") === xo.contentWindow);
+            finish();
+        };
+        document.body.appendChild(xo);
+    };
+    document.body.appendChild(c);
+});
+</script>
+</body>
+</html>

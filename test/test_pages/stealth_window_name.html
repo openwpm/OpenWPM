@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenWPM Stealth — window.name capture probe</title>
+</head>
+<body>
+    <h1>window.name</h1>
+    <div id="results"></div>
+    <script>
+    /*
+     * Exercises the window.name get AND set paths plus the window-level
+     * localStorage / sessionStorage gets so the tests can assert the stealth
+     * DEFAULT surface records them in the javascript table. Legacy OpenWPM
+     * instruments the window instance via
+     * {"window": ["name", "localStorage", "sessionStorage"]}; the stealth
+     * default must match.
+     *
+     * It ALSO self-checks that this specific instrumentation stays
+     * undetectable. In Firefox window.name / localStorage / sessionStorage are
+     * NATIVE accessor properties that live as OWN properties on the window
+     * INSTANCE (depth 0), NOT on Window.prototype — verified against a clean
+     * Firefox: Object.getOwnPropertyDescriptor(Window.prototype, "name") is
+     * undefined while Object.getOwnPropertyDescriptor(window, "name") is a native
+     * accessor. So the instrumented descriptor must match THAT native shape:
+     * own-on-instance, [native code], spec-prefixed accessor name ("get name" /
+     * "set name"), and the same get/set presence the native property has
+     * (window.name has both; localStorage / sessionStorage are getter-only). The
+     * result is published on #results[data-results] exactly like
+     * stealth_detection.html, so the test can assert the page itself cannot tell
+     * window.name was instrumented.
+     */
+
+    // --- exercise the capture paths ---------------------------------------
+    window.name = "openwpm_stealth_window_name_probe";  // set path
+    var readBack = window.name;                          // get path
+    var ls = window.localStorage;                        // window-level get
+    var ss = window.sessionStorage;                      // window-level get
+    void ls;
+    void ss;
+
+    // --- self-detection: the instrumentation must be invisible ------------
+    function isNative(fn) {
+        try {
+            return Function.prototype.toString
+                .call(fn)
+                .indexOf("[native code]") !== -1;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    var results = {};
+
+    // The accessors live as OWN properties on the window INSTANCE and must still
+    // look native: [native code] AND the spec-prefixed name ("get name" etc.).
+    try {
+        var nameDesc = Object.getOwnPropertyDescriptor(window, "name");
+        results.name_getter_native =
+            !!(nameDesc && nameDesc.get && isNative(nameDesc.get));
+        results.name_setter_native =
+            !!(nameDesc && nameDesc.set && isNative(nameDesc.set));
+        results.name_getter_name_native =
+            !!(nameDesc && nameDesc.get && nameDesc.get.name === "get name");
+        results.name_setter_name_native =
+            !!(nameDesc && nameDesc.set && nameDesc.set.name === "set name");
+
+        var lsDesc = Object.getOwnPropertyDescriptor(window, "localStorage");
+        results.localStorage_getter_native =
+            !!(lsDesc && lsDesc.get && isNative(lsDesc.get));
+        results.localStorage_getter_name_native =
+            !!(lsDesc && lsDesc.get && lsDesc.get.name === "get localStorage");
+        // localStorage is getter-only natively: it must NOT have gained a setter.
+        results.localStorage_no_setter = !!(lsDesc && !lsDesc.set);
+
+        var ssDesc = Object.getOwnPropertyDescriptor(window, "sessionStorage");
+        results.sessionStorage_getter_native =
+            !!(ssDesc && ssDesc.get && isNative(ssDesc.get));
+        results.sessionStorage_getter_name_native =
+            !!(ssDesc && ssDesc.get &&
+               ssDesc.get.name === "get sessionStorage");
+        results.sessionStorage_no_setter = !!(ssDesc && !ssDesc.set);
+    } catch (e) {
+        results.descriptor_error = e.message;
+    }
+
+    // In Firefox these are natively OWN accessors on the window instance, so the
+    // instrumented descriptor MUST stay own-on-instance — matching the native
+    // model is what keeps it undetectable.
+    results.name_own_on_instance =
+        Object.prototype.hasOwnProperty.call(window, "name");
+    results.localStorage_own_on_instance =
+        Object.prototype.hasOwnProperty.call(window, "localStorage");
+    results.sessionStorage_own_on_instance =
+        Object.prototype.hasOwnProperty.call(window, "sessionStorage");
+
+    // window.name must still round-trip its value transparently.
+    results.name_roundtrips =
+        readBack === "openwpm_stealth_window_name_probe";
+
+    var resultsDiv = document.getElementById("results");
+    resultsDiv.setAttribute("data-results", JSON.stringify(results));
+    resultsDiv.textContent = JSON.stringify(results, null, 2);
+    </script>
+</body>
+</html>

@@ -1,12 +1,33 @@
 import json
+import logging
 import os
 from typing import Any, Dict, List
 
 import jsonschema
 
+from .errors import ConfigError
+
+logger = logging.getLogger("openwpm")
+
+# Members the stealth default leaves unwrapped, with why.
+STEALTH_UNWRAPPED_MEMBERS = {
+    ("Navigator", "sendBeacon"): (
+        "wrapping it drops beacons a page sends from pagehide while its process "
+        "shuts down (a closed tab or popup, a removed or cross-process-navigated "
+        "frame), which the site can notice. http_instrument records the beacon "
+        "request including its body, and callstack_instrument, once #1178 "
+        "restores it, its JavaScript origin"
+    ),
+}
+# The global holding an instance of an interface, one prototype below it.
+_STEALTH_INSTANCE_GLOBALS = {"Navigator": "navigator"}
+
 curdir = os.path.dirname(os.path.realpath(__file__))
 schema_path = os.path.join(
     curdir, os.pardir, "schemas", "js_instrument_settings.schema.json"
+)
+stealth_schema_path = os.path.join(
+    curdir, os.pardir, "schemas", "stealth_js_instrument_settings.schema.json"
 )
 
 list_log_settings = [
@@ -25,18 +46,30 @@ def _validate(python_list_to_validate):
     with open(schema_path, "r") as f:
         schema = json.loads(f.read())
     jsonschema.validate(instance=python_list_to_validate, schema=schema)
-    # Check properties to instrument and excluded properties don't collide
-    for setting in python_list_to_validate:
-        propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
-        if propertiesToInstrument is not None:
-            propertiesToInstrument = set(propertiesToInstrument)
-            excludedProperties = set(setting["logSettings"]["excludedProperties"])
-            if len(propertiesToInstrument.intersection(excludedProperties)) != 0:
-                raise ValueError(f"excludedProperties and \
-                    propertiesToInstrument collide. This \
-                    may have occurred after a merge. \
-                    Setting with collision: {setting}.")
+    _check_collisions(python_list_to_validate)
     return True
+
+
+def _check_collisions(settings: List[Dict[str, Any]]) -> None:
+    """Properties to instrument and excluded properties must not collide."""
+    for setting in settings:
+        propertiesToInstrument = setting["logSettings"]["propertiesToInstrument"]
+        if propertiesToInstrument is None:
+            continue
+        # Stealth settings may also name members as {depth, propertyNames}; the
+        # schema, validated first, guarantees propertyNames.
+        instrumented = set()
+        for entry in propertiesToInstrument:
+            if isinstance(entry, str):
+                instrumented.add(entry)
+            else:
+                instrumented.update(entry["propertyNames"])
+        excludedProperties = set(setting["logSettings"]["excludedProperties"])
+        if instrumented & excludedProperties:
+            raise ValueError(f"excludedProperties and \
+                propertiesToInstrument collide. This \
+                may have occurred after a merge. \
+                Setting with collision: {setting}.")
 
 
 def _merge_settings(python_list):
@@ -83,7 +116,19 @@ def _merge_settings(python_list):
                 continue
             else:
                 if None in list_setting_value:
-                    raise RuntimeError(f"Mismatching logSettings for object {obj}")
+                    raise RuntimeError(
+                        "Mismatching logSettings for object " f"{setting['object']}"
+                    )
+                elif not all(isinstance(p, str) for p in list_setting_value):
+                    # Stealth-shaped settings express list entries as
+                    # {depth, propertyNames} dicts, which are unhashable and
+                    # therefore cannot be deduped via set(). The legacy merge
+                    # path is not expected to receive these.
+                    raise RuntimeError(
+                        f"Cannot merge non-string {logSetting} entries for "
+                        f"object {setting['object']}. Stealth-shaped settings "
+                        f"must not be passed through the legacy merge path."
+                    )
                 else:
                     # Dedupe
                     setting["logSettings"][logSetting] = list(
@@ -180,6 +225,29 @@ def get_default_log_settings():
     }
 
 
+def _reject_stealth_only_settings(settings: List[Dict[str, Any]]) -> None:
+    """The legacy instrument implements none of these, so accepting them would
+    silently drop what the study asked for."""
+    for setting in settings:
+        log_settings = setting["logSettings"]
+        stealth_only = [
+            k
+            for k in ("overwrittenProperties", "receiverInterfaces")
+            if k in log_settings
+        ]
+        if any(
+            not isinstance(p, str)
+            for p in log_settings.get("propertiesToInstrument") or []
+        ):
+            stealth_only.append("propertiesToInstrument as {depth, propertyNames}")
+        if stealth_only:
+            raise ConfigError(
+                f"js_instrument_settings for {setting['instrumentedName']} uses "
+                f"{', '.join(stealth_only)}, which only the stealth instrument "
+                "supports. Use stealth_js_instrument_settings instead."
+            )
+
+
 def clean_js_instrumentation_settings(
     user_requested_settings: List[Any],
 ) -> List[Dict[str, Any]]:
@@ -231,6 +299,120 @@ def clean_js_instrumentation_settings(
                 settings.append(_build_full_settings_object(sub_setting))
         else:
             settings.append(_build_full_settings_object(setting))
+    _reject_stealth_only_settings(settings)
     settings = _merge_settings(settings)
     _validate(settings)
     return settings
+
+
+def clean_stealth_js_instrumentation_settings(
+    user_requested_settings: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Validate a custom stealth instrumentation surface against
+    ``schemas/stealth_js_instrument_settings.schema.json``.
+
+    Unlike legacy settings, ``object`` is a bare global name (e.g.
+    ``"Navigator"``) and no shortcut is expanded, so the list is returned
+    unchanged.
+    """
+    if not isinstance(user_requested_settings, list):
+        raise TypeError(
+            "stealth_js_instrument_settings must be a list. "
+            f"Received {user_requested_settings}"
+        )
+    with open(stealth_schema_path, "r") as f:
+        schema = json.load(f)
+    errors = sorted(
+        jsonschema.Draft7Validator(schema).iter_errors(user_requested_settings),
+        key=lambda e: [(isinstance(p, str), p) for p in e.absolute_path],
+    )
+    if errors:
+        raise ConfigError(
+            "\n".join(
+                [
+                    *map(_stealth_schema_error, errors),
+                    "To translate a legacy js_instrument_settings config, run",
+                    "    python -m openwpm.utilities.js_settings_migrator CONFIG.json",
+                ]
+            )
+        )
+    try:
+        _check_collisions(user_requested_settings)
+    except ValueError as err:
+        raise ConfigError(
+            f"stealth_js_instrument_settings failed validation: {err}"
+        ) from err
+    for (interface, member), reason in STEALTH_UNWRAPPED_MEMBERS.items():
+        if _stealth_settings_wrap(user_requested_settings, interface, member):
+            logger.warning(
+                "stealth_js_instrument_settings wraps %s.%s: %s.",
+                interface,
+                member,
+                reason,
+            )
+    return user_requested_settings
+
+
+# Legacy logSettings fields stealth has no counterpart for, with why.
+_LEGACY_ONLY_FIELD_HINTS = {
+    "recursive": "stealth never recurses; the migrator flattens a recursive config",
+    "depth": (
+        "legacy's recursion limit; stealth never recurses. The entry's own "
+        "depth is a prototype-chain offset, not a recursion limit"
+    ),
+    "preventSets": (
+        "it protects no stealth wrapper and only drops native setter calls "
+        "(e.g. document.body = el), which a page can observe"
+    ),
+}
+
+
+def _stealth_schema_error(err: jsonschema.ValidationError) -> str:
+    where = "stealth_js_instrument_settings" + "".join(
+        f"[{p}]" if isinstance(p, int) else f".{p}" for p in err.absolute_path
+    )
+    hints = []
+    if err.validator == "additionalProperties":
+        unknown = sorted(set(err.instance) - set(err.schema["properties"]))
+        noun = "field" if len(unknown) == 1 else "fields"
+        problem = f"unknown {noun} {', '.join(map(repr, unknown))}"
+        hints = [
+            f"- {k}: {_LEGACY_ONLY_FIELD_HINTS[k]}"
+            for k in unknown
+            if k in _LEGACY_ONLY_FIELD_HINTS
+        ]
+    elif err.validator == "pattern" and where.endswith(".object"):
+        problem = f"{err.instance!r} is not a bare global name like 'Navigator'"
+    else:
+        problem = err.message
+    return "\n".join([f"{where}: {problem}", *hints])
+
+
+def _stealth_settings_wrap(
+    settings: List[Dict[str, Any]], interface: str, member: str
+) -> bool:
+    """Whether an entry instruments ``interface.prototype[member]``."""
+    for entry in settings:
+        # Prototypes between the entry's root and ``interface.prototype``.
+        if entry.get("object") == interface:
+            owner = 0
+        elif entry.get("object") == _STEALTH_INSTANCE_GLOBALS.get(interface):
+            owner = 1
+        else:
+            continue
+        log_settings = entry.get("logSettings", {})
+        requested = log_settings.get("propertiesToInstrument") or []
+        if not requested:
+            if entry.get("depth", 0) >= owner and member not in log_settings.get(
+                "excludedProperties", []
+            ):
+                return True
+            continue
+        for item in requested:
+            if isinstance(item, str):
+                depth, names = 0, [item]
+            else:
+                depth, names = item.get("depth", 0), item.get("propertyNames", [])
+            if depth == owner and member in names:
+                return True
+    return False

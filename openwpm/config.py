@@ -83,6 +83,18 @@ class BrowserParams(DataClassJsonMixin):
         default_factory=lambda: ["collection_fingerprinting"]
     )
     http_instrument: bool = False
+    stealth_js_instrument: bool = False
+    stealth_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    """Custom instrumentation surface for ``stealth_js_instrument``.
+
+    When ``None`` (the default) the stealth instrument uses its bundled
+    fingerprinting set (``Extension/src/stealth/settings.ts``), so behaviour is
+    unchanged out of the box. To customise the surface, supply a list of
+    stealth-shaped settings objects validated against
+    ``schemas/stealth_js_instrument_settings.schema.json``. Unlike the legacy
+    ``js_instrument_settings`` (which uses a dotted ``window['X'].prototype``
+    path), stealth resolves ``object`` as a BARE global name, e.g.
+    ``"CanvasRenderingContext2D"``, ``"Navigator"``, or ``"document"``."""
     navigation_instrument: bool = False
     save_content: Union[bool, str] = False
     callstack_instrument: bool = False
@@ -218,6 +230,7 @@ class BrowserParamsInternal(BrowserParams):
     browser_id: Optional[BrowserId] = None
     profile_path: Optional[Path] = None
     cleaned_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
+    cleaned_stealth_js_instrument_settings: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass
@@ -286,6 +299,13 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                 "https://github.com/openwpm/OpenWPM/issues/557"
             )
 
+        if browser_params.stealth_js_instrument and browser_params.js_instrument:
+            raise ConfigError(
+                "stealth_js_instrument and js_instrument cannot both be enabled. "
+                "Use stealth_js_instrument for undetectable instrumentation or "
+                "js_instrument for legacy instrumentation, but not both."
+            )
+
         if not isinstance(browser_params.save_content, bool) and not isinstance(
             browser_params.save_content, str
         ):
@@ -307,7 +327,10 @@ def validate_browser_params(browser_params: BrowserParams) -> None:
                         "in browser_params.save_content (%s)" % diff,
                     )
 
-    except:
+    except ConfigError:
+        # Re-raise our explicit validation errors
+        raise
+    except Exception:
         raise ConfigError(
             "Something went wrong while validating BrowserParams. "
             "Please check values provided for BrowserParams are of expected types"
