@@ -35,6 +35,7 @@ dependencies:
 - sentry-sdk=2.71.0
 - sphinx-markdown-tables=0.0.17
 - sphinx=9.1.0
+- sphinxcontrib-mermaid=2.1.1
 - tabulate=0.10.0
 - tblib=3.2.2
 - tomlkit=0.15.1
