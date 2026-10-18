@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test page for navigator.webdriver spoofing across realms.</title>
+  </head>
+  <body>
+    <h3>Test page for navigator.webdriver spoofing across realms.</h3>
+    <pre id="probe"></pre>
+    <script type="text/javascript">
+      // Each probe reaches a realm other than this one and records the raw
+      // `navigator.webdriver` it managed to read. Every probe that can runs
+      // during parsing, i.e. as early as a bot check would.
+      (function () {
+        var results = {};
+
+        function write(done) {
+          document.getElementById("probe").textContent = JSON.stringify(results);
+          if (done) {
+            // The reader waits for this rather than for a fixed duration.
+            document.documentElement.setAttribute("data-probe-complete", "1");
+          }
+        }
+
+        function probe(name, fn) {
+          try {
+            results[name] = fn();
+          } catch (e) {
+            results[name] = "threw: " + e.name + ": " + e.message;
+          }
+        }
+
+        // A frame appended and read back in the same task, with no chance for
+        // anything asynchronous to run in between.
+        probe("syncAppendedIframe", function () {
+          var f = document.createElement("iframe");
+          document.body.appendChild(f);
+          var v = f.contentWindow.navigator.webdriver;
+          f.remove();
+          return v;
+        });
+
+        probe("syncAppendedIframeAboutBlank", function () {
+          var f = document.createElement("iframe");
+          f.src = "about:blank";
+          document.body.appendChild(f);
+          var v = f.contentWindow.navigator.webdriver;
+          f.remove();
+          return v;
+        });
+
+        // Indexed access reaches the frame's realm by a different route than
+        // the element's contentWindow accessor.
+        probe("indexedFrameAccess", function () {
+          var f = document.createElement("iframe");
+          document.body.appendChild(f);
+          var v = window[window.length - 1].navigator.webdriver;
+          f.remove();
+          return v;
+        });
+
+        // A pop-up is a top-level document rather than a frame.
+        probe("popupEmpty", function () {
+          var w = window.open("");
+          if (!w) {
+            return "blocked";
+          }
+          var v = w.navigator.webdriver;
+          w.close();
+          return v;
+        });
+
+        probe("popupAboutBlank", function () {
+          var w = window.open("about:blank");
+          if (!w) {
+            return "blocked";
+          }
+          var v = w.navigator.webdriver;
+          w.close();
+          return v;
+        });
+
+        // Calling a fresh realm's own getter, rather than reading through this
+        // realm's prototype chain.
+        probe("frameNavigatorPrototypeGetter", function () {
+          var f = document.createElement("iframe");
+          document.body.appendChild(f);
+          var desc = Object.getOwnPropertyDescriptor(
+            f.contentWindow.Navigator.prototype,
+            "webdriver"
+          );
+          var v = desc.get.call(f.contentWindow.navigator);
+          f.remove();
+          return v;
+        });
+
+        // A srcdoc document is parsed on a later task than the appendChild
+        // that creates it, so read the same frame at three points to separate
+        // "never patched" from "not patched yet".
+        var sd = document.createElement("iframe");
+        sd.srcdoc = "<!doctype html><title>srcdoc</title>";
+        sd.onload = function () {
+          probe("srcdocOnLoad", function () {
+            return sd.contentWindow.navigator.webdriver;
+          });
+          setTimeout(function () {
+            probe("srcdocAfterTimeout", function () {
+              return sd.contentWindow.navigator.webdriver;
+            });
+            write(true);
+          }, 500);
+        };
+        document.body.appendChild(sd);
+        probe("srcdocSyncAfterAppend", function () {
+          return sd.contentWindow.navigator.webdriver;
+        });
+
+        write();
+      })();
+    </script>
+  </body>
+</html>

@@ -105,6 +105,51 @@ left out of this section.
     - `from_visited`: Only accept third-party cookies from sites that have been visited as a first party.
 - `donottrack`
   - Set to `True` to enable Do Not Track in the browser.
+- `spoof_webdriver`
+  - Defaults to `True`. Makes `navigator.webdriver` read as `false` in every
+    page and frame, hiding the loudest signal that the visit is automated.
+  - Selenium sets `navigator.webdriver = true`. A privileged window actor
+    replaces the page's `Navigator.prototype.webdriver` getter with one compiled
+    in the page's compartment, so the page sees `[native code]` under the native
+    accessor name. The rest of the accessor is matched too: the descriptor
+    flags, the absent setter, the getter's own property order, that it is not
+    a constructor, and its behaviour when called on something that is not a
+    `Navigator` (it throws the native error). The getter never touches the
+    page's builtins, so a page hooking `Function.prototype.call` or
+    `Reflect.apply` cannot observe or break it. No own property is added to the
+    `navigator` instance.
+  - Known residual tell: timing. The getter is a cross-compartment forwarder,
+    so a read costs about 25x the native one (roughly 220 ns against 9 ns on
+    Firefox 155). Native `navigator.webdriver` reads about 10x faster than
+    `navigator.onLine`; spoofed, it reads about 2.5x slower, so a page can
+    detect the spoof by comparing the two without any hardware baseline.
+  - The actor patches each realm as its global is created, so this covers every
+    realm the page can reach -- including a frame's *uncommitted initial
+    `about:blank`*, the placeholder document that exists between `appendChild`
+    and the real document committing, which content scripts are never injected
+    into ([bug 1415539](https://bugzilla.mozilla.org/show_bug.cgi?id=1415539)).
+    A page that appends a `srcdoc` iframe and reads
+    `frame.contentWindow.navigator.webdriver` in the same task reads exactly
+    that document.
+  - It records nothing and applies whether or not any instrument is enabled.
+    `js_instrument` still instruments `navigator.webdriver` alongside it
+    (including via `collection_fingerprinting`) and records the reads, with
+    value `false`. The instrument wraps `window.navigator` on the instance,
+    which gives `webdriver` an own, writable accessor that pages can detect
+    (fpscanner's `webdriverWritable` does). That tell is a known cost of the
+    legacy instrument, not of the spoof, and the spoof cannot hide it. The
+    combination is still useful: the spoof makes the value `false` in every
+    realm, including frames the instrument never reaches, and the instrument
+    records which sites read the flag. Leave `webdriver` out of
+    `js_instrument_settings` to avoid the tell.
+  - Requires `dom.ipc.processPrelaunch.enabled`. Setting that pref to `False`
+    in `prefs` while the spoof is on raises a `ConfigError`, rather than
+    crawling with the processes that predate the extension left unhooked. If
+    the pref is off by other means (e.g. a seed profile), or the spoof fails to
+    install for any other reason, the browser fails to start.
+  - Set to `False` to leave `navigator.webdriver` at its real value, e.g. to
+    measure how much of a crawl's treatment by sites is attributable to this
+    one signal.
 - `tracking_protection`
   - **NOT SUPPORTED.** See [#101](https://github.com/citp/OpenWPM/issues/101).
   - Set to `True` to enable Firefox's built-in

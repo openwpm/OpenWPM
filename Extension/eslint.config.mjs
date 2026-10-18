@@ -124,9 +124,10 @@ export default tseslint.config(
     },
   },
 
-  // Privileged extension scripts
+  // Privileged extension scripts. `.sys.mjs` are system ES modules (JSWindowActor
+  // sides); they share the same chrome-scope globals as the `.js` API scripts.
   {
-    files: ["bundled/privileged/**/*.js"],
+    files: ["bundled/privileged/**/*.js", "bundled/privileged/**/*.sys.mjs"],
     languageOptions: {
       globals: {
         AppConstants: "readonly",
@@ -145,6 +146,8 @@ export default tseslint.config(
         MatchGlob: "readonly",
         MatchPattern: "readonly",
         MatchPatternSet: "readonly",
+        JSWindowActorChild: "readonly",
+        JSWindowActorParent: "readonly",
         Services: "readonly",
         StructuredCloneHolder: "readonly",
         OS: "readonly",

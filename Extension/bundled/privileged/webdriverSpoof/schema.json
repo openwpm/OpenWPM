@@ -1,0 +1,13 @@
+[
+  {
+    "namespace": "webdriverSpoof",
+    "functions": [
+      {
+        "name": "enable",
+        "type": "function",
+        "async": true,
+        "parameters": []
+      }
+    ]
+  }
+]
