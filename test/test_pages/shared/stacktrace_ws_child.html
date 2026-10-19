@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+<script>
+  const n = new URLSearchParams(location.search).get("n");
+  const name = `open_ws_${n}`;
+  const opener = {
+    [name]() {
+      new WebSocket(`ws://${location.host}/stacktrace_ws_${n}`);
+    },
+  };
+  function run_all() {
+    opener[name]();
+    new Worker(`stacktrace_ws_worker.js?n=${n}`);
+  }
+</script>
+</head>
+<body onload="run_all()"></body></html>

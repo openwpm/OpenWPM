@@ -482,3 +482,22 @@ class TestJSInstrumentFailurePropagates(OpenWPMJSTest):
         # The visit must be recorded as incomplete (finalized success=False).
         incomplete = db_utils.query_db(db, "SELECT visit_id FROM incomplete_visits")
         assert incomplete, "expected the failed visit to be marked incomplete"
+
+
+def test_js_instrument_on_restricted_domain(
+    default_params, task_manager_creator, server
+):
+    """Only privileged extensions may inject content scripts into Mozilla's
+    restricted domains (addons.mozilla.org, accounts.firefox.com, ...)."""
+    manager_params, browser_params = default_params
+    manager_params.num_browsers = 1
+    browser_params = browser_params[:1]
+    browser_params[0].js_instrument = True
+    browser_params[0].prefs[
+        "extensions.webextensions.restrictedDomains"
+    ] = server.domain
+    manager, db = task_manager_creator((manager_params, browser_params))
+    manager.get(server.base + "/js_call_stack.html", sleep=3)
+    manager.close()
+    rows = db_utils.query_db(db, "SELECT count(*) FROM javascript")
+    assert rows[0][0] > 0

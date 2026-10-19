@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -132,6 +133,22 @@ def deploy_firefox(
     # Mozilla tracks removing the need for this in bug 1976115.
     fo.set_preference("security.allow_unsafe_subscript_loads", True)
 
+    # geckodriver's temporary install copies the xpi to the system temp
+    # directory, which the content sandbox cannot read, so the call stack
+    # instrument's JSWindowActor child module would fail to load in content
+    # processes. The sandbox broker grants read access to the profile's
+    # extensions/ directory, so install from a copy there. Being temporary, the
+    # install is privileged (experiment APIs, mozillaAddons, exemption from
+    # quarantined domains); the file name is not the add-on id, so the
+    # profile's add-on scan does not pick it up as a second, sideloaded copy.
+    # ref: https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp#749-777
+    # ref: https://searchfox.org/firefox-main/rev/66b70484481af2e01d4da8bb33f4a756aba77d74/toolkit/mozapps/extensions/internal/XPIProvider.sys.mjs#307-315
+    ext_loc = os.path.normpath(os.path.join(root_dir, "../../Extension/openwpm.xpi"))
+    extensions_dir = browser_profile_path / "extensions"
+    extensions_dir.mkdir(exist_ok=True)
+    ext_profile_loc = extensions_dir / "openwpm-temporary.xpi"
+    shutil.copyfile(ext_loc, ext_profile_loc)
+
     # Intercept logging at the Selenium level and redirect it to the
     # main logger.
     webdriver_interceptor = FirefoxLogInterceptor(browser_params.browser_id)
@@ -176,10 +193,9 @@ def deploy_firefox(
         ),
     )
 
-    # Install extension
-    ext_loc = os.path.join(root_dir, "../../Extension/openwpm.xpi")
-    ext_loc = os.path.normpath(ext_loc)
-    driver.install_addon(ext_loc, temporary=True)
+    # Selenium's install_addon uploads the file, which geckodriver writes to
+    # the temp directory; passing a path installs the file in place.
+    driver.execute("INSTALL_ADDON", {"path": str(ext_profile_loc), "temporary": True})
     logger.debug(
         "BROWSER %i: OpenWPM Firefox extension loaded" % browser_params.browser_id
     )

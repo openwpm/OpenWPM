@@ -25,6 +25,26 @@ def test_display_mode():
     validate_browser_params(browser_params)
 
 
+def test_specific_config_error_surfaces():
+    browser_params = BrowserParams()
+    browser_params.display_mode = "not_a_mode"
+    with pytest.raises(ConfigError) as exc_info:
+        validate_browser_params(browser_params)
+    message = str(exc_info.value)
+    assert "display_mode" in message
+    assert "Something went wrong" not in message
+
+
+def test_unexpected_type_is_wrapped():
+    browser_params = BrowserParams()
+    # An int has no .lower(), triggering an unexpected AttributeError that
+    # should be wrapped in the generic ConfigError.
+    browser_params.display_mode = 123
+    with pytest.raises(ConfigError) as exc_info:
+        validate_browser_params(browser_params)
+    assert "Something went wrong" in str(exc_info.value)
+
+
 def test_browser_type():
     browser_params = BrowserParams()
 
@@ -73,6 +93,47 @@ def test_echo_mode():
         validate_browser_params(browser_params)
 
     browser_params.echo_mode = False
+    validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        {"security.allow_unsafe_subscript_loads": False},
+        {"extensions.experiments.enabled": False},
+        # Firefox ignores a user value whose type differs from the default's.
+        {"extensions.experiments.enabled": "true"},
+        {"extensions.experiments.enabled": 1},
+        {"security.allow_unsafe_subscript_loads": "true"},
+    ],
+)
+def test_extension_incompatible_prefs_raise(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    with pytest.raises(ConfigError):
+        validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize("prefs", [None, [], "a.pref"])
+def test_non_dict_prefs_raise(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
+    with pytest.raises(ConfigError, match="browser_params.prefs must be a dict"):
+        validate_browser_params(browser_params)
+
+
+@pytest.mark.parametrize(
+    "prefs",
+    [
+        {},
+        {"some.unrelated.pref": False},
+        {"security.allow_unsafe_subscript_loads": True},
+        {"extensions.experiments.enabled": True},
+    ],
+)
+def test_extension_compatible_prefs_pass(prefs):
+    browser_params = BrowserParams()
+    browser_params.prefs = prefs
     validate_browser_params(browser_params)
 
 

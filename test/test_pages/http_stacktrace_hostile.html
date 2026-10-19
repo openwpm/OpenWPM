@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<title>page-controlled stack contents</title>
+<script>
+  var forger = {
+    ["x\nforged@https://forged.example/f.js:1:1;null"]() {
+      fetch("shared/test_script.js?forged");
+    },
+  };
+  var surrogate = {
+    ["lone\ud800name"]() {
+      fetch("shared/test_script.js?surrogate");
+    },
+  };
+  function recurse(n) {
+    if (n === 0) {
+      fetch("shared/test_script.js?deep");
+      return;
+    }
+    recurse(n - 1);
+  }
+  function run_all() {
+    forger["x\nforged@https://forged.example/f.js:1:1;null"]();
+    recurse(1000);
+    surrogate["lone\ud800name"]();
+  }
+</script>
+</head>
+<body onload="run_all()"></body></html>
