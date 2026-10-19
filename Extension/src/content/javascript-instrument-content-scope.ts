@@ -7,7 +7,9 @@ function getPageScriptAsString(
 ): string {
   // The JS Instrument Requests are setup and validated python side
   // including setting defaults for logSettings. See JSInstrumentation.py
-  const pageScriptString = `
+  // The IIFE keeps getInstrumentJS and jsInstrumentationSettings off the
+  // page's global scope.
+  const pageScriptString = `(function () {
 // Start of js-instruments.
 ${getInstrumentJS}
 // End of js-instruments.
@@ -19,7 +21,7 @@ const jsInstrumentationSettings = ${JSON.stringify(jsInstrumentationSettings)};
 // Start of anonymous function from javascript-instrument-page-scope.ts
 (${pageScript}(getInstrumentJS, jsInstrumentationSettings));
 // End.
-  `;
+})();`;
   return pageScriptString;
 }
 
