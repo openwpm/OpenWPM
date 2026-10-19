@@ -8,15 +8,20 @@ Steps
 4. Update Extension npm dependencies to latest, resolving peer dep conflicts
 5. Rebuild the extension
 6. Check hg.mozilla.org for a newer Firefox and update install-firefox.sh if found
+7. Install the (possibly just bumped) pinned Firefox into a temporary directory
+   and probe it for obsolete OpenWPM prefs (scripts/verify_obsolete_prefs.py).
+   Obsolescence candidates are a warning; failing to probe is an error.
 
 Run from the project root:
     python scripts/update.py
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import tomlkit
@@ -406,6 +411,41 @@ def bump_version_if_behind() -> None:
     version_file.write_text(target + "\n")
 
 
+def install_pinned_firefox(dest: Path) -> Path:
+    """Install the Firefox pinned in install-firefox.sh into ``dest`` and
+    return its binary. ``firefox-bin/`` may still hold the previous release."""
+    run(str(SCRIPTS / "install-firefox.sh"), cwd=dest)
+    if sys.platform == "darwin":
+        return dest / "Nightly.app" / "Contents" / "MacOS" / "firefox"
+    return dest / "firefox-bin" / "firefox-bin"
+
+
+def check_obsolete_firefox_prefs(binary: Path) -> None:
+    """Probe ``binary`` for prefs OpenWPM sets that it no longer defines.
+
+    Review candidates only produce a warning, since a missing default is not
+    proof that a pref is dead. Failing to probe at all raises.
+    """
+    print(f"\n=== Checking {binary} for obsolete OpenWPM prefs ===", flush=True)
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "verify_obsolete_prefs.py")],
+        cwd=ROOT,
+        env={**os.environ, "FIREFOX_BINARY": str(binary)},
+    )
+    if result.returncode == 1:  # EXIT_CANDIDATES
+        print(
+            "WARNING: the prefs listed above have no default in the pinned "
+            "Firefox.\nConfirm against the Firefox source and prune them from "
+            "openwpm/deploy_browsers/configure_firefox.py.",
+            file=sys.stderr,
+        )
+    elif result.returncode != 0:
+        raise RuntimeError(
+            f"verify_obsolete_prefs.py could not probe {binary} "
+            f"(exit code {result.returncode})"
+        )
+
+
 def main() -> None:
     # Repin the conda environment from unpinned sources
     run("./repin.sh", cwd=SCRIPTS)
@@ -434,6 +474,10 @@ def main() -> None:
     import firefox_version
 
     firefox_version.update_if_needed()
+
+    # Must run after the bump so it probes the newly pinned release.
+    with tempfile.TemporaryDirectory(prefix="openwpm-firefox-") as tmp:
+        check_obsolete_firefox_prefs(install_pinned_firefox(Path(tmp)))
 
 
 if __name__ == "__main__":
