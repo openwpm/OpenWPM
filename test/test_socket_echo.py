@@ -82,7 +82,7 @@ def test_socket_echo_roundtrips_through_real_extension(tmp_path):
     driver = None
     display = None
     try:
-        driver, _profile_path, display = deploy_firefox.deploy_firefox(
+        driver, _profile_path, display, _interceptor = deploy_firefox.deploy_firefox(
             status_queue, browser_params, manager_params, crash_recovery=False
         )
 

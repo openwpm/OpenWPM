@@ -763,8 +763,16 @@ class BrowserManager(Process):
             )
 
         try:
-            # Start Xvfb (if necessary), webdriver, and browser
-            driver, browser_profile_path, display = deploy_firefox.deploy_firefox(
+            # Start Xvfb (if necessary), webdriver, and browser. The geckodriver
+            # log interceptor returned here is a daemon thread that needs no
+            # explicit teardown: its temp file is already unlinked (anonymous
+            # inode), and the thread is reaped at process exit.
+            (
+                driver,
+                browser_profile_path,
+                display,
+                _webdriver_interceptor,
+            ) = deploy_firefox.deploy_firefox(
                 self.status_queue,
                 self.browser_params,
                 self.manager_params,
