@@ -210,7 +210,7 @@ fields = [
     pa.field("before_navigate_event_ordinal", pa.int64()),
     pa.field("before_navigate_time_stamp", pa.string()),
     pa.field("committed_event_ordinal", pa.int64()),
-    pa.field("time_stamp", pa.string()),
+    pa.field("committed_time_stamp", pa.string()),
 ]
 PQ_SCHEMAS["navigations"] = pa.schema(fields)
 
