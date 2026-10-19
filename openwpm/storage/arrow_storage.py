@@ -4,7 +4,7 @@ import random
 from abc import abstractmethod
 from asyncio import Task
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, DefaultDict, Dict, List, Optional, Set
 
 import pandas as pd
 import pyarrow as pa
@@ -16,6 +16,7 @@ from .parquet_schema import PQ_SCHEMAS
 from .storage_providers import INCOMPLETE_VISITS, StructuredStorageProvider, TableName
 
 CACHE_SIZE = 500
+"""Number of visits to cache before writing out a file per table"""
 
 
 class ArrowProvider(StructuredStorageProvider):
@@ -39,6 +40,9 @@ class ArrowProvider(StructuredStorageProvider):
 
         # Record batches by TableName
         self._batches: DefaultDict[TableName, List[pa.RecordBatch]] = defaultdict(list)
+        # Records arriving after a visit's finalize add batches for it, so
+        # count visits rather than batches.
+        self._batched_visits: Set[VisitId] = set()
         self._instance_id = random.getrandbits(32)
 
         self.flush_events: List[asyncio.Event] = list()
@@ -62,11 +66,9 @@ class ArrowProvider(StructuredStorageProvider):
     def _create_batch(self, visit_id: VisitId) -> None:
         """Create record batches for all records from `visit_id`"""
         if visit_id not in self._records:
-            # The batch for this `visit_id` was already created, skip
-            self.logger.error(
-                "Trying to create batch for visit_id %d when one was already created",
-                visit_id,
-            )
+            # A concurrent finalize of the same visit already took its records,
+            # e.g. a late record racing the visit's first finalize.
+            self.logger.debug("No new records for visit_id %d", visit_id)
             return
         for table_name, data in self._records[visit_id].items():
             try:
@@ -87,12 +89,10 @@ class ArrowProvider(StructuredStorageProvider):
                 pass
 
         del self._records[visit_id]
+        self._batched_visits.add(visit_id)
 
     def _is_cache_full(self) -> bool:
-        for batches in self._batches.values():
-            if len(batches) > CACHE_SIZE:
-                return True
-        return False
+        return len(self._batched_visits) > CACHE_SIZE
 
     async def finalize_visit_id(
         self, visit_id: VisitId, interrupted: bool = False
@@ -156,6 +156,7 @@ class ArrowProvider(StructuredStorageProvider):
             table = pa.Table.from_batches(batches)
             await self.write_table(table_name, table)
         self._batches.clear()
+        self._batched_visits.clear()
 
         for event in self.flush_events:
             event.set()
