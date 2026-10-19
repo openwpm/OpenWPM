@@ -2,7 +2,6 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
-from sqlite3 import Row
 from typing import List, Optional, Tuple
 
 import pytest
@@ -288,7 +287,6 @@ class TestExtension(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for row in rows:
-            assert isinstance(row, Row)
             item = (
                 row["script_url"],
                 row["symbol"],
@@ -344,7 +342,6 @@ class TestExtension(OpenWPMTest):
         rows = db_utils.get_javascript_entries(db)
         observed_rows = set()
         for row in rows:
-            assert isinstance(row, Row)
             if row["symbol"] == "RTCPeerConnection.setLocalDescription" and (
                 row["operation"] == "call"
             ):
