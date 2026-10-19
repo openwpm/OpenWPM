@@ -39,14 +39,14 @@ def test_failure_limit_reset(
     default_params: FullConfig,
     server: ServerUrls,
 ) -> None:
-    """Test that failure_count is reset on command sequence completion."""
+    """Test that consecutive failures are reset on command sequence completion."""
     manager_params, browser_params = default_params
     manager_params.num_browsers = 1
     manager_params.failure_limit = 1
     manager, _ = task_manager_creator((manager_params, browser_params[:1]))
     manager.get("example.com")  # Selenium requires scheme prefix
     manager.get(server.base)  # Successful command sequence
-    # Now failure_count should be reset to 0 and the following command
+    # Now the failure tracker should be reset and the following command
     # failure should not raise a CommandExecutionError
     manager.get("example.com")  # Selenium requires scheme prefix
     manager.get(server.base)  # Requires two commands to shut down

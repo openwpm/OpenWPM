@@ -66,7 +66,7 @@ def test_is_dns_error_predicate():
 
     Non-DNS neterror types (connectionRefused, netOffline, etc.) and other
     command statuses must NOT be treated as DNS errors, so they continue to
-    increment failure_count as before.
+    count toward the failure limit as before.
     """
     # Only this exact combination qualifies
     assert is_dns_error("neterror", "dnsNotFound") is True
