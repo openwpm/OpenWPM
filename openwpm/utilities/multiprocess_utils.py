@@ -2,9 +2,13 @@ import logging
 import os
 import sys
 import traceback
+from typing import Any, Dict, Optional
 
 import multiprocess as mp
 import psutil
+from opentelemetry import context
+
+from . import otel
 
 
 def parse_traceback_for_sentry(tb):
@@ -34,19 +38,35 @@ def parse_traceback_for_sentry(tb):
 
 
 class Process(mp.Process):
-    """Wrapper Process class that includes exception logging"""
+    """Wrapper Process class that includes exception logging
 
-    def __init__(self, *args, **kwargs):
+    When `otel_service` is given, the child exports its spans under that
+    service name; see openwpm.utilities.otel.
+    """
+
+    def __init__(
+        self,
+        *args: Any,
+        otel_service: Optional[str] = None,
+        otel_attributes: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         mp.Process.__init__(self, *args, **kwargs)
         self.logger = logging.getLogger("openwpm")
+        self.otel_service = otel_service
+        self.otel_attributes = otel_attributes
 
-    def run(self):
+    def run(self) -> None:
         # Enable coverage collection in child processes when COVERAGE_PROCESS_START is set
         if "COVERAGE_PROCESS_START" in os.environ:
             import coverage
 
             coverage.process_startup()
 
+        if self.otel_service is not None:
+            otel.init_process(self.otel_service, self.otel_attributes)
+        # A restarted browser is forked from inside a TaskManager span.
+        context.attach(context.Context())
         try:
             self.run_impl()
         except Exception as e:
@@ -56,6 +76,7 @@ class Process(mp.Process):
             self.logger.error("Exception in child process.", exc_info=True, extra=extra)
             raise e
         finally:
+            otel.shutdown_process()
             # Save coverage data before the process exits, since
             # multiprocess.Process uses os._exit() which skips atexit handlers.
             if "COVERAGE_PROCESS_START" in os.environ:

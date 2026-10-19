@@ -39,6 +39,7 @@ of configurations of `class<BrowserParams>`.
     - [Rendered Page Source](#rendered-page-source)
     - [Screenshots](#screenshots)
     - [`save_content`](#save_content)
+  - [Tracing](#tracing)
 
 
 ## Platform Configuration Options
@@ -62,6 +63,9 @@ of configurations of `class<BrowserParams>`.
 - `failure_limit`
   - The number of command failures tolerated before raising `CommandExecutionError`.
   - Default: `2 * num_browsers + 10`
+- `tracing`
+  - Export OpenTelemetry traces. See [Tracing](#tracing).
+  - Default: `False`
 
 ## Browser Configuration Options
 
@@ -429,3 +433,47 @@ Response body content
     files. This will lessen the performance impact of this instrumentation
     when a large number of browsers are used in parallel. 
 - You will also need to import LevelDbProvider from openwpm/storage/leveldb.py and instantiate it in the TaskManager in demo.py
+
+## Tracing
+
+OpenWPM can export [OpenTelemetry](https://opentelemetry.io/) traces of a
+crawl over OTLP/HTTP. Tracing is off unless `manager_params.tracing` is
+`True`; `OTEL_*` variables alone never switch it on, because they are often
+set for a whole host or cluster. With tracing on, the exporter reads the
+standard environment of the process creating the `TaskManager`:
+`OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+(default `http://localhost:4318`), headers, timeout, compression and
+`OTEL_RESOURCE_ATTRIBUTES`, except that OpenWPM sets `service.name`.
+`OTEL_SDK_DISABLED=true` or `OTEL_TRACES_EXPORTER=none` turn tracing off
+again. Only OTLP over `http/protobuf` is supported: any other
+`OTEL_TRACES_EXPORTER` or `OTEL_EXPORTER_OTLP_(TRACES_)PROTOCOL` value raises
+a `ConfigError`.
+
+Spans are reported under three services:
+
+| `service.name` | Spans |
+|---|---|
+| `openwpm-task-manager` | `execute_command_sequence`, one span per command, `post_cs_chores` (includes browser restarts) |
+| `openwpm-browser-manager` | `browser_startup`, `start_extension`, one span per executed command |
+| `openwpm-storage-controller` | `startup`, `shutdown`, `process_record`, `finalize_visit_id` |
+
+Every process also reports `process.pid`; browser processes report their
+`openwpm.browser_id`. The TaskManager's `execute_command_sequence` span is
+the root of a visit's trace: each command's BrowserManager span and the
+`process_record` spans of records sent from Python hang off it. Records sent
+by the extension are not traced, so tracing adds no per-record spans to the
+instrumentation data path. The extension also sends the visit's final
+record, so `finalize_visit_id` is usually a trace of its own; match it to
+the visit by its `openwpm.visit_id` attribute, which
+`execute_command_sequence` carries too.
+
+Each process flushes its pending spans when it exits, waiting at most one
+second so that an unreachable collector cannot slow down browser restarts;
+spans not exported by then are dropped. A browser that is killed (a command
+timed out, or the memory watchdog fired) loses the spans of its last few
+seconds, including the span of the command that hung. The TaskManager's
+command span records the failure with status `ERROR`.
+
+OpenWPM keeps its own tracer providers and never reads or sets the global
+OpenTelemetry tracer provider, so it does not interfere with tracing
+configured by an application that embeds it.

@@ -28,6 +28,7 @@ from .storage.storage_providers import (
     StructuredStorageProvider,
     UnstructuredStorageProvider,
 )
+from .utilities import otel
 from .utilities.multiprocess_utils import kill_process_and_children
 from .utilities.platform_utils import get_configuration_string, get_version
 from .utilities.storage_watchdog import StorageLogger
@@ -98,6 +99,13 @@ class TaskManager:
             js_settings = a_browsers_params.js_instrument_settings
             cleaned_js_settings = clean_js_instrumentation_settings(js_settings)
             a_browsers_params.cleaned_js_instrument_settings = cleaned_js_settings
+
+        self._otel_provider = (
+            otel.create_provider(otel.TASK_MANAGER_SERVICE)
+            if manager_params.tracing
+            else None
+        )
+        self.tracer = otel.get_tracer(self._otel_provider)
 
         # Flow control
         self.closing = False
@@ -283,7 +291,9 @@ class TaskManager:
         unstructured_storage_provider: Optional[UnstructuredStorageProvider],
     ) -> None:
         self.storage_controller_handle = StorageControllerHandle(
-            structured_storage_provider, unstructured_storage_provider
+            structured_storage_provider,
+            unstructured_storage_provider,
+            tracing=self.manager_params.tracing,
         )
         self.storage_controller_handle.launch()
         self.manager_params.storage_controller_address = (
@@ -503,5 +513,6 @@ class TaskManager:
             return
         start_time = time.time()
         self._shutdown_manager(relaxed=relaxed)
+        otel.shutdown_provider(self._otel_provider)
         # We don't have a logging thread at this time anymore
         print("Shutdown took %s seconds" % str(time.time() - start_time))
