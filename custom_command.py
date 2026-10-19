@@ -44,9 +44,17 @@ class LinkCountingCommand(BaseCommand):
         self.logger.info("There are %d links on %s", link_count, current_url)
 
 
-def get_screen_resolution(webdriver: Firefox) -> list[int]:
-    """Returns the screen resolution [width, height] as seen by the page."""
-    return webdriver.execute_script("return [screen.width, screen.height];")
+def get_screen_resolution(webdriver: Firefox) -> tuple[int, int]:
+    """Returns the available screen resolution (width, height) as seen by the page.
+
+    Uses ``screen.availWidth``/``screen.availHeight``, which exclude OS chrome
+    such as taskbars and docks, so it reflects the maximum window size the page
+    can actually occupy.
+    """
+    width, height = webdriver.execute_script(
+        "return [screen.availWidth, screen.availHeight];"
+    )
+    return int(width), int(height)
 
 
 class SetResolution(BaseCommand):
